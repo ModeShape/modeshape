@@ -43,6 +43,10 @@
         </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jdbc-local</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jdbc</artifactId>
         </dependency>
 
@@ -99,6 +103,13 @@
 			<type>test-jar</type>
 			<scope>test</scope>
 		</dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jdbc-local</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jdbc</artifactId>

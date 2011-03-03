@@ -60,12 +60,12 @@
     </dependencySet>
 	
 	<dependencySet>
-       <unpack>true</unpack>
+        <unpack>true</unpack>
+       
        <useTransitiveDependencies>false</useTransitiveDependencies>
        
        <includes>
             <include>org.modeshape:modeshape-jdbc</include>
-            <include>org.modeshape:modeshape-jdbc-local</include>
        </includes>
 
     </dependencySet>

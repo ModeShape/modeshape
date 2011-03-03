@@ -38,8 +38,8 @@ import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.query.QueryResult;
 import org.modeshape.jdbc.JcrDriver;
-import org.modeshape.jdbc.JdbcI18n;
-import org.modeshape.jdbc.JcrDriver.JcrContextFactory;
+import org.modeshape.jdbc.JdbcLocalI18n;
+import org.modeshape.jdbc.LocalJcrDriver.JcrContextFactory;
 import org.modeshape.web.jcr.rest.client.domain.QueryRow;
 import org.modeshape.web.jcr.rest.client.domain.Server;
 import org.modeshape.web.jcr.rest.client.domain.Workspace;
@@ -49,6 +49,40 @@ import org.modeshape.web.jcr.rest.client.json.JsonRestClient;
  * The HTTPRepositoryDelegate provides remote Repository implementation to access the Jcr layer via HTTP lookup.
  */
 public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
+
+    protected static final int PROTOCOL_HTTP = 2;
+
+    public static final RepositoryDelegateFactory FACTORY = new RepositoryDelegateFactory() {
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.jdbc.delegate.RepositoryDelegateFactory#determineProtocol(java.lang.String)
+         */
+        @Override
+        protected int determineProtocol( String url ) {
+            int protocol = super.determineProtocol(url);
+            if (protocol == -1) {
+                if (url.startsWith(JcrDriver.HTTP_URL_PREFIX) && url.length() > JcrDriver.HTTP_URL_PREFIX.length()) {
+                    // This fits the pattern so far ...
+                    return PROTOCOL_HTTP;
+                }
+            }
+            return super.determineProtocol(url);
+        }
+
+        @Override
+        protected RepositoryDelegate create( int protocol,
+                                             String url,
+                                             Properties info,
+                                             JcrContextFactory contextFactory ) {
+            if (protocol == PROTOCOL_HTTP) {
+                return new HttpRepositoryDelegate(url, info, contextFactory);
+            }
+            return super.create(protocol, url, info, contextFactory);
+        }
+    };
+
     private static final String HTTP_EXAMPLE_URL = JcrDriver.HTTP_URL_PREFIX + "{hostname}:{port}/{context root}";
 
     private JsonRestClient restClient;
@@ -67,7 +101,6 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
                                                    Properties info ) {
         return new HttpConnectionInfo(url, info);
     }
-
 
     @Override
     public QueryResult execute( String query,
@@ -104,7 +137,7 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
 
         NodeType nodetype = nodeTypes.get(name);
         if (nodetype == null) {
-            throw new RepositoryException(JdbcI18n.unableToGetNodeType.text(name));
+            throw new RepositoryException(JdbcLocalI18n.unableToGetNodeType.text(name));
         }
 
         return nodetype;
@@ -119,14 +152,15 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
                 try {
                     nodeTypesByName = this.restClient.getNodeTypes(workspace.getRepository());
                     if (nodeTypesByName == null || nodeTypesByName.isEmpty()) {
-                        String msg = JdbcI18n.noNodeTypesReturned.text(this.workspace.getServer().getUrl() + "/"
-                                                                       + this.workspace.getRepository().getName() + "/"
-                                                                       + this.workspace.getName());
+                        String msg = JdbcLocalI18n.noNodeTypesReturned.text(this.workspace.getServer().getUrl() + "/"
+                                                                            + this.workspace.getRepository().getName() + "/"
+                                                                            + this.workspace.getName());
                         throw new RepositoryException(msg);
                     }
                     this.nodeTypes = nodeTypesByName;
                 } catch (Exception e) {
-                    throw new RepositoryException(JdbcI18n.unableToGetNodeTypes.text(this.workspace.getRepository().getName()), e);
+                    throw new RepositoryException(JdbcLocalI18n.unableToGetNodeTypes.text(this.workspace.getRepository()
+                                                                                                        .getName()), e);
                 }
             }
             return new ArrayList<NodeType>(nodeTypes.values());
@@ -167,7 +201,7 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
         try {
             restClient.getRepositories(server);
         } catch (Exception e) {
-            throw new SQLException(JdbcI18n.noRepositoryNamesFound.text(), e);
+            throw new SQLException(JdbcLocalI18n.noRepositoryNamesFound.text(), e);
         }
 
         Set<String> repositoryNames = new HashSet<String>(1);
@@ -176,9 +210,8 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
         this.setRepositoryNames(repositoryNames);
 
     }
-    
 
-	/**
+    /**
      * @see java.sql.Connection#isValid(int)
      */
     @Override
@@ -198,7 +231,7 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
      */
     @Override
     public void close() {
-    	super.close();
+        super.close();
         restClient = null;
         workspace = null;
         if (nodeTypes != null) nodeTypes.clear();

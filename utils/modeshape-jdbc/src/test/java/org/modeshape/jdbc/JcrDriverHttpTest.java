@@ -125,8 +125,8 @@ public class JcrDriverHttpTest {
         // validProperties.put(JdbcDriver.REPOSITORY_PROPERTY_NAME, validRepositoryName);
         DriverPropertyInfo[] infos = driver.getPropertyInfo(validUrl, validProperties);
         assertThat(infos.length, is(1));
-        assertThat(infos[0].name, is(JdbcI18n.repositoryNamePropertyName.text()));
-        assertThat(infos[0].description, is(JdbcI18n.repositoryNamePropertyDescription.text()));
+        assertThat(infos[0].name, is(JdbcLocalI18n.repositoryNamePropertyName.text()));
+        assertThat(infos[0].description, is(JdbcLocalI18n.repositoryNamePropertyDescription.text()));
         assertThat(infos[0].required, is(true));
     }
 
@@ -139,8 +139,8 @@ public class JcrDriverHttpTest {
         validProperties.put(JcrDriver.REPOSITORY_PROPERTY_NAME, validRepositoryName);
         DriverPropertyInfo[] infos = driver.getPropertyInfo(validUrl, validProperties);
         assertThat(infos.length, is(1));
-        assertThat(infos[0].name, is(JdbcI18n.workspaceNamePropertyName.text()));
-        assertThat(infos[0].description, is(JdbcI18n.workspaceNamePropertyDescription.text()));
+        assertThat(infos[0].name, is(JdbcLocalI18n.workspaceNamePropertyName.text()));
+        assertThat(infos[0].description, is(JdbcLocalI18n.workspaceNamePropertyDescription.text()));
         assertThat(infos[0].required, is(false));
     }
 
@@ -153,8 +153,8 @@ public class JcrDriverHttpTest {
         validProperties.put(JcrDriver.REPOSITORY_PROPERTY_NAME, validRepositoryName);
         DriverPropertyInfo[] infos = driver.getPropertyInfo(validUrl, validProperties);
         assertThat(infos.length, is(1));
-        assertThat(infos[0].name, is(JdbcI18n.usernamePropertyName.text()));
-        assertThat(infos[0].description, is(JdbcI18n.usernamePropertyDescription.text()));
+        assertThat(infos[0].name, is(JdbcLocalI18n.usernamePropertyName.text()));
+        assertThat(infos[0].description, is(JdbcLocalI18n.usernamePropertyDescription.text()));
         assertThat(infos[0].required, is(false));
     }
 
@@ -167,19 +167,22 @@ public class JcrDriverHttpTest {
         validProperties.put(JcrDriver.REPOSITORY_PROPERTY_NAME, validRepositoryName);
         DriverPropertyInfo[] infos = driver.getPropertyInfo(validUrl, validProperties);
         assertThat(infos.length, is(1));
-        assertThat(infos[0].name, is(JdbcI18n.passwordPropertyName.text()));
-        assertThat(infos[0].description, is(JdbcI18n.passwordPropertyDescription.text()));
+        assertThat(infos[0].name, is(JdbcLocalI18n.passwordPropertyName.text()));
+        assertThat(infos[0].description, is(JdbcLocalI18n.passwordPropertyDescription.text()));
         assertThat(infos[0].required, is(false));
     }
 
     @Test
     public void shouldAcceptValidUrls() {
         assertThat(driver.acceptsURL(JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape-rest/" + this.validRepositoryName
-                                     + "/MyWorkspace" + "&user=jsmith&password=secret"), is(true));
+                                     + "/MyWorkspace" + "&user=jsmith&password=secret"),
+                   is(true));
         assertThat(driver.acceptsURL(JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape-rest/" + this.validRepositoryName
-                                     + "&user=jsmith&password=secret"), is(true));
+                                     + "&user=jsmith&password=secret"),
+                   is(true));
         assertThat(driver.acceptsURL(JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape-rest/"
-                                     + "&user=jsmith&password=secret"), is(true));
+                                     + "&user=jsmith&password=secret"),
+                   is(true));
     }
 
     @Test

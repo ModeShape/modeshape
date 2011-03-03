@@ -54,6 +54,7 @@
 		<!-- Order is important (web before JDBC before jbossas) -->
 		<module>web</module>
 		<module>utils/modeshape-jpa-ddl-gen</module>
+		<module>utils/modeshape-jdbc-local</module>
 		<module>utils/modeshape-jdbc</module>
 		<module>utils/modeshape-unit-test</module>
 		<module>deploy/jbossas</module>

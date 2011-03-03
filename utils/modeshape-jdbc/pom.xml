@@ -12,7 +12,7 @@
   <artifactId>modeshape-jdbc</artifactId>
   <packaging>jar</packaging>
   <name>ModeShape JDBC Driver</name>
-  <description>JDBC driver to allow clients to query a ModeShape JCR repository with JCR-SQL2.</description>
+  <description>JDBC driver to allow clients to use JCR-SQL2 to query a local or remote ModeShape JCR repository.</description>
   <url>http://www.modeshape.org</url>
   <!--
     Define the dependencies. Note that all version and scopes default to those defined in the dependencyManagement section of the
@@ -24,28 +24,22 @@
       <artifactId>jcr</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.modeshape</groupId>
-        <artifactId>modeshape-classloader-maven</artifactId>
-    </dependency>    
-    <dependency>
       <groupId>org.modeshape</groupId>
-      <artifactId>modeshape-jcr-api</artifactId>
-      <version>${project.version}</version>
+      <artifactId>modeshape-jdbc-local</artifactId>
     </dependency>
     <dependency>
       <groupId>org.modeshape</groupId>
-      <artifactId>modeshape-common</artifactId>
-      <version>${project.version}</version>
-    </dependency>   
-    <dependency>
-        <groupId>org.modeshape</groupId>
         <artifactId>modeshape-web-jcr-rest-client</artifactId>
         <version>${project.version}</version>
-    </dependency>  
+    </dependency>
+    <!-- 
+    Testing (note the scope)
+    -->
     <dependency>
     	<groupId>org.modeshape</groupId>
     	<artifactId>modeshape-jcr</artifactId>
     	<version>${project.version}</version>
+        <scope>test</scope>
     </dependency>
     <dependency>
     	<groupId>org.modeshape</groupId>
@@ -55,16 +49,11 @@
     </dependency>
     <dependency>
         <groupId>org.modeshape</groupId>
-        <artifactId>modeshape-repository</artifactId>
-        <scope>test</scope>
-    </dependency>         
-    <dependency>
-        <groupId>org.modeshape</groupId>
         <artifactId>modeshape-web-jcr-rest-war</artifactId>
         <type>war</type>
         <version>${project.version}</version>
         <scope>test</scope>
-    </dependency>    
+    </dependency>
     <dependency>
       <groupId>org.modeshape</groupId>
       <artifactId>modeshape-common</artifactId>
@@ -75,6 +64,13 @@
     <dependency>
       <groupId>org.modeshape</groupId>
       <artifactId>modeshape-jcr</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.modeshape</groupId>
+      <artifactId>modeshape-jdbc-local</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
@@ -92,7 +88,6 @@
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-all</artifactId>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -115,9 +110,6 @@
       <groupId>org.picketbox</groupId>
       <artifactId>picketbox-bare</artifactId>
     </dependency>
-    <!-- 
-    Testing (note the scope)
-    -->
     <!-- 
     Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing) 
     -->
@@ -229,6 +221,11 @@
            </resources>
            <plugins>
              <plugin>
+               <!--
+               We need to build a ZIP file so that the Ant task (below) can easily extract and rename the various files.
+               However, this ZIP file is not needed for anything else, and we certainly don't want to install the ZIP
+               file in the Maven repository, so we'll set "attach" to false.
+               -->
                <artifactId>maven-assembly-plugin</artifactId>
                <configuration>
                  <descriptors>
@@ -239,6 +236,7 @@
                      <addClasspath>true</addClasspath>
                    </manifest>
                  </archive>
+                 <attach>false</attach>
                </configuration>
                <executions>
                  <execution>
@@ -338,6 +336,7 @@
                              <delete dir="target/tempjars" />
                              <delete dir="target/temploc" />
                              <delete dir="target/tempproviders" />
+                             <delete file="target/modeshape-jdbc-${project.version}-http-jar-with-dependencies.zip" />
                         </tasks>
                     </configuration>
                     <goals>

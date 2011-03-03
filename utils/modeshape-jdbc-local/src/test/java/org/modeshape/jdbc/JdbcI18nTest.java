@@ -3,8 +3,8 @@
  * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
-* See the AUTHORS.txt file in the distribution for a full listing of 
-* individual contributors.
+ * See the AUTHORS.txt file in the distribution for a full listing of 
+ * individual contributors. 
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
@@ -23,28 +23,11 @@
  */
 package org.modeshape.jdbc;
 
-import org.modeshape.jdbc.util.I18n;
+import org.modeshape.common.AbstractI18nTest;
 
-/**
- * The internationalized string constants for the <code>org.modeshape.jdbc*</code> packages.
- */
-public final class JdbcI18n {
+public class JdbcI18nTest extends AbstractI18nTest {
 
-    public static I18n driverName;
-    public static I18n driverVendor;
-    public static I18n driverVendorUrl;
-    public static I18n driverVersion;
-
-    /**
-     * HTTP connection option related text info
-     */
-    public static I18n driverErrorRegistering;
-
-    static {
-        try {
-            I18n.initialize(JdbcI18n.class);
-        } catch (final Exception err) {
-            System.err.println(err);
-        }
+    public JdbcI18nTest() {
+        super(JdbcLocalI18n.class);
     }
 }
