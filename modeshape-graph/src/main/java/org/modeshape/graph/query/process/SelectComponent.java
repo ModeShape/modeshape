@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 import org.modeshape.graph.Location;
+import org.modeshape.graph.property.Path;
 import org.modeshape.graph.query.QueryResults.Columns;
 import org.modeshape.graph.query.model.And;
 import org.modeshape.graph.query.model.BindVariableName;
@@ -279,7 +280,7 @@ public class SelectComponent extends DelegatingComponent {
         if (constraint instanceof ChildNode) {
             ChildNode childConstraint = (ChildNode)constraint;
             final int locationIndex = columns.getLocationIndex(childConstraint.selectorName().name());
-            final String parentPath = childConstraint.parentPath();
+            final Path parentPath = (Path)types.getPathFactory().create(childConstraint.parentPath());
             return new ConstraintChecker() {
                 public boolean satisfiesConstraints( Object[] tuple ) {
                     Location location = (Location)tuple[locationIndex];
@@ -291,12 +292,22 @@ public class SelectComponent extends DelegatingComponent {
         if (constraint instanceof DescendantNode) {
             DescendantNode descendantNode = (DescendantNode)constraint;
             final int locationIndex = columns.getLocationIndex(descendantNode.selectorName().name());
-            final String ancestorPath = descendantNode.ancestorPath();
+            final String ancestorPathStr = descendantNode.ancestorPath();
+            if (analyzer != null) {
+                return new ConstraintChecker() {
+                    public boolean satisfiesConstraints( Object[] tuple ) {
+                        Location location = (Location)tuple[locationIndex];
+                        assert location.hasPath();
+                        return analyzer.isDescendantOf(location, ancestorPathStr);
+                    }
+                };
+            }
+            final Path ancestorPath = (Path)types.getPathFactory().create(descendantNode.ancestorPath());
             return new ConstraintChecker() {
                 public boolean satisfiesConstraints( Object[] tuple ) {
                     Location location = (Location)tuple[locationIndex];
                     assert location.hasPath();
-                    return analyzer.isDescendantOf(location, ancestorPath);
+                    return location.getPath().isDecendantOf(ancestorPath);
                 }
             };
         }

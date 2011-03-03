@@ -901,6 +901,34 @@ public class JcrQueryManagerTest {
                               "/Other/NodeA[3]");
     }
 
+    @FixFor( "MODE-1110" )
+    @Test
+    public void shouldExecuteQueryWithThreeInnerJoinsAndCriteriaOnDifferentSelectors() throws Exception {
+        String sql = "SELECT * from [nt:base] as myfirstnodetypes INNER JOIN [nt:base] as mysecondnodetypes "
+                     + "        ON ISDESCENDANTNODE(myfirstnodetypes, mysecondnodetypes) "
+                     + "INNER JOIN [nt:base] as mythirdnodetypes "
+                     + "        ON ISDESCENDANTNODE (mysecondnodetypes, mythirdnodetypes) "
+                     + " WHERE ISDESCENDANTNODE( mythirdnodetypes, '/') OR " + "myfirstnodetypes.[jcr:primaryType] IS NOT NULL";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        // print = true;
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 46L); // currently no records
+        assertResultsHaveColumns(result, new String[] {"myfirstnodetypes.jcr:path", "mythirdnodetypes.mode:depth",
+            "mysecondnodetypes.mode:depth", "mythirdnodetypes.jcr:path", "mysecondnodetypes.jcr:path",
+            "mythirdnodetypes.jcr:score", "myfirstnodetypes.jcr:score", "mythirdnodetypes.jcr:name",
+            "mysecondnodetypes.jcr:score", "mythirdnodetypes.mode:localName", "myfirstnodetypes.jcr:primaryType",
+            "mysecondnodetypes.jcr:primaryType", "mysecondnodetypes.jcr:name", "myfirstnodetypes.jcr:name",
+            "mythirdnodetypes.jcr:primaryType", "myfirstnodetypes.mode:localName", "myfirstnodetypes.mode:depth",
+            "mysecondnodetypes.mode:localName"});
+        RowIterator iter = result.getRows();
+        while (iter.hasNext()) {
+            Row row = iter.nextRow();
+            assertThat(row, is(notNullValue()));
+        }
+    }
+
     // ----------------------------------------------------------------------------------------------------------------
     // Full-text Search Queries
     // ----------------------------------------------------------------------------------------------------------------
