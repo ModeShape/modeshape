@@ -86,7 +86,6 @@ public class LocalJcrDriver implements java.sql.Driver {
     public static final String REPOSITORY_PROPERTY_NAME = "repositoryName";
     public static final String USERNAME_PROPERTY_NAME = "user";
     public static final String PASSWORD_PROPERTY_NAME = "password";
-    // TODO: Is this really needed ????
     public static final String TEIID_SUPPORT_PROPERTY_NAME = "teiidsupport";
 
     protected static final Set<String> ALL_PROPERTY_NAMES = Collections.unmodifiableSet(WORKSPACE_PROPERTY_NAME,
@@ -114,18 +113,27 @@ public class LocalJcrDriver implements java.sql.Driver {
         return INSTANCE;
     }
 
-    // TODO: Reduce the visibility????
-    public JcrContextFactory contextFactory = null;
-    protected final RepositoryDelegateFactory delegateFactory;
-    protected final DriverInfo driverInfo;
+    private final JcrContextFactory contextFactory;
+    private final RepositoryDelegateFactory delegateFactory;
+    private final DriverInfo driverInfo;
 
     /**
      * No-arg constructor, required by the {@link DriverManager}.
      */
     public LocalJcrDriver() {
+        this(null);
+    }
+
+    /**
+     * Create an instance of this driver using the supplied JNDI naming context factory. This is useful for testing, but is
+     * otherwise not generally recommended.
+     * 
+     * @param namingContextFactory the naming context factory; may be null if one should be created automatically
+     */
+    public LocalJcrDriver( JcrContextFactory namingContextFactory ) {
         this(LocalRepositoryDelegate.FACTORY, new DriverInfo(JdbcLocalI18n.driverName.text(), JdbcLocalI18n.driverVendor.text(),
                                                              JdbcLocalI18n.driverVendorUrl.text(),
-                                                             JdbcLocalI18n.driverVersion.text()));
+                                                             JdbcLocalI18n.driverVersion.text()), namingContextFactory);
     }
 
     /**
@@ -133,13 +141,16 @@ public class LocalJcrDriver implements java.sql.Driver {
      * 
      * @param delegateFactory the factory that should be used to create {@link RepositoryDelegate} instances; may not be null
      * @param driverInfo the information about the driver; may not be null
+     * @param namingContextFactory the naming context factory; may be null if one should be created automatically
      */
     protected LocalJcrDriver( RepositoryDelegateFactory delegateFactory,
-                              DriverInfo driverInfo ) {
+                              DriverInfo driverInfo,
+                              JcrContextFactory namingContextFactory ) {
         assert delegateFactory != null;
         assert driverInfo != null;
         this.delegateFactory = delegateFactory;
         this.driverInfo = driverInfo;
+        this.contextFactory = namingContextFactory;
     }
 
     /**
@@ -240,12 +251,18 @@ public class LocalJcrDriver implements java.sql.Driver {
         return driverInfo;
     }
 
-    public void setContextFactory( JcrContextFactory factory ) {
-        assert factory != null;
-        this.contextFactory = factory;
-    }
-
+    /**
+     * And interface that can be passed to this driver's contructor to create the JNDI naming context given the set of connection
+     * properties.
+     */
     public interface JcrContextFactory {
+        /**
+         * Create a JNDI naming context from the supplied connection properties.
+         * 
+         * @param properties the connection properties; may be null or empty
+         * @return the naming context; may not be null
+         * @throws NamingException if there is a problem creating or obtaining the naming context
+         */
         Context createContext( Properties properties ) throws NamingException;
     }
 

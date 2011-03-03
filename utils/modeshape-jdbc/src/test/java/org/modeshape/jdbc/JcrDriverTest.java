@@ -83,8 +83,7 @@ public class JcrDriverTest {
             }
         };
 
-        driver = new JcrDriver();
-        driver.setContextFactory(contextFactory);
+        driver = new JcrDriver(contextFactory);
     }
 
     @After

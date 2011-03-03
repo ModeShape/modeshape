@@ -188,8 +188,7 @@ public class JcrDriverIntegrationTest extends ConnectionResultsComparator {
             }
         };
 
-        driver = new JcrDriver();
-        driver.setContextFactory(contextFactory);
+        driver = new JcrDriver(contextFactory);
 
         Properties validProperties = new Properties();
         // validProperties.put(JcrDriver.USERNAME_PROPERTY_NAME, "admin");
@@ -494,11 +493,11 @@ public class JcrDriverIntegrationTest extends ConnectionResultsComparator {
             "cars    NULL    nt:versionHistory    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
             "cars    NULL    nt:versionLabels    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
             "cars    NULL    nt:versionedChild    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED"};
-        
+
         ResultSet rs = dbmd.getTables("%", "%", "%", new String[] {});
         assertResultsSetEquals(rs, expected);
         assertRowCount(44);
-        
+
     }
 
     @Test

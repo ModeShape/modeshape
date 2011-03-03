@@ -110,7 +110,18 @@ public class JcrDriver extends LocalJcrDriver {
      * No-arg constructor, required by the {@link DriverManager}.
      */
     public JcrDriver() {
+        this(null);
+    }
+
+    /**
+     * Create an instance of this driver using the supplied JNDI naming context factory. This is useful for testing, but is
+     * otherwise not generally recommended.
+     * 
+     * @param namingContextFactory the naming context factory; may be null if one should be created automatically
+     */
+    public JcrDriver( JcrContextFactory namingContextFactory ) {
         super(HttpRepositoryDelegate.FACTORY, new DriverInfo(JdbcI18n.driverName.text(), JdbcI18n.driverVendor.text(),
-                                                             JdbcI18n.driverVendorUrl.text(), JdbcI18n.driverVersion.text()));
+                                                             JdbcI18n.driverVendorUrl.text(), JdbcI18n.driverVersion.text()),
+              namingContextFactory);
     }
 }

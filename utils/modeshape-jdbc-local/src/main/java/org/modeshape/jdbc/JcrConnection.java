@@ -76,17 +76,14 @@ public class JcrConnection implements Connection {
         assert this.driverInfo != null;
     }
 
-    // TODO: Reduce visibility?
-    public ConnectionInfo info() {
+    protected ConnectionInfo info() {
         return this.jcrDelegate.getConnectionInfo();
     }
 
-    // TODO: Reduce visibility?
-    public DriverInfo driverInfo() {
+    protected DriverInfo driverInfo() {
         return this.driverInfo;
     }
 
-    // TODO: Reduce visibility?
     /**
      * Returns the interface used to communicate to the Jcr Repository.
      * 

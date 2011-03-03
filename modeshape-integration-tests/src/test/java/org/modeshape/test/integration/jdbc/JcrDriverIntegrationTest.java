@@ -151,8 +151,7 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
         };
 
         // Set up the driver and connection ...
-        driver = new JcrDriver();
-        driver.setContextFactory(contextFactory);
+        driver = new JcrDriver(contextFactory);
         connection = (JcrConnection)driver.connect(validUrl, new Properties());
 
         // And get database metadata ...
@@ -617,79 +616,76 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
         assertThat(tableNames.size(), is(181));
         List<String> tablesWithProblems = new ArrayList<String>();
         for (String table : tableNames) {
-        	Statement stmt = null;
+            Statement stmt = null;
             try {
                 stmt = connection.createStatement();
                 stmt.execute("SELECT * FROM [" + table + "] LIMIT 2");
             } catch (SQLException e) {
                 tablesWithProblems.add(table);
             } finally {
-            	if (stmt != null) {
-            		try {
-            			stmt.close();
-            		} catch (SQLException s) {
-            			
-            		}
-            	}
+                if (stmt != null) {
+                    try {
+                        stmt.close();
+                    } catch (SQLException s) {
+
+                    }
+                }
             }
         }
         if (!tablesWithProblems.isEmpty()) System.out.println(tablesWithProblems);
         assertThat(tablesWithProblems.isEmpty(), is(true));
     }
-    
+
     @Test
-	public  void shouldGetAndQueryAllTablesWithColumns() throws SQLException {
+    public void shouldGetAndQueryAllTablesWithColumns() throws SQLException {
         ResultSet tbrs = dbmd.getTables("%", "%", "%", new String[] {});
         List<String> tablesWithProblems = new ArrayList<String>();
 
-		for (int i = 1; tbrs.next(); i++) {
-			String tname = tbrs.getString("TABLE_NAME");
-       
-			ResultSet colrs = dbmd.getColumns("%", "%", tname, "%");
-        
-			StringBuffer sb = new StringBuffer("Select ");
-	        for (int row = 1; colrs.next(); row++) {
-	    			    		
-				String	columnName = (String) colrs.getObject(4);
-				if (columnName.equals("mode:properties")) continue;
-				
-				if (row > 1) {
-					sb.append(", ");
-				}
-				
-				sb.append("[" + columnName + "]");
-	    		
-	        }
-			sb.append(" From " + "[" + tname + "]");
-			String query = sb.toString();
-			
-			
-        	Statement stmt = null;
+        for (int i = 1; tbrs.next(); i++) {
+            String tname = tbrs.getString("TABLE_NAME");
+
+            ResultSet colrs = dbmd.getColumns("%", "%", tname, "%");
+
+            StringBuffer sb = new StringBuffer("Select ");
+            for (int row = 1; colrs.next(); row++) {
+
+                String columnName = (String)colrs.getObject(4);
+                if (columnName.equals("mode:properties")) continue;
+
+                if (row > 1) {
+                    sb.append(", ");
+                }
+
+                sb.append("[" + columnName + "]");
+
+            }
+            sb.append(" From " + "[" + tname + "]");
+            String query = sb.toString();
+
+            Statement stmt = null;
             try {
-          
+
                 stmt = connection.createStatement();
                 stmt.execute(query + " LIMIT 2");
             } catch (SQLException e) {
-            	System.out.println("QUERY: " + query);
-            	e.printStackTrace();
-            	tablesWithProblems.add(tname);
+                System.out.println("QUERY: " + query);
+                e.printStackTrace();
+                tablesWithProblems.add(tname);
             } finally {
-            	if (stmt != null) {
-            		try {
-            			stmt.close();
-            		} catch (SQLException s) {
-            			
-            		}
-            	}
+                if (stmt != null) {
+                    try {
+                        stmt.close();
+                    } catch (SQLException s) {
+
+                    }
+                }
             }
 
-
-		}
+        }
         if (!tablesWithProblems.isEmpty()) System.out.println(tablesWithProblems);
-        assertThat(tablesWithProblems.isEmpty(), is(true)); 	
+        assertThat(tablesWithProblems.isEmpty(), is(true));
 
-	}
-
+    }
 
     @Test
     public void shouldGetNTPrefixedTables() throws SQLException {
