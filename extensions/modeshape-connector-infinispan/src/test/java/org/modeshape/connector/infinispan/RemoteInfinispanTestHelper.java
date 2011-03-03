@@ -24,33 +24,70 @@
 package org.modeshape.connector.infinispan;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.util.Properties;
 import org.infinispan.manager.DefaultCacheManager;
+import org.infinispan.server.core.Main;
 import org.infinispan.server.hotrod.HotRodServer;
-import org.infinispan.server.hotrod.test.HotRodTestingUtil;
 
 /**
- *
  * @author johnament
  */
 public class RemoteInfinispanTestHelper {
-    public static final String HOST = "localhost";
-    public static final int PORT = 11311;
+    protected static final int PORT = 11311;
+    protected static final int TIMEOUT = 0;
     protected static final String CONFIG_FILE = "src/test/resources/infinispan_remote_config.xml";
     private static HotRodServer server = null;
     private static int count = 0;
+
     public static synchronized HotRodServer createServer() throws IOException {
         count++;
-        if(server == null) {
+        if (server == null) {
             DefaultCacheManager cacheManager = new DefaultCacheManager(CONFIG_FILE);
-            server = HotRodTestingUtil.startHotRodServer(cacheManager, PORT);
+            // This doesn't work on IPv6, because the util assumes "127.0.0.1" ...
+            // server = HotRodTestingUtil.startHotRodServer(cacheManager, HOST, PORT);
+            server = new HotRodServer();
+            String hostAddress = hostAddress();
+            String hostPort = Integer.toString(hostPort());
+            String timeoutStr = Integer.toString(TIMEOUT);
+            Properties props = new Properties();
+            props.setProperty(Main.PROP_KEY_HOST(), hostAddress);
+            props.setProperty(Main.PROP_KEY_PORT(), hostPort);
+            props.setProperty(Main.PROP_KEY_IDLE_TIMEOUT(), timeoutStr);
+            props.setProperty(Main.PROP_KEY_PROXY_HOST(), hostAddress);
+            props.setProperty(Main.PROP_KEY_PROXY_PORT(), hostPort);
+            // System.out.println("Starting HotRot Server at " + hostAddress + ":" + hostPort);
+            server.start(props, cacheManager);
         }
         return server;
     }
+
+    public static int hostPort() {
+        return PORT;
+    }
+
+    /**
+     * Return the IP address of this host, in either IPv4 or IPv6 format.
+     * 
+     * @return the IP address as a string
+     */
+    public static String hostAddress() {
+        try {
+            return InetAddress.getLocalHost().getHostAddress();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static synchronized void releaseServer() {
-        count--;
-        if(count == 0) {
-            server.stop();
-            server = null;
+        --count;
+        if (count <= 0) {
+            try {
+                // System.out.println("Stopping HotRot Server at " + hostAddress() + ":" + hostPort());
+                server.stop();
+            } finally {
+                server = null;
+            }
         }
     }
 }

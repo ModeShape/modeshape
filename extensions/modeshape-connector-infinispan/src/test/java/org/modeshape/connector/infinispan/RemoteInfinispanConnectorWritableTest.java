@@ -55,11 +55,16 @@ public class RemoteInfinispanConnectorWritableTest extends WritableConnectorTest
         source.setDefaultWorkspaceName(predefinedWorkspaceNames[0]);
         source.setCreatingWorkspacesAllowed(true);
         source.setRemoteInfinispanServerList(String.format("%s:%s",
-                                                           RemoteInfinispanTestHelper.HOST,
-                                                           RemoteInfinispanTestHelper.PORT));
+                                                           RemoteInfinispanTestHelper.hostAddress(),
+                                                           RemoteInfinispanTestHelper.hostPort()));
         return source;
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.connector.test.AbstractConnectorTest#cleanUpSourceResources()
+     */
     @Override
     protected void cleanUpSourceResources() throws Exception {
         RemoteInfinispanTestHelper.releaseServer();

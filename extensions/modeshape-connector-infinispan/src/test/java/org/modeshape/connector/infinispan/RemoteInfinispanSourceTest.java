@@ -49,7 +49,6 @@ import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryContext;
 
 /**
- *
  * @author johnament
  */
 public class RemoteInfinispanSourceTest {
@@ -71,6 +70,7 @@ public class RemoteInfinispanSourceTest {
     public static void closeConnection() throws Exception {
         RemoteInfinispanTestHelper.releaseServer();
     }
+
     @Before
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -151,10 +151,7 @@ public class RemoteInfinispanSourceTest {
     public void shouldCreateJndiReferenceAndRecreatedObjectFromReference() throws Exception {
         BasicCachePolicy cachePolicy = new BasicCachePolicy();
         cachePolicy.setTimeToLive(1000L, TimeUnit.MILLISECONDS);
-        convertToAndFromJndiReference(validName,
-                                      validRootNodeUuid,
-                                      cachePolicy,
-                                      100);
+        convertToAndFromJndiReference(validName, validRootNodeUuid, cachePolicy, 100);
     }
 
     @Test
@@ -206,6 +203,10 @@ public class RemoteInfinispanSourceTest {
         throws Exception {
         source.setName(validName);
         source.initialize(repositoryContext);
+        // The HotRod server is started on the host's actual address, which is not '127.0.0.1', so we have to set the server list
+        source.setRemoteInfinispanServerList(String.format("%s:%s",
+                                                           RemoteInfinispanTestHelper.hostAddress(),
+                                                           RemoteInfinispanTestHelper.hostPort()));
         connection = source.getConnection();
         assertThat(connection, is(notNullValue()));
         // assertThat(connection.getCache(), is(notNullValue()));

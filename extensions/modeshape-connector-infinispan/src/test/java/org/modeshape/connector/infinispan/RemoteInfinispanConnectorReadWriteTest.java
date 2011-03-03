@@ -42,7 +42,6 @@ import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryContext;
 
 /**
- *
  * @author johnament
  */
 public class RemoteInfinispanConnectorReadWriteTest {
@@ -55,6 +54,7 @@ public class RemoteInfinispanConnectorReadWriteTest {
     public static void closeConnection() throws Exception {
         RemoteInfinispanTestHelper.releaseServer();
     }
+
     private ExecutionContext context;
     private RemoteInfinispanSource source;
     private RepositoryContext mockRepositoryContext;
@@ -72,7 +72,9 @@ public class RemoteInfinispanConnectorReadWriteTest {
         source.setDefaultWorkspaceName(predefinedWorkspaceNames[0]);
         source.setCreatingWorkspacesAllowed(true);
         source.initialize(mockRepositoryContext);
-        source.setRemoteInfinispanServerList(String.format("%s:%s",RemoteInfinispanTestHelper.HOST,RemoteInfinispanTestHelper.PORT));
+        source.setRemoteInfinispanServerList(String.format("%s:%s",
+                                                           RemoteInfinispanTestHelper.hostAddress(),
+                                                           RemoteInfinispanTestHelper.hostPort()));
     }
 
     @After

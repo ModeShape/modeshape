@@ -58,8 +58,8 @@ public class RemoteInfinispanConnectorReadableTest extends ReadableConnectorTest
         source.setDefaultWorkspaceName(predefinedWorkspaceNames[0]);
         source.setCreatingWorkspacesAllowed(false);
         source.setRemoteInfinispanServerList(String.format("%s:%s",
-                                                           RemoteInfinispanTestHelper.HOST,
-                                                           RemoteInfinispanTestHelper.PORT));
+                                                           RemoteInfinispanTestHelper.hostAddress(),
+                                                           RemoteInfinispanTestHelper.hostPort()));
         return source;
     }
 

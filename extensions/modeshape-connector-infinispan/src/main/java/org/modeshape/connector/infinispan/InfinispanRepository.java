@@ -82,7 +82,7 @@ public class InfinispanRepository extends Repository<InfinispanNode, InfinispanW
      * This method shuts down the workspace and makes it no longer usable. This method should also only be called once.
      */
     public void shutdown() {
-        //this.cacheContainer.stop();
+        this.cacheContainer.stop();
     }
 
     /**
