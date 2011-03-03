@@ -751,7 +751,7 @@
 							<value>${jgroups.preferIpv4}</value>
 						</property>
 						<property>
-							<name>java.net.preferIPv6Stack</name>
+							<name>java.net.preferIPv6Addresses</name>
 							<value>${jgroups.preferIpv6}</value>
 						</property>
 					</systemProperties>
