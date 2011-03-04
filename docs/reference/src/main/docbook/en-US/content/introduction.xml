@@ -479,6 +479,14 @@
         </listitem>
         <listitem>
           <para>
+            <emphasis role="strong">modeshape-extractor-tika</emphasis>
+            is a &TextExtractor; implementation that uses the
+            <ulink url="http://aperture.sourceforge.net/">Apache Tika</ulink>
+            parsing library to extract from binary content text that can be used for indexing the content.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
             <emphasis role="strong">modeshape-classloader-maven</emphasis> is a small library that provides a
             &ClassLoaderFactory; implementation that can create &ClassLoader; instances capable of loading classes given 
 						a Maven Repository and a list of Maven coordinates. The Maven Repository can be managed within a JCR repository.
@@ -622,9 +630,20 @@
         </listitem>
         <listitem>
           <para>
+            <emphasis role="strong">modeshape-jdbc-local</emphasis> provides a JDBC driver implementation that allows JDBC clients 
+						to query the contents of a <emphasis>local</emphasis> JCR repository using <link linkend="jcr-sql2-query-language">JCR-SQL2</link>. 
+						The driver even supports JDBC metadata, making it possible to dynamically discover the tables and columns available for querying
+						(which are determined from the node types). It can be configured as a data source in JBoss AS, and can even
+						leverage the ModeShape service, allowing JDBC-based access by clients deployed to that JBoss AS instance
+						to query the repository content. This library is very lightweight and fast, since it directly accesses the repository
+						using the JCR API.
+					</para>
+        </listitem>
+        <listitem>
+          <para>
             <emphasis role="strong">modeshape-jdbc</emphasis> provides a JDBC driver implementation that allows JDBC clients 
-						to query the contents of a JCR repository using <link linkend="jcr-sql2-query-language">JCR-SQL2</link>. 
-						The driver even supports JDBC metadata, so client applications can dynamically discover the tables and columns available for querying
+						to query the contents of a <emphasis>local or remote</emphasis> JCR repository using <link linkend="jcr-sql2-query-language">JCR-SQL2</link>. 
+						The driver even supports JDBC metadata, making it possible to dynamically discover the tables and columns available for querying
 						(which are determined from the node types). It can be configured as a data source in JBoss AS, and can even
 						leverage the ModeShape service, allowing JDBC-based access to the same repository content available
 						via the JCR API, RESTful service, or WebDAV.

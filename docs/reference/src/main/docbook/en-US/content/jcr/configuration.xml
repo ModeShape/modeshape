@@ -1147,12 +1147,20 @@ config.repository("repository A")
 					</listitem>
 					<listitem>
 						<para>
-							A JDBC driver for querying the repositories through JDBC. This driver is on the global
+							A JDBC driver that allows applications also deployed on the same JBoss AS instance to query
+							the repositories through JDBC. This driver is on the global
 							classpath so it can be used in any deployed component. A single JDBC DataSource is
 							also configured in the "<code>deploy/modeshape-services.jar/modeshape-jdbc-ds.xml</code>" 
 							file to use the single default in-memory repository available out of the box. Simply edit
 							this file to add or change the DataSource definitions. The driver can also be used
 							in a separate JVM to issue queries and access database metadata.
+						</para>
+					</listitem>
+					<listitem>
+						<para>
+							A remote client JAR that can be used by Java applications to use JDBC or the RESTful API to
+							remotely access a ModeShape repository deployed on JBoss AS. This JAR includes ModeShape's
+							full JDBC driver.
 						</para>
 					</listitem>
 				</itemizedlist>
@@ -1166,7 +1174,7 @@ conf/props/modeshape-users.properties
 lib/
 lib/jcr-2.0.jar         
 lib/modeshape-jcr-api-&versionNumber;.jar  
-lib/modeshape-jdbc-&versionNumber;.jar  
+lib/modeshape-jdbc-local-&versionNumber;.jar  
 deploy/
 deploy/modeshape-jboss-beans.xml  
 deploy/modeshape-services.jar/
