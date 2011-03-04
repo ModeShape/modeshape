@@ -28,25 +28,21 @@
 <!ENTITY % CustomDTD SYSTEM "../../custom.dtd">
 %CustomDTD;
 ]>
-<chapter id="custom-mimetype-detector">
-    <title>Writing custom detectors</title>
+<chapter id="custom-text-extractor">
+    <title>Writing custom text extractors</title>
 	  <para>
-	  Creating a custom detector involves the following steps:
+	  Creating a custom text extractor involves the following steps:
 	  <itemizedlist>
 	    <listitem>
 	      <para>Create a Maven 3 project for your detector;</para>
 	    </listitem>
 	    <listitem>
-	      <para>Implement the &MimeTypeDetector; interface with your own implementation, and create unit tests to verify
-	      the functionality and expected behavior;</para>
-	    </listitem>
-	    <listitem>
-	      <para>Add a &MimeTypeDetectorConfig; to the &MimeType; class in your application
-	      as described <link linkend="detectors">earlier</link>; and</para>
+	      <para>Implement the &TextExtractor; interface with your own implementation, and create unit tests to verify
+	      the functionality and expected behavior; and</para>
 	    </listitem>
 	    <listitem>
 	      <para>Deploy the JAR file with your implementation (as well as any dependencies), and make them available to ModeShape
-	      in your application.</para>
+	      in your application via ModeShape's configuration as described <link linkend="text-extractors">earlier</link>.</para>
 	    </listitem>
 	  </itemizedlist>
 	  It's that simple.
@@ -61,11 +57,11 @@
 	    </note>
 			<note>
 		    <para>
-					The <emphasis role="strong">modeshape-mimetype-detector-aperture</emphasis> project is a small, self-contained detector implementation that
+					The <emphasis role="strong">modeshape-extractor-tika</emphasis> project is a small, self-contained detector implementation that
 			    that you can use to help you get going.  Starting with this project's source and modifying it to suit your needs
 			 		may be the easiest way to get started.
-			    See the Git repository: 
-					<ulink url="&GitRepository;/tree/modeshape-&versionNumber;/extensions/modeshape-mimetype-detector-aperture/">&GitRepository;/tree/modeshape-&versionNumber;/extensions/modeshape-mimetype-detector-aperture/</ulink>
+			    See the subversion repository: 
+					<ulink url="&GitRepository;/tree/modeshape-&versionNumber;/extensions/modeshape-extractor-tika/">&GitRepository;/tree/modeshape-&versionNumber;/extensions/modeshape-extractor-tika/</ulink>
 			  </para>
 			</note>
 	    <para>You can create your Maven project any way you'd like.  For examples, see the <ulink url="http://maven.apache.org/guides/getting-started/index.html#How_do_I_make_my_first_Maven_project">Maven 3 documentation</ulink>.  
@@ -115,15 +111,18 @@
   <scope>test</scope>
 </dependency>
 ]]></programlisting>
-			<para>
-				After you've created the project, simply implement the &MimeTypeDetector; interface.  And testing should be
-				quite straightforward, as MIME type detectors don't require any other components.  In your tests,
-				simply instantiate your &MimeTypeDetector; implementation, supply various combinations of names and/or &InputStream;s,
-				and verify the output is what you expect.
-	  	</para>
-			<para>
-				To use in your application, create a &MimeTypeDetectorConfig; object with the name, description, and class information
-				for your detector, and add to the &MimeType; class using the <code>addDetector(&MimeTypeDetectorConfig; config)</code> method.
-				Then, just use the &MimeType; class.
-			</para>
+		<para>
+			After you've created the project, simply implement the &TextExtractor; interface. As mentioned in the JavaDoc,
+			the "supportsMimeType" method will be called by ModeShape first, and only if your implementation
+			returns true for a given MIME type will the "extractFrom" method be called. The supplied &TextExtractorContext;
+			object provides information about the text being processed, while the &TextExtractorOutput; is a simple
+			interface that your extractor uses to record one or more strings containing the extracted text.
+		</para>
+		<para>
+			Testing should be	quite straightforward as text extractors can simply be instantiated and called by your
+			test methods, which can simply instantiate the &TextExtractorContext; class (with the correct information)
+			and either mock or implement the &TextExtractorOutput; interface. Again, see the test cases in the
+			<ulink url="&GitRepository;/tree/modeshape-&versionNumber;/extensions/modeshape-extractor-tika/">Tika text extractor module</ulink>
+			for ideas.
+  	</para>
 </chapter>

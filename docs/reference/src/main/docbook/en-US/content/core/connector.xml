@@ -222,7 +222,7 @@
 		  Creating a custom connector involves the following steps:
 		  <orderedlist>
 		    <listitem>
-		      <para>Create a Maven 2 project for your connector;</para>
+		      <para>Create a Maven 3 project for your connector;</para>
 		    </listitem>
 		    <listitem>
 		      <para>
@@ -269,11 +269,11 @@
 		  Let's go through each one of these steps in more detail.
 	  </para>
 	  <sect2 id="custom_connector_project">
-	    <title>Creating the Maven 2 project</title>
+	    <title>Creating the Maven 3 project</title>
 	    <para>
-				The first step is to create the Maven 2 project that you can use to compile your code and build the JARs.
-	    	Maven 2 automates a lot of the work, and since you're already <link linkend="maven">set up to use Maven</link>,
-	    	using Maven for your project will save you a lot of time and effort.  Of course, you don't have to use Maven 2, but then you'll
+				The first step is to create the Maven 3 project that you can use to compile your code and build the JARs.
+	    	Maven 3 automates a lot of the work, and since you're already <link linkend="maven">set up to use Maven</link>,
+	    	using Maven for your project will save you a lot of time and effort.  Of course, you don't have to use Maven 3, but then you'll
 	    	have to get the required libraries and manage the compiling and building process yourself.</para>
 	    <note>
 	      <para>ModeShape may provide in the future a Maven archetype for creating connector projects.  If you'd find this useful
@@ -281,12 +281,13 @@
 				</para>
 		    <para>In lieu of a Maven archetype, you may find it easier to start with a small existing connector project.
 					The <emphasis role="strong">modeshape-connector-filesystem</emphasis> project is small and provides good example of implementing a path-based repository.
-		    	See the subversion repository: <ulink url="&Subversion;trunk/extensions/modeshape-connector-filesystem/">&Subversion;trunk/extensions/modeshape-connector-filesystem/</ulink>
+		    	See the Git repository: 
+					<ulink url="&GitRepository;/tree/modeshape-&versionNumber;/extensions/modeshape-connector-filesystem/">&GitRepository;/tree/modeshape-&versionNumber;/extensions/modeshape-connector-filesystem/</ulink>
 		    </para>
 		  </note>
 	    <para>
 				You can create your Maven project any way you'd like.  For examples, see the 
-				<ulink url="http://maven.apache.org/guides/getting-started/index.html#How_do_I_make_my_first_Maven_project">Maven 2 documentation</ulink>.  
+				<ulink url="http://maven.apache.org/guides/getting-started/index.html#How_do_I_make_my_first_Maven_project">Maven 3 documentation</ulink>.  
 	    	Once you've done that, just add the dependencies in your project's <code>pom.xml</code> dependencies section:
 			</para>
 	  	<programlisting language="XML" role="XML"><![CDATA[

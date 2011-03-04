@@ -45,6 +45,7 @@
 /docs/gettingstarted/target
 /docs/presentations/*.key
 /docs/reference/target
+/docs/jdbc-guide/target
 
 /extensions/modeshape-web-jcr-rest/target/
 /extensions/modeshape-web-jcr-rest-war/target/

@@ -489,7 +489,7 @@ public interface &ClassLoaderFactory; {
 	  <para>
 	  	ModeShape often needs the ability to determine the MIME type for some binary content.  When uploading content into
 			a repository, we may want to add the MIME type as metadata.  Or, we may want to make some processing decisions
-			based upon the MIME type.  So, ModeShape created a small pluggable framework for determining the MIME type by using
+			based upon the MIME type.  So, ModeShape has a small pluggable framework for determining the MIME type by using
 			the name of the file (e.g., extensions) and/or by reading the actual content.
 	  </para>
     <para>
@@ -537,6 +537,134 @@ public interface &MimeTypeDetector; {
 <programlisting>
 &MimeTypeDetector; myDetector = ...
 &ExecutionContext; contextWithMyDetector = context.with(myDetector);
+</programlisting>
+	</sect1>
+	<sect1 id="text-extractors">
+		<title>Text Extractors</title>
+	  <para>
+	  	ModeShape can store all kinds of content, and ModeShape makes it easy to perform full-text searches on that content.
+	    To support searching, ModeShape extracts the text from the various properties on each node. They way it does this for
+	    most property types (e.g., STRING, LONG, DATE, PATH, NAME, etc.) is simply to read and use the literal values.
+	  	But BINARY properties are another story: there's no way to indexes the binary content directly. Instead, ModeShape
+	 		has a small pluggable framework for extracting useful text from the binary content, based upon the MIME type of
+			the content itself.
+		</para>
+		<para>
+			The process works like this: when a BINARY property needs to be indexed for search, ModeShape determines the MIME
+			type of the content, determines if there is a text extractor capable of handling that MIME type, and if so it
+			passes the content to the text extractor and gets back a string of text, and it indexes that text.
+		</para>
+		<para>
+			ModeShape provides two text extractors out-of-the-box. The Teiid VDB text extractor operates only upon
+			Teiid virtual database (i.e., ".vdb") files and extracts the virtual database's logical name, description, and 
+			version, plus the logical name, description, source	name, source translator name, and JNDI name for each of the 
+			virtual database's models.
+		</para>
+		<para>
+			The second out-of-the-box extractor is capable of extracting text from wider variety of file types, including
+			Microsoft Office, PDF, HTML, plain text, and XML. This extractor uses the
+			<ulink url="http://tika.apache.org/">Tika</ulink> toolkit from Apache, so a number of other file formats are
+			supported. However, these other file formats require additional libraries that are not included out of the box.
+			This is discussed in more detail in a <link linkend="tika-text-extractor">later chapter</link>.
+		</para>
+		<para>
+			Text extraction can be an intensive process, so it is not enabled by default. But enabling the text extractors
+			in ModeShape's configuration is actually pretty easy. When using a configuration file, simply add a "&lt;mode:textExtractors>"
+			fragment under the "&lt;configuration>" root element. Within the "&lt;mode:textExtractors>" element place one or more 
+			"&lt;mode:textExtractor>" fragments specifying at least the extractor's name and fully-qualified Java class.
+		</para>
+		<para>
+			For example, here is the fragment that defines the Teiid text extractor and the Tika text extractor.
+			Note that the Teiid text extractor has no options and is pretty simple, while the Tika extractor allows
+			much more control over the MIME types that should be processed:
+		</para>
+		<programlisting language="XML" role="XML"><![CDATA[
+<mode:textExtractors>
+    <mode:textExtractor jcr:name="VDB Text Extractors">
+      <mode:description>Extract text from Teiid VDB files</mode:description>        
+      <mode:classname>org.modeshape.extractor.teiid.TeiidVdbTextExtractor</mode:classname>
+    </mode:textExtractor>
+
+    <mode:textExtractor jcr:name="Tika Text Extractors">
+      <mode:description>Text extractors using Tika parsers</mode:description>        
+      <mode:classname>org.modeshape.extractor.tika.TikaTextExtractor</mode:classname>
+      <!-- 
+      A comma- or whitespace-delimited list of MIME types that are to be excluded. 
+      The following are excluded by default, but the default is completely overridden 
+      when this property is set. In other words, if you explicitly exclude any MIME types,
+      be sure to list all of the MIME types you want to exclude. Exclusions always 
+      have a higher precedence than inclusions.
+      -->
+      <mode:excludedMimeTypes>
+         application/x-archive,application/x-bzip,application/x-bzip2, 
+         application/x-cpio,application/x-gtar,application/x-gzip, 
+         application/x-ta,application/zip,application/vnd.teiid.vdb
+      </mode:excludedMimeTypes>
+      <!-- 
+      A comma- or whitespace-delimited list of MIME types that are to be included. 
+      If this is used, then the extractor will include only those MIME types found 
+      in this list for which there is an available parser (unless the MIME type
+      is also excluded). Including explicit MIME types is often easier if text is 
+      to be extracted for are only a few MIME types.
+      -->
+      <mode:includedMimeTypes>
+         application/msword,application/vnd.oasis.opendocument.text
+      </mode:includedMimeTypes>
+    </mode:textExtractor>
+    ... <!-- other extractors -->
+  </mode:textExtractors>
+]]></programlisting>
+    <para>
+			It's also possible to define your own text extractors by implementing the &TextExtractor; interface:
+		</para>
+		<programlisting>
+@ThreadSafe
+public interface &TextExtractor; {
+
+    /**
+     * Determine if this extractor is capable of processing content with the supplied MIME type.
+     * 
+     * @param mimeType the MIME type; never null
+     * @return true if this extractor can process content with the supplied MIME type, or false otherwise.
+     */
+    boolean supportsMimeType( &String; mimeType );
+
+    /**
+     * Sequence the data found in the supplied stream, placing the output information into the supplied map.
+     * <p>
+     * ModeShape's SequencingService determines the sequencers that should be executed by monitoring the changes to one or more
+     * workspaces that it is monitoring. Changes in those workspaces are aggregated and used to determine which sequencers should
+     * be called. If the sequencer implements this interface, then this method is called with the property that is to be sequenced
+     * along with the interface used to register the output. The framework takes care of all the rest.
+     * </p>
+     * 
+     * @param stream the stream with the data to be sequenced; never <code>null</code>
+     * @param output the output from the sequencing operation; never <code>null</code>
+     * @param context the context for the sequencing operation; never <code>null</code>
+     * @throws IOException if there is a problem reading the stream
+     */
+    void extractFrom( &InputStream; stream,
+                      &TextExtractorOutput; output,
+                      &TextExtractorContext; context ) throws IOException;
+
+}</programlisting>
+		<para>
+			As mentioned above, the "supportsMimeType" method will be called first, and only if your implementation
+			returns true for a given MIME type will the "extractFrom" method be called. The supplied &TextExtractorContext;
+			object provides information about the text being processed, while the &TextExtractorOutput; is a simple
+			interface that your extractor uses to record one or more strings containing the extracted text.
+		</para>
+		<para>
+			If you need text extraction in sequencers or connectors, you can always get a &TextExtractor; instance
+			from the &ExecutionContext;. That &TextExtractor; implementation is actually a composite of all of the
+			text extractors defined in the configuration.
+		</para>
+		<para>
+			Of course, you can always use a different &TextExtractor; by creating a subcontext and supplying your implementation:
+		</para>
+<programlisting>
+&TextExtractor; myExtractor = ...
+&ExecutionContext; contextWithMyExtractor = context.with(myExtractor);
 </programlisting>
 	</sect1>
 	<sect1>
