@@ -1218,11 +1218,14 @@
 										-group "Sequencer SPI" ${project.groupId}.graph.sequencer*
 										-group "MIME type detector SPI"
 										${project.groupId}.graph.mimetype*
+										-group "Text extractor SPI"
+										${project.groupId}.graph.text*
 										-group "Web services" ${project.groupId}.web*
 										-group "Connectors"
 										${project.groupId}.graph.connector.inmemory:${project.groupId}.graph.connector.federation:${project.groupId}.connector*
 										-group "Sequencers" ${project.groupId}.sequencer*
 										-group "MIME type detectors" ${project.groupId}.mimetype*
+										-group "Text extractors" ${project.groupId}.extractor*
 										-group "Classloaders" ${project.groupId}.maven*
 
 										-nopackagediagram
@@ -1261,12 +1264,15 @@
 										-group "Sequencer SPI" ${project.groupId}.graph.sequencer
 										-group "MIME type detector SPI"
 										${project.groupId}.graph.mimetype
+										-group "Text extractor SPI"
+										${project.groupId}.graph.text*
 										-group "RESTful web service client"
 										${project.groupId}.web.jcr.rest.client*
 										-group "Connectors"
 										${project.groupId}.graph.connector.inmemory:${project.groupId}.graph.connector.federation:${project.groupId}.connector*
 										-group "Sequencers" ${project.groupId}.sequencer*
 										-group "MIME type detectors" ${project.groupId}.mimetype*
+										-group "Text extractors" ${project.groupId}.extractor*
 
 										-nopackagediagram
 					          </additionalparam>

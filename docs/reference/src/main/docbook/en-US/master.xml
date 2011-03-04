@@ -147,11 +147,24 @@
 			<para>
 			  The ModeShape project provides a number of <link linkend="mime-type-detectors">MIME type detectors</link> out-of-the-box.
 			  These are ready to be used by simply including them in the classpath and 
-			  <link linkend="mime-type-detectors">setting up the &ExecutionContext;</link> appropriately.
+			  configuring ModeShape to use them.
 			</para>
 		</partintro>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/mime_type_detectors/aperture.xml"/>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/mime_type_detectors/custom_detectors.xml"/>
+	</part>
+	<part id="provided-text-extractors-part">
+		<title>Text Extractor Library</title>
+		<partintro>
+			<para>
+			  The ModeShape project provides a number of <link linkend="text-extractors">text extractors</link> out-of-the-box.
+			  These are ready to be used by simply including them in the classpath and 
+			  configuring ModeShape to use them.
+			</para>
+		</partintro>
+  	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/text_extractors/teiid_extractor.xml"/>
+  	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/text_extractors/tika_extractor.xml"/>
+  	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/text_extractors/custom_extractors.xml"/>
 	</part>
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/future.xml"/>
 </book>

@@ -19,8 +19,7 @@
 <!ENTITY Roadmap       				"&MODE;#selectedTab=com.atlassian.jira.plugin.system.project&#058;roadmap-panel">
 <!ENTITY ChangeLog            "&MODE;#selectedTab=com.atlassian.jira.plugin.system.project&#058;changelog-panel">
 <!ENTITY FutureReleases       "&MODE;/fixforversion/12314367">
-<!ENTITY Subversion  					"http://anonsvn.jboss.org/repos/modeshape/">
-<!ENTITY SecureSubversion  		"https://svn.jboss.org/repos/modeshape/">
+<!ENTITY GitRepository				"http://github.com/ModeShape/modeshape/">
 <!ENTITY Fisheye							"http://fisheye.jboss.org/browse/modeshape/">
 <!ENTITY Forums     					"http://community.jboss.org/community/modeshape">
 <!ENTITY SingleDownload       "&DownloadsHome;/&versionNumber;/modeshape-&versionNumber;-all-with-dependencies.jar">
@@ -216,6 +215,10 @@
 <!ENTITY ChangeObservers							"<ulink url='&API;graph/observe/ChangeObservers.html'><classname>ChangeObservers</classname></ulink>">
 <!ENTITY Changes											"<ulink url='&API;graph/observe/Changes.html'><classname>Changes</classname></ulink>">
 <!ENTITY SearchEngine									"<ulink url='&API;graph/search/SearchEngine.html'><interface>SearchEngine</interface></ulink>">
+<!ENTITY TextExtractor  					  	"<ulink url='&API;graph/text/TextExtractor.html'><interface>TextExtractor</interface></ulink>">
+<!ENTITY TextExtractors  					  	"<ulink url='&API;graph/text/TextExtractors.html'><interface>TextExtractors</interface></ulink>">
+<!ENTITY TextExtractorOutput			  	"<ulink url='&API;graph/text/TextExtractorOutput.html'><interface>TextExtractorOutput</interface></ulink>">
+<!ENTITY TextExtractorContext			  	"<ulink url='&API;graph/text/TextExtractorContext.html'><classname>TextExtractorContext</classname></ulink>">
 
 <!-- Types in modeshape-repository -->
 
@@ -292,4 +295,7 @@
 
 <!ENTITY ModelSequencer		  	  			"<ulink url='&API;sequencer/teiid/ModelSequencer.html'><classname>ModelSequencer</classname></ulink>">
 <!ENTITY VdbSequencer		  	    			"<ulink url='&API;sequencer/teiid/VdbSequencer.html'><classname>VdbSequencer</classname></ulink>">
+<!ENTITY TeiidVdbTextExtractor   			"<ulink url='&API;extractor/teiid/TeiidVdbTextExtractor.html'><classname>TeiidVdbTextExtractor</classname></ulink>">
+
+<!ENTITY TikaTextExtractor   			    "<ulink url='&API;extractor/tika/TikaTextExtractor.html'><classname>TikaTextExtractor</classname></ulink>">
 
