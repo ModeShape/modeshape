@@ -89,13 +89,15 @@ public final class JsonRestClient implements IRestClient {
      * @param workspace the workspace where the file node is being created
      * @param path the path in the workspace to the folder where the file node is being created
      * @param file the file whose contents will be contained in the file node being created
+     * @param useVersioning true if 'mix:versionable' should be added to the file node
      * @throws Exception if there is a problem creating the file
      */
     private void createFileNode( Workspace workspace,
                                  String path,
-                                 File file ) throws Exception {
+                                 File file,
+                                 boolean useVersioning ) throws Exception {
         LOGGER.trace("createFileNode: workspace={0}, path={1}, file={2}", workspace.getName(), path, file.getAbsolutePath());
-        FileNode fileNode = new FileNode(workspace, path, file);
+        FileNode fileNode = new FileNode(workspace, path, file, useVersioning);
         URL fileNodeUrl = fileNode.getUrl();
         URL fileNodeUrlWithTerseResponse = new URL(fileNodeUrl.toString() + "?mode:includeNode=false");
         HttpClientConnection connection = connect(workspace.getServer(), fileNodeUrlWithTerseResponse, RequestMethod.POST);
@@ -127,13 +129,15 @@ public final class JsonRestClient implements IRestClient {
      * @param workspace the workspace where the file node is being created
      * @param path the path in the workspace to the folder where the file node is being created
      * @param file the file whose contents will be contained in the file node being created
+     * @param useVersioning true if 'mix:versionable' should be added to the file node
      * @throws Exception if there is a problem creating the file
      */
     private void updateFileNode( Workspace workspace,
                                  String path,
-                                 File file ) throws Exception {
+                                 File file,
+                                 boolean useVersioning ) throws Exception {
         LOGGER.trace("updateFileNode: workspace={0}, path={1}, file={2}", workspace.getName(), path, file.getAbsolutePath());
-        FileNode fileNode = new FileNode(workspace, path, file);
+        FileNode fileNode = new FileNode(workspace, path, file, useVersioning);
         URL fileNodeUrl = fileNode.getUrl();
         URL fileNodeUrlWithTerseResponse = new URL(fileNodeUrl.toString() + "?mode:includeNode=false");
         HttpClientConnection connection = connect(workspace.getServer(), fileNodeUrlWithTerseResponse, RequestMethod.PUT);
@@ -444,6 +448,19 @@ public final class JsonRestClient implements IRestClient {
     public Status publish( Workspace workspace,
                            String path,
                            File file ) {
+        return publish(workspace, path, file, false);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.web.jcr.rest.client.IRestClient#publish(org.modeshape.web.jcr.rest.client.domain.Workspace,
+     *      java.lang.String, java.io.File, boolean)
+     */
+    public Status publish( Workspace workspace,
+                           String path,
+                           File file,
+                           boolean useVersioning ) {
         assert workspace != null;
         assert path != null;
         assert file != null;
@@ -452,12 +469,12 @@ public final class JsonRestClient implements IRestClient {
         try {
             if (pathExists(workspace, path, file)) {
                 // Update it ...
-                updateFileNode(workspace, path, file);
+                updateFileNode(workspace, path, file, useVersioning);
             } else {
                 // doesn't exist so make sure the parent path exists
                 ensureFolderExists(workspace, path);
                 // publish file
-                createFileNode(workspace, path, file);
+                createFileNode(workspace, path, file, useVersioning);
             }
 
         } catch (Exception e) {

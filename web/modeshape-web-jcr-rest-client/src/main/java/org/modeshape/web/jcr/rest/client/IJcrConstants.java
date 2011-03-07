@@ -52,6 +52,11 @@ public interface IJcrConstants {
     String FOLDER_NODE_TYPE = "nt:folder";
 
     /**
+     * The JCR versionable mixin node type (<code>mix:versionable</code>).
+     */
+    String VERSIONABLE_NODE_TYPE = "mix:versionable";
+
+    /**
      * The JCR data property name (<code>jcr:lastModified</code>).
      */
     String LAST_MODIFIED = "jcr:lastModified";
@@ -65,6 +70,11 @@ public interface IJcrConstants {
      * The JCR primary type property name (<code>jcr:primaryType</code>).
      */
     String PRIMARY_TYPE_PROPERTY = "jcr:primaryType";
+
+    /**
+     * The JCR mixin type property name (<code>jcr:mixinTypes</code>).
+     */
+    String MIXIN_TYPES_PROPERTY = "jcr:mixinTypes";
 
     /**
      * The JCR resource node type (<code>nt:resource</code>).

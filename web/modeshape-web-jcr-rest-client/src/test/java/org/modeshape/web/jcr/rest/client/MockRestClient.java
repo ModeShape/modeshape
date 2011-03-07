@@ -88,6 +88,20 @@ public final class MockRestClient implements IRestClient {
     /**
      * {@inheritDoc}
      * 
+     * @see org.modeshape.web.jcr.rest.client.IRestClient#publish(org.modeshape.web.jcr.rest.client.domain.Workspace,
+     *      java.lang.String, java.io.File, boolean)
+     */
+    @Override
+    public Status publish( Workspace workspace,
+                           String path,
+                           File file,
+                           boolean useVersioning ) {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.modeshape.web.jcr.rest.client.IRestClient#unpublish(org.modeshape.web.jcr.rest.client.domain.Workspace,
      *      java.lang.String, java.io.File)
      */

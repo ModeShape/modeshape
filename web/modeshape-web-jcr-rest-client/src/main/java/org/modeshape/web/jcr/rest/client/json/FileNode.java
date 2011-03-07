@@ -75,9 +75,23 @@ public final class FileNode extends JsonNode {
     public FileNode( Workspace workspace,
                      String path,
                      File file ) throws Exception {
+        this(workspace, path, file, false);
+    }
+
+    /**
+     * @param workspace the workspace being used (never <code>null</code>)
+     * @param path the path in the workspace (never <code>null</code>)
+     * @param file the file on the local file system (never <code>null</code>)
+     * @param versionable true if the file node should be versionable
+     * @throws Exception if there is a problem constructing the file node
+     */
+    public FileNode( Workspace workspace,
+                     String path,
+                     File file,
+                     boolean versionable ) throws Exception {
         super(file.getName());
-    	assert workspace != null;
-    	assert path != null;
+        assert workspace != null;
+        assert path != null;
 
         this.file = file;
         this.path = path;
@@ -100,6 +114,9 @@ public final class FileNode extends JsonNode {
         properties = new JSONObject();
         kid.put(IJsonConstants.PROPERTIES_KEY, properties);
         properties.put(IJcrConstants.PRIMARY_TYPE_PROPERTY, IJcrConstants.RESOURCE_NODE_TYPE);
+        if (versionable) {
+            properties.put(IJcrConstants.MIXIN_TYPES_PROPERTY, IJcrConstants.VERSIONABLE_NODE_TYPE);
+        }
 
         // add required jcr:lastModified property
         Calendar lastModified = Calendar.getInstance();
@@ -141,7 +158,7 @@ public final class FileNode extends JsonNode {
      * @see #getFileContentsUrl()
      */
     String getFileContents( String jsonResponse ) throws Exception {
-    	assert jsonResponse != null;
+        assert jsonResponse != null;
         JSONObject contentNode = new JSONObject(jsonResponse);
         JSONObject props = (JSONObject)contentNode.get(IJsonConstants.PROPERTIES_KEY);
         String encodedContents = props.getString(IJcrConstants.DATA_PROPERTY);

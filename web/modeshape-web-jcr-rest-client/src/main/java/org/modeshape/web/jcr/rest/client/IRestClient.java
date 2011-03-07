@@ -78,7 +78,9 @@ public interface IRestClient {
     Collection<Workspace> getWorkspaces( Repository repository ) throws Exception;
 
     /**
-     * Publishes, or uploads, a local file to the workspace at the specified path.
+     * Publishes, or uploads, a local file to the workspace at the specified path. This method does not utilize any versioning,
+     * and is equivalent to calling {@link #publish(Workspace, String, File, boolean) "<code>publish(workspace,path,file,false)}
+     * </code>".
      * 
      * @param workspace the workspace where the resource will be published (never <code>null</code>)
      * @param path the unencoded path to the folder where the file will be published (never <code>null</code>)
@@ -88,6 +90,24 @@ public interface IRestClient {
     Status publish( Workspace workspace,
                     String path,
                     File file );
+
+    /**
+     * Publishes, or uploads, a local file to the workspace at the specified path. This method allows the client to specify
+     * whether the uploaded file should be versioned. If so, this method will add the "mix:versionable" mixin to the "nt:file"
+     * node, and subsequent attempts to re-publish will result in new versions in the version history of the file. If no
+     * versioning is to be done, then no version history is maintained for the file, and subsequent attemps to re-publish will
+     * simply overwrite any existing content.
+     * 
+     * @param workspace the workspace where the resource will be published (never <code>null</code>)
+     * @param path the unencoded path to the folder where the file will be published (never <code>null</code>)
+     * @param file the resource being published (never <code>null</code>)
+     * @param useVersioning true if the uploaded file should be versioned, or false if no JCR versioning be used
+     * @return a status of the publishing operation outcome (never <code>null</code>)
+     */
+    Status publish( Workspace workspace,
+                    String path,
+                    File file,
+                    boolean useVersioning );
 
     /**
      * Unpublishes, or deletes, the resource at the specified path in the workspace. If a file being unpublished is not found in
