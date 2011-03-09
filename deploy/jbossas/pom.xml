@@ -44,7 +44,7 @@
                             <artifactId>maven-assembly-plugin</artifactId>
 							
                              <configuration>
-								<finalName>modeshape-jbossas</finalName>
+								<finalName>modeshape-jbossas-${project.version}</finalName>
 								<descriptors>
 									<descriptor>assembly/kit.xml</descriptor>
 								</descriptors>
