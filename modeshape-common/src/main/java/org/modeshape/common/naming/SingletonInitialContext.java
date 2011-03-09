@@ -40,44 +40,77 @@ import javax.naming.spi.InitialContextFactory;
 import org.modeshape.common.SystemFailureException;
 
 /**
- * A simple and limited JNDI implementation that can be used in unit tests for code that {@link Context#lookup(String) looks up}
- * objects.
+ * A simple and limited {@link Context JNDI naming context} that can be used in unit tests for code that
+ * {@link Context#lookup(String) looks up} objects.
  * <p>
  * This can be used easily in a unit test by either using one of two methods. The first is using the convenient static
  * <code>configure</code> method that takes one, two or three name/object pairs:
  * 
  * <pre>
- * MockInitialContext.register(name, obj);
- * MockInitialContext.register(name1, obj1, name2, obj2);
- * MockInitialContext.register(name1, obj1, name2, obj2, name3, obj3);
+ * SingletonInitialContext.register(name, obj);
+ * SingletonInitialContext.register(name1, obj1, name2, obj2);
+ * SingletonInitialContext.register(name1, obj1, name2, obj2, name3, obj3);
  * </pre>
  * 
+ * </p>
+ * <p>
  * The other approach is to set the system property for the {@link InitialContextFactory}:
  * 
  * <pre>
- * System.setProperty(&quot;java.naming.factory.initial&quot;, &quot;org.modeshape.common.mock.MockInitialContextFactory&quot;);
+ * System.setProperty(&quot;java.naming.factory.initial&quot;, &quot;org.modeshape.common.mock.SingletonInitialContextFactory&quot;);
  * </pre>
  * 
  * and then to {@link Context#bind(String, Object) bind} an object.
- * </p>
+ * 
+ * @see SingletonInitialContextFactory
+ * @author Luca Stancapiano
  * @author Randall Hauch
  */
-public class MockInitialContext implements Context {
+public class SingletonInitialContext implements Context {
 
-    public static void setup() {
-        System.setProperty("java.naming.factory.initial", MockInitialContextFactory.class.getName());
-    }
-
-    public static void register( String name, Object obj ) {
+    /**
+     * A convenience method that registers the supplied object with the supplied name.
+     * 
+     * @param name the JNDI name
+     * @param obj the object to be registered
+     */
+    static public void register( String name,
+                                 Object obj ) {
         register(name, obj, null, null, null, null);
     }
 
-    public static void register( String name1, Object obj1, String name2, Object obj2 ) {
+    /**
+     * A convenience method that registers the supplied objects with the supplied names.
+     * 
+     * @param name1 the JNDI name for the first object
+     * @param obj1 the first object to be registered
+     * @param name2 the JNDI name for the second object
+     * @param obj2 the second object to be registered
+     */
+    static public void register( String name1,
+                                 Object obj1,
+                                 String name2,
+                                 Object obj2 ) {
         register(name1, obj1, name2, obj2, null, null);
     }
 
-    public static void register( String name1, Object obj1, String name2, Object obj2, String name3, Object obj3 ) {
-        setup();
+    /**
+     * A convenience method that registers the supplied objects with the supplied names.
+     * 
+     * @param name1 the JNDI name for the first object
+     * @param obj1 the first object to be registered
+     * @param name2 the JNDI name for the second object
+     * @param obj2 the second object to be registered
+     * @param name3 the JNDI name for the third object
+     * @param obj3 the third object to be registered
+     */
+    static public void register( String name1,
+                                 Object obj1,
+                                 String name2,
+                                 Object obj2,
+                                 String name3,
+                                 Object obj3 ) {
+        SingletonInitialContextFactory.initialize();
         try {
             javax.naming.InitialContext context = new javax.naming.InitialContext();
             if (name1 != null) context.rebind(name1, obj1);
@@ -88,23 +121,22 @@ public class MockInitialContext implements Context {
         }
     }
 
-    public static void tearDown() {
-        MockInitialContextFactory.tearDown();
-    }
-
     private final Map<String, Object> environment = new ConcurrentHashMap<String, Object>();
     private final ConcurrentHashMap<String, Object> registry = new ConcurrentHashMap<String, Object>();
 
-    /* package */MockInitialContext( Hashtable<?, ?> environment ) {
-        for (Map.Entry<?, ?> entry : environment.entrySet()) {
-            this.environment.put(entry.getKey().toString(), entry.getValue());
+    /* package */SingletonInitialContext( Hashtable<?, ?> environment ) {
+        if (environment != null) {
+            for (Map.Entry<?, ?> entry : environment.entrySet()) {
+                this.environment.put(entry.getKey().toString(), entry.getValue());
+            }
         }
     }
 
     /**
      * {@inheritDoc}
      */
-    public Object addToEnvironment( String propName, Object propVal ) {
+    public Object addToEnvironment( String propName,
+                                    Object propVal ) {
         return environment.put(propName, propVal);
     }
 
@@ -118,14 +150,16 @@ public class MockInitialContext implements Context {
     /**
      * {@inheritDoc}
      */
-    public void bind( Name name, Object obj ) throws NamingException {
+    public void bind( Name name,
+                      Object obj ) throws NamingException {
         bind(name.toString(), obj);
     }
 
     /**
      * {@inheritDoc}
      */
-    public void bind( String name, Object obj ) throws NamingException {
+    public void bind( String name,
+                      Object obj ) throws NamingException {
         if (this.registry.putIfAbsent(name, obj) != null) {
             throw new NameAlreadyBoundException("The name \"" + name + "\" is already bound to an object");
         }
@@ -134,14 +168,16 @@ public class MockInitialContext implements Context {
     /**
      * {@inheritDoc}
      */
-    public void rebind( Name name, Object obj ) {
+    public void rebind( Name name,
+                        Object obj ) {
         rebind(name.toString(), obj);
     }
 
     /**
      * {@inheritDoc}
      */
-    public void rebind( String name, Object obj ) {
+    public void rebind( String name,
+                        Object obj ) {
         this.registry.put(name, obj);
     }
 
@@ -194,14 +230,16 @@ public class MockInitialContext implements Context {
     /**
      * {@inheritDoc}
      */
-    public void rename( Name oldName, Name newName ) {
+    public void rename( Name oldName,
+                        Name newName ) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * {@inheritDoc}
      */
-    public void rename( String oldName, String newName ) {
+    public void rename( String oldName,
+                        String newName ) {
         throw new UnsupportedOperationException();
     }
 
@@ -214,14 +252,16 @@ public class MockInitialContext implements Context {
     /**
      * {@inheritDoc}
      */
-    public Name composeName( Name name, Name prefix ) {
+    public Name composeName( Name name,
+                             Name prefix ) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * {@inheritDoc}
      */
-    public String composeName( String name, String prefix ) {
+    public String composeName( String name,
+                               String prefix ) {
         throw new UnsupportedOperationException();
     }
 
@@ -257,7 +297,12 @@ public class MockInitialContext implements Context {
      * {@inheritDoc}
      */
     public Hashtable<?, ?> getEnvironment() {
-        return (Hashtable<?, ?>)this.environment;
+        Hashtable<String, String> hashtable = new Hashtable<String, String>();
+        Map<?, ?> map = this.environment;
+        for (Map.Entry<?, ?> dd : map.entrySet()) {
+            hashtable.put(dd.getKey().toString(), dd.getValue().toString());
+        }
+        return hashtable;
     }
 
     /**
