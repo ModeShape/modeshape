@@ -9,7 +9,7 @@
   in order to build a complete set of artifacts to be deployed to a JBoss AS server
  -->
   
-  <id>services.jar</id>
+  <id>services-jar-content</id>
    
   <formats>
 	<format>dir</format>

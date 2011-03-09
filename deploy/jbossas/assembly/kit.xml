@@ -22,17 +22,17 @@
         </fileSet>
     
         <fileSet>
-            <directory>modeshape-jbossas-service/target/distribution/modeshape-services.jar.dir</directory>
+            <directory>modeshape-jbossas-service/target/distribution/modeshape-services-jar-content</directory>
             <outputDirectory>deploy/modeshape-services.jar</outputDirectory>
         </fileSet>
         
         <fileSet>
-            <directory>modeshape-jbossas-web-rest-war/target/distribution/modeshape-rest.war.dir</directory>
+            <directory>modeshape-jbossas-web-rest-war/target/distribution/modeshape-rest-war-content</directory>
             <outputDirectory>deploy/modeshape-rest.war</outputDirectory>
         </fileSet>
 
         <fileSet>
-            <directory>modeshape-jbossas-web-webdav-war/target/distribution/modeshape-webdav.war.dir</directory>
+            <directory>modeshape-jbossas-web-webdav-war/target/distribution/modeshape-webdav-war-content</directory>
             <outputDirectory>deploy/modeshape-webdav.war</outputDirectory>
         </fileSet>
 				
