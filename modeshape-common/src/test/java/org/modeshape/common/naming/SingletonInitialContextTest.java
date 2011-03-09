@@ -36,7 +36,7 @@ import org.junit.Test;
 /**
  * @author Randall Hauch
  */
-public class MockInitialContextTest {
+public class SingletonInitialContextTest {
 
     private String validName;
     private Object registeredObject;
@@ -49,12 +49,12 @@ public class MockInitialContextTest {
 
     @After
     public void afterEach() {
-        MockInitialContext.tearDown();
+        SingletonInitialContextFactory.tearDown();
     }
 
     @Test
     public void shouldCreateInitialContextAndRegisterAnObject() throws Exception {
-        MockInitialContext.register(this.validName, this.registeredObject);
+        SingletonInitialContext.register(this.validName, this.registeredObject);
         for (int i = 0; i != 10; ++i) {
             assertThat(new InitialContext().lookup(this.validName), is(sameInstance(this.registeredObject)));
         }
@@ -64,12 +64,12 @@ public class MockInitialContextTest {
     public void shouldTearDownMockInitialContextUponRequest() throws Exception {
         // Set it up ...
         // (Don't want to use 'expected', since the NamingException could be thrown here and we wouldn't know the difference)
-        MockInitialContext.register(this.validName, this.registeredObject);
+        SingletonInitialContext.register(this.validName, this.registeredObject);
         for (int i = 0; i != 10; ++i) {
             assertThat(new InitialContext().lookup(this.validName), is(sameInstance(this.registeredObject)));
         }
         // Tear it down ...
-        MockInitialContext.tearDown();
+        SingletonInitialContextFactory.tearDown();
         try {
             new InitialContext().lookup(this.validName);
             throw new AssertionFailedError("Failed to throw exception");

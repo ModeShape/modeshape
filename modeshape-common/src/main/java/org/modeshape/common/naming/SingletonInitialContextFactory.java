@@ -53,6 +53,7 @@ import org.modeshape.common.SystemFailureException;
  * </p>
  * 
  * @author Luca Stancapiano
+ * @author Randall Hauch
  */
 public class SingletonInitialContextFactory implements InitialContextFactory {
 
@@ -99,6 +100,14 @@ public class SingletonInitialContextFactory implements InitialContextFactory {
             throw new SystemFailureException();
         }
         return SINGLETON;
+    }
+
+    /**
+     * Set the {@link Context#INITIAL_CONTEXT_FACTORY} system property to the name of this context's
+     * {@link SingletonInitialContextFactory factory class}.
+     */
+    static public void initialize() {
+        System.setProperty("java.naming.factory.initial", SingletonInitialContextFactory.class.getName());
     }
 
     /**

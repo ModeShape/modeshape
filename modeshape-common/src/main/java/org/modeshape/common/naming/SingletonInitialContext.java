@@ -36,24 +36,37 @@ import javax.naming.NameNotFoundException;
 import javax.naming.NameParser;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
+import javax.naming.spi.InitialContextFactory;
 import org.modeshape.common.SystemFailureException;
 
 /**
  * A simple and limited {@link Context JNDI naming context} that can be used in unit tests for code that
  * {@link Context#lookup(String) looks up} objects.
+ * <p>
+ * This can be used easily in a unit test by either using one of two methods. The first is using the convenient static
+ * <code>configure</code> method that takes one, two or three name/object pairs:
+ * 
+ * <pre>
+ * SingletonInitialContext.register(name, obj);
+ * SingletonInitialContext.register(name1, obj1, name2, obj2);
+ * SingletonInitialContext.register(name1, obj1, name2, obj2, name3, obj3);
+ * </pre>
+ * 
+ * </p>
+ * <p>
+ * The other approach is to set the system property for the {@link InitialContextFactory}:
+ * 
+ * <pre>
+ * System.setProperty(&quot;java.naming.factory.initial&quot;, &quot;org.modeshape.common.mock.SingletonInitialContextFactory&quot;);
+ * </pre>
+ * 
+ * and then to {@link Context#bind(String, Object) bind} an object.
  * 
  * @see SingletonInitialContextFactory
  * @author Luca Stancapiano
+ * @author Randall Hauch
  */
 public class SingletonInitialContext implements Context {
-
-    /**
-     * Set the {@link Context#INITIAL_CONTEXT_FACTORY} system property to the name of this context's
-     * {@link SingletonInitialContextFactory factory class}.
-     */
-    static public void setup() {
-        System.setProperty("java.naming.factory.initial", SingletonInitialContextFactory.class.getName());
-    }
 
     /**
      * A convenience method that registers the supplied object with the supplied name.
@@ -97,7 +110,7 @@ public class SingletonInitialContext implements Context {
                                  Object obj2,
                                  String name3,
                                  Object obj3 ) {
-        setup();
+        SingletonInitialContextFactory.initialize();
         try {
             javax.naming.InitialContext context = new javax.naming.InitialContext();
             if (name1 != null) context.rebind(name1, obj1);

@@ -21,36 +21,12 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
+/**
+ * A simple and limited {@link org.modeshape.common.naming.SingletonInitialContext JNDI naming context} 
+ * and {@link org.modeshape.common.naming.SingletonInitialContextFactory InitialContext factory implementation} 
+ * that can be used in unit tests or other code that uses JNDI to {@link javax.naming.Context#lookup(String) looks up} 
+ * objects.
+ */
 
 package org.modeshape.common.naming;
 
-import java.util.Hashtable;
-import javax.naming.Context;
-import javax.naming.spi.InitialContextFactory;
-
-/**
- * The factory for a simple and limited JNDI implementation that can be used in unit tests for code that
- * {@link Context#lookup(String) looks up} objects. See {@link MockInitialContext} for how to use this implementation.
- * @author Randall Hauch
- */
-public class MockInitialContextFactory implements InitialContextFactory {
-
-    private static MockInitialContext SINGLETON;
-
-    /**
-     * {@inheritDoc}
-     */
-    public Context getInitialContext( Hashtable<?, ?> environment ) {
-        return getInstance(environment);
-    }
-
-    public static synchronized MockInitialContext getInstance( Hashtable<?, ?> environment ) {
-        if (SINGLETON == null) SINGLETON = new MockInitialContext(environment);
-        return SINGLETON;
-
-    }
-
-    public static synchronized void tearDown() {
-        SINGLETON = null;
-    }
-}
