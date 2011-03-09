@@ -275,7 +275,7 @@
                     <phase>package</phase>
                     <configuration>
                         <tasks>
-                            <unzip src="target/modeshape-jdbc-${project.version}-http-jar-with-dependencies.zip" dest="target/tempjars" />
+                            <unzip src="target/modeshape-jdbc-${project.version}-http-jar-with-dependencies.jar" dest="target/tempjars" />
                             
                             <unzip src="target/tempjars/jaxrs-api-1.2.1.GA.jar" dest="target/temploc" />                                   
                             <unzip src="target/tempjars/jcr-2.0.jar" dest="target/temploc" />                                   

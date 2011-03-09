@@ -1230,6 +1230,7 @@
 
 										-nopackagediagram
 					          </additionalparam>
+                      <detectOfflineLinks>false</detectOfflineLinks>
 		            </configuration>
 		          </execution>
 		          <execution>
@@ -1276,6 +1277,7 @@
 
 										-nopackagediagram
 					          </additionalparam>
+                      <detectOfflineLinks>false</detectOfflineLinks>
 		            </configuration>
 		          </execution>
 		        </executions>
