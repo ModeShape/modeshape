@@ -55,7 +55,6 @@
 										<addClasspath>true</addClasspath>
 									</manifest>
 								</archive>
-								<attach>false</attach>
                                </configuration>
                                 <executions>
                                     <execution>
