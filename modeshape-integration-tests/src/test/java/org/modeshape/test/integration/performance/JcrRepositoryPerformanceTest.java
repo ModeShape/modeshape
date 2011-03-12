@@ -41,6 +41,7 @@ import javax.jcr.version.VersionManager;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.StringUtil;
@@ -90,6 +91,34 @@ public class JcrRepositoryPerformanceTest extends ModeShapeSingleUseTest {
         withSession(new VerifyContent());
 
         simulateGuvnorUsage();
+    }
+
+    @FixFor( "MODE-1113" )
+    @Test
+    public void shouldHaveImportContentAvailableAfterRestart() throws Exception {
+        // print = true;
+        startEngineUsing("config/configRepositoryForDroolsJpaPerformance.xml");
+        sessionTo("Repo");
+        assertNode("/", "mode:root");
+        // import the file ...
+        importContent(getClass(), "io/drools/mortgage-sample-repository.xml");
+        session().refresh(false);
+        printSubgraph(assertNode("/drools:repository"));
+
+        // Verify the file was imported ...
+        withSession(new VerifyContent());
+
+        // Now shut down the engine ...
+        stopEngine();
+
+        // And restart the engine ...
+        startEngineUsing("config/configRepositoryForDroolsJpaNoNodeTypes.xml");
+        sessionTo("Repo");
+        assertNode("/", "mode:root");
+        printSubgraph(assertNode("/drools:repository"));
+
+        // VVerify the content is still here ...
+        withSession(new VerifyContent());
     }
 
     protected void simulateGuvnorUsage() throws Exception {
@@ -168,6 +197,8 @@ public class JcrRepositoryPerformanceTest extends ModeShapeSingleUseTest {
             assertNode(s, "/drools:repository/drools:package_area", "nt:folder");
             assertNode(s, "/drools:repository/drools:package_area/mortgages", "drools:packageNodeType");
             assertNode(s, "/drools:repository/drools:package_area/mortgages/assets", "drools:versionableAssetFolder");
+            assertNode(s, "/drools:repository/drools:state_area/Draft", "drools:stateNodeType");
+            assertNode(s, "/drools:repository/drools:tag_area/Home Mortgage", "drools:categoryNodeType");
         }
     }
 

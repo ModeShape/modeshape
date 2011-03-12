@@ -496,6 +496,18 @@ public class LuceneSearchSession implements WorkspaceSession {
                 nonBinaryProperties.add(property);
                 continue;
             }
+            if (type == FieldType.LONG) {
+                ValueFactory<Long> longFactory = processor.valueFactories.getLongFactory();
+                boolean index = rule.getIndexOption() != Field.Index.NO;
+                for (Object value : property) {
+                    if (value == null) continue;
+                    // Add a separate field for each property value ...
+                    long lValue = longFactory.create(value);
+                    doc.add(new NumericField(nameString, rule.getStoreOption(), index).setLongValue(lValue));
+                }
+                nonBinaryProperties.add(property);
+                continue;
+            }
             if (type == FieldType.FLOAT) {
                 ValueFactory<Double> doubleFactory = processor.valueFactories.getDoubleFactory();
                 boolean index = rule.getIndexOption() != Field.Index.NO;

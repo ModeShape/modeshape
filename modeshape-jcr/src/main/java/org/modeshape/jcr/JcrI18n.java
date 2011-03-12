@@ -221,6 +221,10 @@ public final class JcrI18n {
     public static I18n problemReadingNodeTypesFromRemote;
     public static I18n errorSynchronizingNodeTypes;
 
+    public static I18n errorRefreshingNodeTypesFromSystem;
+    public static I18n problemRefreshingNodeTypesFromSystem;
+    public static I18n errorRefreshingNodeTypes;
+
     // Lock messages
     public static I18n nodeNotLockable;
     public static I18n cannotRemoveLockToken;

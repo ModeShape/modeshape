@@ -517,8 +517,7 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
                 nodeTypesSubgraph = configuration.getSubgraphOfDepth(4).at(nodeTypesNode.getLocation().getPath());
             }
 
-            repository.getRepositoryTypeManager().registerNodeTypes(nodeTypesSubgraph, nodeTypesNode.getLocation());// throws
-            // exception
+            repository.getRepositoryTypeManager().registerNodeTypes(nodeTypesSubgraph, nodeTypesNode.getLocation(), false);
         }
 
         return repository;
