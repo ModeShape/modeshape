@@ -77,9 +77,13 @@ public abstract class ModeShapeUnitTest {
     private JcrTools tools;
     protected boolean print;
     protected boolean debug;
+    protected static ClassLoader classLoader;
 
     @Before
     public void beforeEach() throws Exception {
+        // Get the classloader for the test class ...
+        classLoader = getClass().getClassLoader();
+
         openSessions.clear();
         tools = new JcrTools();
         print = false;
@@ -120,13 +124,26 @@ public abstract class ModeShapeUnitTest {
                 configuration = new JcrConfiguration();
                 configuration.loadFrom(pathToConfigurationFile);
             } catch (IOException e) {
-                // Re-create the configuration object (otherwise, it will think there are changes from the first load) ...
-                configuration = new JcrConfiguration();
-                // Try loading the configuration from within the src/test/resources folder ...
-                pathToConfigurationFile = pathToConfigurationFile.startsWith("/") ? pathToConfigurationFile : "/"
-                                                                                                              + pathToConfigurationFile;
-                pathToConfigurationFile = "src/test/resources" + pathToConfigurationFile;
-                configuration.loadFrom(pathToConfigurationFile);
+                boolean read = false;
+                if (classLoader != null) {
+                    // Try loading it from the classpath ...
+                    URL url = classLoader.getResource(pathToConfigurationFile);
+                    if (url != null) {
+                        configuration = new JcrConfiguration();
+                        configuration.loadFrom(url);
+                        read = true;
+                    }
+                }
+
+                if (!read) {
+                    // Re-create the configuration object (otherwise, it will think there are changes from the first load) ...
+                    configuration = new JcrConfiguration();
+                    // Try loading the configuration from within the src/test/resources folder ...
+                    pathToConfigurationFile = pathToConfigurationFile.startsWith("/") ? pathToConfigurationFile : "/"
+                                                                                                                  + pathToConfigurationFile;
+                    pathToConfigurationFile = "src/test/resources" + pathToConfigurationFile;
+                    configuration.loadFrom(pathToConfigurationFile);
+                }
             }
         } catch (SAXException e) {
             throw new IOException(e);
