@@ -23,7 +23,6 @@
  */
 package org.modeshape.test.integration;
 
-import static org.junit.Assert.fail;
 import org.junit.After;
 import org.junit.Before;
 import org.modeshape.jcr.JcrTools;
@@ -43,9 +42,6 @@ public abstract class AbstractAdHocModeShapeTest extends AbstractModeShapeTest {
 
     protected void startEngine( String configFilePath,
                                 String repositoryName ) throws Exception {
-        if (session != null) {
-            fail("Can only start one engine in each test");
-        }
         startEngine(getClass(), configFilePath, repositoryName);
         session = repository.login();
     }

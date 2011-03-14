@@ -41,17 +41,18 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.TermAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.Field.Index;
+import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.FieldSelector;
 import org.apache.lucene.document.FieldSelectorResult;
 import org.apache.lucene.document.NumericField;
-import org.apache.lucene.document.Field.Index;
-import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.Term;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
+import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.MatchAllDocsQuery;
@@ -62,7 +63,6 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
-import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.regex.JavaUtilRegexCapabilities;
 import org.apache.lucene.search.regex.RegexQuery;
 import org.apache.lucene.store.Directory;
@@ -71,8 +71,8 @@ import org.modeshape.common.util.Logger;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.ModeShapeIntLexicon;
-import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.ModeShapeIntLexicon.Namespace;
+import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
@@ -478,6 +478,17 @@ public class LuceneSearchSession implements WorkspaceSession {
                     // Add a separate field for each property value ...
                     double dValue = doubleFactory.create(value);
                     doc.add(new NumericField(nameString, rule.getStoreOption(), index).setDoubleValue(dValue));
+                }
+                continue;
+            }
+            if (type == FieldType.LONG) {
+                ValueFactory<Long> longFactory = processor.valueFactories.getLongFactory();
+                boolean index = rule.getIndexOption() != Field.Index.NO;
+                for (Object value : property) {
+                    if (value == null) continue;
+                    // Add a separate field for each property value ...
+                    long lValue = longFactory.create(value);
+                    doc.add(new NumericField(nameString, rule.getStoreOption(), index).setLongValue(lValue));
                 }
                 continue;
             }
