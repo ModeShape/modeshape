@@ -51,12 +51,6 @@
     <mode:repositories>
         <mode:repository jcr:name="Repo" mode:source="Store">
             <jcr:nodeTypes>
-                <mode:resource>/io/drools/versionable_node_type.cnd</mode:resource>
-                <mode:resource>/io/drools/versionable_asset_folder_node_type.cnd</mode:resource>
-                <mode:resource>/io/drools/rule_node_type.cnd</mode:resource>
-                <mode:resource>/io/drools/rulepackage_node_type.cnd</mode:resource>
-                <mode:resource>/io/drools/state_node_type.cnd</mode:resource>
-                <mode:resource>/io/drools/tag_node_type.cnd</mode:resource>
             </jcr:nodeTypes>
             <mode:options jcr:primaryType="options" >
                 <!-- Explicitly specify the "system" workspace in the "SystemStore" source. -->

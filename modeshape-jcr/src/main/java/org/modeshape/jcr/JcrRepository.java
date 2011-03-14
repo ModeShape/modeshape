@@ -714,12 +714,16 @@ public class JcrRepository implements Repository {
             boolean includeInheritedProperties = Boolean.valueOf(this.options.get(Option.TABLES_INCLUDE_COLUMNS_FOR_INHERITED_PROPERTIES));
             boolean includePseudoColumnInSelectStar = true;
 
-            // this.repositoryTypeManager = new RepositoryNodeTypeManager(this, includeInheritedProperties);
-            this.repositoryTypeManager = new RepositoryNodeTypeManager(this, parentOfTypeNodes, includeInheritedProperties,
-                                                                       includePseudoColumnInSelectStar);
+            // Read in the built-in node types ...
             CndNodeTypeReader nodeTypeReader = new CndNodeTypeReader(this.executionContext);
             nodeTypeReader.readBuiltInTypes();
-            this.repositoryTypeManager.registerNodeTypes(nodeTypeReader);
+
+            // Create the manager for this repository's node types, initializing it from the system graph and registering the
+            // standard types ...
+            this.repositoryTypeManager = new RepositoryNodeTypeManager(this, parentOfTypeNodes, includeInheritedProperties,
+                                                                       includePseudoColumnInSelectStar);
+            this.repositoryTypeManager.refreshFromSystem();
+            this.repositoryTypeManager.registerNodeTypes(nodeTypeReader, false);
         } catch (RepositoryException re) {
             throw new IllegalStateException("Could not load node type definition files", re);
         } catch (IOException ioe) {
