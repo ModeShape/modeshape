@@ -548,16 +548,8 @@ final class JcrVersionManager implements VersionManager {
         }
 
         ValueFactory<Reference> refFactory = context().getValueFactories().getReferenceFactory();
-        Object[] oldPreds = EMPTY_OBJECT_ARRAY;
 
-        AbstractJcrProperty oldPredsProperty = node.getBaseVersion().getProperty(JcrLexicon.PREDECESSORS);
-        if (oldPredsProperty != null) {
-            oldPreds = oldPredsProperty.property().getValuesAsArray();
-        }
-
-        Object[] newPreds = new Object[oldPreds.length + 1];
-        newPreds[0] = refFactory.create(node.getBaseVersion().uuid());
-        System.arraycopy(oldPreds, 0, newPreds, 1, oldPreds.length);
+        Object[] newPreds = new Object[] {refFactory.create(node.getBaseVersion().uuid())};
 
         org.modeshape.graph.property.Property isCheckedOut = propFactory.create(JcrLexicon.IS_CHECKED_OUT, true);
         org.modeshape.graph.property.Property predecessors = propFactory.create(JcrLexicon.PREDECESSORS, newPreds);
