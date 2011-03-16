@@ -145,7 +145,8 @@
 				<activeByDefault>false</activeByDefault>
 			</activation>
 			<modules>
-        <module>sandbox/modeshape-sequencer-esb-message</module>
+        <!--module>sandbox/modeshape-sequencer-esb-message</module-->
+        <module>sandbox/modeshape-test-reference-impl</module>
       </modules>
     </profile>
 	</profiles>

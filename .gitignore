@@ -101,5 +101,7 @@
 
 /tools/org.modeshape.eclipse.jcr.rest.client/bin
 
+/sandbox/modeshape-test-reference-impl/target
+
 # Directory created by Eclipse
 /RemoteSystemsTempFiles
