@@ -290,10 +290,10 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
                                     List<Value> newValues,
                                     String versionUuid,
                                     Set<Value> exceptIn ) throws RepositoryException {
-        for (Value predecessor : values) {
-            if (!versionUuid.equals(predecessor.getString()) && !exceptIn.contains(predecessor)) {
-                exceptIn.add(predecessor);
-                newValues.add(predecessor);
+        for (Value value : values) {
+            if (!versionUuid.equals(value.getString()) && !exceptIn.contains(value)) {
+                exceptIn.add(value);
+                newValues.add(value);
             }
         }
     }
