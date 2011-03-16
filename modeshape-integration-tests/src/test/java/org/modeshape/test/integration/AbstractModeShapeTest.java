@@ -137,7 +137,20 @@ public abstract class AbstractModeShapeTest {
 
     protected static void importContent( Class<?> testClass,
                                          String pathToResourceFile,
+                                         int importBehavior ) throws Exception {
+        importContent(testClass, pathToResourceFile, null, importBehavior);
+    }
+
+    protected static void importContent( Class<?> testClass,
+                                         String pathToResourceFile,
                                          String jcrPathToImportUnder ) throws Exception {
+        importContent(testClass, pathToResourceFile, jcrPathToImportUnder, ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW);
+    }
+
+    protected static void importContent( Class<?> testClass,
+                                         String pathToResourceFile,
+                                         String jcrPathToImportUnder,
+                                         int importBehavior ) throws Exception {
         // Use a session to load the contents ...
         Session session = repository.login();
         try {
@@ -151,7 +164,7 @@ public abstract class AbstractModeShapeTest {
             if (jcrPathToImportUnder == null || jcrPathToImportUnder.trim().length() == 0) jcrPathToImportUnder = "/";
 
             try {
-                session.getWorkspace().importXML(jcrPathToImportUnder, stream, ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW);
+                session.getWorkspace().importXML(jcrPathToImportUnder, stream, importBehavior);
             } finally {
                 stream.close();
             }

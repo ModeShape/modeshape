@@ -512,7 +512,7 @@ public class JcrTools {
             }
         }
         sb.append(" jcr:primaryType=" + node.getPrimaryNodeType().getName());
-        boolean referenceable = false;
+        boolean referenceable = node.isNodeType("mix:referenceable");
         if (node.getMixinNodeTypes().length != 0) {
             sb.append(" jcr:mixinTypes=[");
             boolean first = true;
@@ -520,7 +520,6 @@ public class JcrTools {
                 if (first) first = false;
                 else sb.append(',');
                 sb.append(mixin.getName());
-                if (mixin.getName().equals("mix:referenceable")) referenceable = true;
             }
             sb.append(']');
         }
