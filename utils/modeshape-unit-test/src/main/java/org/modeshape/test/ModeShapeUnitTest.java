@@ -361,6 +361,12 @@ public abstract class ModeShapeUnitTest {
 
     protected static void importContent( Class<?> testClass,
                                          String pathToResourceFile,
+                                         int importBehavior ) throws Exception {
+        importContent(testClass, pathToResourceFile, defaultRepositoryName(), null, null, importBehavior);
+    }
+
+    protected static void importContent( Class<?> testClass,
+                                         String pathToResourceFile,
                                          String repositoryName,
                                          String workspaceName ) throws Exception {
         importContent(testClass, pathToResourceFile, repositoryName, workspaceName, null);
@@ -371,6 +377,17 @@ public abstract class ModeShapeUnitTest {
                                          String repositoryName,
                                          String workspaceName,
                                          String jcrPathToImportUnder ) throws Exception {
+        int behavior = ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW;
+        importContent(testClass, pathToResourceFile, repositoryName, workspaceName, null, behavior);
+    }
+
+    protected static void importContent( Class<?> testClass,
+                                         String pathToResourceFile,
+                                         String repositoryName,
+                                         String workspaceName,
+                                         String jcrPathToImportUnder,
+                                         int importBehavior ) throws Exception {
+
         // Use a session to load the contents ...
         try {
             InputStream stream = testClass.getClassLoader().getResourceAsStream(pathToResourceFile);
@@ -384,7 +401,7 @@ public abstract class ModeShapeUnitTest {
 
             Session session = repository(repositoryName).login(workspaceName);
             try {
-                session.getWorkspace().importXML(jcrPathToImportUnder, stream, ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW);
+                session.getWorkspace().importXML(jcrPathToImportUnder, stream, importBehavior);
             } finally {
                 try {
                     session.save();

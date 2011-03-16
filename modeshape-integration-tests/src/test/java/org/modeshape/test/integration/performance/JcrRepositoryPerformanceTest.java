@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Property;
@@ -59,7 +60,7 @@ public class JcrRepositoryPerformanceTest extends ModeShapeSingleUseTest {
         printDetail = false;
     }
 
-    @Ignore( "Removed from automatic builds. Can be run manually." )
+    @Ignore( "Removed from automatic builds due to time of test. Can be run manually." )
     @Test
     public void shouldSimulateGuvnorUsageAgainstRepositoryWithInMemoryStore() throws Exception {
         print = true;
@@ -73,14 +74,14 @@ public class JcrRepositoryPerformanceTest extends ModeShapeSingleUseTest {
         // Verify the file was imported ...
         withSession(new VerifyContent());
 
-        simulateGuvnorUsage();
+        simulateGuvnorUsage(5);
     }
 
-    @Ignore( "Removed from automatic builds. Can be run manually." )
+    @Ignore( "Removed from automatic builds due to time of test. Can be run manually." )
     @Test
     public void shouldSimulateGuvnorUsageAgainstRepositoryWithJpaStore() throws Exception {
         print = true;
-        startEngineUsing("config/configRepositoryForDroolsJpaPerformance.xml");
+        startEngineUsing("config/configRepositoryForDroolsJpaCreate.xml");
         sessionTo("Repo");
         assertNode("/", "mode:root");
         // import the file ...
@@ -90,14 +91,15 @@ public class JcrRepositoryPerformanceTest extends ModeShapeSingleUseTest {
         // Verify the file was imported ...
         withSession(new VerifyContent());
 
-        simulateGuvnorUsage();
+        simulateGuvnorUsage(4);
     }
 
+    @Ignore( "Removed from automatic builds due to time of test. Can be run manually." )
     @FixFor( "MODE-1113" )
     @Test
     public void shouldHaveImportContentAvailableAfterRestart() throws Exception {
         // print = true;
-        startEngineUsing("config/configRepositoryForDroolsJpaPerformance.xml");
+        startEngineUsing("config/configRepositoryForDroolsJpaCreate.xml");
         sessionTo("Repo");
         assertNode("/", "mode:root");
         // import the file ...
@@ -121,7 +123,216 @@ public class JcrRepositoryPerformanceTest extends ModeShapeSingleUseTest {
         withSession(new VerifyContent());
     }
 
-    protected void simulateGuvnorUsage() throws Exception {
+    @FixFor( "MODE-1114" )
+    @Test
+    public void shouldImportMultipleTimesAsNewContent() throws Exception {
+        // print = true;
+        // printDetail = false;
+        startEngineUsing("config/configRepositoryForDroolsInMemoryPerformance.xml");
+        sessionTo("Repo");
+        assertNode("/", "mode:root");
+
+        // import the file multiple times ...
+        int importBehavior = ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW;
+        for (int i = 0; i != 3; ++i) {
+            importContent(getClass(), "io/drools/mortgage-sample-repository.xml", importBehavior);
+            session().refresh(false);
+            assertNode("/drools:repository");
+
+            // Verify the file was imported ...
+            withSession(new VerifyContent());
+        }
+
+        simulateGuvnorUsage(1);
+    }
+
+    @Ignore( "Removed from automatic builds due to time of test. Can be run manually." )
+    @FixFor( "MODE-1114" )
+    @Test
+    public void shouldImportMultipleTimesAsNewContentUsingJpa() throws Exception {
+        // print = true;
+        // printDetail = false;
+        startEngineUsing("config/configRepositoryForDroolsJpaCreate.xml");
+        sessionTo("Repo");
+        assertNode("/", "mode:root");
+
+        // import the file multiple times ...
+        int importBehavior = ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW;
+        for (int i = 0; i != 3; ++i) {
+            importContent(getClass(), "io/drools/mortgage-sample-repository.xml", importBehavior);
+            session().refresh(false);
+            assertNode("/drools:repository");
+
+            // Verify the file was imported ...
+            withSession(new VerifyContent());
+        }
+
+        simulateGuvnorUsage(1);
+    }
+
+    @FixFor( "MODE-1114" )
+    @Test
+    public void shouldImportMultipleTimesAsReplacedContent() throws Exception {
+        print = true;
+        printDetail = false;
+        startEngineUsing("config/configRepositoryForDroolsInMemoryPerformance.xml");
+        sessionTo("Repo");
+        assertNode("/", "mode:root");
+
+        // import the file multiple times ...
+        int importBehavior = ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING;
+        for (int i = 0; i != 2; ++i) {
+            importContent(getClass(), "io/drools/mortgage-sample-repository.xml", importBehavior);
+            session().refresh(false);
+            assertNode("/drools:repository");
+
+            // Verify the file was imported ...
+            withSession(new VerifyContent());
+        }
+
+        simulateGuvnorUsage(1);
+    }
+
+    @Ignore( "Removed from automatic builds due to time of test. Can be run manually." )
+    @FixFor( "MODE-1114" )
+    @Test
+    public void shouldImportMultipleTimesAsReplacedContentUsingJpa() throws Exception {
+        print = true;
+        printDetail = false;
+        startEngineUsing("config/configRepositoryForDroolsJpaCreate.xml");
+        sessionTo("Repo");
+        assertNode("/", "mode:root");
+
+        // import the file multiple times ...
+        int importBehavior = ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING;
+        for (int i = 0; i != 2; ++i) {
+            importContent(getClass(), "io/drools/mortgage-sample-repository.xml", importBehavior);
+            session().refresh(false);
+            assertNode("/drools:repository");
+
+            // Verify the file was imported ...
+            withSession(new VerifyContent());
+        }
+
+        simulateGuvnorUsage(1);
+    }
+
+    @FixFor( "MODE-1114" )
+    @Test
+    public void shouldImportOnceAndSimulateGuvnorUsage() throws Exception {
+        // print = true;
+        // printDetail = false;
+        startEngineUsing("config/configRepositoryForDroolsInMemoryPerformance.xml");
+        sessionTo("Repo");
+        assertNode("/", "mode:root");
+
+        // import the file multiple times ...
+        int importBehavior = ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING;
+        importContent(getClass(), "io/drools/mortgage-sample-repository.xml", importBehavior);
+        session().refresh(false);
+        assertNode("/drools:repository");
+
+        // Verify the file was imported ...
+        withSession(new VerifyContent());
+
+        simulateGuvnorUsage(1);
+    }
+
+    @FixFor( "MODE-1114" )
+    @Test
+    public void shouldImportOnceAndSimulateGuvnorUsageUsingJpa() throws Exception {
+        // print = true;
+        // printDetail = false;
+        startEngineUsing("config/configRepositoryForDroolsJpaCreate.xml");
+        sessionTo("Repo");
+        assertNode("/", "mode:root");
+
+        // import the file multiple times ...
+        int importBehavior = ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING;
+        importContent(getClass(), "io/drools/mortgage-sample-repository.xml", importBehavior);
+        session().refresh(false);
+        assertNode("/drools:repository");
+
+        // Verify the file was imported ...
+        withSession(new VerifyContent());
+
+        simulateGuvnorUsage(1);
+    }
+
+    @FixFor( "MODE-1114" )
+    @Test
+    public void shouldImportAndSimulateGuvnorUsageTwice() throws Exception {
+        // print = true;
+        // printDetail = false;
+        startEngineUsing("config/configRepositoryForDroolsInMemoryPerformance.xml");
+        sessionTo("Repo");
+        assertNode("/", "mode:root");
+
+        // import the file multiple times ...
+        int importBehavior = ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING;
+        importContent(getClass(), "io/drools/mortgage-sample-repository.xml", importBehavior);
+        session().refresh(false);
+        assertNode("/drools:repository");
+
+        // Verify the file was imported ...
+        withSession(new VerifyContent());
+
+        simulateGuvnorUsage(2);
+        withSession(new PrintVersionHistory("/drools:repository/drools:package_area/mortgages/assets/ApplicantDsl"));
+
+        // Import over the top ...
+        session().refresh(false);
+        importContent(getClass(), "io/drools/mortgage-sample-repository.xml", importBehavior);
+        session().refresh(false);
+        assertNode("/drools:repository");
+
+        // Verify the file was imported ...
+        withSession(new VerifyContent());
+        withSession(new PrintVersionHistory("/drools:repository/drools:package_area/mortgages/assets/ApplicantDsl"));
+
+        simulateGuvnorUsage(1);
+
+        withSession(new PrintVersionHistory("/drools:repository/drools:package_area/mortgages/assets/ApplicantDsl"));
+    }
+
+    @Ignore( "Removed from automatic builds due to time of test. Can be run manually." )
+    @FixFor( "MODE-1114" )
+    @Test
+    public void shouldImportAndSimulateGuvnorUsageTwiceUsingJpa() throws Exception {
+        // print = true;
+        // printDetail = false;
+        startEngineUsing("config/configRepositoryForDroolsJpaCreate.xml");
+        sessionTo("Repo");
+        assertNode("/", "mode:root");
+
+        // import the file multiple times ...
+        int importBehavior = ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING;
+        importContent(getClass(), "io/drools/mortgage-sample-repository.xml", importBehavior);
+        session().refresh(false);
+        assertNode("/drools:repository");
+
+        // Verify the file was imported ...
+        withSession(new VerifyContent());
+        withSession(new PrintVersionHistory("/drools:repository/drools:package_area/mortgages/assets/ApplicantDsl"));
+
+        // simulateGuvnorUsage(1);
+
+        // Import over the top ...
+        session().refresh(false);
+        importContent(getClass(), "io/drools/mortgage-sample-repository.xml", importBehavior);
+        session().refresh(false);
+        assertNode("/drools:repository");
+
+        // Verify the file was imported ...
+        withSession(new VerifyContent());
+        withSession(new PrintVersionHistory("/drools:repository/drools:package_area/mortgages/assets/ApplicantDsl"));
+
+        simulateGuvnorUsage(1);
+
+    }
+
+    protected void simulateGuvnorUsage( int count ) throws Exception {
+        assertThat(count >= 0, is(true));
 
         // for (int i = 0; i != 30; ++i) {
         // // Create a snapshot ...
@@ -133,7 +344,7 @@ public class JcrRepositoryPerformanceTest extends ModeShapeSingleUseTest {
         Stopwatch total = new Stopwatch(true, "Total usage");
         Stopwatch sw15 = new Stopwatch(true, "First " + NUMBER_OF_COPIES);
         Stopwatch swRest = new Stopwatch(true, "Remaining");
-        for (int i = 0; i != 30; ++i) {
+        for (int i = 0; i != count; ++i) {
             sw.start();
             total.start();
             if (i <= NUMBER_OF_COPIES) sw15.start();
@@ -235,6 +446,40 @@ public class JcrRepositoryPerformanceTest extends ModeShapeSingleUseTest {
             checkout(assetNode);
             updateDescription(assetNode, "This is the new description");
             checkin(assetNode, "First change");
+        }
+    }
+
+    protected class PrintVersionHistory extends DroolsOperation {
+        private String path;
+
+        public PrintVersionHistory( String path ) {
+            this.path = path;
+        }
+
+        @SuppressWarnings( "synthetic-access" )
+        public void run( Session s ) throws RepositoryException {
+            Node assetNode = s.getNode(path);
+            VersionManager vmgr = s.getWorkspace().getVersionManager();
+            Node versionHistory = vmgr.getVersionHistory(path);
+            if (print) {
+                print("");
+                print("Node with history:");
+                printNode(assetNode);
+                printSubgraph(versionHistory);
+                // print(" Base version:");
+                // Node baseVersion = vmgr.getBaseVersion(path);
+                // print(baseVersion.getPath());
+                // printSubgraph(baseVersion);
+                // print(" Predecessors:");
+                // Property predecessors = assetNode.getProperty("jcr:predecessors");
+                // if (predecessors != null) {
+                // for (Value value : predecessors.getValues()) {
+                // Node predecessor = s.getNodeByIdentifier(value.getString());
+                // print(predecessor.getPath());
+                // printSubgraph(predecessor);
+                // }
+                // }
+            }
         }
     }
 

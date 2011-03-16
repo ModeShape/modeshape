@@ -43,7 +43,7 @@
             mode:compressData="${jpaSource.compressData}"
             mode:predefinedWorkspaceNames="default, otherWorkspace, system"
             mode:showSql="${jpaSource.showSql}"
-            mode:autoGenerateSchema="update"
+            mode:autoGenerateSchema="create"
             mode:creatingWorkspacesAllowed="true"
             mode:defaultWorkspaceName="default"/>    
     </mode:sources>

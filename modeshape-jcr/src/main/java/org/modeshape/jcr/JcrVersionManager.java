@@ -68,19 +68,19 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
-import org.modeshape.graph.Location;
 import org.modeshape.graph.Graph.Batch;
+import org.modeshape.graph.Location;
 import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.DateTimeFactory;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NameFactory;
 import org.modeshape.graph.property.Path;
+import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.PropertyFactory;
 import org.modeshape.graph.property.Reference;
 import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.ValueFactory;
-import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.session.GraphSession.Node;
 import org.modeshape.graph.session.GraphSession.PropertyInfo;
 import org.modeshape.jcr.JcrRepository.Option;
@@ -213,9 +213,9 @@ final class JcrVersionManager implements VersionManager {
      * @param uuid the value of the {@code jcr:uuid} property (as a UUID) for the node for which the version history should be
      *        returned
      * @return the path to the version history node that corresponds to the node with the given UUID. This does not guarantee that
-     *         a node exists at the returned path. In fact, if the node with the given UUID is not versionable (i.e., {@code
-     *         node.getUUID().equals(uuid.toString()) && !node.isNodeType("mix:versionable")}), there will most likely not be a
-     *         node at the path returned by this method.
+     *         a node exists at the returned path. In fact, if the node with the given UUID is not versionable (i.e.,
+     *         {@code node.getUUID().equals(uuid.toString()) && !node.isNodeType("mix:versionable")}), there will most likely not
+     *         be a node at the path returned by this method.
      */
     Path versionHistoryPathFor( UUID uuid ) {
         return versionHistoryPathAlgorithm.versionHistoryPathFor(uuid);
@@ -873,17 +873,24 @@ final class JcrVersionManager implements VersionManager {
         UUID historyUuid = UUID.randomUUID();
         UUID versionUuid = UUID.randomUUID();
 
-        initializeVersionStorageFor(node, historyUuid, originalVersionUuid, versionUuid);
-
+        List<UUID> existingPredecessors = new ArrayList<UUID>();
+        versionUuid = initializeVersionStorageFor(node, historyUuid, originalVersionUuid, versionUuid, existingPredecessors);
         ValueFactory<Reference> refFactory = context().getValueFactories().getReferenceFactory();
+        Object[] predecessorRefs = new Object[existingPredecessors.size()];
+        if (!existingPredecessors.isEmpty()) {
+            int i = 0;
+            for (UUID existingPredecessor : existingPredecessors) {
+                assert existingPredecessor != null;
+                predecessorRefs[i++] = refFactory.create(existingPredecessor);
+            }
+        }
+
         org.modeshape.graph.property.Property isCheckedOut = propertyFactory().create(JcrLexicon.IS_CHECKED_OUT, true);
         org.modeshape.graph.property.Property versionHistory = propertyFactory().create(JcrLexicon.VERSION_HISTORY,
                                                                                         refFactory.create(historyUuid));
         org.modeshape.graph.property.Property baseVersion = propertyFactory().create(JcrLexicon.BASE_VERSION,
                                                                                      refFactory.create(versionUuid));
-        org.modeshape.graph.property.Property predecessors = propertyFactory().create(JcrLexicon.PREDECESSORS,
-                                                                                      new Object[] {refFactory.create(versionUuid)});
-
+        org.modeshape.graph.property.Property predecessors = propertyFactory().create(JcrLexicon.PREDECESSORS, predecessorRefs);
         // This batch will get executed as part of the save
         batch.set(isCheckedOut, versionHistory, baseVersion, predecessors).on(node.getPath()).and();
 
@@ -892,10 +899,11 @@ final class JcrVersionManager implements VersionManager {
         cache().refresh(storageNode.getNodeId(), versionStoragePath, false);
     }
 
-    void initializeVersionStorageFor( Node<JcrNodePayload, JcrPropertyPayload> node,
+    UUID initializeVersionStorageFor( Node<JcrNodePayload, JcrPropertyPayload> node,
                                       UUID historyUuid,
                                       UUID originalVersionUuid,
-                                      UUID versionUuid ) {
+                                      UUID versionUuid,
+                                      List<UUID> predecessors ) {
         JcrNodePayload payload = node.getPayload();
 
         Graph systemGraph = session().repository().createSystemGraph(context());
@@ -933,7 +941,7 @@ final class JcrVersionManager implements VersionManager {
         }
 
         Path versionLabelsPath = path(historyPath, JcrLexicon.VERSION_LABELS);
-        systemBatch.create(versionLabelsPath).with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION_LABELS).and();
+        systemBatch.create(versionLabelsPath).with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION_LABELS).ifAbsent().and();
 
         Path rootVersionPath = path(historyPath, JcrLexicon.ROOT_VERSION);
         DateTime now = context().getValueFactories().getDateFactory().create();
@@ -954,6 +962,27 @@ final class JcrVersionManager implements VersionManager {
                    .and();
 
         systemBatch.execute();
+
+        // Re-read the version UUID, in case the version history was already there ...
+        org.modeshape.graph.Node rootVersion = systemGraph.getNodeAt(rootVersionPath);
+        UUID baseVersion = rootVersion.getLocation().getUuid();
+        if (!baseVersion.equals(versionUuid)) {
+            // The version history already exists, so baseVersion should be set to the version without
+            // a successor, and the predecessors should be set to the base version ...
+            org.modeshape.graph.Node historyNode = systemGraph.getNodeAt(historyPath);
+            for (Location childLocation : historyNode.getChildren()) {
+                if (childLocation.getPath().endsWith(JcrLexicon.ROOT_VERSION)) continue;
+                if (childLocation.getPath().endsWith(JcrLexicon.VERSION_LABELS)) continue;
+                org.modeshape.graph.Node versionNode = systemGraph.getNodeAt(childLocation);
+                if (versionNode.getProperty(JcrLexicon.SUCCESSORS) == null) {
+                    baseVersion = childLocation.getUuid();
+                    break;
+                }
+            }
+        }
+        predecessors.add(baseVersion);
+        assert baseVersion != null;
+        return baseVersion;
     }
 
     @NotThreadSafe
@@ -1015,8 +1044,8 @@ final class JcrVersionManager implements VersionManager {
         }
 
         /**
-         * Restores the child nodes and mixin types for {@code targetNode} based on the frozen version stored at {@code
-         * sourceNode}. This method will remove and add child nodes as necessary based on the documentation in the JCR 2.0
+         * Restores the child nodes and mixin types for {@code targetNode} based on the frozen version stored at
+         * {@code sourceNode}. This method will remove and add child nodes as necessary based on the documentation in the JCR 2.0
          * specification (sections 15.7), but this method will not modify properties (other than jcr:mixinTypes, jcr:baseVersion,
          * and jcr:isCheckedOut).
          * 
@@ -1160,11 +1189,11 @@ final class JcrVersionManager implements VersionManager {
          * Moves {@code targetNode} immediately before {@code beforeNode} under their shared parent. This version is very
          * inefficient in that it always tries to move the node, regardless of whether a move is actually required.
          * <p>
-         * The key postcondition for this method is that {@code targetNode} must be the last "versioned" child node before {@code
-         * beforeNode}, although {@code targetNode} need not be the immediate predecessor of {@code beforeNode} if all intervening
-         * nodes are not "versioned". That is, there can be nodes between {@code targetNode} and {@code beforeNode} as long as
-         * these nodes all have a {@link NodeDefinition node definition} with an {@link NodeDefinition#getOnParentVersion()
-         * onParentVersionAction} of IGNORE, COMPUTE, or INITIALIZE.
+         * The key postcondition for this method is that {@code targetNode} must be the last "versioned" child node before
+         * {@code beforeNode}, although {@code targetNode} need not be the immediate predecessor of {@code beforeNode} if all
+         * intervening nodes are not "versioned". That is, there can be nodes between {@code targetNode} and {@code beforeNode} as
+         * long as these nodes all have a {@link NodeDefinition node definition} with an
+         * {@link NodeDefinition#getOnParentVersion() onParentVersionAction} of IGNORE, COMPUTE, or INITIALIZE.
          * </p>
          * 
          * @param targetNode the node to be reordered; may not be null

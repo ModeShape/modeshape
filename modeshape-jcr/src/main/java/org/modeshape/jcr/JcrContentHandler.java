@@ -223,9 +223,9 @@ class JcrContentHandler extends DefaultHandler {
                     // properties are valid. If they are, then the history must have been imported (or the import
                     // replaced a versionable node that already had history).
                     boolean validHistory = isValidReference(node, JcrLexicon.VERSION_HISTORY, false);
-                    boolean validBaseVersion = isValidReference(node, JcrLexicon.BASE_VERSION, false);
-                    boolean validPredecessors = isValidReference(node, JcrLexicon.PREDECESSORS, false);
                     if (validHistory) {
+                        boolean validBaseVersion = isValidReference(node, JcrLexicon.BASE_VERSION, false);
+                        boolean validPredecessors = isValidReference(node, JcrLexicon.PREDECESSORS, false);
                         // There is a valid version history already ...
                         if (!validBaseVersion || !validPredecessors) {
                             // The imported base version is not valid anymore, so set it to the base version from the history ...
@@ -672,7 +672,10 @@ class JcrContentHandler extends DefaultHandler {
                         switch (uuidBehavior) {
                             case ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING:
                                 parent = existingNodeWithUuid.getParent();
-                                existingNodeWithUuid.remove();
+                                // Destroy the existing node, but do so via the cache so that we don't record
+                                // the removal by UUID, since the new node has the same UUID and the import
+                                // may create references to the new node)
+                                existingNodeWithUuid.editor().destroy();
                                 break;
                             case ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW:
                                 uuid = UUID.randomUUID();
@@ -684,7 +687,10 @@ class JcrContentHandler extends DefaultHandler {
                                                                                                                        uuid,
                                                                                                                        parent.getPath()));
                                 }
-                                existingNodeWithUuid.remove();
+                                // Destroy the existing node, but do so via the cache so that we don't record
+                                // the removal by UUID, since the new node has the same UUID and the import
+                                // may create references to the new node)
+                                existingNodeWithUuid.editor().destroy();
                                 break;
                             case ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW:
                                 throw new ItemExistsException(
