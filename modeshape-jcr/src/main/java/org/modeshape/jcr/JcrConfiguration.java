@@ -240,6 +240,30 @@ public class JcrConfiguration extends ModeShapeConfiguration {
          */
         RepositoryDefinition<ReturnType> registerNamespace( String prefix,
                                                             String uri );
+
+        /**
+         * Specify the location of the file containing the initial content for the repository.
+         * 
+         * @param path the path to the file containing the initial content; may not be null or empty
+         * @param firstWorkspace the first workspace in which this content should be loaded
+         * @param otherWorkspaces additional workspaces in which this content should be loaded
+         * @return the interface used to set the value for the property; never null
+         */
+        RepositoryDefinition<ReturnType> setInitialContent( String path,
+                                                            String firstWorkspace,
+                                                            String... otherWorkspaces );
+
+        /**
+         * Specify the location of the file containing the initial content for the repository.
+         * 
+         * @param file the file containing the initial content; may not be null, and must exist and be readable
+         * @param firstWorkspace the first workspace in which this content should be loaded
+         * @param otherWorkspaces additional workspaces in which this content should be loaded
+         * @return the interface used to set the value for the property; never null
+         */
+        RepositoryDefinition<ReturnType> setInitialContent( File file,
+                                                            String firstWorkspace,
+                                                            String... otherWorkspaces );
     }
 
     private final Map<String, RepositoryDefinition<? extends JcrConfiguration>> repositoryDefinitions = new HashMap<String, RepositoryDefinition<? extends JcrConfiguration>>();
@@ -628,6 +652,53 @@ public class JcrConfiguration extends ModeShapeConfiguration {
         public RepositoryDefinition<ReturnType> addNodeTypes( String pathToCndFile ) {
             CheckArg.isNotEmpty(pathToCndFile, "pathToCndFile");
             return addNodeTypes(new File(pathToCndFile));
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.jcr.JcrConfiguration.RepositoryDefinition#setInitialContent(java.lang.String, java.lang.String,
+         *      java.lang.String[])
+         */
+        @Override
+        public RepositoryDefinition<ReturnType> setInitialContent( String path,
+                                                                   String firstWorkspace,
+                                                                   String... otherWorkspaces ) {
+            CheckArg.isNotEmpty(path, "path");
+            path = path.trim();
+            File file = new File(path);
+            return setInitialContent(file, firstWorkspace, otherWorkspaces);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.jcr.JcrConfiguration.RepositoryDefinition#setInitialContent(java.io.File, java.lang.String,
+         *      java.lang.String[])
+         */
+        @Override
+        public RepositoryDefinition<ReturnType> setInitialContent( File file,
+                                                                   String firstWorkspace,
+                                                                   String... otherWorkspaces ) {
+            CheckArg.isNotNull(file, "file");
+            CheckArg.isNotEmpty(firstWorkspace, "firstWorkspace");
+            // Create the single comma-separated list of workspace names ...
+            String workspaces = firstWorkspace.trim();
+            if (otherWorkspaces.length != 0) {
+                StringBuilder sb = new StringBuilder();
+                sb.append(workspaces); // add the first workspace
+                for (String other : otherWorkspaces) {
+                    if (other == null) continue;
+                    other = other.trim();
+                    if (other.length() == 0) continue;
+                    sb.append(',').append(other);
+                }
+                workspaces = sb.toString();
+            }
+            createIfMissing(ModeShapeLexicon.INITIAL_CONTENT).with(ModeShapeLexicon.WORKSPACES, workspaces)
+                                                             .and(ModeShapeLexicon.CONTENT, file.getAbsolutePath())
+                                                             .and();
+            return this;
         }
 
         public RepositoryDefinition<ReturnType> addNodeTypes( File file ) {

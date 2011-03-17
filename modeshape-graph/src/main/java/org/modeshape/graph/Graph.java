@@ -23,7 +23,10 @@
  */
 package org.modeshape.graph;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
@@ -2904,7 +2907,12 @@ public class Graph {
         // Try the file name ...
         File file = new File(pathToFile);
         if (file.exists() && file.canRead()) {
-            return importXmlFrom(new File(pathToFile).toURI());
+            try {
+                InputStream stream = new BufferedInputStream(new FileInputStream(file));
+                return importXmlFrom(stream);
+            } catch (FileNotFoundException e) {
+                return importXmlFrom(file.toURI());
+            }
         }
         // See if there is a resource on the classpath ...
         ClassLoader classLoader = getClass().getClassLoader();
@@ -2914,7 +2922,11 @@ public class Graph {
         }
         // Try a URL ...
         try {
-            return importXmlFrom(new URI(pathToFile));
+            URI uri = new URI(pathToFile);
+            if (uri.isAbsolute()) {
+                // Must be absolute if we're going to turn it into a URL to resolve it ...
+                return importXmlFrom(new URI(pathToFile));
+            }
         } catch (URISyntaxException e) {
             // Must not be a URI ...
         }
@@ -2941,6 +2953,9 @@ public class Graph {
         RuntimeException error = null;
         try {
             stream = classLoader.getResourceAsStream(resourceName);
+            if (stream == null) {
+                throw new IllegalArgumentException(GraphI18n.errorImportingContent.text(sourceName, resourceName));
+            }
             return importXmlFrom(stream);
         } catch (RuntimeException e) {
             error = e;

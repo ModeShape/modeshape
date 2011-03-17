@@ -201,6 +201,7 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
      * @throws IllegalStateException if this method is called when already shut down.
      * @throws JcrConfigurationException if there is an error in the configuration or any of the services that prevents proper
      *         startup
+     * @see #start(boolean)
      * @see #shutdown()
      */
     @Override
@@ -228,6 +229,32 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
                 // Don't care about these ...
             }
             throw e;
+        }
+    }
+
+    /**
+     * Start this engine to make it available for use, and optionally start each of the repositories in the configuration. Any
+     * errors starting the repositories will be logged as problems.
+     * 
+     * @param validateRepositoryConfigs true if the configurations of each repository should be validated and each repository
+     *        started/initialized, or false otherwise
+     * @throws IllegalStateException if this method is called when already shut down.
+     * @throws JcrConfigurationException if there is an error in the configuration or any of the services that prevents proper
+     *         startup
+     * @see #start()
+     * @see #shutdown()
+     */
+    public void start( boolean validateRepositoryConfigs ) {
+        start();
+        if (validateRepositoryConfigs) {
+            for (String repositoryName : getRepositoryNames()) {
+                try {
+                    getRepository(repositoryName);
+                } catch (Throwable t) {
+                    // Record this in the problems ...
+                    this.problems.addError(t, JcrI18n.errorStartingRepositoryCheckConfiguration, repositoryName, t.getMessage());
+                }
+            }
         }
     }
 
@@ -373,7 +400,7 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
         if (repoNode == null) {
             // There is no repository with the supplied name ...
             throw new PathNotFoundException(Location.create(repoPath), repositoriesPath,
-                                            JcrI18n.repositoryDoesNotExist.text(repoName));
+                                            JcrI18n.repositoryDoesNotExist.text(readable(repoName)));
         }
         Property property = repoNode.getProperty(ModeShapeLexicon.SOURCE_NAME);
         if (property == null || property.isEmpty()) {
@@ -435,7 +462,12 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
                 if (workspaceName != null && workspaceName.trim().length() != 0) {
                     // Load the content into the workspace with this name ...
                     sourceGraph.useWorkspace(workspaceName);
-                    sourceGraph.merge(initialContentGraph);
+                    try {
+                        sourceGraph.merge(initialContentGraph);
+                    } catch (RuntimeException e) {
+                        throw new RepositoryException(JcrI18n.unableToImportInitialContent.text(readable(repoName), contentRef),
+                                                      e);
+                    }
                 }
             }
 

@@ -27,11 +27,14 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.net.URL;
+import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Workspace;
 import javax.jcr.nodetype.NodeType;
 import org.junit.After;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
+import org.modeshape.common.collection.Problem;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.jcr.JcrRepository.Option;
 
@@ -241,6 +244,142 @@ public class JcrEngineTest {
         defaultWorkspace.createWorkspace(workspaceName);
         assertAccessibleWorkspace(defaultWorkspace, workspaceName);
         jcrSession.logout();
+    }
+
+    @FixFor( "MODE-1119" )
+    @Test
+    public void shouldCreateRepositoryConfiguredWithNoInitialContent() throws Exception {
+        configuration = new JcrConfiguration();
+        configuration.repositorySource("car-source")
+                     .usingClass(InMemoryRepositorySource.class)
+                     .setDescription("The automobile content")
+                     .setProperty("defaultWorkspaceName", "default");
+        configuration.repository("cars")
+                     .setSource("car-source")
+                     .registerNamespace("car", "http://www.modeshape.org/examples/cars/1.0")
+                     .addNodeTypes(resourceUrl("cars.cnd"))
+                     .setOption(Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.ADMIN);
+        engine = configuration.build();
+        assertThat(engine.getProblems().hasErrors(), is(false));
+        engine.start();
+        repository = engine.getRepository("cars");
+        session = repository.login();
+
+        assertNodeType("car:Car", false, false, true, false, null, 0, 11, "nt:unstructured", "mix:created");
+
+        // Check that the content is not there...
+        assertThat(session.getRootNode().hasNode("Cars"), is(false));
+    }
+
+    @FixFor( "MODE-1119" )
+    @Test
+    public void shouldCreateRepositoryConfiguredWithCorrectInitialContentPath() throws Exception {
+        configuration = new JcrConfiguration();
+        configuration.repositorySource("car-source")
+                     .usingClass(InMemoryRepositorySource.class)
+                     .setDescription("The automobile content")
+                     .setProperty("defaultWorkspaceName", "default");
+        configuration.repository("cars")
+                     .setSource("car-source")
+                     .registerNamespace("car", "http://www.modeshape.org/examples/cars/1.0")
+                     .addNodeTypes(resourceUrl("cars.cnd"))
+                     .setInitialContent("src/test/resources/initialWorkspaceContent.xml", "default")
+                     .setOption(Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.ADMIN);
+        engine = configuration.build();
+        assertThat(engine.getProblems().hasErrors(), is(false));
+        engine.start();
+        repository = engine.getRepository("cars");
+        session = repository.login();
+
+        assertNodeType("car:Car", false, false, true, false, null, 0, 11, "nt:unstructured", "mix:created");
+
+        // Check that the content is there...
+        assertThat(session.getRootNode().hasNode("Cars"), is(true));
+        assertThat(session.getNode("/Cars"), is(notNullValue()));
+    }
+
+    @FixFor( "MODE-1119" )
+    @Test( expected = RepositoryException.class )
+    public void shouldCreateRepositoryConfiguredWithValidInitialContentPathButEmptyFile() throws Exception {
+        configuration = new JcrConfiguration();
+        configuration.repositorySource("car-source")
+                     .usingClass(InMemoryRepositorySource.class)
+                     .setDescription("The automobile content")
+                     .setProperty("defaultWorkspaceName", "default");
+        configuration.repository("cars")
+                     .setSource("car-source")
+                     .registerNamespace("car", "http://www.modeshape.org/examples/cars/1.0")
+                     .addNodeTypes(resourceUrl("cars.cnd"))
+                     .setInitialContent("src/test/resources/emptyFile.xml", "default")
+                     .setOption(Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.ADMIN);
+        engine = configuration.build();
+        assertThat(engine.getProblems().hasErrors(), is(false));
+        engine.start();
+        repository = engine.getRepository("cars");
+    }
+
+    @FixFor( "MODE-1119" )
+    @Test( expected = RepositoryException.class )
+    public void shouldCreateRepositoryConfiguredWithIncorrectInitialContentPath() throws Exception {
+        configuration = new JcrConfiguration();
+        configuration.repositorySource("car-source")
+                     .usingClass(InMemoryRepositorySource.class)
+                     .setDescription("The automobile content")
+                     .setProperty("defaultWorkspaceName", "default");
+        configuration.repository("cars")
+                     .setSource("car-source")
+                     .registerNamespace("car", "http://www.modeshape.org/examples/cars/1.0")
+                     .addNodeTypes(resourceUrl("cars.cnd"))
+                     .setInitialContent("src/test/resources/blah/blah/blah", "default")
+                     .setOption(Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.ADMIN);
+        engine = configuration.build();
+        assertThat(engine.getProblems().hasErrors(), is(false));
+        engine.start();
+        repository = engine.getRepository("cars");
+    }
+
+    @FixFor( "MODE-1119" )
+    @Test
+    public void shouldRecordProblemWhenStartingRepositoriesConfiguredWithValidInitialContentPathButEmptyFile() throws Exception {
+        configuration = new JcrConfiguration();
+        configuration.repositorySource("car-source")
+                     .usingClass(InMemoryRepositorySource.class)
+                     .setDescription("The automobile content")
+                     .setProperty("defaultWorkspaceName", "default");
+        configuration.repository("cars")
+                     .setSource("car-source")
+                     .registerNamespace("car", "http://www.modeshape.org/examples/cars/1.0")
+                     .addNodeTypes(resourceUrl("cars.cnd"))
+                     .setInitialContent("src/test/resources/emptyFile.xml", "default")
+                     .setOption(Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.ADMIN);
+        engine = configuration.build();
+        assertThat(engine.getProblems().hasErrors(), is(false));
+        engine.start(true);
+        assertThat(engine.getProblems().hasErrors(), is(true));
+        assertThat(engine.getProblems().size(), is(1)); // one error
+        assertThat(engine.getProblems().iterator().next().getStatus(), is(Problem.Status.ERROR));
+    }
+
+    @FixFor( "MODE-1119" )
+    @Test
+    public void shouldRecordProblemWhenStartingRepositoriesConfiguredWithIncorrectInitialContentPath() throws Exception {
+        configuration = new JcrConfiguration();
+        configuration.repositorySource("car-source")
+                     .usingClass(InMemoryRepositorySource.class)
+                     .setDescription("The automobile content")
+                     .setProperty("defaultWorkspaceName", "default");
+        configuration.repository("cars")
+                     .setSource("car-source")
+                     .registerNamespace("car", "http://www.modeshape.org/examples/cars/1.0")
+                     .addNodeTypes(resourceUrl("cars.cnd"))
+                     .setInitialContent("src/test/resources/blah/blah/blah", "default")
+                     .setOption(Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.ADMIN);
+        engine = configuration.build();
+        assertThat(engine.getProblems().hasErrors(), is(false));
+        engine.start(true);
+        assertThat(engine.getProblems().hasErrors(), is(true));
+        assertThat(engine.getProblems().size(), is(1)); // one error
+        assertThat(engine.getProblems().iterator().next().getStatus(), is(Problem.Status.ERROR));
     }
 
     protected void assertAccessibleWorkspace( Session session,
