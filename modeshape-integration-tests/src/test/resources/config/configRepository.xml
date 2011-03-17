@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration xmlns:mode="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+    <!--
+    Define the JCR repositories
+    -->
+    <mode:repositories>
+        <!--
+        Define a JCR repository that accesses the 'Store' source
+        -->
+        <mode:repository jcr:name="My repository" mode:source="Store">
+            <mode:options jcr:primaryType="mode:options">
+                <mode:option jcr:name="systemSourceName" mode:value="system@Store"/>
+                <mode:option jcr:name="jaasLoginConfigName" mode:value="modeshape-jcr"/>
+                <!--
+                As a convenience, ModeShape defaults to granting guest users full access.
+                In a production system, you would want to limit this access by uncommenting one of the
+                options below:
+
+                for no access:
+                <mode:option jcr:name="anonymousUserRoles" mode:value="" />
+
+                for read-only acces:
+                <mode:option jcr:name="anonymousUserRoles" mode:value="readonly" />
+                -->
+
+            </mode:options>
+        </mode:repository>
+    </mode:repositories>
+    <!--
+    Define the sources for the content.  These sources are directly accessible using the ModeShape-specific
+    Graph API.
+    -->
+    <mode:sources>
+        <mode:source jcr:name="Store"
+                     mode:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource"
+                     mode:retryLimit="3" mode:defaultWorkspaceName="default" >
+            <predefinedWorkspaceNames>system</predefinedWorkspaceNames>
+            <predefinedWorkspaceNames>default</predefinedWorkspaceNames>
+        </mode:source>
+    </mode:sources>
+    <!--
+    Define the clustering configuration. This is an optional section; leave it out when
+    running in a non-clustered (single-process) mode.
+    -->
+    <!--<mode:clustering clusterName="modeshape-cluster" configuration="jgroups-modeshape.xml"/>-->
+    <!--
+    Define the sequencers. This is an optional section.
+    -->
+    <!--<mode:sequencers>-->
+        <!--<mode:sequencer jcr:name="Image Sequencer"-->
+                        <!--mode:classname="org.modeshape.sequencer.image.ImageMetadataSequencer">-->
+            <!--<mode:description>Image metadata sequencer</mode:description>-->
+            <!--<mode:pathExpression>/foo/source => /foo/target</mode:pathExpression>-->
+            <!--<mode:pathExpression>/bar/source => /bar/target</mode:pathExpression>-->
+        <!--</mode:sequencer>-->
+    <!--</mode:sequencers>-->
+    <!--
+      Define how ModeShape will determine the MIME type of files. This is an optional section;
+      if you do not specify a MIME type detector, ModeShape will use a built-in one that is based
+      filename extensions for most commonly-used files.
+    -->
+    <!--<mode:mimeTypeDetectors>-->
+        <!--<mode:mimeTypeDetector jcr:name="Detector"-->
+                               <!--mode:description="Standard extension-based MIME type detector"/>-->
+    <!--</mode:mimeTypeDetectors>-->
+</configuration>

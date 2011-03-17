@@ -197,4 +197,36 @@ public class ConfigurationTest {
         }
     }
 
+    @Test
+    public void shouldWork() throws Exception {
+        File file = new File("src/test/resources/config/configRepository.xml");
+        assertThat(file.exists(), is(true));
+        assertThat(file.canRead(), is(true));
+        assertThat(file.isFile(), is(true));
+
+        configuration.loadFrom(file);
+
+        // Create and start the engine ...
+        engine = configuration.build();
+        engine.start();
+        Repository repository = engine.getRepository("My repository");
+        assertThat(repository, is(notNullValue()));
+    }
+
+    @Test
+    public void shouldWork2() throws Exception {
+        File file = new File("src/test/resources/config/configRepositoryForBrix.xml");
+        assertThat(file.exists(), is(true));
+        assertThat(file.canRead(), is(true));
+        assertThat(file.isFile(), is(true));
+
+        configuration.loadFrom(file);
+
+        // Create and start the engine ...
+        engine = configuration.build();
+        engine.start();
+        Repository repository = engine.getRepository("Brix repository");
+        assertThat(repository, is(notNullValue()));
+    }
+
 }
