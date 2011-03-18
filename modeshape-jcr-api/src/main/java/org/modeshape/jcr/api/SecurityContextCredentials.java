@@ -10,7 +10,7 @@ import javax.jcr.Credentials;
  * very important that this context be provided for <i>authenticated users only</i>.
  * </p>
  */
-public final class SecurityContextCredentials implements Credentials {
+public class SecurityContextCredentials implements Credentials {
     private static final long serialVersionUID = 1L;
     private final SecurityContext jcrSecurityContext;
 

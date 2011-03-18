@@ -112,6 +112,8 @@ import org.modeshape.graph.query.validate.Schemata;
 import org.modeshape.graph.request.ChangeRequest;
 import org.modeshape.graph.request.InvalidWorkspaceException;
 import org.modeshape.jcr.RepositoryQueryManager.PushDown;
+import org.modeshape.jcr.api.AnonymousCredentials;
+import org.modeshape.jcr.api.JaasCredentials;
 import org.modeshape.jcr.api.Repository;
 import org.modeshape.jcr.api.SecurityContextCredentials;
 import org.modeshape.jcr.query.JcrQomQueryParser;
@@ -1307,7 +1309,7 @@ public class JcrRepository implements Repository {
         // Ensure credentials are either null or provide a JAAS method
         Map<String, Object> sessionAttributes = new HashMap<String, Object>();
         ExecutionContext execContext = null;
-        if (credentials == null) {
+        if (credentials == null || credentials instanceof AnonymousCredentials) {
             Subject subject = Subject.getSubject(AccessController.getContext());
             if (subject != null) {
                 execContext = executionContext.with(new JaasSecurityContext(subject));
@@ -1341,22 +1343,29 @@ public class JcrRepository implements Repository {
                     execContext = executionContext.with(((JcrSecurityContextCredentials)credentials).getSecurityContext());
                 } else {
                     // Check if credentials provide a login context
-                    try {
-                        Method method = credentials.getClass().getMethod("getLoginContext");
-                        if (method.getReturnType() != LoginContext.class) {
-                            throw new IllegalArgumentException(
-                                                               JcrI18n.credentialsMustReturnLoginContext.text(credentials.getClass()));
+                    LoginContext loginContext = null;
+                    if (credentials instanceof JaasCredentials) {
+                        // Call directly ...
+                        loginContext = ((JaasCredentials)credentials).getLoginContext();
+                    } else {
+                        // Look for a getter method ...
+                        try {
+                            Method method = credentials.getClass().getMethod("getLoginContext");
+                            Object result = method.invoke(credentials);
+                            if (!(result instanceof LoginContext)) {
+                                String msg = JcrI18n.credentialsMustReturnLoginContext.text(credentials.getClass());
+                                throw new IllegalArgumentException(msg);
+                            }
+                            loginContext = (LoginContext)result;
+                        } catch (NoSuchMethodException error) {
+                            String msg = JcrI18n.unknownCredentialsImplementation.text(credentials.getClass());
+                            throw new IllegalArgumentException(msg);
                         }
-                        LoginContext loginContext = (LoginContext)method.invoke(credentials);
-                        if (loginContext == null) {
-                            throw new IllegalArgumentException(
-                                                               JcrI18n.credentialsMustReturnLoginContext.text(credentials.getClass()));
-                        }
-                        execContext = executionContext.with(new JaasSecurityContext(loginContext));
-                    } catch (NoSuchMethodException error) {
-                        throw new IllegalArgumentException(JcrI18n.credentialsMustProvideJaasMethod.text(credentials.getClass()),
-                                                           error);
                     }
+                    if (loginContext == null) {
+                        throw new IllegalArgumentException(JcrI18n.credentialsMustReturnLoginContext.text(credentials.getClass()));
+                    }
+                    execContext = executionContext.with(new JaasSecurityContext(loginContext));
                 }
             } catch (RuntimeException error) {
                 throw error; // pass along

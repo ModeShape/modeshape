@@ -143,7 +143,6 @@
 <!ENTITY ExecutionContext		       		"<ulink url='&API;graph/ExecutionContext.html'><classname>ExecutionContext</classname></ulink>">
 <!ENTITY SecurityContext		       		"<ulink url='&API;graph/SecurityContext.html'><interface>SecurityContext</interface></ulink>">
 <!ENTITY JaasSecurityContext		      "<ulink url='&API;graph/JaasSecurityContext.html'><classname>JaasSecurityContext</classname></ulink>">
-<!ENTITY ServletSecurityContext		   	"<ulink url='&API;graph/ServletSecurityContext.html'><interface>ServletSecurityContext</interface></ulink>">
 <!ENTITY MimeTypeDetector				      "<ulink url='&API;graph/mimetype/MimeTypeDetector.html'><interface>MimeTypeDetector</interface></ulink>">
 <!ENTITY Readable						       		"<ulink url='&API;graph/property/Readable.html'><interface>Readable</interface></ulink>">
 <!ENTITY Name								       		"<ulink url='&API;graph/property/Name.html'><interface>Name</interface></ulink>">
@@ -247,10 +246,15 @@
 <!ENTITY JcrRepositoryFactory			    "<ulink url='&API;jcr/JcrRepositoryFactory.html'><classname>JcrRepositoryFactory</classname></ulink>">
 <!ENTITY JcrSession					       		"<ulink url='&API;jcr/JcrSession.html'><classname>JcrSession</classname></ulink>">
 <!ENTITY JndiRepositoryFactory			  "<ulink url='&API;jcr/JcrRepository.html'><classname>JndiRepositoryFactory</classname></ulink>">
-<!ENTITY SecurityContextCredentials   "<ulink url='&API;jcr/SecurityContextCredentials.html'><classname>SecurityContextCredentials</classname></ulink>">
 <!ENTITY JcrNodeTypeManager       		"<ulink url='&API;jcr/JcrNodeTypeManager.html'><classname>JcrNodeTypeManager</classname></ulink>">
 <!ENTITY CndNodeTypeReader        		"<ulink url='&API;jcr/CndNodeTypeReader.html'><classname>CndNodeTypeReader</classname></ulink>">
 <!ENTITY JackrabbitXmlNodeTypeReader  "<ulink url='&API;jcr/JackrabbitXmlNodeTypeReader.html'><classname>JackrabbitXmlNodeTypeReader</classname></ulink>">
+
+<!-- Types in modeshape-jcr-api -->
+
+<!ENTITY SecurityContextCredentials   "<ulink url='&API;jcr/api/SecurityContextCredentials.html'><classname>SecurityContextCredentials</classname></ulink>">
+<!ENTITY AnonymousCredentials				  "<ulink url='&API;jcr/api/AnonymousCredentials.html'><classname>AnonymousCredentials</classname></ulink>">
+<!ENTITY JaasCredentials				  		"<ulink url='&API;jcr/api/JaasCredentials.html'><classname>JaasCredentials</classname></ulink>">
 
 <!-- Types in extensions/ -->
 
@@ -270,6 +274,8 @@
 <!ENTITY ImageMetadataLexicon			  	"<ulink url='&API;sequencer/image/ImageMetadataLexicon.html'><classname>ImageMetadataLexicon</classname></ulink>">
 <!ENTITY ImageSequencerI18n				  	"<ulink url='&API;sequencer/image/ImageSequencerI18n.html'><classname>ImageSequencerI18n</classname></ulink>">
 <!ENTITY ApertureMimeTypeDetector	  	"<ulink url='&API;mimetype/aperture/ApertureMimeTypeDetector.html'><classname>ApertureMimeTypeDetector</classname></ulink>">
+<!ENTITY ServletSecurityContext		   	"<ulink url='&API;web/jcr/ServletSecurityContext.html'><interface>ServletSecurityContext</interface></ulink>">
+<!ENTITY ServletCredentials				   	"<ulink url='&API;web/jcr/ServletCredentials.html'><interface>ServletCredentials</interface></ulink>">
 <!ENTITY ModeShapeJcrDeployer	  			"<ulink url='&API;web/jcr/ModeShapeJcrDeployer.html'><classname>ModeShapeJcrDeployer</classname></ulink>">
 <!ENTITY RepositoryProvider	  				"<ulink url='&API;web/jcr/spi/RepositoryProvider.html'><classname>RepositoryProvider</classname></ulink>">
 <!ENTITY RequestResolver	  				  "<ulink url='&API;web/jcr/webdav/RequestResolver.html'><classname>RequestResolver</classname></ulink>">
