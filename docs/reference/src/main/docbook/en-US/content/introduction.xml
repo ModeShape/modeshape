@@ -685,6 +685,15 @@
       <ulink url="&JBossMaven;">JBoss Maven 2 Repository</ulink>, the settings for which are described on the
       <ulink url="http://community.jboss.org/wiki/MavenGettingStarted-Users">JBoss.org wiki</ulink>.
     </para>
+  </sect1>
+  <sect1 id="development-tools">
+    <title>Compiling and building</title>
+    <para>
+	    The ModeShape source code is freely available and easy to build. For more information about this, please see our
+	    documentation that describes the <ulink url="http://community.jboss.org/wiki/ModeShapeDevelopmentTools">tools</ulink>, 
+	    <ulink url="http://community.jboss.org/wiki/ModeShapeandMaven">build commands</ulink>, and even 
+			<ulink url="http://community.jboss.org/wiki/ModeShapeDevelopmentWorkflow">how to contribute using Git</ulink>.
+		</para>
 	</sect1>
   <sect1 id="whats_new">
     <title>What's new?</title>

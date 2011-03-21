@@ -50,22 +50,6 @@
 	</bookinfo>
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/preface.xml"/>
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/introduction.xml"/>
-	<part id="developers-part">
-		<title>Developers and Contributors</title>
-		<partintro>
-			<para>
-			  The ModeShape project uses a number of process, tools, and procedures to assist in the development of
-			  the software.  This portion of the document focuses on these aspects and will help developers and contributors
-			  obtain the source code, build locally, and contribute to the project.
-			</para>
-			<para>If you're not contributing to the project but are still developing 
-				custom <link linkend="connector_framework">connectors</link> or <link linkend="sequencing_framework">sequencers</link>. 
-			  this information may be helpful in establishing your own environment.
-			</para>
-		</partintro>
-		<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/developers/tools.xml"/>
-	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/developers/testing.xml"/>
-	</part>
 	<part id="core-part">
 		<title>ModeShape Core</title>
 		<partintro>
