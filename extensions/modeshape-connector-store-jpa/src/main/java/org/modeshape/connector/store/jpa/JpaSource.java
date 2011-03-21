@@ -48,6 +48,7 @@ import net.jcip.annotations.Immutable;
 import net.jcip.annotations.ThreadSafe;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.cfg.Environment;
 import org.hibernate.ejb.Ejb3Configuration;
 import org.hibernate.engine.SessionFactoryImplementor;
 import org.modeshape.common.annotation.AllowedValues;
@@ -1148,10 +1149,10 @@ public class JpaSource implements RepositorySource, ObjectFactory {
             // Set the Hibernate properties used in all situations ...
             if (this.dialect != null) {
                 // The dialect may be auto-determined ...
-                setProperty(configurator, "hibernate.dialect", this.dialect);
+                setProperty(configurator, Environment.DIALECT, this.dialect);
             }
             if (this.isolationLevel != null) {
-                setProperty(configurator, "hibernate.connection.isolation", this.isolationLevel);
+                setProperty(configurator, Environment.ISOLATION, this.isolationLevel);
             }
 
             // Configure additional properties, which may be overridden by subclasses ...
@@ -1187,23 +1188,23 @@ public class JpaSource implements RepositorySource, ObjectFactory {
                     }
                 }
                 // Set the connection properties ...
-                setProperty(configurator, "hibernate.connection.driver_class", this.driverClassName);
-                setProperty(configurator, "hibernate.connection.username", this.username);
-                setProperty(configurator, "hibernate.connection.password", this.password);
-                setProperty(configurator, "hibernate.connection.url", this.url);
-                setProperty(configurator, "hibernate.connection.max_fetch_depth", DEFAULT_MAXIMUM_FETCH_DEPTH);
-                setProperty(configurator, "hibernate.connection.pool_size", 0); // don't use the built-in pool
+                setProperty(configurator, Environment.DRIVER, this.driverClassName);
+                setProperty(configurator, Environment.USER, this.username);
+                setProperty(configurator, Environment.PASS, this.password);
+                setProperty(configurator, Environment.URL, this.url);
+                setProperty(configurator, Environment.MAX_FETCH_DEPTH, DEFAULT_MAXIMUM_FETCH_DEPTH);
+                setProperty(configurator, Environment.POOL_SIZE, 0); // don't use the built-in pool
                 if (this.maximumConnectionsInPool > 0) {
                     // Set the connection pooling properties (to use C3P0) ...
                     setProperty(configurator,
-                                "hibernate.connection.provider_class",
+                                Environment.CONNECTION_PROVIDER,
                                 "org.hibernate.connection.C3P0ConnectionProvider");
-                    setProperty(configurator, "hibernate.c3p0.max_size", this.maximumConnectionsInPool);
-                    setProperty(configurator, "hibernate.c3p0.min_size", this.minimumConnectionsInPool);
-                    setProperty(configurator, "hibernate.c3p0.timeout", this.maximumConnectionIdleTimeInSeconds);
-                    setProperty(configurator, "hibernate.c3p0.max_statements", this.maximumSizeOfStatementCache);
-                    setProperty(configurator, "hibernate.c3p0.idle_test_period", this.idleTimeInSecondsBeforeTestingConnections);
-                    setProperty(configurator, "hibernate.c3p0.acquire_increment", this.numberOfConnectionsToAcquireAsNeeded);
+                    setProperty(configurator, Environment.C3P0_MAX_SIZE, this.maximumConnectionsInPool);
+                    setProperty(configurator, Environment.C3P0_MIN_SIZE, this.minimumConnectionsInPool);
+                    setProperty(configurator, Environment.C3P0_TIMEOUT, this.maximumConnectionIdleTimeInSeconds);
+                    setProperty(configurator, Environment.C3P0_MAX_STATEMENTS, this.maximumSizeOfStatementCache);
+                    setProperty(configurator, Environment.C3P0_IDLE_TEST_PERIOD, this.idleTimeInSecondsBeforeTestingConnections);
+                    setProperty(configurator, Environment.C3P0_ACQUIRE_INCREMENT, this.numberOfConnectionsToAcquireAsNeeded);
                     setProperty(configurator, "hibernate.c3p0.validate", "false");
                 }
             }
@@ -1323,14 +1324,14 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     protected void configure( Ejb3Configuration configuration ) {
 
         // Disable the second-level cache ...
-        setProperty(configuration, "hibernate.cache.provider_class", "org.hibernate.cache.NoCacheProvider");
+        setProperty(configuration, Environment.CACHE_PROVIDER, "org.hibernate.cache.NoCacheProvider");
 
         // Set up the schema and DDL options ...
-        setProperty(configuration, "hibernate.show_sql", String.valueOf(this.showSql)); // writes all SQL statements to console
-        setProperty(configuration, "hibernate.format_sql", "true");
-        setProperty(configuration, "hibernate.use_sql_comments", "true");
+        setProperty(configuration, Environment.SHOW_SQL, String.valueOf(this.showSql)); // writes all SQL statements to console
+        setProperty(configuration, Environment.FORMAT_SQL, "true");
+        setProperty(configuration, Environment.USE_SQL_COMMENTS, "true");
         if (!AUTO_GENERATE_SCHEMA_DISABLE.equalsIgnoreCase(this.autoGenerateSchema)) {
-            setProperty(configuration, "hibernate.hbm2ddl.auto", this.autoGenerateSchema);
+            setProperty(configuration, Environment.HBM2DDL_AUTO, this.autoGenerateSchema);
         }
     }
 
