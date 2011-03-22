@@ -139,6 +139,11 @@
 			<organization>JBoss, a division of Red Hat</organization>
 			<timezone>-5</timezone>
 		</contributor>
+		<contributor>
+			<name>George Gastaldi</name>
+			<email>gegastaldi@gmail.com</email>
+			<timezone>-3</timezone>
+		</contributor>
 	</contributors>
 
 	<properties>
