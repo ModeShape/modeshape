@@ -1095,6 +1095,10 @@
 	<profiles>
 		<profile>
 			<id>assembly</id>
+			<!-- Generate assemblies by default; but this can be disabled via "-DskipAssemblies=true" -->
+			<activation>
+				<activeByDefault />
+			</activation>
 		  <build>
 		    <plugins>
 		      <plugin>
@@ -1139,7 +1143,6 @@
 					<name>!skipJavaDoc</name>
 				</property>
 			</activation>
-
 			<build>
 				<plugins>
 		      <plugin>
@@ -1282,6 +1285,9 @@
 		          </execution>
 		        </executions>
 		      </plugin>
+		      <!-- 
+		      This no longer works, because it only works as an aggregate execution when within the top-level POM.
+		      Because we're no longer using aggregates, we can't use JXR anymore.
 		      <plugin>
 		        <artifactId>maven-jxr-plugin</artifactId>
 						<version>${maven.jxr.plugin.version}</version>
@@ -1304,7 +1310,7 @@
 		          <docTitle>${project.name} Source Xref (${project.version})</docTitle>
 		          <windowTitle>${project.name} Source Xref (${project.version})</windowTitle>
 		        </configuration>
-		      </plugin>
+		      </plugin-->
 		      <plugin>
 		        <artifactId>maven-assembly-plugin</artifactId>
 		        <version>${maven.assembly.plugin.version}</version>
@@ -1329,6 +1335,10 @@
 		          <descriptorRefs>
 		            <descriptorRef>javadoc</descriptorRef>
 		            <descriptorRef>javadoc-public-api</descriptorRef>
+		            <descriptorRef>binary-distribution</descriptorRef>
+		            <descriptorRef>source-archive</descriptorRef>
+		            <descriptorRef>jars-with-dependencies</descriptorRef>
+		            <descriptorRef>examples</descriptorRef>
 		          </descriptorRefs>
 							<finalName>modeshape-${project.version}</finalName>
 							<attach>false</attach>
@@ -1370,10 +1380,11 @@
 						<id>test-jar</id>
 						<!-- We don't want to run this -->
 						<phase>non-existant</phase>
-						<goals>
-							<goal>jar</goal>
-							<goal>test-jar</goal>
-						</goals>
+					</execution>
+					<execution>
+						<id>default-jar</id>
+						<!-- We don't want to run this -->
+						<phase>non-existant</phase>
 					</execution>
 				</executions>
 				<configuration>
