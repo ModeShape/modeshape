@@ -1,107 +1,25 @@
+# ignore Maven generated target folders
+target
 
-# /
+# ignore eclipse files and folders
+.settings
+.scala_dependencies
+.externalToolBuilders
 /.metadata
-/target
+/RemoteSystemsTempFiles
 
-/modeshape-parent/.settings
-/modeshape-parent/target
+# ignore IDEA files
+*.iml
+*.ipr
+*.iws
+.idea
+atlassian-ide-plugin.xml
 
-/modeshape-assembly-descriptors/.settings
-/modeshape-assembly-descriptors/target
+# Compiled python files
+*.pyc
 
-/modeshape-distribution/.settings
-/modeshape-distribution/target
-
-/modeshape-common/.settings
-/modeshape-common/target
-
-/modeshape-graph/.settings
-/modeshape-graph/target
-
-/modeshape-cnd/.settings
-/modeshape-cnd/target
-
-/modeshape-integration-tests/.settings
-/modeshape-integration-tests/target
-
-/modeshape-search/.settings
-/modeshape-search/target
-
-/modeshape-jcr/.settings
-/modeshape-jcr/target
-
-/modeshape-jcr-api/.settings
-/modeshape-jcr-api/target
-
-/modeshape-jcr-tck/.settings
-/modeshape-jcr-tck/target
-
-/modeshape-repository/.settings
-/modeshape-repository/target
-
-/docs/target
-/docs/examples/gettingstarted/repositories/target
-/docs/examples/gettingstarted/sequencers/target
-/docs/gettingstarted/target
-/docs/presentations/*.key
-/docs/reference/target
-/docs/jdbc-guide/target
-
-/extensions/modeshape-web-jcr-rest/target/
-/extensions/modeshape-web-jcr-rest-war/target/
-
-/web/target/
-/web/modeshape-web-jcr/target/
-/web/modeshape-web-jcr-rest/target/
-/web/modeshape-web-jcr-rest-war/target/
-/web/modeshape-web-jcr-rest-client/target/
-/web/modeshape-web-jcr-webdav/target
-/web/modeshape-web-jcr-webdav-war/target/
-
-/utils/modeshape-jdbc-local/target/
-/utils/modeshape-jdbc/target/
-/utils/modeshape-jpa-ddl-gen/target/
-/utils/modeshape-unit-test/target/
-
-/deploy/jbossas/target/
-/deploy/jbossas/modeshape-jbossas-console/target/
-/deploy/jbossas/modeshape-jbossas-service/target/
-/deploy/jbossas/modeshape-jbossas-web-rest-war/target/
-/deploy/jbossas/modeshape-jbossas-web-webdav-war/target/
-
-/extensions/modeshape-clustering/target
-/extensions/modeshape-search-lucene/target
-/extensions/modeshape-classloader-maven/target
-/extensions/modeshape-common-jdbc/target
-/extensions/modeshape-connector-federation/target
-/extensions/modeshape-connector-filesystem/target
-/extensions/modeshape-connector-inmemory/target
-/extensions/modeshape-connector-jbosscache/target
-/extensions/modeshape-connector-jcr/target
-/extensions/modeshape-connector-infinispan/target
-/extensions/modeshape-connector-jdbc-metadata/target
-/extensions/modeshape-connector-store-jpa/target
-/extensions/modeshape-connector-svn/target
-/extensions/modeshape-mimetype-detector-aperture/.settings
-/extensions/modeshape-mimetype-detector-aperture/target
-/extensions/modeshape-sequencer-classfile/target
-/extensions/modeshape-sequencer-cnd/target
-/extensions/modeshape-sequencer-ddl/target
-/extensions/modeshape-sequencer-esbMessage/target
-/extensions/modeshape-sequencer-images/target
-/extensions/modeshape-sequencer-java/target
-/extensions/modeshape-sequencer-jbpm-jpdl/target
-/extensions/modeshape-sequencer-mp3/target
-/extensions/modeshape-sequencer-msoffice/target
-/extensions/modeshape-sequencer-text/target
-/extensions/modeshape-sequencer-teiid/target
-/extensions/modeshape-sequencer-xml/target
-/extensions/modeshape-sequencer-zip/target
-/extensions/modeshape-extractor-tika/target
-
+# REST client module bin folder
 /tools/org.modeshape.eclipse.jcr.rest.client/bin
 
-/sandbox/modeshape-test-reference-impl/target
-
-# Directory created by Eclipse
-/RemoteSystemsTempFiles
+# Presentation Keynote files
+/docs/presentations/*.key
