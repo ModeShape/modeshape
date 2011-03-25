@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.jcr.PropertyType;
 import javax.jcr.Session;
 import javax.jcr.Value;
@@ -58,6 +59,7 @@ import org.modeshape.graph.io.Destination;
 import org.modeshape.graph.io.GraphBatchDestination;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NameFactory;
+import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.Property;
@@ -75,10 +77,10 @@ import org.modeshape.graph.property.basic.LocalNamespaceRegistry;
  * {@code jcr:primaryType} property was set.
  * </p>
  * <p>
- * Each node type node may have zero or more children, each with the name {@code jcr:propertyDefinition} or {@code
- * jcr:childNodeDefinition}, as per the definition of the {@code nt:nodeType} built-in type. Each property definition and child
- * node definition must obey the semantics of {@code jcr:propertyDefinition} and {@code jcr:childNodeDefinition} respectively
- * However these nodes also do not need to have the {@code jcr:primaryType} property set.
+ * Each node type node may have zero or more children, each with the name {@code jcr:propertyDefinition} or
+ * {@code jcr:childNodeDefinition}, as per the definition of the {@code nt:nodeType} built-in type. Each property definition and
+ * child node definition must obey the semantics of {@code jcr:propertyDefinition} and {@code jcr:childNodeDefinition}
+ * respectively However these nodes also do not need to have the {@code jcr:primaryType} property set.
  * </p>
  * <p>
  * For example, one valid graph is:
@@ -359,6 +361,34 @@ class GraphNodeTypeReader implements Iterable<NodeTypeDefinition> {
     @Override
     public Iterator<NodeTypeDefinition> iterator() {
         return immutableTypes.iterator();
+    }
+
+    /**
+     * Get the execution context used by this reader. This context is different than what was supplied in the constructor, and
+     * will have a local {@link NamespaceRegistry}. This prevents the reader from modifying the registry in the supplied context.
+     * 
+     * @return the execution context; never null
+     */
+    public ExecutionContext getExecutionContext() {
+        return context;
+    }
+
+    /**
+     * Get the namespace registry used by this reader.
+     * 
+     * @return the namespace registry; never null
+     */
+    public NamespaceRegistry getNamespaceRegistry() {
+        return context.getNamespaceRegistry();
+    }
+
+    /**
+     * Get the namespaces that were created when reading in node types.
+     * 
+     * @return the namespaces; never null
+     */
+    public Set<NamespaceRegistry.Namespace> getNamespaces() {
+        return ((LocalNamespaceRegistry)(context.getNamespaceRegistry())).getLocalNamespaces();
     }
 
     protected List<NodeTypeDefinition> readTypesFrom( Graph graph,
