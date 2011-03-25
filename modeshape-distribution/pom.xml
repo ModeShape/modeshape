@@ -1350,6 +1350,22 @@
   </profiles>
 	<build>
 		<plugins>
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+				<version>${maven.resources.plugin.version}</version>
+        <executions>
+          <execution>
+            <id>default-resources</id>
+						<!-- We don't want to run this -->
+						<phase>non-existant</phase>
+          </execution>
+          <execution>
+            <id>test-resources</id>
+						<!-- We don't want to run this -->
+						<phase>non-existant</phase>
+          </execution>
+        </executions>
+      </plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>
@@ -1383,8 +1399,8 @@
 					</execution>
 					<execution>
 						<id>default-jar</id>
-						<!-- We don't want to run this -->
-						<phase>non-existant</phase>
+						<!-- We don't want to run this, but we have to -->
+						<!--phase>non-existant</phase-->
 					</execution>
 				</executions>
 				<configuration>
