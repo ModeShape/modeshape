@@ -28,7 +28,7 @@ used in the second parameter of the CONTAINS(...) function of the JCR-SQL2 langu
   [7]:  http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#fulltext-search-query-language
   [8]:  http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#jcr-sql2-full-text-search-constraints
 
-As with previous releases, ModeShape 2.4.0.Final integrates with [JAAS][9], [web application security][10],
+As with previous releases, ModeShape &version; integrates with [JAAS][9], [web application security][10],
 or you can easily [integrate it with other systems][11]. ModeShape can use a variety of back-ends to store 
 information ([RDBMSes][12], [Infinispan data grid][13], [memory][14], [JBoss Cache][15], [JCR repositories][16]), can access content
 in multiple systems ([file systems][17], [SVN repositories][18], [JDBC metadata][19]), can [federate][20] multiple stores and
