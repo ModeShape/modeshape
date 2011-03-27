@@ -2,9 +2,10 @@
 
 ## JCR Supported Features
 
-ModeShape &version; includes an improved JBoss AS deployment kit with JOPR monitoring plugin, 
-an improved JDBC driver for accessing content in ModeShape through JDBC (including JDBC metadata), 
-and a lot of improvements and bug fixes.
+ModeShape &version; includes several new minor improvements, such as new javax.jcr.Credentials classes for 
+anonymous and HTTP servlet authentication, a built-in profiling framework enabling use of Byteman runtime
+bytecode injection, and a switch to Maven 3 and refactoring of the build process. The release also contains
+fixes for almost two dozen bugs. ModeShape also uses PicketBox for the JAAS implementation used in tests.
 
 This means that **ModeShape now implements all of the required JCR 2.0 features** (repository acquisition, 
 authentication, reading/navigating, query, export, node type discovery, and permissions and capability 
