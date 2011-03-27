@@ -366,7 +366,8 @@ def release():
     sys.exit(1)
   prettyprint("OK, releasing! Please stand by ...", Levels.INFO)
   
-  git = Git(branch, version.upper())
+  tag_name = "modeshape-%s" % version
+  git = Git(branch, tag_name)
   if not git.is_upstream_clone():
     proceed = input_with_default('This is not a clone of an %supstream%s Infinispan repository! Are you sure you want to proceed?' % (Colors.UNDERLINE, Colors.END), 'N')
     if not proceed.upper().startswith('Y'):

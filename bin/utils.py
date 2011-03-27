@@ -328,8 +328,7 @@ class Git(object):
   
   def push_to_origin(self):
     '''Pushes the updated tags to origin'''
-    #self.run_git("push origin --tags")
-    prettyprint("!!!!! NOT PUSHING TO ORIGIN !!!!!!", Levels.INFO)
+    self.run_git("push origin --tags")
  
   def current_branch(self):
     '''Returns the current branch you are on'''
