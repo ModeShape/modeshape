@@ -1,6 +1,6 @@
 package org.modeshape.graph;
 
-import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.annotation.NotThreadSafe;
 
 /**
  * A security context provides a pluggable means to support disparate authentication and authorization mechanisms that specify the

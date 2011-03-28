@@ -6,7 +6,7 @@ import java.util.Map;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.servlet.http.HttpServletRequest;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.web.jcr.rest.model.WorkspaceEntry;
 
 /**

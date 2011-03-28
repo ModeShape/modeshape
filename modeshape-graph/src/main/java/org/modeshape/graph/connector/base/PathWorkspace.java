@@ -26,7 +26,7 @@ package org.modeshape.graph.connector.base;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
-import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.property.Path;
 

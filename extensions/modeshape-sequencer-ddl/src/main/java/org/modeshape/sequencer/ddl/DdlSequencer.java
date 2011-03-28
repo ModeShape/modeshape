@@ -32,7 +32,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.graph.JcrLexicon;

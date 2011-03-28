@@ -24,7 +24,7 @@
 package org.modeshape.jcr;
 
 import javax.jcr.PropertyType;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.SystemFailureException;
 
 /**

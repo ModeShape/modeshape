@@ -28,7 +28,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.Location;

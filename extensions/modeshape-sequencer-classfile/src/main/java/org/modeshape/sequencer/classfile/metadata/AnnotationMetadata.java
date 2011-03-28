@@ -28,7 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import javassist.bytecode.annotation.Annotation;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 @Immutable
 public class AnnotationMetadata {

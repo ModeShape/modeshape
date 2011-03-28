@@ -24,7 +24,7 @@
 package org.modeshape.graph.cache;
 
 import java.io.Serializable;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * The specification of how node data is to be cached. The time values provided are relative, allowing the same cache policy

@@ -34,7 +34,7 @@ import javax.jcr.ItemVisitor;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
-import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.text.TextEncoder;
 import org.modeshape.common.text.XmlNameEncoder;
 import org.modeshape.common.xml.StreamingContentHandler;

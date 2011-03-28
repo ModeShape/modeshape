@@ -23,7 +23,7 @@
  */
 package org.modeshape.graph.property;
 
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * A runtime exception that represents that an invalid {@link PathExpression path expression} was specified.

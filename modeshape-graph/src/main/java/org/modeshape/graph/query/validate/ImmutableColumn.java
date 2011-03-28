@@ -26,7 +26,7 @@ package org.modeshape.graph.query.validate;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Set;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.Collections;
 import org.modeshape.graph.query.model.Operator;
 import org.modeshape.graph.query.validate.Schemata.Column;

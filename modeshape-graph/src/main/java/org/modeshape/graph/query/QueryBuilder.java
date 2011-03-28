@@ -31,7 +31,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.property.Binary;

@@ -26,7 +26,7 @@ package org.modeshape.graph.query.optimize;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.graph.query.QueryContext;
 import org.modeshape.graph.query.model.ChildNodeJoinCondition;
 import org.modeshape.graph.query.model.DescendantNodeJoinCondition;

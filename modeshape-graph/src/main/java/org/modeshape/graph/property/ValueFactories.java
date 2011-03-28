@@ -25,7 +25,7 @@ package org.modeshape.graph.property;
 
 import java.math.BigDecimal;
 import java.net.URI;
-import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.graph.query.model.TypeSystem;
 
 /**

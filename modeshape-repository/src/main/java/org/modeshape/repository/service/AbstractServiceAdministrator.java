@@ -24,8 +24,8 @@
 package org.modeshape.repository.service;
 
 import java.util.Locale;
-import net.jcip.annotations.GuardedBy;
-import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.GuardedBy;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.Logger;
 import org.modeshape.repository.RepositoryI18n;

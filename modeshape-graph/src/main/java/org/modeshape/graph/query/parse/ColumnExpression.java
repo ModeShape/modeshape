@@ -23,7 +23,7 @@
  */
 package org.modeshape.graph.query.parse;
 
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.text.Position;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.ObjectUtil;

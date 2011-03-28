@@ -38,7 +38,7 @@ import java.io.Writer;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * A set of utilities for more easily performing I/O.

@@ -24,7 +24,7 @@
 package org.modeshape.graph;
 
 import java.util.UUID;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.basic.BasicSingleValueProperty;

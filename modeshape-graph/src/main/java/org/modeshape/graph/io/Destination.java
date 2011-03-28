@@ -23,7 +23,7 @@
  */
 package org.modeshape.graph.io;
 
-import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.NodeConflictBehavior;
 import org.modeshape.graph.property.Path;

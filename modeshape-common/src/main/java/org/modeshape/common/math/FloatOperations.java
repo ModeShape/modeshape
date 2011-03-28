@@ -26,7 +26,7 @@ package org.modeshape.common.math;
 import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.Random;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * The {@link MathOperations math operations} for float numbers.

@@ -23,7 +23,7 @@
  */
 package org.modeshape.common.statistic;
 
-import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.math.Duration;
 import org.modeshape.common.math.DurationOperations;
 

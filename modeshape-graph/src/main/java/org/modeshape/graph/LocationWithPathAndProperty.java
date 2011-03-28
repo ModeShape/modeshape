@@ -25,7 +25,7 @@ package org.modeshape.graph;
 
 import java.util.Collections;
 import java.util.UUID;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;

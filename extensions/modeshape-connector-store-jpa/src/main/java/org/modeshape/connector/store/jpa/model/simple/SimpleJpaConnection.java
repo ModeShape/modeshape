@@ -26,7 +26,7 @@ package org.modeshape.connector.store.jpa.model.simple;
 import java.util.concurrent.TimeUnit;
 import javax.persistence.EntityManager;
 import javax.transaction.xa.XAResource;
-import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.common.util.Logger;
 import org.modeshape.connector.store.jpa.JpaSource;

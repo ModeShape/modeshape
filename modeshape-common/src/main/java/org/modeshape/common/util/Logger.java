@@ -25,7 +25,7 @@ package org.modeshape.common.util;
 
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
-import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.i18n.I18n;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.LoggerFactory;

@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.naming.Reference;
 import javax.transaction.xa.XAResource;
-import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.cache.CachePolicy;
 import org.modeshape.graph.request.Request;

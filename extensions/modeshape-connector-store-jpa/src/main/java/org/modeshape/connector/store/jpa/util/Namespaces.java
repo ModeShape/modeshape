@@ -26,7 +26,7 @@ package org.modeshape.connector.store.jpa.util;
 import java.util.HashMap;
 import java.util.Map;
 import javax.persistence.EntityManager;
-import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.connector.store.jpa.model.common.NamespaceEntity;
 
 /**

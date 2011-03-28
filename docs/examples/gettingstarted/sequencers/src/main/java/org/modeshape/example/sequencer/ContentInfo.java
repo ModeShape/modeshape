@@ -25,7 +25,7 @@ package org.modeshape.example.sequencer;
 
 import java.util.Map;
 import java.util.Properties;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * The information about content.

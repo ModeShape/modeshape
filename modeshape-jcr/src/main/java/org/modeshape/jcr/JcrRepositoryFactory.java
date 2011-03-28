@@ -38,7 +38,7 @@ import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.collection.Problem;
 import org.modeshape.common.util.Logger;
 import org.modeshape.jcr.api.Repositories;

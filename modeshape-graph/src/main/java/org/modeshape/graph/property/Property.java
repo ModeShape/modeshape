@@ -25,7 +25,7 @@ package org.modeshape.graph.property;
 
 import java.io.Serializable;
 import java.util.Iterator;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * Representation of a property consisting of a name and value(s). Note that this property is immutable, meaning that the property

@@ -39,7 +39,7 @@ import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.Problem;
 import org.modeshape.common.text.NoOpEncoder;
 import org.modeshape.common.util.CheckArg;

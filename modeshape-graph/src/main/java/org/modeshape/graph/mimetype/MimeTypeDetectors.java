@@ -25,7 +25,7 @@ package org.modeshape.graph.mimetype;
 
 import java.io.IOException;
 import java.io.InputStream;
-import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.component.ClassLoaderFactory;
 import org.modeshape.common.component.ComponentLibrary;
 import org.modeshape.common.component.StandardClassLoaderFactory;

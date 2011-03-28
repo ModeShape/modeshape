@@ -26,7 +26,7 @@ package org.modeshape.graph.query.model;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.CheckArg;
 
 /**

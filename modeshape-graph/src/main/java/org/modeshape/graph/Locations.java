@@ -23,7 +23,7 @@
  */
 package org.modeshape.graph;
 
-import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.annotation.NotThreadSafe;
 
 /**
  * A class used by this package to manage a single {@link Location} or multiple {@link Location} objects, without having the

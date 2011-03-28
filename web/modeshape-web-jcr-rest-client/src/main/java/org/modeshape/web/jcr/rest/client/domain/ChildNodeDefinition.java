@@ -26,7 +26,7 @@ package org.modeshape.web.jcr.rest.client.domain;
 import java.util.Map;
 import java.util.Set;
 import javax.jcr.version.OnParentVersionAction;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * An immutable representation of a JCR PropertyDefinition.

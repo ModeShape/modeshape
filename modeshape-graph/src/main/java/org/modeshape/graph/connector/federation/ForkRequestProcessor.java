@@ -33,7 +33,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.GraphI18n;

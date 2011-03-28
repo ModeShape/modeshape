@@ -24,7 +24,7 @@
 package org.modeshape.graph.mimetype;
 
 import java.util.Map;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.component.ComponentConfig;
 
 /**

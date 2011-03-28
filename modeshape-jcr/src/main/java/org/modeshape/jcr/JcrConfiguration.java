@@ -33,7 +33,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.cnd.CndImporter;
 import org.modeshape.common.collection.Problem;
 import org.modeshape.common.collection.Problem.Status;

@@ -26,7 +26,7 @@ package org.modeshape.jcr;
 import java.util.NoSuchElementException;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.CheckArg;
 
 /**

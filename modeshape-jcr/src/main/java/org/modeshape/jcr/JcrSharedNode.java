@@ -31,7 +31,7 @@ import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.ConstraintViolationException;
-import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.session.GraphSession.Node;

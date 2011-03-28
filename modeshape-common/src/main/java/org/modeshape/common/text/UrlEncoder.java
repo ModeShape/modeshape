@@ -26,7 +26,7 @@ package org.modeshape.common.text;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
 import java.util.BitSet;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * An encoder useful for converting text to be used within a URL, as defined by Section 2.3 of <a

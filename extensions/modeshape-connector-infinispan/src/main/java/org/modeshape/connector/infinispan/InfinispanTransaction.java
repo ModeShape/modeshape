@@ -26,7 +26,7 @@ package org.modeshape.connector.infinispan;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.locks.Lock;
-import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.infinispan.Cache;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.connector.base.MapTransaction;

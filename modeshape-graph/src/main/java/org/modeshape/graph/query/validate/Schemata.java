@@ -27,7 +27,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.graph.query.model.Operator;
 import org.modeshape.graph.query.model.Ordering;
 import org.modeshape.graph.query.model.QueryCommand;

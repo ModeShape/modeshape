@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.UUID;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.text.TextEncoder;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.HashCode;

@@ -35,7 +35,7 @@ import java.util.Set;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeTypeIterator;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.web.jcr.rest.client.RestClientI18n;
 
 /**

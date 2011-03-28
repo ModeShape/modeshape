@@ -23,7 +23,7 @@
  */
 package org.modeshape.search.lucene;
 
-import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.Version;
 import org.modeshape.graph.search.SearchEngineException;

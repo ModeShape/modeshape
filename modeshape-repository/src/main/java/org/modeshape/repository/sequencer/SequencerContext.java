@@ -1,6 +1,6 @@
 package org.modeshape.repository.sequencer;
 
-import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.io.Destination;

@@ -23,7 +23,7 @@
  */
 package org.modeshape.common.component;
 
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * A {@link ClassLoaderFactory} implementation that loads classes using the thread's {@link Thread#getContextClassLoader() context

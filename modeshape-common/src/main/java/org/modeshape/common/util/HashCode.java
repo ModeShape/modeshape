@@ -24,7 +24,7 @@
 package org.modeshape.common.util;
 
 import java.util.Arrays;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * Utilities for easily computing hash codes. The algorithm should generally produce good distributions for use in hash-based

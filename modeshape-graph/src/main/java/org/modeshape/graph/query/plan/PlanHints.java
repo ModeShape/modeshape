@@ -24,7 +24,7 @@
 package org.modeshape.graph.query.plan;
 
 import java.io.Serializable;
-import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.graph.query.QueryResults;
 
 @NotThreadSafe

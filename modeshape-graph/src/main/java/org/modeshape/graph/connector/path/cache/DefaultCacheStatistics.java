@@ -1,7 +1,7 @@
 package org.modeshape.graph.connector.path.cache;
 
 import java.util.concurrent.atomic.AtomicLong;
-import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.ThreadSafe;
 
 /**
  * Default, thread-safe implementation of {@link CacheStatistics} that uses {@link AtomicLong AtomicLongs} as counters for the

@@ -26,7 +26,7 @@ package org.modeshape.graph.property;
 import java.io.Serializable;
 import java.util.Iterator;
 import java.util.List;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.text.Jsr283Encoder;
 import org.modeshape.common.text.NoOpEncoder;
 import org.modeshape.common.text.TextDecoder;

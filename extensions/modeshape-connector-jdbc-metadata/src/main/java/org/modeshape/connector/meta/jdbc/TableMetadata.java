@@ -24,7 +24,7 @@
 package org.modeshape.connector.meta.jdbc;
 
 import java.sql.DatabaseMetaData;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * Container for table-level metadata. The fields in this class roughly parallel the information returned from the

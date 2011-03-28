@@ -34,7 +34,7 @@ import javax.naming.NamingException;
 import javax.naming.Reference;
 import javax.naming.StringRefAddr;
 import javax.naming.spi.ObjectFactory;
-import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.infinispan.manager.CacheContainer;
 import org.modeshape.common.annotation.Category;
 import org.modeshape.common.annotation.Description;

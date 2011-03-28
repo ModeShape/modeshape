@@ -23,7 +23,7 @@
  */
 package org.modeshape.repository.sequencer;
 
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * A runtime exception that denotes an error within a sequencer.

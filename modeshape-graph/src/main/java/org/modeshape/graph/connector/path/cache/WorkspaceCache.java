@@ -23,7 +23,7 @@
  */
 package org.modeshape.graph.connector.path.cache;
 
-import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.graph.connector.path.PathNode;
 import org.modeshape.graph.property.Path;
 

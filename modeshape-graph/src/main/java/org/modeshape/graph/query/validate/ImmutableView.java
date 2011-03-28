@@ -26,7 +26,7 @@ package org.modeshape.graph.query.validate;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.graph.query.model.QueryCommand;
 import org.modeshape.graph.query.model.SelectorName;
 import org.modeshape.graph.query.model.Visitors;

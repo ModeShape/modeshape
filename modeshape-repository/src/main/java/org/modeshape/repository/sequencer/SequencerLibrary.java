@@ -23,7 +23,7 @@
  */
 package org.modeshape.repository.sequencer;
 
-import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.component.ComponentLibrary;
 import org.modeshape.graph.sequencer.StreamSequencer;
 

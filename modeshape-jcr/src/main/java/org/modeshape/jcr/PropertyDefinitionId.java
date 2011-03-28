@@ -26,7 +26,7 @@ package org.modeshape.jcr;
 import java.io.Serializable;
 import java.util.HashMap;
 import javax.jcr.PropertyType;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NameFactory;
 import org.modeshape.graph.property.ValueFormatException;

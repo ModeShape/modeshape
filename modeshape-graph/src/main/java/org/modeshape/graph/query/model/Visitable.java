@@ -23,7 +23,7 @@
  */
 package org.modeshape.graph.query.model;
 
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * An interface called by a visitor when that visitor is visiting the node.

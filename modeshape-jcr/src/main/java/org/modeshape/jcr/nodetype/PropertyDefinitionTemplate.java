@@ -24,7 +24,7 @@
 package org.modeshape.jcr.nodetype;
 
 import javax.jcr.nodetype.PropertyDefinition;
-import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.annotation.NotThreadSafe;
 
 /**
  * A template that can be used to create new property definitions, patterned after the approach in the proposed <a

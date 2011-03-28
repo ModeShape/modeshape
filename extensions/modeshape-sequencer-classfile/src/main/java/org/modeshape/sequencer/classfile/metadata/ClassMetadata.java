@@ -33,7 +33,7 @@ import javassist.bytecode.ClassFile;
 import javassist.bytecode.FieldInfo;
 import javassist.bytecode.MethodInfo;
 import javassist.bytecode.annotation.Annotation;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 @Immutable
 public class ClassMetadata {

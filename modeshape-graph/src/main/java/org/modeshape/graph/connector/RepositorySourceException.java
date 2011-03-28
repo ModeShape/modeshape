@@ -23,7 +23,7 @@
  */
 package org.modeshape.graph.connector;
 
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * A runtime exception signalling an error within a {@link RepositorySource}.

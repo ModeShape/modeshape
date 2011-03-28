@@ -34,7 +34,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.GraphI18n;

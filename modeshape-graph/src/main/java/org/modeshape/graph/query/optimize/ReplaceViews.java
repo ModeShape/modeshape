@@ -28,7 +28,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.graph.query.QueryContext;
 import org.modeshape.graph.query.model.SelectorName;
 import org.modeshape.graph.query.plan.CanonicalPlanner;

@@ -128,13 +128,6 @@
 			<artifactId>log4j</artifactId>
 			<scope>runtime</scope>
 		</dependency>
-		<!-- 
-        Java Concurrency in Practice annotations
-    -->
-		<dependency>
-			<groupId>net.jcip</groupId>
-			<artifactId>jcip-annotations</artifactId>
-		</dependency>
 	</dependencies>
 	<reporting>
 		<plugins>

@@ -24,7 +24,7 @@
 package org.modeshape.graph.query.model;
 
 import java.util.Set;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * A dynamic operand that evaluates to the length of the supplied propety values, used in a {@link Comparison} constraint.

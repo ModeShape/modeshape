@@ -23,7 +23,7 @@
  */
 package org.modeshape.web.jcr.rest.client;
 
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * The <code>Status</code> class is an outcome that provides an outcome or result of an operation.

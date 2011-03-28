@@ -25,7 +25,7 @@ package org.modeshape.graph.query;
 
 import java.util.HashMap;
 import java.util.Map;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.util.CheckArg;

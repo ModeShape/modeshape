@@ -25,7 +25,7 @@ package org.modeshape.graph.connector;
 
 import java.util.concurrent.TimeUnit;
 import javax.transaction.xa.XAResource;
-import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.cache.CachePolicy;
 import org.modeshape.graph.property.PathNotFoundException;

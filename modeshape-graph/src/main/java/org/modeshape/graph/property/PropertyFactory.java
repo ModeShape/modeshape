@@ -24,7 +24,7 @@
 package org.modeshape.graph.property;
 
 import java.util.Iterator;
-import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.ThreadSafe;
 
 /**
  * A factory for creating {@link Property} objects.

@@ -28,7 +28,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.NodeTypeIterator;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * Type-safe {@link Iterator} implementation for NodeTypes, as per the JCR specification.

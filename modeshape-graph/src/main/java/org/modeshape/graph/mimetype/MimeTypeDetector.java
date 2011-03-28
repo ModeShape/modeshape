@@ -25,7 +25,7 @@ package org.modeshape.graph.mimetype;
 
 import java.io.IOException;
 import java.io.InputStream;
-import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.ThreadSafe;
 
 /**
  * MIME-type detection libraries must provide thread-safe implementations of this interface to enable ModeShape to use the libraries to

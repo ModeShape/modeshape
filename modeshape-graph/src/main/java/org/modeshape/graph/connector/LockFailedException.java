@@ -23,7 +23,7 @@
  */
 package org.modeshape.graph.connector;
 
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.Location;
 

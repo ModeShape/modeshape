@@ -23,7 +23,7 @@
  */
 package org.modeshape.graph.property;
 
-import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.text.TextDecoder;
 
 /**

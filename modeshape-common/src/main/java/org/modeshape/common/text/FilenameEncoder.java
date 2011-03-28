@@ -24,7 +24,7 @@
 package org.modeshape.common.text;
 
 import java.util.BitSet;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * An encoder useful for converting text to be used within a filename on common file systems and operating systems, including

@@ -29,7 +29,7 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.TimeZone;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.codehaus.jettison.json.JSONObject;
 import org.modeshape.common.util.Base64;
 import org.modeshape.web.jcr.rest.client.IJcrConstants;

@@ -27,7 +27,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import javax.jcr.nodetype.NodeType;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.graph.property.Name;
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;

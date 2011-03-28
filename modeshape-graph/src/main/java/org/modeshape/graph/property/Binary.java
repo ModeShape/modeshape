@@ -26,7 +26,7 @@ package org.modeshape.graph.property;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.security.MessageDigest;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * Value holder for binary data. Binary instances are not mutable.

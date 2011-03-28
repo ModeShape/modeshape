@@ -16,7 +16,7 @@ import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.UriInfo;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;

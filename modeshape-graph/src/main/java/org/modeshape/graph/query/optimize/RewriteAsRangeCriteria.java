@@ -29,7 +29,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.graph.property.ValueComparators;
 import org.modeshape.graph.query.QueryContext;
 import org.modeshape.graph.query.model.And;

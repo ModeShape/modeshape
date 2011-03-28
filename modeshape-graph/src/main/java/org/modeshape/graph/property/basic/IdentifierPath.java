@@ -26,7 +26,7 @@ package org.modeshape.graph.property.basic;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.text.Inflector;
 import org.modeshape.common.text.TextEncoder;
 import org.modeshape.common.util.CheckArg;

@@ -25,7 +25,7 @@ package org.modeshape.common.collection;
 
 import java.util.LinkedList;
 import java.util.List;
-import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.annotation.NotThreadSafe;
 
 /**
  * A simple {@link Problems} collection. The problems will be {@link #iterator() returned} in the order in which they were

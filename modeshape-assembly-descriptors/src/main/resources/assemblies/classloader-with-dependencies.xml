@@ -9,8 +9,6 @@
       <unpack>true</unpack>
       <scope>runtime</scope>
 			<excludes>
-				<!-- No need to include the JCIP annotations -->
-				<exclude>net.jcip:jcip-annotations</exclude>
 				<!-- Cannot ship the JCR 1.0 jar -->
 				<exclude>javax.jcr:jcr</exclude>
 				<!-- Don't include the ModeShape core libraries and their dependencies -->

@@ -28,7 +28,7 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
-import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.math.MathOperations;
 import org.modeshape.common.text.Inflector;
 import org.modeshape.common.util.StringUtil;

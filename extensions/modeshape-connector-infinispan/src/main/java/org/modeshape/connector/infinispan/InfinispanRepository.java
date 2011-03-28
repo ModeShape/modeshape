@@ -29,7 +29,7 @@ import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.infinispan.manager.CacheContainer;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.connector.base.Repository;

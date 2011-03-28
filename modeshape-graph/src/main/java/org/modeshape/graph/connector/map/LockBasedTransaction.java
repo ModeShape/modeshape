@@ -24,7 +24,7 @@
 package org.modeshape.graph.connector.map;
 
 import java.util.concurrent.locks.Lock;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * A {@link MapRepositoryTransaction} based upon a {@link Lock}.

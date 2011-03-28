@@ -26,7 +26,7 @@ package org.modeshape.common.util;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.CommonI18n;
 
 /**

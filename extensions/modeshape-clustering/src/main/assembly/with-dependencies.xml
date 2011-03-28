@@ -9,8 +9,6 @@
       <unpack>true</unpack>
       <scope>runtime</scope>
 			<excludes>
-				<!-- No need to include the JCIP annotations -->
-				<exclude>net.jcip:jcip-annotations</exclude>
 				<!-- Don't include the ModeShape core libraries and their dependencies -->
 				<exclude>org.modeshape:modeshape-common</exclude>
 				<exclude>org.modeshape:modeshape-graph</exclude>

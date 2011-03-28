@@ -37,7 +37,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
 import javax.jcr.version.OnParentVersionAction;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.modeshape.web.jcr.rest.client.RestClientI18n;

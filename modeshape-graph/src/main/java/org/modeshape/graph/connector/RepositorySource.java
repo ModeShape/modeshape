@@ -28,7 +28,7 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.util.UUID;
 import javax.naming.Referenceable;
-import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.property.Binary;
 import org.modeshape.graph.property.DateTime;

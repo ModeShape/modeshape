@@ -34,7 +34,7 @@ import java.util.Map;
 import java.util.Set;
 import javax.jcr.PropertyType;
 import javax.jcr.version.OnParentVersionAction;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONObject;
 import org.modeshape.common.util.CheckArg;

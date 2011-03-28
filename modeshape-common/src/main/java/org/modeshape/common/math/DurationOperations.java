@@ -27,7 +27,7 @@ import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * The {@link MathOperations math operations} for {@link Duration}s.

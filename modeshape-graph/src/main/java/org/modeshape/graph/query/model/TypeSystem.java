@@ -26,7 +26,7 @@ package org.modeshape.graph.query.model;
 import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.Set;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.graph.property.ValueFormatException;
 
 /**

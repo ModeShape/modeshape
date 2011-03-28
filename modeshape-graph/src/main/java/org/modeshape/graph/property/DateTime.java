@@ -26,7 +26,7 @@ package org.modeshape.graph.property;
 import java.io.Serializable;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * An immutable date-time class that represents an instance in time. This class is designed to hide the horrible implementations

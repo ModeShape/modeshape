@@ -27,7 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import net.jcip.annotations.GuardedBy;
+import org.modeshape.common.annotation.GuardedBy;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;

@@ -23,7 +23,7 @@
  */
 package org.modeshape.graph.property;
 
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * A runtime exception denoting that a namespace was invalid or not found.
