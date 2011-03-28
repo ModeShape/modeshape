@@ -20,7 +20,6 @@
                 <exclude>com.sun.xml.bind:jaxb-impl</exclude>
                 <exclude>com.sun.xml.stream:buffer.streambuffer</exclude>
                 <exclude>org.apache.log4j:*</exclude>
-                <exclude>net.jcip:jcip-annotations</exclude>
                 <exclude>org.scannotation:scannotation</exclude>
                 <exclude>javassist:javassist</exclude>
                 <exclude>javax.activation:activation</exclude>

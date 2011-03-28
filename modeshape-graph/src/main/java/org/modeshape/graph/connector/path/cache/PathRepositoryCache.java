@@ -25,7 +25,7 @@ package org.modeshape.graph.connector.path.cache;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.ThreadSafe;
 
 /**
  * The repository-source level cache of workspace names to {@link WorkspaceCache workspace caches}.

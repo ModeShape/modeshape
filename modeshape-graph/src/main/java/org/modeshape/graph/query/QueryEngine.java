@@ -24,7 +24,7 @@
 package org.modeshape.graph.query;
 
 import java.util.List;
-import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.query.QueryResults.Statistics;
 import org.modeshape.graph.query.model.Column;

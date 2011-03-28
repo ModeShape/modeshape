@@ -25,7 +25,7 @@ package org.modeshape.common.text;
 
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * Encoder that escapes characters that are not allowed in JCR names. The mapping defined in Section 3.6.3 of the JSR-283 public

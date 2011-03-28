@@ -24,7 +24,7 @@
 package org.modeshape.graph.property.basic;
 
 import java.util.Iterator;
-import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.property.PropertyType;
 import org.modeshape.graph.property.ValueFactories;

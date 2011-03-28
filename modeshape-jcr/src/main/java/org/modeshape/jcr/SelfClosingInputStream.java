@@ -25,7 +25,7 @@ package org.modeshape.jcr;
 
 import java.io.IOException;
 import java.io.InputStream;
-import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.graph.property.Binary;
 
 /**

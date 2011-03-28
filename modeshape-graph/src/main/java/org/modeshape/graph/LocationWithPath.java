@@ -25,7 +25,7 @@ package org.modeshape.graph;
 
 import java.util.List;
 import java.util.UUID;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.text.TextEncoder;
 import org.modeshape.common.util.HashCode;
 import org.modeshape.graph.property.NamespaceRegistry;

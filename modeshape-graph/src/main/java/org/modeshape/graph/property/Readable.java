@@ -23,7 +23,7 @@
  */
 package org.modeshape.graph.property;
 
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.text.TextEncoder;
 import org.modeshape.graph.property.Path.Segment;
 

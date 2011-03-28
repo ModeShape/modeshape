@@ -149,13 +149,6 @@
 			<artifactId>log4j</artifactId>
 		</dependency>
 		<!-- 
-			Java Concurrency in Practice annotations
-		-->
-		<dependency>
-			<groupId>net.jcip</groupId>
-			<artifactId>jcip-annotations</artifactId>
-		</dependency>
-		<!-- 
 			Eclipse Java Development Tools (JDT) parser and its (many) required libraries
 		-->
     <dependency>

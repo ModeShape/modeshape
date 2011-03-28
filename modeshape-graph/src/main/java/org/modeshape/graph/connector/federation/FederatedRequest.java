@@ -24,7 +24,7 @@
 package org.modeshape.graph.connector.federation;
 
 import java.util.concurrent.CountDownLatch;
-import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.graph.request.Request;
 
 /**

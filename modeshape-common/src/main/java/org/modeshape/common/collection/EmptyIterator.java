@@ -25,7 +25,7 @@ package org.modeshape.common.collection;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * A reusuable {@link Iterator} implementation that has no elements. Note that the objects are immutable, and therefore may be

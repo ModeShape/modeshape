@@ -24,7 +24,7 @@
 package org.modeshape.graph.connector.federation;
 
 import java.util.List;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.property.Path;

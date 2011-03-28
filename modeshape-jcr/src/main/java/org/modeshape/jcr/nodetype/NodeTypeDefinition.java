@@ -23,7 +23,7 @@
  */
 package org.modeshape.jcr.nodetype;
 
-import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.annotation.NotThreadSafe;
 
 /**
  * An interface for an existing node type definition, patterned after the approach in the proposed <a

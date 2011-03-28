@@ -24,7 +24,7 @@
 package org.modeshape.repository.service;
 
 import java.util.concurrent.TimeUnit;
-import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.ThreadSafe;
 
 /**
  * Contract defining an administrative interface for controlling the running state of a service.

@@ -33,7 +33,7 @@ import java.net.URI;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.UUID;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.graph.GraphI18n;

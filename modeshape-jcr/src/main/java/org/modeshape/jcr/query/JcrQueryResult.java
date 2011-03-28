@@ -37,7 +37,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
-import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.collection.Collections;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.property.Name;

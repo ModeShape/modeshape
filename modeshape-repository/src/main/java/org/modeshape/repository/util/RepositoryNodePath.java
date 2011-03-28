@@ -25,7 +25,7 @@ package org.modeshape.repository.util;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.HashCode;
 import org.modeshape.repository.RepositoryI18n;
 

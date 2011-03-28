@@ -23,7 +23,7 @@
  */
 package org.modeshape.jcr;
 
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * A lexicon of internal and implementation-specific information

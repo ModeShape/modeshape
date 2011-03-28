@@ -25,7 +25,7 @@
 package org.modeshape.common.component;
 
 import java.util.concurrent.atomic.AtomicInteger;
-import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.ThreadSafe;
 
 /**
  * A sequencer that can be used for basic unit testing.

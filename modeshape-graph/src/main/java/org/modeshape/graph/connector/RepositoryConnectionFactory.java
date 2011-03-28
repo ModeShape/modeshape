@@ -23,7 +23,7 @@
  */
 package org.modeshape.graph.connector;
 
-import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.ThreadSafe;
 
 /**
  * An interface for a factory of {@link RepositoryConnection}s using the names of the {@link RepositorySource} from which the

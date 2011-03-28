@@ -23,7 +23,7 @@
  */
 package org.modeshape.graph;
 
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * The information about a workspace.

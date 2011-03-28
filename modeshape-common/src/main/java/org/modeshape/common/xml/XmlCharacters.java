@@ -25,7 +25,7 @@ package org.modeshape.common.xml;
 
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * A utility class for determining the validity of various XML names, per the <a href="http://www.w3.org/TR/REC-xml/">XML 1.0

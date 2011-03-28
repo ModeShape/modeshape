@@ -23,7 +23,7 @@
  */
 package org.modeshape.graph.property;
 
-import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.ThreadSafe;
 
 /**
  * A factory for creating {@link Reference references}. This interface extends the {@link ValueFactory} generic interface and adds

@@ -25,7 +25,7 @@ package org.modeshape.graph.connector.inmemory;
 
 import java.util.UUID;
 import java.util.concurrent.locks.Lock;
-import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.connector.base.MapTransaction;
 import org.modeshape.graph.property.Property;

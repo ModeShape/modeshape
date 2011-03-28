@@ -24,7 +24,7 @@
 package org.modeshape.web.jcr.rest.client.json;
 
 import java.net.URL;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.codehaus.jettison.json.JSONObject;
 import org.modeshape.web.jcr.rest.client.IJcrConstants;
 import org.modeshape.web.jcr.rest.client.domain.Workspace;

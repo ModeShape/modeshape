@@ -32,7 +32,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * Default {@link MetadataCollector} implementation that uses the {@link DatabaseMetaData built-in JDBC support} for collecting

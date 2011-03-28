@@ -21,7 +21,7 @@
  */
 package org.modeshape.repository;
 
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * A runtime exception that denotes an error within the configuration for ModeShape.

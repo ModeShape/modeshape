@@ -3,7 +3,7 @@ package org.modeshape.web.jcr.rest;
 import java.util.HashMap;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.web.jcr.RepositoryFactory;
 import org.modeshape.web.jcr.rest.model.RepositoryEntry;
 

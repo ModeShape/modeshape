@@ -1,6 +1,6 @@
 package org.modeshape.common.text;
 
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * A class that represents the position of a particular character in terms of the lines and columns of a character sequence.

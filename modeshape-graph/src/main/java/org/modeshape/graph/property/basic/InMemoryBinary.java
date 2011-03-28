@@ -25,7 +25,7 @@ package org.modeshape.graph.property.basic;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.property.Binary;
 

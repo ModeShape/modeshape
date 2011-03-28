@@ -24,7 +24,7 @@
 package org.modeshape.connector.store.jpa.model.simple;
 
 import javax.persistence.EntityTransaction;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.graph.connector.map.MapRepositoryTransaction;
 
 /**

@@ -25,7 +25,7 @@ package org.modeshape.jcr;
 
 import java.util.Iterator;
 import javax.jcr.NodeIterator;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.CheckArg;
 
 /**

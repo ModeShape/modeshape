@@ -33,7 +33,7 @@ import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
-import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.graph.property.Binary;

@@ -200,7 +200,6 @@
 		<slf4j.api.version>1.5.11</slf4j.api.version>
 		<slf4j.log4j.version>1.5.11</slf4j.log4j.version>
 		<log4j.version>1.2.16</log4j.version>
-		<jcip.version>1.0</jcip.version>
 		<jcr.version>2.0</jcr.version>
 		<jackrabbit.jcr.tck.version>2.1.0</jackrabbit.jcr.tck.version>
 		<picketbox.version>3.0.0.Final</picketbox.version>
@@ -1088,13 +1087,6 @@
 				<artifactId>log4j</artifactId>
 				<version>${log4j.version}</version>
 				<scope>test</scope>
-			</dependency>
-			<!-- Java Concurrency in Practice annotations -->
-			<dependency>
-				<groupId>net.jcip</groupId>
-				<artifactId>jcip-annotations</artifactId>
-				<version>${jcip.version}</version>
-				<scope>compile</scope>
 			</dependency>
 			<!-- Java Content Repository API -->
 			<dependency>

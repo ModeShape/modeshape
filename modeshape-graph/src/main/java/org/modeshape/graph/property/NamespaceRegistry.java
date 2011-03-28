@@ -24,8 +24,8 @@
 package org.modeshape.graph.property;
 
 import java.util.Set;
-import net.jcip.annotations.Immutable;
-import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.Immutable;
+import org.modeshape.common.annotation.ThreadSafe;
 
 /**
  * Registry of namespaces, which are used to provide isolated and independent domains for {@link Name names}.

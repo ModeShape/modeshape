@@ -23,7 +23,7 @@
  */
 package org.modeshape.jcr;
 
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.HashCode;
 import org.modeshape.graph.property.Path;

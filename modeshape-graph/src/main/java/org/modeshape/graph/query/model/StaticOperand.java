@@ -23,7 +23,7 @@
  */
 package org.modeshape.graph.query.model;
 
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * A static operand used in a {@link Comparison} constraint.

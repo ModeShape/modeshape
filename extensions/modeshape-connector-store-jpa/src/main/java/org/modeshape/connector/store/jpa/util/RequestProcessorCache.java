@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
-import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.property.Name;

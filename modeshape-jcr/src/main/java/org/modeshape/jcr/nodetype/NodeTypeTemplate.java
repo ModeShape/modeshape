@@ -23,7 +23,7 @@
  */
 package org.modeshape.jcr.nodetype;
 
-import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.annotation.NotThreadSafe;
 
 /**
  * A template that can be used to create new node types, patterned after the approach in the proposed <a

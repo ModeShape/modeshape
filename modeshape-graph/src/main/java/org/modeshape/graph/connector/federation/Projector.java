@@ -23,7 +23,7 @@
  */
 package org.modeshape.graph.connector.federation;
 
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Location;
 

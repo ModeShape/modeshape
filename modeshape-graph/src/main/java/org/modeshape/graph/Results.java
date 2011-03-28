@@ -24,7 +24,7 @@
 package org.modeshape.graph;
 
 import java.util.List;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.request.Request;
 

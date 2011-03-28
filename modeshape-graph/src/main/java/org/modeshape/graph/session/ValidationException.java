@@ -23,7 +23,7 @@
  */
 package org.modeshape.graph.session;
 
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * A runtime exception signaling failed validation within a graph session.

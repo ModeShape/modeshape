@@ -26,7 +26,7 @@ package org.modeshape.common.math;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.concurrent.TimeUnit;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * A number representing an immutable duration of time. This is intended to be used in the same manner as other {@link Number}

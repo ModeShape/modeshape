@@ -23,7 +23,7 @@
  */
 package org.modeshape.graph.connector;
 
-import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Subgraph;
 import org.modeshape.graph.observe.Observer;

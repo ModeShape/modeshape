@@ -419,7 +419,6 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 	|	+ google-collections-1.0.jar
 	|	+ hamcrest-core-1.1.jar
 	|	+ jakarta-regexp-1.4.jar
-	|	+ jcip-annotations-1.0.jar
 	|	+ jcr-2.0.jar
 	|	+ joda-time-1.6.jar
 	|	+ junit-dep-4.4.jar
@@ -1085,7 +1084,6 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 	|	+ jaxb-api-2.1.jar
 	|	+ jaxb-impl-2.1.12.jar
 	|	+ jaxrs-api-1.2.1.GA.jar
-	|	+ jcip-annotations-1.0.jar
 	|	+ jcl-over-slf4j-1.5.8.jar
 	|	+ jcr-2.0.jar
 	|	+ jettison-1.1.jar

@@ -24,7 +24,7 @@
 package org.modeshape.graph.cache;
 
 import java.util.concurrent.TimeUnit;
-import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
 
 /**

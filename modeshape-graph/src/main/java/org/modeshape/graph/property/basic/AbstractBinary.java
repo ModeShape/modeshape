@@ -30,7 +30,7 @@ import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.SecureHash;
 import org.modeshape.graph.GraphI18n;

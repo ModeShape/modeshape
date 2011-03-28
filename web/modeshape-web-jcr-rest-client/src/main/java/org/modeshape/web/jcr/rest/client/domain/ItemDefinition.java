@@ -25,7 +25,7 @@ package org.modeshape.web.jcr.rest.client.domain;
 
 import java.util.Collection;
 import java.util.Map;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * An immutable representation of an abstract JCR ItemDefinition.

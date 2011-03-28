@@ -23,7 +23,7 @@
  */
 package org.modeshape.repository;
 
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.basic.BasicName;
 

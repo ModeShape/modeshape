@@ -25,7 +25,7 @@ package org.modeshape.common.text;
 
 import java.util.LinkedList;
 import java.util.List;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * 

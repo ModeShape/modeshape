@@ -23,7 +23,7 @@
  */
 package org.modeshape.common.text;
 
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * Interface for components that can decode text. This is the counterpart to {@link TextEncoder}.

@@ -23,7 +23,7 @@
  */
 package org.modeshape.graph.request;
 
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * Specifies that the request was a type that is not supported.

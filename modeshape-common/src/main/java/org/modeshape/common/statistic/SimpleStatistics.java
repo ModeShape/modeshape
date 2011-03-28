@@ -26,7 +26,7 @@ package org.modeshape.common.statistic;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.math.MathOperations;
 import org.modeshape.common.text.Inflector;
 import org.modeshape.common.util.StringUtil;

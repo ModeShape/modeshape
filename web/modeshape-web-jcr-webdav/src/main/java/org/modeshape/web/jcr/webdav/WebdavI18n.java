@@ -23,7 +23,7 @@
  */
 package org.modeshape.web.jcr.webdav;
 
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.i18n.I18n;
 
 /**

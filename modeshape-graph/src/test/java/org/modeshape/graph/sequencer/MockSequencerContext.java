@@ -23,7 +23,7 @@
  */
 package org.modeshape.graph.sequencer;
 
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.graph.ExecutionContext;
 

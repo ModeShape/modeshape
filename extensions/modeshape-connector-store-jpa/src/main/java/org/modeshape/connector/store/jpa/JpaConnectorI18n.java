@@ -25,7 +25,7 @@ package org.modeshape.connector.store.jpa;
 
 import java.util.Locale;
 import java.util.Set;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.i18n.I18n;
 
 /**

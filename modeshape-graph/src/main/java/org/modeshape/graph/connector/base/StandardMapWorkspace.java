@@ -26,7 +26,7 @@ package org.modeshape.graph.connector.base;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
-import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.annotation.NotThreadSafe;
 
 /**
  * The {@link Workspace} implementation that represents all nodes as {@link MapNode} objects and stores them within a

@@ -23,7 +23,7 @@
  */
 package org.modeshape.graph.request.processor;
 
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
 import org.modeshape.graph.GraphI18n;

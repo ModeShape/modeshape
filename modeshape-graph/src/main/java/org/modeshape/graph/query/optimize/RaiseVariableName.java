@@ -24,7 +24,7 @@
 package org.modeshape.graph.query.optimize;
 
 import java.util.LinkedList;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.graph.query.QueryContext;
 import org.modeshape.graph.query.plan.PlanNode;
 import org.modeshape.graph.query.plan.PlanNode.Property;

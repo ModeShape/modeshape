@@ -25,7 +25,7 @@ package org.modeshape.jcr;
 
 import javax.jcr.nodetype.ItemDefinition;
 import javax.jcr.nodetype.NodeType;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.property.Name;
 

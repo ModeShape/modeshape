@@ -24,7 +24,7 @@
 package org.modeshape.graph.property;
 
 import java.io.Serializable;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * A qualified name consisting of a namespace and a local name.

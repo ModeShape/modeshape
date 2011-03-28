@@ -36,7 +36,7 @@ import javax.jcr.PropertyIterator;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
-import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.Base64;
 import org.modeshape.common.xml.XmlCharacters;
 import org.modeshape.graph.property.Name;

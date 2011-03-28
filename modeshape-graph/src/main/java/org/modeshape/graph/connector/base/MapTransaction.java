@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.RandomAccess;
 import java.util.Set;
 import java.util.UUID;
-import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.GraphI18n;

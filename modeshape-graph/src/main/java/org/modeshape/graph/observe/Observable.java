@@ -23,7 +23,7 @@
  */
 package org.modeshape.graph.observe;
 
-import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.ThreadSafe;
 
 /**
  * Interface used to register {@link ChangeObserver listeners}. Implementations should use a {@link ChangeObservers} to actually

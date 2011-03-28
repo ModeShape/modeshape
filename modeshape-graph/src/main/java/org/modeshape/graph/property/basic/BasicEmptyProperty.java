@@ -25,7 +25,7 @@ package org.modeshape.graph.property.basic;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.graph.property.Name;
 
 /**

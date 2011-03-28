@@ -25,7 +25,7 @@ package org.modeshape.graph.connector.federation;
 
 import java.util.List;
 import java.util.Map;
-import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Property;

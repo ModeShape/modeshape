@@ -26,7 +26,7 @@ package org.modeshape.graph.query.process;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.ImmutableProblems;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;

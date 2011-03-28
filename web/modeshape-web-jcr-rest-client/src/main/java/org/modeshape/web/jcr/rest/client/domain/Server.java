@@ -23,7 +23,7 @@
  */
 package org.modeshape.web.jcr.rest.client.domain;
 
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.HashCode;

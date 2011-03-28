@@ -23,7 +23,7 @@
  */
 package org.modeshape.common.text;
 
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * An encoder implementation that does nothing. This is useful when a {@link TextEncoder encoder} is optional but the code is

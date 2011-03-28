@@ -23,7 +23,7 @@
  */
 package org.modeshape.jcr.nodetype;
 
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * Exception representing that a node type definition is somehow invalid

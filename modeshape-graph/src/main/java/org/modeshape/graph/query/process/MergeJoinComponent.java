@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.query.QueryContext;
 import org.modeshape.graph.query.QueryResults.Columns;

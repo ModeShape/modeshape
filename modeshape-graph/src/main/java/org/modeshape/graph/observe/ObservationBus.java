@@ -23,7 +23,7 @@
  */
 package org.modeshape.graph.observe;
 
-import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.ThreadSafe;
 
 /**
  * A simple {@link Observer} that is itself {@link Observable}. This interface essentially multiplexes the events from a single

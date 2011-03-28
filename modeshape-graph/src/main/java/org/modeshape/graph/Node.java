@@ -26,7 +26,7 @@ package org.modeshape.graph;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;

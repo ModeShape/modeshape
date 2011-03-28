@@ -24,7 +24,7 @@
 package org.modeshape.repository.sequencer;
 
 import java.util.Set;
-import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.component.Component;
 import org.modeshape.graph.Node;

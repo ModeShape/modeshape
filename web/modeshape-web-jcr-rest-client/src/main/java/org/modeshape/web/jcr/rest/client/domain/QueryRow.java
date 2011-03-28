@@ -3,7 +3,7 @@ package org.modeshape.web.jcr.rest.client.domain;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 @Immutable
 public class QueryRow {

@@ -23,7 +23,7 @@
  */
 package org.modeshape.graph.cache;
 
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * A basic {@link CachePolicy} implementation with a fixed {@link #getTimeToLive() time to live}.

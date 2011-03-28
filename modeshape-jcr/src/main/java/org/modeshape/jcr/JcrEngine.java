@@ -40,7 +40,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import javax.jcr.PropertyType;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
-import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.cnd.CndImporter;
 import org.modeshape.common.collection.Problem;
 import org.modeshape.common.collection.Problem.Status;

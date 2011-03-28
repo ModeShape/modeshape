@@ -24,7 +24,7 @@
 package org.modeshape.graph.query.model;
 
 import java.util.Set;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * A dynamic operand that evaluates to the lower-case representation of the supplied operand, used in a {@link Comparison}

@@ -26,7 +26,7 @@ package org.modeshape.graph.query.process;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.property.Path;

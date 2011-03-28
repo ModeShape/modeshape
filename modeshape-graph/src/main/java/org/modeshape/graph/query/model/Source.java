@@ -23,7 +23,7 @@
  */
 package org.modeshape.graph.query.model;
 
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * The source that represents a set of node tuples. The {@link Selector} and {@link Join} are the two concrete types of sources.

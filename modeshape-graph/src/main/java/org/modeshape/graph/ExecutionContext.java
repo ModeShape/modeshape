@@ -29,7 +29,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.component.ClassLoaderFactory;
 import org.modeshape.common.component.StandardClassLoaderFactory;
 import org.modeshape.common.util.CheckArg;

@@ -23,7 +23,7 @@
  */
 package org.modeshape.sequencer.ddl;
 
-import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.annotation.NotThreadSafe;
 
 /**
  * Interface used by a parser to determine a score describing how well it handles the DDL content.

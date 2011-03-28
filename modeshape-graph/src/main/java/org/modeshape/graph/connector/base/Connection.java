@@ -25,7 +25,7 @@ package org.modeshape.graph.connector.base;
 
 import java.util.concurrent.TimeUnit;
 import javax.transaction.xa.XAResource;
-import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.common.util.Logger;
 import org.modeshape.graph.ExecutionContext;
