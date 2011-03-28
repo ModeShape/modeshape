@@ -85,8 +85,8 @@
                                 <artifactId>maven-compiler-plugin</artifactId>
                                 <version>${maven.compiler.plugin.version}</version>
                                 <configuration>
-                                        <source>1.5</source>
-                                        <target>1.5</target>
+                                        <source>${java.version.jcr.graph}</source>
+                                        <target>${java.version.jcr.graph}</target>
                                         <showDeprecation>false</showDeprecation>
                                         <showWarnings>false</showWarnings>
                                 </configuration>

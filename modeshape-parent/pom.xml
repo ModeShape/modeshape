@@ -220,6 +220,8 @@
 		<jdbc.oracle11g.version>11.1.0.7.0</jdbc.oracle11g.version>
 		<jdbc.sybase15.version>6.0.5</jdbc.sybase15.version>
 		<jdbc.mssql2008.version>2.0.1008.2</jdbc.mssql2008.version>
+		<java.version>1.6</java.version>
+		<java.version.jcr.graph>1.5</java.version.jcr.graph>
 		<!--
 		Maven plugin versions
 		-->
@@ -720,8 +722,8 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>${maven.compiler.plugin.version}</version>
 				<configuration>
-					<source>1.6</source>
-					<target>1.6</target>
+					<source>${java.version}</source>
+					<target>${java.version}</target>
 					<showDeprecation>false</showDeprecation>
 					<showWarnings>false</showWarnings>
 				</configuration>
