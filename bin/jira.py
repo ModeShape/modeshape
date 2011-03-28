@@ -79,7 +79,7 @@ class Jira(object):
       lines.append('### %s' % (issue_type) )
       for issue in self.issues_by_id.values():
         if issue['type'] == issue_type:
-          lines.append('- [%s][%s] - %s' % (issue['id'],issue['url'],issue['title']) )
+          lines.append('- [%s](%s) - %s' % (issue['id'],issue['url'],issue['title']) )
       lines.append('')
     return '\n'.join(lines)
 
@@ -319,12 +319,12 @@ def main():
   version = '2.5.0.Beta1'
   jira = Jira(jira_url,project_key,project_id,project_name,version)
   jira.fetch_release_info()
-  #print jira.get_release_notes_in_markdown()
+  print jira.get_release_notes_in_markdown()
   #print jira.project_info()
   #print jira.version_info()
   #print jira.issues_by_email()
   #print jira.get_contributor_emails()
-  print jira.get_contribution_email_text_for('rhauch@jboss.org')
+  #print jira.get_contribution_email_text_for('joe@gmail.org')
   #print jira.get_contribution_html('rhauch@redhat.com')
 
 if __name__ == "__main__":
