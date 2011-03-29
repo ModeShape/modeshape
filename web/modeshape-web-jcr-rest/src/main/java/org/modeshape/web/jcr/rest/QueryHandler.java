@@ -16,10 +16,10 @@ import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.UriInfo;
-import org.modeshape.common.annotation.Immutable;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * Resource handler that implements REST methods for items.
@@ -86,7 +86,9 @@ public class QueryHandler extends AbstractHandler {
             for (String columnName : columnNames) {
                 Value value = resultRow.getValue(columnName);
 
-                if (value.getType() == PropertyType.BINARY) {
+                if (value == null) {
+                    // do nothing ...
+                } else if (value.getType() == PropertyType.BINARY) {
                     jsonRow.put(columnName + BASE64_ENCODING_SUFFIX, jsonEncodedStringFor(value));
                 } else {
                     jsonRow.put(columnName, value.getString());

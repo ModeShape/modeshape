@@ -26,6 +26,7 @@ package org.modeshape.web.jcr.rest.client.json;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import java.io.File;
 import java.net.URL;
@@ -280,5 +281,36 @@ public final class JsonRestClientTest {
 
         assertThat((String)row.getValue("jcr:path"), is("/myproject/myfolder/document.txt"));
         assertThat((String)row.getValue("jcr:primaryType"), is("nt:file"));
+    }
+
+    @FixFor( "MODE-1131" )
+    @Test
+    public void shouldQueryAndNotFailWhenNullValueAppearsInResultSet() throws Exception {
+        // first publish
+        shouldPublishTextResource();
+
+        String query = "SELECT [jcr:primaryType], [jcr:path], [jcr:title] FROM [mode:publishArea]";
+        List<QueryRow> results = this.restClient.query(WORKSPACE1, IJcrConstants.JCR_SQL2, query);
+
+        assertThat(results.size(), is(1));
+        System.out.println(results.get(0).getColumnNames());
+        for (QueryRow row : results) {
+            System.out.println(row);
+        }
+
+        QueryRow row = results.get(0);
+
+        assertThat(row.getColumnNames().size(), is(3));
+        assertThat(row.getColumnNames().contains("jcr:path"), is(true));
+        assertThat(row.getColumnNames().contains("jcr:primaryType"), is(true));
+        assertThat(row.getColumnNames().contains("jcr:title"), is(true));
+
+        assertThat(row.getColumnType("jcr:path"), is("PATH"));
+        assertThat(row.getColumnType("jcr:primaryType"), is("STRING"));
+        assertThat(row.getColumnType("jcr:title"), is("STRING"));
+
+        assertThat((String)row.getValue("jcr:path"), is("/files"));
+        assertThat((String)row.getValue("jcr:primaryType"), is("nt:folder"));
+        assertThat(row.getValue("jcr:title"), is(nullValue()));
     }
 }

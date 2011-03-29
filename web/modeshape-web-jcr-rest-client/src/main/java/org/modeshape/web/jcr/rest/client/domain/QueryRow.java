@@ -20,7 +20,7 @@ public class QueryRow {
     }
 
     public Collection<String> getColumnNames() {
-        return values.keySet();
+        return queryTypes != null ? queryTypes.keySet() : values.keySet();
     }
 
     public Object getValue( String columnName ) {
@@ -29,5 +29,15 @@ public class QueryRow {
 
     public String getColumnType( String columnName ) {
         return queryTypes.get(columnName);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        return values.toString();
     }
 }

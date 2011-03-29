@@ -634,6 +634,8 @@ public final class JsonRestClient implements IRestClient {
             String response = connection.read();
             JSONObject result = new JSONObject(response);
             Map<String, String> columnTypes = new HashMap<String, String>();
+
+            // Get the result types ...
             if (result.has("types")) {
                 JSONObject types = (JSONObject)result.get("types");
 
@@ -645,6 +647,7 @@ public final class JsonRestClient implements IRestClient {
 
             Map<String, String> types = Collections.unmodifiableMap(columnTypes);
 
+            // Get the rows ...
             JSONArray rows = (JSONArray)result.get("rows");
             List<QueryRow> queryRows = new LinkedList<QueryRow>();
             for (int i = 0; i < rows.length(); i++) {

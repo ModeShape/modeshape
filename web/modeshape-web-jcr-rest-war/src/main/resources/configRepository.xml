@@ -42,6 +42,8 @@
             <nodeTypes jcr:primaryType="nodeTypes"/>
             <!-- Define any namespaces for this repository, other than those already defined by JCR or ModeShape-->
             <namespaces jcr:primaryType="namespaces" />
+            <!-- Define what the initial content looks like for each workspace -->
+            <initialContent workspaces="default" applyToNewWorkspaces="true" content="modeshape-initial-content.xml"/>
         </repository>
     </repositories>
 </configuration>

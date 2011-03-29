@@ -1,7 +1,7 @@
 package org.modeshape.web.jcr.rest;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
 import java.net.URI;
@@ -241,6 +241,38 @@ public class QueryHandlerTest {
                 assertThat(nodePath, is("/" + NODE_NAME));
             } else {
                 assertThat(nodePath, is("/" + NODE_NAME + "[" + (i + 1) + "]"));
+            }
+        }
+    }
+
+    @Test
+    public void shouldQueryAndNotFailWhenNullValueAppearsInResultSet() throws Exception {
+        Session session = getSession();
+        String nodeName = "publishAreaX";
+        String nodePath = "/" + nodeName;
+        try {
+            Node publishAreaX = session.getRootNode().addNode(nodeName, "nt:unstructured");
+            publishAreaX.addMixin("mode:publishArea");
+            session.save();
+
+            String statement = "SELECT [jcr:primaryType], [jcr:path], [jcr:title] FROM [mode:publishArea]";
+            String response = handler.postItem(request, REPOSITORY_NAME, WORKSPACE_NAME, Query.JCR_SQL2, statement, -1, 100, null);
+
+            JSONObject queryResult = new JSONObject(response);
+            assertThat(queryResult.get("rows"), is(notNullValue()));
+
+            JSONArray results = (JSONArray)queryResult.get("rows");
+
+            assertThat(results.length(), is(1));
+
+            JSONObject object = (JSONObject)results.get(0);
+            assertThat((String)object.get("jcr:path"), is(nodePath));
+            assertThat(object.has("jcr:title"), is(false));
+        } finally {
+            try {
+                session.getNode("/publishAreaX").remove();
+            } catch (RepositoryException e) {
+                // it's okay ...
             }
         }
     }

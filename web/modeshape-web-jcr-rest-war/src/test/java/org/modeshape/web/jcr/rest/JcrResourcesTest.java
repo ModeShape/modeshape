@@ -206,8 +206,8 @@ public class JcrResourcesTest {
         assertThat(properties.get("jcr:uuid"), is(notNullValue()));
 
         JSONArray children = body.getJSONArray("children");
-        assertThat(children.length(), is(1));
-        assertThat(children.getString(0), is("jcr:system"));
+        assertThat(children.length(), is(2));
+        assertThat(children.getString(1), is("jcr:system"));
 
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
         connection.disconnect();
@@ -231,7 +231,7 @@ public class JcrResourcesTest {
         assertThat(properties.get("jcr:uuid"), is(notNullValue()));
 
         JSONObject children = body.getJSONObject("children");
-        assertThat(children.length(), is(1));
+        assertThat(children.length(), is(2));
 
         JSONObject system = children.getJSONObject("jcr:system");
         assertThat(system.length(), is(2));
