@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="ASCII"?>
+<xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:diagram="http://www.metamatrix.com/metamodels/Diagram" xmlns:jdbc="http://www.metamatrix.com/metamodels/JDBC" xmlns:mmcore="http://www.metamatrix.com/metamodels/Core" xmlns:relational="http://www.metamatrix.com/metamodels/Relational">
+  <mmcore:ModelAnnotation xmi:uuid="mmuuid:6f83e692-6183-464c-8a5f-2df8113c98ec" primaryMetamodelUri="http://www.metamatrix.com/metamodels/Relational" modelType="PHYSICAL" maxSetSize="1000" ProducerName="Teiid Designer" ProducerVersion="7.4.0.qualifier">
+    <modelImports xmi:uuid="mmuuid:5ba789f7-13bb-4a0a-acd1-ee614a7c06fe" name="XMLSchema" modelLocation="http://www.w3.org/2001/XMLSchema" modelType="TYPE" primaryMetamodelUri="http://www.eclipse.org/xsd/2002/XSD"/>
+    <modelImports xmi:uuid="mmuuid:4cbd7bf3-033a-4898-9811-233b043c5c0a" name="SimpleDatatypes-instance" modelLocation="http://www.metamatrix.com/metamodels/SimpleDatatypes-instance" modelType="TYPE" primaryMetamodelUri="http://www.eclipse.org/xsd/2002/XSD"/>
+  </mmcore:ModelAnnotation>
+  <relational:Schema xmi:uuid="mmuuid:1e40dcf2-8113-4c0b-81de-5a9dbf8bede0" name="BOOKS" nameInSource="BOOKS">
+    <tables xsi:type="relational:BaseTable" xmi:uuid="mmuuid:0351c0b2-f83c-4e1a-b9b2-765f8ee22c26" name="AUTHORS" nameInSource="AUTHORS">
+      <columns xmi:uuid="mmuuid:3a98c9a7-9298-4495-9ba9-13d54da54592" name="AUTHOR_ID" nameInSource="AUTHOR_ID" nativeType="NUMBER" fixedLength="true" precision="10" nullable="NO_NULLS" caseSensitive="false" searchability="ALL_EXCEPT_LIKE" uniqueKeys="mmuuid/2ab9553e-1b7a-401e-8076-0c6becdc03bd">
+        <type href="http://www.metamatrix.com/metamodels/SimpleDatatypes-instance#bigdecimal"/>
+      </columns>
+      <columns xmi:uuid="mmuuid:3b031501-428e-482a-8b87-33e4d3710366" name="FIRSTNAME" nameInSource="FIRSTNAME" nativeType="VARCHAR2" length="255">
+        <type href="http://www.w3.org/2001/XMLSchema#string"/>
+      </columns>
+      <columns xmi:uuid="mmuuid:8fdb79b0-91e1-48c0-9418-aa4d7238cab9" name="LASTNAME" nameInSource="LASTNAME" nativeType="VARCHAR2" length="255">
+        <type href="http://www.w3.org/2001/XMLSchema#string"/>
+      </columns>
+      <columns xmi:uuid="mmuuid:2c3d7f10-76f7-4636-8dae-a6513a061dd7" name="MIDDLEINIT" nameInSource="MIDDLEINIT" nativeType="VARCHAR2" length="255">
+        <type href="http://www.w3.org/2001/XMLSchema#string"/>
+      </columns>
+      <primaryKey xmi:uuid="mmuuid:2ab9553e-1b7a-401e-8076-0c6becdc03bd" name="PK_AUTHORS" nameInSource="PK_AUTHORS" columns="mmuuid/3a98c9a7-9298-4495-9ba9-13d54da54592" foreignKeys="mmuuid/51fe71c7-cd9f-48f3-a970-764d67fb4e41"/>
+    </tables>
+    <tables xsi:type="relational:BaseTable" xmi:uuid="mmuuid:aab80502-e67d-4a58-9f0b-af9d136c43a0" name="BOOKS" nameInSource="BOOKS">
+      <columns xmi:uuid="mmuuid:d272c58b-280f-44a8-a159-596277da3c83" name="ISBN" nameInSource="ISBN" nativeType="VARCHAR2" length="255" nullable="NO_NULLS" uniqueKeys="mmuuid/5aca5de0-bf3e-4987-9a3a-d23fe63565ea">
+        <type href="http://www.w3.org/2001/XMLSchema#string"/>
+      </columns>
+      <columns xmi:uuid="mmuuid:4902413d-0247-4772-ac9e-fd8690419b33" name="TITLE" nameInSource="TITLE" nativeType="VARCHAR2" length="255">
+        <type href="http://www.w3.org/2001/XMLSchema#string"/>
+      </columns>
+      <columns xmi:uuid="mmuuid:45d19dd2-bc33-46a0-8acb-11faf2909ae8" name="SUBTITLE" nameInSource="SUBTITLE" nativeType="VARCHAR2" length="255">
+        <type href="http://www.w3.org/2001/XMLSchema#string"/>
+      </columns>
+      <columns xmi:uuid="mmuuid:a0dafba0-0c0b-46da-ac36-5c0129336139" name="PUBLISHER" nameInSource="PUBLISHER" nativeType="NUMBER" fixedLength="true" precision="10" caseSensitive="false" searchability="ALL_EXCEPT_LIKE" foreignKeys="mmuuid/32963de6-3d4a-4309-a19d-d709413c825f">
+        <type href="http://www.metamatrix.com/metamodels/SimpleDatatypes-instance#bigdecimal"/>
+      </columns>
+      <columns xmi:uuid="mmuuid:330ff4cc-e0fe-469a-92e6-413bd90fe5b3" name="PUBLISH_YEAR" nameInSource="PUBLISH_YEAR" nativeType="NUMBER" fixedLength="true" precision="10" caseSensitive="false" searchability="ALL_EXCEPT_LIKE">
+        <type href="http://www.metamatrix.com/metamodels/SimpleDatatypes-instance#bigdecimal"/>
+      </columns>
+      <columns xmi:uuid="mmuuid:2e93186f-e52c-4cb5-ade6-88d30a222b9e" name="EDITION" nameInSource="EDITION" nativeType="NUMBER" fixedLength="true" precision="10" caseSensitive="false" searchability="ALL_EXCEPT_LIKE">
+        <type href="http://www.metamatrix.com/metamodels/SimpleDatatypes-instance#bigdecimal"/>
+      </columns>
+      <columns xmi:uuid="mmuuid:a7d50a2f-db4d-4bc7-8cb2-08c0be22ebf8" name="TYPE" nameInSource="TYPE" nativeType="VARCHAR2" length="255">
+        <type href="http://www.w3.org/2001/XMLSchema#string"/>
+      </columns>
+      <foreignKeys xmi:uuid="mmuuid:32963de6-3d4a-4309-a19d-d709413c825f" name="FK_PUBLISHER" nameInSource="FK_PUBLISHER" foreignKeyMultiplicity="UNSPECIFIED" primaryKeyMultiplicity="UNSPECIFIED" columns="mmuuid/a0dafba0-0c0b-46da-ac36-5c0129336139" uniqueKey="mmuuid/32878b72-17d3-4ca7-a259-6f11fcbf3766"/>
+      <primaryKey xmi:uuid="mmuuid:5aca5de0-bf3e-4987-9a3a-d23fe63565ea" name="PK_BOOKS" nameInSource="PK_BOOKS" columns="mmuuid/d272c58b-280f-44a8-a159-596277da3c83" foreignKeys="mmuuid/a8063e5e-0c4d-46e0-a3c9-a5dcd948326d"/>
+    </tables>
+    <tables xsi:type="relational:BaseTable" xmi:uuid="mmuuid:27a18f98-9e5a-4db9-87c5-ccd8bfc07bff" name="BOOK_AUTHORS" nameInSource="BOOK_AUTHORS">
+      <columns xmi:uuid="mmuuid:25615ee5-3aa0-409d-bee4-c0f8393e11b0" name="ISBN" nameInSource="ISBN" nativeType="VARCHAR2" length="255" nullable="NO_NULLS" uniqueKeys="mmuuid/07144fca-0331-4111-8dac-2f2619ac757e" foreignKeys="mmuuid/a8063e5e-0c4d-46e0-a3c9-a5dcd948326d">
+        <type href="http://www.w3.org/2001/XMLSchema#string"/>
+      </columns>
+      <columns xmi:uuid="mmuuid:59a64538-137e-4ec3-abdd-697ebb2c99a7" name="AUTHOR_ID" nameInSource="AUTHOR_ID" nativeType="NUMBER" fixedLength="true" precision="10" nullable="NO_NULLS" caseSensitive="false" searchability="ALL_EXCEPT_LIKE" uniqueKeys="mmuuid/07144fca-0331-4111-8dac-2f2619ac757e" foreignKeys="mmuuid/51fe71c7-cd9f-48f3-a970-764d67fb4e41">
+        <type href="http://www.metamatrix.com/metamodels/SimpleDatatypes-instance#bigdecimal"/>
+      </columns>
+      <foreignKeys xmi:uuid="mmuuid:a8063e5e-0c4d-46e0-a3c9-a5dcd948326d" name="FK_ISBN" nameInSource="FK_ISBN" foreignKeyMultiplicity="UNSPECIFIED" primaryKeyMultiplicity="UNSPECIFIED" columns="mmuuid/25615ee5-3aa0-409d-bee4-c0f8393e11b0" uniqueKey="mmuuid/5aca5de0-bf3e-4987-9a3a-d23fe63565ea"/>
+      <foreignKeys xmi:uuid="mmuuid:51fe71c7-cd9f-48f3-a970-764d67fb4e41" name="FK_AUTHOR" nameInSource="FK_AUTHOR" foreignKeyMultiplicity="UNSPECIFIED" primaryKeyMultiplicity="UNSPECIFIED" columns="mmuuid/59a64538-137e-4ec3-abdd-697ebb2c99a7" uniqueKey="mmuuid/2ab9553e-1b7a-401e-8076-0c6becdc03bd"/>
+      <primaryKey xmi:uuid="mmuuid:07144fca-0331-4111-8dac-2f2619ac757e" name="PK_BOOK_AUTHORS" nameInSource="PK_BOOK_AUTHORS" columns="mmuuid/25615ee5-3aa0-409d-bee4-c0f8393e11b0 mmuuid/59a64538-137e-4ec3-abdd-697ebb2c99a7"/>
+    </tables>
+    <tables xsi:type="relational:BaseTable" xmi:uuid="mmuuid:17a76c86-1cec-4db4-a02f-4cd05de05876" name="PUBLISHERS" nameInSource="PUBLISHERS">
+      <columns xmi:uuid="mmuuid:13c0d5a5-3c00-4588-b7b8-2788c3142af4" name="PUBLISHER_ID" nameInSource="PUBLISHER_ID" nativeType="NUMBER" fixedLength="true" precision="10" nullable="NO_NULLS" caseSensitive="false" searchability="ALL_EXCEPT_LIKE" uniqueKeys="mmuuid/32878b72-17d3-4ca7-a259-6f11fcbf3766">
+        <type href="http://www.metamatrix.com/metamodels/SimpleDatatypes-instance#bigdecimal"/>
+      </columns>
+      <columns xmi:uuid="mmuuid:bc0746f4-b069-49fd-941d-cd3ab7fc31ab" name="NAME" nameInSource="NAME" nativeType="VARCHAR2" length="255">
+        <type href="http://www.w3.org/2001/XMLSchema#string"/>
+      </columns>
+      <columns xmi:uuid="mmuuid:54f813a8-2248-45de-b3f1-97b3cbec4aaa" name="LOCATION" nameInSource="LOCATION" nativeType="VARCHAR2" length="255">
+        <type href="http://www.w3.org/2001/XMLSchema#string"/>
+      </columns>
+      <primaryKey xmi:uuid="mmuuid:32878b72-17d3-4ca7-a259-6f11fcbf3766" name="PK_PUBLISHERS" nameInSource="PK_PUBLISHERS" columns="mmuuid/13c0d5a5-3c00-4588-b7b8-2788c3142af4" foreignKeys="mmuuid/32963de6-3d4a-4309-a19d-d709413c825f"/>
+    </tables>
+  </relational:Schema>
+  <mmcore:AnnotationContainer xmi:uuid="mmuuid:e70f3497-9425-4798-b36a-91f713297ad8">
+    <annotations xmi:uuid="mmuuid:5eea4e57-faed-40ba-a3bc-570734435543" annotatedObject="mmuuid/6f83e692-6183-464c-8a5f-2df8113c98ec">
+      <tags xmi:uuid="mmuuid:2496499a-faed-467e-bab1-5e1e1fa586cc" key="connection:driver-class" value="oracle.jdbc.OracleDriver"/>
+      <tags xmi:uuid="mmuuid:6bd4d93b-39b1-42fd-b120-eb7938f3f024" key="connectionProfile:connectionProfileName" value="Books Oracle"/>
+      <tags xmi:uuid="mmuuid:be103fd4-e099-4c76-a0dd-0fb52ce23135" key="connectionProfile:connectionProfileProviderId" value="org.eclipse.datatools.enablement.oracle.connectionProfile"/>
+      <tags xmi:uuid="mmuuid:8d318bd6-73dd-4424-ab45-af857d6fae7a" key="translator:name" value="oracle"/>
+      <tags xmi:uuid="mmuuid:9a61918e-88c3-4573-996f-29df0ecd8c8e" key="connection:connection-url" value="jdbc:oracle:thin:@englxdbs11.mm.atl2.redhat.com:1521:ORCL"/>
+      <tags xmi:uuid="mmuuid:289c510a-b0ce-41da-8b0d-cc04b789f932" key="connectionProfile:connectionProfileInstanceID" value="f4414200-19b4-11e0-b85a-fc6ecb9e8fc1"/>
+      <tags xmi:uuid="mmuuid:b459d871-6a36-47e3-988b-87129a8b1bd8" key="connection:connectionProfileInstanceID" value="org.eclipse.datatools.enablement.oracle.connectionProfile"/>
+      <tags xmi:uuid="mmuuid:52f4351d-a855-46ea-94ee-205ba7b24aca" key="connectionProfile:connectionProfileDescription" value=""/>
+      <tags xmi:uuid="mmuuid:0481d771-a939-4f78-8090-6c3191b228ac" key="connection:user-name" value="books"/>
+      <tags xmi:uuid="mmuuid:f17155e8-7a97-4af6-9e70-979785aa5e06" key="connectionProfile:connectionProfileCategory" value="org.eclipse.datatools.connectivity.db.category"/>
+    </annotations>
+  </mmcore:AnnotationContainer>
+  <diagram:DiagramContainer xmi:uuid="mmuuid:d5c90acd-16b9-4ae1-8350-920547dfc3c5">
+    <diagram xmi:uuid="mmuuid:8e58501a-0271-407b-9870-c2bebdfb35dc" type="packageDiagramType" target="mmuuid/6f83e692-6183-464c-8a5f-2df8113c98ec">
+      <diagramEntity xmi:uuid="mmuuid:d520d874-3dd1-4103-900d-d8428a1915e0" modelObject="mmuuid/1e40dcf2-8113-4c0b-81de-5a9dbf8bede0" xPosition="115" yPosition="143"/>
+    </diagram>
+    <diagram xmi:uuid="mmuuid:eabd8c32-da49-45b4-8fd5-973ea9b54b34" type="packageDiagramType" target="mmuuid/1e40dcf2-8113-4c0b-81de-5a9dbf8bede0">
+      <diagramEntity xmi:uuid="mmuuid:0d8897e7-c02b-4835-b35d-fedf2c2b7543" modelObject="mmuuid/0351c0b2-f83c-4e1a-b9b2-765f8ee22c26" xPosition="-19" yPosition="26"/>
+      <diagramEntity xmi:uuid="mmuuid:570c7cc0-8c8f-4152-8c4c-040552f4f60e" modelObject="mmuuid/aab80502-e67d-4a58-9f0b-af9d136c43a0" xPosition="622" yPosition="20"/>
+      <diagramEntity xmi:uuid="mmuuid:ae9f8d8d-f738-405a-b188-34b6ec1604b4" modelObject="mmuuid/27a18f98-9e5a-4db9-87c5-ccd8bfc07bff" xPosition="321" yPosition="58"/>
+      <diagramEntity xmi:uuid="mmuuid:0201efb7-c975-462a-be3c-dd10ce195ca7" modelObject="mmuuid/17a76c86-1cec-4db4-a02f-4cd05de05876" xPosition="939" yPosition="67"/>
+    </diagram>
+  </diagram:DiagramContainer>
+  <jdbc:JdbcSource xmi:uuid="mmuuid:a0444c0c-35b3-4ddf-ace4-2b0ce2e5b931" name="Books Oracle" driverName="Oracle Thin Driver" driverClass="oracle.jdbc.OracleDriver" username="books" url="jdbc:oracle:thin:@englxdbs11.mm.atl2.redhat.com:1521:ORCL">
+    <importSettings xmi:uuid="mmuuid:5c6e0cc1-400d-4e3b-aa8a-d4fdef6a3e36" includeIndexes="false" includeApproximateIndexes="false">
+      <includedSchemaPaths>/BOOKS</includedSchemaPaths>
+      <includedTableTypes>TABLE</includedTableTypes>
+    </importSettings>
+  </jdbc:JdbcSource>
+</xmi:XMI>

@@ -74,6 +74,8 @@ public final class JsonRestClientTest {
     private static final String FILE_PATH = WORKSPACE_PATH + "document.txt";
     private static final String BINARY_FILE_PATH = WORKSPACE_PATH + "picture.jpg";
     private static final String DDL_FILE_PATH = WORKSPACE_PATH + "oracle_test_create.ddl";
+    private static final String BOOKS_MODEL_PATH = WORKSPACE_PATH + "Books_Oracle.xmi";
+    private static final String BOOKS_MODEL_PATH2 = WORKSPACE_PATH + "Books_Oracle2.xmi";
 
     private static final String WORKSPACE_UNUSUALPATH = "/myproject/My.Test - Folder/";
     private static final String FILE_UNUSUALPATH = WORKSPACE_UNUSUALPATH + "Test File_.a-().txt";
@@ -283,6 +285,72 @@ public final class JsonRestClientTest {
         assertThat((String)row.getValue("jcr:primaryType"), is("nt:file"));
     }
 
+    @FixFor( "MODE-1130" )
+    @Test
+    public void shouldPublishNonVersionableResourceMultipleTimes() throws Exception {
+        URL modelFile = getClass().getResource(BOOKS_MODEL_PATH);
+        assertThat(modelFile, is(notNullValue()));
+
+        // publish first time
+        File file = new File(modelFile.toURI());
+        Status status = this.restClient.publish(WORKSPACE1, WORKSPACE_PATH, file, false);
+
+        // make sure no error when publishing the first time
+        assertThat(status.getMessage(), status.isOk(), is(true));
+
+        // confirm it exists in repository
+        assertThat(((JsonRestClient)this.restClient).pathExists(WORKSPACE1, WORKSPACE_PATH, file), is(true));
+
+        // compare file contents to the contents that have been published
+        String expected = new FileNode(WORKSPACE1, WORKSPACE_PATH, file).readFile();
+        String actual = ((JsonRestClient)this.restClient).getFileContents(WORKSPACE1, WORKSPACE_PATH, file);
+        assertThat(actual, is(expected));
+
+        // publish second time
+        status = this.restClient.publish(WORKSPACE1, WORKSPACE_PATH, file, false);
+
+        // make sure no error when publishing the second time
+        assertThat(status.getMessage(), status.isOk(), is(true));
+    }
+
+    @FixFor( "MODE-1130" )
+    @Test
+    public void shouldPublishMVersionableResourceMultipleTimes() throws Exception {
+        URL modelFile = getClass().getResource(BOOKS_MODEL_PATH2);
+        assertThat(modelFile, is(notNullValue()));
+
+        // publish first time
+        File file = new File(modelFile.toURI());
+        Status status = this.restClient.publish(WORKSPACE1, WORKSPACE_PATH, file, true);
+
+        // make sure no error when publishing the first time
+        if (!status.isOk()) {
+            System.out.println(status + "\n");
+            status.getException().printStackTrace();
+        }
+        assertThat(status.getMessage(), status.isOk(), is(true));
+
+        // confirm it exists in repository
+        assertThat(((JsonRestClient)this.restClient).pathExists(WORKSPACE1, WORKSPACE_PATH, file), is(true));
+
+        // compare file contents to the contents that have been published
+        String expected = new FileNode(WORKSPACE1, WORKSPACE_PATH, file).readFile();
+        String actual = ((JsonRestClient)this.restClient).getFileContents(WORKSPACE1, WORKSPACE_PATH, file);
+        assertThat(actual, is(expected));
+
+        // publish second time
+        status = this.restClient.publish(WORKSPACE1, WORKSPACE_PATH, file, true);
+
+        // make sure no error when publishing the second time
+        if (!status.isOk()) {
+            System.out.println(status + "\n");
+            status.getException().printStackTrace();
+        }
+        assertThat(status.getMessage(), status.isOk(), is(true));
+
+        // TODO still need to verify that the 2 versions exist in repository
+    }
+
     @FixFor( "MODE-1131" )
     @Test
     public void shouldQueryAndNotFailWhenNullValueAppearsInResultSet() throws Exception {
@@ -293,10 +361,10 @@ public final class JsonRestClientTest {
         List<QueryRow> results = this.restClient.query(WORKSPACE1, IJcrConstants.JCR_SQL2, query);
 
         assertThat(results.size(), is(1));
-        System.out.println(results.get(0).getColumnNames());
-        for (QueryRow row : results) {
-            System.out.println(row);
-        }
+        // System.out.println(results.get(0).getColumnNames());
+        // for (QueryRow row : results) {
+        // System.out.println(row);
+        // }
 
         QueryRow row = results.get(0);
 

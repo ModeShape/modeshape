@@ -143,7 +143,7 @@ public final class JsonRestClient implements IRestClient {
         HttpClientConnection connection = connect(workspace.getServer(), fileNodeUrlWithTerseResponse, RequestMethod.PUT);
 
         try {
-            LOGGER.trace("updateFileNode: create node={0}", fileNode);
+            LOGGER.trace("updateFileNode: update node={0}", fileNode);
             connection.write(fileNode.getContent());
 
             // make sure node was created

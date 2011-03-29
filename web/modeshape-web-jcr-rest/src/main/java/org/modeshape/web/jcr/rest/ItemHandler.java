@@ -26,15 +26,16 @@ import javax.jcr.Value;
 import javax.jcr.ValueFactory;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
+import javax.jcr.version.VersionManager;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.modeshape.common.annotation.Immutable;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.UnauthorizedException;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.Base64;
 
 /**
@@ -59,8 +60,8 @@ class ItemHandler extends AbstractHandler {
      * @param depth the depth of the node graph that should be returned if {@code path} refers to a node. @{code 0} means return
      *        the requested node only. A negative value indicates that the full subgraph under the node should be returned. This
      *        parameter defaults to {@code 0} and is ignored if {@code path} refers to a property.
-     * @return the JSON-encoded version of the item (and, if the item is a node, its subgraph, depending on the value of {@code
-     *         depth})
+     * @return the JSON-encoded version of the item (and, if the item is a node, its subgraph, depending on the value of
+     *         {@code depth})
      * @throws NotFoundException if the named repository does not exists, the named workspace does not exist, or the user does not
      *         have access to the named workspace
      * @throws JSONException if there is an error encoding the node
@@ -232,8 +233,8 @@ class ItemHandler extends AbstractHandler {
     /**
      * Adds the content of the request as a node (or subtree of nodes) at the location specified by {@code path}.
      * <p>
-     * The primary type and mixin type(s) may optionally be specified through the {@code jcr:primaryType} and {@code
-     * jcr:mixinTypes} properties.
+     * The primary type and mixin type(s) may optionally be specified through the {@code jcr:primaryType} and
+     * {@code jcr:mixinTypes} properties.
      * </p>
      * 
      * @param request the servlet request; may not be null or unauthenticated
@@ -537,7 +538,22 @@ class ItemHandler extends AbstractHandler {
                              String requestContent ) throws RepositoryException, JSONException {
         if (item instanceof Node) {
             JSONObject jsonNode = new JSONObject(requestContent);
-            return updateNode((Node)item, jsonNode);
+            Node node = (Node)item;
+            VersionableChanges changes = new VersionableChanges(node.getSession());
+            try {
+                node = updateNode(node, jsonNode, changes);
+                changes.checkin();
+            } catch (RepositoryException e) {
+                changes.abort();
+                throw e;
+            } catch (JSONException e) {
+                changes.abort();
+                throw e;
+            } catch (RuntimeException e) {
+                changes.abort();
+                throw e;
+            }
+            return node;
         }
 
         // Otherwise the incoming content should be a JSON object containing the property name and
@@ -556,73 +572,62 @@ class ItemHandler extends AbstractHandler {
      * 
      * @param node the node to be updated
      * @param jsonNode the JSON-encoded representation of the node or nodes to be updated.
+     * @param changes the versionable changes; may not be null
      * @return the Node that was updated; never null
      * @throws JSONException if there is an error encoding the node
      * @throws RepositoryException if any other error occurs
      */
     private Node updateNode( Node node,
-                             JSONObject jsonNode ) throws RepositoryException, JSONException {
+                             JSONObject jsonNode,
+                             VersionableChanges changes ) throws RepositoryException, JSONException {
         // If the JSON object has a properties holder, then this is likely a subgraph ...
         JSONObject properties = jsonNode;
         if (jsonNode.has(PROPERTIES_HOLDER)) {
             properties = jsonNode.getJSONObject(PROPERTIES_HOLDER);
         }
 
-        // Check out the node if it is versionable ...
-        boolean versionable = node.isNodeType("mix:versionable");
-        if (versionable) {
-            node.getSession().getWorkspace().getVersionManager().checkout(node.getPath());
-            // If this fails, we don't need to do a checkin ...
+        changes.checkout(node);
+
+        for (Iterator<?> iter = properties.keys(); iter.hasNext();) {
+            String key = (String)iter.next();
+            if (PRIMARY_TYPE_PROPERTY.equals(key)) continue; // can't change the primary type
+            setPropertyOnNode(node, key, properties.get(key));
         }
 
-        try {
+        // If the JSON object has a children holder, then we need to update the list of children and child nodes ...
+        if (jsonNode.has(CHILD_NODE_HOLDER)) {
+            Node parent = node;
+            JSONObject children = jsonNode.getJSONObject(CHILD_NODE_HOLDER);
 
-            for (Iterator<?> iter = properties.keys(); iter.hasNext();) {
-                String key = (String)iter.next();
-                if (PRIMARY_TYPE_PROPERTY.equals(key)) continue; // can't change the primary type
-                setPropertyOnNode(node, key, properties.get(key));
+            // Get the existing children ...
+            Map<String, Node> existingChildNames = new LinkedHashMap<String, Node>();
+            NodeIterator childIter = parent.getNodes();
+            while (childIter.hasNext()) {
+                Node child = childIter.nextNode();
+                existingChildNames.put(nameOf(child), child);
             }
 
-            // If the JSON object has a children holder, then we need to update the list of children and child nodes ...
-            if (jsonNode.has(CHILD_NODE_HOLDER)) {
-                Node parent = node;
-                JSONObject children = jsonNode.getJSONObject(CHILD_NODE_HOLDER);
-
-                // Get the existing children ...
-                Map<String, Node> existingChildNames = new LinkedHashMap<String, Node>();
-                NodeIterator childIter = parent.getNodes();
-                while (childIter.hasNext()) {
-                    Node child = childIter.nextNode();
-                    existingChildNames.put(nameOf(child), child);
-                }
-
-                for (Iterator<?> iter = children.keys(); iter.hasNext();) {
-                    String childName = (String)iter.next();
-                    JSONObject child = children.getJSONObject(childName);
-                    // Find the existing node ...
-                    if (parent.hasNode(childName)) {
-                        // The node exists, so get it and update it ...
-                        Node childNode = parent.getNode(childName);
-                        updateNode(childNode, child);
-                        existingChildNames.remove(nameOf(childNode));
-                    } else {
-                        // Have to add the new child ...
-                        addNode(parent, childName, child);
-                    }
-                }
-
-                // Remove the children in reverse order (starting with the last child to be removed) ...
-                LinkedList<Node> childNodes = new LinkedList<Node>(existingChildNames.values());
-                Collections.reverse(childNodes);
-                while (!childNodes.isEmpty()) {
-                    Node child = childNodes.removeLast();
-                    child.remove();
+            for (Iterator<?> iter = children.keys(); iter.hasNext();) {
+                String childName = (String)iter.next();
+                JSONObject child = children.getJSONObject(childName);
+                // Find the existing node ...
+                if (parent.hasNode(childName)) {
+                    // The node exists, so get it and update it ...
+                    Node childNode = parent.getNode(childName);
+                    updateNode(childNode, child, changes);
+                    existingChildNames.remove(nameOf(childNode));
+                } else {
+                    // Have to add the new child ...
+                    addNode(parent, childName, child);
                 }
             }
-        } finally {
-            if (versionable || node.isNodeType("mix:versionable")) {
-                // It either was versionable, or it wasn't but is now ...
-                node.getSession().getWorkspace().getVersionManager().checkin(node.getPath());
+
+            // Remove the children in reverse order (starting with the last child to be removed) ...
+            LinkedList<Node> childNodes = new LinkedList<Node>(existingChildNames.values());
+            Collections.reverse(childNodes);
+            while (!childNodes.isEmpty()) {
+                Node child = childNodes.removeLast();
+                child.remove();
             }
         }
 
@@ -633,6 +638,60 @@ class ItemHandler extends AbstractHandler {
         int index = node.getIndex();
         String childName = node.getName();
         return index == 1 ? childName : childName + "[" + index + "]";
+    }
+
+    protected static class VersionableChanges {
+        private final Set<String> changedVersionableNodes = new HashSet<String>();
+        private final Session session;
+        private final VersionManager versionManager;
+
+        protected VersionableChanges( Session session ) throws RepositoryException {
+            this.session = session;
+            assert this.session != null;
+            this.versionManager = session.getWorkspace().getVersionManager();
+        }
+
+        public void checkout( Node node ) throws RepositoryException {
+            boolean versionable = node.isNodeType("mix:versionable");
+            if (versionable) {
+                String path = node.getPath();
+                versionManager.checkout(path);
+                this.changedVersionableNodes.add(path);
+            }
+        }
+
+        public void checkin() throws RepositoryException {
+            if (this.changedVersionableNodes.isEmpty()) return;
+            session.save();
+            RepositoryException first = null;
+            for (String path : this.changedVersionableNodes) {
+                try {
+                    if (versionManager.isCheckedOut(path)) {
+                        versionManager.checkin(path);
+                    }
+                } catch (RepositoryException e) {
+                    if (first == null) first = e;
+                }
+            }
+            if (first != null) throw first;
+        }
+
+        public void abort() throws RepositoryException {
+            if (this.changedVersionableNodes.isEmpty()) return;
+            // Throw out all the changes ...
+            session.refresh(false);
+            RepositoryException first = null;
+            for (String path : this.changedVersionableNodes) {
+                try {
+                    if (versionManager.isCheckedOut(path)) {
+                        versionManager.checkin(path);
+                    }
+                } catch (RepositoryException e) {
+                    if (first == null) first = e;
+                }
+            }
+            if (first != null) throw first;
+        }
     }
 
 }
