@@ -3406,13 +3406,14 @@ public class Graph {
          * @return an object that allows the scope of the lock to be defined
          */
         public LockScope<LockTimeout<BatchConjunction>> lock( Location at ) {
+            assertNotExecuted();
             return new LockAction<BatchConjunction>(this.nextRequests, at) {
                 @Override
                 protected BatchConjunction submit( Location target,
                                                    org.modeshape.graph.request.LockBranchRequest.LockScope lockScope,
                                                    long lockTimeoutInMillis ) {
                     String workspaceName = getCurrentWorkspaceName();
-                    requests.lockBranch(workspaceName, target, lockScope, lockTimeoutInMillis);
+                    requestQueue.lockBranch(workspaceName, target, lockScope, lockTimeoutInMillis);
                     return and();
                 }
             };
@@ -3489,7 +3490,8 @@ public class Graph {
          * @return the interface that can either execute the batched requests or continue to add additional requests to the batch
          */
         public BatchConjunction unlock( Location at ) {
-            requests.unlockBranch(workspaceName, at);
+            assertNotExecuted();
+            requestQueue.unlockBranch(workspaceName, at);
             return this.nextRequests;
         }
 

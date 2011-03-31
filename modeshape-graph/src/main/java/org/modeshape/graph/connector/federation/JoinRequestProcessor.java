@@ -61,6 +61,7 @@ import org.modeshape.graph.request.DestroyWorkspaceRequest;
 import org.modeshape.graph.request.FullTextSearchRequest;
 import org.modeshape.graph.request.GetWorkspacesRequest;
 import org.modeshape.graph.request.InvalidRequestException;
+import org.modeshape.graph.request.LockBranchRequest;
 import org.modeshape.graph.request.MoveBranchRequest;
 import org.modeshape.graph.request.ReadAllChildrenRequest;
 import org.modeshape.graph.request.ReadAllPropertiesRequest;
@@ -924,6 +925,23 @@ class JoinRequestProcessor extends RequestProcessor {
         if (checkErrorOrCancel(request, source)) return;
         Location sourceLocation = source.getActualLocationOfNode();
         request.setActualLocationOfNode(projectToFederated(request.from(), projected.getProjection(), sourceLocation, request));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.request.processor.RequestProcessor#process(org.modeshape.graph.request.LockBranchRequest)
+     */
+    @Override
+    public void process( LockBranchRequest request ) {
+        ProjectedRequest projected = federatedRequest.getFirstProjectedRequest();
+        // Check the projection first ...
+        if (checkErrorOrCancel(request, federatedRequest)) return;
+
+        LockBranchRequest source = (LockBranchRequest)projected.getRequest();
+        if (checkErrorOrCancel(request, source)) return;
+        Location sourceLocation = source.getActualLocation();
+        request.setActualLocation(projectToFederated(request.at(), projected.getProjection(), sourceLocation, request));
     }
 
     /**

@@ -969,8 +969,9 @@ final class JcrObservationManager implements ObservationManager {
                         if (root != null && !propertiesByLocation.containsKey(root)) {
                             // The connector doesn't actually have any properties for the root node, so assume 'mode:root' ...
                             // For details, see MODE-959.
-                            Property primaryType = graph.getContext().getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE,
-                                                                                                  ModeShapeLexicon.ROOT);
+                            Property primaryType = graph.getContext()
+                                                        .getPropertyFactory()
+                                                        .create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.ROOT);
                             Map<Name, Property> props = Collections.singletonMap(primaryType.getName(), primaryType);
                             this.propertiesByLocation.put(root, props);
                         }
@@ -1006,11 +1007,6 @@ final class JcrObservationManager implements ObservationManager {
                         // We ignore it ...
                         continue;
                     }
-                }
-
-                // ignore if lock/unlock
-                if (change.includes(ChangeType.NODE_LOCKED) || change.includes(ChangeType.NODE_UNLOCKED)) {
-                    continue;
                 }
 
                 // determine if need to process

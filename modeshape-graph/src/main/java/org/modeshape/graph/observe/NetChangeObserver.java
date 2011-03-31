@@ -586,6 +586,23 @@ public abstract class NetChangeObserver extends ChangeObserver {
             return false;
         }
 
+        /**
+         * Determine whether this net change includes only the supplied types.
+         * 
+         * @param jcrEventTypes the types to check for
+         * @return true if all of the supplied events are included in this net change, or false otherwise
+         */
+        public boolean includesOnly( ChangeType... jcrEventTypes ) {
+            int length = jcrEventTypes.length;
+            if (length == 0) return false;
+            if (length == 1) {
+                return this.eventTypes.size() == 1 && this.eventTypes.contains(jcrEventTypes[0]);
+            }
+            // Otherwise there are more than one expected type ...
+            EnumSet<ChangeType> expected = EnumSet.of(jcrEventTypes[0], jcrEventTypes);
+            return this.eventTypes.equals(expected);
+        }
+
         public boolean isSameNode( NetChange that ) {
             if (that == this) return true;
             if (this.hc != that.hc) return false;
