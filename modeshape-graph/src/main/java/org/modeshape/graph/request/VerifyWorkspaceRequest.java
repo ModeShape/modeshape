@@ -30,7 +30,7 @@ import org.modeshape.graph.Location;
  * Verify that a workspace exists with the supplied name. This is useful to determine the name of the "default" workspace for a
  * source.
  */
-public final class VerifyWorkspaceRequest extends Request {
+public final class VerifyWorkspaceRequest extends Request implements Cloneable {
 
     private static final long serialVersionUID = 1L;
 
@@ -159,5 +159,16 @@ public final class VerifyWorkspaceRequest extends Request {
     @Override
     public RequestType getType() {
         return RequestType.VERIFY_WORKSPACE;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method does not clone the results.
+     * </p>
+     */
+    @Override
+    public VerifyWorkspaceRequest clone() {
+        return new VerifyWorkspaceRequest(workspaceName);
     }
 }

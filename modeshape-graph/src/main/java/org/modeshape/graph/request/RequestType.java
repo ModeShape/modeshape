@@ -35,6 +35,8 @@ public enum RequestType {
     UPDATE_VALUES,
     VERIFY_NODE_EXISTS,
     VERIFY_WORKSPACE,
-    /** Used for testing */
-    INVALID
+    INVALID, // used for testing
+    FUNCTION,
+
+    // Never rearrange these literals, or the integer value will change, affecting serialized instances
 }

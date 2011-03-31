@@ -23,9 +23,11 @@
  */
 package org.modeshape.graph.request;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
@@ -37,6 +39,8 @@ import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.request.CloneWorkspaceRequest.CloneConflictBehavior;
 import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
+import org.modeshape.graph.request.LockBranchRequest.LockScope;
+import org.modeshape.graph.request.function.Function;
 
 /**
  * A component that can be used to build up a list of requests. This implementation does perform some simple optimizations, such
@@ -760,6 +764,90 @@ public class BatchRequestBuilder {
     public BatchRequestBuilder submit( Request request ) {
         CheckArg.isNotNull(request, "request");
         return add(request);
+    }
+
+    /**
+     * Create a request to lock a branch or node
+     * 
+     * @param workspaceName the name of the workspace containing the node; may not be null
+     * @param target the location of the top node in the existing branch that is to be locked
+     * @param lockScope the {@link LockBranchRequest#lockScope()} scope of the lock
+     * @param lockTimeoutInMillis the number of milliseconds that the lock should last before the lock times out; zero (0)
+     *        indicates that the connector default should be used
+     * @return this builder for method chaining; never null
+     * @throws IllegalArgumentException if any of the parameters are null
+     */
+    public BatchRequestBuilder lockBranch( String workspaceName,
+                                           Location target,
+                                           LockScope lockScope,
+                                           long lockTimeoutInMillis ) {
+        return add(new LockBranchRequest(target, workspaceName, lockScope, lockTimeoutInMillis));
+    }
+
+    /**
+     * Add a request to add values to a property on an existing node
+     * 
+     * @param workspaceName the name of the workspace containing the node; may not be null
+     * @param on the location of the node; may not be null
+     * @param property the name of the property; may not be null
+     * @param values the new values to add; may not be null
+     * @return this builder for method chaining; never null
+     */
+    public BatchRequestBuilder addValues( String workspaceName,
+                                          Location on,
+                                          Name property,
+                                          List<Object> values ) {
+        return add(new UpdateValuesRequest(workspaceName, on, property, values, null));
+    }
+
+    /**
+     * Add a request to remove values from a property on an existing node
+     * 
+     * @param workspaceName the name of the workspace containing the node; may not be null
+     * @param on the location of the node; may not be null
+     * @param property the name of the property; may not be null
+     * @param values the new values to remove; may not be null
+     * @return this builder for method chaining; never null
+     */
+    public BatchRequestBuilder removeValues( String workspaceName,
+                                             Location on,
+                                             Name property,
+                                             List<Object> values ) {
+        return add(new UpdateValuesRequest(workspaceName, on, property, null, values));
+    }
+
+    /**
+     * Create a request to unlock a branch or node
+     * <p>
+     * The lock on the node should be removed. If the lock was deep (i.e., locked the entire branch under the node, then all of
+     * the descendants of the node affected by the lock should also be unlocked after this request is processed.
+     * </p>
+     * 
+     * @param workspaceName the name of the workspace containing the node; may not be null
+     * @param target the location of the top node in the existing branch that is to be unlocked
+     * @return this builder for method chaining; never null
+     * @throws IllegalArgumentException if any of the parameters are null
+     */
+    public BatchRequestBuilder unlockBranch( String workspaceName,
+                                             Location target ) {
+        return add(new UnlockBranchRequest(target, workspaceName));
+    }
+
+    /**
+     * Create a request to run the supplied function at the given location in the named workspace, using the supplied inputs.
+     * 
+     * @param function the function to be run
+     * @param inputs the input parameters
+     * @param to the scope of the function
+     * @param workspaceName the name of the workspace containing the node
+     * @return this builder for method chaining; never null
+     * @throws IllegalArgumentException if any of the parameters are null
+     */
+    public BatchRequestBuilder applyFunction( Function function,
+                                              Map<String, Serializable> inputs,
+                                              Location to,
+                                              String workspaceName ) {
+        return add(new FunctionRequest(function, to, workspaceName, inputs));
     }
 
     /**

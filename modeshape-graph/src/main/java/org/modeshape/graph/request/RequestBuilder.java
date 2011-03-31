@@ -23,6 +23,7 @@
  */
 package org.modeshape.graph.request;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -36,6 +37,7 @@ import org.modeshape.graph.property.Property;
 import org.modeshape.graph.request.CloneWorkspaceRequest.CloneConflictBehavior;
 import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
 import org.modeshape.graph.request.LockBranchRequest.LockScope;
+import org.modeshape.graph.request.function.Function;
 
 /**
  * A component that can be used to build requests while allowing different strategies for how requests are handled. Subclasses can
@@ -461,8 +463,8 @@ public abstract class RequestBuilder {
      * @param removeExisting whether any nodes in the intoWorkspace with the same UUIDs as a node in the source branch should be
      *        removed (if true) or a {@link UuidAlreadyExistsException} should be thrown.
      * @return the request; never null
-     * @throws IllegalArgumentException if any of the parameters are null except for {@code nameForClone} or {@code
-     *         exactSegmentForClone}. Exactly one of {@code nameForClone} and {@code exactSegmentForClone} must be null.
+     * @throws IllegalArgumentException if any of the parameters are null except for {@code nameForClone} or
+     *         {@code exactSegmentForClone}. Exactly one of {@code nameForClone} and {@code exactSegmentForClone} must be null.
      */
     public CloneBranchRequest cloneBranch( Location from,
                                            String fromWorkspace,
@@ -667,5 +669,22 @@ public abstract class RequestBuilder {
                                          int maxResults,
                                          int offset ) {
         return process(new FullTextSearchRequest(fullTextSearchExpression, workspaceName, maxResults, offset));
+    }
+
+    /**
+     * Create a request to run the supplied function at the given location in the named workspace, using the supplied inputs.
+     * 
+     * @param function the function to be run
+     * @param inputs the input parameters
+     * @param to the scope of the function
+     * @param workspaceName the name of the workspace containing the node
+     * @return the request; never null
+     * @throws IllegalArgumentException if any of the parameters are null
+     */
+    public FunctionRequest applyFunction( Function function,
+                                          Map<String, Serializable> inputs,
+                                          Location to,
+                                          String workspaceName ) {
+        return process(new FunctionRequest(function, to, workspaceName, inputs));
     }
 }

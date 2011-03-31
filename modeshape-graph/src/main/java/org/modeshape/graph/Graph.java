@@ -30,6 +30,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -112,6 +113,7 @@ import org.modeshape.graph.request.RequestBuilder;
 import org.modeshape.graph.request.RequestType;
 import org.modeshape.graph.request.UnsupportedRequestException;
 import org.modeshape.graph.request.VerifyWorkspaceRequest;
+import org.modeshape.graph.request.function.Function;
 import org.xml.sax.SAXException;
 
 /**
@@ -2481,6 +2483,69 @@ public class Graph {
         return getNodeAt(uuid);
     }
 
+    public WithInput<Map<String, Serializable>> applyFunction( final Function function ) {
+        return new WithInput<Map<String, Serializable>>() {
+            private final Map<String, Serializable> inputs = new HashMap<String, Serializable>();
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.modeshape.graph.Graph.WithInput#withInput(java.lang.String, java.lang.Object)
+             */
+            @Override
+            public WithInput<Map<String, Serializable>> withInput( String parameterName,
+                                                                   Object parameterValue ) {
+                CheckArg.isNotEmpty(parameterName, "parameterName");
+                if (parameterValue == null) {
+                    inputs.remove(parameterName);
+                } else {
+                    inputs.put(parameterName, (Serializable)parameterValue);
+                }
+                return this;
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.modeshape.graph.Graph.WithInput#and(java.lang.String, java.lang.Object)
+             */
+            @Override
+            public WithInput<Map<String, Serializable>> and( String parameterName,
+                                                             Object parameterValue ) {
+                return withInput(parameterName, parameterValue);
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.modeshape.graph.Graph.To#to(org.modeshape.graph.Location)
+             */
+            @Override
+            public Map<String, Serializable> to( Location desiredLocation ) {
+                return requests.applyFunction(function, inputs, desiredLocation, getCurrentWorkspaceName()).outputs();
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.modeshape.graph.Graph.To#to(org.modeshape.graph.property.Path)
+             */
+            @Override
+            public Map<String, Serializable> to( Path desiredPath ) {
+                return to(Location.create(desiredPath));
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.modeshape.graph.Graph.To#to(java.lang.String)
+             */
+            public java.util.Map<String, Serializable> to( String desiredPath ) {
+                return to(Location.create(createPath(desiredPath)));
+            }
+        };
+    }
+
     /**
      * Request to read a subgraph of the specified depth, rooted at a location that will be specified via <code>at(...)</code> in
      * the resulting {@link At} object. All properties and children of every node in the subgraph will be read and returned in the
@@ -4015,7 +4080,7 @@ public class Graph {
                                         Location on,
                                         Name property,
                                         List<Object> values ) {
-                    requests.addValues(workspaceName, on, property, values);
+                    requestQueue.addValues(workspaceName, on, property, values);
                     return nextRequests.and();
                 }
             };
@@ -4029,7 +4094,7 @@ public class Graph {
                                         Location on,
                                         Name property,
                                         List<Object> values ) {
-                    requests.removeValues(workspaceName, on, property, values);
+                    requestQueue.removeValues(workspaceName, on, property, values);
                     return nextRequests.and();
                 }
             };
@@ -4859,6 +4924,38 @@ public class Graph {
         }
 
         /**
+         * Request that the supplied function with input parameters be applied to the location in the workspace defined on the
+         * returned {@link ApplyFunction} object.
+         * <p>
+         * Like all other methods on the {@link Batch}, the request will be performed when the {@link #execute()} method is
+         * called.
+         * </p>
+         * 
+         * @param function the function to be applied
+         * @return the object that is used to specified the node whose children are to be read
+         * @throws IllegalArgumentException if the function reference is null
+         */
+        public ApplyFunction<Batch> applyFunction( Function function ) {
+            CheckArg.isNotNull(function, "function");
+            return new ApplyFunctionAction<Batch>(function, getCurrentWorkspaceName(), this) {
+                /**
+                 * {@inheritDoc}
+                 * 
+                 * @see org.modeshape.graph.Graph.ApplyFunctionAction#submit(org.modeshape.graph.Location, java.lang.String,
+                 *      org.modeshape.graph.request.function.Function, java.util.Map)
+                 */
+                @Override
+                protected Batch submit( Location to,
+                                        String workspaceName,
+                                        Function function,
+                                        Map<String, Serializable> inputs ) {
+                    requestQueue.applyFunction(function, inputs, to, workspaceName);
+                    return Batch.this;
+                }
+            };
+        }
+
+        /**
          * {@inheritDoc}
          * 
          * @see org.modeshape.graph.Graph.Executable#execute()
@@ -5544,6 +5641,52 @@ public class Graph {
 
             };
         }
+
+    }
+
+    /**
+     * The interface for defining input parameters for a function.
+     * 
+     * @param <Next> The interface that is to be returned when constructing this request is completed
+     */
+    public interface WithInput<Next> extends WithScope<Next> {
+        /**
+         * Specify the name and value of an input to be passed to the function when it is executed.
+         * 
+         * @param parameterName the parameter name
+         * @param parameterValue the parameter value
+         * @return this interface for continued specification of the request
+         * @throws IllegalArgumentException if the parameter name is null or empty
+         */
+        WithInput<Next> withInput( String parameterName,
+                                   Object parameterValue );
+
+        /**
+         * Specify the name and value of an input to be passed to the function when it is executed.
+         * 
+         * @param parameterName the parameter name
+         * @param parameterValue the parameter value
+         * @return this interface for continued specification of the request
+         * @throws IllegalArgumentException if the parameter name is null or empty
+         */
+        WithInput<Next> and( String parameterName,
+                             Object parameterValue );
+    }
+
+    /**
+     * The interface for defining the content scope of a function.
+     * 
+     * @param <Next> The interface that is to be returned when constructing this request is completed.
+     */
+    public interface WithScope<Next> extends To<Next> {
+    }
+
+    /**
+     * Interface for defining the application of a function.
+     * 
+     * @param <Next> The interface that is to be returned when constructing this request is completed.
+     */
+    public interface ApplyFunction<Next> extends WithInput<Next>, Conjunction<Next> {
 
     }
 
@@ -8146,6 +8289,110 @@ public class Graph {
         protected abstract CreateAction<T> createWith( T afterConjunction,
                                                        Location parent,
                                                        Name nodeName );
+    }
+
+    public abstract class ApplyFunctionAction<T> extends AbstractAction<T> implements ApplyFunction<T> {
+        private Location to;
+        private Function function;
+        private String workspaceName;
+        private Map<String, Serializable> inputs = new HashMap<String, Serializable>();
+        private boolean submitted = false;
+
+        protected ApplyFunctionAction( Function function,
+                                       String workspace,
+                                       T afterConjunction ) {
+            super(afterConjunction);
+            this.function = function;
+            this.workspaceName = workspace;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.Graph.AbstractAction#and()
+         */
+        @Override
+        public T and() {
+            if (!submitted) {
+                submit(to, workspaceName, function, inputs);
+                submitted = true;
+            }
+            return super.and();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.Graph.To#to(org.modeshape.graph.Location)
+         */
+        @Override
+        public T to( Location desiredLocation ) {
+            CheckArg.isNotNull(desiredLocation, "desiredLocation");
+            this.to = desiredLocation;
+            return and();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.Graph.To#to(java.lang.String)
+         */
+        @Override
+        public T to( String desiredPath ) {
+            CheckArg.isNotEmpty(desiredPath, "desiredPath");
+            return to(Location.create(createPath(desiredPath)));
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.Graph.To#to(org.modeshape.graph.property.Path)
+         */
+        @Override
+        public T to( Path desiredPath ) {
+            CheckArg.isNotNull(desiredPath, "desiredPath");
+            return to(Location.create(desiredPath));
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.Graph.WithInput#withInput(java.lang.String, java.lang.Object)
+         */
+        @Override
+        public WithInput<T> withInput( String parameterName,
+                                       Object parameterValue ) {
+            CheckArg.isNotEmpty(parameterName, "parameterName");
+            if (parameterValue != null) {
+                this.inputs.put(parameterName, (Serializable)parameterValue);
+            } else {
+                this.inputs.remove(parameterName);
+            }
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.Graph.WithInput#and(java.lang.String, java.lang.Object)
+         */
+        @Override
+        public WithInput<T> and( String parameterName,
+                                 Object parameterValue ) {
+            CheckArg.isNotEmpty(parameterName, "parameterName");
+            if (parameterValue != null) {
+                this.inputs.put(parameterName, (Serializable)parameterValue);
+            } else {
+                this.inputs.remove(parameterName);
+            }
+            return this;
+        }
+
+        protected abstract T submit( Location parent,
+                                     String workspaceName,
+                                     Function function,
+                                     Map<String, Serializable> inputs );
+
     }
 
     @Immutable

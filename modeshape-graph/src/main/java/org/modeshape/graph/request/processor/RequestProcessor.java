@@ -23,6 +23,7 @@
  */
 package org.modeshape.graph.request.processor;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,6 +32,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.atomic.AtomicReference;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
@@ -45,6 +47,7 @@ import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.Property;
+import org.modeshape.graph.property.PropertyType;
 import org.modeshape.graph.property.ReferentialIntegrityException;
 import org.modeshape.graph.request.AccessQueryRequest;
 import org.modeshape.graph.request.CacheableRequest;
@@ -60,6 +63,7 @@ import org.modeshape.graph.request.DeleteBranchRequest;
 import org.modeshape.graph.request.DeleteChildrenRequest;
 import org.modeshape.graph.request.DestroyWorkspaceRequest;
 import org.modeshape.graph.request.FullTextSearchRequest;
+import org.modeshape.graph.request.FunctionRequest;
 import org.modeshape.graph.request.GetWorkspacesRequest;
 import org.modeshape.graph.request.InvalidRequestException;
 import org.modeshape.graph.request.LockBranchRequest;
@@ -74,6 +78,7 @@ import org.modeshape.graph.request.ReadPropertyRequest;
 import org.modeshape.graph.request.RemovePropertyRequest;
 import org.modeshape.graph.request.RenameNodeRequest;
 import org.modeshape.graph.request.Request;
+import org.modeshape.graph.request.RequestBuilder;
 import org.modeshape.graph.request.SetPropertyRequest;
 import org.modeshape.graph.request.UnlockBranchRequest;
 import org.modeshape.graph.request.UnsupportedRequestException;
@@ -81,6 +86,7 @@ import org.modeshape.graph.request.UpdatePropertiesRequest;
 import org.modeshape.graph.request.UpdateValuesRequest;
 import org.modeshape.graph.request.VerifyNodeExistsRequest;
 import org.modeshape.graph.request.VerifyWorkspaceRequest;
+import org.modeshape.graph.request.function.FunctionContext;
 
 /**
  * A component that is used to process and execute {@link Request}s. This class is intended to be subclassed and methods
@@ -257,6 +263,9 @@ public abstract class RequestProcessor {
                     break;
                 case FULL_TEXT_SEARCH:
                     process((FullTextSearchRequest)request);
+                    break;
+                case FUNCTION:
+                    process((FunctionRequest)request);
                     break;
                 case GET_WORKSPACES:
                     process((GetWorkspacesRequest)request);
@@ -1037,6 +1046,196 @@ public abstract class RequestProcessor {
      */
     public void process( CollectGarbageRequest request ) {
         // do nothing by default
+    }
+
+    /**
+     * Process a function request.
+     * <p>
+     * The default implementation applies the function.
+     * </p>
+     * 
+     * @param functionRequest the request
+     */
+    public void process( final FunctionRequest functionRequest ) {
+        final AtomicReference<List<ChangeRequest>> changeRequests = new AtomicReference<List<ChangeRequest>>();
+        final FunctionContext context = new FunctionContext() {
+            /** Create a builder that always processes the request using the #execute method. */
+            private final RequestBuilder builder = new RequestBuilder() {
+                @Override
+                protected <T extends Request> T process( T request ) {
+                    execute(request);
+                    return request;
+                }
+            };
+
+            @Override
+            public void execute( Request request ) {
+                RequestProcessor.this.process(request);
+                if (!request.hasError() && !request.isCancelled()) {
+                    functionRequest.addActualRequest(request);
+                    if (request instanceof ChangeRequest) {
+                        ChangeRequest changeRequest = (ChangeRequest)request;
+                        List<ChangeRequest> changes = changeRequests.get();
+                        if (changes == null) {
+                            changes = changeRequests.getAndSet(new LinkedList<ChangeRequest>());
+                        }
+                        changes.add(changeRequest);
+                    }
+                }
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.modeshape.graph.request.function.FunctionContext#builder()
+             */
+            @Override
+            public RequestBuilder builder() {
+                // Create a builder that
+                return builder;
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.modeshape.graph.request.function.FunctionContext#setError(java.lang.Throwable)
+             */
+            @Override
+            public void setError( Throwable t ) {
+                functionRequest.setError(t);
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.modeshape.graph.request.function.FunctionContext#isCancelled()
+             */
+            @Override
+            public boolean isCancelled() {
+                return functionRequest.isCancelled();
+            }
+
+            @Override
+            public ExecutionContext getExecutionContext() {
+                return RequestProcessor.this.getExecutionContext();
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.modeshape.graph.request.function.FunctionContext#appliedAt()
+             */
+            @Override
+            public Location appliedAt() {
+                return functionRequest.at();
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.modeshape.graph.request.function.FunctionContext#workspace()
+             */
+            @Override
+            public String workspace() {
+                return functionRequest.inWorkspace();
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.modeshape.graph.request.function.FunctionContext#getNowInUtc()
+             */
+            @Override
+            public DateTime getNowInUtc() {
+                return RequestProcessor.this.getNowInUtc();
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.modeshape.graph.request.function.FunctionContext#input(java.lang.String, java.lang.Class)
+             */
+            @Override
+            public <T> T input( String name,
+                                Class<T> type ) {
+                return functionRequest.input(name, type, null, getExecutionContext());
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.modeshape.graph.request.function.FunctionContext#input(java.lang.String, java.lang.Class,
+             *      java.lang.Object)
+             */
+            @Override
+            public <T> T input( String name,
+                                Class<T> type,
+                                T defaultValue ) {
+                return functionRequest.input(name, type, defaultValue, getExecutionContext());
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.modeshape.graph.request.function.FunctionContext#input(java.lang.String,
+             *      org.modeshape.graph.property.PropertyType, java.lang.Object)
+             */
+            @Override
+            public <T> T input( String name,
+                                PropertyType type,
+                                T defaultValue ) {
+                return functionRequest.input(name, type, defaultValue, getExecutionContext());
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.modeshape.graph.request.function.FunctionContext#output(java.lang.String, java.lang.Class,
+             *      java.lang.Object)
+             */
+            @Override
+            public <T> T output( String name,
+                                 Class<T> type,
+                                 T defaultValue ) {
+                return functionRequest.output(name, type, getExecutionContext());
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.modeshape.graph.request.function.FunctionContext#output(java.lang.String,
+             *      org.modeshape.graph.property.PropertyType, java.lang.Object)
+             */
+            @Override
+            public <T> T output( String name,
+                                 PropertyType type,
+                                 T defaultValue ) {
+                return functionRequest.output(name, type, defaultValue, getExecutionContext());
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.modeshape.graph.request.function.FunctionContext#setOutput(java.lang.String, java.io.Serializable)
+             */
+            @Override
+            public void setOutput( String name,
+                                   Serializable value ) {
+                functionRequest.setOutput(name, value);
+            }
+        };
+        functionRequest.function().run(context);
+
+        // Add all the change requests to the
+        List<ChangeRequest> changes = changeRequests.get();
+        if (changes != null) {
+            if (functionRequest.isReadOnly()) {
+                functionRequest.setError(null);
+            }
+            for (ChangeRequest change : changes) {
+                recordChange(change);
+            }
+        }
     }
 
     /**
