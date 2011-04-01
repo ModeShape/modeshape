@@ -304,7 +304,7 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
 
         static {
             MAPPED_CHARACTERS = new HashSet<Character>();
-            MAPPED_CHARACTERS.add(' ');
+            // MAPPED_CHARACTERS.add(' '); // See MODE-1137
             MAPPED_CHARACTERS.add('\r');
             MAPPED_CHARACTERS.add('\n');
             MAPPED_CHARACTERS.add('\t');

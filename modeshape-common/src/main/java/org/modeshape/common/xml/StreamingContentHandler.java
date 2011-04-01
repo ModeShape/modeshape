@@ -25,10 +25,13 @@ package org.modeshape.common.xml;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.text.TextEncoder;
 import org.modeshape.common.text.XmlValueEncoder;
 import org.xml.sax.Attributes;
@@ -45,6 +48,8 @@ public class StreamingContentHandler extends DefaultHandler {
     /** Debug setting that allows all output to be written to {@link System#out}. */
     private static final boolean LOG_TO_CONSOLE = false;
 
+    public static final String DEFAULT_ENCODING = "UTF-8";
+
     /**
      * Encoder to properly escape XML attribute values
      * 
@@ -60,12 +65,17 @@ public class StreamingContentHandler extends DefaultHandler {
     /**
      * The output stream to which the XML will be written
      */
-    private final OutputStream os;
+    private final OutputStreamWriter writer;
 
     /**
      * The XML namespace prefixes that are currently mapped
      */
     private final Map<String, String> mappedPrefixes;
+
+    /**
+     * The XML declaration information written to the output.
+     */
+    private final String declaration;
 
     public StreamingContentHandler( OutputStream os ) {
         this(os, Collections.<String>emptyList());
@@ -73,9 +83,25 @@ public class StreamingContentHandler extends DefaultHandler {
 
     public StreamingContentHandler( OutputStream os,
                                     Collection<String> unexportableNamespaces ) {
-        this.os = os;
+        try {
+            this.writer = new OutputStreamWriter(os, DEFAULT_ENCODING);
+        } catch (UnsupportedEncodingException e) {
+            // This should never happen ...
+            throw new SystemFailureException(e);
+        }
         this.unexportableNamespaces = unexportableNamespaces;
-        mappedPrefixes = new HashMap<String, String>();
+        this.mappedPrefixes = new HashMap<String, String>();
+        this.declaration = "version=\"1.0\" encoding=\"" + DEFAULT_ENCODING + "\"";
+    }
+
+    public StreamingContentHandler( OutputStream os,
+                                    Collection<String> unexportableNamespaces,
+                                    String encoding ) throws UnsupportedEncodingException {
+        this.writer = new OutputStreamWriter(os, encoding);
+        this.unexportableNamespaces = unexportableNamespaces;
+        this.mappedPrefixes = new HashMap<String, String>();
+        if (encoding == null || encoding.length() == 0) encoding = "UTF-8";
+        this.declaration = "version=\"1.0\" encoding=\"" + encoding + "\"";
     }
 
     /**
@@ -97,7 +123,21 @@ public class StreamingContentHandler extends DefaultHandler {
      */
     @Override
     public void startDocument() throws SAXException {
-        emit("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+        emit("<?xml " + declaration + "?>");
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.xml.sax.helpers.DefaultHandler#endDocument()
+     */
+    @Override
+    public void endDocument() throws SAXException {
+        try {
+            writer.flush();
+        } catch (IOException e) {
+            throw new SAXException(e);
+        }
     }
 
     /**
@@ -171,7 +211,6 @@ public class StreamingContentHandler extends DefaultHandler {
      * 
      * @param text the text to output
      * @throws SAXException if there is an error writing to the stream
-     * @see StreamingContentHandler#os
      */
     private void emit( String text ) throws SAXException {
 
@@ -180,7 +219,7 @@ public class StreamingContentHandler extends DefaultHandler {
                 System.out.print(text);
             }
 
-            os.write(text.getBytes());
+            writer.write(text);
         } catch (IOException ioe) {
             throw new SAXException(ioe);
         }

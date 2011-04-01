@@ -44,8 +44,8 @@ import javax.jcr.ValueFactory;
 import javax.jcr.ValueFormatException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.version.VersionException;
-import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.SystemFailureException;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.collection.Collections;
 import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.text.XmlNameEncoder;
@@ -1038,8 +1038,10 @@ class JcrContentHandler extends DefaultHandler {
             // Add the properties ...
             for (int i = 0; i < atts.getLength(); i++) {
                 String value = atts.getValue(i);
+                if (value == null) continue;
+                value = DOCUMENT_VIEW_NAME_DECODER.decode(value);
                 String propertyName = DOCUMENT_VIEW_NAME_DECODER.decode(atts.getQName(i));
-                current.addPropertyValue(nameFor(propertyName), value, PropertyType.STRING, null);// don't decode the value
+                current.addPropertyValue(nameFor(propertyName), value, PropertyType.STRING, null);
             }
 
             // Now create the node ...

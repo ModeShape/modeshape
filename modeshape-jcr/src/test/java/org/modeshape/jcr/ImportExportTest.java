@@ -31,15 +31,25 @@ import static org.junit.Assert.fail;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import javax.jcr.Credentials;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
+import javax.jcr.Property;
+import javax.jcr.PropertyIterator;
+import javax.jcr.RepositoryException;
+import javax.jcr.Session;
+import javax.jcr.Value;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
+import org.modeshape.common.FixFor;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.MockSecurityContext;
 import org.modeshape.graph.SecurityContext;
@@ -66,18 +76,21 @@ public class ImportExportTest {
     private JcrRepository repository;
     @SuppressWarnings( "unused" )
     private JcrTools tools;
+    private Credentials credentials;
 
     @Before
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
         this.tools = new JcrTools();
 
-        String workspaceName = "workspace1";
+        String workspace1 = "workspace1";
+        String workspace2 = "workspace2";
 
         // Set up the source ...
         source = new InMemoryRepositorySource();
-        source.setName(workspaceName);
-        source.setDefaultWorkspaceName(workspaceName);
+        source.setName("Store");
+        source.setDefaultWorkspaceName(workspace1);
+        source.setPredefinedWorkspaceNames(new String[] {workspace1, workspace2});
 
         // Set up the execution context ...
         ExecutionContext context = new ExecutionContext();
@@ -95,7 +108,8 @@ public class ImportExportTest {
         repository = new JcrRepository(context, connectionFactory, "unused", new MockObservable(), null, null, null, null);
 
         SecurityContext mockSecurityContext = new MockSecurityContext("testuser", Collections.singleton(ModeShapeRoles.ADMIN));
-        session = (JcrSession)repository.login(new JcrSecurityContextCredentials(mockSecurityContext));
+        credentials = new JcrSecurityContextCredentials(mockSecurityContext);
+        session = (JcrSession)repository.login(credentials);
     }
 
     @After
@@ -326,5 +340,96 @@ public class ImportExportTest {
         assertNoNode("/sameNode[2]");
         assertNoNode("/otherNode/Cars[2]");
         assertNoNode("/otherNode[2]");
+    }
+
+    @FixFor( "MODE-1137" )
+    @Test
+    public void shouldExportContentWithUnicodeCharactersAsDocumentView() throws Exception {
+        Node unicode = session.getRootNode().addNode("unicodeContent");
+        Node desc = unicode.addNode("descriptionNode");
+        desc.setProperty("ex1", "étudiant (student)");
+        desc.setProperty("ex2", "où (where)");
+        desc.setProperty("ex3", "forêt (forest)");
+        desc.setProperty("ex4", "naïve (naïve)");
+        desc.setProperty("ex5", "garçon (boy)");
+        desc.setProperty("ex6", "multi\nline\nvalue");
+        desc.setProperty("ex7", "prop \"value\" with quotes");
+        desc.setProperty("ex7", "values with \r various \t\n : characters");
+        session.save();
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        session.exportDocumentView("/unicodeContent", baos, false, false);
+        baos.close();
+
+        InputStream istream = new ByteArrayInputStream(baos.toByteArray());
+        Session session2 = repository.login(credentials, "workspace2");
+        session2.getWorkspace().importXML("/", istream, ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);
+
+        Node desc2 = session2.getNode("/unicodeContent/descriptionNode");
+        assertSameProperties(desc, desc2);
+    }
+
+    @FixFor( "MODE-1137" )
+    @Test
+    public void shouldExportContentWithUnicodeCharactersAsSystemView() throws Exception {
+        Node unicode = session.getRootNode().addNode("unicodeContent");
+        Node desc = unicode.addNode("descriptionNode");
+        desc.setProperty("ex1", "étudiant (student)");
+        desc.setProperty("ex2", "où (where)");
+        desc.setProperty("ex3", "forêt (forest)");
+        desc.setProperty("ex4", "naïve (naïve)");
+        desc.setProperty("ex5", "garçon (boy)");
+        desc.setProperty("ex6", "multi\nline\nvalue");
+        desc.setProperty("ex7", "prop \"value\" with quotes");
+        desc.setProperty("ex7", "values with \n various \t\n : characters");
+        session.save();
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        session.exportSystemView("/unicodeContent", baos, false, false);
+        baos.close();
+
+        InputStream istream = new ByteArrayInputStream(baos.toByteArray());
+        Session session2 = repository.login(credentials, "workspace2");
+        session2.getWorkspace().importXML("/", istream, ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);
+
+        Node desc2 = session2.getNode("/unicodeContent/descriptionNode");
+        assertSameProperties(desc, desc2);
+    }
+
+    protected void assertSameProperties( Node node1,
+                                         Node node2,
+                                         String... excludedPropertyNames ) throws RepositoryException {
+        Set<String> excludedNames = new HashSet<String>(Arrays.asList(excludedPropertyNames));
+        Set<String> node2Names = new HashSet<String>();
+
+        // Find the names of all (non-excluded) proeprties in node 2 ...
+        PropertyIterator iter = node2.getProperties();
+        while (iter.hasNext()) {
+            Property prop2 = iter.nextProperty();
+            node2Names.add(prop2.getName());
+        }
+        node2Names.removeAll(excludedNames);
+
+        iter = node1.getProperties();
+        while (iter.hasNext()) {
+            Property prop1 = iter.nextProperty();
+            String name = prop1.getName();
+            if (excludedNames.contains(name)) continue;
+            Property prop2 = node2.getProperty(prop1.getName());
+            assertThat(prop1.isMultiple(), is(prop2.isMultiple()));
+            if (prop1.isMultiple()) {
+                Value[] values1 = prop1.getValues();
+                Value[] values2 = prop2.getValues();
+                assertThat(values1, is(values2));
+            } else {
+                assertThat(prop1.getValue().getString(), is(prop2.getValue().getString()));
+            }
+            node2Names.remove(name);
+        }
+
+        // There should be no more properties left ...
+        if (!node2Names.isEmpty()) {
+            fail("Found extra properties in node2: " + node2Names);
+        }
     }
 }
