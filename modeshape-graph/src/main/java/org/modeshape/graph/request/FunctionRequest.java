@@ -118,6 +118,16 @@ public final class FunctionRequest extends Request implements Cloneable {
     }
 
     /**
+     * Get the value for the named input to this function. The actual value is returned as-is.
+     * 
+     * @param name the name of the input parameter
+     * @return the (possibly null) value for the named input, or the specified default value if there is no such named parameter
+     */
+    public Object input( String name ) {
+        return this.inputs.get(name);
+    }
+
+    /**
      * Get the value for the named input to this function. If the actual value corresponds to a {@link PropertyType}, then the
      * value will be converted to the specified type using the {@link ExecutionContext}'s {@link ValueFactories}. Otherwise, the
      * value will simply be cast to the supplied type.
@@ -172,6 +182,16 @@ public final class FunctionRequest extends Request implements Cloneable {
      */
     public Map<String, Serializable> outputs() {
         return outputs;
+    }
+
+    /**
+     * Get the value for the named output to this function. The actual value is returned as-is.
+     * 
+     * @param name the name of the output parameter
+     * @return the (possibly null) value for the named output, or null if there is no such named parameter
+     */
+    public Object output( String name ) {
+        return this.outputs.get(name);
     }
 
     /**

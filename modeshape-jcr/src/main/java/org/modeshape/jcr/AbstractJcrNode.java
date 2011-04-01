@@ -204,6 +204,12 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         return new JcrValue(cache.factories(), cache, PropertyType.STRING, value);
     }
 
+    final JcrValue valueFrom( UUID value ) {
+        ValueFactories factories = cache.factories();
+        Reference ref = factories.getReferenceFactory().create(value);
+        return new JcrValue(cache.factories(), cache, PropertyType.REFERENCE, ref);
+    }
+
     final JcrValue valueFrom( Calendar value ) {
         ValueFactories factories = cache.factories();
         DateTime dateTime = factories.getDateFactory().create(value);

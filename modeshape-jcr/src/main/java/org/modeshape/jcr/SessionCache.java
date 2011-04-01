@@ -336,6 +336,32 @@ class SessionCache {
     }
 
     /**
+     * Refreshes (removes the cached state) for the given node and its descendants. This method does nothing If the node is not in
+     * the cache.
+     * <p>
+     * If {@code keepChanges == true}, modified nodes will not have their state refreshed, while all others will either be
+     * unloaded or changed to reflect the current state of the persistent store.
+     * </p>
+     * 
+     * @param absolutePath the absolute path to the node that is to be refreshed; may not be null
+     * @param keepChanges indicates whether changed nodes should be kept or refreshed from the repository.
+     * @throws InvalidItemStateException if the node being refreshed no longer exists
+     * @throws RepositoryException if any error resulting while saving the changes to the repository
+     */
+    public void refresh( Path absolutePath,
+                         boolean keepChanges ) throws InvalidItemStateException, RepositoryException {
+        try {
+            graphSession.refresh(absolutePath, keepChanges);
+        } catch (InvalidStateException e) {
+            throw new InvalidItemStateException(e.getLocalizedMessage());
+        } catch (org.modeshape.graph.property.PathNotFoundException e) {
+            throw new InvalidItemStateException(e.getLocalizedMessage());
+        } catch (RepositorySourceException e) {
+            throw new RepositoryException(e.getLocalizedMessage());
+        }
+    }
+
+    /**
      * Refreshes the properties for the node with the given UUID.
      * 
      * @param location the location of the node that is to be refreshed; may not be null

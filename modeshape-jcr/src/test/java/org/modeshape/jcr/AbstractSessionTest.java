@@ -215,7 +215,7 @@ public abstract class AbstractSessionTest {
     }
 
     protected JcrValue value( boolean value ) {
-        return (JcrValue)session.getValueFactory().createValue(true);
+        return session.getValueFactory().createValue(true);
     }
 
     @SuppressWarnings( "deprecation" )

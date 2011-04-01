@@ -23,6 +23,7 @@
  */
 package org.modeshape.jcr;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -70,6 +71,7 @@ import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.Graph.Batch;
 import org.modeshape.graph.Location;
+import org.modeshape.graph.Results;
 import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.DateTimeFactory;
 import org.modeshape.graph.property.Name;
@@ -81,6 +83,8 @@ import org.modeshape.graph.property.PropertyFactory;
 import org.modeshape.graph.property.Reference;
 import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.ValueFactory;
+import org.modeshape.graph.request.FunctionRequest;
+import org.modeshape.graph.request.Request;
 import org.modeshape.graph.session.GraphSession.Node;
 import org.modeshape.graph.session.GraphSession.PropertyInfo;
 import org.modeshape.jcr.JcrRepository.Option;
@@ -88,6 +92,8 @@ import org.modeshape.jcr.JcrRepository.VersionHistoryOption;
 import org.modeshape.jcr.SessionCache.JcrNodePayload;
 import org.modeshape.jcr.SessionCache.JcrPropertyPayload;
 import org.modeshape.jcr.SessionCache.NodeEditor;
+import org.modeshape.jcr.SystemFunctions.CreateVersionNodeFunction;
+import org.modeshape.jcr.SystemFunctions.InitializeVersionHistoryFunction;
 
 /**
  * Local implementation of version management code, comparable to an implementation of the JSR-283 {@code VersionManager}
@@ -97,7 +103,7 @@ final class JcrVersionManager implements VersionManager {
 
     private static final Logger LOGGER = Logger.getLogger(JcrVersionManager.class);
 
-    private static final TextEncoder NODE_ENCODER = new Jsr283Encoder();
+    protected static final TextEncoder NODE_ENCODER = new Jsr283Encoder();
 
     static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
 
@@ -221,19 +227,6 @@ final class JcrVersionManager implements VersionManager {
         return versionHistoryPathAlgorithm.versionHistoryPathFor(uuid);
     }
 
-    Path[] versionHistoryPathsTo( Path historyPath ) {
-        int numIntermediatePaths = historyPath.size() - versionStoragePath.size() - 1;
-        if (numIntermediatePaths <= 0) return null;
-
-        Path[] paths = new Path[numIntermediatePaths];
-        Path path = historyPath.getParent();
-        for (int i = numIntermediatePaths - 1; i >= 0; --i) {
-            paths[i] = path;
-            path = path.getParent();
-        }
-        return paths;
-    }
-
     /**
      * Returns the version history (if one exists) for the given node.
      * 
@@ -265,7 +258,8 @@ final class JcrVersionManager implements VersionManager {
             // This will throw an ItemNotFoundException if the history node still doesn't exist
             JcrVersionHistoryNode historyNode = (JcrVersionHistoryNode)cache().findJcrNode(historyLocation);
 
-            LOGGER.warn(JcrI18n.repairedVersionStorage, historyLocation);
+            // This sometimes happens when a versionable node is copied ...
+            LOGGER.debug("Repaired version storage located at: {0}", historyLocation);
 
             return historyNode;
         }
@@ -317,79 +311,70 @@ final class JcrVersionManager implements VersionManager {
             return node.getBaseVersion();
         }
 
-        Name primaryTypeName = node.getPrimaryTypeName();
-        List<Name> mixinTypeNames = node.getMixinTypeNames();
-
-        UUID jcrUuid = node.uuid();
-        UUID versionUuid = UUID.randomUUID();
-
-        AbstractJcrNode historyNode = getVersionHistory(node);
-        Path historyPath = historyNode.path();
+        // Collect some of the information about the node that we'll need ...
+        final UUID jcrUuid = node.uuid();
+        final Name primaryTypeName = node.getPrimaryTypeName();
+        final List<Name> mixinTypeNames = node.getMixinTypeNames();
+        final org.modeshape.graph.property.Property predecessorsProp = node.getProperty(JcrLexicon.PREDECESSORS).property();
+        final List<org.modeshape.graph.property.Property> versionedProperties = versionedPropertiesFor(node);
+        final Path historyPath = versionHistoryPathFor(jcrUuid);
+        final int onParentVersion = node.getDefinition().getOnParentVersion();
+        final DateTime now = context().getValueFactories().getDateFactory().create();
+        final Name versionName = name(NODE_ENCODER.encode(now.getString()));
+        Path versionPath = path(historyPath, versionName);
+        Path frozenVersionPath = path(versionPath, JcrLexicon.FROZEN_NODE);
 
         Graph systemGraph = repository().createSystemGraph(context());
         Graph.Batch systemBatch = systemGraph.batch();
-        DateTime now = context().getValueFactories().getDateFactory().create();
 
-        Path versionPath = path(historyPath, name(NODE_ENCODER.encode(now.getString())));
-        AbstractJcrProperty predecessorsProp = node.getProperty(JcrLexicon.PREDECESSORS);
+        systemBatch.applyFunction(SystemFunctions.CREATE_VERSION_NODE)
+                   .withInput(CreateVersionNodeFunction.VERSION_HISTORY_PATH, historyPath)
+                   .withInput(CreateVersionNodeFunction.VERSION_NAME, versionName)
+                   .withInput(CreateVersionNodeFunction.VERSIONED_NODE_UUID, jcrUuid)
+                   .withInput(CreateVersionNodeFunction.PRIMARY_TYPE_NAME, primaryTypeName)
+                   .withInput(CreateVersionNodeFunction.MIXIN_TYPE_NAME_LIST, mixinTypeNames)
+                   .withInput(CreateVersionNodeFunction.PREDECESSOR_PROPERTY, predecessorsProp)
+                   .withInput(CreateVersionNodeFunction.VERSION_PROPERTY_LIST, versionedProperties)
+                   .to(versionStoragePath);
 
-        systemBatch.create(versionPath)
-                   .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION)
-                   .and(JcrLexicon.CREATED, now)
-                   .and(JcrLexicon.UUID, versionUuid)
-                   .and(predecessorsProp.property())
-                   .and();
-        Path frozenVersionPath = path(versionPath, JcrLexicon.FROZEN_NODE);
-        systemBatch.create(frozenVersionPath)
-                   .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FROZEN_NODE)
-                   .and(JcrLexicon.FROZEN_UUID, jcrUuid)
-                   .and(JcrLexicon.FROZEN_PRIMARY_TYPE, primaryTypeName)
-                   .and(JcrLexicon.FROZEN_MIXIN_TYPES, mixinTypeNames)
-                   .and(versionedPropertiesFor(node))
-                   .and();
-        int onParentVersion = node.getDefinition().getOnParentVersion();
         for (NodeIterator childNodes = node.getNodes(); childNodes.hasNext();) {
             AbstractJcrNode childNode = (AbstractJcrNode)childNodes.nextNode();
             versionNodeAt(childNode, frozenVersionPath, systemBatch, onParentVersion);
         }
 
-        PropertyFactory propFactory = propertyFactory();
+        // Execute the batch and get the results ...
+        Results results = systemBatch.execute();
+        List<Request> requests = results.getRequests();
+        FunctionRequest createVersionFunction = (FunctionRequest)requests.get(0);
 
-        for (Object ob : predecessorsProp.property()) {
-            UUID predUuid = uuid(ob);
-
-            org.modeshape.graph.property.Property successorsProp = systemGraph.getNodeAt(predUuid)
-                                                                              .getProperty(JcrLexicon.SUCCESSORS);
-
-            List<Object> newSuccessors = new LinkedList<Object>();
-            boolean alreadySuccessor = false;
-            if (successorsProp != null) {
-                for (Object successor : successorsProp) {
-                    newSuccessors.add(successor);
-                    if (uuid(successor).equals(predUuid)) alreadySuccessor = true;
-                }
-            }
-
-            if (!alreadySuccessor) {
-                newSuccessors.add(versionUuid);
-
-                org.modeshape.graph.property.Property newSuccessorsProp = propFactory.create(JcrLexicon.SUCCESSORS,
-                                                                                             newSuccessors.toArray());
-                systemBatch.set(newSuccessorsProp).on(predUuid).and();
-            }
+        if (createVersionFunction.hasError()) {
+            Throwable error = createVersionFunction.getError();
+            String msg = JcrI18n.errorDuringCheckinNode.text(node.getPath(), error.getMessage());
+            throw new VersionException(msg, error);
         }
 
-        systemBatch.execute();
-        historyNode.refresh(false);
+        // Get the highest node that was changed ...
+        Path highestChanged = (Path)createVersionFunction.output(CreateVersionNodeFunction.PATH_OF_HIGHEST_MODIFIED_NODE);
+        // We have to refresh the parent of the highest node that was changed ...
+        cache().refresh(highestChanged.getParent(), false);
 
-        AbstractJcrNode newVersion = cache().findJcrNode(Location.create(versionUuid));
+        // Find the version history UUID (which may have been created) ...
+        UUID versionHistoryUuid = (UUID)createVersionFunction.output(CreateVersionNodeFunction.VERSION_HISTORY_UUID);
 
+        // Find the new version (which we'll need to return) ...
+        UUID versionUuid = (UUID)createVersionFunction.output(CreateVersionNodeFunction.VERSION_UUID);
+        versionPath = (Path)createVersionFunction.output(CreateVersionNodeFunction.VERSION_PATH);
+        Location versionLocation = Location.create(versionPath, versionUuid);
+        AbstractJcrNode newVersion = cache().findJcrNode(versionLocation);
+
+        // Update the node's 'mix:versionable' properties ...
         NodeEditor editor = node.editor();
         editor.setProperty(JcrLexicon.PREDECESSORS,
                            node.valuesFrom(PropertyType.REFERENCE, EMPTY_OBJECT_ARRAY),
                            PropertyType.REFERENCE,
                            false);
-        editor.setProperty(JcrLexicon.BASE_VERSION, node.valueFrom(newVersion), false, false);
+        editor.setProperty(JcrLexicon.VERSION_HISTORY, node.valueFrom(versionHistoryUuid), false, false);
+        editor.setProperty(JcrLexicon.BASE_VERSION, node.valueFrom(versionUuid), false, false);
         editor.setProperty(JcrLexicon.IS_CHECKED_OUT, node.valueFrom(PropertyType.BOOLEAN, false), false, false);
         node.save();
 
@@ -465,10 +450,9 @@ final class JcrVersionManager implements VersionManager {
      * @return the versioned properties for {@code node} (i.e., the properties to add the the frozen version of {@code node}
      * @throws RepositoryException if an error occurs accessing the repository
      */
-    private Collection<org.modeshape.graph.property.Property> versionedPropertiesFor( AbstractJcrNode node )
-        throws RepositoryException {
+    private List<org.modeshape.graph.property.Property> versionedPropertiesFor( AbstractJcrNode node ) throws RepositoryException {
 
-        Collection<org.modeshape.graph.property.Property> props = new LinkedList<org.modeshape.graph.property.Property>();
+        List<org.modeshape.graph.property.Property> props = new LinkedList<org.modeshape.graph.property.Property>();
 
         // Have to add this directly as it's not returned by AbstractJcrNode.getProperties
         AbstractJcrProperty multiValuedProperties = node.getProperty(ModeShapeIntLexicon.MULTI_VALUED_PROPERTIES);
@@ -844,7 +828,11 @@ final class JcrVersionManager implements VersionManager {
 
         initializeVersionHistoryFor(batch, node.nodeInfo(), originalVersionUuid, true);
 
-        batch.execute();
+        if (batch.isExecuteRequired()) {
+            batch.execute();
+            // Refresh the node, because some of the 'mix:versionable' nodes have changed ...
+            cache().refresh(node.internalId(), node.path(), true);
+        }
     }
 
     void initializeVersionHistoryFor( Graph.Batch batch,
@@ -854,127 +842,62 @@ final class JcrVersionManager implements VersionManager {
 
         if (!cache().isVersionable(node)) return;
 
-        /*
-         * Determine if the node has already had its version history initialized based on whether the protected property
-         * jcr:isCheckedOut exists.
-         */
-
+        // Determine if the node has already had its version history initialized based on whether the protected property
+        // jcr:isCheckedOut exists.
         boolean initialized = node.getProperty(JcrLexicon.IS_CHECKED_OUT) != null;
         if (!forceWrite && initialized) return;
 
-        UUID historyUuid = UUID.randomUUID();
-        UUID versionUuid = UUID.randomUUID();
+        // Now get ready to update the version storage under '/jcr:system/jcr:versionStorage' ...
+        JcrNodePayload payload = node.getPayload();
 
-        List<UUID> existingPredecessors = new ArrayList<UUID>();
-        versionUuid = initializeVersionStorageFor(node, historyUuid, originalVersionUuid, versionUuid, existingPredecessors);
+        Name primaryTypeName = payload.getPrimaryTypeName();
+        List<Name> mixinTypeNames = payload.getMixinTypeNames();
+        PropertyInfo<JcrPropertyPayload> jcrUuidProp = node.getProperty(JcrLexicon.UUID);
+        UUID jcrUuid = uuid(jcrUuidProp.getProperty().getFirstValue());
+        Path historyPath = versionHistoryPathFor(jcrUuid);
+
+        // Initialize the version storage system content (using a graph function) ...
+        Map<String, Serializable> outputs = null;
+        Graph systemGraph = session().repository().createSystemGraph(context());
+        outputs = systemGraph.applyFunction(SystemFunctions.INITIALIZE_VERSION_HISTORY)
+                             .withInput(InitializeVersionHistoryFunction.VERSIONED_NODE_UUID, jcrUuid)
+                             .withInput(InitializeVersionHistoryFunction.ORIGINAL_UUID, originalVersionUuid)
+                             .withInput(InitializeVersionHistoryFunction.VERSION_HISTORY_PATH, historyPath)
+                             .withInput(InitializeVersionHistoryFunction.PRIMARY_TYPE_NAME, primaryTypeName)
+                             .withInput(InitializeVersionHistoryFunction.MIXIN_TYPE_NAME_LIST, mixinTypeNames)
+                             .to(versionStoragePath);
+
+        @SuppressWarnings( "unchecked" )
+        List<UUID> predecessorUuids = (List<UUID>)outputs.get(InitializeVersionHistoryFunction.PREDECESSOR_UUID_LIST);
+        UUID baseVersionUuid = (UUID)outputs.get(InitializeVersionHistoryFunction.BASE_VERSION_UUID);
+        UUID historyUuid = (UUID)outputs.get(InitializeVersionHistoryFunction.VERSION_HISTORY_UUID);
+        Path highestModifiedPath = (Path)outputs.get(InitializeVersionHistoryFunction.PATH_OF_HIGHEST_MODIFIED_NODE);
+
+        // Convert the predecessor UUIDs to REFERENCE properties ...
         ValueFactory<Reference> refFactory = context().getValueFactories().getReferenceFactory();
-        Object[] predecessorRefs = new Object[existingPredecessors.size()];
-        if (!existingPredecessors.isEmpty()) {
+        Object[] predecessorRefs = new Object[predecessorUuids.size()];
+        if (!predecessorUuids.isEmpty()) {
             int i = 0;
-            for (UUID existingPredecessor : existingPredecessors) {
+            for (UUID existingPredecessor : predecessorUuids) {
                 assert existingPredecessor != null;
                 predecessorRefs[i++] = refFactory.create(existingPredecessor);
             }
         }
 
-        org.modeshape.graph.property.Property isCheckedOut = propertyFactory().create(JcrLexicon.IS_CHECKED_OUT, true);
-        org.modeshape.graph.property.Property versionHistory = propertyFactory().create(JcrLexicon.VERSION_HISTORY,
-                                                                                        refFactory.create(historyUuid));
-        org.modeshape.graph.property.Property baseVersion = propertyFactory().create(JcrLexicon.BASE_VERSION,
-                                                                                     refFactory.create(versionUuid));
-        org.modeshape.graph.property.Property predecessors = propertyFactory().create(JcrLexicon.PREDECESSORS, predecessorRefs);
-        // This batch will get executed as part of the save
+        // Now set the "mix:versionable" properties on the node, as part of the current save ...
+        Reference historyRef = refFactory.create(historyUuid);
+        Reference baseVersionRef = refFactory.create(baseVersionUuid);
+        PropertyFactory propFactory = propertyFactory();
+        org.modeshape.graph.property.Property isCheckedOut = propFactory.create(JcrLexicon.IS_CHECKED_OUT, true);
+        org.modeshape.graph.property.Property versionHistory = propFactory.create(JcrLexicon.VERSION_HISTORY, historyRef);
+        org.modeshape.graph.property.Property baseVersion = propFactory.create(JcrLexicon.BASE_VERSION, baseVersionRef);
+        org.modeshape.graph.property.Property predecessors = propFactory.create(JcrLexicon.PREDECESSORS, predecessorRefs);
         batch.set(isCheckedOut, versionHistory, baseVersion, predecessors).on(node.getPath()).and();
 
-        // Refresh the version storage node ...
-        Node<JcrNodePayload, JcrPropertyPayload> storageNode = cache().findNode(null, versionStoragePath);
-        cache().refresh(storageNode.getNodeId(), versionStoragePath, false);
-    }
-
-    UUID initializeVersionStorageFor( Node<JcrNodePayload, JcrPropertyPayload> node,
-                                      UUID historyUuid,
-                                      UUID originalVersionUuid,
-                                      UUID versionUuid,
-                                      List<UUID> predecessors ) {
-        JcrNodePayload payload = node.getPayload();
-
-        Graph systemGraph = session().repository().createSystemGraph(context());
-
-        Name primaryTypeName = payload.getPrimaryTypeName();
-        List<Name> mixinTypeNames = payload.getMixinTypeNames();
-
-        PropertyInfo<JcrPropertyPayload> jcrUuidProp = node.getProperty(JcrLexicon.UUID);
-
-        UUID jcrUuid = uuid(jcrUuidProp.getProperty().getFirstValue());
-        Path historyPath = versionHistoryPathFor(jcrUuid);
-        Batch systemBatch = systemGraph.batch();
-
-        // Determine if there are any intermediate paths to where this history node is to be ...
-        Path[] intermediatePaths = versionHistoryPathsTo(historyPath);
-        if (intermediatePaths != null) {
-            // Create any intermediate nodes, if absent ...
-            for (Path intermediatePath : intermediatePaths) {
-                systemBatch.create(intermediatePath)
-                           .with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.VERSION_HISTORY_FOLDER)
-                           .ifAbsent()
-                           .and();
-            }
-        }
-
-        systemBatch.create(historyPath)
-                   .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION_HISTORY)
-                   .and(JcrLexicon.VERSIONABLE_UUID, jcrUuid)
-                   .and(JcrLexicon.UUID, historyUuid)
-                   .ifAbsent()
-                   .and();
-
-        if (originalVersionUuid != null) {
-            systemBatch.set(JcrLexicon.COPIED_FROM).on(historyPath).to(originalVersionUuid).and();
-        }
-
-        Path versionLabelsPath = path(historyPath, JcrLexicon.VERSION_LABELS);
-        systemBatch.create(versionLabelsPath).with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION_LABELS).ifAbsent().and();
-
-        Path rootVersionPath = path(historyPath, JcrLexicon.ROOT_VERSION);
-        DateTime now = context().getValueFactories().getDateFactory().create();
-        systemBatch.create(rootVersionPath)
-                   .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION)
-                   .and(JcrLexicon.CREATED, now)
-                   .and(JcrLexicon.UUID, versionUuid)
-                   .ifAbsent()
-                   .and();
-
-        Path frozenVersionPath = path(rootVersionPath, JcrLexicon.FROZEN_NODE);
-        systemBatch.create(frozenVersionPath)
-                   .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FROZEN_NODE)
-                   .and(JcrLexicon.FROZEN_UUID, jcrUuid)
-                   .and(JcrLexicon.FROZEN_PRIMARY_TYPE, primaryTypeName)
-                   .and(JcrLexicon.FROZEN_MIXIN_TYPES, mixinTypeNames)
-                   .ifAbsent()
-                   .and();
-
-        systemBatch.execute();
-
-        // Re-read the version UUID, in case the version history was already there ...
-        org.modeshape.graph.Node rootVersion = systemGraph.getNodeAt(rootVersionPath);
-        UUID baseVersion = rootVersion.getLocation().getUuid();
-        if (!baseVersion.equals(versionUuid)) {
-            // The version history already exists, so baseVersion should be set to the version without
-            // a successor, and the predecessors should be set to the base version ...
-            org.modeshape.graph.Node historyNode = systemGraph.getNodeAt(historyPath);
-            for (Location childLocation : historyNode.getChildren()) {
-                if (childLocation.getPath().endsWith(JcrLexicon.ROOT_VERSION)) continue;
-                if (childLocation.getPath().endsWith(JcrLexicon.VERSION_LABELS)) continue;
-                org.modeshape.graph.Node versionNode = systemGraph.getNodeAt(childLocation);
-                if (versionNode.getProperty(JcrLexicon.SUCCESSORS) == null) {
-                    baseVersion = childLocation.getUuid();
-                    break;
-                }
-            }
-        }
-        predecessors.add(baseVersion);
-        assert baseVersion != null;
-        return baseVersion;
+        // Refresh/discard the version storage node ...
+        Path refreshPath = historyPath;
+        if (highestModifiedPath != null && highestModifiedPath.isAncestorOf(historyPath)) refreshPath = highestModifiedPath;
+        cache().refresh(refreshPath.getParent(), false);
     }
 
     @NotThreadSafe

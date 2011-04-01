@@ -94,7 +94,7 @@ public class BooleanValueFactory extends AbstractValueFactory<Boolean> {
      * {@inheritDoc}
      */
     public Boolean create( boolean value ) {
-        return value;
+        return Boolean.valueOf(value);
     }
 
     /**

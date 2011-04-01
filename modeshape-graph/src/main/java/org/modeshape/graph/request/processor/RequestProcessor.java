@@ -1077,7 +1077,8 @@ public abstract class RequestProcessor {
                         ChangeRequest changeRequest = (ChangeRequest)request;
                         List<ChangeRequest> changes = changeRequests.get();
                         if (changes == null) {
-                            changes = changeRequests.getAndSet(new LinkedList<ChangeRequest>());
+                            changes = new LinkedList<ChangeRequest>();
+                            changeRequests.set(changes);
                         }
                         changes.add(changeRequest);
                     }
@@ -1148,6 +1149,16 @@ public abstract class RequestProcessor {
             @Override
             public DateTime getNowInUtc() {
                 return RequestProcessor.this.getNowInUtc();
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.modeshape.graph.request.function.FunctionContext#input(java.lang.String)
+             */
+            @Override
+            public Object input( String name ) {
+                return functionRequest.input(name);
             }
 
             /**

@@ -56,10 +56,10 @@ import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
+import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.PathNotFoundException;
 import org.modeshape.graph.property.Property;
-import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.request.BatchRequestBuilder;
 import org.modeshape.graph.request.ChangeRequest;
 import org.modeshape.graph.request.CloneBranchRequest;
@@ -872,6 +872,33 @@ public class GraphSession<Payload, PropertyPayload> {
             root.expirationTime = Long.MAX_VALUE;
             root.changedBelow = false;
             root.payload = null;
+        }
+    }
+
+    /**
+     * Refreshes (removes the cached state) for the given node and its descendants. This method does nothing If the node is not in
+     * the cache.
+     * <p>
+     * If {@code keepChanges == true}, modified nodes will not have their state refreshed, while all others will either be
+     * unloaded or changed to reflect the current state of the persistent store.
+     * </p>
+     * 
+     * @param path the path to the node that is to be refreshed; may not be null
+     * @param keepChanges indicates whether changed nodes should be kept or refreshed from the repository.
+     * @throws InvalidStateException if any error resulting while reading information from the repository
+     * @throws RepositorySourceException if any error resulting while reading information from the repository
+     */
+    public void refresh( Path path,
+                         boolean keepChanges ) throws InvalidStateException, RepositorySourceException {
+        // Find the node at the path, if it is in the cache ...
+        try {
+            Node<Payload, PropertyPayload> node = findNodeWith(path, false);
+            if (node != null) {
+                // It is in the cache ...
+                refresh(node, keepChanges);
+            }
+        } catch (PathNotFoundException e) {
+            // do nothing ...
         }
     }
 

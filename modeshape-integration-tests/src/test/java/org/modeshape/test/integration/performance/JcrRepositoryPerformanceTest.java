@@ -91,7 +91,7 @@ public class JcrRepositoryPerformanceTest extends ModeShapeSingleUseTest {
         // Verify the file was imported ...
         withSession(new VerifyContent());
 
-        simulateGuvnorUsage(4);
+        simulateGuvnorUsage(30);
     }
 
     @Ignore( "Removed from automatic builds due to time of test. Can be run manually." )

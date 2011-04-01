@@ -60,6 +60,14 @@ public interface FunctionContext {
     String workspace();
 
     /**
+     * Get the value for the named input to this function. The actual value is returned as is.
+     * 
+     * @param name the name of the input parameter
+     * @return the (possibly null) value for the named input, or null if there is no such named parameter
+     */
+    Object input( String name );
+
+    /**
      * Get the value for the named input to this function. If the actual value corresponds to a {@link PropertyType}, then the
      * value will be converted to the specified type using the {@link ExecutionContext}'s {@link ValueFactories}. Otherwise, the
      * value will simply be cast to the supplied type.

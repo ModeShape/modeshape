@@ -26,9 +26,7 @@ package org.modeshape.jcr;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.math.BigDecimal;
 import java.security.AccessControlException;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -54,8 +52,6 @@ import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Value;
-import javax.jcr.ValueFactory;
-import javax.jcr.ValueFormatException;
 import javax.jcr.Workspace;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
@@ -74,15 +70,10 @@ import org.modeshape.graph.Graph;
 import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.SecurityContext;
-import org.modeshape.graph.property.Binary;
-import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.property.PathFactory;
-import org.modeshape.graph.property.Reference;
-import org.modeshape.graph.property.ReferenceFactory;
-import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.query.QueryBuilder;
 import org.modeshape.graph.query.model.QueryCommand;
 import org.modeshape.graph.query.model.TypeSystem;
@@ -141,6 +132,8 @@ class JcrSession implements Session {
 
     private final SessionCache cache;
 
+    private final JcrValueFactory valueFactory;
+
     /**
      * A cached instance of the root path.
      */
@@ -194,6 +187,7 @@ class JcrSession implements Session {
         assert this.sessionRegistry != null;
         assert this.graph != null;
         assert this.executionContext.getSecurityContext() != null;
+        this.valueFactory = new JcrValueFactory(this);
     }
 
     // Added to facilitate mock testing of items without necessarily requiring an entire repository structure to be built
@@ -862,174 +856,8 @@ class JcrSession implements Session {
      * 
      * @see javax.jcr.Session#getValueFactory()
      */
-    public ValueFactory getValueFactory() {
-        final ValueFactories valueFactories = executionContext.getValueFactories();
-        final SessionCache sessionCache = this.cache;
-
-        return new ValueFactory() {
-
-            @Override
-            public Value createValue( String value,
-                                      int propertyType ) throws ValueFormatException {
-                return new JcrValue(valueFactories, sessionCache, propertyType, convertValueToType(value, propertyType));
-            }
-
-            @Override
-            public Value createValue( Node value ) throws RepositoryException {
-                if (!value.isNodeType(JcrMixLexicon.REFERENCEABLE.getString(JcrSession.this.namespaces()))) {
-                    throw new RepositoryException(JcrI18n.nodeNotReferenceable.text());
-                }
-                Reference ref = valueFactories.getReferenceFactory().create(value.getIdentifier());
-                return new JcrValue(valueFactories, sessionCache, PropertyType.REFERENCE, ref);
-            }
-
-            @Override
-            public Value createValue( Node value,
-                                      boolean weak ) throws RepositoryException {
-                if (!value.isNodeType(JcrMixLexicon.REFERENCEABLE.getString(JcrSession.this.namespaces()))) {
-                    throw new RepositoryException(JcrI18n.nodeNotReferenceable.text());
-                }
-                ReferenceFactory factory = weak ? valueFactories.getWeakReferenceFactory() : valueFactories.getReferenceFactory();
-                int refType = weak ? PropertyType.WEAKREFERENCE : PropertyType.REFERENCE;
-                Reference ref = factory.create(value.getIdentifier());
-                return new JcrValue(valueFactories, sessionCache, refType, ref);
-            }
-
-            @Override
-            public Value createValue( javax.jcr.Binary value ) {
-                return new JcrValue(valueFactories, sessionCache, PropertyType.BINARY, value);
-            }
-
-            @Override
-            public Value createValue( InputStream value ) {
-                Binary binary = valueFactories.getBinaryFactory().create(value);
-                return new JcrValue(valueFactories, sessionCache, PropertyType.BINARY, binary);
-            }
-
-            @Override
-            public javax.jcr.Binary createBinary( InputStream value ) {
-                Binary binary = valueFactories.getBinaryFactory().create(value);
-                return new JcrBinary(binary);
-            }
-
-            @Override
-            public Value createValue( Calendar value ) {
-                DateTime dateTime = valueFactories.getDateFactory().create(value);
-                return new JcrValue(valueFactories, sessionCache, PropertyType.DATE, dateTime);
-            }
-
-            @Override
-            public Value createValue( boolean value ) {
-                return new JcrValue(valueFactories, sessionCache, PropertyType.BOOLEAN, value);
-            }
-
-            @Override
-            public Value createValue( double value ) {
-                return new JcrValue(valueFactories, sessionCache, PropertyType.DOUBLE, value);
-            }
-
-            @Override
-            public Value createValue( long value ) {
-                return new JcrValue(valueFactories, sessionCache, PropertyType.LONG, value);
-            }
-
-            @Override
-            public Value createValue( String value ) {
-                return new JcrValue(valueFactories, sessionCache, PropertyType.STRING, value);
-            }
-
-            @Override
-            public Value createValue( BigDecimal value ) {
-                return new JcrValue(valueFactories, sessionCache, PropertyType.DECIMAL, value);
-            }
-
-            Object convertValueToType( Object value,
-                                       int toType ) throws ValueFormatException {
-                switch (toType) {
-                    case PropertyType.BOOLEAN:
-                        try {
-                            return valueFactories.getBooleanFactory().create(value);
-                        } catch (org.modeshape.graph.property.ValueFormatException vfe) {
-                            throw new ValueFormatException(vfe);
-                        }
-
-                    case PropertyType.DATE:
-                        try {
-                            return valueFactories.getDateFactory().create(value);
-                        } catch (org.modeshape.graph.property.ValueFormatException vfe) {
-                            throw new ValueFormatException(vfe);
-                        }
-
-                    case PropertyType.NAME:
-                        try {
-                            return valueFactories.getNameFactory().create(value);
-                        } catch (org.modeshape.graph.property.ValueFormatException vfe) {
-                            throw new ValueFormatException(vfe);
-                        }
-
-                    case PropertyType.PATH:
-                        try {
-                            return valueFactories.getPathFactory().create(value);
-                        } catch (org.modeshape.graph.property.ValueFormatException vfe) {
-                            throw new ValueFormatException(vfe);
-                        }
-
-                    case PropertyType.REFERENCE:
-                    case PropertyType.WEAKREFERENCE:
-                        try {
-                            return valueFactories.getReferenceFactory().create(value);
-                        } catch (org.modeshape.graph.property.ValueFormatException vfe) {
-                            throw new ValueFormatException(vfe);
-                        }
-                    case PropertyType.DOUBLE:
-                        try {
-                            return valueFactories.getDoubleFactory().create(value);
-                        } catch (org.modeshape.graph.property.ValueFormatException vfe) {
-                            throw new ValueFormatException(vfe);
-                        }
-                    case PropertyType.LONG:
-                        try {
-                            return valueFactories.getLongFactory().create(value);
-                        } catch (org.modeshape.graph.property.ValueFormatException vfe) {
-                            throw new ValueFormatException(vfe);
-                        }
-                    case PropertyType.DECIMAL:
-                        try {
-                            return valueFactories.getDecimalFactory().create(value);
-                        } catch (org.modeshape.graph.property.ValueFormatException vfe) {
-                            throw new ValueFormatException(vfe);
-                        }
-                    case PropertyType.URI:
-                        try {
-                            return valueFactories.getUriFactory().create(value);
-                        } catch (org.modeshape.graph.property.ValueFormatException vfe) {
-                            throw new ValueFormatException(vfe);
-                        }
-
-                        // Anything can be converted to these types
-                    case PropertyType.BINARY:
-                        try {
-                            return valueFactories.getBinaryFactory().create(value);
-                        } catch (org.modeshape.graph.property.ValueFormatException vfe) {
-                            throw new ValueFormatException(vfe);
-                        }
-                    case PropertyType.STRING:
-                        try {
-                            return valueFactories.getStringFactory().create(value);
-                        } catch (org.modeshape.graph.property.ValueFormatException vfe) {
-                            throw new ValueFormatException(vfe);
-                        }
-                    case PropertyType.UNDEFINED:
-                        return value;
-
-                    default:
-                        assert false : "Unexpected JCR property type " + toType;
-                        // This should still throw an exception even if assertions are turned off
-                        throw new IllegalStateException("Invalid property type " + toType);
-                }
-            }
-
-        };
+    public JcrValueFactory getValueFactory() {
+        return valueFactory;
     }
 
     /**

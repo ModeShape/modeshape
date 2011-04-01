@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.NodeConflictBehavior;
 import org.modeshape.graph.connector.UuidAlreadyExistsException;
@@ -355,18 +356,25 @@ public abstract class RequestBuilder {
      * @param workspaceName the name of the workspace containing the node
      * @param properties the new properties on the node
      * @return the {@link SetPropertyRequest} or {@link UpdatePropertiesRequest} request, depending upon the number of properties
-     *         being set; never null
+     *         being set
      * @throws IllegalArgumentException if the location or workspace name is null or if there are no properties to update
      */
     public Request setProperties( Location on,
                                   String workspaceName,
                                   Property... properties ) {
         if (properties.length == 1) {
+            Property prop = properties[0];
+            if (prop == null) {
+                throw new IllegalArgumentException(GraphI18n.noPropertiesToUpdate.text(on));
+            }
             return process(new SetPropertyRequest(on, workspaceName, properties[0]));
         }
         Map<Name, Property> propertyMap = new HashMap<Name, Property>();
         for (Property property : properties) {
-            propertyMap.put(property.getName(), property);
+            if (property != null) propertyMap.put(property.getName(), property);
+        }
+        if (propertyMap.isEmpty()) {
+            throw new IllegalArgumentException(GraphI18n.noPropertiesToUpdate.text(on));
         }
         return process(new UpdatePropertiesRequest(on, workspaceName, propertyMap));
     }
@@ -402,11 +410,18 @@ public abstract class RequestBuilder {
                                      String workspaceName,
                                      Name... propertyNames ) {
         if (propertyNames.length == 1) {
+            Name name = propertyNames[0];
+            if (name == null) {
+                throw new IllegalArgumentException(GraphI18n.noPropertiesToRemove.text(on));
+            }
             return process(new RemovePropertyRequest(on, workspaceName, propertyNames[0]));
         }
         Map<Name, Property> properties = new HashMap<Name, Property>();
         for (Name propertyName : propertyNames) {
             properties.put(propertyName, null);
+        }
+        if (properties.isEmpty()) {
+            throw new IllegalArgumentException(GraphI18n.noPropertiesToRemove.text(on));
         }
         return process(new UpdatePropertiesRequest(on, workspaceName, properties));
     }

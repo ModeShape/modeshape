@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +38,7 @@ import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.ItemExistsException;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.PathNotFoundException;
+import javax.jcr.Property;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
@@ -51,13 +53,19 @@ import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.text.XmlNameEncoder;
 import org.modeshape.common.util.Base64;
 import org.modeshape.graph.ExecutionContext;
+import org.modeshape.graph.Graph;
 import org.modeshape.graph.Location;
+import org.modeshape.graph.Results;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NameFactory;
 import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
+import org.modeshape.graph.property.UuidFactory;
+import org.modeshape.graph.request.FunctionRequest;
+import org.modeshape.graph.request.Request;
 import org.modeshape.jcr.SessionCache.NodeEditor;
+import org.modeshape.jcr.SystemFunctions.InitializeVersionHistoryFunction;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -86,6 +94,8 @@ class JcrContentHandler extends DefaultHandler {
     protected static final TextDecoder DOCUMENT_VIEW_VALUE_DECODER = JcrDocumentViewExporter.VALUE_DECODER;
 
     private static final String ALT_XML_SCHEMA_NAMESPACE_PREFIX = "xsd";
+    private final JcrSession session;
+    private final ExecutionContext context;
     private final NameFactory nameFactory;
     private final PathFactory pathFactory;
     private final org.modeshape.graph.property.ValueFactory<String> stringFactory;
@@ -127,7 +137,8 @@ class JcrContentHandler extends DefaultHandler {
                || uuidBehavior == ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING
                || uuidBehavior == ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW;
 
-        ExecutionContext context = session.getExecutionContext();
+        this.session = session;
+        this.context = this.session.getExecutionContext();
         this.namespaces = context.getNamespaceRegistry();
         this.nameFactory = context.getValueFactories().getNameFactory();
         this.pathFactory = context.getValueFactories().getPathFactory();
@@ -209,47 +220,61 @@ class JcrContentHandler extends DefaultHandler {
     }
 
     protected void postProcessNodes() throws SAXException {
-        JcrVersionManager versions = null;
         try {
+            List<AbstractJcrNode> versionableNodes = null;
+            Graph.Batch systemChanges = null;
+            JcrVersionManager versions = null;
+            final UuidFactory uuidFactory = session.getExecutionContext().getValueFactories().getUuidFactory();
+            NodeEditor editor = null;
+
             for (AbstractJcrNode node : nodesForPostProcessing) {
-                NodeEditor editor = null;
+                editor = null;
+
                 // ---------------
                 // mix:versionable
                 // ---------------
                 if (node.isNodeType(JcrMixLexicon.VERSIONABLE)) {
 
-                    // At this point, we're not recovering version history information nor properly updating
-                    // existing versionable nodes. Instead, we're just checking whether all of the versionable
-                    // properties are valid. If they are, then the history must have been imported (or the import
-                    // replaced a versionable node that already had history).
-                    boolean validHistory = isValidReference(node, JcrLexicon.VERSION_HISTORY, false);
-                    if (validHistory) {
-                        boolean validBaseVersion = isValidReference(node, JcrLexicon.BASE_VERSION, false);
-                        boolean validPredecessors = isValidReference(node, JcrLexicon.PREDECESSORS, false);
-                        // There is a valid version history already ...
-                        if (!validBaseVersion || !validPredecessors) {
-                            // The imported base version is not valid anymore, so set it to the base version from the history ...
-                            if (versions == null) versions = node.versionManager();
-                            JcrVersionHistoryNode history = versions.getVersionHistory(node);
-                            UUID baseVersion = history.getRootVersion().uuid();
-                            JcrValue newValue = node.valueFrom(PropertyType.REFERENCE, baseVersion.toString());
-                            JcrValue[] newValues = new JcrValue[] {newValue};
-                            editor = node.editor();
-                            editor.setProperty(JcrLexicon.BASE_VERSION, newValue, true, false);
-                            editor.setProperty(JcrLexicon.PREDECESSORS, newValues, PropertyType.REFERENCE, false);
-                        } // otherwise the base version and predecessors are valid, too
-                    } else {
-                        // The version history reference is not valid, so remove all mix:versionable properties
-                        // (they'll be re-added during save by SessionCache) ...
-                        editor = node.editor();
-                        editor.removeProperty(JcrLexicon.IS_CHECKED_OUT);
-                        editor.removeProperty(JcrLexicon.VERSION_HISTORY);
-                        editor.removeProperty(JcrLexicon.BASE_VERSION);
-                        editor.removeProperty(JcrLexicon.PREDECESSORS);
-                        editor.removeProperty(JcrLexicon.MERGE_FAILED);
-                        editor.removeProperty(JcrLexicon.ACTIVITY);
-                        editor.removeProperty(JcrLexicon.CONFIGURATION);
+                    if (versionableNodes == null) {
+                        versionableNodes = new LinkedList<AbstractJcrNode>();
+                        systemChanges = session.repository().createSystemGraph(this.context).batch();
+                        versions = node.versionManager();
                     }
+
+                    assert systemChanges != null;
+                    assert versions != null;
+
+                    versionableNodes.add(node);
+
+                    // Does the versionable node already have a reference to the version history?
+                    Property versionHistoryRef = node.getProperty(JcrLexicon.VERSION_HISTORY);
+                    UUID versionHistoryUuid = null;
+                    if (versionHistoryRef != null) {
+                        versionHistoryUuid = uuidFactory.create(versionHistoryRef.getString());
+                    }
+
+                    // Does the versionable node already have a base version?
+                    Property baseVersionRef = node.getProperty(JcrLexicon.BASE_VERSION);
+                    UUID baseVersionUuid = null;
+                    if (baseVersionRef != null) {
+                        baseVersionUuid = uuidFactory.create(baseVersionRef.getString());
+                    }
+
+                    // Apply the 'InitializeVersionHistoryFunction' to each versionable node, using a single
+                    // batch operation against the system graph.
+                    UUID uuid = node.uuid();
+                    Path historyPath = versions.versionHistoryPathFor(uuid);
+                    Name primaryTypeName = node.getPrimaryTypeName();
+                    List<Name> mixinTypeNames = node.getMixinTypeNames();
+                    systemChanges.applyFunction(SystemFunctions.INITIALIZE_VERSION_HISTORY)
+                                 .withInput(InitializeVersionHistoryFunction.VERSIONED_NODE_UUID, uuid)
+                                 .withInput(InitializeVersionHistoryFunction.VERSION_HISTORY_UUID, versionHistoryUuid)
+                                 .withInput(InitializeVersionHistoryFunction.VERSION_UUID, baseVersionUuid)
+                                 // .withInput(InitializeVersionHistoryFunction.ORIGINAL_UUID, originalVersionUuid)
+                                 .withInput(InitializeVersionHistoryFunction.VERSION_HISTORY_PATH, historyPath)
+                                 .withInput(InitializeVersionHistoryFunction.PRIMARY_TYPE_NAME, primaryTypeName)
+                                 .withInput(InitializeVersionHistoryFunction.MIXIN_TYPE_NAME_LIST, mixinTypeNames)
+                                 .to(versions.versionStoragePath);
                 }
 
                 // ---------------
@@ -267,7 +292,7 @@ class JcrContentHandler extends DefaultHandler {
                     if (lifecycleInfoRetained && !isValidReference(node, JcrLexicon.LIFECYCLE_POLICY, false)) {
                         // The 'jcr:lifecyclePolicy' REFERENCE values is not valid or does not reference an existing node,
                         // so the 'jcr:lifecyclePolicy' and 'jcr:currentLifecycleState' properties should be removed...
-                        if (editor == null) editor = node.editor();
+                        editor = node.editor();
                         assert editor != null;
                         editor.removeProperty(JcrLexicon.LIFECYCLE_POLICY);
                         editor.removeProperty(JcrLexicon.CURRENT_LIFECYCLE_STATE);
@@ -290,6 +315,51 @@ class JcrContentHandler extends DefaultHandler {
 
                 }
             }
+
+            if (versionableNodes != null) {
+                assert systemChanges != null;
+                assert versions != null;
+
+                // Commit the system batch ...
+                assert systemChanges.isExecuteRequired();
+                Results systemResults = systemChanges.execute();
+
+                // Uncache the version storage ...
+                // cache().refresh(versions.versionStoragePath, false);
+
+                JcrValueFactory valueFactory = session.getValueFactory();
+                JcrValue trueValue = valueFactory.createValue(true);
+
+                // Loop through the requests looking for FunctionRequest instances, which should be in the same order as
+                // the AbstractJcrNode objects in the versionable nodes list. Each FunctionRequest should have the output
+                // of running the 'InitializeVersionHistoryFunction' to each versionable node, so now update the
+                // versionable node with the "mix:versionable" properites referencing the version history ...
+                Iterator<AbstractJcrNode> iter = versionableNodes.iterator();
+                for (Request request : systemResults.getRequests()) {
+                    if (request instanceof FunctionRequest && iter.hasNext()) {
+                        FunctionRequest func = (FunctionRequest)request;
+                        AbstractJcrNode versionableNode = iter.next();
+                        editor = versionableNode.editor();
+
+                        List<?> predecessorUuids = (List<?>)func.output(InitializeVersionHistoryFunction.PREDECESSOR_UUID_LIST);
+                        UUID baseVersionUuid = (UUID)func.output(InitializeVersionHistoryFunction.BASE_VERSION_UUID);
+                        UUID historyUuid = (UUID)func.output(InitializeVersionHistoryFunction.VERSION_HISTORY_UUID);
+                        // Path highestModifiedPath =
+                        // (Path)func.output(InitializeVersionHistoryFunction.PATH_OF_HIGHEST_MODIFIED_NODE);
+
+                        JcrValue history = valueFactory.createValue(historyUuid.toString(), PropertyType.REFERENCE);
+                        JcrValue baseVersion = valueFactory.createValue(baseVersionUuid.toString(), PropertyType.REFERENCE);
+                        JcrValue[] predecessors = valueFactory.createValues(predecessorUuids, PropertyType.REFERENCE);
+
+                        editor.setProperty(JcrLexicon.IS_CHECKED_OUT, trueValue, false, false);
+                        editor.setProperty(JcrLexicon.VERSION_HISTORY, history, false, false);
+                        editor.setProperty(JcrLexicon.BASE_VERSION, baseVersion, false, false);
+                        editor.setProperty(JcrLexicon.PREDECESSORS, predecessors, PropertyType.REFERENCE, false);
+                    }
+                }
+                editor = null;
+            }
+
         } catch (RepositoryException e) {
             throw new EnclosingSAXException(e);
         }
@@ -329,7 +399,8 @@ class JcrContentHandler extends DefaultHandler {
                 if (!isValidReference(refProp)) {
                     JcrPropertyDefinition defn = refProp.getDefinition();
                     String name = stringFor(refProp.name());
-                    throw new ConstraintViolationException(JcrI18n.constraintViolatedOnReference.text(name, defn));
+                    String path = refProp.getParent().getPath();
+                    throw new ConstraintViolationException(JcrI18n.constraintViolatedOnReference.text(name, path, defn));
                 }
             }
         } catch (RepositoryException e) {

@@ -216,6 +216,11 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         }
     }
 
+    protected void printSubgraph( Node node ) throws RepositoryException {
+        JcrTools tools = new JcrTools();
+        tools.printSubgraph(node);
+    }
+
     /**
      * Tests that read-only sessions can read nodes by loading all of the children of the root node
      * 
@@ -682,6 +687,9 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         session.save();
 
         Version version = checkin(copyNode);
+        Version version2 = checkin(versionNode);
+
+        // printSubgraph(session.getRootNode());
 
         assertThat(version.getProperty("jcr:frozenNode/versionNode/jcr:primaryType").getString(), is("nt:frozenNode"));
         assertThat(version.getProperty("jcr:frozenNode/versionNode/jcr:frozenPrimaryType").getString(),
@@ -693,6 +701,10 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         } catch (PathNotFoundException pnfe) {
             // Expected
         }
+
+        assertThat(version2.getProperty("jcr:frozenNode/jcr:primaryType").getString(), is("nt:frozenNode"));
+        assertThat(version2.getProperty("jcr:frozenNode/jcr:frozenPrimaryType").getString(), is("modetest:versionTest"));
+        assertThat(version2.getProperty("jcr:frozenNode/jcr:frozenUuid").getString(), is(versionNode.getIdentifier()));
     }
 
     public void testShouldIgnoreAbortSemanticsOfChildNode() throws Exception {
@@ -1358,6 +1370,8 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
         ensureExactlyOneVersionRoot(session.getWorkspace().getVersionManager(), "/createfile.mode");
         session.save();
+        ensureExactlyOneVersionRoot(session.getWorkspace().getVersionManager(), "/createfile.mode");
+        session.refresh(false);
         ensureExactlyOneVersionRoot(session.getWorkspace().getVersionManager(), "/createfile.mode");
     }
 
