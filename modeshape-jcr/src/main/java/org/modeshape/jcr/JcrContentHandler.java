@@ -82,8 +82,8 @@ class JcrContentHandler extends DefaultHandler {
      * @see XmlNameEncoder
      */
     protected static final TextDecoder SYSTEM_VIEW_NAME_DECODER = new XmlNameEncoder();
-
-    protected static final TextDecoder DOCUMENT_VIEW_NAME_DECODER = new JcrDocumentViewExporter.JcrDocumentViewPropertyEncoder();
+    protected static final TextDecoder DOCUMENT_VIEW_NAME_DECODER = JcrDocumentViewExporter.NAME_DECODER;
+    protected static final TextDecoder DOCUMENT_VIEW_VALUE_DECODER = JcrDocumentViewExporter.VALUE_DECODER;
 
     private static final String ALT_XML_SCHEMA_NAMESPACE_PREFIX = "xsd";
     private final NameFactory nameFactory;
@@ -1039,7 +1039,7 @@ class JcrContentHandler extends DefaultHandler {
             for (int i = 0; i < atts.getLength(); i++) {
                 String value = atts.getValue(i);
                 if (value == null) continue;
-                value = DOCUMENT_VIEW_NAME_DECODER.decode(value);
+                value = DOCUMENT_VIEW_VALUE_DECODER.decode(value);
                 String propertyName = DOCUMENT_VIEW_NAME_DECODER.decode(atts.getQName(i));
                 current.addPropertyValue(nameFor(propertyName), value, PropertyType.STRING, null);
             }

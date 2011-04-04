@@ -38,6 +38,7 @@ import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import org.modeshape.common.annotation.NotThreadSafe;
+import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.text.TextEncoder;
 import org.modeshape.common.text.XmlNameEncoder;
 import org.modeshape.common.util.Base64;
@@ -61,7 +62,12 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
 
     private static final int ENCODE_BUFFER_SIZE = 2 << 15;
 
-    private static final TextEncoder VALUE_ENCODER = new JcrDocumentViewExporter.JcrDocumentViewPropertyEncoder();
+    /** The name encoder needs to encode spaces plus the standard slash characters */
+    static final TextEncoder NAME_ENCODER = new JcrDocumentViewExporter.JcrDocumentViewPropertyEncoder(' ', '\r', '\n', '\t');
+    static final TextEncoder VALUE_ENCODER = NAME_ENCODER;
+    static final TextDecoder NAME_DECODER = (TextDecoder)NAME_ENCODER;
+    static final TextDecoder VALUE_DECODER = (TextDecoder)NAME_ENCODER;
+
     private final ValueFactory<String> stringFactory;
 
     JcrDocumentViewExporter( JcrSession session ) {
@@ -126,6 +132,7 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
         PropertyIterator properties = node.getProperties();
         while (properties.hasNext()) {
             Property prop = properties.nextProperty();
+            if (prop == primaryType) continue;
             addAttribute(atts, prop, skipBinary, true);
         }
 
@@ -300,15 +307,13 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
      */
     protected static class JcrDocumentViewPropertyEncoder extends XmlNameEncoder {
 
-        private static final Set<Character> MAPPED_CHARACTERS;
+        private final Set<Character> mappedCharacters;
 
-        static {
-            MAPPED_CHARACTERS = new HashSet<Character>();
-            // MAPPED_CHARACTERS.add(' '); // See MODE-1137
-            MAPPED_CHARACTERS.add('\r');
-            MAPPED_CHARACTERS.add('\n');
-            MAPPED_CHARACTERS.add('\t');
-
+        protected JcrDocumentViewPropertyEncoder( char... chars ) {
+            mappedCharacters = new HashSet<Character>();
+            for (char c : chars) {
+                mappedCharacters.add(c);
+            }
         }
 
         /**
@@ -341,7 +346,7 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
                     sb.append("_x005f_");
                     // And then write out the next character ...
                     sb.append(next);
-                } else if (!MAPPED_CHARACTERS.contains(c)) {
+                } else if (!mappedCharacters.contains(c)) {
                     // Legal characters for an XML Name ...
                     sb.append(c);
                 } else {
@@ -362,5 +367,16 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
             }
             return sb.toString();
         }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.common.text.XmlNameEncoder#decode(java.lang.String)
+         */
+        @Override
+        public String decode( String encodedText ) {
+            return super.decode(encodedText);
+        }
     }
+
 }
