@@ -143,6 +143,13 @@
 			<version>${jopr.jboss.as5.plugin.version}</version>
 		</dependency>
 
+		<!-- See MODE-1140 -->
+		<dependency>
+		  <groupId>junit</groupId>
+		  <artifactId>junit</artifactId>
+		  <version>${junit.version}</version>
+		  <scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<build>
