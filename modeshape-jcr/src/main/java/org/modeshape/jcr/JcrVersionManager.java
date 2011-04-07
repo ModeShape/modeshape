@@ -416,7 +416,7 @@ final class JcrVersionManager implements VersionManager {
                          .with(JcrLexicon.CHILD_VERSION_HISTORY, historyUuid)
                          .and();
 
-                    break;
+                    return;
                 }
 
                 // Otherwise, treat it as a copy, as per 8.2.11.2 in the 1.0.1 Spec
