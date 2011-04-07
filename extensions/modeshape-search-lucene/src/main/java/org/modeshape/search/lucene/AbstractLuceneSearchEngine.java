@@ -32,22 +32,22 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import org.modeshape.common.annotation.NotThreadSafe;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.tokenattributes.TermAttribute;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryParser.ParseException;
-import org.apache.lucene.queryParser.complexPhrase.ComplexPhraseQueryParser;
+import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Collector;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.util.Version;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.util.Logger;
 import org.modeshape.graph.ExecutionContext;
@@ -81,6 +81,7 @@ import org.modeshape.graph.query.model.Constraint;
 import org.modeshape.graph.query.model.DescendantNode;
 import org.modeshape.graph.query.model.DynamicOperand;
 import org.modeshape.graph.query.model.FullTextSearch;
+import org.modeshape.graph.query.model.FullTextSearch.NegationTerm;
 import org.modeshape.graph.query.model.FullTextSearchScore;
 import org.modeshape.graph.query.model.Length;
 import org.modeshape.graph.query.model.Limit;
@@ -100,9 +101,8 @@ import org.modeshape.graph.query.model.SameNode;
 import org.modeshape.graph.query.model.SetCriteria;
 import org.modeshape.graph.query.model.StaticOperand;
 import org.modeshape.graph.query.model.TypeSystem;
-import org.modeshape.graph.query.model.UpperCase;
-import org.modeshape.graph.query.model.FullTextSearch.NegationTerm;
 import org.modeshape.graph.query.model.TypeSystem.TypeFactory;
+import org.modeshape.graph.query.model.UpperCase;
 import org.modeshape.graph.query.process.ProcessingComponent;
 import org.modeshape.graph.query.process.SelectComponent;
 import org.modeshape.graph.request.AccessQueryRequest;
@@ -833,13 +833,19 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                     if (simple.containsWildcards()) {
                         // Use the ComplexPhraseQueryParser, but instead of wildcard queries (which don't work with leading
                         // wildcards) we should use our like queries (which often use RegexQuery where applicable) ...
-                        ComplexPhraseQueryParser parser = new ComplexPhraseQueryParser(session.getVersion(), fieldName, analyzer) {
+                        QueryParser parser = new QueryParser(session.getVersion(), fieldName, analyzer) {
+                            /**
+                             * {@inheritDoc}
+                             * 
+                             * @see org.apache.lucene.queryParser.QueryParser#getWildcardQuery(java.lang.String, java.lang.String)
+                             */
                             @Override
-                            protected Query getWildcardQuery( String field,
-                                                              String termStr ) {
+                            protected org.apache.lucene.search.Query getWildcardQuery( String field,
+                                                                                       String termStr ) {
                                 return CompareStringQuery.createQueryForNodesWithFieldLike(termStr, field, valueFactories, false);
                             }
                         };
+                        parser.setAllowLeadingWildcard(true);
                         try {
                             String expression = simple.getValue();
                             // The ComplexPhraseQueryParser only understands the '?' and '*' as being wildcards ...
@@ -859,10 +865,10 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                     String expression = simple.getValue();
                     // Run the expression through the Lucene analyzer to extract the terms ...
                     TokenStream stream = session.getAnalyzer().tokenStream(fieldName, new StringReader(expression));
-                    TermAttribute termAttribute = stream.addAttribute(TermAttribute.class);
+                    CharTermAttribute termAttribute = stream.addAttribute(CharTermAttribute.class);
                     while (stream.incrementToken()) {
                         // The term attribute object has been modified to contain the next term ...
-                        String analyzedTerm = termAttribute.term();
+                        String analyzedTerm = termAttribute.toString();
                         query.add(new Term(fieldName, analyzedTerm));
                     }
                     return query;

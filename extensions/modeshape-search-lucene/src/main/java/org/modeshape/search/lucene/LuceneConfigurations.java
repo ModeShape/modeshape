@@ -26,13 +26,13 @@ package org.modeshape.search.lucene;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
-import org.modeshape.common.annotation.Immutable;
-import org.modeshape.common.annotation.ThreadSafe;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.LockFactory;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.Version;
+import org.modeshape.common.annotation.Immutable;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.text.NoOpEncoder;
 import org.modeshape.common.text.TextEncoder;
@@ -370,7 +370,7 @@ public class LuceneConfigurations {
          */
         @Override
         protected boolean doDestroy( FSDirectory directory ) throws SearchEngineException {
-            File file = directory.getFile();
+            File file = directory.getDirectory();
             if (file.exists()) {
                 return FileUtil.delete(file);
             }

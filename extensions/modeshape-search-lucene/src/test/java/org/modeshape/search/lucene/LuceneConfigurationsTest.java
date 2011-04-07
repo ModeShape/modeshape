@@ -34,11 +34,11 @@ import java.util.Map;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.RAMDirectory;
-import org.modeshape.common.text.FilenameEncoder;
-import org.modeshape.common.util.FileUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.text.FilenameEncoder;
+import org.modeshape.common.util.FileUtil;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
@@ -134,8 +134,8 @@ public class LuceneConfigurationsTest {
         directory = getDirectory(config, workspace, index);
         assertThat(directory, is(instanceOf(FSDirectory.class)));
         FSDirectory fsDirectory = (FSDirectory)directory;
-        assertThat(fsDirectory.getFile().getName(), is(index));
-        assertThat(fsDirectory.getFile().getParentFile().getName(), is(workspace));
+        assertThat(fsDirectory.getDirectory().getName(), is(index));
+        assertThat(fsDirectory.getDirectory().getParentFile().getName(), is(workspace));
     }
 
     @Test
@@ -145,8 +145,8 @@ public class LuceneConfigurationsTest {
         directory = getDirectory(config, workspace, index);
         assertThat(directory, is(instanceOf(FSDirectory.class)));
         FSDirectory fsDirectory = (FSDirectory)directory;
-        assertThat(fsDirectory.getFile().getName(), is(index));
-        assertThat(fsDirectory.getFile().getParentFile().getName(), is(workspace));
+        assertThat(fsDirectory.getDirectory().getName(), is(index));
+        assertThat(fsDirectory.getDirectory().getParentFile().getName(), is(workspace));
         for (int i = 0; i != 10; ++i) {
             assertThat(getDirectory(config, workspace, index), is(sameInstance(directory)));
         }
@@ -167,7 +167,7 @@ public class LuceneConfigurationsTest {
         directory = getDirectory(config, workspace, index);
         assertThat(directory, is(instanceOf(FSDirectory.class)));
         FSDirectory fsDirectory = (FSDirectory)directory;
-        assertThat(fsDirectory.getFile().getName(), is(encoder.encode(index)));
-        assertThat(fsDirectory.getFile().getParentFile().getName(), is(encoder.encode(workspace)));
+        assertThat(fsDirectory.getDirectory().getName(), is(encoder.encode(index)));
+        assertThat(fsDirectory.getDirectory().getParentFile().getName(), is(encoder.encode(workspace)));
     }
 }

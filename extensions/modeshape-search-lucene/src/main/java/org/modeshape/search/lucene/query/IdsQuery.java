@@ -33,7 +33,6 @@ import org.apache.lucene.search.Explanation;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.Searcher;
-import org.apache.lucene.search.Similarity;
 import org.apache.lucene.search.Weight;
 
 /**
@@ -41,6 +40,7 @@ import org.apache.lucene.search.Weight;
  * works for large sets of IDs; in smaller numbers, it may be more efficient to create a boolean query that checks for each of the
  * IDs.
  */
+@SuppressWarnings( "deprecation" )
 public class IdsQuery extends Query {
 
     private static final long serialVersionUID = 1L;
@@ -88,7 +88,7 @@ public class IdsQuery extends Query {
      */
     @Override
     public Weight createWeight( Searcher searcher ) {
-        return new IdSetWeight(searcher);
+        return new IdSetWeight();
     }
 
     /**
@@ -106,11 +106,8 @@ public class IdsQuery extends Query {
      */
     protected class IdSetWeight extends Weight {
         private static final long serialVersionUID = 1L;
-        private final Searcher searcher;
 
-        protected IdSetWeight( Searcher searcher ) {
-            this.searcher = searcher;
-            assert this.searcher != null;
+        protected IdSetWeight() {
         }
 
         /**
@@ -172,7 +169,7 @@ public class IdsQuery extends Query {
                               boolean scoreDocsInOrder,
                               boolean topScorer ) {
             // Return a custom scorer ...
-            return new IdScorer(reader);
+            return new IdScorer(reader, this);
         }
 
         /**
@@ -195,9 +192,10 @@ public class IdsQuery extends Query {
         private final int pastMaxDocId;
         private final IndexReader reader;
 
-        protected IdScorer( IndexReader reader ) {
+        protected IdScorer( IndexReader reader,
+                            Weight weight ) {
             // We don't care which Similarity we have, because we don't use it. So get the default.
-            super(Similarity.getDefault());
+            super(weight);
             this.reader = reader;
             assert this.reader != null;
             this.pastMaxDocId = this.reader.maxDoc();

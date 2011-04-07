@@ -34,7 +34,7 @@ import java.util.Iterator;
 import java.util.List;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.Scorer;
-import org.apache.lucene.search.Similarity;
+import org.apache.lucene.search.Weight;
 import org.junit.Test;
 
 public class NotQueryTest {
@@ -45,7 +45,7 @@ public class NotQueryTest {
         when(reader.isDeleted(anyInt())).thenReturn(false);
         when(reader.maxDoc()).thenReturn(10);
         Scorer operandScorer = new MockScorer(0, 1, 2, 3, 4);
-        Scorer notScorer = new NotQuery.NotScorer(operandScorer, reader);
+        Scorer notScorer = new NotQuery.NotScorer(operandScorer, reader, null);
         assertScores(notScorer, 5, 6, 7, 8, 9);
     }
 
@@ -55,7 +55,7 @@ public class NotQueryTest {
         when(reader.isDeleted(anyInt())).thenReturn(false);
         when(reader.maxDoc()).thenReturn(10);
         Scorer operandScorer = new MockScorer(8, 9);
-        Scorer notScorer = new NotQuery.NotScorer(operandScorer, reader);
+        Scorer notScorer = new NotQuery.NotScorer(operandScorer, reader, null);
         assertScores(notScorer, 0, 1, 2, 3, 4, 5, 6, 7);
     }
 
@@ -65,7 +65,7 @@ public class NotQueryTest {
         when(reader.isDeleted(anyInt())).thenReturn(false);
         when(reader.maxDoc()).thenReturn(10);
         Scorer operandScorer = new MockScorer(2, 3, 4);
-        Scorer notScorer = new NotQuery.NotScorer(operandScorer, reader);
+        Scorer notScorer = new NotQuery.NotScorer(operandScorer, reader, null);
         assertScores(notScorer, 0, 1, 5, 6, 7, 8, 9);
     }
 
@@ -75,7 +75,7 @@ public class NotQueryTest {
         when(reader.isDeleted(anyInt())).thenReturn(false);
         when(reader.maxDoc()).thenReturn(10);
         Scorer operandScorer = new MockScorer(2, 4, 8);
-        Scorer notScorer = new NotQuery.NotScorer(operandScorer, reader);
+        Scorer notScorer = new NotQuery.NotScorer(operandScorer, reader, null);
         assertScores(notScorer, 0, 1, 3, 5, 6, 7, 9);
     }
 
@@ -92,7 +92,7 @@ public class NotQueryTest {
         private final Iterator<Integer> docIds;
 
         protected MockScorer( int... docIds ) {
-            super(Similarity.getDefault());
+            super((Weight)null);
             List<Integer> ids = new ArrayList<Integer>();
             for (int docId : docIds) {
                 ids.add(new Integer(docId));

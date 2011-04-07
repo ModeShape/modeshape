@@ -40,12 +40,12 @@ import org.modeshape.graph.query.model.Comparison;
 
 /**
  * A Lucene {@link Query} implementation that is used to apply a {@link Comparison} constraint against the Path of nodes. This
- * query implementation works by using the {@link Query#weight(Searcher) weight} and
- * {@link Weight#scorer(IndexReader, boolean, boolean) scorer} of the wrapped query to score (and return) only those documents
- * that correspond to nodes with Paths that satisfy the constraint.
+ * query implementation works by using the weight and {@link Weight#scorer(IndexReader, boolean, boolean) scorer} of the wrapped
+ * query to score (and return) only those documents that correspond to nodes with Paths that satisfy the constraint.
  * 
  * @param <ValueType>
  */
+@SuppressWarnings( "deprecation" )
 public abstract class CompareQuery<ValueType> extends Query {
 
     private static final long serialVersionUID = 1L;
@@ -134,7 +134,7 @@ public abstract class CompareQuery<ValueType> extends Query {
      */
     @Override
     public Weight createWeight( Searcher searcher ) {
-        return new CompareWeight(searcher);
+        return new CompareWeight();
     }
 
     /**
@@ -153,11 +153,8 @@ public abstract class CompareQuery<ValueType> extends Query {
      */
     protected class CompareWeight extends Weight {
         private static final long serialVersionUID = 1L;
-        private final Searcher searcher;
 
-        protected CompareWeight( Searcher searcher ) {
-            this.searcher = searcher;
-            assert this.searcher != null;
+        protected CompareWeight() {
         }
 
         /**

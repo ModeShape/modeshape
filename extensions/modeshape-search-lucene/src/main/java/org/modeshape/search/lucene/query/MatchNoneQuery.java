@@ -28,12 +28,12 @@ import org.apache.lucene.search.Explanation;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.Searcher;
-import org.apache.lucene.search.Similarity;
 import org.apache.lucene.search.Weight;
 
 /**
  * A Lucene {@link Query} implementation that always matches no documents.
  */
+@SuppressWarnings( "deprecation" )
 public class MatchNoneQuery extends Query {
 
     private static final long serialVersionUID = 1L;
@@ -141,7 +141,7 @@ public class MatchNoneQuery extends Query {
         public Scorer scorer( IndexReader reader,
                               boolean scoreDocsInOrder,
                               boolean topScorer ) {
-            return new NoneScorer();
+            return new NoneScorer(this);
         }
 
         /**
@@ -163,9 +163,9 @@ public class MatchNoneQuery extends Query {
     protected static class NoneScorer extends Scorer {
         private int docId = -1;
 
-        protected NoneScorer() {
+        protected NoneScorer( Weight weight ) {
             // We don't care which Similarity we have, because we don't use it. So get the default.
-            super(Similarity.getDefault());
+            super(weight);
         }
 
         /**

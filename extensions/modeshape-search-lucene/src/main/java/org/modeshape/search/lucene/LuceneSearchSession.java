@@ -36,10 +36,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
-import org.modeshape.common.annotation.NotThreadSafe;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.tokenattributes.TermAttribute;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Index;
@@ -49,7 +48,7 @@ import org.apache.lucene.document.FieldSelectorResult;
 import org.apache.lucene.document.NumericField;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.IndexWriter.MaxFieldLength;
+import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
@@ -68,6 +67,7 @@ import org.apache.lucene.search.regex.JavaUtilRegexCapabilities;
 import org.apache.lucene.search.regex.RegexQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.Version;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.util.Logger;
@@ -191,7 +191,8 @@ public class LuceneSearchSession implements WorkspaceSession {
                 contentReader = IndexReader.open(contentIndexDirectory, processor.readOnly);
             } catch (IOException e) {
                 // try creating the workspace ...
-                IndexWriter writer = new IndexWriter(contentIndexDirectory, workspace.analyzer, MaxFieldLength.UNLIMITED);
+                IndexWriterConfig config = new IndexWriterConfig(workspace.getVersion(), workspace.analyzer);
+                IndexWriter writer = new IndexWriter(contentIndexDirectory, config);
                 writer.close();
                 // And try reading again ...
                 contentReader = IndexReader.open(contentIndexDirectory, processor.readOnly);
@@ -204,7 +205,8 @@ public class LuceneSearchSession implements WorkspaceSession {
         assert !processor.readOnly;
         if (contentWriter == null) {
             // Don't overwrite, but create if missing ...
-            contentWriter = new IndexWriter(contentIndexDirectory, workspace.analyzer, MaxFieldLength.UNLIMITED);
+            IndexWriterConfig config = new IndexWriterConfig(workspace.getVersion(), workspace.analyzer);
+            contentWriter = new IndexWriter(contentIndexDirectory, config);
         }
         return contentWriter;
     }
@@ -693,14 +695,14 @@ public class LuceneSearchSession implements WorkspaceSession {
                 // Run the expression through the Lucene analyzer to extract the terms ...
                 String fullTextContent = fullTextSearchValue.toString();
                 TokenStream stream = getAnalyzer().tokenStream(ContentIndex.FULL_TEXT, new StringReader(fullTextContent));
-                TermAttribute term = stream.addAttribute(TermAttribute.class);
+                CharTermAttribute term = stream.addAttribute(CharTermAttribute.class);
                 // PositionIncrementAttribute positionIncrement = stream.addAttribute(PositionIncrementAttribute.class);
                 // OffsetAttribute offset = stream.addAttribute(OffsetAttribute.class);
                 // TypeAttribute type = stream.addAttribute(TypeAttribute.class);
                 // int position = 0;
                 StringBuilder output = new StringBuilder();
                 while (stream.incrementToken()) {
-                    output.append(term.term()).append(' ');
+                    output.append(term).append(' ');
                     // // The term attribute object has been modified to contain the next term ...
                     // int incr = positionIncrement.getPositionIncrement();
                     // if (incr > 0) {

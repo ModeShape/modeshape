@@ -32,12 +32,12 @@ import org.apache.lucene.search.Explanation;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.Searcher;
-import org.apache.lucene.search.Similarity;
 import org.apache.lucene.search.Weight;
 
 /**
  * A Lucene {@link Query} implementation that is satisfied if there is at least one value for a document.
  */
+@SuppressWarnings( "deprecation" )
 public class HasValueQuery extends Query {
 
     private static final long serialVersionUID = 1L;
@@ -79,7 +79,7 @@ public class HasValueQuery extends Query {
      */
     @Override
     public Weight createWeight( Searcher searcher ) {
-        return new ExistsWeight(searcher);
+        return new ExistsWeight();
     }
 
     /**
@@ -104,11 +104,8 @@ public class HasValueQuery extends Query {
      */
     protected class ExistsWeight extends Weight {
         private static final long serialVersionUID = 1L;
-        private final Searcher searcher;
 
-        protected ExistsWeight( Searcher searcher ) {
-            this.searcher = searcher;
-            assert this.searcher != null;
+        protected ExistsWeight() {
         }
 
         /**
@@ -170,7 +167,7 @@ public class HasValueQuery extends Query {
                               boolean scoreDocsInOrder,
                               boolean topScorer ) {
             // Return a custom scorer ...
-            return new ExistsScorer(reader);
+            return new ExistsScorer(reader, this);
         }
 
         /**
@@ -193,9 +190,10 @@ public class HasValueQuery extends Query {
         private final int pastMaxDocId;
         private final IndexReader reader;
 
-        protected ExistsScorer( IndexReader reader ) {
+        protected ExistsScorer( IndexReader reader,
+                                Weight weight ) {
             // We don't care which Similarity we have, because we don't use it. So get the default.
-            super(Similarity.getDefault());
+            super(weight);
             this.reader = reader;
             assert this.reader != null;
             this.pastMaxDocId = this.reader.maxDoc();

@@ -29,7 +29,6 @@ import org.apache.lucene.search.Explanation;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.Searcher;
-import org.apache.lucene.search.Similarity;
 import org.apache.lucene.search.Weight;
 
 /**
@@ -39,6 +38,7 @@ import org.apache.lucene.search.Weight;
  * that were <i>not</i> scored by the wrapped query. In other words, if the wrapped query ended up scoring any document, that
  * document is <i>not</i> scored (i.e., skipped) by this query.
  */
+@SuppressWarnings( "deprecation" )
 public class NotQuery extends Query {
 
     private static final long serialVersionUID = 1L;
@@ -160,7 +160,7 @@ public class NotQuery extends Query {
             // Get the operand's score, and set this on the NOT query
             Scorer operandScorer = operand.weight(searcher).scorer(reader, scoreDocsInOrder, topScorer);
             // Return a custom scorer ...
-            return new NotScorer(operandScorer, reader);
+            return new NotScorer(operandScorer, reader, this);
         }
 
         /**
@@ -191,11 +191,13 @@ public class NotQuery extends Query {
         /**
          * @param operandScorer the scorer that is used to score the documents based upon the operand of the NOT; may not be null
          * @param reader the reader that has access to all the docs ...
+         * @param weight
          */
         protected NotScorer( Scorer operandScorer,
-                             IndexReader reader ) {
+                             IndexReader reader,
+                             Weight weight ) {
             // We don't care which Similarity we have, because we don't use it. So get the default.
-            super(Similarity.getDefault());
+            super(weight);
             this.operandScorer = operandScorer;
             this.reader = reader;
             assert this.operandScorer != null;

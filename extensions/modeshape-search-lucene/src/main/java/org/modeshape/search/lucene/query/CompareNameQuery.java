@@ -29,7 +29,6 @@ import org.apache.lucene.document.FieldSelector;
 import org.apache.lucene.document.FieldSelectorResult;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.search.Searcher;
 import org.apache.lucene.search.Weight;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
@@ -40,9 +39,8 @@ import org.modeshape.graph.query.model.Comparison;
 
 /**
  * A Lucene {@link Query} implementation that is used to apply a {@link Comparison} constraint against the name of nodes. This
- * query implementation works by using the {@link Query#weight(Searcher) weight} and
- * {@link Weight#scorer(IndexReader, boolean, boolean) scorer} of the wrapped query to score (and return) only those documents
- * that correspond to nodes with Names that satisfy the constraint.
+ * query implementation works by using the weight and {@link Weight#scorer(IndexReader, boolean, boolean) scorer} of the wrapped
+ * query to score (and return) only those documents that correspond to nodes with Names that satisfy the constraint.
  */
 public class CompareNameQuery extends CompareQuery<Path.Segment> {
 
