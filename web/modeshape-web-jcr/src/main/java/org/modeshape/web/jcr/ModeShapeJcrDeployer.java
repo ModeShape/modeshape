@@ -49,6 +49,7 @@ public class ModeShapeJcrDeployer implements ServletContextListener {
      * @see RepositoryFactory#shutdown()
      * @see RepositoryProvider#shutdown()
      */
+    @Override
     public void contextDestroyed( ServletContextEvent event ) {
         RepositoryFactory.shutdown();
     }
@@ -59,6 +60,7 @@ public class ModeShapeJcrDeployer implements ServletContextListener {
      * @param event the servlet context event
      * @see RepositoryFactory#initialize(javax.servlet.ServletContext)
      */
+    @Override
     public void contextInitialized( ServletContextEvent event ) {
         RepositoryFactory.initialize(event.getServletContext());
     }

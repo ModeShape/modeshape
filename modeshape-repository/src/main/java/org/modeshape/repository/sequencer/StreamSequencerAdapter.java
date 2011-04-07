@@ -89,6 +89,7 @@ public class StreamSequencerAdapter implements Sequencer {
     /**
      * {@inheritDoc}
      */
+    @Override
     public SequencerConfig getConfiguration() {
         return this.configuration;
     }
@@ -96,6 +97,7 @@ public class StreamSequencerAdapter implements Sequencer {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setConfiguration( SequencerConfig configuration ) {
         this.configuration = configuration;
 
@@ -141,6 +143,7 @@ public class StreamSequencerAdapter implements Sequencer {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void execute( Node input,
                          String sequencedPropertyName,
                          NetChange changes,

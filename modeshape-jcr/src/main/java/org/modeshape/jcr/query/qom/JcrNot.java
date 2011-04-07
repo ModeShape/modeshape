@@ -54,7 +54,6 @@ public class JcrNot extends Not implements javax.jcr.query.qom.Not, JcrConstrain
      * 
      * @see javax.jcr.query.qom.Not#getConstraint()
      */
-    @Override
     public JcrConstraint getConstraint() {
         return constraint();
     }

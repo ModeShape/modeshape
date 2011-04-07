@@ -133,7 +133,6 @@ public class ThreadSafeNamespaceRegistry implements NamespaceRegistry {
      * 
      * @see org.modeshape.graph.property.NamespaceRegistry#register(java.lang.Iterable)
      */
-    @Override
     public void register( Iterable<Namespace> namespaces ) {
         CheckArg.isNotNull(namespaces, "namespaces");
         Lock lock = this.registryLock.writeLock();

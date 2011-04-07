@@ -55,6 +55,7 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
      * 
      * @return the current state
      */
+    @Override
     public State getState() {
         return this.state;
     }
@@ -69,6 +70,7 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
      * @see #pause()
      * @see #shutdown()
      */
+    @Override
     @GuardedBy( "this" )
     public synchronized ServiceAdministrator setState( State state ) {
         switch (state) {
@@ -98,6 +100,7 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
      * @see #pause()
      * @see #shutdown()
      */
+    @Override
     public ServiceAdministrator setState( String state ) {
         State newState = state == null ? null : State.valueOf(state.toUpperCase());
         if (newState == null) {
@@ -116,6 +119,7 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
      * @see #shutdown()
      * @see #isStarted()
      */
+    @Override
     public synchronized ServiceAdministrator start() {
         switch (this.state) {
             case STARTED:
@@ -155,6 +159,7 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
      * @see #shutdown()
      * @see #isPaused()
      */
+    @Override
     public synchronized ServiceAdministrator pause() {
         switch (this.state) {
             case STARTED:
@@ -193,6 +198,7 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
      * @see #pause()
      * @see #isShutdown()
      */
+    @Override
     public synchronized ServiceAdministrator shutdown() {
         switch (this.state) {
             case STARTED:
@@ -232,6 +238,7 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
      * @see #isPaused()
      * @see #isShutdown()
      */
+    @Override
     public boolean isStarted() {
         return this.state == State.STARTED;
     }
@@ -245,6 +252,7 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
      * @see #isStarted()
      * @see #isShutdown()
      */
+    @Override
     public boolean isPaused() {
         return this.state == State.PAUSED;
     }
@@ -257,6 +265,7 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
      * @see #isPaused()
      * @see #isStarted()
      */
+    @Override
     public boolean isShutdown() {
         return this.state == State.SHUTDOWN || this.state == State.TERMINATED;
     }
@@ -264,6 +273,7 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean isTerminated() {
         switch (this.state) {
             case PAUSED:

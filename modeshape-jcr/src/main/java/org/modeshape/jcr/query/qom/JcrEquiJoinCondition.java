@@ -67,7 +67,6 @@ public class JcrEquiJoinCondition extends EquiJoinCondition implements javax.jcr
      * 
      * @see javax.jcr.query.qom.EquiJoinCondition#getProperty1Name()
      */
-    @Override
     public String getProperty1Name() {
         return property1Name();
     }
@@ -77,7 +76,6 @@ public class JcrEquiJoinCondition extends EquiJoinCondition implements javax.jcr
      * 
      * @see javax.jcr.query.qom.EquiJoinCondition#getProperty2Name()
      */
-    @Override
     public String getProperty2Name() {
         return property2Name();
     }
@@ -87,7 +85,6 @@ public class JcrEquiJoinCondition extends EquiJoinCondition implements javax.jcr
      * 
      * @see javax.jcr.query.qom.EquiJoinCondition#getSelector1Name()
      */
-    @Override
     public String getSelector1Name() {
         return selector1Name().name();
     }
@@ -97,7 +94,6 @@ public class JcrEquiJoinCondition extends EquiJoinCondition implements javax.jcr
      * 
      * @see javax.jcr.query.qom.EquiJoinCondition#getSelector2Name()
      */
-    @Override
     public String getSelector2Name() {
         return selector2Name().name();
     }

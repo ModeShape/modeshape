@@ -47,7 +47,6 @@ public class JcrPropertyExistence extends PropertyExistence implements javax.jcr
      * 
      * @see javax.jcr.query.qom.PropertyValue#getPropertyName()
      */
-    @Override
     public String getPropertyName() {
         return propertyName();
     }
@@ -57,7 +56,6 @@ public class JcrPropertyExistence extends PropertyExistence implements javax.jcr
      * 
      * @see javax.jcr.query.qom.PropertyValue#getSelectorName()
      */
-    @Override
     public String getSelectorName() {
         return selectorName().name();
     }

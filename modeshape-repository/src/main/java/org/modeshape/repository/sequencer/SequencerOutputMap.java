@@ -64,6 +64,7 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setProperty( Path nodePath,
                              Name propertyName,
                              Object... values ) {
@@ -95,6 +96,7 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
      *             mappings for the given URIs in the name components of the nodePath and propertyName to be mapped in the
      *             NamespaceRegistry of the ModeShapeEngine's (or JcrEngine's) ExecutionContext.
      */
+    @Override
     @Deprecated
     public void setProperty( String nodePath,
                              String property,
@@ -114,6 +116,7 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
      *             mappings for the given URIs in the name components of the nodePath and propertyName to be mapped in the
      *             NamespaceRegistry of the ModeShapeEngine's (or JcrEngine's) ExecutionContext.
      */
+    @Override
     @Deprecated
     public void setReference( String nodePath,
                               String propertyName,
@@ -169,6 +172,7 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
      * <p>
      * {@inheritDoc}
      */
+    @Override
     public Iterator<Entry> iterator() {
         // LinkedList<Path> paths = new LinkedList<Path>(data.keySet());
         // Collections.sort(paths);
@@ -252,6 +256,7 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
         /**
          * {@inheritDoc}
          */
+        @Override
         public int compareTo( PropertyValue that ) {
             if (this == that) return 0;
             if (this.name.equals(JcrLexicon.PRIMARY_TYPE)) return -1;
@@ -355,6 +360,7 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
         /**
          * {@inheritDoc}
          */
+        @Override
         public boolean hasNext() {
             return iter.hasNext();
         }
@@ -362,6 +368,7 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
         /**
          * {@inheritDoc}
          */
+        @Override
         public Entry next() {
             this.last = iter.next();
             return new Entry(last, getProperties(last));
@@ -370,6 +377,7 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
         /**
          * {@inheritDoc}
          */
+        @Override
         public void remove() {
             if (last == null) throw new IllegalStateException();
             try {

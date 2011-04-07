@@ -899,7 +899,6 @@ class JcrWorkspace implements Workspace {
      * 
      * @see javax.jcr.Workspace#createWorkspace(java.lang.String, java.lang.String)
      */
-    @Override
     public void createWorkspace( String name,
                                  String srcWorkspace )
         throws AccessDeniedException, UnsupportedRepositoryOperationException, NoSuchWorkspaceException, RepositoryException {
@@ -927,7 +926,6 @@ class JcrWorkspace implements Workspace {
      * 
      * @see javax.jcr.Workspace#createWorkspace(java.lang.String)
      */
-    @Override
     public void createWorkspace( String name )
         throws AccessDeniedException, UnsupportedRepositoryOperationException, RepositoryException {
         CheckArg.isNotNull(name, "name");
@@ -953,7 +951,6 @@ class JcrWorkspace implements Workspace {
      * 
      * @see javax.jcr.Workspace#deleteWorkspace(java.lang.String)
      */
-    @Override
     public void deleteWorkspace( String name )
         throws AccessDeniedException, UnsupportedRepositoryOperationException, NoSuchWorkspaceException, RepositoryException {
         CheckArg.isNotNull(name, "name");
@@ -975,7 +972,6 @@ class JcrWorkspace implements Workspace {
      * 
      * @see javax.jcr.Workspace#getVersionManager()
      */
-    @Override
     public VersionManager getVersionManager() {
         return versionManager;
     }

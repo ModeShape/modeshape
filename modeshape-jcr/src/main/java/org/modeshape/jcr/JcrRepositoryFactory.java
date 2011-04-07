@@ -123,7 +123,6 @@ public class JcrRepositoryFactory implements RepositoryFactory {
      * @see RepositoryFactory#getRepository(Map)
      */
     @SuppressWarnings( {"unchecked", "rawtypes"} )
-    @Override
     public Repository getRepository( Map parameters ) {
         LOG.debug("Trying to load ModeShape JCR Repository with parameters: " + parameters);
         if (parameters == null) return null;
@@ -286,7 +285,6 @@ public class JcrRepositoryFactory implements RepositoryFactory {
         }
     }
 
-    @Override
     public void shutdown() {
         synchronized (ENGINES) {
             for (JcrEngine engine : ENGINES.values()) {
@@ -297,7 +295,6 @@ public class JcrRepositoryFactory implements RepositoryFactory {
         }
     }
 
-    @Override
     public boolean shutdown( long timeout,
                              TimeUnit unit ) throws InterruptedException {
         synchronized (ENGINES) {
@@ -475,7 +472,6 @@ public class JcrRepositoryFactory implements RepositoryFactory {
         return repositoryName;
     }
 
-    @Override
     public Repositories getRepositories( String jcrUrl ) {
         URL url = urlFor(jcrUrl);
         if (url == null) return null;

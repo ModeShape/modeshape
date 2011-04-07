@@ -47,7 +47,6 @@ public class JcrChildNode extends ChildNode implements javax.jcr.query.qom.Child
      * 
      * @see javax.jcr.query.qom.ChildNode#getParentPath()
      */
-    @Override
     public String getParentPath() {
         return parentPath();
     }
@@ -57,7 +56,6 @@ public class JcrChildNode extends ChildNode implements javax.jcr.query.qom.Child
      * 
      * @see javax.jcr.query.qom.PropertyValue#getSelectorName()
      */
-    @Override
     public String getSelectorName() {
         return selectorName().name();
     }

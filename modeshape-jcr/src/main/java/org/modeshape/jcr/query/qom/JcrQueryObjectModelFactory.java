@@ -103,7 +103,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * @see javax.jcr.query.qom.QueryObjectModelFactory#createQuery(javax.jcr.query.qom.Source, javax.jcr.query.qom.Constraint,
      *      javax.jcr.query.qom.Ordering[], javax.jcr.query.qom.Column[])
      */
-    @Override
     public JcrQueryObjectModel createQuery( Source source,
                                             Constraint constraint,
                                             Ordering[] orderings,
@@ -126,7 +125,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      *      javax.jcr.query.qom.Constraint, javax.jcr.query.qom.Ordering[], javax.jcr.query.qom.Column[],
      *      org.modeshape.jcr.api.query.qom.Limit, boolean)
      */
-    @Override
     public JcrSelectQuery select( Source source,
                                   Constraint constraint,
                                   Ordering[] orderings,
@@ -161,7 +159,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * 
      * @see org.modeshape.jcr.api.query.qom.QueryObjectModelFactory#union(QueryCommand, QueryCommand, Ordering[], Limit, boolean)
      */
-    @Override
     public SetQuery union( QueryCommand left,
                            QueryCommand right,
                            Ordering[] orderings,
@@ -177,7 +174,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      *      org.modeshape.jcr.api.query.qom.QueryCommand, javax.jcr.query.qom.Ordering[], org.modeshape.jcr.api.query.qom.Limit,
      *      boolean)
      */
-    @Override
     public SetQuery intersect( QueryCommand left,
                                QueryCommand right,
                                Ordering[] orderings,
@@ -193,7 +189,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      *      org.modeshape.jcr.api.query.qom.QueryCommand, javax.jcr.query.qom.Ordering[], org.modeshape.jcr.api.query.qom.Limit,
      *      boolean)
      */
-    @Override
     public SetQuery except( QueryCommand left,
                             QueryCommand right,
                             Ordering[] orderings,
@@ -223,7 +218,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * 
      * @see javax.jcr.query.qom.QueryObjectModelFactory#selector(java.lang.String, java.lang.String)
      */
-    @Override
     public JcrNamedSelector selector( String nodeTypeName,
                                       String selectorName ) {
         CheckArg.isNotNull(nodeTypeName, "nodeTypeName");
@@ -236,7 +230,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * 
      * @see javax.jcr.query.qom.QueryObjectModelFactory#column(java.lang.String, java.lang.String, java.lang.String)
      */
-    @Override
     public JcrColumn column( String selectorName,
                              String propertyName,
                              String columnName ) {
@@ -253,7 +246,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * 
      * @see javax.jcr.query.qom.QueryObjectModelFactory#ascending(javax.jcr.query.qom.DynamicOperand)
      */
-    @Override
     public JcrOrdering ascending( DynamicOperand operand ) {
         JcrDynamicOperand jcrOperand = CheckArg.getInstanceOf(operand, JcrDynamicOperand.class, "operand");
         return new JcrOrdering(jcrOperand, Order.ASCENDING);
@@ -264,7 +256,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * 
      * @see javax.jcr.query.qom.QueryObjectModelFactory#descending(javax.jcr.query.qom.DynamicOperand)
      */
-    @Override
     public JcrOrdering descending( DynamicOperand operand ) {
         JcrDynamicOperand jcrOperand = CheckArg.getInstanceOf(operand, JcrDynamicOperand.class, "operand");
         return new JcrOrdering(jcrOperand, Order.DESCENDING);
@@ -275,7 +266,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * 
      * @see javax.jcr.query.qom.QueryObjectModelFactory#and(javax.jcr.query.qom.Constraint, javax.jcr.query.qom.Constraint)
      */
-    @Override
     public And and( Constraint constraint1,
                     Constraint constraint2 ) {
         JcrConstraint jcrConstraint1 = CheckArg.getInstanceOf(constraint1, JcrConstraint.class, "constraint1");
@@ -288,7 +278,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * 
      * @see javax.jcr.query.qom.QueryObjectModelFactory#bindVariable(java.lang.String)
      */
-    @Override
     public BindVariableValue bindVariable( String bindVariableName ) {
         CheckArg.isNotNull(bindVariableName, "bindVariableName");
         return new JcrBindVariableName(bindVariableName);
@@ -299,7 +288,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * 
      * @see javax.jcr.query.qom.QueryObjectModelFactory#childNode(java.lang.String, java.lang.String)
      */
-    @Override
     public ChildNode childNode( String selectorName,
                                 String path ) {
         CheckArg.isNotNull(selectorName, "selectorName");
@@ -312,7 +300,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * 
      * @see javax.jcr.query.qom.QueryObjectModelFactory#childNodeJoinCondition(java.lang.String, java.lang.String)
      */
-    @Override
     public ChildNodeJoinCondition childNodeJoinCondition( String childSelectorName,
                                                           String parentSelectorName ) {
         CheckArg.isNotNull(childSelectorName, "childSelectorName");
@@ -326,7 +313,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * @see javax.jcr.query.qom.QueryObjectModelFactory#comparison(javax.jcr.query.qom.DynamicOperand, java.lang.String,
      *      javax.jcr.query.qom.StaticOperand)
      */
-    @Override
     public Comparison comparison( DynamicOperand operand1,
                                   String operator,
                                   StaticOperand operand2 ) {
@@ -353,7 +339,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * 
      * @see javax.jcr.query.qom.QueryObjectModelFactory#descendantNode(java.lang.String, java.lang.String)
      */
-    @Override
     public DescendantNode descendantNode( String selectorName,
                                           String path ) {
         CheckArg.isNotNull(selectorName, "selectorName");
@@ -366,7 +351,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * 
      * @see javax.jcr.query.qom.QueryObjectModelFactory#descendantNodeJoinCondition(java.lang.String, java.lang.String)
      */
-    @Override
     public DescendantNodeJoinCondition descendantNodeJoinCondition( String descendantSelectorName,
                                                                     String ancestorSelectorName ) {
         CheckArg.isNotNull(descendantSelectorName, "descendantSelectorName");
@@ -380,7 +364,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * @see javax.jcr.query.qom.QueryObjectModelFactory#equiJoinCondition(java.lang.String, java.lang.String, java.lang.String,
      *      java.lang.String)
      */
-    @Override
     public EquiJoinCondition equiJoinCondition( String selector1Name,
                                                 String property1Name,
                                                 String selector2Name,
@@ -398,7 +381,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * @see javax.jcr.query.qom.QueryObjectModelFactory#fullTextSearch(java.lang.String, java.lang.String,
      *      javax.jcr.query.qom.StaticOperand)
      */
-    @Override
     public FullTextSearch fullTextSearch( String selectorName,
                                           String propertyName,
                                           StaticOperand fullTextSearchExpression ) throws RepositoryException {
@@ -412,7 +394,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * 
      * @see javax.jcr.query.qom.QueryObjectModelFactory#fullTextSearchScore(java.lang.String)
      */
-    @Override
     public FullTextSearchScore fullTextSearchScore( String selectorName ) {
         CheckArg.isNotNull(selectorName, "selectorName");
         return new JcrFullTextSearchScore(selectorName(selectorName));
@@ -424,7 +405,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * @see javax.jcr.query.qom.QueryObjectModelFactory#join(javax.jcr.query.qom.Source, javax.jcr.query.qom.Source,
      *      java.lang.String, javax.jcr.query.qom.JoinCondition)
      */
-    @Override
     public Join join( Source left,
                       Source right,
                       String joinType,
@@ -451,7 +431,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * 
      * @see javax.jcr.query.qom.QueryObjectModelFactory#length(javax.jcr.query.qom.PropertyValue)
      */
-    @Override
     public Length length( PropertyValue propertyValue ) {
         JcrPropertyValue jcrPropValue = CheckArg.getInstanceOf(propertyValue, JcrPropertyValue.class, "propertyValue");
         return new JcrLength(jcrPropValue);
@@ -462,7 +441,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * 
      * @see javax.jcr.query.qom.QueryObjectModelFactory#literal(javax.jcr.Value)
      */
-    @Override
     public Literal literal( Value literalValue ) throws RepositoryException {
         CheckArg.isNotNull(literalValue, "literalValue");
         return new JcrLiteral(literalValue);
@@ -473,7 +451,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * 
      * @see javax.jcr.query.qom.QueryObjectModelFactory#lowerCase(javax.jcr.query.qom.DynamicOperand)
      */
-    @Override
     public LowerCase lowerCase( DynamicOperand operand ) {
         JcrDynamicOperand jcrOperand = CheckArg.getInstanceOf(operand, JcrDynamicOperand.class, "operand");
         return new JcrLowerCase(jcrOperand);
@@ -484,7 +461,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * 
      * @see javax.jcr.query.qom.QueryObjectModelFactory#nodeLocalName(java.lang.String)
      */
-    @Override
     public NodeLocalName nodeLocalName( String selectorName ) {
         CheckArg.isNotNull(selectorName, "selectorName");
         return new JcrNodeLocalName(selectorName(selectorName));
@@ -495,7 +471,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * 
      * @see javax.jcr.query.qom.QueryObjectModelFactory#nodeName(java.lang.String)
      */
-    @Override
     public NodeName nodeName( String selectorName ) {
         CheckArg.isNotNull(selectorName, "selectorName");
         return new JcrNodeName(selectorName(selectorName));
@@ -506,7 +481,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * 
      * @see javax.jcr.query.qom.QueryObjectModelFactory#not(javax.jcr.query.qom.Constraint)
      */
-    @Override
     public Not not( Constraint constraint ) {
         JcrConstraint jcrConstraint = CheckArg.getInstanceOf(constraint, JcrConstraint.class, "constraint");
         return new JcrNot(jcrConstraint);
@@ -517,7 +491,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * 
      * @see javax.jcr.query.qom.QueryObjectModelFactory#or(javax.jcr.query.qom.Constraint, javax.jcr.query.qom.Constraint)
      */
-    @Override
     public Or or( Constraint constraint1,
                   Constraint constraint2 ) {
         JcrConstraint jcrConstraint1 = CheckArg.getInstanceOf(constraint1, JcrConstraint.class, "constraint1");
@@ -530,7 +503,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * 
      * @see javax.jcr.query.qom.QueryObjectModelFactory#propertyExistence(java.lang.String, java.lang.String)
      */
-    @Override
     public PropertyExistence propertyExistence( String selectorName,
                                                 String propertyName ) {
         CheckArg.isNotNull(selectorName, "selectorName");
@@ -543,7 +515,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * 
      * @see javax.jcr.query.qom.QueryObjectModelFactory#propertyValue(java.lang.String, java.lang.String)
      */
-    @Override
     public PropertyValue propertyValue( String selectorName,
                                         String propertyName ) {
         CheckArg.isNotNull(selectorName, "selectorName");
@@ -556,7 +527,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * 
      * @see javax.jcr.query.qom.QueryObjectModelFactory#sameNode(java.lang.String, java.lang.String)
      */
-    @Override
     public SameNode sameNode( String selectorName,
                               String path ) {
         CheckArg.isNotNull(selectorName, "selectorName");
@@ -570,7 +540,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * @see javax.jcr.query.qom.QueryObjectModelFactory#sameNodeJoinCondition(java.lang.String, java.lang.String,
      *      java.lang.String)
      */
-    @Override
     public SameNodeJoinCondition sameNodeJoinCondition( String selector1Name,
                                                         String selector2Name,
                                                         String selector2Path ) {
@@ -584,7 +553,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * 
      * @see javax.jcr.query.qom.QueryObjectModelFactory#upperCase(javax.jcr.query.qom.DynamicOperand)
      */
-    @Override
     public UpperCase upperCase( DynamicOperand operand ) {
         JcrDynamicOperand jcrOperand = CheckArg.getInstanceOf(operand, JcrDynamicOperand.class, "operand");
         return new JcrUpperCase(jcrOperand);
@@ -595,7 +563,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * 
      * @see org.modeshape.jcr.api.query.qom.QueryObjectModelFactory#nodePath(java.lang.String)
      */
-    @Override
     public NodePath nodePath( String selectorName ) {
         CheckArg.isNotNull(selectorName, "selectorName");
         return new JcrNodePath(selectorName(selectorName));
@@ -606,7 +573,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * 
      * @see org.modeshape.jcr.api.query.qom.QueryObjectModelFactory#nodeDepth(java.lang.String)
      */
-    @Override
     public NodeDepth nodeDepth( String selectorName ) {
         CheckArg.isNotNull(selectorName, "selectorName");
         return new JcrNodeDepth(selectorName(selectorName));
@@ -617,7 +583,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * 
      * @see org.modeshape.jcr.api.query.qom.QueryObjectModelFactory#limit(int, int)
      */
-    @Override
     public Limit limit( int rowLimit,
                         int offset ) {
         CheckArg.isPositive(rowLimit, "rowLimit");
@@ -631,7 +596,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * @see org.modeshape.jcr.api.query.qom.QueryObjectModelFactory#between(javax.jcr.query.qom.DynamicOperand,
      *      javax.jcr.query.qom.StaticOperand, javax.jcr.query.qom.StaticOperand, boolean, boolean)
      */
-    @Override
     public Between between( DynamicOperand operand,
                             StaticOperand lowerBound,
                             StaticOperand upperBound,
@@ -649,7 +613,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * @see org.modeshape.jcr.api.query.qom.QueryObjectModelFactory#in(javax.jcr.query.qom.DynamicOperand,
      *      javax.jcr.query.qom.StaticOperand[])
      */
-    @Override
     public SetCriteria in( DynamicOperand operand,
                            StaticOperand... values ) {
         JcrDynamicOperand jcrOperand = CheckArg.getInstanceOf(operand, JcrDynamicOperand.class, "operand");
@@ -666,7 +629,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * 
      * @see org.modeshape.jcr.api.query.qom.QueryObjectModelFactory#subquery(org.modeshape.jcr.api.query.qom.QueryCommand)
      */
-    @Override
     public Subquery subquery( QueryCommand subqueryCommand ) {
         JcrQueryCommand jcrCommand = CheckArg.getInstanceOf(subqueryCommand, JcrQueryCommand.class, "subqueryCommand");
         return new JcrSubquery(jcrCommand);
@@ -678,7 +640,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * @see org.modeshape.jcr.api.query.qom.QueryObjectModelFactory#add(javax.jcr.query.qom.DynamicOperand,
      *      javax.jcr.query.qom.DynamicOperand)
      */
-    @Override
     public ArithmeticOperand add( DynamicOperand left,
                                   DynamicOperand right ) {
         return arithmeticOperand(left, ArithmeticOperator.ADD, right);
@@ -690,7 +651,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * @see org.modeshape.jcr.api.query.qom.QueryObjectModelFactory#subtract(javax.jcr.query.qom.DynamicOperand,
      *      javax.jcr.query.qom.DynamicOperand)
      */
-    @Override
     public ArithmeticOperand subtract( DynamicOperand left,
                                        DynamicOperand right ) {
         return arithmeticOperand(left, ArithmeticOperator.SUBTRACT, right);
@@ -702,7 +662,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * @see org.modeshape.jcr.api.query.qom.QueryObjectModelFactory#multiply(javax.jcr.query.qom.DynamicOperand,
      *      javax.jcr.query.qom.DynamicOperand)
      */
-    @Override
     public ArithmeticOperand multiply( DynamicOperand left,
                                        DynamicOperand right ) {
         return arithmeticOperand(left, ArithmeticOperator.MULTIPLY, right);
@@ -714,7 +673,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * @see org.modeshape.jcr.api.query.qom.QueryObjectModelFactory#divide(javax.jcr.query.qom.DynamicOperand,
      *      javax.jcr.query.qom.DynamicOperand)
      */
-    @Override
     public ArithmeticOperand divide( DynamicOperand left,
                                      DynamicOperand right ) {
         return arithmeticOperand(left, ArithmeticOperator.DIVIDE, right);
@@ -733,7 +691,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * 
      * @see org.modeshape.jcr.api.query.qom.QueryObjectModelFactory#referenceValue(java.lang.String)
      */
-    @Override
     public JcrReferenceValue referenceValue( String selectorName ) {
         return new JcrReferenceValue(selectorName(selectorName), null);
     }
@@ -743,7 +700,6 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
      * 
      * @see org.modeshape.jcr.api.query.qom.QueryObjectModelFactory#referenceValue(java.lang.String, java.lang.String)
      */
-    @Override
     public JcrReferenceValue referenceValue( String selectorName,
                                              String propertyName ) {
         return new JcrReferenceValue(selectorName(selectorName), propertyName);

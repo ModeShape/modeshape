@@ -212,6 +212,7 @@ public class Stopwatch implements Comparable<Stopwatch> {
         this.stats.reset();
     }
 
+    @Override
     public int compareTo( Stopwatch that ) {
         return this.getTotalDuration().compareTo(that.getTotalDuration());
     }

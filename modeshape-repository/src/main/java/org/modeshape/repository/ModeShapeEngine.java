@@ -401,6 +401,7 @@ public class ModeShapeEngine {
         }
 
         final Runnable gcTask = new Runnable() {
+            @Override
             public void run() {
                 getRepositoryService().runGarbageCollection(null); // log problems as errors
             }

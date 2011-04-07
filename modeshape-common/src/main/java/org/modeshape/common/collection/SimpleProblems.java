@@ -64,6 +64,7 @@ public class SimpleProblems extends AbstractProblems {
      * 
      * @see org.modeshape.common.collection.Problems#addAll(java.lang.Iterable)
      */
+    @Override
     public void addAll( Iterable<Problem> problems ) {
         if (problems != null) {
             if (problems == this) return;

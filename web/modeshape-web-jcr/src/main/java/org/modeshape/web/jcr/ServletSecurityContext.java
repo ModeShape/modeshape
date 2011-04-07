@@ -56,6 +56,7 @@ public class ServletSecurityContext implements SecurityContext {
      * 
      * @see SecurityContext#getUserName()
      */
+    @Override
     public final String getUserName() {
         return userName;
     }
@@ -65,6 +66,7 @@ public class ServletSecurityContext implements SecurityContext {
      * 
      * @see SecurityContext#hasRole(String)
      */
+    @Override
     public final boolean hasRole( String roleName ) {
         return request.isUserInRole(roleName);
     }
@@ -74,6 +76,7 @@ public class ServletSecurityContext implements SecurityContext {
      * 
      * @see SecurityContext#logout()
      */
+    @Override
     public void logout() {
     }
 

@@ -323,6 +323,7 @@ public class DdlTokenStream extends TokenStream {
          * 
          * @see org.modeshape.common.text.TokenStream.Tokenizer#tokenize(CharacterStream, Tokens)
          */
+        @Override
         public void tokenize( CharacterStream input,
                               Tokens tokens ) throws ParsingException {
             int startIndex;

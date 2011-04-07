@@ -402,6 +402,7 @@ public class JcrRepositoryPerformanceTest extends ModeShapeSingleUseTest {
     }
 
     protected class VerifyContent extends BasicOperation {
+        @Override
         public void run( Session s ) throws Exception {
             // Verify the file was imported ...
             assertNode(s, "/drools:repository", "nt:folder");
@@ -421,6 +422,7 @@ public class JcrRepositoryPerformanceTest extends ModeShapeSingleUseTest {
             this.path = path;
         }
 
+        @Override
         public void run( Session s ) throws Exception {
             // Verify the file was imported ...
             Node node = s.getNode(path);
@@ -440,6 +442,7 @@ public class JcrRepositoryPerformanceTest extends ModeShapeSingleUseTest {
             this.path = path;
         }
 
+        @Override
         public void run( Session s ) throws RepositoryException {
             // Verify the file was imported ...
             Node assetNode = s.getNode(path);
@@ -456,6 +459,7 @@ public class JcrRepositoryPerformanceTest extends ModeShapeSingleUseTest {
             this.path = path;
         }
 
+        @Override
         @SuppressWarnings( "synthetic-access" )
         public void run( Session s ) throws RepositoryException {
             Node assetNode = s.getNode(path);
@@ -496,6 +500,7 @@ public class JcrRepositoryPerformanceTest extends ModeShapeSingleUseTest {
             this.comment = comment;
         }
 
+        @Override
         public void run( Session s ) throws RepositoryException {
             createPackageSnapshot(s, packageName, snapshotName);
             Node pkgItem = loadPackageSnapshot(s, packageName, snapshotName);
@@ -516,6 +521,7 @@ public class JcrRepositoryPerformanceTest extends ModeShapeSingleUseTest {
             this.snapshotName = snapshotName;
         }
 
+        @Override
         public void run( Session s ) throws RepositoryException {
             loadPackageSnapshot(s, packageName, snapshotName);
         }
@@ -528,6 +534,7 @@ public class JcrRepositoryPerformanceTest extends ModeShapeSingleUseTest {
             this.packageName = packageName;
         }
 
+        @Override
         public void run( Session s ) throws RepositoryException, IOException {
             buildPackage(s, packageName);
             getPackageAssets(s, packageName);

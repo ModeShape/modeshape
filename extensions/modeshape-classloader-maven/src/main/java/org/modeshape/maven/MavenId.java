@@ -312,6 +312,7 @@ public class MavenId implements Comparable<MavenId>, Cloneable {
     /**
      * {@inheritDoc}
      */
+    @Override
     public int compareTo( MavenId that ) {
         if (that == null) return 1;
         if (this == that) return 0;
@@ -381,6 +382,7 @@ public class MavenId implements Comparable<MavenId>, Cloneable {
         /**
          * {@inheritDoc}
          */
+        @Override
         public int compareTo( Version that ) {
             if (that == null) return 1;
             Object[] thisComponents = this.getComponents();

@@ -41,6 +41,7 @@ public final class EmptyIterator<T> implements Iterator<T> {
      * 
      * @see java.util.Iterator#hasNext()
      */
+    @Override
     public boolean hasNext() {
         return false;
     }
@@ -50,6 +51,7 @@ public final class EmptyIterator<T> implements Iterator<T> {
      * 
      * @see java.util.Iterator#next()
      */
+    @Override
     public T next() {
         throw new NoSuchElementException();
     }
@@ -59,6 +61,7 @@ public final class EmptyIterator<T> implements Iterator<T> {
      * 
      * @see java.util.Iterator#remove()
      */
+    @Override
     public void remove() {
         throw new UnsupportedOperationException();
     }

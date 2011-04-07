@@ -124,7 +124,6 @@ public class SimpleNamespaceRegistry implements NamespaceRegistry {
      * 
      * @see org.modeshape.graph.property.NamespaceRegistry#register(java.lang.Iterable)
      */
-    @Override
     public void register( Iterable<Namespace> namespaces ) {
         for (Namespace namespace : namespaces) {
             register(namespace.getPrefix(), namespace.getNamespaceUri());

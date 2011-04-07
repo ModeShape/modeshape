@@ -41,6 +41,7 @@ public class AddFile implements ScmAction {
         this.content = content;
     }
 
+    @Override
     public void applyAction( Object context ) throws Exception {
         ISVNEditor editor = (ISVNEditor)context;
         ISVNEditorUtil.openDirectories(editor, this.path);

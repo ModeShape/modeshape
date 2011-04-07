@@ -1068,7 +1068,6 @@ public abstract class RequestProcessor {
                 }
             };
 
-            @Override
             public void execute( Request request ) {
                 RequestProcessor.this.process(request);
                 if (!request.hasError() && !request.isCancelled()) {
@@ -1090,7 +1089,6 @@ public abstract class RequestProcessor {
              * 
              * @see org.modeshape.graph.request.function.FunctionContext#builder()
              */
-            @Override
             public RequestBuilder builder() {
                 // Create a builder that
                 return builder;
@@ -1101,7 +1099,6 @@ public abstract class RequestProcessor {
              * 
              * @see org.modeshape.graph.request.function.FunctionContext#setError(java.lang.Throwable)
              */
-            @Override
             public void setError( Throwable t ) {
                 functionRequest.setError(t);
             }
@@ -1111,12 +1108,10 @@ public abstract class RequestProcessor {
              * 
              * @see org.modeshape.graph.request.function.FunctionContext#isCancelled()
              */
-            @Override
             public boolean isCancelled() {
                 return functionRequest.isCancelled();
             }
 
-            @Override
             public ExecutionContext getExecutionContext() {
                 return RequestProcessor.this.getExecutionContext();
             }
@@ -1126,7 +1121,6 @@ public abstract class RequestProcessor {
              * 
              * @see org.modeshape.graph.request.function.FunctionContext#appliedAt()
              */
-            @Override
             public Location appliedAt() {
                 return functionRequest.at();
             }
@@ -1136,7 +1130,6 @@ public abstract class RequestProcessor {
              * 
              * @see org.modeshape.graph.request.function.FunctionContext#workspace()
              */
-            @Override
             public String workspace() {
                 return functionRequest.inWorkspace();
             }
@@ -1146,7 +1139,6 @@ public abstract class RequestProcessor {
              * 
              * @see org.modeshape.graph.request.function.FunctionContext#getNowInUtc()
              */
-            @Override
             public DateTime getNowInUtc() {
                 return RequestProcessor.this.getNowInUtc();
             }
@@ -1156,7 +1148,6 @@ public abstract class RequestProcessor {
              * 
              * @see org.modeshape.graph.request.function.FunctionContext#input(java.lang.String)
              */
-            @Override
             public Object input( String name ) {
                 return functionRequest.input(name);
             }
@@ -1166,7 +1157,6 @@ public abstract class RequestProcessor {
              * 
              * @see org.modeshape.graph.request.function.FunctionContext#input(java.lang.String, java.lang.Class)
              */
-            @Override
             public <T> T input( String name,
                                 Class<T> type ) {
                 return functionRequest.input(name, type, null, getExecutionContext());
@@ -1178,7 +1168,6 @@ public abstract class RequestProcessor {
              * @see org.modeshape.graph.request.function.FunctionContext#input(java.lang.String, java.lang.Class,
              *      java.lang.Object)
              */
-            @Override
             public <T> T input( String name,
                                 Class<T> type,
                                 T defaultValue ) {
@@ -1191,7 +1180,6 @@ public abstract class RequestProcessor {
              * @see org.modeshape.graph.request.function.FunctionContext#input(java.lang.String,
              *      org.modeshape.graph.property.PropertyType, java.lang.Object)
              */
-            @Override
             public <T> T input( String name,
                                 PropertyType type,
                                 T defaultValue ) {
@@ -1204,7 +1192,6 @@ public abstract class RequestProcessor {
              * @see org.modeshape.graph.request.function.FunctionContext#output(java.lang.String, java.lang.Class,
              *      java.lang.Object)
              */
-            @Override
             public <T> T output( String name,
                                  Class<T> type,
                                  T defaultValue ) {
@@ -1217,7 +1204,6 @@ public abstract class RequestProcessor {
              * @see org.modeshape.graph.request.function.FunctionContext#output(java.lang.String,
              *      org.modeshape.graph.property.PropertyType, java.lang.Object)
              */
-            @Override
             public <T> T output( String name,
                                  PropertyType type,
                                  T defaultValue ) {
@@ -1229,7 +1215,6 @@ public abstract class RequestProcessor {
              * 
              * @see org.modeshape.graph.request.function.FunctionContext#setOutput(java.lang.String, java.io.Serializable)
              */
-            @Override
             public void setOutput( String name,
                                    Serializable value ) {
                 functionRequest.setOutput(name, value);

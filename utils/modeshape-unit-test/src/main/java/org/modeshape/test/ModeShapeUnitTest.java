@@ -1237,6 +1237,7 @@ public abstract class ModeShapeUnitTest {
             this.path = path;
         }
 
+        @Override
         public void run( Session s ) throws RepositoryException {
             // Verify the file was imported ...
             Node node = s.getNode(path);
@@ -1246,6 +1247,7 @@ public abstract class ModeShapeUnitTest {
     }
 
     protected class CountNodes extends BasicOperation {
+        @Override
         public void run( Session s ) throws RepositoryException {
             // Count the nodes below the root, excluding the '/jcr:system' branch ...
             String queryStr = "SELECT [jcr:primaryType] FROM [nt:base]";
@@ -1256,6 +1258,7 @@ public abstract class ModeShapeUnitTest {
     }
 
     protected class PrintNodes extends BasicOperation {
+        @Override
         public void run( Session s ) throws RepositoryException {
             // Count the nodes below the root, excluding the '/jcr:system' branch ...
             String queryStr = "SELECT [jcr:path] FROM [nt:base] ORDER BY [jcr:path]";

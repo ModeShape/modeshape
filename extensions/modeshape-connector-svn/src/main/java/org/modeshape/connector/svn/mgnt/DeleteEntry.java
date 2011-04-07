@@ -42,6 +42,7 @@ public class DeleteEntry implements ScmAction {
      * 
      * @see org.modeshape.connector.scm.ScmAction#applyAction(java.lang.Object)
      */
+    @Override
     public void applyAction( Object context ) throws Exception {
 
         ISVNEditor editor = (ISVNEditor)context;

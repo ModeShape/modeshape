@@ -175,6 +175,7 @@ public class JcrAndLocalSvnRepositoryTest {
          * 
          * @see org.modeshape.graph.SecurityContext#getUserName()
          */
+        @Override
         public String getUserName() {
             return "Fred";
         }
@@ -184,6 +185,7 @@ public class JcrAndLocalSvnRepositoryTest {
          * 
          * @see org.modeshape.graph.SecurityContext#hasRole(java.lang.String)
          */
+        @Override
         public boolean hasRole( String roleName ) {
             return true;
         }
@@ -193,6 +195,7 @@ public class JcrAndLocalSvnRepositoryTest {
          * 
          * @see org.modeshape.graph.SecurityContext#logout()
          */
+        @Override
         public void logout() {
             // do something
         }

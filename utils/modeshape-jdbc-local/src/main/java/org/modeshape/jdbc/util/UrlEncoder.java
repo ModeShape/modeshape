@@ -78,6 +78,7 @@ public class UrlEncoder implements TextEncoder, TextDecoder {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String encode( String text ) {
         if (text == null) return null;
         if (text.length() == 0) return text;
@@ -105,6 +106,7 @@ public class UrlEncoder implements TextEncoder, TextDecoder {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String decode( String encodedText ) {
         if (encodedText == null) return null;
         if (encodedText.length() == 0) return encodedText;

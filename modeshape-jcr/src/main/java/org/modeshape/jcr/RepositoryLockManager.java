@@ -150,12 +150,10 @@ class RepositoryLockManager implements JcrSystemObserver {
      * 
      * @see org.modeshape.jcr.JcrSystemObserver#getObservedPath()
      */
-    @Override
     public Path getObservedPath() {
         return locksPath;
     }
 
-    @Override
     public void notify( Changes changes ) {
         for (ChangeRequest change : changes.getChangeRequests()) {
             assert change.changedLocation().hasPath();

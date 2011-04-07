@@ -89,6 +89,7 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
         /**
          * {@inheritDoc}
          */
+        @Override
         public boolean awaitTermination( long timeout,
                                          TimeUnit unit ) throws InterruptedException {
             return RepositoryLibrary.this.awaitTermination(timeout, unit);
@@ -176,6 +177,7 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
      * 
      * @see org.modeshape.graph.observe.Observable#register(org.modeshape.graph.observe.Observer)
      */
+    @Override
     public boolean register( Observer observer ) {
         if (observer == null) return false;
         return observationBus.register(observer);
@@ -189,6 +191,7 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
      * 
      * @see org.modeshape.graph.observe.Observable#unregister(org.modeshape.graph.observe.Observer)
      */
+    @Override
     public boolean unregister( Observer observer ) {
         return observationBus.unregister(observer);
     }
@@ -405,6 +408,7 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
              * 
              * @see org.modeshape.graph.connector.RepositoryContext#getExecutionContext()
              */
+            @Override
             public ExecutionContext getExecutionContext() {
                 return RepositoryLibrary.this.getExecutionContext();
             }
@@ -414,6 +418,7 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
              * 
              * @see org.modeshape.graph.connector.RepositoryContext#getRepositoryConnectionFactory()
              */
+            @Override
             public RepositoryConnectionFactory getRepositoryConnectionFactory() {
                 return RepositoryLibrary.this;
             }
@@ -423,6 +428,7 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
              * 
              * @see org.modeshape.graph.connector.RepositoryContext#getObserver()
              */
+            @Override
             public Observer getObserver() {
                 return observationBus.hasObservers() ? observationBus : null;
             }
@@ -432,6 +438,7 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
              * 
              * @see org.modeshape.graph.connector.RepositoryContext#getConfiguration(int)
              */
+            @Override
             public Subgraph getConfiguration( int depth ) {
                 Subgraph result = null;
                 RepositorySource configSource = getConfigurationSource();
@@ -551,6 +558,7 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
      * 
      * @see org.modeshape.graph.connector.RepositoryConnectionFactory#createConnection(java.lang.String)
      */
+    @Override
     public RepositoryConnection createConnection( String sourceName ) {
         try {
             this.sourcesLock.readLock().lock();

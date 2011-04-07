@@ -59,6 +59,7 @@ public class MockSequencerB implements Sequencer {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setConfiguration( SequencerConfig sequencerConfiguration ) {
         this.config = sequencerConfiguration;
     }
@@ -66,6 +67,7 @@ public class MockSequencerB implements Sequencer {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void execute( Node input,
                          String sequencedPropertyName,
                          NetChange changes,
@@ -88,6 +90,7 @@ public class MockSequencerB implements Sequencer {
     /**
      * @return config
      */
+    @Override
     public SequencerConfig getConfiguration() {
         return this.config;
     }

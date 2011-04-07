@@ -519,6 +519,7 @@ public class SimpleJpaRepository extends MapRepository {
          * @param lockTimeoutInMillis
          * @throws LockFailedException
          */
+        @Override
         public void lockNode( MapNode node,
                               LockScope lockScope,
                               long lockTimeoutInMillis ) throws LockFailedException {
@@ -530,6 +531,7 @@ public class SimpleJpaRepository extends MapRepository {
          * 
          * @param node the node to be unlocked
          */
+        @Override
         public void unlockNode( MapNode node ) {
             // Locking is not supported by this connector
         }
@@ -562,15 +564,18 @@ public class SimpleJpaRepository extends MapRepository {
             return (JpaNode)node;
         }
 
+        @Override
         public void addChild( int index,
                               MapNode child ) {
             entity.addChild(index, jpaNodeFor(child).entity);
         }
 
+        @Override
         public void addChild( MapNode child ) {
             entity.addChild(jpaNodeFor(child).entity);
         }
 
+        @Override
         public List<MapNode> getChildren() {
             List<MapNode> children = new ArrayList<MapNode>(entity.getChildren().size());
 
@@ -581,11 +586,13 @@ public class SimpleJpaRepository extends MapRepository {
             return Collections.unmodifiableList(children);
         }
 
+        @Override
         public Segment getName() {
             return pathFactory.createSegment(nameFactory.create(entity.getChildNamespace().getUri(), entity.getChildName()),
                                              entity.getSameNameSiblingIndex());
         }
 
+        @Override
         public MapNode getParent() {
             if (entity.getParent() == null) return null;
             return new JpaNode(entity.getParent());
@@ -656,6 +663,7 @@ public class SimpleJpaRepository extends MapRepository {
             }
         }
 
+        @Override
         public MapNode removeProperty( Name propertyName ) {
             ensurePropertiesLoaded();
 
@@ -666,21 +674,25 @@ public class SimpleJpaRepository extends MapRepository {
             return this;
         }
 
+        @Override
         public Map<Name, Property> getProperties() {
             ensurePropertiesLoaded();
             return properties;
         }
 
+        @Override
         public Property getProperty( ExecutionContext context,
                                      String name ) {
             return getProperty(context.getValueFactories().getNameFactory().create(name));
         }
 
+        @Override
         public Property getProperty( Name name ) {
             ensurePropertiesLoaded();
             return properties.get(name);
         }
 
+        @Override
         public Set<Name> getUniqueChildNames() {
             List<NodeEntity> children = entity.getChildren();
             Set<Name> uniqueNames = new HashSet<Name>(children.size());
@@ -692,11 +704,13 @@ public class SimpleJpaRepository extends MapRepository {
             return uniqueNames;
         }
 
+        @Override
         public UUID getUuid() {
             if (entity.getNodeUuidString() == null) return null;
             return UUID.fromString(entity.getNodeUuidString());
         }
 
+        @Override
         public boolean removeChild( MapNode child ) {
 
             /*
@@ -729,10 +743,12 @@ public class SimpleJpaRepository extends MapRepository {
             return true;
         }
 
+        @Override
         public void clearChildren() {
             entity.getChildren().clear();
         }
 
+        @Override
         public void setName( Segment name ) {
             entity.setChildNamespace(namespaceEntities.get(name.getName().getNamespaceUri(), true));
             // entity.setChildNamespace(NamespaceEntity.findByUri(entityManager, name.getName().getNamespaceUri(), true));
@@ -740,6 +756,7 @@ public class SimpleJpaRepository extends MapRepository {
             entity.setSameNameSiblingIndex(name.getIndex());
         }
 
+        @Override
         public void setParent( MapNode parent ) {
             if (parent == null) {
                 entity.setParent(null);
@@ -748,6 +765,7 @@ public class SimpleJpaRepository extends MapRepository {
             }
         }
 
+        @Override
         public MapNode setProperty( ExecutionContext context,
                                     String name,
                                     Object... values ) {
@@ -756,6 +774,7 @@ public class SimpleJpaRepository extends MapRepository {
             return this.setProperty(propertyFactory.create(nameFactory.create(name), values));
         }
 
+        @Override
         public MapNode setProperty( Property property ) {
             ensurePropertiesLoaded();
 
@@ -765,6 +784,7 @@ public class SimpleJpaRepository extends MapRepository {
             return this;
         }
 
+        @Override
         public MapNode setProperties( Iterable<Property> properties ) {
             ensurePropertiesLoaded();
 
@@ -818,6 +838,7 @@ public class SimpleJpaRepository extends MapRepository {
          * 
          * @see org.modeshape.connector.store.jpa.util.Serializer.LargeValues#getMinimumSize()
          */
+        @Override
         public long getMinimumSize() {
             return minimumSizeOfLargeValuesInBytes;
         }
@@ -828,6 +849,7 @@ public class SimpleJpaRepository extends MapRepository {
          * @see org.modeshape.connector.store.jpa.util.Serializer.LargeValues#read(org.modeshape.graph.property.ValueFactories,
          *      byte[], long)
          */
+        @Override
         public Object read( ValueFactories valueFactories,
                             byte[] hash,
                             long length ) throws IOException {
@@ -856,6 +878,7 @@ public class SimpleJpaRepository extends MapRepository {
          * @see org.modeshape.connector.store.jpa.util.Serializer.LargeValues#write(byte[], long,
          *      org.modeshape.graph.property.PropertyType, java.lang.Object)
          */
+        @Override
         public void write( byte[] hash,
                            long length,
                            PropertyType type,

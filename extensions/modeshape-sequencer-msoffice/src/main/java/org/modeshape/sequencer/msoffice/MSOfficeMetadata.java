@@ -55,6 +55,7 @@ public class MSOfficeMetadata implements POIFSReaderListener {
     private byte[] thumbnail;
     private static final Logger LOGGER = Logger.getLogger(MSOfficeMetadata.class);
 
+    @Override
     public void processPOIFSReaderEvent( POIFSReaderEvent event ) {
         try {
             SummaryInformation si = (SummaryInformation)PropertySetFactory.create(event.getStream());

@@ -114,6 +114,7 @@ public class Server implements IModeShapeObject {
      * 
      * @see org.modeshape.web.jcr.rest.client.domain.IModeShapeObject#getName()
      */
+    @Override
     public String getName() {
         return getUrl();
     }
@@ -130,6 +131,7 @@ public class Server implements IModeShapeObject {
      * 
      * @see org.modeshape.web.jcr.rest.client.domain.IModeShapeObject#getShortDescription()
      */
+    @Override
     public String getShortDescription() {
         return RestClientI18n.serverShortDescription.text(this.url, this.user);
     }

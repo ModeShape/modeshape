@@ -486,6 +486,7 @@ public class SerializerTest {
          * 
          * @see org.modeshape.connector.store.jpa.util.Serializer.LargeValues#getMinimumSize()
          */
+        @Override
         public long getMinimumSize() {
             return minimumSize;
         }
@@ -496,6 +497,7 @@ public class SerializerTest {
          * @see org.modeshape.connector.store.jpa.util.Serializer.LargeValues#read(org.modeshape.graph.property.ValueFactories,
          *      byte[], long)
          */
+        @Override
         public Object read( ValueFactories valueFactories,
                             byte[] hash,
                             long length ) {
@@ -509,6 +511,7 @@ public class SerializerTest {
          * @see org.modeshape.connector.store.jpa.util.Serializer.LargeValues#write(byte[], long,
          *      org.modeshape.graph.property.PropertyType, java.lang.Object)
          */
+        @Override
         public void write( byte[] hash,
                            long length,
                            PropertyType type,
@@ -542,6 +545,7 @@ public class SerializerTest {
          * 
          * @see org.modeshape.connector.store.jpa.util.Serializer.LargeValues#getMinimumSize()
          */
+        @Override
         public long getMinimumSize() {
             return minimumSize;
         }
@@ -564,6 +568,7 @@ public class SerializerTest {
          * @see org.modeshape.connector.store.jpa.util.Serializer.LargeValues#read(org.modeshape.graph.property.ValueFactories,
          *      byte[], long)
          */
+        @Override
         public Object read( ValueFactories valueFactories,
                             byte[] hash,
                             long length ) {
@@ -591,6 +596,7 @@ public class SerializerTest {
          * @see org.modeshape.connector.store.jpa.util.Serializer.LargeValues#write(byte[], long,
          *      org.modeshape.graph.property.PropertyType, java.lang.Object)
          */
+        @Override
         public void write( byte[] hash,
                            long length,
                            PropertyType type,

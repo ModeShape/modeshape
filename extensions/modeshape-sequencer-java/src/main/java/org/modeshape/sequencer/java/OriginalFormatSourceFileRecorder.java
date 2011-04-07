@@ -165,6 +165,7 @@ import org.modeshape.sequencer.java.metadata.Variable;
  */
 public class OriginalFormatSourceFileRecorder implements SourceFileRecorder {
 
+    @Override
     public void record( StreamSequencerContext context,
                         SequencerOutput output,
                         JavaMetadata javaMetadata ) {

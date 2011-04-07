@@ -358,7 +358,6 @@ class GraphNodeTypeReader implements Iterable<NodeTypeDefinition> {
      * 
      * @see java.lang.Iterable#iterator()
      */
-    @Override
     public Iterator<NodeTypeDefinition> iterator() {
         return immutableTypes.iterator();
     }

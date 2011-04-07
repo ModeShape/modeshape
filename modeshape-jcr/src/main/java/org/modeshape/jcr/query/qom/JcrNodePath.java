@@ -48,7 +48,6 @@ public class JcrNodePath extends NodePath implements org.modeshape.jcr.api.query
      * 
      * @see org.modeshape.jcr.api.query.qom.NodePath#getSelectorName()
      */
-    @Override
     public String getSelectorName() {
         return selectorName().name();
     }

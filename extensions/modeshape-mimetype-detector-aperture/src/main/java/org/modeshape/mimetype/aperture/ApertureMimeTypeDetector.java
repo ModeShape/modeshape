@@ -41,6 +41,7 @@ public class ApertureMimeTypeDetector implements MimeTypeDetector {
      * @throws IOException
      * @see org.modeshape.graph.mimetype.MimeTypeDetector#mimeTypeOf(java.lang.String, java.io.InputStream)
      */
+    @Override
     public String mimeTypeOf( String name,
                               InputStream content ) throws IOException {
         /*

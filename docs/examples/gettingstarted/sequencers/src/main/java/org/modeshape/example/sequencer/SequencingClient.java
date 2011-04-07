@@ -593,6 +593,7 @@ public class SequencingClient {
          * 
          * @see org.modeshape.jcr.api.SecurityContext#getUserName()
          */
+        @Override
         public String getUserName() {
             return "Fred";
         }
@@ -602,6 +603,7 @@ public class SequencingClient {
          * 
          * @see org.modeshape.jcr.api.SecurityContext#hasRole(java.lang.String)
          */
+        @Override
         public boolean hasRole( String roleName ) {
             return true;
         }
@@ -611,6 +613,7 @@ public class SequencingClient {
          * 
          * @see org.modeshape.jcr.api.SecurityContext#logout()
          */
+        @Override
         public void logout() {
             // do something
         }

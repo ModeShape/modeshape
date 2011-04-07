@@ -363,6 +363,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      * 
      * @see org.modeshape.graph.connector.RepositorySource#getName()
      */
+    @Override
     public String getName() {
         return name;
     }
@@ -389,6 +390,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      * 
      * @see org.modeshape.graph.connector.RepositorySource#getCapabilities()
      */
+    @Override
     public RepositorySourceCapabilities getCapabilities() {
         return capabilities;
     }
@@ -483,6 +485,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      * 
      * @see org.modeshape.graph.connector.RepositorySource#getRetryLimit()
      */
+    @Override
     public int getRetryLimit() {
         return retryLimit;
     }
@@ -492,6 +495,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      * 
      * @see org.modeshape.graph.connector.RepositorySource#setRetryLimit(int)
      */
+    @Override
     public synchronized void setRetryLimit( int limit ) {
         if (limit < 0) limit = 0;
         this.retryLimit = limit;
@@ -983,6 +987,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      * 
      * @see org.modeshape.graph.connector.RepositorySource#initialize(org.modeshape.graph.connector.RepositoryContext)
      */
+    @Override
     public void initialize( RepositoryContext context ) throws RepositorySourceException {
         this.repositoryContext = context;
     }
@@ -992,6 +997,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      * 
      * @see javax.naming.Referenceable#getReference()
      */
+    @Override
     public Reference getReference() {
         String className = getClass().getName();
         String factoryClassName = this.getClass().getName();
@@ -1046,6 +1052,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Object getObjectInstance( Object obj,
                                      javax.naming.Name name,
                                      Context nameCtx,
@@ -1133,6 +1140,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      * 
      * @see org.modeshape.graph.connector.RepositorySource#getConnection()
      */
+    @Override
     public synchronized RepositoryConnection getConnection() throws RepositorySourceException {
         if (this.name == null || this.name.trim().length() == 0) {
             throw new RepositorySourceException(JpaConnectorI18n.repositorySourceMustHaveName.text());
@@ -1286,6 +1294,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      * 
      * @see org.modeshape.graph.connector.RepositorySource#close()
      */
+    @Override
     public synchronized void close() {
         if (entityManagers != null) {
             try {
@@ -1364,6 +1373,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
             this.ttl = ttl;
         }
 
+        @Override
         public long getTimeToLive() {
             return ttl;
         }

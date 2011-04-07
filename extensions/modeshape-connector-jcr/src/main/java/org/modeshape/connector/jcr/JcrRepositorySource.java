@@ -151,6 +151,7 @@ public class JcrRepositorySource implements RepositorySource, ObjectFactory {
      * 
      * @see org.modeshape.graph.connector.RepositorySource#getName()
      */
+    @Override
     public String getName() {
         return name;
     }
@@ -173,6 +174,7 @@ public class JcrRepositorySource implements RepositorySource, ObjectFactory {
      * 
      * @see org.modeshape.graph.connector.RepositorySource#getCapabilities()
      */
+    @Override
     public RepositorySourceCapabilities getCapabilities() {
         return capabilities;
     }
@@ -277,6 +279,7 @@ public class JcrRepositorySource implements RepositorySource, ObjectFactory {
      * 
      * @see org.modeshape.graph.connector.RepositorySource#getRetryLimit()
      */
+    @Override
     public int getRetryLimit() {
         return retryLimit;
     }
@@ -286,6 +289,7 @@ public class JcrRepositorySource implements RepositorySource, ObjectFactory {
      * 
      * @see org.modeshape.graph.connector.RepositorySource#setRetryLimit(int)
      */
+    @Override
     public synchronized void setRetryLimit( int limit ) {
         retryLimit = limit < 0 ? 0 : limit;
     }
@@ -295,6 +299,7 @@ public class JcrRepositorySource implements RepositorySource, ObjectFactory {
      * 
      * @see org.modeshape.graph.connector.RepositorySource#initialize(org.modeshape.graph.connector.RepositoryContext)
      */
+    @Override
     public void initialize( RepositoryContext context ) throws RepositorySourceException {
         this.repositoryContext = context;
     }
@@ -324,6 +329,7 @@ public class JcrRepositorySource implements RepositorySource, ObjectFactory {
      * 
      * @see javax.naming.Referenceable#getReference()
      */
+    @Override
     public synchronized Reference getReference() {
         String className = getClass().getName();
         String factoryClassName = this.getClass().getName();
@@ -367,6 +373,7 @@ public class JcrRepositorySource implements RepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Object getObjectInstance( Object obj,
                                      javax.naming.Name name,
                                      Context nameCtx,
@@ -424,6 +431,7 @@ public class JcrRepositorySource implements RepositorySource, ObjectFactory {
      * 
      * @see org.modeshape.graph.connector.RepositorySource#getConnection()
      */
+    @Override
     public synchronized RepositoryConnection getConnection() throws RepositorySourceException {
         if (name == null || name.trim().length() == 0) {
             I18n msg = JcrConnectorI18n.propertyIsRequired;
@@ -481,6 +489,7 @@ public class JcrRepositorySource implements RepositorySource, ObjectFactory {
      * 
      * @see org.modeshape.graph.connector.RepositorySource#close()
      */
+    @Override
     public void close() {
         // Null the repository context and Repository references ...
         this.repositoryContext = null;

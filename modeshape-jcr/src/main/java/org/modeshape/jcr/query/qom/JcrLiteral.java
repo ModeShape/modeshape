@@ -82,7 +82,6 @@ public class JcrLiteral extends Literal implements javax.jcr.query.qom.Literal, 
      * 
      * @see javax.jcr.query.qom.Literal#getLiteralValue()
      */
-    @Override
     public Value getLiteralValue() {
         return jcrValue;
     }

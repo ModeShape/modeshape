@@ -140,6 +140,7 @@ public class LuceneConfigurations {
          * 
          * @see LuceneConfiguration#getDirectory(java.lang.String, java.lang.String)
          */
+        @Override
         public Directory getDirectory( String workspaceName,
                                        String indexName ) throws SearchEngineException {
             CheckArg.isNotNull(workspaceName, "workspaceName");
@@ -158,6 +159,7 @@ public class LuceneConfigurations {
          * 
          * @see LuceneConfiguration#destroyDirectory(java.lang.String, java.lang.String)
          */
+        @Override
         public boolean destroyDirectory( String workspaceName,
                                          String indexName ) throws SearchEngineException {
             CheckArg.isNotNull(workspaceName, "workspaceName");

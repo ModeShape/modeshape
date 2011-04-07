@@ -202,6 +202,7 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
      * 
      * @see org.modeshape.graph.connector.RepositorySource#getCapabilities()
      */
+    @Override
     public RepositorySourceCapabilities getCapabilities() {
         return capabilities;
     }
@@ -351,6 +352,7 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
             filenameFilter = new FilenameFilter() {
                 Pattern filter = Pattern.compile(filterPattern);
 
+                @Override
                 public boolean accept( File dir,
                                        String name ) {
                     return !filter.matcher(name).matches();
@@ -402,6 +404,7 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
      * 
      * @return the name of the workspace that should be used by default; never null
      */
+    @Override
     public String getDefaultWorkspaceName() {
         return defaultWorkspaceName;
     }
@@ -491,6 +494,7 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
      *        allowed.
      * @see #areUpdatesAllowed()
      */
+    @Override
     public synchronized void setUpdatesAllowed( boolean allowUpdates ) {
         capabilities = new RepositorySourceCapabilities(capabilities.supportsSameNameSiblings(), allowUpdates,
                                                         capabilities.supportsEvents(), capabilities.supportsCreatingWorkspaces(),
@@ -622,6 +626,7 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
      * 
      * @see javax.naming.Referenceable#getReference()
      */
+    @Override
     public synchronized Reference getReference() {
         String className = getClass().getName();
         String factoryClassName = this.getClass().getName();
@@ -659,6 +664,7 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
     /**
      * {@inheritDoc}
      */
+    @Override
     public Object getObjectInstance( Object obj,
                                      javax.naming.Name name,
                                      Context nameCtx,
@@ -709,6 +715,7 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
      * 
      * @see org.modeshape.graph.connector.RepositorySource#getConnection()
      */
+    @Override
     public synchronized RepositoryConnection getConnection() throws RepositorySourceException {
         String sourceName = getName();
         if (sourceName == null || sourceName.trim().length() == 0) {

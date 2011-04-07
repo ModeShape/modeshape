@@ -73,21 +73,26 @@ public class JcrRepositorySourceTest {
         // Initialize ...
         this.source.initialize(new RepositoryContext() {
 
+            @Override
             public Subgraph getConfiguration( int depth ) {
                 return null;
             }
 
+            @Override
             public ExecutionContext getExecutionContext() {
                 return context;
             }
 
+            @Override
             public Observer getObserver() {
                 return null;
             }
 
+            @Override
             public RepositoryConnectionFactory getRepositoryConnectionFactory() {
                 return new RepositoryConnectionFactory() {
 
+                    @Override
                     @SuppressWarnings( "synthetic-access" )
                     public RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException {
                         return source.getConnection();

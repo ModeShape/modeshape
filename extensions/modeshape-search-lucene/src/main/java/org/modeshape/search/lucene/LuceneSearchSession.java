@@ -136,6 +136,7 @@ public class LuceneSearchSession implements WorkspaceSession {
     protected static final FieldSelector LOCATION_FIELDS_SELECTOR = new FieldSelector() {
         private static final long serialVersionUID = 1L;
 
+        @Override
         public FieldSelectorResult accept( String fieldName ) {
             if (ContentIndex.PATH.equals(fieldName) || ContentIndex.LOCATION_ID_PROPERTIES.equals(fieldName)) {
                 return FieldSelectorResult.LOAD;
@@ -172,6 +173,7 @@ public class LuceneSearchSession implements WorkspaceSession {
      * 
      * @see org.modeshape.search.lucene.AbstractLuceneSearchEngine.WorkspaceSession#getWorkspaceName()
      */
+    @Override
     public String getWorkspaceName() {
         return workspace.getWorkspaceName();
     }
@@ -207,6 +209,7 @@ public class LuceneSearchSession implements WorkspaceSession {
         return contentWriter;
     }
 
+    @Override
     public IndexSearcher getContentSearcher() throws IOException {
         if (contentSearcher == null) {
             contentSearcher = new IndexSearcher(getContentReader());
@@ -219,6 +222,7 @@ public class LuceneSearchSession implements WorkspaceSession {
      * 
      * @see org.modeshape.search.lucene.AbstractLuceneSearchEngine.WorkspaceSession#getAnalyzer()
      */
+    @Override
     public Analyzer getAnalyzer() {
         return workspace.analyzer;
     }
@@ -233,6 +237,7 @@ public class LuceneSearchSession implements WorkspaceSession {
         return workspace.getVersion();
     }
 
+    @Override
     public boolean hasWriters() {
         return contentWriter != null;
     }
@@ -251,6 +256,7 @@ public class LuceneSearchSession implements WorkspaceSession {
      * 
      * @see org.modeshape.search.lucene.AbstractLuceneSearchEngine.WorkspaceSession#getChangeCount()
      */
+    @Override
     public final int getChangeCount() {
         return numChanges;
     }
@@ -260,6 +266,7 @@ public class LuceneSearchSession implements WorkspaceSession {
      * 
      * @see org.modeshape.search.lucene.AbstractLuceneSearchEngine.WorkspaceSession#commit()
      */
+    @Override
     public void commit() {
         if (logger.isTraceEnabled() && numChanges > 0) {
             logger.trace("index for \"{0}\" workspace: COMMIT", workspace.getWorkspaceName());
@@ -315,6 +322,7 @@ public class LuceneSearchSession implements WorkspaceSession {
      * 
      * @see org.modeshape.search.lucene.AbstractLuceneSearchEngine.WorkspaceSession#rollback()
      */
+    @Override
     public void rollback() {
         if (logger.isTraceEnabled() && numChanges > 0) {
             logger.trace("index for \"{0}\" workspace: ROLLBACK", workspace.getWorkspaceName());
@@ -720,6 +728,7 @@ public class LuceneSearchSession implements WorkspaceSession {
      * 
      * @see org.modeshape.search.lucene.AbstractLuceneSearchEngine.WorkspaceSession#createTupleCollector(org.modeshape.graph.query.QueryResults.Columns)
      */
+    @Override
     public TupleCollector createTupleCollector( Columns columns ) {
         return new DualIndexTupleCollector(this, columns);
     }
@@ -737,6 +746,7 @@ public class LuceneSearchSession implements WorkspaceSession {
         return tuples.isEmpty() ? Location.create(processor.pathFactory.createRootPath()) : (Location)tuples.get(0)[0];
     }
 
+    @Override
     public Query findAllNodesBelow( Path parentPath ) {
         // Find the path of the parent ...
         String stringifiedPath = processor.pathAsString(parentPath);
@@ -747,6 +757,7 @@ public class LuceneSearchSession implements WorkspaceSession {
         return new PrefixQuery(new Term(ContentIndex.PATH, stringifiedPath));
     }
 
+    @Override
     public Query findAllNodesAtOrBelow( Path parentPath ) {
         if (parentPath.isRoot()) {
             return new MatchAllDocsQuery();
@@ -765,6 +776,7 @@ public class LuceneSearchSession implements WorkspaceSession {
      * @param parentPath the path of the parent node.
      * @return the query; never null
      */
+    @Override
     public Query findChildNodes( Path parentPath ) {
         // Find the path of the parent ...
         String stringifiedPath = processor.pathAsString(parentPath);
@@ -789,6 +801,7 @@ public class LuceneSearchSession implements WorkspaceSession {
      * @param path the path of the node
      * @return the query; never null
      */
+    @Override
     public Query findNodeAt( Path path ) {
         if (path.isRoot()) {
             // Look for the root node ...
@@ -798,6 +811,7 @@ public class LuceneSearchSession implements WorkspaceSession {
         return new TermQuery(new Term(ContentIndex.PATH, stringifiedPath));
     }
 
+    @Override
     public Query findNodesLike( String fieldName,
                                 String likeExpression,
                                 boolean caseSensitive ) {
@@ -805,6 +819,7 @@ public class LuceneSearchSession implements WorkspaceSession {
         return CompareStringQuery.createQueryForNodesWithFieldLike(likeExpression, fieldName, factories, caseSensitive);
     }
 
+    @Override
     public Query findNodesWith( Length propertyLength,
                                 Operator operator,
                                 Object value ) {
@@ -835,6 +850,7 @@ public class LuceneSearchSession implements WorkspaceSession {
         return null;
     }
 
+    @Override
     @SuppressWarnings( "unchecked" )
     public Query findNodesWith( PropertyValue propertyValue,
                                 Operator operator,
@@ -1115,6 +1131,7 @@ public class LuceneSearchSession implements WorkspaceSession {
         return null;
     }
 
+    @Override
     public Query findNodesWithNumericRange( PropertyValue propertyValue,
                                             Object lowerValue,
                                             Object upperValue,
@@ -1124,6 +1141,7 @@ public class LuceneSearchSession implements WorkspaceSession {
         return findNodesWithNumericRange(field, lowerValue, upperValue, includesLower, includesUpper);
     }
 
+    @Override
     public Query findNodesWithNumericRange( NodeDepth depth,
                                             Object lowerValue,
                                             Object upperValue,
@@ -1219,6 +1237,7 @@ public class LuceneSearchSession implements WorkspaceSession {
         return sb.toString();
     }
 
+    @Override
     public Query findNodesWith( NodePath nodePath,
                                 Operator operator,
                                 Object value,
@@ -1279,6 +1298,7 @@ public class LuceneSearchSession implements WorkspaceSession {
         return query;
     }
 
+    @Override
     public Query findNodesWith( NodeName nodeName,
                                 Operator operator,
                                 Object value,
@@ -1386,6 +1406,7 @@ public class LuceneSearchSession implements WorkspaceSession {
         return query;
     }
 
+    @Override
     public Query findNodesWith( NodeLocalName nodeName,
                                 Operator operator,
                                 Object value,
@@ -1438,6 +1459,7 @@ public class LuceneSearchSession implements WorkspaceSession {
         return query;
     }
 
+    @Override
     public Query findNodesWith( NodeDepth depthConstraint,
                                 Operator operator,
                                 Object value ) {
@@ -1584,6 +1606,7 @@ public class LuceneSearchSession implements WorkspaceSession {
             this.fieldSelector = new FieldSelector() {
                 private static final long serialVersionUID = 1L;
 
+                @Override
                 public FieldSelectorResult accept( String fieldName ) {
                     return fieldNames.contains(fieldName) ? FieldSelectorResult.LOAD : FieldSelectorResult.NO_LOAD;
                 }

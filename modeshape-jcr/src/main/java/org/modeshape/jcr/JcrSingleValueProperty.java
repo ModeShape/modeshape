@@ -111,7 +111,6 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         }
     }
 
-    @Override
     public BigDecimal getDecimal() throws ValueFormatException, RepositoryException {
         checkSession();
         try {
@@ -187,7 +186,6 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      * 
      * @see javax.jcr.Property#getProperty()
      */
-    @Override
     public Property getProperty() throws ItemNotFoundException, ValueFormatException, RepositoryException {
         checkSession();
         Path path = null;
@@ -236,7 +234,6 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         }
     }
 
-    @Override
     public javax.jcr.Binary getBinary() throws ValueFormatException, RepositoryException {
         checkSession();
         try {
@@ -436,7 +433,6 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         setValue(createValue(uuid, PropertyType.REFERENCE).asType(this.getType()));
     }
 
-    @Override
     public void setValue( javax.jcr.Binary value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
         // Get the Graph Binary object out of the value ...
@@ -454,7 +450,6 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         setValue(createValue(binary, PropertyType.BINARY).asType(this.getType()));
     }
 
-    @Override
     public void setValue( BigDecimal value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
         if (value == null) {

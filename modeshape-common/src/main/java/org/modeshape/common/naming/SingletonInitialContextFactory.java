@@ -68,6 +68,7 @@ public class SingletonInitialContextFactory implements InitialContextFactory {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Context getInitialContext( Hashtable<?, ?> environment ) {
         return getInstance(environment);
     }

@@ -47,7 +47,6 @@ public class JcrPropertyValue extends PropertyValue implements javax.jcr.query.q
      * 
      * @see javax.jcr.query.qom.PropertyValue#getPropertyName()
      */
-    @Override
     public String getPropertyName() {
         return propertyName();
     }
@@ -57,7 +56,6 @@ public class JcrPropertyValue extends PropertyValue implements javax.jcr.query.q
      * 
      * @see javax.jcr.query.qom.PropertyValue#getSelectorName()
      */
-    @Override
     public String getSelectorName() {
         return selectorName().name();
     }

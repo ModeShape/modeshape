@@ -110,6 +110,7 @@ public class MavenRepository implements ClassLoaderFactory {
      * @return the class loader
      * @throws IllegalArgumentException if no coordinates are passed in or if any of the coordinate references is null
      */
+    @Override
     public ClassLoader getClassLoader( String... coordinates ) {
         return getClassLoader(null, coordinates);
     }

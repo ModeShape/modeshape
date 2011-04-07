@@ -68,6 +68,7 @@ public class InfinispanTransaction extends MapTransaction<InfinispanNode, Infini
      * @see org.modeshape.graph.connector.base.Transaction#getWorkspace(java.lang.String,
      *      org.modeshape.graph.connector.base.Workspace)
      */
+    @Override
     public InfinispanWorkspace getWorkspace( String name,
                                              InfinispanWorkspace originalToClone ) {
         Cache<UUID, InfinispanNode> workspaceCache = repository.getCacheContainer().getCache(name);
@@ -86,6 +87,7 @@ public class InfinispanTransaction extends MapTransaction<InfinispanNode, Infini
      * 
      * @see org.modeshape.graph.connector.base.Transaction#destroyWorkspace(org.modeshape.graph.connector.base.Workspace)
      */
+    @Override
     public boolean destroyWorkspace( InfinispanWorkspace workspace ) {
         // Can't seem to tell Infinispan to destroy the cache, so perhaps we should destroy all the content ...
         workspace.destroy();

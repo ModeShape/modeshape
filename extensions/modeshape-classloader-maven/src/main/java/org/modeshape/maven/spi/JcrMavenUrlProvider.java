@@ -195,6 +195,7 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
     /**
      * {@inheritDoc}
      */
+    @Override
     public URL getUrl( MavenId mavenId,
                        ArtifactType artifactType,
                        SignatureType signatureType,

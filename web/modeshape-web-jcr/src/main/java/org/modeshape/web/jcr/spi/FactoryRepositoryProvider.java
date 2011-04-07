@@ -57,6 +57,7 @@ public class FactoryRepositoryProvider implements RepositoryProvider {
     public FactoryRepositoryProvider() {
     }
 
+    @Override
     public Set<String> getJcrRepositoryNames() {
         RepositoryFactory factory = factory();
         if (factory == null) return null;
@@ -71,10 +72,12 @@ public class FactoryRepositoryProvider implements RepositoryProvider {
         return factory.getRepositories(jcrUrl).getRepository(repositoryName);
     }
 
+    @Override
     public void startup( ServletContext context ) {
         this.jcrUrl = context.getInitParameter(JCR_URL);
     }
 
+    @Override
     public void shutdown() {
         factory().shutdown();
     }
@@ -97,6 +100,7 @@ public class FactoryRepositoryProvider implements RepositoryProvider {
      * @return an active session with the given workspace in the named repository
      * @throws RepositoryException if any other error occurs
      */
+    @Override
     public Session getSession( HttpServletRequest request,
                                String repositoryName,
                                String workspaceName ) throws RepositoryException {

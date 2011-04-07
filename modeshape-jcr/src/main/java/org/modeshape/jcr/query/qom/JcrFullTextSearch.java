@@ -82,47 +82,38 @@ public class JcrFullTextSearch extends FullTextSearch implements javax.jcr.query
         super(selectorName, propertyName, fullTextSearchExpression, term);
         this.fullTextSearchOperand = new JcrLiteral(new Value() {
 
-            @Override
             public int getType() {
                 return PropertyType.STRING;
             }
 
-            @Override
             public String getString() {
                 return fullTextSearchExpression;
             }
 
-            @Override
             public InputStream getStream() throws RepositoryException {
                 throw new ValueFormatException();
             }
 
-            @Override
             public long getLong() throws ValueFormatException, RepositoryException {
                 throw new ValueFormatException();
             }
 
-            @Override
             public double getDouble() throws ValueFormatException, RepositoryException {
                 throw new ValueFormatException();
             }
 
-            @Override
             public BigDecimal getDecimal() throws ValueFormatException, RepositoryException {
                 throw new ValueFormatException();
             }
 
-            @Override
             public Calendar getDate() throws ValueFormatException, RepositoryException {
                 throw new ValueFormatException();
             }
 
-            @Override
             public boolean getBoolean() throws ValueFormatException, RepositoryException {
                 throw new ValueFormatException();
             }
 
-            @Override
             public Binary getBinary() throws RepositoryException {
                 throw new ValueFormatException();
             }
@@ -134,7 +125,6 @@ public class JcrFullTextSearch extends FullTextSearch implements javax.jcr.query
      * 
      * @see javax.jcr.query.qom.PropertyValue#getPropertyName()
      */
-    @Override
     public String getPropertyName() {
         return propertyName();
     }
@@ -144,7 +134,6 @@ public class JcrFullTextSearch extends FullTextSearch implements javax.jcr.query
      * 
      * @see javax.jcr.query.qom.FullTextSearch#getFullTextSearchExpression()
      */
-    @Override
     public StaticOperand getFullTextSearchExpression() {
         return fullTextSearchOperand;
     }
@@ -154,7 +143,6 @@ public class JcrFullTextSearch extends FullTextSearch implements javax.jcr.query
      * 
      * @see javax.jcr.query.qom.PropertyValue#getSelectorName()
      */
-    @Override
     public String getSelectorName() {
         return selectorName().name();
     }

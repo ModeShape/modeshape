@@ -45,7 +45,6 @@ public class JcrNodeLocalName extends NodeLocalName implements javax.jcr.query.q
      * 
      * @see javax.jcr.query.qom.NodeLocalName#getSelectorName()
      */
-    @Override
     public String getSelectorName() {
         return selectorName().name();
     }

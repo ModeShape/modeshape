@@ -57,18 +57,22 @@ public class SimpleJpaSourceTest {
 
             private final ExecutionContext context = new ExecutionContext();
 
+            @Override
             public Subgraph getConfiguration( int depth ) {
                 return null;
             }
 
+            @Override
             public ExecutionContext getExecutionContext() {
                 return context;
             }
 
+            @Override
             public Observer getObserver() {
                 return null;
             }
 
+            @Override
             public RepositoryConnectionFactory getRepositoryConnectionFactory() {
                 return null;
             }

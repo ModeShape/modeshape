@@ -60,7 +60,6 @@ public class JcrColumn extends Column implements javax.jcr.query.qom.Column {
      * 
      * @see javax.jcr.query.qom.Column#getSelectorName()
      */
-    @Override
     public String getSelectorName() {
         return selectorName().name();
     }
@@ -70,7 +69,6 @@ public class JcrColumn extends Column implements javax.jcr.query.qom.Column {
      * 
      * @see javax.jcr.query.qom.Column#getPropertyName()
      */
-    @Override
     public String getPropertyName() {
         return propertyName();
     }
@@ -80,7 +78,6 @@ public class JcrColumn extends Column implements javax.jcr.query.qom.Column {
      * 
      * @see javax.jcr.query.qom.Column#getColumnName()
      */
-    @Override
     public String getColumnName() {
         return columnName();
     }

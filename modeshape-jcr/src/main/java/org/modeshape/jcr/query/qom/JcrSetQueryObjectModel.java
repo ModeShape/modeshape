@@ -73,7 +73,6 @@ public class JcrSetQueryObjectModel extends JcrQuery implements SetQueryObjectMo
      * 
      * @see org.modeshape.jcr.api.query.qom.SetQuery#getLeft()
      */
-    @Override
     public org.modeshape.jcr.api.query.qom.QueryCommand getLeft() {
         return query().getLeft();
     }
@@ -83,7 +82,6 @@ public class JcrSetQueryObjectModel extends JcrQuery implements SetQueryObjectMo
      * 
      * @see org.modeshape.jcr.api.query.qom.SetQuery#getRight()
      */
-    @Override
     public org.modeshape.jcr.api.query.qom.QueryCommand getRight() {
         return query().getRight();
     }
@@ -93,7 +91,6 @@ public class JcrSetQueryObjectModel extends JcrQuery implements SetQueryObjectMo
      * 
      * @see org.modeshape.jcr.api.query.qom.SetQuery#isAll()
      */
-    @Override
     public boolean isAll() {
         return query().isAll();
     }
@@ -103,7 +100,6 @@ public class JcrSetQueryObjectModel extends JcrQuery implements SetQueryObjectMo
      * 
      * @see org.modeshape.jcr.api.query.qom.QueryCommand#getLimits()
      */
-    @Override
     public Limit getLimits() {
         return query().getLimits();
     }
@@ -113,7 +109,6 @@ public class JcrSetQueryObjectModel extends JcrQuery implements SetQueryObjectMo
      * 
      * @see org.modeshape.jcr.api.query.qom.SetQuery#getOperation()
      */
-    @Override
     public String getOperation() {
         return query().getOperation();
     }
@@ -123,7 +118,6 @@ public class JcrSetQueryObjectModel extends JcrQuery implements SetQueryObjectMo
      * 
      * @see javax.jcr.query.qom.QueryObjectModel#getColumns()
      */
-    @Override
     public Column[] getColumns() {
         return query().getColumns();
     }
@@ -133,7 +127,6 @@ public class JcrSetQueryObjectModel extends JcrQuery implements SetQueryObjectMo
      * 
      * @see javax.jcr.query.qom.QueryObjectModel#getOrderings()
      */
-    @Override
     public Ordering[] getOrderings() {
         return query().getOrderings();
     }

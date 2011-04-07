@@ -90,6 +90,7 @@ public class Repository implements IModeShapeObject {
      * 
      * @see org.modeshape.web.jcr.rest.client.domain.IModeShapeObject#getName()
      */
+    @Override
     public String getName() {
         return this.name;
     }
@@ -106,6 +107,7 @@ public class Repository implements IModeShapeObject {
      * 
      * @see org.modeshape.web.jcr.rest.client.domain.IModeShapeObject#getShortDescription()
      */
+    @Override
     public String getShortDescription() {
         return RestClientI18n.repositoryShortDescription.text(this.name, this.server.getName());
     }

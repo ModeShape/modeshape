@@ -130,7 +130,6 @@ public class JcrSetQuery extends SetQuery implements org.modeshape.jcr.api.query
      * 
      * @see org.modeshape.jcr.api.query.qom.QueryCommand#getLimits()
      */
-    @Override
     public Limit getLimits() {
         return limits();
     }
@@ -140,7 +139,6 @@ public class JcrSetQuery extends SetQuery implements org.modeshape.jcr.api.query
      * 
      * @see org.modeshape.jcr.api.query.qom.SetQuery#getLeft()
      */
-    @Override
     public JcrQueryCommand getLeft() {
         return left();
     }
@@ -150,7 +148,6 @@ public class JcrSetQuery extends SetQuery implements org.modeshape.jcr.api.query
      * 
      * @see org.modeshape.jcr.api.query.qom.SetQuery#getRight()
      */
-    @Override
     public JcrQueryCommand getRight() {
         return right();
     }
@@ -160,7 +157,6 @@ public class JcrSetQuery extends SetQuery implements org.modeshape.jcr.api.query
      * 
      * @see org.modeshape.jcr.api.query.qom.SetQuery#getOperation()
      */
-    @Override
     public String getOperation() {
         switch (operation()) {
             case UNION:
@@ -179,7 +175,6 @@ public class JcrSetQuery extends SetQuery implements org.modeshape.jcr.api.query
      * 
      * @see org.modeshape.jcr.api.query.qom.QueryCommand#getColumns()
      */
-    @Override
     public Column[] getColumns() {
         List<? extends JcrColumn> columns = columns();
         return columns.toArray(new Column[columns.size()]);
@@ -190,7 +185,6 @@ public class JcrSetQuery extends SetQuery implements org.modeshape.jcr.api.query
      * 
      * @see org.modeshape.jcr.api.query.qom.QueryCommand#getOrderings()
      */
-    @Override
     public Ordering[] getOrderings() {
         List<? extends JcrOrdering> orderings = orderings();
         return orderings.toArray(new Ordering[orderings.size()]);

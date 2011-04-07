@@ -93,6 +93,7 @@ public class IndexRules {
          * 
          * @see Rule#getType()
          */
+        @Override
         public FieldType getType() {
             return FieldType.STRING;
         }
@@ -102,6 +103,7 @@ public class IndexRules {
          * 
          * @see Rule#isSkipped()
          */
+        @Override
         public boolean isSkipped() {
             return true;
         }
@@ -131,6 +133,7 @@ public class IndexRules {
          * 
          * @see Rule#getIndexOption()
          */
+        @Override
         public Index getIndexOption() {
             return Field.Index.NO;
         }
@@ -140,6 +143,7 @@ public class IndexRules {
          * 
          * @see Rule#getStoreOption()
          */
+        @Override
         public Store getStoreOption() {
             return Field.Store.NO;
         }
@@ -173,6 +177,7 @@ public class IndexRules {
          * 
          * @see IndexRules.Rule#getType()
          */
+        @Override
         public FieldType getType() {
             return type;
         }
@@ -182,6 +187,7 @@ public class IndexRules {
          * 
          * @see IndexRules.Rule#isSkipped()
          */
+        @Override
         public boolean isSkipped() {
             return false;
         }
@@ -211,6 +217,7 @@ public class IndexRules {
          * 
          * @see IndexRules.Rule#getIndexOption()
          */
+        @Override
         public Index getIndexOption() {
             return index;
         }
@@ -220,6 +227,7 @@ public class IndexRules {
          * 
          * @see IndexRules.Rule#getStoreOption()
          */
+        @Override
         public Store getStoreOption() {
             return store;
         }
@@ -257,6 +265,7 @@ public class IndexRules {
          * 
          * @see IndexRules.NumericRule#getMaximum()
          */
+        @Override
         public T getMaximum() {
             return maxValue;
         }
@@ -266,6 +275,7 @@ public class IndexRules {
          * 
          * @see IndexRules.NumericRule#getMinimum()
          */
+        @Override
         public T getMinimum() {
             return minValue;
         }

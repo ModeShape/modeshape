@@ -48,6 +48,7 @@ public class SimpleJpaTransaction implements MapRepositoryTransaction {
      * 
      * @see org.modeshape.graph.connector.map.MapRepositoryTransaction#commit()
      */
+    @Override
     public void commit() {
         if (txn != null) txn.commit();
     }
@@ -57,6 +58,7 @@ public class SimpleJpaTransaction implements MapRepositoryTransaction {
      * 
      * @see org.modeshape.graph.connector.map.MapRepositoryTransaction#rollback()
      */
+    @Override
     public void rollback() {
         if (txn != null) this.txn.rollback();
     }

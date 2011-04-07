@@ -2288,12 +2288,10 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
         }
     }
 
-    @Override
     public Path getObservedPath() {
         return this.nodeTypesPath;
     }
 
-    @Override
     public void notify( Changes changes ) {
         Collection<Name> createdNodeTypeNames = new HashSet<Name>();
         Collection<Name> deletedNodeTypeNames = new HashSet<Name>();

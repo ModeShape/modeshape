@@ -806,22 +806,18 @@ public class JcrRepository implements Repository {
             final Observer observer = this.repositoryObservationManager;
             final ExecutionContext context = executionContext;
             transientSystemSource.initialize(new RepositoryContext() {
-                @Override
                 public Observer getObserver() {
                     return observer;
                 }
 
-                @Override
                 public ExecutionContext getExecutionContext() {
                     return context;
                 }
 
-                @Override
                 public Subgraph getConfiguration( int depth ) {
                     return null; // not needed for the in-memory transient repository
                 }
 
-                @Override
                 public RepositoryConnectionFactory getRepositoryConnectionFactory() {
                     return null; // not needed for the in-memory transient repository
                 }
@@ -1392,17 +1388,14 @@ public class JcrRepository implements Repository {
         assert jcrSecurityContext != null;
 
         return new SecurityContext() {
-            @Override
             public String getUserName() {
                 return jcrSecurityContext.getUserName();
             }
 
-            @Override
             public boolean hasRole( String roleName ) {
                 return jcrSecurityContext.hasRole(roleName);
             }
 
-            @Override
             public void logout() {
                 jcrSecurityContext.logout();
             }
@@ -2011,7 +2004,6 @@ public class JcrRepository implements Repository {
             assert systemWorkspaceName != null;
         }
 
-        @Override
         public void notify( Changes changes ) {
             // Don't process changes from outside the system graph
             if (!changes.getSourceName().equals(systemSourceName)) {

@@ -133,7 +133,8 @@ public abstract class Facet implements
 	 * 
 	 * @see ResourceComponent#start(ResourceContext)
 	 */
-	public void start(ResourceContext context) {
+	@Override
+    public void start(ResourceContext context) {
 		resourceContext = context;
 		deploymentName = context.getResourceKey();
 	}
@@ -145,7 +146,8 @@ public abstract class Facet implements
 	 * 
 	 * @see ResourceComponent#stop()
 	 */
-	public void stop() {
+	@Override
+    public void stop() {
 		this.isAvailable = false;
 	}
 
@@ -211,7 +213,8 @@ public abstract class Facet implements
 	 * 
 	 * @see org.rhq.core.pluginapi.inventory.ResourceComponent#getAvailability()
 	 */
-	public AvailabilityType getAvailability() {
+	@Override
+    public AvailabilityType getAvailability() {
 
 		LOG.debug("Checking availability of  " + identifier); //$NON-NLS-1$
 
@@ -236,7 +239,8 @@ public abstract class Facet implements
 	 * 
 	 * @see MeasurementFacet#getValues(MeasurementReport, Set)
 	 */
-	public abstract void getValues(MeasurementReport arg0,
+	@Override
+    public abstract void getValues(MeasurementReport arg0,
 			Set<MeasurementScheduleRequest> arg1) throws Exception;
 
 	/**
@@ -247,7 +251,8 @@ public abstract class Facet implements
 	 * 
 	 * @see OperationFacet#invokeOperation(String, Configuration)
 	 */
-	public OperationResult invokeOperation(String name,
+	@Override
+    public OperationResult invokeOperation(String name,
 			Configuration configuration) {
 		Map valueMap = new HashMap<String, Object>();
 
@@ -274,7 +279,8 @@ public abstract class Facet implements
 	 * 
 	 * @see ConfigurationFacet#loadResourceConfiguration()
 	 */
-	public Configuration loadResourceConfiguration() {
+	@Override
+    public Configuration loadResourceConfiguration() {
 		// here we simulate the loading of the managed resource's configuration
 
 		if (resourceConfiguration == null) {
@@ -299,7 +305,8 @@ public abstract class Facet implements
 	 * 
 	 * @see ConfigurationFacet#updateResourceConfiguration(ConfigurationUpdateReport)
 	 */
-	public void updateResourceConfiguration(ConfigurationUpdateReport report) {
+	@Override
+    public void updateResourceConfiguration(ConfigurationUpdateReport report) {
 
 		resourceConfiguration = report.getConfiguration().deepCopy();
 

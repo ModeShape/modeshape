@@ -71,6 +71,7 @@ public class ImageMetadataSequencer implements StreamSequencer {
      * 
      * @see StreamSequencer#sequence(InputStream, SequencerOutput, StreamSequencerContext)
      */
+    @Override
     public void sequence( InputStream stream,
                           SequencerOutput output,
                           StreamSequencerContext context ) {

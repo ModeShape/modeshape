@@ -99,16 +99,19 @@ public class Serializer {
     }
 
     protected static class NoLargeValues implements LargeValues {
+        @Override
         public long getMinimumSize() {
             return Long.MAX_VALUE;
         }
 
+        @Override
         public void write( byte[] hash,
                            long length,
                            PropertyType type,
                            Object value ) {
         }
 
+        @Override
         public Object read( ValueFactories valueFactories,
                             byte[] hash,
                             long length ) {
@@ -130,12 +133,15 @@ public class Serializer {
     }
 
     protected static class NoReferenceValues implements ReferenceValues {
+        @Override
         public void read( Reference arg0 ) {
         }
 
+        @Override
         public void remove( Reference arg0 ) {
         }
 
+        @Override
         public void write( Reference arg0 ) {
         }
     }

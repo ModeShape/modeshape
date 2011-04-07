@@ -126,6 +126,7 @@ public class NodeType implements IModeShapeObject, javax.jcr.nodetype.NodeType {
      * 
      * @see org.modeshape.web.jcr.rest.client.domain.IModeShapeObject#getName()
      */
+    @Override
     public String getName() {
         return this.name;
     }
@@ -379,6 +380,7 @@ public class NodeType implements IModeShapeObject, javax.jcr.nodetype.NodeType {
      * 
      * @see org.modeshape.web.jcr.rest.client.domain.IModeShapeObject#getShortDescription()
      */
+    @Override
     public String getShortDescription() {
         return RestClientI18n.nodeTypeShortDescription.text(this.name);
     }

@@ -554,7 +554,6 @@ final class JcrVersionManager implements VersionManager {
      * @throws RepositoryException if an error occurs accessing the repository
      * @see javax.jcr.Workspace#restore(Version[], boolean)
      */
-    @Override
     public void restore( Version[] versions,
                          boolean removeExisting ) throws RepositoryException {
         session.checkLive();
@@ -1641,7 +1640,6 @@ final class JcrVersionManager implements VersionManager {
 
     }
 
-    @Override
     public void cancelMerge( String absPath,
                              Version version ) throws VersionException, InvalidItemStateException, RepositoryException {
         cancelMerge(session.getNode(absPath), version);
@@ -1661,18 +1659,15 @@ final class JcrVersionManager implements VersionManager {
         }
     }
 
-    @Override
     public Version checkin( String absPath )
         throws VersionException, InvalidItemStateException, LockException, RepositoryException {
         return checkin(session.getNode(absPath));
     }
 
-    @Override
     public void checkout( String absPath ) throws LockException, RepositoryException {
         checkout(session.getNode(absPath));
     }
 
-    @Override
     public Version checkpoint( String absPath )
         throws VersionException, InvalidItemStateException, LockException, RepositoryException {
         Version version = checkin(absPath);
@@ -1680,42 +1675,35 @@ final class JcrVersionManager implements VersionManager {
         return version;
     }
 
-    @Override
     public void doneMerge( String absPath,
                            Version version ) throws VersionException, InvalidItemStateException, RepositoryException {
         doneMerge(session.getNode(absPath), version);
     }
 
-    @Override
     public javax.jcr.Node getActivity() throws UnsupportedRepositoryOperationException, RepositoryException {
         throw new UnsupportedRepositoryOperationException();
     }
 
-    @Override
     public Version getBaseVersion( String absPath ) throws RepositoryException {
         return session.getNode(absPath).getBaseVersion();
     }
 
-    @Override
     public VersionHistory getVersionHistory( String absPath ) throws UnsupportedRepositoryOperationException, RepositoryException {
         return session.getNode(absPath).getVersionHistory();
     }
 
-    @Override
     public boolean isCheckedOut( String absPath ) throws RepositoryException {
         AbstractJcrNode node = session.getNode(absPath);
         return node.isCheckedOut();
     }
 
     @SuppressWarnings( "unused" )
-    @Override
     public NodeIterator merge( javax.jcr.Node activityNode )
         throws VersionException, AccessDeniedException, MergeException, LockException, InvalidItemStateException,
         RepositoryException {
         throw new UnsupportedRepositoryOperationException();
     }
 
-    @Override
     public NodeIterator merge( String absPath,
                                String srcWorkspace,
                                boolean bestEffort,
@@ -1729,7 +1717,6 @@ final class JcrVersionManager implements VersionManager {
         return merge(node, srcWorkspace, bestEffort, isShallow);
     }
 
-    @Override
     public NodeIterator merge( String absPath,
                                String srcWorkspace,
                                boolean bestEffort )
@@ -1738,7 +1725,6 @@ final class JcrVersionManager implements VersionManager {
         return merge(absPath, srcWorkspace, bestEffort, false);
     }
 
-    @Override
     public void restore( String absPath,
                          String versionName,
                          boolean removeExisting )
@@ -1763,7 +1749,6 @@ final class JcrVersionManager implements VersionManager {
         restore(path, version, null, removeExisting);
     }
 
-    @Override
     public void restore( String absPath,
                          Version version,
                          boolean removeExisting )
@@ -1774,7 +1759,6 @@ final class JcrVersionManager implements VersionManager {
         restore(path, version, null, removeExisting);
     }
 
-    @Override
     public void restore( Version version,
                          boolean removeExisting )
         throws VersionException, ItemExistsException, InvalidItemStateException, LockException, RepositoryException {
@@ -1784,7 +1768,6 @@ final class JcrVersionManager implements VersionManager {
         restore(path, version, null, removeExisting);
     }
 
-    @Override
     public void restoreByLabel( String absPath,
                                 String versionLabel,
                                 boolean removeExisting )
@@ -1792,25 +1775,21 @@ final class JcrVersionManager implements VersionManager {
         session.getNode(absPath).restoreByLabel(versionLabel, removeExisting);
     }
 
-    @Override
     public javax.jcr.Node setActivity( javax.jcr.Node activity )
         throws UnsupportedRepositoryOperationException, RepositoryException {
         throw new UnsupportedRepositoryOperationException();
     }
 
     @SuppressWarnings( "unused" )
-    @Override
     public void removeActivity( javax.jcr.Node activityNode )
         throws UnsupportedRepositoryOperationException, VersionException, RepositoryException {
         throw new UnsupportedRepositoryOperationException();
     }
 
-    @Override
     public javax.jcr.Node createActivity( String title ) throws UnsupportedRepositoryOperationException, RepositoryException {
         throw new UnsupportedRepositoryOperationException();
     }
 
-    @Override
     public javax.jcr.Node createConfiguration( String absPath )
         throws UnsupportedRepositoryOperationException, RepositoryException {
         throw new UnsupportedRepositoryOperationException();
@@ -1839,7 +1818,6 @@ final class JcrVersionManager implements VersionManager {
             super(versionStoragePath, context);
         }
 
-        @Override
         public Path versionHistoryPathFor( UUID uuid ) {
             String uuidStr = uuid.toString();
             Name p1 = names.create(uuidStr.substring(0, 2));
@@ -1857,7 +1835,6 @@ final class JcrVersionManager implements VersionManager {
             super(versionStoragePath, context);
         }
 
-        @Override
         public Path versionHistoryPathFor( UUID uuid ) {
             return paths.createAbsolutePath(JcrLexicon.SYSTEM, JcrLexicon.VERSION_STORAGE, names.create(uuid.toString()));
         }

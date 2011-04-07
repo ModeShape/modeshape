@@ -59,6 +59,7 @@ public class JcrRepositoryConnection implements RepositoryConnection {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getSourceName() {
         return source.getName();
     }
@@ -66,6 +67,7 @@ public class JcrRepositoryConnection implements RepositoryConnection {
     /**
      * {@inheritDoc}
      */
+    @Override
     public CachePolicy getDefaultCachePolicy() {
         return source.getDefaultCachePolicy();
     }
@@ -73,6 +75,7 @@ public class JcrRepositoryConnection implements RepositoryConnection {
     /**
      * {@inheritDoc}
      */
+    @Override
     public XAResource getXAResource() {
         return null;
     }
@@ -80,6 +83,7 @@ public class JcrRepositoryConnection implements RepositoryConnection {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean ping( long time,
                          TimeUnit unit ) {
         return true;
@@ -88,6 +92,7 @@ public class JcrRepositoryConnection implements RepositoryConnection {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void close() {
         // do nothing
     }
@@ -98,6 +103,7 @@ public class JcrRepositoryConnection implements RepositoryConnection {
      * @see org.modeshape.graph.connector.RepositoryConnection#execute(org.modeshape.graph.ExecutionContext,
      *      org.modeshape.graph.request.Request)
      */
+    @Override
     public void execute( final ExecutionContext context,
                          Request request ) throws RepositorySourceException {
         Logger logger = context.getLogger(getClass());

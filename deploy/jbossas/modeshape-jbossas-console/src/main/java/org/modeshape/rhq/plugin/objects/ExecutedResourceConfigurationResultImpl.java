@@ -69,19 +69,23 @@ public class ExecutedResourceConfigurationResultImpl implements ExecutedResult {
         content = null;
     }
 
+    @Override
     public String getComponentType() {
         return this.componentType;
     }
 
+    @Override
     public String getOperationName() {
         return this.operationName;
     }
 
+    @Override
     @SuppressWarnings( "unchecked" )
     public List getFieldNameList() {
         return fieldNameList;
     }
 
+    @Override
     public Object getResult() {
         return result;
     }
@@ -105,11 +109,13 @@ public class ExecutedResourceConfigurationResultImpl implements ExecutedResult {
         result = list;
     }
 
+    @Override
     public void setContent( Collection content ) {
         this.content = content;
         setComplexResult();
     }
 
+    @Override
     public void setContent( String content ) {
         this.content = content;
     }

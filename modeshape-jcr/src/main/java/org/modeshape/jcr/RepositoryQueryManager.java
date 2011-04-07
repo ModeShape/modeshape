@@ -308,7 +308,6 @@ abstract class RepositoryQueryManager {
                      * 
                      * @see java.util.concurrent.ThreadFactory#newThread(java.lang.Runnable)
                      */
-                    @Override
                     public Thread newThread( Runnable r ) {
                         Thread thread = new Thread("modeshape-indexing");
                         thread.setPriority(Thread.NORM_PRIORITY + 3);

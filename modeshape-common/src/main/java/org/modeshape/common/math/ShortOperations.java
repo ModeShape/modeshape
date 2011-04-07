@@ -34,10 +34,12 @@ import org.modeshape.common.annotation.Immutable;
 @Immutable
 public class ShortOperations implements MathOperations<Short>, Comparator<Short> {
 
+    @Override
     public Class<Short> getOperandClass() {
         return Short.class;
     }
 
+    @Override
     public Short add( Short value1,
                       Short value2 ) {
         if (value1 == null) return value2 != null ? value2 : createZeroValue();
@@ -45,6 +47,7 @@ public class ShortOperations implements MathOperations<Short>, Comparator<Short>
         return (short)(value1 + value2);
     }
 
+    @Override
     public Short subtract( Short value1,
                            Short value2 ) {
         if (value1 == null) return negate(value2);
@@ -52,28 +55,33 @@ public class ShortOperations implements MathOperations<Short>, Comparator<Short>
         return (short)(value1 - value2);
     }
 
+    @Override
     public Short multiply( Short value1,
                            Short value2 ) {
         if (value1 == null || value2 == null) return createZeroValue();
         return (short)(value1 * value2);
     }
 
+    @Override
     public double divide( Short value1,
                           Short value2 ) {
         if (value1 == null || value2 == null) throw new IllegalArgumentException();
         return value1 / value2;
     }
 
+    @Override
     public Short negate( Short value ) {
         if (value == null) return createZeroValue();
         return (short)(value * -1);
     }
 
+    @Override
     public Short increment( Short value ) {
         if (value == null) return createZeroValue();
         return (short)(value + 1);
     }
 
+    @Override
     public Short maximum( Short value1,
                           Short value2 ) {
         if (value1 == null) return value2;
@@ -81,6 +89,7 @@ public class ShortOperations implements MathOperations<Short>, Comparator<Short>
         return (short)Math.max(value1, value2);
     }
 
+    @Override
     public Short minimum( Short value1,
                           Short value2 ) {
         if (value1 == null) return value2;
@@ -88,6 +97,7 @@ public class ShortOperations implements MathOperations<Short>, Comparator<Short>
         return (short)Math.min(value1, value2);
     }
 
+    @Override
     public int compare( Short value1,
                         Short value2 ) {
         if (value1 == null) return value2 != null ? -1 : 0;
@@ -95,38 +105,47 @@ public class ShortOperations implements MathOperations<Short>, Comparator<Short>
         return value1.compareTo(value2);
     }
 
+    @Override
     public BigDecimal asBigDecimal( Short value ) {
         return value != null ? new BigDecimal(value) : null;
     }
 
+    @Override
     public Short fromBigDecimal( BigDecimal value ) {
         return value != null ? value.shortValue() : null;
     }
 
+    @Override
     public Short createZeroValue() {
         return 0;
     }
 
+    @Override
     public Short create( int value ) {
         return (short)value;
     }
 
+    @Override
     public Short create( long value ) {
         return (short)value;
     }
 
+    @Override
     public Short create( double value ) {
         return (short)value;
     }
 
+    @Override
     public double sqrt( Short value ) {
         return Math.sqrt(value);
     }
 
+    @Override
     public Comparator<Short> getComparator() {
         return this;
     }
 
+    @Override
     public Short random( Short minimum,
                          Short maximum,
                          Random rng ) {
@@ -135,26 +154,32 @@ public class ShortOperations implements MathOperations<Short>, Comparator<Short>
         return new Integer(minimum + increment).shortValue();
     }
 
+    @Override
     public double doubleValue( Short value ) {
         return value.doubleValue();
     }
 
+    @Override
     public float floatValue( Short value ) {
         return value.floatValue();
     }
 
+    @Override
     public int intValue( Short value ) {
         return value.intValue();
     }
 
+    @Override
     public long longValue( Short value ) {
         return value.longValue();
     }
 
+    @Override
     public short shortValue( Short value ) {
         return value.shortValue();
     }
 
+    @Override
     public int getExponentInScientificNotation( Short value ) {
         int v = Math.abs(value);
         int exp = 0;
@@ -172,6 +197,7 @@ public class ShortOperations implements MathOperations<Short>, Comparator<Short>
         return exp;
     }
 
+    @Override
     public Short roundUp( Short value,
                           int decimalShift ) {
         if (value == 0) return 0;
@@ -188,6 +214,7 @@ public class ShortOperations implements MathOperations<Short>, Comparator<Short>
         return (short)shiftedValue;
     }
 
+    @Override
     public Short roundDown( Short value,
                             int decimalShift ) {
         if (value == 0) return 0;
@@ -201,6 +228,7 @@ public class ShortOperations implements MathOperations<Short>, Comparator<Short>
         return (short)shiftedValue;
     }
 
+    @Override
     public Short keepSignificantFigures( Short value,
                                          int numSigFigs ) {
         if (numSigFigs < 0) return value;

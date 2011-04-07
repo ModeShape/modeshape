@@ -43,6 +43,7 @@ public class StringMatcher extends TypeSafeMatcher<String> {
         return item.startsWith(item);
     }
 
+    @Override
     public void describeTo( Description description ) {
         description.appendText("a string starts with ").appendValue(substring);
     }

@@ -563,7 +563,6 @@ public class XmlHandlerTest {
          * @see org.modeshape.graph.io.Destination#create(org.modeshape.graph.NodeConflictBehavior,
          *      org.modeshape.graph.property.Path, org.modeshape.graph.property.Property, org.modeshape.graph.property.Property[])
          */
-        @Override
         public void create( NodeConflictBehavior behavior,
                             Path path,
                             Property firstProperty,
@@ -589,7 +588,6 @@ public class XmlHandlerTest {
          * 
          * @see org.modeshape.graph.io.Destination#setProperties(org.modeshape.graph.property.Path, java.lang.Iterable)
          */
-        @Override
         public void setProperties( Path path,
                                    Iterable<Property> properties ) {
             Property firstProp = null;

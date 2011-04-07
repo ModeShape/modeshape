@@ -53,6 +53,7 @@ public abstract class AbstractTextSequencer implements StreamSequencer {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void sequence( InputStream stream,
                           SequencerOutput output,
                           StreamSequencerContext context ) {

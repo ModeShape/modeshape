@@ -295,7 +295,6 @@ final class JcrObservationManager implements ObservationManager {
      * 
      * @see javax.jcr.observation.ObservationManager#setUserData(java.lang.String)
      */
-    @Override
     public void setUserData( String userData ) {
         // User data value may be null
         session.setSessionData(OBSERVATION_USER_DATA_KEY, userData);
@@ -309,7 +308,6 @@ final class JcrObservationManager implements ObservationManager {
      * 
      * @see javax.jcr.observation.ObservationManager#getEventJournal()
      */
-    @Override
     public EventJournal getEventJournal() {
         return null; // per the JavaDoc
     }
@@ -323,7 +321,6 @@ final class JcrObservationManager implements ObservationManager {
      * @see javax.jcr.observation.ObservationManager#getEventJournal(int, java.lang.String, boolean, java.lang.String[],
      *      java.lang.String[])
      */
-    @Override
     public EventJournal getEventJournal( int eventTypes,
                                          String absPath,
                                          boolean isDeep,
@@ -587,7 +584,6 @@ final class JcrObservationManager implements ObservationManager {
          * 
          * @see javax.jcr.observation.Event#getDate()
          */
-        @Override
         public long getDate() {
             return bundle.getDate().getMilliseconds();
         }
@@ -597,7 +593,6 @@ final class JcrObservationManager implements ObservationManager {
          * 
          * @see javax.jcr.observation.Event#getIdentifier()
          */
-        @Override
         public String getIdentifier() {
             return id;
         }
@@ -607,7 +602,6 @@ final class JcrObservationManager implements ObservationManager {
          * 
          * @see javax.jcr.observation.Event#getUserData()
          */
-        @Override
         public String getUserData() {
             return bundle.getUserData();
         }
@@ -618,7 +612,6 @@ final class JcrObservationManager implements ObservationManager {
          * @see javax.jcr.observation.Event#getInfo()
          * @see JcrMoveEvent#getInfo()
          */
-        @Override
         public Map<String, String> getInfo() {
             return Collections.emptyMap();
         }

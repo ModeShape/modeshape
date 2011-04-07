@@ -42,6 +42,7 @@ public class MockComponentB implements SampleComponent {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setConfiguration( SampleComponentConfig config ) {
         this.config = config;
     }
@@ -49,6 +50,7 @@ public class MockComponentB implements SampleComponent {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void doSomething() {
         // increment the counter and record the progress ...
         this.counter.incrementAndGet();
@@ -65,6 +67,7 @@ public class MockComponentB implements SampleComponent {
     /**
      * @return config
      */
+    @Override
     public SampleComponentConfig getConfiguration() {
         return this.config;
     }

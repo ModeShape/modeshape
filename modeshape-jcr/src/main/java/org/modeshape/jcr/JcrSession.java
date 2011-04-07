@@ -814,7 +814,6 @@ class JcrSession implements Session {
      * 
      * @see javax.jcr.Session#getNodeByIdentifier(java.lang.String)
      */
-    @Override
     public AbstractJcrNode getNodeByIdentifier( String id ) throws ItemNotFoundException, RepositoryException {
         // Attempt to create a UUID from the identifier ...
         try {
@@ -1288,7 +1287,6 @@ class JcrSession implements Session {
      * 
      * @see javax.jcr.Session#getAccessControlManager()
      */
-    @Override
     public AccessControlManager getAccessControlManager() throws UnsupportedRepositoryOperationException, RepositoryException {
         throw new UnsupportedRepositoryOperationException();
     }
@@ -1298,7 +1296,6 @@ class JcrSession implements Session {
      * 
      * @see javax.jcr.Session#getRetentionManager()
      */
-    @Override
     public RetentionManager getRetentionManager() throws UnsupportedRepositoryOperationException, RepositoryException {
         throw new UnsupportedRepositoryOperationException();
     }

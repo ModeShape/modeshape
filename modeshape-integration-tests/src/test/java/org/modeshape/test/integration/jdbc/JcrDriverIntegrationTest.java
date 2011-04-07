@@ -136,6 +136,7 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
         // Set up the mock JNDI context ...
         MockitoAnnotations.initMocks(this);
         when(jndi.lookup(jndiNameForRepository)).thenAnswer(new Answer<Repository>() {
+            @Override
             @SuppressWarnings( "synthetic-access" )
             public Repository answer( InvocationOnMock invocation ) throws Throwable {
                 return repository();

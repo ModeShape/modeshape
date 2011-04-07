@@ -62,6 +62,7 @@ public class SequencingServiceDiscoveryComponent implements
 	 * 
 	 * @see org.rhq.core.pluginapi.inventory.ResourceDiscoveryComponent#discoverResources(org.rhq.core.pluginapi.inventory.ResourceDiscoveryContext)
 	 */
+    @Override
     @SuppressWarnings( "rawtypes" )
 	public Set<DiscoveredResourceDetails> discoverResources(
 			ResourceDiscoveryContext discoveryContext)

@@ -83,6 +83,7 @@ public class XmlValueEncoder implements TextEncoder, TextDecoder {
      * 
      * @see org.modeshape.common.text.TextEncoder#encode(java.lang.String)
      */
+    @Override
     public String encode( String text ) {
         if (text == null) return null;
         StringBuilder sb = new StringBuilder();
@@ -116,6 +117,7 @@ public class XmlValueEncoder implements TextEncoder, TextDecoder {
      * 
      * @see org.modeshape.common.text.TextDecoder#decode(java.lang.String)
      */
+    @Override
     public String decode( String encodedText ) {
         if (encodedText == null) return null;
         StringBuilder sb = new StringBuilder();

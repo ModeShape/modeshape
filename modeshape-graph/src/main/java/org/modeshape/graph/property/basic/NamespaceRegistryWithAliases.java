@@ -163,7 +163,6 @@ public class NamespaceRegistryWithAliases implements NamespaceRegistry {
      * 
      * @see org.modeshape.graph.property.NamespaceRegistry#register(java.lang.Iterable)
      */
-    @Override
     public void register( Iterable<Namespace> namespaces ) {
         // Let the delegate registry handle this, including cases where an aliased namespace is changed ...
         delegate.register(namespaces);

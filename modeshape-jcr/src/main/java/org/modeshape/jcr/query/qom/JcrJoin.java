@@ -86,7 +86,6 @@ public class JcrJoin extends Join implements javax.jcr.query.qom.Join, JcrSource
      * 
      * @see javax.jcr.query.qom.Join#getJoinCondition()
      */
-    @Override
     public JoinCondition getJoinCondition() {
         return joinCondition();
     }
@@ -96,7 +95,6 @@ public class JcrJoin extends Join implements javax.jcr.query.qom.Join, JcrSource
      * 
      * @see javax.jcr.query.qom.Join#getJoinType()
      */
-    @Override
     public String getJoinType() {
         switch (type()) {
             case CROSS:
@@ -119,7 +117,6 @@ public class JcrJoin extends Join implements javax.jcr.query.qom.Join, JcrSource
      * 
      * @see javax.jcr.query.qom.Join#getLeft()
      */
-    @Override
     public JcrSource getLeft() {
         return left();
     }
@@ -129,7 +126,6 @@ public class JcrJoin extends Join implements javax.jcr.query.qom.Join, JcrSource
      * 
      * @see javax.jcr.query.qom.Join#getRight()
      */
-    @Override
     public JcrSource getRight() {
         return right();
     }

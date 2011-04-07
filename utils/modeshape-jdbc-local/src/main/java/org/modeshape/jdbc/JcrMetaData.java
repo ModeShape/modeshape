@@ -2695,6 +2695,7 @@ public class JcrMetaData implements DatabaseMetaData {
 
         if (nodetypes.size() > 1) {
             final Comparator<NodeType> name_order = new Comparator<NodeType>() {
+                @Override
                 public int compare( NodeType e1,
                                     NodeType e2 ) {
                     return e1.getName().compareTo(e2.getName());
@@ -2767,6 +2768,7 @@ public class JcrMetaData implements DatabaseMetaData {
 
         if (resultDefns.size() > 1) {
             final Comparator<PropertyDefinition> name_order = new Comparator<PropertyDefinition>() {
+                @Override
                 public int compare( PropertyDefinition e1,
                                     PropertyDefinition e2 ) {
                     return e1.getName().compareTo(e2.getName());

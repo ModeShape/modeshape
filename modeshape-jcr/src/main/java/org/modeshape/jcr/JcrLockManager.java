@@ -59,7 +59,6 @@ public class JcrLockManager implements LockManager {
         lockTokens = new HashSet<String>();
     }
 
-    @Override
     public void addLockToken( String lockToken ) throws LockException {
         CheckArg.isNotNull(lockToken, "lock token");
 
@@ -76,7 +75,6 @@ public class JcrLockManager implements LockManager {
         lockTokens.add(lockToken);
     }
 
-    @Override
     public Lock getLock( String absPath ) throws PathNotFoundException, LockException, AccessDeniedException, RepositoryException {
         AbstractJcrNode node = session.getNode(absPath);
         return getLock(node);
@@ -88,7 +86,6 @@ public class JcrLockManager implements LockManager {
         throw new LockException(JcrI18n.notLocked.text(node.location()));
     }
 
-    @Override
     public String[] getLockTokens() {
         Set<String> publicTokens = new HashSet<String>(lockTokens);
 
@@ -105,7 +102,6 @@ public class JcrLockManager implements LockManager {
         return this.lockTokens;
     }
 
-    @Override
     public boolean holdsLock( String absPath ) throws PathNotFoundException, RepositoryException {
         AbstractJcrNode node = session.getNode(absPath);
         return holdsLock(node);
@@ -118,7 +114,6 @@ public class JcrLockManager implements LockManager {
 
     }
 
-    @Override
     public boolean isLocked( String absPath ) throws PathNotFoundException, RepositoryException {
         AbstractJcrNode node = session.getNode(absPath);
         return isLocked(node);
@@ -128,7 +123,6 @@ public class JcrLockManager implements LockManager {
         return lockFor(node) != null;
     }
 
-    @Override
     public Lock lock( String absPath,
                       boolean isDeep,
                       boolean isSessionScoped,
@@ -180,7 +174,6 @@ public class JcrLockManager implements LockManager {
 
     }
 
-    @Override
     public void removeLockToken( String lockToken ) throws LockException {
         CheckArg.isNotNull(lockToken, "lockToken");
         // A LockException is thrown if the lock associated with the specified lock token is session-scoped.
@@ -209,7 +202,6 @@ public class JcrLockManager implements LockManager {
         lockTokens.remove(lockToken);
     }
 
-    @Override
     public void unlock( String absPath )
         throws PathNotFoundException, LockException, AccessDeniedException, InvalidItemStateException, RepositoryException {
         AbstractJcrNode node = session.getNode(absPath);

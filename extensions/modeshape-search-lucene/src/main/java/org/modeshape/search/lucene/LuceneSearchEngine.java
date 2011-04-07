@@ -248,6 +248,7 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
      * 
      * @see org.modeshape.graph.search.SearchEngine#index(org.modeshape.graph.ExecutionContext, java.lang.Iterable)
      */
+    @Override
     public void index( ExecutionContext context,
                        final Iterable<ChangeRequest> changes ) throws SearchEngineException {
         // Process the changes to determine what work needs to be done ...
@@ -301,6 +302,7 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
             return work;
         }
 
+        @Override
         public Iterator<WorkspaceWork> iterator() {
             return byWorkspaceName.values().iterator();
         }
@@ -333,6 +335,7 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
             this.workspaceName = workspaceName;
         }
 
+        @Override
         public Iterator<WorkRequest> iterator() {
             return requestByPath.values().iterator();
         }

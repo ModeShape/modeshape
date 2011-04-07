@@ -151,7 +151,6 @@ public abstract class AbstractJcrTest {
         cache = new SessionCache(jcrSession, store.getCurrentWorkspaceName(), context, nodeTypes, store);
 
         when(jcrSession.getNodeByIdentifier(anyString())).thenAnswer(new Answer<AbstractJcrNode>() {
-            @Override
             public AbstractJcrNode answer( InvocationOnMock invocation ) throws Throwable {
                 String uuidStr = invocation.getArguments()[0].toString();
                 Location location = Location.create(UUID.fromString(uuidStr));

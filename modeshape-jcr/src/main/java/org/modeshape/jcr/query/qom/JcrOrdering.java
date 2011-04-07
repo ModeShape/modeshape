@@ -61,7 +61,6 @@ public class JcrOrdering extends Ordering implements javax.jcr.query.qom.Orderin
      * 
      * @see javax.jcr.query.qom.Ordering#getOperand()
      */
-    @Override
     public JcrDynamicOperand getOperand() {
         return operand();
     }
@@ -71,7 +70,6 @@ public class JcrOrdering extends Ordering implements javax.jcr.query.qom.Orderin
      * 
      * @see javax.jcr.query.qom.Ordering#getOrder()
      */
-    @Override
     public String getOrder() {
         switch (order()) {
             case ASCENDING:

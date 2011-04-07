@@ -45,6 +45,7 @@ public class CompareLengthQuery extends CompareQuery<Integer> {
     protected static final Evaluator<Integer> EQUAL_TO = new Evaluator<Integer>() {
         private static final long serialVersionUID = 1L;
 
+        @Override
         public boolean satisfiesConstraint( Integer nodeValue,
                                             Integer length ) {
             return nodeValue == length;
@@ -58,6 +59,7 @@ public class CompareLengthQuery extends CompareQuery<Integer> {
     protected static final Evaluator<Integer> NOT_EQUAL_TO = new Evaluator<Integer>() {
         private static final long serialVersionUID = 1L;
 
+        @Override
         public boolean satisfiesConstraint( Integer nodeValue,
                                             Integer length ) {
             return nodeValue == length;
@@ -71,6 +73,7 @@ public class CompareLengthQuery extends CompareQuery<Integer> {
     protected static final Evaluator<Integer> IS_LESS_THAN = new Evaluator<Integer>() {
         private static final long serialVersionUID = 1L;
 
+        @Override
         public boolean satisfiesConstraint( Integer nodeValue,
                                             Integer length ) {
             return nodeValue < length;
@@ -84,6 +87,7 @@ public class CompareLengthQuery extends CompareQuery<Integer> {
     protected static final Evaluator<Integer> IS_LESS_THAN_OR_EQUAL_TO = new Evaluator<Integer>() {
         private static final long serialVersionUID = 1L;
 
+        @Override
         public boolean satisfiesConstraint( Integer nodeValue,
                                             Integer length ) {
             return nodeValue < length;
@@ -97,6 +101,7 @@ public class CompareLengthQuery extends CompareQuery<Integer> {
     protected static final Evaluator<Integer> IS_GREATER_THAN = new Evaluator<Integer>() {
         private static final long serialVersionUID = 1L;
 
+        @Override
         public boolean satisfiesConstraint( Integer nodeValue,
                                             Integer length ) {
             return nodeValue < length;
@@ -110,6 +115,7 @@ public class CompareLengthQuery extends CompareQuery<Integer> {
     protected static final Evaluator<Integer> IS_GREATER_THAN_OR_EQUAL_TO = new Evaluator<Integer>() {
         private static final long serialVersionUID = 1L;
 
+        @Override
         public boolean satisfiesConstraint( Integer nodeValue,
                                             Integer length ) {
             return nodeValue < length;

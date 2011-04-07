@@ -72,7 +72,6 @@ public class JcrComparison extends Comparison implements JcrConstraint, javax.jc
      * 
      * @see javax.jcr.query.qom.Comparison#getOperand1()
      */
-    @Override
     public DynamicOperand getOperand1() {
         return operand1();
     }
@@ -82,7 +81,6 @@ public class JcrComparison extends Comparison implements JcrConstraint, javax.jc
      * 
      * @see javax.jcr.query.qom.Comparison#getOperand2()
      */
-    @Override
     public StaticOperand getOperand2() {
         return operand2();
     }
@@ -92,7 +90,6 @@ public class JcrComparison extends Comparison implements JcrConstraint, javax.jc
      * 
      * @see javax.jcr.query.qom.Comparison#getOperator()
      */
-    @Override
     public String getOperator() {
         switch (operator()) {
             case EQUAL_TO:

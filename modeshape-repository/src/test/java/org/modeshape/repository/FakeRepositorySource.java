@@ -67,6 +67,7 @@ public class FakeRepositorySource implements PathRepositorySource {
      * 
      * @see org.modeshape.graph.connector.RepositorySource#getCapabilities()
      */
+    @Override
     public RepositorySourceCapabilities getCapabilities() {
         return new RepositorySourceCapabilities();
     }
@@ -76,6 +77,7 @@ public class FakeRepositorySource implements PathRepositorySource {
      * 
      * @see org.modeshape.graph.connector.RepositorySource#getConnection()
      */
+    @Override
     public RepositoryConnection getConnection() throws RepositorySourceException {
         throw new UnsupportedOperationException();
     }
@@ -85,6 +87,7 @@ public class FakeRepositorySource implements PathRepositorySource {
      * 
      * @see org.modeshape.graph.connector.RepositorySource#close()
      */
+    @Override
     public void close() {
         // do nothing
     }
@@ -94,6 +97,7 @@ public class FakeRepositorySource implements PathRepositorySource {
      * 
      * @see org.modeshape.graph.connector.RepositorySource#getName()
      */
+    @Override
     public String getName() {
         return name;
     }
@@ -110,6 +114,7 @@ public class FakeRepositorySource implements PathRepositorySource {
      * 
      * @see org.modeshape.graph.connector.RepositorySource#getRetryLimit()
      */
+    @Override
     public int getRetryLimit() {
         return retryLimit;
     }
@@ -119,6 +124,7 @@ public class FakeRepositorySource implements PathRepositorySource {
      * 
      * @see org.modeshape.graph.connector.RepositorySource#setRetryLimit(int)
      */
+    @Override
     public void setRetryLimit( int limit ) {
         this.retryLimit = limit;
     }
@@ -128,6 +134,7 @@ public class FakeRepositorySource implements PathRepositorySource {
      * 
      * @see org.modeshape.graph.connector.RepositorySource#initialize(org.modeshape.graph.connector.RepositoryContext)
      */
+    @Override
     public void initialize( RepositoryContext context ) throws RepositorySourceException {
         // do nothing
     }
@@ -137,6 +144,7 @@ public class FakeRepositorySource implements PathRepositorySource {
      * 
      * @see javax.naming.Referenceable#getReference()
      */
+    @Override
     public Reference getReference() {
         throw new UnsupportedOperationException();
     }
@@ -213,6 +221,7 @@ public class FakeRepositorySource implements PathRepositorySource {
         this.stringArrayParam = stringArrayParam;
     }
 
+    @Override
     public boolean areUpdatesAllowed() {
         return false;
     }
@@ -221,22 +230,27 @@ public class FakeRepositorySource implements PathRepositorySource {
         this.cachePolicy = cachePolicy;
     }
 
+    @Override
     public PathCachePolicy getCachePolicy() {
         return this.cachePolicy;
     }
 
+    @Override
     public String getDefaultWorkspaceName() {
         return null;
     }
 
+    @Override
     public RepositoryContext getRepositoryContext() {
         return null;
     }
 
+    @Override
     public UUID getRootNodeUuid() {
         return null;
     }
 
+    @Override
     public void setUpdatesAllowed( boolean updatesAllowed ) {
         // NOP
     }

@@ -962,7 +962,6 @@ class JcrContentHandler extends DefaultHandler {
          * @see org.modeshape.jcr.JcrContentHandler.NodeHandlerFactory#createFor(org.modeshape.graph.property.Name,
          *      org.modeshape.jcr.JcrContentHandler.NodeHandler,int)
          */
-        @Override
         public NodeHandler createFor( Name name,
                                       NodeHandler parentHandler,
                                       int uuidBehavior ) throws SAXException {

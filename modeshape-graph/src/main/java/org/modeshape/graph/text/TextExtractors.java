@@ -114,7 +114,6 @@ public final class TextExtractors implements TextExtractor {
      * 
      * @see org.modeshape.graph.text.TextExtractor#supportsMimeType(java.lang.String)
      */
-    @Override
     public boolean supportsMimeType( String mimeType ) {
         for (TextExtractor extractor : library.getInstances()) {
             if (extractor.supportsMimeType(mimeType)) return true;
@@ -128,7 +127,6 @@ public final class TextExtractors implements TextExtractor {
      * @see org.modeshape.graph.text.TextExtractor#extractFrom(java.io.InputStream, org.modeshape.graph.text.TextExtractorOutput,
      *      org.modeshape.graph.text.TextExtractorContext)
      */
-    @Override
     public void extractFrom( InputStream stream,
                              TextExtractorOutput output,
                              TextExtractorContext context ) throws IOException {

@@ -56,7 +56,6 @@ public class JcrSetCriteria extends SetCriteria implements JcrConstraint, org.mo
      * 
      * @see org.modeshape.jcr.api.query.qom.SetCriteria#getOperand()
      */
-    @Override
     public javax.jcr.query.qom.DynamicOperand getOperand() {
         return (JcrDynamicOperand)super.leftOperand();
     }
@@ -67,7 +66,6 @@ public class JcrSetCriteria extends SetCriteria implements JcrConstraint, org.mo
      * @see org.modeshape.jcr.api.query.qom.SetCriteria#getValues()
      */
     @SuppressWarnings( "unchecked" )
-    @Override
     public Collection<? extends javax.jcr.query.qom.StaticOperand> getValues() {
         return (Collection<JcrStaticOperand>)super.rightOperands();
     }

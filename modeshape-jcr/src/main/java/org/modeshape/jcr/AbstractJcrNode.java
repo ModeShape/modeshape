@@ -349,7 +349,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * 
      * @see javax.jcr.Node#getIdentifier()
      */
-    @Override
     public String getIdentifier() throws RepositoryException {
         return identifier();
     }
@@ -713,7 +712,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * 
      * @see javax.jcr.Node#getWeakReferences()
      */
-    @Override
     public PropertyIterator getWeakReferences() throws RepositoryException {
         return getWeakReferences(null);
     }
@@ -723,7 +721,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * 
      * @see javax.jcr.Node#getWeakReferences(java.lang.String)
      */
-    @Override
     public PropertyIterator getWeakReferences( String propertyName ) throws RepositoryException {
         checkSession();
         return propertiesOnOtherNodesReferencingThis(propertyName, PropertyType.WEAKREFERENCE);
@@ -1569,7 +1566,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * 
      * @see javax.jcr.Node#setProperty(java.lang.String, Binary)
      */
-    @Override
     public Property setProperty( String name,
                                  Binary value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
@@ -1581,7 +1577,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * 
      * @see javax.jcr.Node#setProperty(java.lang.String, BigDecimal)
      */
-    @Override
     public Property setProperty( String name,
                                  BigDecimal value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
@@ -2277,7 +2272,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Node#followLifecycleTransition(java.lang.String)
      */
     @SuppressWarnings( "unused" )
-    @Override
     public void followLifecycleTransition( String transition )
         throws UnsupportedRepositoryOperationException, InvalidLifecycleTransitionException, RepositoryException {
         throw new UnsupportedRepositoryOperationException();
@@ -2288,7 +2282,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * 
      * @see javax.jcr.Node#getAllowedLifecycleTransistions()
      */
-    @Override
     public String[] getAllowedLifecycleTransistions() throws UnsupportedRepositoryOperationException, RepositoryException {
         throw new UnsupportedRepositoryOperationException();
     }
@@ -2298,7 +2291,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * 
      * @see javax.jcr.Node#getSharedSet()
      */
-    @Override
     public NodeIterator getSharedSet() throws RepositoryException {
         if (isShareable()) {
             // Find the nodes that make up this shared set ...
@@ -2342,7 +2334,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * 
      * @see javax.jcr.Node#removeShare()
      */
-    @Override
     public void removeShare() throws VersionException, LockException, ConstraintViolationException, RepositoryException {
         if (isShareable()) {
             // Get the nodes in the shared set ...
@@ -2397,7 +2388,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * 
      * @see javax.jcr.Node#removeSharedSet()
      */
-    @Override
     public void removeSharedSet() throws VersionException, LockException, ConstraintViolationException, RepositoryException {
         if (isShareable()) {
             // Remove all of the node is the shared set ...
@@ -2429,7 +2419,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * 
      * @see javax.jcr.Item#remove()
      */
-    @Override
     public void remove()
         throws VersionException, LockException, ConstraintViolationException, AccessDeniedException, RepositoryException {
         // Since this node might be shareable, we want to implement 'remove()' by calling 'removeShare()',

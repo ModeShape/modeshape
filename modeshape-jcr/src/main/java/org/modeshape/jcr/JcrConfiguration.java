@@ -33,8 +33,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.cnd.CndImporter;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.collection.Problem;
 import org.modeshape.common.collection.Problem.Status;
 import org.modeshape.common.component.ClassLoaderFactory;
@@ -660,7 +660,6 @@ public class JcrConfiguration extends ModeShapeConfiguration {
          * @see org.modeshape.jcr.JcrConfiguration.RepositoryDefinition#setInitialContent(java.lang.String, java.lang.String,
          *      java.lang.String[])
          */
-        @Override
         public RepositoryDefinition<ReturnType> setInitialContent( String path,
                                                                    String firstWorkspace,
                                                                    String... otherWorkspaces ) {
@@ -676,7 +675,6 @@ public class JcrConfiguration extends ModeShapeConfiguration {
          * @see org.modeshape.jcr.JcrConfiguration.RepositoryDefinition#setInitialContent(java.io.File, java.lang.String,
          *      java.lang.String[])
          */
-        @Override
         public RepositoryDefinition<ReturnType> setInitialContent( File file,
                                                                    String firstWorkspace,
                                                                    String... otherWorkspaces ) {

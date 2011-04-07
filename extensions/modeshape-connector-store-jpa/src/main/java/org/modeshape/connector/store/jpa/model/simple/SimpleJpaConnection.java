@@ -54,6 +54,7 @@ public class SimpleJpaConnection implements RepositoryConnection {
 
     }
 
+    @Override
     public boolean ping( long time,
                          TimeUnit unit ) {
         // Most pings will occur before or after an execute() call, when there is no entityManger
@@ -61,14 +62,17 @@ public class SimpleJpaConnection implements RepositoryConnection {
         return entityManager == null || entityManager.isOpen();
     }
 
+    @Override
     public CachePolicy getDefaultCachePolicy() {
         return source.getCachePolicy();
     }
 
+    @Override
     public String getSourceName() {
         return source.getName();
     }
 
+    @Override
     public XAResource getXAResource() {
         return null;
     }
@@ -96,6 +100,7 @@ public class SimpleJpaConnection implements RepositoryConnection {
 
     }
 
+    @Override
     public void close() {
     }
 
@@ -105,6 +110,7 @@ public class SimpleJpaConnection implements RepositoryConnection {
      * @see org.modeshape.graph.connector.RepositoryConnection#execute(org.modeshape.graph.ExecutionContext,
      *      org.modeshape.graph.request.Request)
      */
+    @Override
     public void execute( ExecutionContext context,
                          Request request ) throws RepositorySourceException {
         Logger logger = context.getLogger(getClass());

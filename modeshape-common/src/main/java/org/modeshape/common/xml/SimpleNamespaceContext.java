@@ -39,6 +39,7 @@ public class SimpleNamespaceContext implements NamespaceContext {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getNamespaceURI( String prefix ) {
         return this.prefixToNamespace.get(prefix);
     }
@@ -46,6 +47,7 @@ public class SimpleNamespaceContext implements NamespaceContext {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getPrefix( String namespaceURI ) {
         for (Map.Entry<String, String> entry : this.prefixToNamespace.entrySet()) {
             if (entry.getValue().equals(namespaceURI)) return entry.getKey();
@@ -62,6 +64,7 @@ public class SimpleNamespaceContext implements NamespaceContext {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Iterator<String> getPrefixes( String namespaceURI ) {
         return this.prefixToNamespace.keySet().iterator();
     }

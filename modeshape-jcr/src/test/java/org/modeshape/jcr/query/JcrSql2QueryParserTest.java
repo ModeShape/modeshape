@@ -544,88 +544,71 @@ public class JcrSql2QueryParserTest {
             this.delegate = this.executionContext.getValueFactories().getTypeSystem();
         }
 
-        @Override
         public Set<String> getTypeNames() {
             return delegate.getTypeNames();
         }
 
-        @Override
         public TypeFactory<?> getTypeFactory( Object prototype ) {
             return delegate.getTypeFactory(prototype);
         }
 
-        @Override
         public TypeFactory<?> getTypeFactory( String typeName ) {
             return delegate.getTypeFactory(typeName);
         }
 
-        @Override
         public TypeFactory<String> getStringFactory() {
             return delegate.getStringFactory();
         }
 
-        @Override
         public TypeFactory<?> getReferenceFactory() {
             return delegate.getReferenceFactory();
         }
 
-        @Override
         public TypeFactory<?> getPathFactory() {
             return delegate.getPathFactory();
         }
 
-        @Override
         public TypeFactory<Long> getLongFactory() {
             return delegate.getLongFactory();
         }
 
-        @Override
         public TypeFactory<Double> getDoubleFactory() {
             return delegate.getDoubleFactory();
         }
 
-        @Override
         public String getDefaultType() {
             return delegate.getDefaultType();
         }
 
-        @Override
         public Comparator<Object> getDefaultComparator() {
             return delegate.getDefaultComparator();
         }
 
-        @Override
         public TypeFactory<BigDecimal> getDecimalFactory() {
             return delegate.getDecimalFactory();
         }
 
-        @Override
         public TypeFactory<?> getDateTimeFactory() {
             return delegate.getDateTimeFactory();
         }
 
-        @Override
         public String getCompatibleType( String type1,
                                          String type2 ) {
             return delegate.getCompatibleType(type1, type2);
         }
 
-        @Override
         public TypeFactory<Boolean> getBooleanFactory() {
             return delegate.getBooleanFactory();
         }
 
-        @Override
         public TypeFactory<?> getBinaryFactory() {
             return delegate.getBinaryFactory();
         }
 
-        @Override
         public String asString( Object value ) {
             return delegate.asString(value);
         }
 
-        @Override
         public ValueFactory getValueFactory() {
             return valueFactory;
         }

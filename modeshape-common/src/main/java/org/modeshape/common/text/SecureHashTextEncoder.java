@@ -85,6 +85,7 @@ public class SecureHashTextEncoder implements TextEncoder {
      * 
      * @see org.modeshape.common.text.TextEncoder#encode(java.lang.String)
      */
+    @Override
     public String encode( String text ) {
         try {
             byte[] hash = SecureHash.getHash(algorithm, text.getBytes());

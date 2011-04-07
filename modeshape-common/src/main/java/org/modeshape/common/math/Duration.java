@@ -176,6 +176,7 @@ public class Duration extends Number implements Comparable<Duration> {
     /**
      * {@inheritDoc}
      */
+    @Override
     public int compareTo( Duration that ) {
         if (that == null) return 1;
         return this.durationInNanos < that.durationInNanos ? -1 : this.durationInNanos > that.durationInNanos ? 1 : 0;

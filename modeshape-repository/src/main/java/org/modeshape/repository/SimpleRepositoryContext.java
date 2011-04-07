@@ -54,6 +54,7 @@ public class SimpleRepositoryContext implements RepositoryContext {
      * 
      * @see org.modeshape.graph.connector.RepositoryContext#getConfiguration(int)
      */
+    @Override
     public Subgraph getConfiguration( int depth ) {
         return null;
     }
@@ -63,6 +64,7 @@ public class SimpleRepositoryContext implements RepositoryContext {
      * 
      * @see org.modeshape.graph.connector.RepositoryContext#getExecutionContext()
      */
+    @Override
     public ExecutionContext getExecutionContext() {
         return context;
     }
@@ -72,6 +74,7 @@ public class SimpleRepositoryContext implements RepositoryContext {
      * 
      * @see org.modeshape.graph.connector.RepositoryContext#getObserver()
      */
+    @Override
     public Observer getObserver() {
         return observer;
     }
@@ -81,6 +84,7 @@ public class SimpleRepositoryContext implements RepositoryContext {
      * 
      * @see org.modeshape.graph.connector.RepositoryContext#getRepositoryConnectionFactory()
      */
+    @Override
     public RepositoryConnectionFactory getRepositoryConnectionFactory() {
         return connectionFactory;
     }

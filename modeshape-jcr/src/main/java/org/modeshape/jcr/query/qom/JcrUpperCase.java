@@ -44,7 +44,6 @@ public class JcrUpperCase extends UpperCase implements javax.jcr.query.qom.Upper
      * 
      * @see javax.jcr.query.qom.LowerCase#getOperand()
      */
-    @Override
     public JcrDynamicOperand getOperand() {
         return (JcrDynamicOperand)operand();
     }

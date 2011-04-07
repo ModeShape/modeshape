@@ -54,6 +54,7 @@ public class QuoteEncoder implements TextDecoder, TextEncoder {
      * 
      * @see org.modeshape.common.text.TextDecoder#decode(java.lang.String)
      */
+    @Override
     public String decode( String encodedText ) {
         if (encodedText == null) return null;
         if (encodedText.length() == 0) return "";
@@ -86,6 +87,7 @@ public class QuoteEncoder implements TextDecoder, TextEncoder {
      * 
      * @see org.modeshape.common.text.TextEncoder#encode(java.lang.String)
      */
+    @Override
     public String encode( String text ) {
         final StringBuilder result = new StringBuilder();
         final CharacterIterator iter = new StringCharacterIterator(text);

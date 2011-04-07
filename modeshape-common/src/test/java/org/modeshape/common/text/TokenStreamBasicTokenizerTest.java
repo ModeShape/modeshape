@@ -46,12 +46,14 @@ public class TokenStreamBasicTokenizerTest {
         tokenizer = TokenStream.basicTokenizer(true);
         final LinkedList<int[]> tokenValues = new LinkedList<int[]>();
         tokenFactory = new Tokens() {
+            @Override
             public void addToken( Position position,
                                   int index ) {
                 int[] token = new int[] {index, index + 1, 0};
                 tokenValues.add(token);
             }
 
+            @Override
             public void addToken( Position position,
                                   int startIndex,
                                   int endIndex ) {
@@ -59,6 +61,7 @@ public class TokenStreamBasicTokenizerTest {
                 tokenValues.add(token);
             }
 
+            @Override
             public void addToken( Position position,
                                   int startIndex,
                                   int endIndex,

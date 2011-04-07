@@ -1238,6 +1238,7 @@ public class ModeShapeConfiguration {
          * 
          * @see org.modeshape.repository.ModeShapeConfiguration.Returnable#and()
          */
+        @Override
         public ReturnType and() {
             return returnObject;
         }
@@ -1340,10 +1341,12 @@ public class ModeShapeConfiguration {
             return path.getLastSegment().getName().getString(context.getNamespaceRegistry());
         }
 
+        @Override
         public ThisType setDescription( String description ) {
             return setProperty(ModeShapeLexicon.DESCRIPTION, description);
         }
 
+        @Override
         public String getDescription() {
             Property property = getProperty(ModeShapeLexicon.DESCRIPTION);
             if (property != null && !property.isEmpty()) {
@@ -1361,6 +1364,7 @@ public class ModeShapeConfiguration {
             return thisType();
         }
 
+        @Override
         public ThisType setProperty( String propertyName,
                                      Object value ) {
             return setProperty(context.getValueFactories().getNameFactory().create(propertyName), value);
@@ -1375,46 +1379,55 @@ public class ModeShapeConfiguration {
             return thisType();
         }
 
+        @Override
         public ThisType setProperty( String propertyName,
                                      Object[] values ) {
             return setProperty(context.getValueFactories().getNameFactory().create(propertyName), values);
         }
 
+        @Override
         public ThisType setProperty( String beanPropertyName,
                                      boolean value ) {
             return setProperty(beanPropertyName, (Object)value);
         }
 
+        @Override
         public ThisType setProperty( String beanPropertyName,
                                      int value ) {
             return setProperty(beanPropertyName, (Object)value);
         }
 
+        @Override
         public ThisType setProperty( String beanPropertyName,
                                      short value ) {
             return setProperty(beanPropertyName, (Object)value);
         }
 
+        @Override
         public ThisType setProperty( String beanPropertyName,
                                      long value ) {
             return setProperty(beanPropertyName, (Object)value);
         }
 
+        @Override
         public ThisType setProperty( String beanPropertyName,
                                      double value ) {
             return setProperty(beanPropertyName, (Object)value);
         }
 
+        @Override
         public ThisType setProperty( String beanPropertyName,
                                      float value ) {
             return setProperty(beanPropertyName, (Object)value);
         }
 
+        @Override
         public ThisType setProperty( String beanPropertyName,
                                      String value ) {
             return setProperty(beanPropertyName, (Object)value);
         }
 
+        @Override
         public ThisType setProperty( String beanPropertyName,
                                      String firstValue,
                                      String... additionalValues ) {
@@ -1424,6 +1437,7 @@ public class ModeShapeConfiguration {
             return setProperty(beanPropertyName, values);
         }
 
+        @Override
         public Property getProperty( String beanPropertyName ) {
             return properties.get(context.getValueFactories().getNameFactory().create(beanPropertyName));
         }
@@ -1432,6 +1446,7 @@ public class ModeShapeConfiguration {
             return properties.get(beanPropertyName);
         }
 
+        @Override
         public ReturnType remove() {
             batch.delete(path);
             properties.clear();
@@ -1455,12 +1470,15 @@ public class ModeShapeConfiguration {
             super(returnObject, batch, path, names);
         }
 
+        @Override
         public LoadedFrom<ThisType> usingClass( final String classname ) {
             return new LoadedFrom<ThisType>() {
+                @Override
                 public ThisType loadedFromClasspath() {
                     return setProperty(ModeShapeLexicon.CLASSNAME, classname);
                 }
 
+                @Override
                 public ThisType loadedFrom( String... classpath ) {
                     List<String> classpaths = new ArrayList<String>();
                     // Ignore any null, zero-length, or duplicate elements ...
@@ -1479,6 +1497,7 @@ public class ModeShapeConfiguration {
             };
         }
 
+        @Override
         public ThisType usingClass( Class<? extends ComponentType> componentClass ) {
             return setProperty(ModeShapeLexicon.CLASSNAME, componentClass.getCanonicalName());
         }
@@ -1533,6 +1552,7 @@ public class ModeShapeConfiguration {
             return this;
         }
 
+        @Override
         public RepositorySourceDefinition<ReturnType> setRetryLimit( int retryLimit ) {
             return setProperty(ModeShapeLexicon.RETRY_LIMIT, retryLimit);
         }
@@ -1572,6 +1592,7 @@ public class ModeShapeConfiguration {
             return this;
         }
 
+        @Override
         public Set<PathExpression> getPathExpressions() {
             Set<PathExpression> expressions = new HashSet<PathExpression>();
             try {
@@ -1588,6 +1609,7 @@ public class ModeShapeConfiguration {
             return expressions;
         }
 
+        @Override
         public SequencerDefinition<ReturnType> sequencingFrom( PathExpression expression ) {
             CheckArg.isNotNull(expression, "expression");
             Set<PathExpression> compiledExpressions = getPathExpressions();
@@ -1601,9 +1623,11 @@ public class ModeShapeConfiguration {
             return this;
         }
 
+        @Override
         public PathExpressionOutput<ReturnType> sequencingFrom( final String fromPathExpression ) {
             CheckArg.isNotEmpty(fromPathExpression, "fromPathExpression");
             return new PathExpressionOutput<ReturnType>() {
+                @Override
                 public SequencerDefinition<ReturnType> andOutputtingTo( String into ) {
                     CheckArg.isNotEmpty(into, "into");
                     return sequencingFrom(PathExpression.compile(fromPathExpression + " => " + into));

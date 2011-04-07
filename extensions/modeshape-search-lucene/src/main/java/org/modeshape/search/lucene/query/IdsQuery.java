@@ -67,6 +67,7 @@ public class IdsQuery extends Query {
         this.fieldSelector = new FieldSelector() {
             private static final long serialVersionUID = 1L;
 
+            @Override
             public FieldSelectorResult accept( String fieldName ) {
                 return fieldName.equals(fieldName) ? FieldSelectorResult.LOAD_AND_BREAK : FieldSelectorResult.NO_LOAD;
             }

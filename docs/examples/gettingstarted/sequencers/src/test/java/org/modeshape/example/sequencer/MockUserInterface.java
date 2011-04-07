@@ -48,6 +48,7 @@ public class MockUserInterface implements UserInterface {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void displaySearchResults( List<ContentInfo> infos ) {
         assertThat(infos.size(), is(this.numberOfSearchResults));
         for (ContentInfo info : infos) {
@@ -59,6 +60,7 @@ public class MockUserInterface implements UserInterface {
     /**
      * {@inheritDoc}
      */
+    @Override
     public URL getFileToUpload() {
         return this.fileToUpload;
     }
@@ -66,6 +68,7 @@ public class MockUserInterface implements UserInterface {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getRepositoryPath( String defaultPath ) {
         return this.repositoryPath != null ? this.repositoryPath : defaultPath;
     }
@@ -75,6 +78,7 @@ public class MockUserInterface implements UserInterface {
      * 
      * @see org.modeshape.example.sequencer.UserInterface#displayError(java.lang.Exception)
      */
+    @Override
     public void displayError( Exception e ) {
         // Do nothing
     }

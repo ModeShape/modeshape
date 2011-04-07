@@ -51,6 +51,7 @@ public class ConsoleInput implements UserInterface {
 
                 private boolean quit = false;
 
+                @Override
                 public void run() {
                     try {
                         while (!quit) {
@@ -138,6 +139,7 @@ public class ConsoleInput implements UserInterface {
     /**
      * {@inheritDoc}
      */
+    @Override
     public URL getFileToUpload() throws IllegalArgumentException, IOException {
         System.out.println("Please enter the file to upload:");
         String path = in.readLine();
@@ -155,6 +157,7 @@ public class ConsoleInput implements UserInterface {
         return file.toURI().toURL();
     }
 
+    @Override
     public String getRepositoryPath( String defaultPath ) throws IllegalArgumentException, IOException {
         if (defaultPath != null) defaultPath = defaultPath.trim();
         if (defaultPath.length() == 0) defaultPath = null;
@@ -170,6 +173,7 @@ public class ConsoleInput implements UserInterface {
         return path;
     }
 
+    @Override
     public void displaySearchResults( List<ContentInfo> contentInfos ) {
         System.out.println();
         if (contentInfos.isEmpty()) {
@@ -199,6 +203,7 @@ public class ConsoleInput implements UserInterface {
         return sb.toString();
     }
 
+    @Override
     public void displayError( Exception e ) {
         System.err.println(e.getMessage());
     }

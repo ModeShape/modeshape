@@ -135,6 +135,7 @@ public class SingletonInitialContext implements Context {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Object addToEnvironment( String propName,
                                     Object propVal ) {
         return environment.put(propName, propVal);
@@ -143,6 +144,7 @@ public class SingletonInitialContext implements Context {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Object removeFromEnvironment( String propName ) {
         return environment.remove(propName);
     }
@@ -150,6 +152,7 @@ public class SingletonInitialContext implements Context {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void bind( Name name,
                       Object obj ) throws NamingException {
         bind(name.toString(), obj);
@@ -158,6 +161,7 @@ public class SingletonInitialContext implements Context {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void bind( String name,
                       Object obj ) throws NamingException {
         if (this.registry.putIfAbsent(name, obj) != null) {
@@ -168,6 +172,7 @@ public class SingletonInitialContext implements Context {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void rebind( Name name,
                         Object obj ) {
         rebind(name.toString(), obj);
@@ -176,6 +181,7 @@ public class SingletonInitialContext implements Context {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void rebind( String name,
                         Object obj ) {
         this.registry.put(name, obj);
@@ -184,6 +190,7 @@ public class SingletonInitialContext implements Context {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void unbind( String name ) {
         this.registry.remove(name);
     }
@@ -191,6 +198,7 @@ public class SingletonInitialContext implements Context {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void unbind( Name name ) {
         unbind(name.toString());
     }
@@ -198,6 +206,7 @@ public class SingletonInitialContext implements Context {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Object lookup( Name name ) throws NamingException {
         return lookup(name.toString());
     }
@@ -205,6 +214,7 @@ public class SingletonInitialContext implements Context {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Object lookup( String name ) throws NamingException {
         Object result = this.registry.get(name);
         if (result == null) {
@@ -216,6 +226,7 @@ public class SingletonInitialContext implements Context {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Object lookupLink( String name ) {
         throw new UnsupportedOperationException();
     }
@@ -223,6 +234,7 @@ public class SingletonInitialContext implements Context {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Object lookupLink( Name name ) {
         throw new UnsupportedOperationException();
     }
@@ -230,6 +242,7 @@ public class SingletonInitialContext implements Context {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void rename( Name oldName,
                         Name newName ) {
         throw new UnsupportedOperationException();
@@ -238,6 +251,7 @@ public class SingletonInitialContext implements Context {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void rename( String oldName,
                         String newName ) {
         throw new UnsupportedOperationException();
@@ -246,12 +260,14 @@ public class SingletonInitialContext implements Context {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void close() {
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public Name composeName( Name name,
                              Name prefix ) {
         throw new UnsupportedOperationException();
@@ -260,6 +276,7 @@ public class SingletonInitialContext implements Context {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String composeName( String name,
                                String prefix ) {
         throw new UnsupportedOperationException();
@@ -268,6 +285,7 @@ public class SingletonInitialContext implements Context {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Context createSubcontext( Name name ) {
         throw new UnsupportedOperationException();
     }
@@ -275,6 +293,7 @@ public class SingletonInitialContext implements Context {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Context createSubcontext( String name ) {
         throw new UnsupportedOperationException();
     }
@@ -282,6 +301,7 @@ public class SingletonInitialContext implements Context {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void destroySubcontext( Name name ) {
         throw new UnsupportedOperationException();
     }
@@ -289,6 +309,7 @@ public class SingletonInitialContext implements Context {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void destroySubcontext( String name ) {
         throw new UnsupportedOperationException();
     }
@@ -296,6 +317,7 @@ public class SingletonInitialContext implements Context {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Hashtable<?, ?> getEnvironment() {
         Hashtable<String, String> hashtable = new Hashtable<String, String>();
         Map<?, ?> map = this.environment;
@@ -308,6 +330,7 @@ public class SingletonInitialContext implements Context {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getNameInNamespace() {
         throw new UnsupportedOperationException();
     }
@@ -315,6 +338,7 @@ public class SingletonInitialContext implements Context {
     /**
      * {@inheritDoc}
      */
+    @Override
     public NameParser getNameParser( Name name ) {
         throw new UnsupportedOperationException();
     }
@@ -322,6 +346,7 @@ public class SingletonInitialContext implements Context {
     /**
      * {@inheritDoc}
      */
+    @Override
     public NameParser getNameParser( String name ) {
         throw new UnsupportedOperationException();
     }
@@ -329,6 +354,7 @@ public class SingletonInitialContext implements Context {
     /**
      * {@inheritDoc}
      */
+    @Override
     public NamingEnumeration<NameClassPair> list( Name name ) {
         throw new UnsupportedOperationException();
     }
@@ -336,6 +362,7 @@ public class SingletonInitialContext implements Context {
     /**
      * {@inheritDoc}
      */
+    @Override
     public NamingEnumeration<NameClassPair> list( String name ) {
         throw new UnsupportedOperationException();
     }
@@ -343,6 +370,7 @@ public class SingletonInitialContext implements Context {
     /**
      * {@inheritDoc}
      */
+    @Override
     public NamingEnumeration<Binding> listBindings( Name name ) {
         throw new UnsupportedOperationException();
     }
@@ -350,6 +378,7 @@ public class SingletonInitialContext implements Context {
     /**
      * {@inheritDoc}
      */
+    @Override
     public NamingEnumeration<Binding> listBindings( String name ) {
         throw new UnsupportedOperationException();
     }

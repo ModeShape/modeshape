@@ -88,7 +88,6 @@ public class JcrBetween extends Between implements JcrConstraint, org.modeshape.
      * 
      * @see org.modeshape.jcr.api.query.qom.Between#getLowerBound()
      */
-    @Override
     public StaticOperand getLowerBound() {
         return lowerBound();
     }
@@ -98,7 +97,6 @@ public class JcrBetween extends Between implements JcrConstraint, org.modeshape.
      * 
      * @see org.modeshape.jcr.api.query.qom.Between#getUpperBound()
      */
-    @Override
     public StaticOperand getUpperBound() {
         return upperBound();
     }
@@ -108,7 +106,6 @@ public class JcrBetween extends Between implements JcrConstraint, org.modeshape.
      * 
      * @see org.modeshape.jcr.api.query.qom.Between#getOperand()
      */
-    @Override
     public DynamicOperand getOperand() {
         return operand();
     }

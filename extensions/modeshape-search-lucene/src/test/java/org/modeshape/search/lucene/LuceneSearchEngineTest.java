@@ -110,6 +110,7 @@ public class LuceneSearchEngineTest {
 
         // Set up the connection factory ...
         connectionFactory = new RepositoryConnectionFactory() {
+            @Override
             @SuppressWarnings( "synthetic-access" )
             public RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException {
                 return source.getConnection();

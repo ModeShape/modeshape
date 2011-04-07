@@ -53,6 +53,7 @@ public class CompareStringQuery extends CompareQuery<String> {
     protected static final Evaluator<String> EQUAL_TO = new Evaluator<String>() {
         private static final long serialVersionUID = 1L;
 
+        @Override
         public boolean satisfiesConstraint( String nodeValue,
                                             String constraintValue ) {
             return constraintValue.equals(nodeValue);
@@ -66,6 +67,7 @@ public class CompareStringQuery extends CompareQuery<String> {
     protected static final Evaluator<String> IS_LESS_THAN = new Evaluator<String>() {
         private static final long serialVersionUID = 1L;
 
+        @Override
         public boolean satisfiesConstraint( String nodeValue,
                                             String constraintValue ) {
             return ValueComparators.STRING_COMPARATOR.compare(nodeValue, constraintValue) < 0;
@@ -79,6 +81,7 @@ public class CompareStringQuery extends CompareQuery<String> {
     protected static final Evaluator<String> IS_LESS_THAN_OR_EQUAL_TO = new Evaluator<String>() {
         private static final long serialVersionUID = 1L;
 
+        @Override
         public boolean satisfiesConstraint( String nodeValue,
                                             String constraintValue ) {
             return ValueComparators.STRING_COMPARATOR.compare(nodeValue, constraintValue) <= 0;
@@ -92,6 +95,7 @@ public class CompareStringQuery extends CompareQuery<String> {
     protected static final Evaluator<String> IS_GREATER_THAN = new Evaluator<String>() {
         private static final long serialVersionUID = 1L;
 
+        @Override
         public boolean satisfiesConstraint( String nodeValue,
                                             String constraintValue ) {
             return ValueComparators.STRING_COMPARATOR.compare(nodeValue, constraintValue) > 0;
@@ -105,6 +109,7 @@ public class CompareStringQuery extends CompareQuery<String> {
     protected static final Evaluator<String> IS_GREATER_THAN_OR_EQUAL_TO = new Evaluator<String>() {
         private static final long serialVersionUID = 1L;
 
+        @Override
         public boolean satisfiesConstraint( String nodeValue,
                                             String constraintValue ) {
             return ValueComparators.STRING_COMPARATOR.compare(nodeValue, constraintValue) >= 0;

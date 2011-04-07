@@ -213,7 +213,6 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
      * 
      * @see javax.jcr.nodetype.PropertyDefinition#getAvailableQueryOperators()
      */
-    @Override
     public String[] getAvailableQueryOperators() {
         return queryOperators;
     }

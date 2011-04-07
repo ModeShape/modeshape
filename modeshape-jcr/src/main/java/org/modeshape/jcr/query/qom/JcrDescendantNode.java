@@ -47,7 +47,6 @@ public class JcrDescendantNode extends DescendantNode implements javax.jcr.query
      * 
      * @see javax.jcr.query.qom.DescendantNode#getAncestorPath()
      */
-    @Override
     public String getAncestorPath() {
         return ancestorPath();
     }
@@ -57,7 +56,6 @@ public class JcrDescendantNode extends DescendantNode implements javax.jcr.query
      * 
      * @see javax.jcr.query.qom.PropertyValue#getSelectorName()
      */
-    @Override
     public String getSelectorName() {
         return selectorName().name();
     }

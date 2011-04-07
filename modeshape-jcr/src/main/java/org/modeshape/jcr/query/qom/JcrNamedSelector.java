@@ -62,7 +62,6 @@ public class JcrNamedSelector extends NamedSelector implements Selector, JcrSour
      * 
      * @see javax.jcr.query.qom.Selector#getNodeTypeName()
      */
-    @Override
     public String getNodeTypeName() {
         return name().name();
     }
@@ -72,7 +71,6 @@ public class JcrNamedSelector extends NamedSelector implements Selector, JcrSour
      * 
      * @see javax.jcr.query.qom.Selector#getSelectorName()
      */
-    @Override
     public String getSelectorName() {
         return alias().name();
     }

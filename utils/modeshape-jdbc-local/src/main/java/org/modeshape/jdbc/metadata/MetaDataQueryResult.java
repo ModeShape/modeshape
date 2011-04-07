@@ -143,6 +143,7 @@ class QueryResultNodeIterator implements NodeIterator {
      * 
      * @see javax.jcr.NodeIterator#nextNode()
      */
+    @Override
     public Node nextNode() {
         Node node = nodes[(int)(position)];
         ++position;
@@ -154,6 +155,7 @@ class QueryResultNodeIterator implements NodeIterator {
      * 
      * @see javax.jcr.RangeIterator#getPosition()
      */
+    @Override
     public long getPosition() {
         return position;
     }
@@ -163,6 +165,7 @@ class QueryResultNodeIterator implements NodeIterator {
      * 
      * @see javax.jcr.RangeIterator#getSize()
      */
+    @Override
     public long getSize() {
         return size;
     }
@@ -172,6 +175,7 @@ class QueryResultNodeIterator implements NodeIterator {
      * 
      * @see javax.jcr.RangeIterator#skip(long)
      */
+    @Override
     public void skip( long skipNum ) {
         for (long i = 0L; i != skipNum; ++i)
             nextNode();
@@ -182,6 +186,7 @@ class QueryResultNodeIterator implements NodeIterator {
      * 
      * @see java.util.Iterator#hasNext()
      */
+    @Override
     public boolean hasNext() {
         return (nodes.length > position);
     }
@@ -191,6 +196,7 @@ class QueryResultNodeIterator implements NodeIterator {
      * 
      * @see java.util.Iterator#next()
      */
+    @Override
     public Object next() {
         return nextNode();
     }
@@ -200,6 +206,7 @@ class QueryResultNodeIterator implements NodeIterator {
      * 
      * @see java.util.Iterator#remove()
      */
+    @Override
     public void remove() {
         throw new UnsupportedOperationException();
     }
@@ -228,6 +235,7 @@ class QueryResultRowIterator implements RowIterator {
      * 
      * @see javax.jcr.query.RowIterator#nextRow()
      */
+    @Override
     public Row nextRow() {
         if (nextRow == null) {
             // Didn't call 'hasNext()' ...
@@ -247,6 +255,7 @@ class QueryResultRowIterator implements RowIterator {
      * 
      * @see javax.jcr.RangeIterator#getPosition()
      */
+    @Override
     public long getPosition() {
         return position;
     }
@@ -256,6 +265,7 @@ class QueryResultRowIterator implements RowIterator {
      * 
      * @see javax.jcr.RangeIterator#getSize()
      */
+    @Override
     public long getSize() {
         return numRows;
     }
@@ -265,6 +275,7 @@ class QueryResultRowIterator implements RowIterator {
      * 
      * @see javax.jcr.RangeIterator#skip(long)
      */
+    @Override
     public void skip( long skipNum ) {
         for (long i = 0L; i != skipNum; ++i) {
             tuples.next();
@@ -277,6 +288,7 @@ class QueryResultRowIterator implements RowIterator {
      * 
      * @see java.util.Iterator#hasNext()
      */
+    @Override
     public boolean hasNext() {
         if (nextRow != null) {
             return true;
@@ -310,6 +322,7 @@ class QueryResultRowIterator implements RowIterator {
      * 
      * @see java.util.Iterator#next()
      */
+    @Override
     public Object next() {
         return nextRow();
     }
@@ -319,6 +332,7 @@ class QueryResultRowIterator implements RowIterator {
      * 
      * @see java.util.Iterator#remove()
      */
+    @Override
     public void remove() {
         throw new UnsupportedOperationException();
     }

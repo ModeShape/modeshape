@@ -64,6 +64,7 @@ public class ClasspathLocalizationRepository implements LocalizationRepository {
     /**
      * {@inheritDoc}
      */
+    @Override
     public URL getLocalizationBundle( String bundleName,
                                       Locale locale ) {
         URL url = null;

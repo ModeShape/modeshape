@@ -41,6 +41,7 @@ public class NoOpEncoder implements TextEncoder, TextDecoder {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String encode( String text ) {
         return text;
     }
@@ -48,6 +49,7 @@ public class NoOpEncoder implements TextEncoder, TextDecoder {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String decode( String encodedText ) {
         return encodedText;
     }

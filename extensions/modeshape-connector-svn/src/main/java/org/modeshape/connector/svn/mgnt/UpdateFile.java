@@ -44,6 +44,7 @@ public class UpdateFile implements ScmAction {
         this.newData = newData;
     }
 
+    @Override
     public void applyAction( Object context ) throws Exception {
         ISVNEditor editor = (ISVNEditor)context;
         ISVNEditorUtil.openDirectories(editor, this.path);

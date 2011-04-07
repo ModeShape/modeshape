@@ -51,7 +51,6 @@ public class JcrDescendantNodeJoinCondition extends DescendantNodeJoinCondition
      * 
      * @see javax.jcr.query.qom.DescendantNodeJoinCondition#getAncestorSelectorName()
      */
-    @Override
     public String getAncestorSelectorName() {
         return ancestorSelectorName().name();
     }
@@ -61,7 +60,6 @@ public class JcrDescendantNodeJoinCondition extends DescendantNodeJoinCondition
      * 
      * @see javax.jcr.query.qom.DescendantNodeJoinCondition#getDescendantSelectorName()
      */
-    @Override
     public String getDescendantSelectorName() {
         return descendantSelectorName().name();
     }

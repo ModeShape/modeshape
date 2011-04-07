@@ -47,7 +47,6 @@ public class JcrSameNode extends SameNode implements javax.jcr.query.qom.SameNod
      * 
      * @see javax.jcr.query.qom.SameNode#getPath()
      */
-    @Override
     public String getPath() {
         return path();
     }
@@ -57,7 +56,6 @@ public class JcrSameNode extends SameNode implements javax.jcr.query.qom.SameNod
      * 
      * @see javax.jcr.query.qom.PropertyValue#getSelectorName()
      */
-    @Override
     public String getSelectorName() {
         return selectorName().name();
     }

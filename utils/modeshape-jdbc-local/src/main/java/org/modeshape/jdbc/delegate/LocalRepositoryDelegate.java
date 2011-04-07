@@ -68,6 +68,7 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
 
         if (contextFactory == null) {
             jcrContext = new JcrContextFactory() {
+                @Override
                 public Context createContext( Properties properties ) throws NamingException {
                     InitialContext initContext = ((properties == null || properties.isEmpty()) ? new InitialContext() : new InitialContext(
                                                                                                                                            properties));

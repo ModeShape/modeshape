@@ -34,10 +34,12 @@ import org.modeshape.common.annotation.Immutable;
 @Immutable
 public class LongOperations implements MathOperations<Long>, Comparator<Long> {
 
+    @Override
     public Class<Long> getOperandClass() {
         return Long.class;
     }
 
+    @Override
     public Long add( Long value1,
                      Long value2 ) {
         if (value1 == null) return value2 != null ? value2 : createZeroValue();
@@ -45,6 +47,7 @@ public class LongOperations implements MathOperations<Long>, Comparator<Long> {
         return (value1 + value2);
     }
 
+    @Override
     public Long subtract( Long value1,
                           Long value2 ) {
         if (value1 == null) return negate(value2);
@@ -52,28 +55,33 @@ public class LongOperations implements MathOperations<Long>, Comparator<Long> {
         return (value1 - value2);
     }
 
+    @Override
     public Long multiply( Long value1,
                           Long value2 ) {
         if (value1 == null || value2 == null) return createZeroValue();
         return (value1 * value2);
     }
 
+    @Override
     public double divide( Long value1,
                           Long value2 ) {
         if (value1 == null || value2 == null) throw new IllegalArgumentException();
         return value1 / value2;
     }
 
+    @Override
     public Long negate( Long value ) {
         if (value == null) return createZeroValue();
         return (value * -1);
     }
 
+    @Override
     public Long increment( Long value ) {
         if (value == null) return createZeroValue();
         return (value + 1);
     }
 
+    @Override
     public Long maximum( Long value1,
                          Long value2 ) {
         if (value1 == null) return value2;
@@ -81,6 +89,7 @@ public class LongOperations implements MathOperations<Long>, Comparator<Long> {
         return Math.max(value1, value2);
     }
 
+    @Override
     public Long minimum( Long value1,
                          Long value2 ) {
         if (value1 == null) return value2;
@@ -88,6 +97,7 @@ public class LongOperations implements MathOperations<Long>, Comparator<Long> {
         return Math.min(value1, value2);
     }
 
+    @Override
     public int compare( Long value1,
                         Long value2 ) {
         if (value1 == null) return value2 != null ? -1 : 0;
@@ -95,38 +105,47 @@ public class LongOperations implements MathOperations<Long>, Comparator<Long> {
         return value1.compareTo(value2);
     }
 
+    @Override
     public BigDecimal asBigDecimal( Long value ) {
         return value != null ? new BigDecimal(value) : null;
     }
 
+    @Override
     public Long fromBigDecimal( BigDecimal value ) {
         return value != null ? value.longValue() : null;
     }
 
+    @Override
     public Long createZeroValue() {
         return 0l;
     }
 
+    @Override
     public Long create( int value ) {
         return (long)value;
     }
 
+    @Override
     public Long create( long value ) {
         return value;
     }
 
+    @Override
     public Long create( double value ) {
         return (long)value;
     }
 
+    @Override
     public double sqrt( Long value ) {
         return Math.sqrt(value);
     }
 
+    @Override
     public Comparator<Long> getComparator() {
         return this;
     }
 
+    @Override
     public Long random( Long minimum,
                         Long maximum,
                         Random rng ) {
@@ -134,26 +153,32 @@ public class LongOperations implements MathOperations<Long>, Comparator<Long> {
         return minimum + rng.nextInt(difference.intValue());
     }
 
+    @Override
     public double doubleValue( Long value ) {
         return value.doubleValue();
     }
 
+    @Override
     public float floatValue( Long value ) {
         return value.floatValue();
     }
 
+    @Override
     public int intValue( Long value ) {
         return value.intValue();
     }
 
+    @Override
     public long longValue( Long value ) {
         return value.longValue();
     }
 
+    @Override
     public short shortValue( Long value ) {
         return value.shortValue();
     }
 
+    @Override
     public int getExponentInScientificNotation( Long value ) {
         long v = Math.abs(value);
         int exp = 0;
@@ -172,6 +197,7 @@ public class LongOperations implements MathOperations<Long>, Comparator<Long> {
         return exp;
     }
 
+    @Override
     public Long roundUp( Long value,
                          int decimalShift ) {
         if (value == 0) return 0l;
@@ -188,6 +214,7 @@ public class LongOperations implements MathOperations<Long>, Comparator<Long> {
         return shiftedValue;
     }
 
+    @Override
     public Long roundDown( Long value,
                            int decimalShift ) {
         if (value == 0) return 0l;
@@ -201,6 +228,7 @@ public class LongOperations implements MathOperations<Long>, Comparator<Long> {
         return shiftedValue;
     }
 
+    @Override
     public Long keepSignificantFigures( Long value,
                                         int numSigFigs ) {
         if (value == 0l) return value;

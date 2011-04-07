@@ -147,6 +147,7 @@ public class SvnRepositorySource extends AbstractRepositorySource implements Obj
      * 
      * @see org.modeshape.graph.connector.RepositorySource#getCapabilities()
      */
+    @Override
     public RepositorySourceCapabilities getCapabilities() {
         return capabilities;
     }
@@ -213,6 +214,7 @@ public class SvnRepositorySource extends AbstractRepositorySource implements Obj
      * @return the file system path to the directory representing the default workspace, or null if the default should be the
      *         current working directory
      */
+    @Override
     public String getDefaultWorkspaceName() {
         return defaultWorkspace;
     }
@@ -308,6 +310,7 @@ public class SvnRepositorySource extends AbstractRepositorySource implements Obj
      *        allowed.
      * @see #areUpdatesAllowed()
      */
+    @Override
     public synchronized void setUpdatesAllowed( boolean allowUpdates ) {
         capabilities = new RepositorySourceCapabilities(capabilities.supportsSameNameSiblings(), allowUpdates,
                                                         capabilities.supportsEvents(), capabilities.supportsCreatingWorkspaces(),
@@ -342,6 +345,7 @@ public class SvnRepositorySource extends AbstractRepositorySource implements Obj
      * 
      * @see javax.naming.Referenceable#getReference()
      */
+    @Override
     public synchronized Reference getReference() {
         String className = getClass().getName();
         String factoryClassName = this.getClass().getName();
@@ -377,6 +381,7 @@ public class SvnRepositorySource extends AbstractRepositorySource implements Obj
      * @see javax.naming.spi.ObjectFactory#getObjectInstance(java.lang.Object, javax.naming.Name, javax.naming.Context,
      *      java.util.Hashtable)
      */
+    @Override
     public Object getObjectInstance( Object obj,
                                      Name name,
                                      Context nameCtx,
@@ -419,6 +424,7 @@ public class SvnRepositorySource extends AbstractRepositorySource implements Obj
      * 
      * @see org.modeshape.graph.connector.RepositorySource#getConnection()
      */
+    @Override
     public synchronized RepositoryConnection getConnection() throws RepositorySourceException {
 
         String sourceName = getName();

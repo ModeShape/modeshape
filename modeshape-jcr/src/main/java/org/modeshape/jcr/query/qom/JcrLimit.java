@@ -61,7 +61,6 @@ public class JcrLimit extends Limit implements org.modeshape.jcr.api.query.qom.L
      * 
      * @see org.modeshape.jcr.api.query.qom.Limit#getOffset()
      */
-    @Override
     public int getOffset() {
         return offset();
     }
@@ -71,7 +70,6 @@ public class JcrLimit extends Limit implements org.modeshape.jcr.api.query.qom.L
      * 
      * @see org.modeshape.jcr.api.query.qom.Limit#getRowLimit()
      */
-    @Override
     public int getRowLimit() {
         return rowLimit();
     }

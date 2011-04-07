@@ -41,6 +41,7 @@ public class JavaMetadataSequencer implements StreamSequencer {
      * @see org.modeshape.graph.sequencer.StreamSequencer#sequence(java.io.InputStream,
      *      org.modeshape.graph.sequencer.SequencerOutput, org.modeshape.graph.sequencer.StreamSequencerContext)
      */
+    @Override
     public void sequence( InputStream stream,
                           SequencerOutput output,
                           StreamSequencerContext context ) {

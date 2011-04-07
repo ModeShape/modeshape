@@ -1230,6 +1230,7 @@ public class Reflection {
          * 
          * @see java.lang.Comparable#compareTo(java.lang.Object)
          */
+        @Override
         public int compareTo( Property that ) {
             if (this == that) return 0;
             if (that == null) return 1;

@@ -76,17 +76,19 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
     }
 
     /**
-     * @{inheritDoc
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.version.VersionHistory#getAllVersions()
      */
-    @Override
     public VersionIterator getAllVersions() throws RepositoryException {
         return new JcrVersionIterator(getNodes());
     }
 
     /**
-     * @{inheritDoc
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.version.VersionHistory#getRootVersion()
      */
-    @Override
     public JcrVersionNode getRootVersion() throws RepositoryException {
         // Copied from AbstractJcrNode.getNode(String) to avoid double conversion. Needs to be refactored.
         Segment segment = context().getValueFactories().getPathFactory().createSegment(JcrLexicon.ROOT_VERSION);
@@ -101,9 +103,10 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
     }
 
     /**
-     * @{inheritDoc
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.version.VersionHistory#getVersion(java.lang.String)
      */
-    @Override
     public JcrVersionNode getVersion( String versionName ) throws VersionException, RepositoryException {
         try {
             AbstractJcrNode version = getNode(versionName);
@@ -114,9 +117,10 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
     }
 
     /**
-     * @{inheritDoc
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.version.VersionHistory#getVersionByLabel(java.lang.String)
      */
-    @Override
     public JcrVersionNode getVersionByLabel( String label ) throws VersionException, RepositoryException {
         Property prop = versionLabels().getProperty(label);
         if (prop == null) throw new VersionException(JcrI18n.invalidVersionLabel.text(label, getPath()));
@@ -129,9 +133,10 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
     }
 
     /**
-     * @{inheritDoc
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.version.VersionHistory#getVersionLabels()
      */
-    @Override
     public String[] getVersionLabels() throws RepositoryException {
         PropertyIterator iter = versionLabels().getProperties();
 
@@ -173,33 +178,37 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
     }
 
     /**
-     * @{inheritDoc
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.version.VersionHistory#getVersionLabels(javax.jcr.version.Version)
      */
-    @Override
     public String[] getVersionLabels( Version version ) throws RepositoryException {
         return versionLabelsFor(version).toArray(EMPTY_STRING_ARRAY);
     }
 
     /**
-     * @{inheritDoc
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.version.VersionHistory#getVersionableUUID()
      */
-    @Override
     public String getVersionableUUID() throws RepositoryException {
         return getProperty(JcrLexicon.VERSIONABLE_UUID).getString();
     }
 
     /**
-     * @{inheritDoc
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.version.VersionHistory#hasVersionLabel(java.lang.String)
      */
-    @Override
     public boolean hasVersionLabel( String label ) throws RepositoryException {
         return versionLabels().hasProperty(label);
     }
 
     /**
-     * @{inheritDoc
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.version.VersionHistory#hasVersionLabel(javax.jcr.version.Version, java.lang.String)
      */
-    @Override
     public boolean hasVersionLabel( Version version,
                                     String label ) throws RepositoryException {
         Collection<String> labels = versionLabelsFor(version);
@@ -208,10 +217,11 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
     }
 
     /**
-     * @{inheritDoc
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.version.VersionHistory#removeVersion(java.lang.String)
      */
     @SuppressWarnings( "deprecation" )
-    @Override
     public void removeVersion( String versionName )
         throws ReferentialIntegrityException, AccessDeniedException, UnsupportedRepositoryOperationException, VersionException,
         RepositoryException {
@@ -299,10 +309,11 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
     }
 
     /**
-     * @{inheritDoc
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.version.VersionHistory#addVersionLabel(java.lang.String, java.lang.String, boolean)
      */
     @SuppressWarnings( "deprecation" )
-    @Override
     public void addVersionLabel( String versionName,
                                  String label,
                                  boolean moveLabel ) throws VersionException, RepositoryException {
@@ -327,9 +338,10 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
     }
 
     /**
-     * @{inheritDoc
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.version.VersionHistory#removeVersionLabel(java.lang.String)
      */
-    @Override
     public void removeVersionLabel( String label ) throws VersionException, RepositoryException {
         AbstractJcrNode versionLabels = versionLabels();
 
@@ -347,17 +359,14 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
         versionLabels.refresh(false);
     }
 
-    @Override
     public NodeIterator getAllFrozenNodes() throws RepositoryException {
         return new FrozenNodeIterator(getAllVersions());
     }
 
-    @Override
     public NodeIterator getAllLinearFrozenNodes() throws RepositoryException {
         return new FrozenNodeIterator(getAllLinearVersions());
     }
 
-    @Override
     public VersionIterator getAllLinearVersions() throws RepositoryException {
         AbstractJcrNode existingNode = session().getNodeByIdentifier(getVersionableIdentifier());
         if (existingNode == null) return getAllVersions();
@@ -375,7 +384,6 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
         return new LinearVersionIterator(versions, versions.size());
     }
 
-    @Override
     public String getVersionableIdentifier() throws RepositoryException {
         // ModeShape uses a node's UUID as it's identifier
         return getVersionableUUID();
@@ -398,9 +406,10 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
         }
 
         /**
-         * @{inheritDoc
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.version.VersionIterator#nextVersion()
          */
-        @Override
         public Version nextVersion() {
             Version next = this.next;
 
@@ -439,17 +448,19 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
         }
 
         /**
-         * @{inheritDoc
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.RangeIterator#getPosition()
          */
-        @Override
         public long getPosition() {
             return position;
         }
 
         /**
-         * @{inheritDoc
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.RangeIterator#getSize()
          */
-        @Override
         public long getSize() {
             // The number of version nodes is the number of child nodes of the version history - 1
             // (the jcr:versionLabels node)
@@ -457,9 +468,10 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
         }
 
         /**
-         * @{inheritDoc
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.RangeIterator#skip(long)
          */
-        @Override
         public void skip( long count ) {
             // Walk through the list to make sure that we don't accidentally count jcr:rootVersion or jcr:versionLabels as a
             // skipped node
@@ -469,9 +481,10 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
         }
 
         /**
-         * @{inheritDoc
+         * {@inheritDoc}
+         * 
+         * @see java.util.Iterator#hasNext()
          */
-        @Override
         public boolean hasNext() {
             if (this.next != null) return true;
 
@@ -481,17 +494,19 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
         }
 
         /**
-         * @{inheritDoc
+         * {@inheritDoc}
+         * 
+         * @see java.util.Iterator#next()
          */
-        @Override
         public Object next() {
             return nextVersion();
         }
 
         /**
-         * @{inheritDoc
+         * {@inheritDoc}
+         * 
+         * @see java.util.Iterator#remove()
          */
-        @Override
         public void remove() {
             throw new UnsupportedOperationException();
         }
@@ -515,17 +530,14 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
             this.pos = 0;
         }
 
-        @Override
         public long getPosition() {
             return pos;
         }
 
-        @Override
         public long getSize() {
             return this.size;
         }
 
-        @Override
         public void skip( long skipNum ) {
             while (skipNum-- > 0 && versions.hasNext()) {
                 versions.next();
@@ -534,22 +546,18 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
 
         }
 
-        @Override
         public Version nextVersion() {
             return versions.next();
         }
 
-        @Override
         public boolean hasNext() {
             return versions.hasNext();
         }
 
-        @Override
         public Object next() {
             return nextVersion();
         }
 
-        @Override
         public void remove() {
             throw new UnsupportedOperationException();
         }
@@ -562,22 +570,18 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
             this.versions = versionIter;
         }
 
-        @Override
         public boolean hasNext() {
             return versions.hasNext();
         }
 
-        @Override
         public Object next() {
             return nextNode();
         }
 
-        @Override
         public void remove() {
             throw new UnsupportedOperationException();
         }
 
-        @Override
         public Node nextNode() {
             try {
                 return versions.nextVersion().getFrozenNode();
@@ -587,17 +591,14 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
             }
         }
 
-        @Override
         public long getPosition() {
             return versions.getPosition();
         }
 
-        @Override
         public long getSize() {
             return versions.getSize();
         }
 
-        @Override
         public void skip( long skipNum ) {
             versions.skip(skipNum);
         }

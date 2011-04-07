@@ -116,7 +116,6 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
      * 
      * @see org.modeshape.jcr.api.query.QueryResult#getColumnTypes()
      */
-    @Override
     public String[] getColumnTypes() {
         List<String> types = getColumnTypeList();
         return types.toArray(new String[types.size()]); // make a defensive copy ...
@@ -127,7 +126,6 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
      * 
      * @see org.modeshape.jcr.api.query.QueryResult#getSelectorNames()
      */
-    @Override
     public String[] getSelectorNames() {
         if (columnTables == null) {
             // Discover the types ...
@@ -518,7 +516,6 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
          * 
          * @see org.modeshape.jcr.api.query.Row#getNode(java.lang.String)
          */
-        @Override
         public Node getNode( String selectorName ) throws RepositoryException {
             if (!iterator.hasSelector(selectorName)) {
                 throw new RepositoryException(JcrI18n.selectorNotUsedInQuery.text(selectorName, iterator.query));
@@ -579,17 +576,14 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
             return values;
         }
 
-        @Override
         public Node getNode() {
             return node;
         }
 
-        @Override
         public String getPath() throws RepositoryException {
             return node.getPath();
         }
 
-        @Override
         public String getPath( String selectorName ) throws RepositoryException {
             if (!iterator.hasSelector(selectorName)) {
                 throw new RepositoryException(JcrI18n.selectorNotUsedInQuery.text(selectorName, iterator.query));
@@ -597,7 +591,6 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
             return node.getPath();
         }
 
-        @Override
         public double getScore() throws RepositoryException {
             int index = iterator.scoreIndex;
             if (index == -1) {
@@ -607,7 +600,6 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
             return score instanceof Float ? ((Float)score).doubleValue() : (Double)score;
         }
 
-        @Override
         public double getScore( String selectorName ) throws RepositoryException {
             if (!iterator.hasSelector(selectorName)) {
                 throw new RepositoryException(JcrI18n.selectorNotUsedInQuery.text(selectorName, iterator.query));
@@ -638,7 +630,6 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
          * 
          * @see org.modeshape.jcr.api.query.Row#getNode(java.lang.String)
          */
-        @Override
         public Node getNode( String selectorName ) throws RepositoryException {
             int locationIndex = iterator.columns.getLocationIndex(selectorName);
             if (locationIndex == -1) {
@@ -707,30 +698,25 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
             return values;
         }
 
-        @Override
         public Node getNode() throws RepositoryException {
             throw new RepositoryException(
                                           JcrI18n.multipleSelectorsAppearInQueryRequireSpecifyingSelectorName.text(iterator.query));
         }
 
-        @Override
         public String getPath() throws RepositoryException {
             throw new RepositoryException(
                                           JcrI18n.multipleSelectorsAppearInQueryRequireSpecifyingSelectorName.text(iterator.query));
         }
 
-        @Override
         public double getScore() throws RepositoryException {
             throw new RepositoryException(
                                           JcrI18n.multipleSelectorsAppearInQueryRequireSpecifyingSelectorName.text(iterator.query));
         }
 
-        @Override
         public String getPath( String selectorName ) throws RepositoryException {
             return getNode(selectorName).getPath();
         }
 
-        @Override
         public double getScore( String selectorName ) throws RepositoryException {
             if (!iterator.hasSelector(selectorName)) {
                 throw new RepositoryException(JcrI18n.selectorNotUsedInQuery.text(selectorName, iterator.query));

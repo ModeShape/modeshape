@@ -84,6 +84,7 @@ public class XmlSequencer implements StreamSequencer {
      * 
      * @see org.modeshape.graph.sequencer.StreamSequencer#sequence(InputStream, SequencerOutput, StreamSequencerContext)
      */
+    @Override
     public void sequence( InputStream stream,
                           SequencerOutput output,
                           StreamSequencerContext context ) {

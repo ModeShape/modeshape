@@ -1658,6 +1658,7 @@ public class TokenStream {
          * 
          * @see org.modeshape.common.text.TokenStream.Token#withType(int)
          */
+        @Override
         public Token withType( int typeMask ) {
             int type = this.type | typeMask;
             return new CaseSensitiveToken(startIndex, endIndex, type, position);
@@ -1668,6 +1669,7 @@ public class TokenStream {
          * 
          * @see org.modeshape.common.text.TokenStream.Token#type()
          */
+        @Override
         public final int type() {
             return type;
         }
@@ -1677,6 +1679,7 @@ public class TokenStream {
          * 
          * @see org.modeshape.common.text.TokenStream.Token#startIndex()
          */
+        @Override
         public final int startIndex() {
             return startIndex;
         }
@@ -1686,6 +1689,7 @@ public class TokenStream {
          * 
          * @see org.modeshape.common.text.TokenStream.Token#endIndex()
          */
+        @Override
         public final int endIndex() {
             return endIndex;
         }
@@ -1695,6 +1699,7 @@ public class TokenStream {
          * 
          * @see org.modeshape.common.text.TokenStream.Token#length()
          */
+        @Override
         public final int length() {
             return endIndex - startIndex;
         }
@@ -1704,6 +1709,7 @@ public class TokenStream {
          * 
          * @see org.modeshape.common.text.TokenStream.Token#matches(char)
          */
+        @Override
         public final boolean matches( char expected ) {
             return length() == 1 && matchString().charAt(startIndex) == expected;
         }
@@ -1713,6 +1719,7 @@ public class TokenStream {
          * 
          * @see org.modeshape.common.text.TokenStream.Token#matches(java.lang.String)
          */
+        @Override
         public final boolean matches( String expected ) {
             return matchString().substring(startIndex, endIndex).equals(expected);
         }
@@ -1722,6 +1729,7 @@ public class TokenStream {
          * 
          * @see org.modeshape.common.text.TokenStream.Token#matches(int)
          */
+        @Override
         public final boolean matches( int expectedType ) {
             return expectedType == ANY_TYPE || (currentToken().type() & expectedType) == expectedType;
         }
@@ -1731,6 +1739,7 @@ public class TokenStream {
          * 
          * @see org.modeshape.common.text.TokenStream.Token#value()
          */
+        @Override
         public final String value() {
             return inputString.substring(startIndex, endIndex);
         }
@@ -1740,6 +1749,7 @@ public class TokenStream {
          * 
          * @see org.modeshape.common.text.TokenStream.Token#position()
          */
+        @Override
         public Position position() {
             return position;
         }
@@ -1798,6 +1808,7 @@ public class TokenStream {
          * 
          * @see org.modeshape.common.text.TokenStream.Tokens#addToken(Position, int)
          */
+        @Override
         public void addToken( Position position,
                               int index ) {
             addToken(position, index, index + 1, 0);
@@ -1808,6 +1819,7 @@ public class TokenStream {
          * 
          * @see org.modeshape.common.text.TokenStream.Tokens#addToken(Position, int, int)
          */
+        @Override
         public final void addToken( Position position,
                                     int startIndex,
                                     int endIndex ) {
@@ -1828,6 +1840,7 @@ public class TokenStream {
          * 
          * @see org.modeshape.common.text.TokenStream.TokenFactory#addToken(Position,int, int, int)
          */
+        @Override
         public void addToken( Position position,
                               int startIndex,
                               int endIndex,
@@ -1842,6 +1855,7 @@ public class TokenStream {
          * 
          * @see org.modeshape.common.text.TokenStream.TokenFactory#addToken(Position,int, int, int)
          */
+        @Override
         public void addToken( Position position,
                               int startIndex,
                               int endIndex,
@@ -1871,6 +1885,7 @@ public class TokenStream {
          * 
          * @see org.modeshape.common.text.TokenStream.CharacterStream#hasNext()
          */
+        @Override
         public boolean hasNext() {
             return lastIndex < maxIndex;
         }
@@ -1880,6 +1895,7 @@ public class TokenStream {
          * 
          * @see org.modeshape.common.text.TokenStream.CharacterStream#index()
          */
+        @Override
         public int index() {
             return lastIndex;
         }
@@ -1891,6 +1907,7 @@ public class TokenStream {
          * @return the position of the token. never null
          * @see org.modeshape.common.text.TokenStream.CharacterStream#position(int)
          */
+        @Override
         public Position position( int startIndex ) {
             return new Position(startIndex, lineNumber, columnNumber);
         }
@@ -1900,6 +1917,7 @@ public class TokenStream {
          * 
          * @see org.modeshape.common.text.TokenStream.CharacterStream#next()
          */
+        @Override
         public char next() {
             if (lastIndex >= maxIndex) {
                 throw new NoSuchElementException();
@@ -1924,6 +1942,7 @@ public class TokenStream {
          * 
          * @see org.modeshape.common.text.TokenStream.CharacterStream#isNext(char)
          */
+        @Override
         public boolean isNext( char c ) {
             int nextIndex = lastIndex + 1;
             return nextIndex <= maxIndex && content[nextIndex] == c;
@@ -1934,6 +1953,7 @@ public class TokenStream {
          * 
          * @see org.modeshape.common.text.TokenStream.CharacterStream#isNext(char, char)
          */
+        @Override
         public boolean isNext( char nextChar1,
                                char nextChar2 ) {
             int nextIndex1 = lastIndex + 1;
@@ -1946,6 +1966,7 @@ public class TokenStream {
          * 
          * @see org.modeshape.common.text.TokenStream.CharacterStream#isNext(char, char, char)
          */
+        @Override
         public boolean isNext( char nextChar1,
                                char nextChar2,
                                char nextChar3 ) {
@@ -1961,6 +1982,7 @@ public class TokenStream {
          * 
          * @see org.modeshape.common.text.TokenStream.CharacterStream#isNextAnyOf(char[])
          */
+        @Override
         public boolean isNextAnyOf( char[] characters ) {
             int nextIndex = lastIndex + 1;
             if (nextIndex <= maxIndex) {
@@ -1977,6 +1999,7 @@ public class TokenStream {
          * 
          * @see org.modeshape.common.text.TokenStream.CharacterStream#isNextAnyOf(java.lang.String)
          */
+        @Override
         public boolean isNextAnyOf( String characters ) {
             int nextIndex = lastIndex + 1;
             if (nextIndex <= maxIndex) {
@@ -1991,6 +2014,7 @@ public class TokenStream {
          * 
          * @see org.modeshape.common.text.TokenStream.CharacterStream#isNextWhitespace()
          */
+        @Override
         public boolean isNextWhitespace() {
             int nextIndex = lastIndex + 1;
             return nextIndex <= maxIndex && Character.isWhitespace(content[nextIndex]);
@@ -2001,6 +2025,7 @@ public class TokenStream {
          * 
          * @see org.modeshape.common.text.TokenStream.CharacterStream#isNextLetterOrDigit()
          */
+        @Override
         public boolean isNextLetterOrDigit() {
             int nextIndex = lastIndex + 1;
             return nextIndex <= maxIndex && Character.isLetterOrDigit(content[nextIndex]);
@@ -2011,6 +2036,7 @@ public class TokenStream {
          * 
          * @see org.modeshape.common.text.TokenStream.CharacterStream#isNextValidXmlCharacter()
          */
+        @Override
         public boolean isNextValidXmlCharacter() {
             int nextIndex = lastIndex + 1;
             return nextIndex <= maxIndex && XmlCharacters.isValid(content[nextIndex]);
@@ -2021,6 +2047,7 @@ public class TokenStream {
          * 
          * @see org.modeshape.common.text.TokenStream.CharacterStream#isNextValidXmlNameCharacter()
          */
+        @Override
         public boolean isNextValidXmlNameCharacter() {
             int nextIndex = lastIndex + 1;
             return nextIndex <= maxIndex && XmlCharacters.isValidName(content[nextIndex]);
@@ -2031,6 +2058,7 @@ public class TokenStream {
          * 
          * @see org.modeshape.common.text.TokenStream.CharacterStream#isNextValidXmlNcNameCharacter()
          */
+        @Override
         public boolean isNextValidXmlNcNameCharacter() {
             int nextIndex = lastIndex + 1;
             return nextIndex <= maxIndex && XmlCharacters.isValidNcName(content[nextIndex]);
@@ -2103,6 +2131,7 @@ public class TokenStream {
          * 
          * @see org.modeshape.common.text.TokenStream.Tokenizer#tokenize(CharacterStream, Tokens)
          */
+        @Override
         public void tokenize( CharacterStream input,
                               Tokens tokens ) throws ParsingException {
             while (input.hasNext()) {

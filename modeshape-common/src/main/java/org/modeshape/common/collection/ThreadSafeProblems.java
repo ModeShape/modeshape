@@ -152,6 +152,7 @@ public class ThreadSafeProblems extends AbstractProblems {
      * 
      * @see org.modeshape.common.collection.Problems#addAll(java.lang.Iterable)
      */
+    @Override
     public void addAll( Iterable<Problem> problems ) {
         if (problems == this) return;
         try {

@@ -76,7 +76,6 @@ public class JcrArithmeticOperand extends ArithmeticOperand
      * 
      * @see org.modeshape.jcr.api.query.qom.ArithmeticOperand#getLeft()
      */
-    @Override
     public DynamicOperand getLeft() {
         return left();
     }
@@ -86,7 +85,6 @@ public class JcrArithmeticOperand extends ArithmeticOperand
      * 
      * @see org.modeshape.jcr.api.query.qom.ArithmeticOperand#getRight()
      */
-    @Override
     public DynamicOperand getRight() {
         return right();
     }
@@ -96,7 +94,6 @@ public class JcrArithmeticOperand extends ArithmeticOperand
      * 
      * @see org.modeshape.jcr.api.query.qom.ArithmeticOperand#getOperator()
      */
-    @Override
     public String getOperator() {
         switch (operator()) {
             case ADD:

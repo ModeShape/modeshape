@@ -130,6 +130,7 @@ public class LuceneSearchEngineObservationTest {
              * 
              * @see org.modeshape.graph.connector.RepositoryConnectionFactory#createConnection(java.lang.String)
              */
+            @Override
             @SuppressWarnings( "synthetic-access" )
             public RepositoryConnection createConnection( String name ) throws RepositorySourceException {
                 assertThat(sourceName, is(name));
@@ -155,20 +156,25 @@ public class LuceneSearchEngineObservationTest {
         // Initialize the source so that the search engine observes the events ...
         @SuppressWarnings( "synthetic-access" )
         RepositoryContext repositoryContext = new RepositoryContext() {
+            @Override
             public Subgraph getConfiguration( int depth ) {
                 return null;
             }
 
+            @Override
             public ExecutionContext getExecutionContext() {
                 return context;
             }
 
+            @Override
             public RepositoryConnectionFactory getRepositoryConnectionFactory() {
                 return connectionFactory;
             }
 
+            @Override
             public Observer getObserver() {
                 return new Observer() {
+                    @Override
                     public void notify( Changes changes ) {
                         // -----------------------------------------------------------
                         // NOTE THAT THE SEARCH ENGINE IS UPDATED IN-THREAD !!!!!!!!!!

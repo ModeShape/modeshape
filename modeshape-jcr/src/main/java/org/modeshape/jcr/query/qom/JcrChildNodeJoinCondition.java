@@ -51,7 +51,6 @@ public class JcrChildNodeJoinCondition extends ChildNodeJoinCondition
      * 
      * @see javax.jcr.query.qom.ChildNodeJoinCondition#getChildSelectorName()
      */
-    @Override
     public String getChildSelectorName() {
         return childSelectorName().name();
     }
@@ -61,7 +60,6 @@ public class JcrChildNodeJoinCondition extends ChildNodeJoinCondition
      * 
      * @see javax.jcr.query.qom.ChildNodeJoinCondition#getParentSelectorName()
      */
-    @Override
     public String getParentSelectorName() {
         return parentSelectorName().name();
     }

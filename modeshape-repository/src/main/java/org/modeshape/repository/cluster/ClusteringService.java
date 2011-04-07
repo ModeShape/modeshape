@@ -80,6 +80,7 @@ public class ClusteringService implements AdministeredService, ObservationBus {
         /**
          * {@inheritDoc}
          */
+        @Override
         public boolean awaitTermination( long timeout,
                                          TimeUnit unit ) {
             return true; // nothing to wait for

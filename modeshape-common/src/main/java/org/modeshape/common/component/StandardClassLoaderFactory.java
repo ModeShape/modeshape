@@ -52,6 +52,7 @@ public class StandardClassLoaderFactory implements ClassLoaderFactory {
     /**
      * {@inheritDoc}
      */
+    @Override
     public ClassLoader getClassLoader( String... classpath ) {
         ClassLoader result = null;
         if (this.useCurrentThreadContextClassLoader) result = Thread.currentThread().getContextClassLoader();

@@ -471,6 +471,7 @@ public class AstNode implements Iterable<AstNode> {
      * 
      * @see java.lang.Iterable#iterator()
      */
+    @Override
     public Iterator<AstNode> iterator() {
         return childrenView.iterator();
     }

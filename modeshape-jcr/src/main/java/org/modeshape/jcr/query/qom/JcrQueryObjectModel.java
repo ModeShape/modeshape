@@ -73,7 +73,6 @@ public class JcrQueryObjectModel extends JcrQuery implements QueryObjectModel {
      * 
      * @see javax.jcr.query.qom.QueryObjectModel#getSource()
      */
-    @Override
     public Source getSource() {
         return query().source();
     }
@@ -83,7 +82,6 @@ public class JcrQueryObjectModel extends JcrQuery implements QueryObjectModel {
      * 
      * @see javax.jcr.query.qom.QueryObjectModel#getConstraint()
      */
-    @Override
     public Constraint getConstraint() {
         return query().constraint();
     }
@@ -93,7 +91,6 @@ public class JcrQueryObjectModel extends JcrQuery implements QueryObjectModel {
      * 
      * @see javax.jcr.query.qom.QueryObjectModel#getColumns()
      */
-    @Override
     public Column[] getColumns() {
         return query().getColumns();
     }
@@ -103,7 +100,6 @@ public class JcrQueryObjectModel extends JcrQuery implements QueryObjectModel {
      * 
      * @see javax.jcr.query.qom.QueryObjectModel#getOrderings()
      */
-    @Override
     public Ordering[] getOrderings() {
         return query().getOrderings();
     }

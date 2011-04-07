@@ -33,8 +33,8 @@ import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
-import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.SystemFailureException;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.graph.property.Binary;
 import org.modeshape.graph.property.BinaryFactory;
@@ -156,7 +156,6 @@ final class JcrValue implements org.modeshape.jcr.api.Value {
      * 
      * @see javax.jcr.Value#getDecimal()
      */
-    @Override
     public BigDecimal getDecimal() throws ValueFormatException, RepositoryException {
         try {
             BigDecimal convertedValue = valueFactories.getDecimalFactory().create(value);

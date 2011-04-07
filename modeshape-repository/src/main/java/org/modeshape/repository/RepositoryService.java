@@ -114,6 +114,7 @@ public class RepositoryService implements AdministeredService, Observer {
          * 
          * @see org.modeshape.repository.service.ServiceAdministrator#awaitTermination(long, java.util.concurrent.TimeUnit)
          */
+        @Override
         public boolean awaitTermination( long timeout,
                                          TimeUnit unit ) {
             return true;
@@ -174,6 +175,7 @@ public class RepositoryService implements AdministeredService, Observer {
     /**
      * {@inheritDoc}
      */
+    @Override
     public final ServiceAdministrator getAdministrator() {
         return this.administrator;
     }
@@ -540,6 +542,7 @@ public class RepositoryService implements AdministeredService, Observer {
      * 
      * @see org.modeshape.graph.observe.Observer#notify(org.modeshape.graph.observe.Changes)
      */
+    @Override
     public void notify( Changes changes ) {
         // Forward the changes to the net change observer ...
         this.configurationChangeObserver.notify(changes);

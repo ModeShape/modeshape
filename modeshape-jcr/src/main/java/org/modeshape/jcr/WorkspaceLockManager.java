@@ -134,10 +134,10 @@ class WorkspaceLockManager {
     }
 
     ModeShapeLock lockNodeInternally( String lockOwner,
-                             UUID lockUuid,
-                             UUID lockedNodeUuid,
-                             boolean isDeep,
-                             boolean isSessionScoped ) {
+                                      UUID lockUuid,
+                                      UUID lockedNodeUuid,
+                                      boolean isDeep,
+                                      boolean isSessionScoped ) {
         ModeShapeLock lock = createLock(lockOwner, lockUuid, lockedNodeUuid, isDeep, isSessionScoped);
 
         workspaceLocksByNodeUuid.put(lockedNodeUuid, lock);
@@ -168,8 +168,8 @@ class WorkspaceLockManager {
      * by calling {@link #unlock(ExecutionContext, ModeShapeLock)} and will throw a {@code RepositoryException}.
      * </p>
      * <p>
-     * This method does not modify the system graph. In other words, it will not create the record for the lock in the {@code
-     * /jcr:system/dna:locks} subgraph.
+     * This method does not modify the system graph. In other words, it will not create the record for the lock in the
+     * {@code /jcr:system/dna:locks} subgraph.
      * </p>
      * 
      * @param session the session in which the node is being locked and that loaded the node
@@ -191,14 +191,15 @@ class WorkspaceLockManager {
         Property lockIsDeepProp = propFactory.create(JcrLexicon.LOCK_IS_DEEP, isDeep);
 
         // Write them directly to the underlying graph
-        Graph.Batch workspaceBatch = repositoryLockManager.createWorkspaceGraph(workspaceName, session.getExecutionContext()).batch();
+        Graph.Batch workspaceBatch = repositoryLockManager.createWorkspaceGraph(workspaceName, session.getExecutionContext())
+                                                          .batch();
         workspaceBatch.set(lockOwnerProp, lockIsDeepProp).on(nodeUuid);
         if (isDeep) {
             workspaceBatch.lock(nodeUuid).andItsDescendants().withDefaultTimeout();
         } else {
             workspaceBatch.lock(nodeUuid).only().withDefaultTimeout();
         }
-            workspaceBatch.execute();
+        workspaceBatch.execute();
 
     }
 
@@ -225,7 +226,9 @@ class WorkspaceLockManager {
                      // This gets set after the lock succeeds and the lock token gets added to the session
                      propFactory.create(ModeShapeLexicon.IS_HELD_BY_SESSION, false),
                      propFactory.create(JcrLexicon.LOCK_OWNER, lockOwner),
-                     propFactory.create(JcrLexicon.LOCK_IS_DEEP, lockIsDeep)).ifAbsent().and();
+                     propFactory.create(JcrLexicon.LOCK_IS_DEEP, lockIsDeep))
+             .ifAbsent()
+             .and();
 
     }
 
@@ -263,8 +266,8 @@ class WorkspaceLockManager {
      * {@code jcr:lockIsDeep} properties on the node and sends an {@link Graph#unlock(Location) unlock request} to the underlying
      * repository to clear any locks that it is holding on the node.
      * <p>
-     * This method does not modify the system graph. In other words, it will not remove the record for the lock in the {@code
-     * /jcr:system/dna:locks} subgraph.
+     * This method does not modify the system graph. In other words, it will not remove the record for the lock in the
+     * {@code /jcr:system/dna:locks} subgraph.
      * </p>
      * 
      * @param sessionExecutionContext the execution context of the session in which the node is being unlocked
@@ -272,7 +275,8 @@ class WorkspaceLockManager {
      */
     void unlockNodeInRepository( ExecutionContext sessionExecutionContext,
                                  ModeShapeLock lock ) {
-        Graph.Batch workspaceBatch = repositoryLockManager.createWorkspaceGraph(this.workspaceName, sessionExecutionContext).batch();
+        Graph.Batch workspaceBatch = repositoryLockManager.createWorkspaceGraph(this.workspaceName, sessionExecutionContext)
+                                                          .batch();
 
         workspaceBatch.remove(JcrLexicon.LOCK_OWNER, JcrLexicon.LOCK_IS_DEEP).on(lock.nodeUuid);
         workspaceBatch.unlock(lock.nodeUuid);
@@ -310,8 +314,9 @@ class WorkspaceLockManager {
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
 
         try {
-            org.modeshape.graph.Node lockNode = repositoryLockManager.createSystemGraph(context).getNodeAt(pathFactory.create(locksPath,
-                                                                                                                              pathFactory.createSegment(lockToken)));
+            org.modeshape.graph.Node lockNode = repositoryLockManager.createSystemGraph(context)
+                                                                     .getNodeAt(pathFactory.create(locksPath,
+                                                                                                   pathFactory.createSegment(lockToken)));
 
             return booleanFactory.create(lockNode.getProperty(ModeShapeLexicon.IS_HELD_BY_SESSION).getFirstValue());
         } catch (PathNotFoundException pnfe) {
@@ -339,8 +344,9 @@ class WorkspaceLockManager {
         PropertyFactory propFactory = context.getPropertyFactory();
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
 
-        repositoryLockManager.createSystemGraph(context).set(propFactory.create(ModeShapeLexicon.IS_HELD_BY_SESSION, value)).on(pathFactory.create(locksPath,
-                                                                                                                                                   pathFactory.createSegment(lockToken)));
+        repositoryLockManager.createSystemGraph(context)
+                             .set(propFactory.create(ModeShapeLexicon.IS_HELD_BY_SESSION, value))
+                             .on(pathFactory.create(locksPath, pathFactory.createSegment(lockToken)));
     }
 
     /**
@@ -538,12 +544,10 @@ class WorkspaceLockManager {
                     }
                 }
 
-                @Override
                 public long getSecondsRemaining() {
                     return isLockOwningSession() ? Integer.MAX_VALUE : Integer.MIN_VALUE;
                 }
 
-                @Override
                 public boolean isLockOwningSession() {
                     String uuidString = lockUuid.toString();
                     return session.lockManager().lockTokens().contains(uuidString);

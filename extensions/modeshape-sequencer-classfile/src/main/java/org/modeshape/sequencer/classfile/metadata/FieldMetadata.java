@@ -91,6 +91,7 @@ public class FieldMetadata implements Comparable<FieldMetadata> {
         return annotations;
     }
 
+    @Override
     public int compareTo( FieldMetadata o ) {
         if (this.isStatic() && !o.isStatic()) {
             return 1;

@@ -48,7 +48,6 @@ public class JcrNodeDepth extends NodeDepth implements org.modeshape.jcr.api.que
      * 
      * @see org.modeshape.jcr.api.query.qom.NodeDepth#getSelectorName()
      */
-    @Override
     public String getSelectorName() {
         return selectorName().name();
     }

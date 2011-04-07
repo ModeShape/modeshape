@@ -492,6 +492,7 @@ public class JcrResources extends AbstractHandler {
     @Provider
     public static class NotFoundExceptionMapper implements ExceptionMapper<NotFoundException> {
 
+        @Override
         public Response toResponse( NotFoundException exception ) {
             return Response.status(Status.NOT_FOUND).entity(exception.getMessage()).build();
         }
@@ -501,6 +502,7 @@ public class JcrResources extends AbstractHandler {
     @Provider
     public static class NoSuchRepositoryExceptionMapper implements ExceptionMapper<NoSuchRepositoryException> {
 
+        @Override
         public Response toResponse( NoSuchRepositoryException exception ) {
             return Response.status(Status.NOT_FOUND).entity(exception.getMessage()).build();
         }
@@ -510,6 +512,7 @@ public class JcrResources extends AbstractHandler {
     @Provider
     public static class JSONExceptionMapper implements ExceptionMapper<JSONException> {
 
+        @Override
         public Response toResponse( JSONException exception ) {
             return Response.status(Status.BAD_REQUEST).entity(exception.getMessage()).build();
         }
@@ -519,6 +522,7 @@ public class JcrResources extends AbstractHandler {
     @Provider
     public static class InvalidQueryExceptionMapper implements ExceptionMapper<InvalidQueryException> {
 
+        @Override
         public Response toResponse( InvalidQueryException exception ) {
             return Response.status(Status.BAD_REQUEST).entity(exception.getMessage()).build();
         }
@@ -528,6 +532,7 @@ public class JcrResources extends AbstractHandler {
     @Provider
     public static class RepositoryExceptionMapper implements ExceptionMapper<RepositoryException> {
 
+        @Override
         public Response toResponse( RepositoryException exception ) {
             /*
              * This error code is murky - the request must have been syntactically valid to get to

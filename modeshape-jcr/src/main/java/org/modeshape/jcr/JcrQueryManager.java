@@ -91,7 +91,6 @@ class JcrQueryManager implements QueryManager {
      * 
      * @see javax.jcr.query.QueryManager#getQOMFactory()
      */
-    @Override
     public javax.jcr.query.qom.QueryObjectModelFactory getQOMFactory() {
         return factory;
     }
@@ -1394,7 +1393,6 @@ class JcrQueryManager implements QueryManager {
          * 
          * @see org.modeshape.jcr.query.JcrQueryContext#createValue(int, java.lang.Object)
          */
-        @Override
         public Value createValue( int propertyType,
                                   Object value ) {
             return new JcrValue(factories, cache, propertyType, value);
@@ -1405,7 +1403,6 @@ class JcrQueryManager implements QueryManager {
          * 
          * @see org.modeshape.jcr.query.JcrQueryContext#emptyNodeIterator()
          */
-        @Override
         public NodeIterator emptyNodeIterator() {
             return new JcrEmptyNodeIterator();
         }
@@ -1416,7 +1413,6 @@ class JcrQueryManager implements QueryManager {
          * @see org.modeshape.jcr.query.JcrQueryContext#execute(org.modeshape.graph.query.model.QueryCommand,
          *      org.modeshape.graph.query.plan.PlanHints, java.util.Map)
          */
-        @Override
         public QueryResults execute( QueryCommand query,
                                      PlanHints hints,
                                      Map<String, Object> variables ) throws RepositoryException {
@@ -1431,7 +1427,6 @@ class JcrQueryManager implements QueryManager {
          * 
          * @see org.modeshape.jcr.query.JcrQueryContext#getExecutionContext()
          */
-        @Override
         public ExecutionContext getExecutionContext() {
             return session.getExecutionContext();
         }
@@ -1441,7 +1436,6 @@ class JcrQueryManager implements QueryManager {
          * 
          * @see org.modeshape.jcr.query.JcrQueryContext#getNode(Location)
          */
-        @Override
         public Node getNode( Location location ) throws RepositoryException {
             if (!session.wasRemovedInSession(location)) {
                 try {
@@ -1460,7 +1454,6 @@ class JcrQueryManager implements QueryManager {
          * 
          * @see org.modeshape.jcr.query.JcrQueryContext#getSchemata()
          */
-        @Override
         public Schemata getSchemata() {
             return session.nodeTypeManager().schemata();
         }
@@ -1470,7 +1463,6 @@ class JcrQueryManager implements QueryManager {
          * 
          * @see org.modeshape.jcr.query.JcrQueryContext#isLive()
          */
-        @Override
         public boolean isLive() {
             return session.isLive();
         }
@@ -1480,14 +1472,12 @@ class JcrQueryManager implements QueryManager {
          * 
          * @see org.modeshape.jcr.query.JcrQueryContext#search(java.lang.String, int, int)
          */
-        @Override
         public QueryResults search( String searchExpression,
                                     int maxRowCount,
                                     int offset ) throws RepositoryException {
-            return session.repository().queryManager().search(session.workspace().getName(),
-                                                              searchExpression,
-                                                              maxRowCount,
-                                                              offset);
+            return session.repository()
+                          .queryManager()
+                          .search(session.workspace().getName(), searchExpression, maxRowCount, offset);
         }
 
         /**
@@ -1496,7 +1486,6 @@ class JcrQueryManager implements QueryManager {
          * @see org.modeshape.jcr.query.JcrQueryContext#store(java.lang.String, org.modeshape.graph.property.Name,
          *      java.lang.String, java.lang.String)
          */
-        @Override
         public Node store( String absolutePath,
                            Name nodeType,
                            String language,
@@ -1538,88 +1527,71 @@ class JcrQueryManager implements QueryManager {
             this.delegate = session.getExecutionContext().getValueFactories().getTypeSystem();
         }
 
-        @Override
         public Set<String> getTypeNames() {
             return delegate.getTypeNames();
         }
 
-        @Override
         public TypeFactory<?> getTypeFactory( Object prototype ) {
             return delegate.getTypeFactory(prototype);
         }
 
-        @Override
         public TypeFactory<?> getTypeFactory( String typeName ) {
             return delegate.getTypeFactory(typeName);
         }
 
-        @Override
         public TypeFactory<String> getStringFactory() {
             return delegate.getStringFactory();
         }
 
-        @Override
         public TypeFactory<?> getReferenceFactory() {
             return delegate.getReferenceFactory();
         }
 
-        @Override
         public TypeFactory<?> getPathFactory() {
             return delegate.getPathFactory();
         }
 
-        @Override
         public TypeFactory<Long> getLongFactory() {
             return delegate.getLongFactory();
         }
 
-        @Override
         public TypeFactory<Double> getDoubleFactory() {
             return delegate.getDoubleFactory();
         }
 
-        @Override
         public String getDefaultType() {
             return delegate.getDefaultType();
         }
 
-        @Override
         public Comparator<Object> getDefaultComparator() {
             return delegate.getDefaultComparator();
         }
 
-        @Override
         public TypeFactory<BigDecimal> getDecimalFactory() {
             return delegate.getDecimalFactory();
         }
 
-        @Override
         public TypeFactory<?> getDateTimeFactory() {
             return delegate.getDateTimeFactory();
         }
 
-        @Override
         public String getCompatibleType( String type1,
                                          String type2 ) {
             return delegate.getCompatibleType(type1, type2);
         }
 
-        @Override
         public TypeFactory<Boolean> getBooleanFactory() {
             return delegate.getBooleanFactory();
         }
 
-        @Override
         public TypeFactory<?> getBinaryFactory() {
             return delegate.getBinaryFactory();
         }
 
-        @Override
         public String asString( Object value ) {
             return delegate.asString(value);
         }
 
-        @Override
         public ValueFactory getValueFactory() {
             return session.getValueFactory();
         }

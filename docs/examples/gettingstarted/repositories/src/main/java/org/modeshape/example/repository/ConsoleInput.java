@@ -81,6 +81,7 @@ public class ConsoleInput implements UserInterface {
 
                 private boolean quit = false;
 
+                @Override
                 @SuppressWarnings( "synthetic-access" )
                 public void run() {
                     try {
@@ -273,6 +274,7 @@ public class ConsoleInput implements UserInterface {
      * @param activity the activity; may not be null but may be empty
      * @param t the exception; may not be null
      */
+    @Override
     public void displayError( String activity,
                               Throwable t ) {
         assert activity != null;
@@ -295,6 +297,7 @@ public class ConsoleInput implements UserInterface {
      * 
      * @see org.modeshape.example.repository.UserInterface#getLocationOfRepositoryFiles()
      */
+    @Override
     public String getLocationOfRepositoryFiles() {
         return new File("").getAbsolutePath();
     }
@@ -304,6 +307,7 @@ public class ConsoleInput implements UserInterface {
      * 
      * @see org.modeshape.example.repository.UserInterface#getRepositoryConfiguration()
      */
+    @Override
     public File getRepositoryConfiguration() {
         return new File("configRepository.xml");
     }
@@ -313,6 +317,7 @@ public class ConsoleInput implements UserInterface {
      * 
      * @see org.modeshape.example.repository.UserInterface#getCallbackHandler()
      */
+    @Override
     public CallbackHandler getCallbackHandler() {
         return new JaasSecurityContext.UserPasswordCallbackHandler("jsmith", "secret".toCharArray());
     }

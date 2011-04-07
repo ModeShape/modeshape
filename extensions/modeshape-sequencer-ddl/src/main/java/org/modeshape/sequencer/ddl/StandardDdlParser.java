@@ -184,6 +184,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
      * @see org.modeshape.sequencer.ddl.DdlParser#score(java.lang.String, java.lang.String,
      *      org.modeshape.sequencer.ddl.DdlParserScorer)
      */
+    @Override
     public Object score( String ddl,
                          String fileName,
                          DdlParserScorer scorer ) throws ParsingException {
@@ -238,6 +239,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
      * @see org.modeshape.sequencer.ddl.DdlParser#parse(java.lang.String, org.modeshape.sequencer.ddl.node.AstNode,
      *      java.lang.Object)
      */
+    @Override
     public void parse( String ddl,
                        AstNode rootNode,
                        Object scoreReturnObject ) throws ParsingException {
@@ -2862,6 +2864,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
      * 
      * @see org.modeshape.sequencer.ddl.DdlParser#getId()
      */
+    @Override
     public String getId() {
         return parserId;
     }

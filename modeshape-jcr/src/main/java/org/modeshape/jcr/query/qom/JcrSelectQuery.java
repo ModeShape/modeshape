@@ -116,7 +116,6 @@ public class JcrSelectQuery extends Query implements org.modeshape.jcr.api.query
      * 
      * @see org.modeshape.jcr.api.query.qom.SelectQuery#getConstraint()
      */
-    @Override
     public Constraint getConstraint() {
         return constraint();
     }
@@ -126,7 +125,6 @@ public class JcrSelectQuery extends Query implements org.modeshape.jcr.api.query
      * 
      * @see org.modeshape.jcr.api.query.qom.SelectQuery#getSource()
      */
-    @Override
     public Source getSource() {
         return source();
     }
@@ -136,7 +134,6 @@ public class JcrSelectQuery extends Query implements org.modeshape.jcr.api.query
      * 
      * @see org.modeshape.jcr.api.query.qom.QueryCommand#getLimits()
      */
-    @Override
     public Limit getLimits() {
         return limits();
     }
@@ -146,7 +143,6 @@ public class JcrSelectQuery extends Query implements org.modeshape.jcr.api.query
      * 
      * @see org.modeshape.jcr.api.query.qom.QueryCommand#getColumns()
      */
-    @Override
     public Column[] getColumns() {
         List<? extends JcrColumn> columns = columns();
         return columns.toArray(new Column[columns.size()]);
@@ -157,7 +153,6 @@ public class JcrSelectQuery extends Query implements org.modeshape.jcr.api.query
      * 
      * @see org.modeshape.jcr.api.query.qom.QueryCommand#getOrderings()
      */
-    @Override
     public Ordering[] getOrderings() {
         List<? extends JcrOrdering> orderings = orderings();
         return orderings.toArray(new Ordering[orderings.size()]);

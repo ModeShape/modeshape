@@ -143,6 +143,7 @@ public abstract class AbstractRepositoryDelegate implements RepositoryDelegate {
         this.getConnectionInfo().setRepositoryName(repositoryName);
     }
 
+    @Override
     public Set<String> getRepositoryNames() {
         return this.repositoryNames;
     }

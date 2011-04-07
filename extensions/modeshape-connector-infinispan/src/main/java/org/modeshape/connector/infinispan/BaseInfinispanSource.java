@@ -135,6 +135,7 @@ public abstract class BaseInfinispanSource implements BaseRepositorySource, Obje
      * 
      * @see org.modeshape.graph.connector.RepositorySource#initialize(org.modeshape.graph.connector.RepositoryContext)
      */
+    @Override
     public void initialize( RepositoryContext context ) throws RepositorySourceException {
         this.repositoryContext = context;
     }
@@ -142,6 +143,7 @@ public abstract class BaseInfinispanSource implements BaseRepositorySource, Obje
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getName() {
         return this.name;
     }
@@ -151,6 +153,7 @@ public abstract class BaseInfinispanSource implements BaseRepositorySource, Obje
      * 
      * @see org.modeshape.graph.connector.RepositorySource#getCapabilities()
      */
+    @Override
     public RepositorySourceCapabilities getCapabilities() {
         return capabilities;
     }
@@ -160,6 +163,7 @@ public abstract class BaseInfinispanSource implements BaseRepositorySource, Obje
      * 
      * @see org.modeshape.graph.connector.RepositorySource#getRetryLimit()
      */
+    @Override
     public int getRetryLimit() {
         return retryLimit;
     }
@@ -169,6 +173,7 @@ public abstract class BaseInfinispanSource implements BaseRepositorySource, Obje
      * 
      * @see org.modeshape.graph.connector.RepositorySource#setRetryLimit(int)
      */
+    @Override
     public synchronized void setRetryLimit( int limit ) {
         retryLimit = limit < 0 ? 0 : limit;
     }
@@ -188,6 +193,7 @@ public abstract class BaseInfinispanSource implements BaseRepositorySource, Obje
      * 
      * @return the default cache policy, or null if this source has no explicit default cache policy
      */
+    @Override
     public CachePolicy getDefaultCachePolicy() {
         return defaultCachePolicy;
     }
@@ -217,6 +223,7 @@ public abstract class BaseInfinispanSource implements BaseRepositorySource, Obje
      * 
      * @return the UUID of the root node for the cache.
      */
+    @Override
     public UUID getRootNodeUuidObject() {
         return this.rootNodeUuid;
     }
@@ -240,6 +247,7 @@ public abstract class BaseInfinispanSource implements BaseRepositorySource, Obje
      * 
      * @return the name of the workspace that should be used by default; never null
      */
+    @Override
     public String getDefaultWorkspaceName() {
         return defaultWorkspace;
     }
@@ -325,6 +333,7 @@ public abstract class BaseInfinispanSource implements BaseRepositorySource, Obje
      * 
      * @see org.modeshape.graph.connector.RepositorySource#close()
      */
+    @Override
     public synchronized void close() {
         if (this.repository != null) {
             try {
@@ -338,6 +347,7 @@ public abstract class BaseInfinispanSource implements BaseRepositorySource, Obje
     /**
      * @return repositoryContext
      */
+    @Override
     public RepositoryContext getRepositoryContext() {
         return repositoryContext;
     }
@@ -354,10 +364,12 @@ public abstract class BaseInfinispanSource implements BaseRepositorySource, Obje
         this.jndiContext = context;
     }
 
+    @Override
     public boolean areUpdatesAllowed() {
         return this.updatesAllowed;
     }
 
+    @Override
     public void setUpdatesAllowed( boolean updatesAllowed ) {
         this.updatesAllowed = updatesAllowed;
     }
@@ -367,6 +379,7 @@ public abstract class BaseInfinispanSource implements BaseRepositorySource, Obje
      * 
      * @see org.modeshape.graph.connector.RepositorySource#getConnection()
      */
+    @Override
     public synchronized RepositoryConnection getConnection() throws RepositorySourceException {
         if (getName() == null) {
             I18n msg = InfinispanConnectorI18n.propertyIsRequired;
@@ -395,6 +408,7 @@ public abstract class BaseInfinispanSource implements BaseRepositorySource, Obje
     /**
      * {@inheritDoc}
      */
+    @Override
     public synchronized Reference getReference() {
         String className = getClass().getName();
         String managerClassName = this.getClass().getName();

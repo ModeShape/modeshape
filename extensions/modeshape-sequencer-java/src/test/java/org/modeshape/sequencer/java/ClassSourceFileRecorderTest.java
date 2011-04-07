@@ -121,6 +121,7 @@ public class ClassSourceFileRecorderTest {
     public static class MockSourceFileRecorder implements SourceFileRecorder {
         static boolean called = false;
 
+        @Override
         public void record( StreamSequencerContext context,
                             SequencerOutput output,
                             JavaMetadata javaMetadata ) {

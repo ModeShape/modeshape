@@ -183,6 +183,7 @@ public class DdlParsers {
          * 
          * @see java.lang.Comparable#compareTo(java.lang.Object)
          */
+        @Override
         public int compareTo( ScoredParser that ) {
             if (that == null) return 1;
             return that.getScorer().getScore() - this.getScorer().getScore();

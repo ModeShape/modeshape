@@ -34,10 +34,12 @@ import org.modeshape.common.annotation.Immutable;
 @Immutable
 public class IntegerOperations implements MathOperations<Integer>, Comparator<Integer> {
 
+    @Override
     public Class<Integer> getOperandClass() {
         return Integer.class;
     }
 
+    @Override
     public Integer add( Integer value1,
                         Integer value2 ) {
         if (value1 == null) return value2 != null ? value2 : createZeroValue();
@@ -45,6 +47,7 @@ public class IntegerOperations implements MathOperations<Integer>, Comparator<In
         return value1 + value2;
     }
 
+    @Override
     public Integer subtract( Integer value1,
                              Integer value2 ) {
         if (value1 == null) return negate(value2);
@@ -52,28 +55,33 @@ public class IntegerOperations implements MathOperations<Integer>, Comparator<In
         return value1 - value2;
     }
 
+    @Override
     public Integer multiply( Integer value1,
                              Integer value2 ) {
         if (value1 == null || value2 == null) return createZeroValue();
         return value1 * value2;
     }
 
+    @Override
     public double divide( Integer value1,
                           Integer value2 ) {
         if (value1 == null || value2 == null) throw new IllegalArgumentException();
         return value1 / value2;
     }
 
+    @Override
     public Integer negate( Integer value ) {
         if (value == null) return createZeroValue();
         return value * -1;
     }
 
+    @Override
     public Integer increment( Integer value ) {
         if (value == null) return createZeroValue();
         return value + 1;
     }
 
+    @Override
     public Integer maximum( Integer value1,
                             Integer value2 ) {
         if (value1 == null) return value2;
@@ -81,6 +89,7 @@ public class IntegerOperations implements MathOperations<Integer>, Comparator<In
         return Math.max(value1, value2);
     }
 
+    @Override
     public Integer minimum( Integer value1,
                             Integer value2 ) {
         if (value1 == null) return value2;
@@ -88,6 +97,7 @@ public class IntegerOperations implements MathOperations<Integer>, Comparator<In
         return Math.min(value1, value2);
     }
 
+    @Override
     public int compare( Integer value1,
                         Integer value2 ) {
         if (value1 == null) return value2 != null ? -1 : 0;
@@ -95,38 +105,47 @@ public class IntegerOperations implements MathOperations<Integer>, Comparator<In
         return value1.compareTo(value2);
     }
 
+    @Override
     public BigDecimal asBigDecimal( Integer value ) {
         return value != null ? new BigDecimal(value) : null;
     }
 
+    @Override
     public Integer fromBigDecimal( BigDecimal value ) {
         return value != null ? value.intValue() : null;
     }
 
+    @Override
     public Integer createZeroValue() {
         return 0;
     }
 
+    @Override
     public Integer create( int value ) {
         return value;
     }
 
+    @Override
     public Integer create( long value ) {
         return (int)value;
     }
 
+    @Override
     public Integer create( double value ) {
         return (int)value;
     }
 
+    @Override
     public double sqrt( Integer value ) {
         return Math.sqrt(value);
     }
 
+    @Override
     public Comparator<Integer> getComparator() {
         return this;
     }
 
+    @Override
     public Integer random( Integer minimum,
                            Integer maximum,
                            Random rng ) {
@@ -134,26 +153,32 @@ public class IntegerOperations implements MathOperations<Integer>, Comparator<In
         return minimum + rng.nextInt(difference);
     }
 
+    @Override
     public double doubleValue( Integer value ) {
         return value.doubleValue();
     }
 
+    @Override
     public float floatValue( Integer value ) {
         return value.floatValue();
     }
 
+    @Override
     public int intValue( Integer value ) {
         return value.intValue();
     }
 
+    @Override
     public long longValue( Integer value ) {
         return value.longValue();
     }
 
+    @Override
     public short shortValue( Integer value ) {
         return value.shortValue();
     }
 
+    @Override
     public int getExponentInScientificNotation( Integer value ) {
         int v = Math.abs(value);
         int exp = 0;
@@ -166,6 +191,7 @@ public class IntegerOperations implements MathOperations<Integer>, Comparator<In
         return exp;
     }
 
+    @Override
     public Integer roundUp( Integer value,
                             int decimalShift ) {
         if (value == 0) return 0;
@@ -182,6 +208,7 @@ public class IntegerOperations implements MathOperations<Integer>, Comparator<In
         return shiftedValue;
     }
 
+    @Override
     public Integer roundDown( Integer value,
                               int decimalShift ) {
         if (value == 0) return 0;
@@ -195,6 +222,7 @@ public class IntegerOperations implements MathOperations<Integer>, Comparator<In
         return shiftedValue;
     }
 
+    @Override
     public Integer keepSignificantFigures( Integer value,
                                            int numSigFigs ) {
         if (numSigFigs < 0) return value;

@@ -44,7 +44,6 @@ public class JcrLowerCase extends LowerCase implements javax.jcr.query.qom.Lower
      * 
      * @see javax.jcr.query.qom.LowerCase#getOperand()
      */
-    @Override
     public JcrDynamicOperand getOperand() {
         return (JcrDynamicOperand)operand();
     }

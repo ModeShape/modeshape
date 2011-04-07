@@ -153,6 +153,7 @@ public class MethodMetadata implements Comparable<MethodMetadata> {
         return AccessFlag.SYNCHRONIZED == (AccessFlag.SYNCHRONIZED & method.getAccessFlags());
     }
 
+    @Override
     public int compareTo( MethodMetadata o ) {
         if (this.isStatic() && !o.isStatic()) {
             return -1;

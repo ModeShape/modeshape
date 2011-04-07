@@ -107,6 +107,7 @@ public final class ClassUtil {
             } else {
                 AccessController.doPrivileged(new PrivilegedAction<Object>() {
 
+                    @Override
                     public Object run() {
                         object.setAccessible(true);
                         return null;

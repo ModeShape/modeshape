@@ -431,6 +431,7 @@ public class Histogram<T extends Number> {
             return 0;
         }
 
+        @Override
         public int compareTo( Bucket that ) {
             // This is lower if 'that' has a lowerBound that is greater than 'this' lower bound ...
             if (Histogram.this.math.compare(this.lowerBound, that.lowerBound) < 0) return -1;

@@ -48,7 +48,6 @@ public class JcrFullTextSearchScore extends FullTextSearchScore
      * 
      * @see javax.jcr.query.qom.FullTextSearchScore#getSelectorName()
      */
-    @Override
     public String getSelectorName() {
         return selectorName().getString();
     }

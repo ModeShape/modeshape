@@ -54,7 +54,8 @@ public class EngineDiscoveryComponent implements
 	 * 
 	 * @see org.rhq.core.pluginapi.inventory.ResourceDiscoveryComponent#discoverResources(org.rhq.core.pluginapi.inventory.ResourceDiscoveryContext)
 	 */
-	@SuppressWarnings( "rawtypes" )
+	@Override
+    @SuppressWarnings( "rawtypes" )
     public Set<DiscoveredResourceDetails> discoverResources(
 			ResourceDiscoveryContext discoveryContext)
 			throws InvalidPluginConfigurationException, Exception {

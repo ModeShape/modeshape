@@ -126,7 +126,6 @@ public class JcrQuery extends JcrAbstractQuery {
      * 
      * @see javax.jcr.query.Query#bindValue(java.lang.String, javax.jcr.Value)
      */
-    @Override
     public void bindValue( String varName,
                            Value value ) throws IllegalArgumentException, RepositoryException {
         CheckArg.isNotNull(varName, "varName");
@@ -139,7 +138,6 @@ public class JcrQuery extends JcrAbstractQuery {
      * 
      * @see javax.jcr.query.Query#getBindVariableNames()
      */
-    @Override
     public String[] getBindVariableNames() {
         Set<String> keys = variables.keySet();
         return keys.toArray(new String[keys.size()]);
@@ -150,7 +148,6 @@ public class JcrQuery extends JcrAbstractQuery {
      * 
      * @see javax.jcr.query.Query#setLimit(long)
      */
-    @Override
     public void setLimit( long limit ) {
         if (limit > Integer.MAX_VALUE) limit = Integer.MAX_VALUE;
         query = query.withLimit((int)limit); // may not actually change if the limit matches the existing query
@@ -161,7 +158,6 @@ public class JcrQuery extends JcrAbstractQuery {
      * 
      * @see javax.jcr.query.Query#setOffset(long)
      */
-    @Override
     public void setOffset( long offset ) {
         if (offset > Integer.MAX_VALUE) offset = Integer.MAX_VALUE;
         query = query.withOffset((int)offset); // may not actually change if the offset matches the existing query

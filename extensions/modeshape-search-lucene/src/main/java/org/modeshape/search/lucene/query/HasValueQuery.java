@@ -55,6 +55,7 @@ public class HasValueQuery extends Query {
         this.fieldSelector = new FieldSelector() {
             private static final long serialVersionUID = 1L;
 
+            @Override
             public FieldSelectorResult accept( String fieldName ) {
                 return HasValueQuery.this.fieldName.equals(fieldName) ? FieldSelectorResult.LOAD_AND_BREAK : FieldSelectorResult.NO_LOAD;
             }

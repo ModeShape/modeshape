@@ -219,6 +219,7 @@ public class ModeShapeEngineTest {
             this.mimeType = mimeType;
         }
 
+        @Override
         public String mimeTypeOf( String name,
                                   InputStream is ) {
             return mimeType;

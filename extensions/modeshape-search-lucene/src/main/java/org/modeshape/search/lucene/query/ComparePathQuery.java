@@ -47,6 +47,7 @@ public class ComparePathQuery extends CompareQuery<Path> {
     protected static final Evaluator<Path> PATH_IS_LESS_THAN = new Evaluator<Path>() {
         private static final long serialVersionUID = 1L;
 
+        @Override
         public boolean satisfiesConstraint( Path nodePath,
                                             Path constraintPath ) {
             return ValueComparators.PATH_COMPARATOR.compare(nodePath, constraintPath) < 0;
@@ -60,6 +61,7 @@ public class ComparePathQuery extends CompareQuery<Path> {
     protected static final Evaluator<Path> PATH_IS_LESS_THAN_OR_EQUAL_TO = new Evaluator<Path>() {
         private static final long serialVersionUID = 1L;
 
+        @Override
         public boolean satisfiesConstraint( Path nodePath,
                                             Path constraintPath ) {
             return ValueComparators.PATH_COMPARATOR.compare(nodePath, constraintPath) <= 0;
@@ -73,6 +75,7 @@ public class ComparePathQuery extends CompareQuery<Path> {
     protected static final Evaluator<Path> PATH_IS_GREATER_THAN = new Evaluator<Path>() {
         private static final long serialVersionUID = 1L;
 
+        @Override
         public boolean satisfiesConstraint( Path nodePath,
                                             Path constraintPath ) {
             return ValueComparators.PATH_COMPARATOR.compare(nodePath, constraintPath) > 0;
@@ -86,6 +89,7 @@ public class ComparePathQuery extends CompareQuery<Path> {
     protected static final Evaluator<Path> PATH_IS_GREATER_THAN_OR_EQUAL_TO = new Evaluator<Path>() {
         private static final long serialVersionUID = 1L;
 
+        @Override
         public boolean satisfiesConstraint( Path nodePath,
                                             Path constraintPath ) {
             return ValueComparators.PATH_COMPARATOR.compare(nodePath, constraintPath) >= 0;

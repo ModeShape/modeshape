@@ -124,6 +124,7 @@ public class StoreProperties extends BasePropertiesFactory {
         final Pattern resourceExtensionFilter = Pattern.compile(resourceExtension.replaceAll("\\.", "\\\\.") + "$");
         return new FilenameFilter() {
 
+            @Override
             public boolean accept( File dir,
                                    String name ) {
                 if (extensionFilter.matcher(name).matches()) return false;

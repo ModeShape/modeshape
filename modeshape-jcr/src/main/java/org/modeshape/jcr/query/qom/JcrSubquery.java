@@ -45,7 +45,6 @@ public class JcrSubquery extends Subquery implements JcrStaticOperand, org.modes
      * 
      * @see org.modeshape.jcr.api.query.qom.Subquery#getQuery()
      */
-    @Override
     public QueryCommand getQuery() {
         return (JcrQueryCommand)query();
     }

@@ -400,6 +400,7 @@ public class XmlNameEncoder implements TextDecoder, TextEncoder {
      * 
      * @see org.modeshape.common.text.TextDecoder#decode(java.lang.String)
      */
+    @Override
     public String decode( String encodedText ) {
         if (encodedText == null) return null;
         if (encodedText.length() < 7) {
@@ -471,6 +472,7 @@ public class XmlNameEncoder implements TextDecoder, TextEncoder {
      * 
      * @see org.modeshape.common.text.TextEncoder#encode(java.lang.String)
      */
+    @Override
     public String encode( String text ) {
         if (text == null) return null;
         if (text.length() == 0) return text;

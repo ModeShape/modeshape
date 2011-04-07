@@ -82,10 +82,12 @@ public class ExecutedOperationResultImpl implements ExecutedResult {
         init();
     }
 
+    @Override
     public String getComponentType() {
         return this.componentType;
     }
 
+    @Override
     public String getOperationName() {
         return this.operationName;
     }
@@ -94,11 +96,13 @@ public class ExecutedOperationResultImpl implements ExecutedResult {
         return operationResult;
     }
 
+    @Override
     @SuppressWarnings( "unchecked" )
     public List getFieldNameList() {
         return fieldNameList;
     }
 
+    @Override
     public Object getResult() {
         return result;
     }
@@ -122,11 +126,13 @@ public class ExecutedOperationResultImpl implements ExecutedResult {
         operationResult.getComplexResults().put(list);
     }
 
+    @Override
     public void setContent( Collection content ) {
         this.content = content;
         setComplexResult();
     }
 
+    @Override
     public void setContent( String content ) {
         this.content = content;
         this.result = content;
@@ -158,6 +164,7 @@ public class ExecutedOperationResultImpl implements ExecutedResult {
     /**
      * @param managedOperation Sets managedOperation to the specified value.
      */
+    @Override
     public void setManagedOperation( ManagedOperation managedOperation ) {
         this.managedOperation = managedOperation;
     }

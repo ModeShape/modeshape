@@ -59,8 +59,8 @@ import org.modeshape.graph.query.model.SetCriteria;
 import org.modeshape.graph.query.model.Source;
 import org.modeshape.graph.query.model.StaticOperand;
 import org.modeshape.graph.query.model.TypeSystem;
-import org.modeshape.graph.query.model.Visitor;
 import org.modeshape.graph.query.model.TypeSystem.TypeFactory;
+import org.modeshape.graph.query.model.Visitor;
 import org.modeshape.graph.query.parse.FullTextSearchParser;
 import org.modeshape.graph.query.parse.SqlQueryParser;
 import org.modeshape.jcr.JcrI18n;
@@ -836,7 +836,6 @@ public class JcrSqlQueryParser extends SqlQueryParser {
          * 
          * @see org.modeshape.graph.query.model.Visitable#accept(org.modeshape.graph.query.model.Visitor)
          */
-        @Override
         public void accept( Visitor visitor ) {
         }
 

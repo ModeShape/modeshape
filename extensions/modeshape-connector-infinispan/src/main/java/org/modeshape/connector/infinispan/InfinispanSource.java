@@ -272,6 +272,7 @@ public class InfinispanSource extends BaseInfinispanSource {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Object getObjectInstance( Object obj,
                                      javax.naming.Name name,
                                      Context nameCtx,

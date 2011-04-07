@@ -334,27 +334,22 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
         throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
-    @Override
     public Binary getBinary() throws ValueFormatException, RepositoryException {
         throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
-    @Override
     public BigDecimal getDecimal() throws ValueFormatException, RepositoryException {
         throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
-    @Override
     public javax.jcr.Property getProperty() throws ValueFormatException, RepositoryException {
         throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
-    @Override
     public void setValue( BigDecimal value ) throws ValueFormatException, RepositoryException {
         throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
-    @Override
     public void setValue( Binary value ) throws ValueFormatException, RepositoryException {
         throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }

@@ -99,6 +99,7 @@ public class LuceneSearchWorkspace implements SearchEngineWorkspace {
      * 
      * @see org.modeshape.graph.search.SearchEngineWorkspace#getWorkspaceName()
      */
+    @Override
     public String getWorkspaceName() {
         return workspaceName;
     }
@@ -108,6 +109,7 @@ public class LuceneSearchWorkspace implements SearchEngineWorkspace {
      * 
      * @see org.modeshape.graph.search.SearchEngineWorkspace#destroy(org.modeshape.graph.ExecutionContext)
      */
+    @Override
     public void destroy( ExecutionContext context ) {
         configuration.destroyDirectory(workspaceDirectoryName, INDEX_NAME);
     }

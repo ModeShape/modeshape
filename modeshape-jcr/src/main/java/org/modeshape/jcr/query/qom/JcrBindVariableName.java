@@ -46,7 +46,6 @@ public class JcrBindVariableName extends BindVariableName implements BindVariabl
      * 
      * @see javax.jcr.query.qom.BindVariableValue#getBindVariableName()
      */
-    @Override
     public String getBindVariableName() {
         return variableName();
     }

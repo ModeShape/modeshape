@@ -50,6 +50,7 @@ public class CompareNameQuery extends CompareQuery<Path.Segment> {
     protected static final Evaluator<Path.Segment> IS_LESS_THAN = new Evaluator<Path.Segment>() {
         private static final long serialVersionUID = 1L;
 
+        @Override
         public boolean satisfiesConstraint( Path.Segment nodeValue,
                                             Path.Segment constraintValue ) {
             return ValueComparators.PATH_SEGMENT_COMPARATOR.compare(nodeValue, constraintValue) < 0;
@@ -63,6 +64,7 @@ public class CompareNameQuery extends CompareQuery<Path.Segment> {
     protected static final Evaluator<Path.Segment> IS_LESS_THAN_OR_EQUAL_TO = new Evaluator<Path.Segment>() {
         private static final long serialVersionUID = 1L;
 
+        @Override
         public boolean satisfiesConstraint( Path.Segment nodeValue,
                                             Path.Segment constraintValue ) {
             return ValueComparators.PATH_SEGMENT_COMPARATOR.compare(nodeValue, constraintValue) <= 0;
@@ -76,6 +78,7 @@ public class CompareNameQuery extends CompareQuery<Path.Segment> {
     protected static final Evaluator<Path.Segment> IS_GREATER_THAN = new Evaluator<Path.Segment>() {
         private static final long serialVersionUID = 1L;
 
+        @Override
         public boolean satisfiesConstraint( Path.Segment nodeValue,
                                             Path.Segment constraintValue ) {
             return ValueComparators.PATH_SEGMENT_COMPARATOR.compare(nodeValue, constraintValue) > 0;
@@ -89,6 +92,7 @@ public class CompareNameQuery extends CompareQuery<Path.Segment> {
     protected static final Evaluator<Path.Segment> IS_GREATER_THAN_OR_EQUAL_TO = new Evaluator<Path.Segment>() {
         private static final long serialVersionUID = 1L;
 
+        @Override
         public boolean satisfiesConstraint( Path.Segment nodeValue,
                                             Path.Segment constraintValue ) {
             return ValueComparators.PATH_SEGMENT_COMPARATOR.compare(nodeValue, constraintValue) >= 0;
@@ -103,6 +107,7 @@ public class CompareNameQuery extends CompareQuery<Path.Segment> {
     protected static final Evaluator<Path.Segment> IS_LESS_THAN_NO_SNS = new Evaluator<Path.Segment>() {
         private static final long serialVersionUID = 1L;
 
+        @Override
         public boolean satisfiesConstraint( Path.Segment nodeValue,
                                             Path.Segment constraintValue ) {
             return ValueComparators.PATH_SEGMENT_NAME_COMPARATOR.compare(nodeValue, constraintValue) < 0;
@@ -116,6 +121,7 @@ public class CompareNameQuery extends CompareQuery<Path.Segment> {
     protected static final Evaluator<Path.Segment> IS_LESS_THAN_OR_EQUAL_TO_NO_SNS = new Evaluator<Path.Segment>() {
         private static final long serialVersionUID = 1L;
 
+        @Override
         public boolean satisfiesConstraint( Path.Segment nodeValue,
                                             Path.Segment constraintValue ) {
             return ValueComparators.PATH_SEGMENT_NAME_COMPARATOR.compare(nodeValue, constraintValue) <= 0;
@@ -129,6 +135,7 @@ public class CompareNameQuery extends CompareQuery<Path.Segment> {
     protected static final Evaluator<Path.Segment> IS_GREATER_THAN_NO_SNS = new Evaluator<Path.Segment>() {
         private static final long serialVersionUID = 1L;
 
+        @Override
         public boolean satisfiesConstraint( Path.Segment nodeValue,
                                             Path.Segment constraintValue ) {
             return ValueComparators.PATH_SEGMENT_NAME_COMPARATOR.compare(nodeValue, constraintValue) > 0;
@@ -142,6 +149,7 @@ public class CompareNameQuery extends CompareQuery<Path.Segment> {
     protected static final Evaluator<Path.Segment> IS_GREATER_THAN_OR_EQUAL_TO_NO_SNS = new Evaluator<Path.Segment>() {
         private static final long serialVersionUID = 1L;
 
+        @Override
         public boolean satisfiesConstraint( Path.Segment nodeValue,
                                             Path.Segment constraintValue ) {
             return ValueComparators.PATH_SEGMENT_NAME_COMPARATOR.compare(nodeValue, constraintValue) >= 0;
@@ -279,6 +287,7 @@ public class CompareNameQuery extends CompareQuery<Path.Segment> {
         super(localNameField, constraintValue, null, stringFactory, evaluator, new FieldSelector() {
             private static final long serialVersionUID = 1L;
 
+            @Override
             public FieldSelectorResult accept( String fieldName ) {
                 if (fieldName.equals(localNameField)) return FieldSelectorResult.LOAD;
                 if (fieldName.equals(snsIndexFieldName)) return FieldSelectorResult.LOAD;

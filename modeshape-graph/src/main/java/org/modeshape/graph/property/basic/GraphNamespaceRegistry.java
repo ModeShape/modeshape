@@ -166,7 +166,6 @@ public class GraphNamespaceRegistry implements NamespaceRegistry {
      * 
      * @see org.modeshape.graph.property.NamespaceRegistry#register(java.lang.Iterable)
      */
-    @Override
     public void register( Iterable<Namespace> namespaces ) {
         Map<String, String> urisByPrefix = new HashMap<String, String>();
         for (Namespace namespace : namespaces) {

@@ -179,6 +179,7 @@ public class JBossCacheSource implements BaseRepositorySource, ObjectFactory {
      * 
      * @see org.modeshape.graph.connector.RepositorySource#initialize(org.modeshape.graph.connector.RepositoryContext)
      */
+    @Override
     public void initialize( RepositoryContext context ) throws RepositorySourceException {
         this.repositoryContext = context;
     }
@@ -186,6 +187,7 @@ public class JBossCacheSource implements BaseRepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getName() {
         return this.name;
     }
@@ -195,6 +197,7 @@ public class JBossCacheSource implements BaseRepositorySource, ObjectFactory {
      * 
      * @see org.modeshape.graph.connector.RepositorySource#getCapabilities()
      */
+    @Override
     public RepositorySourceCapabilities getCapabilities() {
         return capabilities;
     }
@@ -204,6 +207,7 @@ public class JBossCacheSource implements BaseRepositorySource, ObjectFactory {
      * 
      * @see org.modeshape.graph.connector.RepositorySource#getRetryLimit()
      */
+    @Override
     public int getRetryLimit() {
         return retryLimit;
     }
@@ -213,6 +217,7 @@ public class JBossCacheSource implements BaseRepositorySource, ObjectFactory {
      * 
      * @see org.modeshape.graph.connector.RepositorySource#setRetryLimit(int)
      */
+    @Override
     public synchronized void setRetryLimit( int limit ) {
         retryLimit = limit < 0 ? 0 : limit;
     }
@@ -232,6 +237,7 @@ public class JBossCacheSource implements BaseRepositorySource, ObjectFactory {
      * 
      * @return the default cache policy, or null if this source has no explicit default cache policy
      */
+    @Override
     public CachePolicy getDefaultCachePolicy() {
         return defaultCachePolicy;
     }
@@ -385,6 +391,7 @@ public class JBossCacheSource implements BaseRepositorySource, ObjectFactory {
      * 
      * @return the UUID of the root node for the cache.
      */
+    @Override
     public UUID getRootNodeUuidObject() {
         return this.rootNodeUuid;
     }
@@ -408,6 +415,7 @@ public class JBossCacheSource implements BaseRepositorySource, ObjectFactory {
      * 
      * @return the name of the workspace that should be used by default; never null
      */
+    @Override
     public String getDefaultWorkspaceName() {
         return defaultWorkspace;
     }
@@ -482,6 +490,7 @@ public class JBossCacheSource implements BaseRepositorySource, ObjectFactory {
      * 
      * @see org.modeshape.graph.connector.RepositorySource#getConnection()
      */
+    @Override
     @SuppressWarnings( "unchecked" )
     public synchronized RepositoryConnection getConnection() throws RepositorySourceException {
         if (getName() == null) {
@@ -530,6 +539,7 @@ public class JBossCacheSource implements BaseRepositorySource, ObjectFactory {
      * 
      * @see org.modeshape.graph.connector.RepositorySource#close()
      */
+    @Override
     public synchronized void close() {
         // Null the reference to the repository; open connections still reference it and can continue to work ...
         this.repository = null;
@@ -580,6 +590,7 @@ public class JBossCacheSource implements BaseRepositorySource, ObjectFactory {
     /**
      * @return repositoryContext
      */
+    @Override
     public RepositoryContext getRepositoryContext() {
         return repositoryContext;
     }
@@ -596,10 +607,12 @@ public class JBossCacheSource implements BaseRepositorySource, ObjectFactory {
         this.jndiContext = context;
     }
 
+    @Override
     public boolean areUpdatesAllowed() {
         return this.updatesAllowed;
     }
 
+    @Override
     public void setUpdatesAllowed( boolean updatesAllowed ) {
         this.updatesAllowed = updatesAllowed;
     }
@@ -630,6 +643,7 @@ public class JBossCacheSource implements BaseRepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      */
+    @Override
     public synchronized Reference getReference() {
         String className = getClass().getName();
         String factoryClassName = this.getClass().getName();
@@ -666,6 +680,7 @@ public class JBossCacheSource implements BaseRepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Object getObjectInstance( Object obj,
                                      javax.naming.Name name,
                                      Context nameCtx,

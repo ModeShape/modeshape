@@ -139,6 +139,7 @@ public class JcrRepositoryWithJpaConfigurationTest {
                     // No need to provide a credentials, so just login with the name of the workspace.
                     // However, we DO need to do this from within a doPrivilege block.
                     session = AccessController.doPrivileged(new PrivilegedExceptionAction<Session>() {
+                        @Override
                         public Session run() throws Exception {
                             return myRepository.login(workspaceName);
                         }
@@ -204,14 +205,17 @@ public class JcrRepositoryWithJpaConfigurationTest {
             this.username = username;
         }
 
+        @Override
         public String getUserName() {
             return username;
         }
 
+        @Override
         public boolean hasRole( String roleName ) {
             return true;
         }
 
+        @Override
         public void logout() {
         }
 

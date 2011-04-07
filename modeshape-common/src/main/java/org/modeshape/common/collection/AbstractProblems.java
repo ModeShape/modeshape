@@ -37,17 +37,20 @@ public abstract class AbstractProblems implements Problems {
 
     protected static final List<Problem> EMPTY_PROBLEMS = Collections.emptyList();
 
+    @Override
     public void addError( I18n message,
                           Object... params ) {
         addProblem(new Problem(Problem.Status.ERROR, Problem.DEFAULT_CODE, message, params, null, null, null));
     }
 
+    @Override
     public void addError( Throwable throwable,
                           I18n message,
                           Object... params ) {
         addProblem(new Problem(Problem.Status.ERROR, Problem.DEFAULT_CODE, message, params, null, null, throwable));
     }
 
+    @Override
     public void addError( String resource,
                           String location,
                           I18n message,
@@ -55,6 +58,7 @@ public abstract class AbstractProblems implements Problems {
         addProblem(new Problem(Problem.Status.ERROR, Problem.DEFAULT_CODE, message, params, resource, location, null));
     }
 
+    @Override
     public void addError( Throwable throwable,
                           String resource,
                           String location,
@@ -63,12 +67,14 @@ public abstract class AbstractProblems implements Problems {
         addProblem(new Problem(Problem.Status.ERROR, Problem.DEFAULT_CODE, message, params, resource, location, throwable));
     }
 
+    @Override
     public void addError( int code,
                           I18n message,
                           Object... params ) {
         addProblem(new Problem(Problem.Status.ERROR, code, message, params, null, null, null));
     }
 
+    @Override
     public void addError( Throwable throwable,
                           int code,
                           I18n message,
@@ -76,6 +82,7 @@ public abstract class AbstractProblems implements Problems {
         addProblem(new Problem(Problem.Status.ERROR, code, message, params, null, null, throwable));
     }
 
+    @Override
     public void addError( int code,
                           String resource,
                           String location,
@@ -84,6 +91,7 @@ public abstract class AbstractProblems implements Problems {
         addProblem(new Problem(Problem.Status.ERROR, code, message, params, resource, location, null));
     }
 
+    @Override
     public void addError( Throwable throwable,
                           int code,
                           String resource,
@@ -93,17 +101,20 @@ public abstract class AbstractProblems implements Problems {
         addProblem(new Problem(Problem.Status.ERROR, code, message, params, resource, location, throwable));
     }
 
+    @Override
     public void addWarning( I18n message,
                             Object... params ) {
         addProblem(new Problem(Problem.Status.WARNING, Problem.DEFAULT_CODE, message, params, null, null, null));
     }
 
+    @Override
     public void addWarning( Throwable throwable,
                             I18n message,
                             Object... params ) {
         addProblem(new Problem(Problem.Status.WARNING, Problem.DEFAULT_CODE, message, params, null, null, throwable));
     }
 
+    @Override
     public void addWarning( String resource,
                             String location,
                             I18n message,
@@ -111,6 +122,7 @@ public abstract class AbstractProblems implements Problems {
         addProblem(new Problem(Problem.Status.WARNING, Problem.DEFAULT_CODE, message, params, resource, location, null));
     }
 
+    @Override
     public void addWarning( Throwable throwable,
                             String resource,
                             String location,
@@ -119,12 +131,14 @@ public abstract class AbstractProblems implements Problems {
         addProblem(new Problem(Problem.Status.WARNING, Problem.DEFAULT_CODE, message, params, resource, location, throwable));
     }
 
+    @Override
     public void addWarning( int code,
                             I18n message,
                             Object... params ) {
         addProblem(new Problem(Problem.Status.WARNING, code, message, params, null, null, null));
     }
 
+    @Override
     public void addWarning( Throwable throwable,
                             int code,
                             I18n message,
@@ -132,6 +146,7 @@ public abstract class AbstractProblems implements Problems {
         addProblem(new Problem(Problem.Status.WARNING, code, message, params, null, null, throwable));
     }
 
+    @Override
     public void addWarning( int code,
                             String resource,
                             String location,
@@ -140,6 +155,7 @@ public abstract class AbstractProblems implements Problems {
         addProblem(new Problem(Problem.Status.WARNING, code, message, params, resource, location, null));
     }
 
+    @Override
     public void addWarning( Throwable throwable,
                             int code,
                             String resource,
@@ -149,17 +165,20 @@ public abstract class AbstractProblems implements Problems {
         addProblem(new Problem(Problem.Status.WARNING, code, message, params, resource, location, throwable));
     }
 
+    @Override
     public void addInfo( I18n message,
                          Object... params ) {
         addProblem(new Problem(Problem.Status.INFO, Problem.DEFAULT_CODE, message, params, null, null, null));
     }
 
+    @Override
     public void addInfo( Throwable throwable,
                          I18n message,
                          Object... params ) {
         addProblem(new Problem(Problem.Status.INFO, Problem.DEFAULT_CODE, message, params, null, null, throwable));
     }
 
+    @Override
     public void addInfo( String resource,
                          String location,
                          I18n message,
@@ -167,6 +186,7 @@ public abstract class AbstractProblems implements Problems {
         addProblem(new Problem(Problem.Status.INFO, Problem.DEFAULT_CODE, message, params, resource, location, null));
     }
 
+    @Override
     public void addInfo( Throwable throwable,
                          String resource,
                          String location,
@@ -175,12 +195,14 @@ public abstract class AbstractProblems implements Problems {
         addProblem(new Problem(Problem.Status.INFO, Problem.DEFAULT_CODE, message, params, resource, location, throwable));
     }
 
+    @Override
     public void addInfo( int code,
                          I18n message,
                          Object... params ) {
         addProblem(new Problem(Problem.Status.INFO, code, message, params, null, null, null));
     }
 
+    @Override
     public void addInfo( Throwable throwable,
                          int code,
                          I18n message,
@@ -188,6 +210,7 @@ public abstract class AbstractProblems implements Problems {
         addProblem(new Problem(Problem.Status.INFO, code, message, params, null, null, throwable));
     }
 
+    @Override
     public void addInfo( int code,
                          String resource,
                          String location,
@@ -196,6 +219,7 @@ public abstract class AbstractProblems implements Problems {
         addProblem(new Problem(Problem.Status.INFO, code, message, params, resource, location, null));
     }
 
+    @Override
     public void addInfo( Throwable throwable,
                          int code,
                          String resource,
@@ -205,10 +229,12 @@ public abstract class AbstractProblems implements Problems {
         addProblem(new Problem(Problem.Status.INFO, code, message, params, resource, location, throwable));
     }
 
+    @Override
     public boolean hasProblems() {
         return getProblems().size() > 0;
     }
 
+    @Override
     public boolean hasErrors() {
         for (Problem problem : this.getProblems()) {
             if (problem.getStatus() == Problem.Status.ERROR) return true;
@@ -216,6 +242,7 @@ public abstract class AbstractProblems implements Problems {
         return false;
     }
 
+    @Override
     public boolean hasWarnings() {
         for (Problem problem : this.getProblems()) {
             if (problem.getStatus() == Problem.Status.WARNING) return true;
@@ -223,6 +250,7 @@ public abstract class AbstractProblems implements Problems {
         return false;
     }
 
+    @Override
     public boolean hasInfo() {
         for (Problem problem : this.getProblems()) {
             if (problem.getStatus() == Problem.Status.INFO) return true;
@@ -230,10 +258,12 @@ public abstract class AbstractProblems implements Problems {
         return false;
     }
 
+    @Override
     public boolean isEmpty() {
         return getProblems().isEmpty();
     }
 
+    @Override
     public int size() {
         return getProblems().size();
     }
@@ -243,6 +273,7 @@ public abstract class AbstractProblems implements Problems {
      * 
      * @see org.modeshape.common.collection.Problems#iterator()
      */
+    @Override
     public Iterator<Problem> iterator() {
         return getProblems().iterator();
     }

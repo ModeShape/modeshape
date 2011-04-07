@@ -102,6 +102,7 @@ public class StreamSequencerAdapterTest {
              * This method always copies the {@link StreamSequencerAdapterTest#sequencerOutput} data into the output {@inheritDoc}
              * , and does nothing else with any of the other parameters.
              */
+            @Override
             public void sequence( InputStream stream,
                                   SequencerOutput output,
                                   StreamSequencerContext context ) {
@@ -145,6 +146,7 @@ public class StreamSequencerAdapterTest {
     protected void testSequencer( final StreamSequencer sequencer ) throws Throwable {
         StreamSequencer streamSequencer = new StreamSequencer() {
 
+            @Override
             public void sequence( InputStream stream,
                                   SequencerOutput output,
                                   StreamSequencerContext context ) {
@@ -397,6 +399,7 @@ public class StreamSequencerAdapterTest {
     public void shouldPassNonNullInputStreamToSequencer() throws Throwable {
         testSequencer(new StreamSequencer() {
 
+            @Override
             public void sequence( InputStream stream,
                                   SequencerOutput output,
                                   StreamSequencerContext context ) {
@@ -409,6 +412,7 @@ public class StreamSequencerAdapterTest {
     public void shouldPassNonNullSequencerOutputToSequencer() throws Throwable {
         testSequencer(new StreamSequencer() {
 
+            @Override
             public void sequence( InputStream stream,
                                   SequencerOutput output,
                                   StreamSequencerContext context ) {
@@ -421,6 +425,7 @@ public class StreamSequencerAdapterTest {
     public void shouldPassNonNullSequencerContextToSequencer() throws Throwable {
         testSequencer(new StreamSequencer() {
 
+            @Override
             public void sequence( InputStream stream,
                                   SequencerOutput output,
                                   StreamSequencerContext context ) {

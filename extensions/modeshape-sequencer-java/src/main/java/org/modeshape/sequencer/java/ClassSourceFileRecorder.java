@@ -27,6 +27,7 @@ import org.modeshape.sequencer.java.metadata.TypeMetadata;
  */
 public class ClassSourceFileRecorder implements SourceFileRecorder {
 
+    @Override
     public void record( StreamSequencerContext context,
                         SequencerOutput output,
                         JavaMetadata javaMetadata ) {

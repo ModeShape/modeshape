@@ -44,7 +44,6 @@ public class JcrLength extends Length implements javax.jcr.query.qom.Length, Jcr
      * 
      * @see javax.jcr.query.qom.Length#getPropertyValue()
      */
-    @Override
     public JcrPropertyValue getPropertyValue() {
         return (JcrPropertyValue)propertyValue();
     }

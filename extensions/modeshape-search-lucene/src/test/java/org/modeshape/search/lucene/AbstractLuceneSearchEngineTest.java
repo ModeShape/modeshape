@@ -318,6 +318,7 @@ public class AbstractLuceneSearchEngineTest {
          * 
          * @see org.modeshape.graph.search.SearchEngineWorkspace#destroy(org.modeshape.graph.ExecutionContext)
          */
+        @Override
         public void destroy( ExecutionContext context ) {
             destroyed = true;
         }
@@ -331,6 +332,7 @@ public class AbstractLuceneSearchEngineTest {
          * 
          * @see org.modeshape.graph.search.SearchEngineWorkspace#getWorkspaceName()
          */
+        @Override
         public String getWorkspaceName() {
             return name;
         }

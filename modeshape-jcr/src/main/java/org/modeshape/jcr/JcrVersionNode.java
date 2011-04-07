@@ -47,17 +47,19 @@ class JcrVersionNode extends JcrNode implements Version {
     }
 
     /**
-     * @{inheritDoc
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.version.Version#getContainingHistory()
      */
-    @Override
     public JcrVersionHistoryNode getContainingHistory() throws RepositoryException {
         return new JcrVersionHistoryNode(getParent());
     }
 
     /**
-     * @{inheritDoc
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.version.Version#getCreated()
      */
-    @Override
     public Calendar getCreated() throws RepositoryException {
         return getProperty(JcrLexicon.CREATED).getDate();
     }
@@ -75,18 +77,23 @@ class JcrVersionNode extends JcrNode implements Version {
     }
 
     /**
-     * @{inheritDoc
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.version.Version#getPredecessors()
      */
-    @Override
     public Version[] getPredecessors() throws RepositoryException {
         return getNodesForProperty(JcrLexicon.PREDECESSORS);
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Returns the successor versions of this version. This corresponds to returning all the nt:version nodes referenced by the
      * jcr:successors multi-value property in the nt:version node that represents this version.
+     * </p>
+     * 
+     * @see javax.jcr.version.Version#getSuccessors()
      */
-    @Override
     public Version[] getSuccessors() throws RepositoryException {
         return getNodesForProperty(JcrLexicon.SUCCESSORS);
     }
@@ -144,12 +151,10 @@ class JcrVersionNode extends JcrNode implements Version {
         return false;
     }
 
-    @Override
     public JcrVersionNode getLinearPredecessor() throws RepositoryException {
         return getFirstNodeForProperty(JcrLexicon.PREDECESSORS);
     }
 
-    @Override
     public JcrVersionNode getLinearSuccessor() throws RepositoryException {
         return getFirstNodeForProperty(JcrLexicon.SUCCESSORS);
     }

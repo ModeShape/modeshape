@@ -99,6 +99,7 @@ public class SequencingService implements AdministeredService {
      */
     protected static class DefaultSelector implements Selector {
 
+        @Override
         public List<Sequencer> selectSequencers( List<Sequencer> sequencers,
                                                  Node node,
                                                  NetChange nodeChange ) {
@@ -160,6 +161,7 @@ public class SequencingService implements AdministeredService {
         /**
          * {@inheritDoc}
          */
+        @Override
         public boolean awaitTermination( long timeout,
                                          TimeUnit unit ) throws InterruptedException {
             return doAwaitTermination(timeout, unit);
@@ -191,6 +193,7 @@ public class SequencingService implements AdministeredService {
      * 
      * @return the administrative component; never null
      */
+    @Override
     public ServiceAdministrator getAdministrator() {
         return this.administrator;
     }
@@ -653,6 +656,7 @@ public class SequencingService implements AdministeredService {
             try {
                 getExecutorService().execute(new Runnable() {
 
+                    @Override
                     public void run() {
                         processChange(netChanges);
                     }

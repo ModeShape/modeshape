@@ -39,6 +39,7 @@ public abstract class AbstractMavenUrlProvider implements MavenUrlProvider {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void configure( Properties properties ) {
         this.properties = new UnmodifiableProperties(properties);
     }

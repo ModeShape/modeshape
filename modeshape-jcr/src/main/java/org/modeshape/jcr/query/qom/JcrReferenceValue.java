@@ -52,7 +52,6 @@ public class JcrReferenceValue extends ReferenceValue
      * 
      * @see javax.jcr.query.qom.PropertyValue#getPropertyName()
      */
-    @Override
     public String getPropertyName() {
         return propertyName();
     }
@@ -62,7 +61,6 @@ public class JcrReferenceValue extends ReferenceValue
      * 
      * @see javax.jcr.query.qom.PropertyValue#getSelectorName()
      */
-    @Override
     public String getSelectorName() {
         return selectorName().name();
     }

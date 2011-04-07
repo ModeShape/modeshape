@@ -74,13 +74,11 @@ class JcrValueFactory implements ValueFactory {
         return jcrValues;
     }
 
-    @Override
     public JcrValue createValue( String value,
                                  int propertyType ) throws ValueFormatException {
         return new JcrValue(valueFactories, sessionCache, propertyType, convertValueToType(value, propertyType));
     }
 
-    @Override
     public JcrValue createValue( Node value ) throws RepositoryException {
         if (!value.isNodeType(JcrMixLexicon.REFERENCEABLE.getString(namespaces))) {
             throw new RepositoryException(JcrI18n.nodeNotReferenceable.text());
@@ -89,7 +87,6 @@ class JcrValueFactory implements ValueFactory {
         return new JcrValue(valueFactories, sessionCache, PropertyType.REFERENCE, ref);
     }
 
-    @Override
     public JcrValue createValue( Node value,
                                  boolean weak ) throws RepositoryException {
         if (!value.isNodeType(JcrMixLexicon.REFERENCEABLE.getString(namespaces))) {
@@ -101,50 +98,41 @@ class JcrValueFactory implements ValueFactory {
         return new JcrValue(valueFactories, sessionCache, refType, ref);
     }
 
-    @Override
     public JcrValue createValue( javax.jcr.Binary value ) {
         return new JcrValue(valueFactories, sessionCache, PropertyType.BINARY, value);
     }
 
-    @Override
     public JcrValue createValue( InputStream value ) {
         Binary binary = valueFactories.getBinaryFactory().create(value);
         return new JcrValue(valueFactories, sessionCache, PropertyType.BINARY, binary);
     }
 
-    @Override
     public JcrBinary createBinary( InputStream value ) {
         Binary binary = valueFactories.getBinaryFactory().create(value);
         return new JcrBinary(binary);
     }
 
-    @Override
     public JcrValue createValue( Calendar value ) {
         DateTime dateTime = valueFactories.getDateFactory().create(value);
         return new JcrValue(valueFactories, sessionCache, PropertyType.DATE, dateTime);
     }
 
-    @Override
     public JcrValue createValue( boolean value ) {
         return new JcrValue(valueFactories, sessionCache, PropertyType.BOOLEAN, value);
     }
 
-    @Override
     public JcrValue createValue( double value ) {
         return new JcrValue(valueFactories, sessionCache, PropertyType.DOUBLE, value);
     }
 
-    @Override
     public JcrValue createValue( long value ) {
         return new JcrValue(valueFactories, sessionCache, PropertyType.LONG, value);
     }
 
-    @Override
     public JcrValue createValue( String value ) {
         return new JcrValue(valueFactories, sessionCache, PropertyType.STRING, value);
     }
 
-    @Override
     public JcrValue createValue( BigDecimal value ) {
         return new JcrValue(valueFactories, sessionCache, PropertyType.DECIMAL, value);
     }

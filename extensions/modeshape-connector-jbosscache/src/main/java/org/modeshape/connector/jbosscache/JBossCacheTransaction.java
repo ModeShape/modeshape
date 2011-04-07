@@ -68,6 +68,7 @@ public class JBossCacheTransaction extends MapTransaction<JBossCacheNode, JBossC
      * @see org.modeshape.graph.connector.base.Transaction#getWorkspace(java.lang.String,
      *      org.modeshape.graph.connector.base.Workspace)
      */
+    @Override
     public JBossCacheWorkspace getWorkspace( String name,
                                              JBossCacheWorkspace originalToClone ) {
         Cache<UUID, JBossCacheNode> workspaceCache = repository.getCache();
@@ -86,6 +87,7 @@ public class JBossCacheTransaction extends MapTransaction<JBossCacheNode, JBossC
      * 
      * @see org.modeshape.graph.connector.base.Transaction#destroyWorkspace(org.modeshape.graph.connector.base.Workspace)
      */
+    @Override
     public boolean destroyWorkspace( JBossCacheWorkspace workspace ) {
         // Can't seem to tell Infinispan to destroy the cache, so perhaps we should destroy all the content ...
         workspace.removeAll();

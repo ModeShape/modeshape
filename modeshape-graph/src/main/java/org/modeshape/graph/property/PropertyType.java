@@ -91,14 +91,12 @@ public enum PropertyType {
     }
 
     protected final static class StrongReferenceTypeChecker implements TypeChecker {
-        @Override
         public boolean isTypeFor( Object value ) {
             return value instanceof Reference && !((Reference)value).isWeak();
         }
     }
 
     protected final static class WeakReferenceTypeChecker implements TypeChecker {
-        @Override
         public boolean isTypeFor( Object value ) {
             return value instanceof Reference && ((Reference)value).isWeak();
         }
@@ -112,7 +110,6 @@ public enum PropertyType {
             assert this.valueClass != null;
         }
 
-        @Override
         public boolean isTypeFor( Object value ) {
             return this.valueClass.isInstance(value);
         }

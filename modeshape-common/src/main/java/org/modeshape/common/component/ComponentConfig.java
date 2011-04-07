@@ -215,6 +215,7 @@ public class ComponentConfig implements Comparable<ComponentConfig> {
     /**
      * {@inheritDoc}
      */
+    @Override
     public int compareTo( ComponentConfig that ) {
         if (that == this) return 0;
         int diff = this.getName().compareToIgnoreCase(that.getName());

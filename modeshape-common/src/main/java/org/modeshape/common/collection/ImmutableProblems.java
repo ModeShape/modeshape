@@ -47,6 +47,7 @@ public class ImmutableProblems implements Problems {
      * 
      * @see org.modeshape.common.collection.Problems#addError(org.modeshape.common.i18n.I18n, java.lang.Object[])
      */
+    @Override
     public void addError( I18n message,
                           Object... params ) {
         throw new UnsupportedOperationException();
@@ -58,6 +59,7 @@ public class ImmutableProblems implements Problems {
      * @see org.modeshape.common.collection.Problems#addError(java.lang.String, java.lang.String, org.modeshape.common.i18n.I18n,
      *      java.lang.Object[])
      */
+    @Override
     public void addError( String resource,
                           String location,
                           I18n message,
@@ -70,6 +72,7 @@ public class ImmutableProblems implements Problems {
      * 
      * @see org.modeshape.common.collection.Problems#addError(int, org.modeshape.common.i18n.I18n, java.lang.Object[])
      */
+    @Override
     public void addError( int code,
                           I18n message,
                           Object... params ) {
@@ -81,6 +84,7 @@ public class ImmutableProblems implements Problems {
      * 
      * @see org.modeshape.common.collection.Problems#addError(int, String, String, I18n, Object...)
      */
+    @Override
     public void addError( int code,
                           String resource,
                           String location,
@@ -95,6 +99,7 @@ public class ImmutableProblems implements Problems {
      * @see org.modeshape.common.collection.Problems#addError(java.lang.Throwable, org.modeshape.common.i18n.I18n,
      *      java.lang.Object[])
      */
+    @Override
     public void addError( Throwable throwable,
                           I18n message,
                           Object... params ) {
@@ -107,6 +112,7 @@ public class ImmutableProblems implements Problems {
      * @see org.modeshape.common.collection.Problems#addError(java.lang.Throwable, java.lang.String, java.lang.String,
      *      org.modeshape.common.i18n.I18n,java.lang.Object[])
      */
+    @Override
     public void addError( Throwable throwable,
                           String resource,
                           String location,
@@ -121,6 +127,7 @@ public class ImmutableProblems implements Problems {
      * @see org.modeshape.common.collection.Problems#addError(java.lang.Throwable, int, org.modeshape.common.i18n.I18n,
      *      java.lang.Object[])
      */
+    @Override
     public void addError( Throwable throwable,
                           int code,
                           I18n message,
@@ -134,6 +141,7 @@ public class ImmutableProblems implements Problems {
      * @see org.modeshape.common.collection.Problems#addError(java.lang.Throwable, int, java.lang.String, java.lang.String,
      *      org.modeshape.common.i18n.I18n, java.lang.Object[])
      */
+    @Override
     public void addError( Throwable throwable,
                           int code,
                           String resource,
@@ -148,6 +156,7 @@ public class ImmutableProblems implements Problems {
      * 
      * @see org.modeshape.common.collection.Problems#addInfo(org.modeshape.common.i18n.I18n, java.lang.Object[])
      */
+    @Override
     public void addInfo( I18n message,
                          Object... params ) {
         throw new UnsupportedOperationException();
@@ -159,6 +168,7 @@ public class ImmutableProblems implements Problems {
      * @see org.modeshape.common.collection.Problems#addInfo(java.lang.String, java.lang.String, org.modeshape.common.i18n.I18n,
      *      java.lang.Object[])
      */
+    @Override
     public void addInfo( String resource,
                          String location,
                          I18n message,
@@ -171,6 +181,7 @@ public class ImmutableProblems implements Problems {
      * 
      * @see org.modeshape.common.collection.Problems#addInfo(int, org.modeshape.common.i18n.I18n, java.lang.Object[])
      */
+    @Override
     public void addInfo( int code,
                          I18n message,
                          Object... params ) {
@@ -183,6 +194,7 @@ public class ImmutableProblems implements Problems {
      * @see org.modeshape.common.collection.Problems#addInfo(int, java.lang.String, java.lang.String,
      *      org.modeshape.common.i18n.I18n, java.lang.Object[])
      */
+    @Override
     public void addInfo( int code,
                          String resource,
                          String location,
@@ -197,6 +209,7 @@ public class ImmutableProblems implements Problems {
      * @see org.modeshape.common.collection.Problems#addInfo(java.lang.Throwable, org.modeshape.common.i18n.I18n,
      *      java.lang.Object[])
      */
+    @Override
     public void addInfo( Throwable throwable,
                          I18n message,
                          Object... params ) {
@@ -209,6 +222,7 @@ public class ImmutableProblems implements Problems {
      * @see org.modeshape.common.collection.Problems#addInfo(java.lang.Throwable, java.lang.String, java.lang.String,
      *      org.modeshape.common.i18n.I18n, java.lang.Object[])
      */
+    @Override
     public void addInfo( Throwable throwable,
                          String resource,
                          String location,
@@ -223,6 +237,7 @@ public class ImmutableProblems implements Problems {
      * @see org.modeshape.common.collection.Problems#addInfo(java.lang.Throwable, int, org.modeshape.common.i18n.I18n,
      *      java.lang.Object[])
      */
+    @Override
     public void addInfo( Throwable throwable,
                          int code,
                          I18n message,
@@ -236,6 +251,7 @@ public class ImmutableProblems implements Problems {
      * @see org.modeshape.common.collection.Problems#addInfo(java.lang.Throwable, int, java.lang.String, java.lang.String,
      *      org.modeshape.common.i18n.I18n, java.lang.Object[])
      */
+    @Override
     public void addInfo( Throwable throwable,
                          int code,
                          String resource,
@@ -250,6 +266,7 @@ public class ImmutableProblems implements Problems {
      * 
      * @see org.modeshape.common.collection.Problems#addWarning(org.modeshape.common.i18n.I18n, java.lang.Object[])
      */
+    @Override
     public void addWarning( I18n message,
                             Object... params ) {
         throw new UnsupportedOperationException();
@@ -261,6 +278,7 @@ public class ImmutableProblems implements Problems {
      * @see org.modeshape.common.collection.Problems#addWarning(java.lang.String, java.lang.String,
      *      org.modeshape.common.i18n.I18n, java.lang.Object[])
      */
+    @Override
     public void addWarning( String resource,
                             String location,
                             I18n message,
@@ -273,6 +291,7 @@ public class ImmutableProblems implements Problems {
      * 
      * @see org.modeshape.common.collection.Problems#addWarning(int, org.modeshape.common.i18n.I18n, java.lang.Object[])
      */
+    @Override
     public void addWarning( int code,
                             I18n message,
                             Object... params ) {
@@ -285,6 +304,7 @@ public class ImmutableProblems implements Problems {
      * @see org.modeshape.common.collection.Problems#addWarning(int, java.lang.String, java.lang.String,
      *      org.modeshape.common.i18n.I18n, java.lang.Object[])
      */
+    @Override
     public void addWarning( int code,
                             String resource,
                             String location,
@@ -299,6 +319,7 @@ public class ImmutableProblems implements Problems {
      * @see org.modeshape.common.collection.Problems#addWarning(java.lang.Throwable, org.modeshape.common.i18n.I18n,
      *      java.lang.Object[])
      */
+    @Override
     public void addWarning( Throwable throwable,
                             I18n message,
                             Object... params ) {
@@ -311,6 +332,7 @@ public class ImmutableProblems implements Problems {
      * @see org.modeshape.common.collection.Problems#addWarning(java.lang.Throwable, java.lang.String, java.lang.String ,
      *      org.modeshape.common.i18n.I18n,java.lang.Object[])
      */
+    @Override
     public void addWarning( Throwable throwable,
                             String resource,
                             String location,
@@ -325,6 +347,7 @@ public class ImmutableProblems implements Problems {
      * @see org.modeshape.common.collection.Problems#addWarning(java.lang.Throwable, int, org.modeshape.common.i18n.I18n,
      *      java.lang.Object[])
      */
+    @Override
     public void addWarning( Throwable throwable,
                             int code,
                             I18n message,
@@ -338,6 +361,7 @@ public class ImmutableProblems implements Problems {
      * @see org.modeshape.common.collection.Problems#addWarning(java.lang.Throwable, int, java.lang.String, java.lang.String,
      *      org.modeshape.common.i18n.I18n,java.lang.Object[])
      */
+    @Override
     public void addWarning( Throwable throwable,
                             int code,
                             String resource,
@@ -352,6 +376,7 @@ public class ImmutableProblems implements Problems {
      * 
      * @see org.modeshape.common.collection.Problems#addAll(java.lang.Iterable)
      */
+    @Override
     public void addAll( Iterable<Problem> problems ) {
         if (problems != null && problems != this && problems != delegate) this.delegate.addAll(problems);
     }
@@ -361,6 +386,7 @@ public class ImmutableProblems implements Problems {
      * 
      * @see org.modeshape.common.collection.Problems#hasErrors()
      */
+    @Override
     public boolean hasErrors() {
         return delegate.hasErrors();
     }
@@ -370,6 +396,7 @@ public class ImmutableProblems implements Problems {
      * 
      * @see org.modeshape.common.collection.Problems#hasInfo()
      */
+    @Override
     public boolean hasInfo() {
         return delegate.hasInfo();
     }
@@ -379,6 +406,7 @@ public class ImmutableProblems implements Problems {
      * 
      * @see org.modeshape.common.collection.Problems#hasProblems()
      */
+    @Override
     public boolean hasProblems() {
         return delegate.hasProblems();
     }
@@ -388,6 +416,7 @@ public class ImmutableProblems implements Problems {
      * 
      * @see org.modeshape.common.collection.Problems#hasWarnings()
      */
+    @Override
     public boolean hasWarnings() {
         return delegate.hasWarnings();
     }
@@ -397,6 +426,7 @@ public class ImmutableProblems implements Problems {
      * 
      * @see org.modeshape.common.collection.Problems#isEmpty()
      */
+    @Override
     public boolean isEmpty() {
         return delegate.isEmpty();
     }
@@ -406,6 +436,7 @@ public class ImmutableProblems implements Problems {
      * 
      * @see org.modeshape.common.collection.Problems#iterator()
      */
+    @Override
     public Iterator<Problem> iterator() {
         return new ReadOnlyIterator<Problem>(delegate.iterator());
     }
@@ -415,6 +446,7 @@ public class ImmutableProblems implements Problems {
      * 
      * @see org.modeshape.common.collection.Problems#size()
      */
+    @Override
     public int size() {
         return delegate.size();
     }

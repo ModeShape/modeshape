@@ -34,10 +34,12 @@ import org.modeshape.common.annotation.Immutable;
 @Immutable
 public class DoubleOperations implements MathOperations<Double>, Comparator<Double> {
 
+    @Override
     public Class<Double> getOperandClass() {
         return Double.class;
     }
 
+    @Override
     public Double add( Double value1,
                        Double value2 ) {
         if (value1 == null) return value2 != null ? value2 : createZeroValue();
@@ -45,6 +47,7 @@ public class DoubleOperations implements MathOperations<Double>, Comparator<Doub
         return (value1 + value2);
     }
 
+    @Override
     public Double subtract( Double value1,
                             Double value2 ) {
         if (value1 == null) return negate(value2);
@@ -52,28 +55,33 @@ public class DoubleOperations implements MathOperations<Double>, Comparator<Doub
         return (value1 - value2);
     }
 
+    @Override
     public Double multiply( Double value1,
                             Double value2 ) {
         if (value1 == null || value2 == null) return createZeroValue();
         return (value1 * value2);
     }
 
+    @Override
     public double divide( Double value1,
                           Double value2 ) {
         if (value1 == null || value2 == null) throw new IllegalArgumentException();
         return value1 / value2;
     }
 
+    @Override
     public Double negate( Double value ) {
         if (value == null) return createZeroValue();
         return (value * -1);
     }
 
+    @Override
     public Double increment( Double value ) {
         if (value == null) return createZeroValue();
         return (value + 1);
     }
 
+    @Override
     public Double maximum( Double value1,
                            Double value2 ) {
         if (value1 == null) return value2;
@@ -81,6 +89,7 @@ public class DoubleOperations implements MathOperations<Double>, Comparator<Doub
         return Math.max(value1, value2);
     }
 
+    @Override
     public Double minimum( Double value1,
                            Double value2 ) {
         if (value1 == null) return value2;
@@ -88,6 +97,7 @@ public class DoubleOperations implements MathOperations<Double>, Comparator<Doub
         return Math.min(value1, value2);
     }
 
+    @Override
     public int compare( Double value1,
                         Double value2 ) {
         if (value1 == null) return value2 != null ? -1 : 0;
@@ -95,38 +105,47 @@ public class DoubleOperations implements MathOperations<Double>, Comparator<Doub
         return value1.compareTo(value2);
     }
 
+    @Override
     public BigDecimal asBigDecimal( Double value ) {
         return value != null ? new BigDecimal(value) : null;
     }
 
+    @Override
     public Double fromBigDecimal( BigDecimal value ) {
         return value != null ? value.doubleValue() : null;
     }
 
+    @Override
     public Double createZeroValue() {
         return 0.0d;
     }
 
+    @Override
     public Double create( int value ) {
         return (double)value;
     }
 
+    @Override
     public Double create( long value ) {
         return (double)value;
     }
 
+    @Override
     public Double create( double value ) {
         return value;
     }
 
+    @Override
     public double sqrt( Double value ) {
         return Math.sqrt(value);
     }
 
+    @Override
     public Comparator<Double> getComparator() {
         return this;
     }
 
+    @Override
     public Double random( Double minimum,
                           Double maximum,
                           Random rng ) {
@@ -134,26 +153,32 @@ public class DoubleOperations implements MathOperations<Double>, Comparator<Doub
         return minimum + difference.doubleValue() * rng.nextDouble();
     }
 
+    @Override
     public double doubleValue( Double value ) {
         return value.doubleValue();
     }
 
+    @Override
     public float floatValue( Double value ) {
         return value.floatValue();
     }
 
+    @Override
     public int intValue( Double value ) {
         return value.intValue();
     }
 
+    @Override
     public long longValue( Double value ) {
         return value.longValue();
     }
 
+    @Override
     public short shortValue( Double value ) {
         return value.shortValue();
     }
 
+    @Override
     public int getExponentInScientificNotation( Double value ) {
         double v = Math.abs(value);
         int exp = 0;
@@ -172,6 +197,7 @@ public class DoubleOperations implements MathOperations<Double>, Comparator<Doub
         return exp;
     }
 
+    @Override
     public Double roundUp( Double value,
                            int decimalShift ) {
         if (value == 0) return 0.0d;
@@ -180,6 +206,7 @@ public class DoubleOperations implements MathOperations<Double>, Comparator<Doub
         return roundedValue * Math.pow(10.0d, -decimalShift);
     }
 
+    @Override
     public Double roundDown( Double value,
                              int decimalShift ) {
         if (value == 0) return 0.0d;
@@ -188,6 +215,7 @@ public class DoubleOperations implements MathOperations<Double>, Comparator<Doub
         return roundedValue * Math.pow(10.0d, -decimalShift);
     }
 
+    @Override
     public Double keepSignificantFigures( Double value,
                                           int numSigFigs ) {
         if (numSigFigs < 0) return value;

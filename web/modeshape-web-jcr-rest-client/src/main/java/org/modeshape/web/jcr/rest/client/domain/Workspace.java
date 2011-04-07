@@ -90,6 +90,7 @@ public class Workspace implements IModeShapeObject {
      * 
      * @see org.modeshape.web.jcr.rest.client.domain.IModeShapeObject#getName()
      */
+    @Override
     public String getName() {
         return this.name;
     }
@@ -113,6 +114,7 @@ public class Workspace implements IModeShapeObject {
      * 
      * @see org.modeshape.web.jcr.rest.client.domain.IModeShapeObject#getShortDescription()
      */
+    @Override
     public String getShortDescription() {
         return RestClientI18n.workspaceShortDescription.text(this.name, this.repository.getName());
     }

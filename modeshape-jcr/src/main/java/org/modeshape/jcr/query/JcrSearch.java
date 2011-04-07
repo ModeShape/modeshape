@@ -82,23 +82,19 @@ public class JcrSearch extends JcrAbstractQuery {
         return language + " -> " + statement;
     }
 
-    @Override
     public void bindValue( String varName,
                            Value value ) throws IllegalArgumentException, RepositoryException {
         throw new UnsupportedRepositoryOperationException();
     }
 
-    @Override
     public String[] getBindVariableNames() throws RepositoryException {
         throw new UnsupportedRepositoryOperationException();
     }
 
-    @Override
     public void setLimit( long limit ) {
         throw new IllegalStateException();
     }
 
-    @Override
     public void setOffset( long offset ) {
         throw new IllegalStateException();
     }

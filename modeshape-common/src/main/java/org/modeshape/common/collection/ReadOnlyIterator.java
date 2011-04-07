@@ -45,6 +45,7 @@ public final class ReadOnlyIterator<T> implements Iterator<T> {
      * 
      * @see java.util.Iterator#hasNext()
      */
+    @Override
     public boolean hasNext() {
         return delegate.hasNext();
     }
@@ -54,6 +55,7 @@ public final class ReadOnlyIterator<T> implements Iterator<T> {
      * 
      * @see java.util.Iterator#next()
      */
+    @Override
     public T next() {
         return delegate.next();
     }
@@ -63,6 +65,7 @@ public final class ReadOnlyIterator<T> implements Iterator<T> {
      * 
      * @see java.util.Iterator#remove()
      */
+    @Override
     public void remove() {
         throw new UnsupportedOperationException();
     }

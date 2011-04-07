@@ -84,22 +84,27 @@ public class SvnRepositorySourceTest {
         this.source.setRepositoryRootUrl(url);
         this.source.initialize(new RepositoryContext() {
 
+            @Override
             public Subgraph getConfiguration( int depth ) {
                 return null;
             }
 
+            @Override
             @SuppressWarnings( "synthetic-access" )
             public ExecutionContext getExecutionContext() {
                 return context;
             }
 
+            @Override
             public Observer getObserver() {
                 return null;
             }
 
+            @Override
             public RepositoryConnectionFactory getRepositoryConnectionFactory() {
                 return new RepositoryConnectionFactory() {
 
+                    @Override
                     public RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException {
                         return null;
                     }

@@ -55,6 +55,7 @@ public class IsIteratorContaining<T> extends TypeSafeMatcher<Iterator<T>> {
         return false;
     }
 
+    @Override
     public void describeTo( Description description ) {
         description.appendText("a iterator containing ").appendDescriptionOf(elementMatcher);
     }

@@ -66,7 +66,6 @@ public class JcrSameNodeJoinCondition extends SameNodeJoinCondition
      * 
      * @see javax.jcr.query.qom.SameNodeJoinCondition#getSelector2Path()
      */
-    @Override
     public String getSelector2Path() {
         return selector2Path();
     }
@@ -76,7 +75,6 @@ public class JcrSameNodeJoinCondition extends SameNodeJoinCondition
      * 
      * @see javax.jcr.query.qom.SameNodeJoinCondition#getSelector1Name()
      */
-    @Override
     public String getSelector1Name() {
         return selector1Name().name();
     }
@@ -86,7 +84,6 @@ public class JcrSameNodeJoinCondition extends SameNodeJoinCondition
      * 
      * @see javax.jcr.query.qom.SameNodeJoinCondition#getSelector2Name()
      */
-    @Override
     public String getSelector2Name() {
         return selector2Name().name();
     }

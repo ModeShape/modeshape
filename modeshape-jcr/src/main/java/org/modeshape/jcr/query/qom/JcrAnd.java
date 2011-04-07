@@ -66,7 +66,6 @@ public class JcrAnd extends And implements javax.jcr.query.qom.And, JcrConstrain
      * 
      * @see javax.jcr.query.qom.And#getConstraint1()
      */
-    @Override
     public JcrConstraint getConstraint1() {
         return left();
     }
@@ -76,7 +75,6 @@ public class JcrAnd extends And implements javax.jcr.query.qom.And, JcrConstrain
      * 
      * @see javax.jcr.query.qom.And#getConstraint2()
      */
-    @Override
     public JcrConstraint getConstraint2() {
         return right();
     }
