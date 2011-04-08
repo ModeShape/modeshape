@@ -342,6 +342,69 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                                                   Value value,
                                                   boolean checkMultiValuedDefinitions,
                                                   boolean skipProtected ) {
+        return findPropertyDefinition(primaryTypeName,
+                                      mixinTypeNames,
+                                      propertyName,
+                                      value,
+                                      checkMultiValuedDefinitions,
+                                      skipProtected,
+                                      true);
+    }
+
+    /**
+     * Searches the supplied primary node type and the mixin node types for a property definition that is the best match for the
+     * given property name, property type, and value.
+     * <p>
+     * This method first attempts to find a single-valued property definition with the supplied property name and
+     * {@link Value#getType() value's property type} in the primary type, skipping any property definitions that are protected.
+     * The property definition is returned if it has a matching type (or has an {@link PropertyType#UNDEFINED undefined property
+     * type}) and the value satisfies the {@link PropertyDefinition#getValueConstraints() definition's constraints}. Otherwise,
+     * the process continues with each of the mixin types, in the order they are named.
+     * </p>
+     * <p>
+     * If no matching property definition could be found (and <code>checkMultiValuedDefinitions</code> parameter is
+     * <code>true</code>), the process is repeated except with multi-valued property definitions with the same name, property
+     * type, and compatible constraints, starting with the primary type and continuing with each mixin type.
+     * </p>
+     * <p>
+     * If no matching property definition could be found, and the process repeats by searching the primary type (and then mixin
+     * types) for single-valued property definitions with a compatible type, where the values can be safely cast to the
+     * definition's property type and still satisfy the definition's constraints.
+     * </p>
+     * <p>
+     * If no matching property definition could be found, the previous step is repeated with multi-valued property definitions.
+     * </p>
+     * <p>
+     * If no matching property definition could be found (and the supplied property name is not the residual name), the whole
+     * process repeats for residual property definitions (e.g., those that are defined with a {@link JcrNodeType#RESIDUAL_NAME "*"
+     * name}).
+     * </p>
+     * <p>
+     * Finally, if no satisfactory property definition could be found, this method returns null.
+     * </p>
+     * 
+     * @param primaryTypeName the name of the primary type; may not be null
+     * @param mixinTypeNames the names of the mixin types; may be null or empty if there are no mixins to include in the search
+     * @param propertyName the name of the property for which the definition should be retrieved. This method will automatically
+     *        look for residual definitions, but you can use {@link JcrNodeType#RESIDUAL_ITEM_NAME} to retrieve only the best
+     *        residual property definition (if any).
+     * @param value the value, or null if the property is being removed
+     * @param checkMultiValuedDefinitions true if the type's multi-valued property definitions should be considered, or false if
+     *        only single-value property definitions should be considered
+     * @param skipProtected true if this operation is being done from within the public JCR node and property API, or false if
+     *        this operation is being done from within internal implementations
+     * @param checkTypeAndConstraints true if the type and constraints of the property definition should be checked, or false
+     *        otherwise
+     * @return the best property definition, or <code>null</code> if no property definition allows the property with the supplied
+     *         name, type and number of values
+     */
+    JcrPropertyDefinition findPropertyDefinition( Name primaryTypeName,
+                                                  List<Name> mixinTypeNames,
+                                                  Name propertyName,
+                                                  Value value,
+                                                  boolean checkMultiValuedDefinitions,
+                                                  boolean skipProtected,
+                                                  boolean checkTypeAndConstraints ) {
         boolean setToEmpty = value == null;
 
         /*
@@ -372,7 +435,10 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                 // Don't check constraints on reference properties
                 if (type == PropertyType.REFERENCE && type == value.getType()) return definition;
                 if (type == PropertyType.WEAKREFERENCE && type == value.getType()) return definition;
-                if ((type == PropertyType.UNDEFINED || type == value.getType()) && definition.satisfiesConstraints(value)) return definition;
+                if (type == PropertyType.UNDEFINED || type == value.getType()) {
+                    if (!checkTypeAndConstraints) return definition;
+                    if (definition.satisfiesConstraints(value)) return definition;
+                }
             }
 
             if (matchedOnName) {
@@ -388,6 +454,7 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                         if (type == PropertyType.WEAKREFERENCE && definition.canCastToType(value)) {
                             return definition;
                         }
+                        if (!checkTypeAndConstraints) return definition;
                         if (definition.canCastToTypeAndSatisfyConstraints(value)) return definition;
                     }
                 }
@@ -408,7 +475,10 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                         // Don't check constraints on reference properties
                         if (type == PropertyType.REFERENCE && type == value.getType()) return definition;
                         if (type == PropertyType.WEAKREFERENCE && type == value.getType()) return definition;
-                        if ((type == PropertyType.UNDEFINED || type == value.getType()) && definition.satisfiesConstraints(value)) return definition;
+                        if (type == PropertyType.UNDEFINED || type == value.getType()) {
+                            if (!checkTypeAndConstraints) return definition;
+                            if (definition.satisfiesConstraints(value)) return definition;
+                        }
                     }
                     if (value != null) {
                         for (JcrPropertyDefinition definition : primaryType.allMultiValuePropertyDefinitions(propertyName)) {
@@ -423,6 +493,7 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                             if (type == PropertyType.WEAKREFERENCE && definition.canCastToType(value)) {
                                 return definition;
                             }
+                            if (!checkTypeAndConstraints) return definition;
                             if (definition.canCastToTypeAndSatisfyConstraints(value)) return definition;
                         }
                     }
@@ -454,7 +525,10 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                     // Don't check constraints on reference properties
                     if (type == PropertyType.REFERENCE && type == value.getType()) return definition;
                     if (type == PropertyType.WEAKREFERENCE && type == value.getType()) return definition;
-                    if ((type == PropertyType.UNDEFINED || type == value.getType()) && definition.satisfiesConstraints(value)) return definition;
+                    if (type == PropertyType.UNDEFINED || type == value.getType()) {
+                        if (!checkTypeAndConstraints) return definition;
+                        if (definition.satisfiesConstraints(value)) return definition;
+                    }
                 }
                 if (matchedOnName) {
                     if (value != null) {
@@ -470,6 +544,7 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                             if (type == PropertyType.WEAKREFERENCE && definition.canCastToType(value)) {
                                 return definition;
                             }
+                            if (!checkTypeAndConstraints) return definition;
                             if (definition.canCastToTypeAndSatisfyConstraints(value)) return definition;
                         }
                     }
@@ -489,8 +564,10 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                             // Don't check constraints on reference properties
                             if (type == PropertyType.REFERENCE && type == value.getType()) return definition;
                             if (type == PropertyType.WEAKREFERENCE && type == value.getType()) return definition;
-                            if ((type == PropertyType.UNDEFINED || type == value.getType())
-                                && definition.satisfiesConstraints(value)) return definition;
+                            if (type == PropertyType.UNDEFINED || type == value.getType()) {
+                                if (!checkTypeAndConstraints) return definition;
+                                if (definition.satisfiesConstraints(value)) return definition;
+                            }
                         }
                         if (value != null) {
                             for (JcrPropertyDefinition definition : mixinType.allMultiValuePropertyDefinitions(propertyName)) {
@@ -506,8 +583,8 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                                 if (type == PropertyType.WEAKREFERENCE && definition.canCastToType(value)) {
                                     return definition;
                                 }
+                                if (!checkTypeAndConstraints) return definition;
                                 if (definition.canCastToTypeAndSatisfyConstraints(value)) return definition;
-
                             }
                         }
                     }
@@ -535,7 +612,10 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                     // Don't check constraints on reference properties
                     if (type == PropertyType.REFERENCE && type == value.getType()) return definition;
                     if (type == PropertyType.WEAKREFERENCE && type == value.getType()) return definition;
-                    if ((type == PropertyType.UNDEFINED || type == value.getType()) && definition.satisfiesConstraints(value)) return definition;
+                    if (type == PropertyType.UNDEFINED || type == value.getType()) {
+                        if (!checkTypeAndConstraints) return definition;
+                        if (definition.satisfiesConstraints(value)) return definition;
+                    }
                 }
                 if (value != null) {
                     for (JcrPropertyDefinition definition : primaryType.allMultiValuePropertyDefinitions(propertyName)) {
@@ -551,6 +631,7 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                         if (type == PropertyType.WEAKREFERENCE && definition.canCastToType(value)) {
                             return definition;
                         }
+                        if (!checkTypeAndConstraints) return definition;
                         if (definition.canCastToTypeAndSatisfyConstraints(value)) return definition;
                     }
                 }
@@ -579,7 +660,10 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                         // Don't check constraints on reference properties
                         if (type == PropertyType.REFERENCE && type == value.getType()) return definition;
                         if (type == PropertyType.WEAKREFERENCE && type == value.getType()) return definition;
-                        if ((type == PropertyType.UNDEFINED || type == value.getType()) && definition.satisfiesConstraints(value)) return definition;
+                        if (type == PropertyType.UNDEFINED || type == value.getType()) {
+                            if (!checkTypeAndConstraints) return definition;
+                            if (definition.satisfiesConstraints(value)) return definition;
+                        }
                     }
                     if (value != null) {
                         for (JcrPropertyDefinition definition : mixinType.allMultiValuePropertyDefinitions(propertyName)) {
@@ -595,6 +679,7 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                             if (type == PropertyType.WEAKREFERENCE && definition.canCastToType(value)) {
                                 return definition;
                             }
+                            if (!checkTypeAndConstraints) return definition;
                             if (definition.canCastToTypeAndSatisfyConstraints(value)) return definition;
                         }
                     }
@@ -610,7 +695,8 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                                                                                            JcrNodeType.RESIDUAL_NAME,
                                                                                            value,
                                                                                            checkMultiValuedDefinitions,
-                                                                                           skipProtected);
+                                                                                           skipProtected,
+                                                                                           checkTypeAndConstraints);
         return null;
     }
 
@@ -662,6 +748,60 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                                                   Name propertyName,
                                                   Value[] values,
                                                   boolean skipProtected ) {
+        return findPropertyDefinition(primaryTypeName, mixinTypeNames, propertyName, values, skipProtected, true);
+    }
+
+    /**
+     * Searches the supplied primary node type and the mixin node types for a property definition that is the best match for the
+     * given property name, property type, and value.
+     * <p>
+     * This method first attempts to find a single-valued property definition with the supplied property name and
+     * {@link Value#getType() value's property type} in the primary type, skipping any property definitions that are protected.
+     * The property definition is returned if it has a matching type (or has an {@link PropertyType#UNDEFINED undefined property
+     * type}) and the value satisfies the {@link PropertyDefinition#getValueConstraints() definition's constraints}. Otherwise,
+     * the process continues with each of the mixin types, in the order they are named.
+     * </p>
+     * <p>
+     * If no matching property definition could be found (and <code>checkMultiValuedDefinitions</code> parameter is
+     * <code>true</code>), the process is repeated except with multi-valued property definitions with the same name, property
+     * type, and compatible constraints, starting with the primary type and continuing with each mixin type.
+     * </p>
+     * <p>
+     * If no matching property definition could be found, and the process repeats by searching the primary type (and then mixin
+     * types) for single-valued property definitions with a compatible type, where the values can be safely cast to the
+     * definition's property type and still satisfy the definition's constraints.
+     * </p>
+     * <p>
+     * If no matching property definition could be found, the previous step is repeated with multi-valued property definitions.
+     * </p>
+     * <p>
+     * If no matching property definition could be found (and the supplied property name is not the residual name), the whole
+     * process repeats for residual property definitions (e.g., those that are defined with a {@link JcrNodeType#RESIDUAL_NAME "*"
+     * name}).
+     * </p>
+     * <p>
+     * Finally, if no satisfactory property definition could be found, this method returns null.
+     * </p>
+     * 
+     * @param primaryTypeName the name of the primary type; may not be null
+     * @param mixinTypeNames the names of the mixin types; may be null or empty if there are no mixins to include in the search
+     * @param propertyName the name of the property for which the definition should be retrieved. This method will automatically
+     *        look for residual definitions, but you can use {@link JcrNodeType#RESIDUAL_ITEM_NAME} to retrieve only the best
+     *        residual property definition (if any).
+     * @param values the values
+     * @param skipProtected true if this operation is being done from within the public JCR node and property API, or false if
+     *        this operation is being done from within internal implementations
+     * @param checkTypeAndConstraints true if the type and constraints of the property definition should be checked, or false
+     *        otherwise
+     * @return the best property definition, or <code>null</code> if no property definition allows the property with the supplied
+     *         name, type and number of values
+     */
+    JcrPropertyDefinition findPropertyDefinition( Name primaryTypeName,
+                                                  List<Name> mixinTypeNames,
+                                                  Name propertyName,
+                                                  Value[] values,
+                                                  boolean skipProtected,
+                                                  boolean checkTypeAndConstraints ) {
         boolean setToEmpty = values == null;
         int propertyType = values == null || values.length == 0 ? PropertyType.STRING : values[0].getType();
 
@@ -692,9 +832,12 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                 int type = definition.getRequiredType();
                 boolean typeMatches = values.length == 0 || type == PropertyType.UNDEFINED || type == propertyType;
                 // Don't check constraints on reference properties
-                if (typeMatches && type == PropertyType.REFERENCE) return definition;
-                if (typeMatches && type == PropertyType.WEAKREFERENCE) return definition;
-                if (typeMatches && definition.satisfiesConstraints(values)) return definition;
+                if (typeMatches) {
+                    if (type == PropertyType.REFERENCE) return definition;
+                    if (type == PropertyType.WEAKREFERENCE) return definition;
+                    if (!checkTypeAndConstraints) return definition;
+                    if (definition.satisfiesConstraints(values)) return definition;
+                }
             }
 
             if (matchedOnName) {
@@ -710,6 +853,7 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                         // Don't check constraints on reference properties
                         if (definition.getRequiredType() == PropertyType.REFERENCE && definition.canCastToType(values)) return definition;
                         if (definition.getRequiredType() == PropertyType.WEAKREFERENCE && definition.canCastToType(values)) return definition;
+                        if (!checkTypeAndConstraints) return definition;
                         if (definition.canCastToTypeAndSatisfyConstraints(values)) return definition;
                     }
                 }
@@ -740,9 +884,12 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                     int type = definition.getRequiredType();
                     boolean typeMatches = values.length == 0 || type == PropertyType.UNDEFINED || type == propertyType;
                     // Don't check constraints on reference properties
-                    if (typeMatches && type == PropertyType.REFERENCE) return definition;
-                    if (typeMatches && type == PropertyType.WEAKREFERENCE) return definition;
-                    if (typeMatches && definition.satisfiesConstraints(values)) return definition;
+                    if (typeMatches) {
+                        if (type == PropertyType.REFERENCE) return definition;
+                        if (type == PropertyType.WEAKREFERENCE) return definition;
+                        if (!checkTypeAndConstraints) return definition;
+                        if (definition.satisfiesConstraints(values)) return definition;
+                    }
                 }
                 if (matchedOnName) {
                     if (values != null && values.length != 0) {
@@ -757,6 +904,7 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                             // Don't check constraints on reference properties
                             if (definition.getRequiredType() == PropertyType.REFERENCE && definition.canCastToType(values)) return definition;
                             if (definition.getRequiredType() == PropertyType.WEAKREFERENCE && definition.canCastToType(values)) return definition;
+                            if (!checkTypeAndConstraints) return definition;
                             if (definition.canCastToTypeAndSatisfyConstraints(values)) return definition;
                         }
                     }
@@ -772,7 +920,8 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                                                                                            mixinTypeNames,
                                                                                            JcrNodeType.RESIDUAL_NAME,
                                                                                            values,
-                                                                                           skipProtected);
+                                                                                           skipProtected,
+                                                                                           checkTypeAndConstraints);
         return null;
     }
 

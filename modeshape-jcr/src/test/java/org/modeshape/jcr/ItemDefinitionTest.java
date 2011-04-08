@@ -85,13 +85,31 @@ public class ItemDefinitionTest extends AbstractSessionTest {
         Name badName = nameFactory.create("undefinedName");
         JcrPropertyDefinition propDef;
 
-        propDef = repoTypeManager.findPropertyDefinition(NODE_TYPE_A, Collections.<Name>emptyList(), badName, null, true, true);
+        propDef = repoTypeManager.findPropertyDefinition(NODE_TYPE_A,
+                                                         Collections.<Name>emptyList(),
+                                                         badName,
+                                                         null,
+                                                         true,
+                                                         true,
+                                                         true);
         assertThat(propDef, is(nullValue()));
 
-        propDef = repoTypeManager.findPropertyDefinition(NODE_TYPE_B, Collections.<Name>emptyList(), badName, null, true, true);
+        propDef = repoTypeManager.findPropertyDefinition(NODE_TYPE_B,
+                                                         Collections.<Name>emptyList(),
+                                                         badName,
+                                                         null,
+                                                         true,
+                                                         true,
+                                                         true);
         assertThat(propDef, is(nullValue()));
 
-        propDef = repoTypeManager.findPropertyDefinition(NODE_TYPE_C, Collections.<Name>emptyList(), badName, null, true, true);
+        propDef = repoTypeManager.findPropertyDefinition(NODE_TYPE_C,
+                                                         Collections.<Name>emptyList(),
+                                                         badName,
+                                                         null,
+                                                         true,
+                                                         true,
+                                                         true);
         assertThat(propDef, is(nullValue()));
     }
 
@@ -107,6 +125,7 @@ public class ItemDefinitionTest extends AbstractSessionTest {
                                                          SINGLE_PROP1,
                                                          null,
                                                          true,
+                                                         true,
                                                          true);
         assertThat(propDef, is(notNullValue()));
         assertEquals(propDef.getRequiredType(), PropertyType.STRING);
@@ -116,6 +135,7 @@ public class ItemDefinitionTest extends AbstractSessionTest {
                                                          SINGLE_PROP1,
                                                          null,
                                                          true,
+                                                         true,
                                                          true);
         assertThat(propDef, is(notNullValue()));
         assertEquals(propDef.getRequiredType(), PropertyType.DOUBLE);
@@ -124,6 +144,7 @@ public class ItemDefinitionTest extends AbstractSessionTest {
                                                          Collections.<Name>emptyList(),
                                                          SINGLE_PROP1,
                                                          null,
+                                                         true,
                                                          true,
                                                          true);
         assertThat(propDef, is(notNullValue()));
