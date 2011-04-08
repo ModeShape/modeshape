@@ -376,11 +376,12 @@ public class XPathToQueryTranslator {
         if (tableName != null) {
             // This is after some element(...) steps, so we need to join ...
             builder.joinAllNodesAs(alias);
+            alias = tableName;
         } else {
             // This is the only part of the query ...
             builder.fromAllNodesAs(alias);
+            tableName = alias;
         }
-        tableName = alias;
         if (path.size() == 1 && path.get(0).collapse() instanceof NameTest) {
             // Node immediately below root ...
             NameTest nodeName = (NameTest)path.get(0).collapse();

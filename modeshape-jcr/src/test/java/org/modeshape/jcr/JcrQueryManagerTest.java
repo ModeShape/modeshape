@@ -28,6 +28,7 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -205,6 +206,12 @@ public class JcrQueryManagerTest {
                 session = null;
             }
         }
+    }
+
+    protected void registerNodeTypes( String pathToClasspathResource ) throws RepositoryException, IOException {
+        CndNodeTypeReader cndReader = new CndNodeTypeReader(session);
+        cndReader.read(pathToClasspathResource);
+        session.getWorkspace().getNodeTypeManager().registerNodeTypes(cndReader.getNodeTypeDefinitions(), true);
     }
 
     protected Name name( String name ) {
@@ -1801,6 +1808,24 @@ public class JcrQueryManagerTest {
         Query query = session.getWorkspace()
                              .getQueryManager()
                              .createQuery("/jcr:root/Cars//*[jcr:like(@car:wheelbaseInInches, '%')]", Query.XPATH);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+
+        for (NodeIterator iter = result.getNodes(); iter.hasNext();) {
+            assertThat(iter.nextNode().hasProperty("car:wheelbaseInInches"), is(true));
+        }
+    }
+
+    @FixFor( "MODE-1144" )
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldParseMagnoliaXPathQuery() throws Exception {
+        registerNodeTypes("magnolia.cnd");
+
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("//*[@jcr:primaryType='mgnl:content']//*[jcr:contains(., 'paragraph')]", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
