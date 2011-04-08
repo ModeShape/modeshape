@@ -44,6 +44,7 @@ import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeType;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -503,11 +504,29 @@ public class JcrImportExportTest {
     }
 
     // ----------------------------------------------------------------------------------------------------------------
-    // Import System View WITH 'jcr:root' node and WITH uuids
+    // Import Document and System View containing constraint violations
+    // ----------------------------------------------------------------------------------------------------------------
+
+    @FixFor( "MODE-1139" )
+    @Test( expected = ConstraintViolationException.class )
+    public void shouldThrowCorrectExceptionWhenImportingDocumentViewContainingPropertiesThatViolateConstraints() throws Exception {
+        // Set up the repository ...
+        assertImport("io/full-workspace-document-view-with-constraint-violation.xml", "/", ImportBehavior.THROW);
+    }
+
+    @FixFor( "MODE-1139" )
+    @Test( expected = ConstraintViolationException.class )
+    public void shouldThrowCorrectExceptionWhenImportingSystemViewContainingPropertiesThatViolateConstraints() throws Exception {
+        // Set up the repository ...
+        assertImport("io/full-workspace-system-view-with-constraint-violation.xml", "/", ImportBehavior.THROW);
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // Import Document View WITH 'jcr:root' node and WITH uuids
     // ----------------------------------------------------------------------------------------------------------------
 
     @Test
-    public void shouldImportDocumentView() throws Exception {
+    public void shouldImportDocumentViewWithUuids() throws Exception {
         // Set up the repository ...
         assertImport("io/full-workspace-document-view-with-uuids.xml", "/", ImportBehavior.THROW); // no matching UUIDs expected
         assertNode("/a/b/Cars");
@@ -522,11 +541,11 @@ public class JcrImportExportTest {
     }
 
     // ----------------------------------------------------------------------------------------------------------------
-    // Import System View WITH constraints
+    // Import Document View WITH constraints
     // ----------------------------------------------------------------------------------------------------------------
 
     @Test
-    public void shouldImportSystemViewWithReferenceConstraints() throws Exception {
+    public void shouldImportDocumentViewWithReferenceConstraints() throws Exception {
         // Set up the repository ...
         assertImport("io/full-workspace-document-view-with-uuids.xml", "/", ImportBehavior.THROW); // no matching UUIDs expected
         assertNode("/a/b/Cars");
