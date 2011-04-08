@@ -270,6 +270,21 @@ class SessionCache {
         return location.getString(namespaces);
     }
 
+    final String readable( Value value ) throws RepositoryException {
+        return value.getString();
+    }
+
+    final String readable( Value[] values ) throws RepositoryException {
+        StringBuilder sb = new StringBuilder('[');
+        boolean first = true;
+        for (Value value : values) {
+            if (first) first = false;
+            sb.append(',');
+            sb.append(value.getString());
+        }
+        return sb.toString();
+    }
+
     final String readable( Iterable<Name> names ) {
         StringBuilder sb = new StringBuilder();
         sb.append('[');
@@ -1099,12 +1114,39 @@ class SessionCache {
                                                          && definition != null
                                                          && (definition.getRequiredType() == PropertyType.REFERENCE || definition.getRequiredType() == PropertyType.WEAKREFERENCE)
                                                          && !definition.canCastToTypeAndSatisfyConstraints(value);
-                if (definition == null || referencePropMissedConstraints) {
+                if (definition == null) {
+                    // See if there is a definition that has constraints that were violated ...
+                    definition = nodeTypes().findPropertyDefinition(payload.getPrimaryTypeName(),
+                                                                    payload.getMixinTypeNames(),
+                                                                    name,
+                                                                    value,
+                                                                    true,
+                                                                    skipProtected,
+                                                                    false);
+                    if (definition != null) {
+                        String msg = JcrI18n.valueViolatesConstraintsOnDefinition.text(readable(name),
+                                                                                       readable(value),
+                                                                                       readable(node.getPath()),
+                                                                                       definition.getName(),
+                                                                                       definition.getDeclaringNodeType()
+                                                                                                 .getName());
+                        throw new ConstraintViolationException(msg);
+
+                    }
                     throw new ConstraintViolationException(JcrI18n.noDefinition.text("property",
                                                                                      readable(name),
                                                                                      readable(node.getPath()),
                                                                                      readable(payload.getPrimaryTypeName()),
                                                                                      readable(payload.getMixinTypeNames())));
+                }
+                if (referencePropMissedConstraints) {
+                    I18n i18n = definition.getRequiredType() == PropertyType.REFERENCE ? JcrI18n.referenceValueViolatesConstraintsOnDefinition : JcrI18n.weakReferenceValueViolatesConstraintsOnDefinition;
+                    String msg = i18n.text(readable(name),
+                                           readable(value),
+                                           readable(node.getPath()),
+                                           definition.getName(),
+                                           definition.getDeclaringNodeType().getName());
+                    throw new ConstraintViolationException(msg);
                 }
             } else {
                 // Check that the existing definition isn't protected
@@ -1301,12 +1343,38 @@ class SessionCache {
                 boolean referencePropMissedConstraints = definition != null
                                                          && (definition.getRequiredType() == PropertyType.REFERENCE || definition.getRequiredType() == PropertyType.WEAKREFERENCE)
                                                          && !definition.canCastToTypeAndSatisfyConstraints(newValues);
-                if (definition == null || referencePropMissedConstraints) {
+                if (definition == null) {
+                    // See if there is a definition that has constraints that were violated ...
+                    definition = nodeTypes().findPropertyDefinition(payload.getPrimaryTypeName(),
+                                                                    payload.getMixinTypeNames(),
+                                                                    name,
+                                                                    values,
+                                                                    skipProtected,
+                                                                    false);
+                    if (definition != null) {
+                        String msg = JcrI18n.valueViolatesConstraintsOnDefinition.text(readable(name),
+                                                                                       readable(values),
+                                                                                       readable(node.getPath()),
+                                                                                       definition.getName(),
+                                                                                       definition.getDeclaringNodeType()
+                                                                                                 .getName());
+                        throw new ConstraintViolationException(msg);
+
+                    }
                     throw new ConstraintViolationException(JcrI18n.noDefinition.text("property",
                                                                                      readable(name),
                                                                                      readable(node.getPath()),
                                                                                      readable(payload.getPrimaryTypeName()),
                                                                                      readable(payload.getMixinTypeNames())));
+                }
+                if (referencePropMissedConstraints) {
+                    I18n i18n = definition.getRequiredType() == PropertyType.REFERENCE ? JcrI18n.referenceValuesViolateConstraintsOnDefinition : JcrI18n.weakReferenceValuesViolateConstraintsOnDefinition;
+                    String msg = i18n.text(readable(name),
+                                           readable(values),
+                                           readable(node.getPath()),
+                                           definition.getName(),
+                                           definition.getDeclaringNodeType().getName());
+                    throw new ConstraintViolationException(msg);
                 }
             } else {
                 // Check that the existing definition isn't protected

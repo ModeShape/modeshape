@@ -200,6 +200,12 @@ public final class JcrI18n {
     public static I18n noDefinition;
     public static I18n noSnsDefinition;
     public static I18n missingMandatoryItem;
+    public static I18n valueViolatesConstraintsOnDefinition;
+    public static I18n valuesViolateConstraintsOnDefinition;
+    public static I18n referenceValueViolatesConstraintsOnDefinition;
+    public static I18n referenceValuesViolateConstraintsOnDefinition;
+    public static I18n weakReferenceValueViolatesConstraintsOnDefinition;
+    public static I18n weakReferenceValuesViolateConstraintsOnDefinition;
 
     public static I18n allNodeTypeTemplatesMustComeFromSameSession;
 
