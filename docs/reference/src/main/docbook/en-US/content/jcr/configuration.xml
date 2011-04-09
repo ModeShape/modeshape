@@ -628,9 +628,30 @@ config.repository("repository A")
 						</para>
 					</entry>
 				</row>
+				<row>
+					<entry>useAnonymousAccessOnFailedLogin</entry>
+					<entry>
+						<para>
+							A boolean flag that indicates whether any failed, non-anonymous login attempts will automatically cause the &Session; to be created using the anonymous context.  If anonymous logins are not enabled
+							(with the anonymousUserRoles option), then the login will still fail. 
+						</para>
+						<para>
+							By default this option has a value of "false", ensuring that non-anonymous login attempts either succeed as the requested user or fail.
+						</para>
+						<para>
+							The enumeration literal is <ulink url='&API;jcr/JcrRepository.Option.html#USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN'>Option.USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN</ulink>
+						</para>
+					</entry>
+				</row>				
 			</tbody>
 		</tgroup>
 	</table>
+		    <warning>
+		    <para>
+					Setting the useAnonymousAccessOnFailedLogin option to "true" and setting the anonymousUserRoles to a valid value means that all login attempts will succeed, but 
+					named login attempts may actually succeed in an anonymous context.  You can programattically determine which context is being used by checking the value of &Session;.getUserID().
+				</para>
+		  </warning>
  </sect1>
  <sect1 id="system_workspace_configuration">
 	  <title>Repository system content</title>

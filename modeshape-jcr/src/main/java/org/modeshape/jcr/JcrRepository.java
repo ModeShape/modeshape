@@ -69,13 +69,13 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
-import org.modeshape.graph.Graph.Batch;
 import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.JaasSecurityContext;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.SecurityContext;
 import org.modeshape.graph.Subgraph;
 import org.modeshape.graph.Workspace;
+import org.modeshape.graph.Graph.Batch;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryConnectionFactory;
 import org.modeshape.graph.connector.RepositoryContext;
@@ -102,8 +102,8 @@ import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.basic.GraphNamespaceRegistry;
 import org.modeshape.graph.query.QueryBuilder;
-import org.modeshape.graph.query.QueryBuilder.ConstraintBuilder;
 import org.modeshape.graph.query.QueryResults;
+import org.modeshape.graph.query.QueryBuilder.ConstraintBuilder;
 import org.modeshape.graph.query.model.QueryCommand;
 import org.modeshape.graph.query.model.Visitors;
 import org.modeshape.graph.query.parse.QueryParsers;
@@ -354,7 +354,16 @@ public class JcrRepository implements Repository {
          * leave the derived content. The default value is 'true'.
          * </p>
          */
-        REMOVE_DERIVED_CONTENT_WITH_ORIGINAL, ;
+        REMOVE_DERIVED_CONTENT_WITH_ORIGINAL,
+
+        /**
+         * Indicates whether a failed attempt to {@link #login} should automatically attempt to use anonymous access instead. If
+         * anonymous access is not enabled, then failed login attempts will still cause an {@link LoginException} to be thrown.
+         * The default value is 'false'.
+         * 
+         * @see #ANONYMOUS_USER_ROLES
+         */
+        USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN, ;
 
         /**
          * Determine the option given the option name. This does more than {@link Option#valueOf(String)}, since this method first
@@ -481,6 +490,11 @@ public class JcrRepository implements Repository {
          * The default value for the {@link Option#REMOVE_DERIVED_CONTENT_WITH_ORIGINAL} option is {@value} .
          */
         public static final String REMOVE_DERIVED_CONTENT_WITH_ORIGINAL = Boolean.TRUE.toString();
+
+        /**
+         * The default value for the {@link Option#USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN} option is {@value} .
+         */
+        public static final String USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN = Boolean.FALSE.toString();
     }
 
     /**
@@ -543,6 +557,7 @@ public class JcrRepository implements Repository {
         defaults.put(Option.VERSION_HISTORY_STRUCTURE, DefaultOption.VERSION_HISTORY_STRUCTURE);
         defaults.put(Option.REPOSITORY_JNDI_LOCATION, DefaultOption.REPOSITORY_JNDI_LOCATION);
         defaults.put(Option.REMOVE_DERIVED_CONTENT_WITH_ORIGINAL, DefaultOption.REMOVE_DERIVED_CONTENT_WITH_ORIGINAL);
+        defaults.put(Option.USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN, DefaultOption.USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN);
         DEFAULT_OPTIONS = Collections.<Option, String>unmodifiableMap(defaults);
     }
 
@@ -1305,6 +1320,7 @@ public class JcrRepository implements Repository {
         // Ensure credentials are either null or provide a JAAS method
         Map<String, Object> sessionAttributes = new HashMap<String, Object>();
         ExecutionContext execContext = null;
+
         if (credentials == null || credentials instanceof AnonymousCredentials) {
             Subject subject = Subject.getSubject(AccessController.getContext());
             if (subject != null) {
@@ -1366,7 +1382,16 @@ public class JcrRepository implements Repository {
             } catch (RuntimeException error) {
                 throw error; // pass along
             } catch (javax.jcr.LoginException error) {
-                throw error; // pass along
+                boolean tryAnonAccess = Boolean.valueOf(options.get(Option.USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN));
+
+                if (tryAnonAccess && anonymousUserContext != null) {
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug(JcrI18n.usingAnonymousUser.text());
+                    }
+                    execContext = executionContext.with(this.anonymousUserContext);
+                } else {
+                    throw error; // pass along
+                }
             } catch (Exception error) {
                 throw new javax.jcr.LoginException(error); // wrap
             }
