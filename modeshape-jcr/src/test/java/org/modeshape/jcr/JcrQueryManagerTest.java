@@ -152,6 +152,9 @@ public class JcrQueryManagerTest {
                     stream.close();
                 }
 
+                registerNodeTypes(session, "fincayra.cnd");
+                registerNodeTypes(session, "magnolia.cnd");
+
                 // Create a branch that contains some same-name-siblings ...
                 Node other = session.getRootNode().addNode("Other", "nt:unstructured");
                 other.addNode("NodeA", "nt:unstructured").setProperty("something", "value3 quick brown fox");
@@ -169,6 +172,7 @@ public class JcrQueryManagerTest {
 
             // Prime creating the schemata ...
             repository.getRepositoryTypeManager().getRepositorySchemata();
+
         } catch (RuntimeException e) {
             e.printStackTrace();
             throw e;
@@ -208,7 +212,8 @@ public class JcrQueryManagerTest {
         }
     }
 
-    protected void registerNodeTypes( String pathToClasspathResource ) throws RepositoryException, IOException {
+    protected static void registerNodeTypes( Session session,
+                                             String pathToClasspathResource ) throws RepositoryException, IOException {
         CndNodeTypeReader cndReader = new CndNodeTypeReader(session);
         cndReader.read(pathToClasspathResource);
         session.getWorkspace().getNodeTypeManager().registerNodeTypes(cndReader.getNodeTypeDefinitions(), true);
@@ -1821,7 +1826,6 @@ public class JcrQueryManagerTest {
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldParseMagnoliaXPathQuery() throws Exception {
-        registerNodeTypes("magnolia.cnd");
 
         Query query = session.getWorkspace()
                              .getQueryManager()
@@ -1832,6 +1836,47 @@ public class JcrQueryManagerTest {
 
         for (NodeIterator iter = result.getNodes(); iter.hasNext();) {
             assertThat(iter.nextNode().hasProperty("car:wheelbaseInInches"), is(true));
+        }
+    }
+
+    @FixFor( "MODE-1145" )
+    @Test
+    public void shouldParseFincayraQuery() throws Exception {
+        String sql = "SELECT post.\"jcr:uuid\", post.\"text\", post.\"user\" FROM [fincayra.Post] AS post JOIN [fincayra.User] AS u ON post.\"user\"=u.\"jcr:uuid\" WHERE u.email='test1@innobuilt.com'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        for (NodeIterator iter = result.getNodes(); iter.hasNext();) {
+            assertThat(iter.nextNode().hasProperty("jcr:uuid"), is(true));
+            assertThat(iter.nextNode().hasProperty("text"), is(true));
+            assertThat(iter.nextNode().hasProperty("user"), is(true));
+        }
+    }
+
+    @FixFor( "MODE-1145" )
+    @Test
+    public void shouldParseFincayraQuery2() throws Exception {
+        String sql = "SELECT post.\"jcr:uuid\", post.\"text\", post.\"user\" FROM [fincayra.UnstrPost] AS post JOIN [fincayra.UnstrUser] AS u ON post.\"user\"=u.\"jcr:uuid\" WHERE u.email='test1@innobuilt.com'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        for (NodeIterator iter = result.getNodes(); iter.hasNext();) {
+            assertThat(iter.nextNode().hasProperty("jcr:uuid"), is(true));
+            assertThat(iter.nextNode().hasProperty("text"), is(true));
+            assertThat(iter.nextNode().hasProperty("user"), is(true));
+        }
+    }
+
+    @FixFor( "MODE-1145" )
+    @Test
+    public void shouldParseQueryWithResidualPropertyInSelectAndCriteria() throws Exception {
+        String sql = "SELECT [jcr:path], something FROM [nt:unstructured] AS u WHERE something LIKE 'value%'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result.getRows().getSize(), is(3L));
+        for (NodeIterator iter = result.getNodes(); iter.hasNext();) {
+            assertThat(iter.nextNode().hasProperty("something"), is(true));
         }
     }
 }

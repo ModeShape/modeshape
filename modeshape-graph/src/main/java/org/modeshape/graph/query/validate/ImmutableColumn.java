@@ -32,7 +32,7 @@ import org.modeshape.graph.query.model.Operator;
 import org.modeshape.graph.query.validate.Schemata.Column;
 
 @Immutable
-class ImmutableColumn implements Column {
+public class ImmutableColumn implements Column {
 
     public static final Set<Operator> ALL_OPERATORS = Collections.unmodifiableSet(EnumSet.allOf(Operator.class));
     public static final Set<Operator> NO_OPERATORS = Collections.unmodifiableSet(EnumSet.noneOf(Operator.class));

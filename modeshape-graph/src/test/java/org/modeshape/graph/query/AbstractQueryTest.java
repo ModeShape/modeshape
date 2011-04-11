@@ -31,9 +31,11 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.modeshape.graph.query.model.Column;
 import org.modeshape.graph.query.model.SelectorName;
 import org.modeshape.graph.query.plan.PlanNode;
 import org.modeshape.graph.query.plan.PlanNode.Property;
+import org.modeshape.graph.query.plan.PlanNode.Type;
 
 /**
  * 
@@ -42,6 +44,50 @@ public abstract class AbstractQueryTest {
 
     protected SelectorName selector( String selectorName ) {
         return new SelectorName(selectorName);
+    }
+
+    protected Column column( SelectorName selector,
+                             String property ) {
+        return new Column(selector, property, property);
+    }
+
+    protected Column column( SelectorName selector,
+                             String property,
+                             String alias ) {
+        return new Column(selector, property, alias);
+    }
+
+    protected List<Column> columns( QueryContext context,
+                                    SelectorName selector,
+                                    String... columnNames ) {
+        List<Column> columns = new ArrayList<Column>();
+        for (String columnName : columnNames) {
+            columns.add(column(selector, columnName));
+        }
+        return columns;
+    }
+
+    protected List<String> columnTypes( QueryContext context,
+                                        SelectorName selector,
+                                        String... columnNames ) {
+        List<String> types = new ArrayList<String>();
+        for (@SuppressWarnings( "unused" )
+        String columnName : columnNames) {
+            types.add(context.getTypeSystem().getDefaultType());
+        }
+        return types;
+    }
+
+    protected PlanNode sourceNode( QueryContext context,
+                                   PlanNode parent,
+                                   String selectorName,
+                                   String... columnNames ) {
+        PlanNode node = new PlanNode(Type.SOURCE, parent);
+        SelectorName selector = selector(selectorName);
+        node.addSelector(selector);
+        node.setProperty(Property.PROJECT_COLUMNS, columns(context, selector, columnNames));
+        node.setProperty(Property.PROJECT_COLUMN_TYPES, columnTypes(context, selector, columnNames));
+        return node;
     }
 
     protected void assertChildren( PlanNode node,
@@ -80,6 +126,13 @@ public abstract class AbstractQueryTest {
                                              Class<T> valueType,
                                              T... values ) {
         assertThat("Property value doesn't match", node.getPropertyAsList(name, valueType), is(Arrays.asList(values)));
+    }
+
+    protected <T> void assertPropertyIsList( PlanNode node,
+                                             Property name,
+                                             Class<T> valueType,
+                                             List<T> values ) {
+        assertThat("Property value doesn't match", node.getPropertyAsList(name, valueType), is(values));
     }
 
     protected void assertSortOrderBy( PlanNode sortNode,

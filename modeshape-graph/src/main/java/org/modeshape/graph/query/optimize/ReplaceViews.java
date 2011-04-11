@@ -26,16 +26,18 @@ package org.modeshape.graph.query.optimize;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.graph.query.QueryContext;
+import org.modeshape.graph.query.model.Column;
 import org.modeshape.graph.query.model.SelectorName;
 import org.modeshape.graph.query.plan.CanonicalPlanner;
 import org.modeshape.graph.query.plan.PlanNode;
-import org.modeshape.graph.query.plan.PlanUtil;
 import org.modeshape.graph.query.plan.PlanNode.Property;
 import org.modeshape.graph.query.plan.PlanNode.Type;
+import org.modeshape.graph.query.plan.PlanUtil;
 import org.modeshape.graph.query.validate.Schemata;
 import org.modeshape.graph.query.validate.Schemata.Table;
 import org.modeshape.graph.query.validate.Schemata.View;
@@ -115,6 +117,16 @@ public class ReplaceViews implements OptimizerRule {
                         // Replace the view's alias ...
                         Map<SelectorName, SelectorName> replacements = Collections.singletonMap(viewAlias, tableAliasOrName);
                         PlanUtil.replaceReferencesToRemovedSource(context, viewPlan, replacements);
+
+                        if (!context.getHints().validateColumnExistance) {
+                            // Find the next highest PROJECT node above the source ...
+                            PlanNode project = sourceNode.findAncestor(Type.PROJECT);
+                            if (project != null) {
+                                List<Column> projectedColumns = project.getPropertyAsList(Property.PROJECT_COLUMNS, Column.class);
+                                // There may be columns that don't appear in the source, so make sure they are there ...
+                                viewPlan = PlanUtil.addMissingProjectColumns(context, viewProjectNode, projectedColumns);
+                            }
+                        }
                     }
 
                     // Insert the view plan under the parent SOURCE node ...
