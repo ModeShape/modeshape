@@ -581,7 +581,7 @@ ORDER BY nodeSet1.title,
 			The JCR 2.0 specification defines how nodes in a repository are mapped onto relational tables queryable through a
 			SQL-like language, including JCR-SQL and <link linkend="jcr-sql-query-language">JCR-SQL2</link>. 
 			Basically, each node type is mapped as a relational view with a single column for each
-			of the node type's (non-residual) property definitions. Conceptually, each node in the repository then appears as a record inside
+			of the node type's (residual and non-residual) property definitions. Conceptually, each node in the repository then appears as a record inside
 			the view corresponding to the node type for which "<code>Node.isNodeType(nodeTypeName)</code>" would return true.
 		</para>
 		<para>
