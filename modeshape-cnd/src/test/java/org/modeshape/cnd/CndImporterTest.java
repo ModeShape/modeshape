@@ -23,32 +23,10 @@
  */
 package org.modeshape.cnd;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.nullValue;
-import static org.junit.Assert.assertThat;
-import static org.modeshape.graph.IsNodeWithProperty.hasProperty;
-import java.io.File;
-import java.io.InputStream;
-import java.util.HashSet;
-import java.util.Set;
-import org.junit.Before;
-import org.junit.Test;
-import org.modeshape.common.collection.Problem;
-import org.modeshape.common.collection.SimpleProblems;
-import org.modeshape.common.text.ParsingException;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.Graph;
-import org.modeshape.graph.JcrLexicon;
-import org.modeshape.graph.JcrNtLexicon;
-import org.modeshape.graph.Location;
-import org.modeshape.graph.ModeShapeLexicon;
-import org.modeshape.graph.Node;
-import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
-import org.modeshape.graph.io.Destination;
-import org.modeshape.graph.io.GraphBatchDestination;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.Path;
-import org.modeshape.graph.property.Property;
+import src.test.java.org.modeshape.cnd.CndImporterTest.ChildOptions;
+import src.test.java.org.modeshape.cnd.CndImporterTest.NodeOptions;
+import src.test.java.org.modeshape.cnd.CndImporterTest.OnParentVersion;
+import src.test.java.org.modeshape.cnd.CndImporterTest.PropertyOptions;
 
 /**
  * 
@@ -239,7 +217,47 @@ public class CndImporterTest {
     }
 
     @Test
-    public void shouldImportCndThatIsOnOneLine() {
+    public void shouldImportCndThatUsesExtensions() throws IOException {
+        // importer.setDebug(true);
+        String cnd = "<ex = 'http://namespace.com/ns'>\n"
+                     + "[ex:NodeType] > ex:ParentType1, ex:ParentType2 abstract {mode:desc 'ex:NodeType description'} orderable mixin noquery primaryitem ex:property\n"
+                     + "- ex:property (STRING) = 'default1', 'default2' mandatory autocreated protected multiple VERSION\n"
+                     + " queryops '=, <>, <, <=, >, >=, LIKE' {mode:desc 'ex:property description'} {mode:altName Cool Property} nofulltext noqueryorder < 'constraint1', 'constraint2'"
+                     + "+ ex:node (ex:reqType1, ex:reqType2) = ex:defaultType {} mandatory autocreated protected sns version";
+        importer.importFrom(cnd, problems, "string");
+        // assertThat(problems.size(), is(1));
+        // printProblems();
+        context.getNamespaceRegistry().register("ex", "http://namespace.com/ns");
+        Node nodeType = node("ex:NodeType");
+        assertThat(nodeType, hasProperty(JcrLexicon.IS_ABSTRACT, true));
+        assertThat(nodeType, hasProperty(name("mode:desc"), "ex:NodeType description"));
+        Node prop = node("ex:NodeType/jcr:propertyDefinition");
+        assertThat(prop, hasProperty(JcrLexicon.NAME, name("ex:property")));
+        assertThat(prop, hasProperty(JcrLexicon.REQUIRED_TYPE, "STRING"));
+        assertThat(prop, hasProperty(JcrLexicon.DEFAULT_VALUES, new Object[] {"default1", "default2"}));
+        assertThat(prop, hasProperty(JcrLexicon.AUTO_CREATED, true));
+        assertThat(prop, hasProperty(JcrLexicon.MANDATORY, true));
+        assertThat(prop, hasProperty(JcrLexicon.PROTECTED, true));
+        assertThat(prop, hasProperty(JcrLexicon.MULTIPLE, true));
+        assertThat(prop, hasProperty(JcrLexicon.ON_PARENT_VERSION, "VERSION"));
+        assertThat(prop, hasProperty(JcrLexicon.VALUE_CONSTRAINTS, new Object[] {"constraint1", "constraint2"}));
+        assertThat(prop, hasProperty(JcrLexicon.IS_FULL_TEXT_SEARCHABLE, false));
+        assertThat(prop, hasProperty(JcrLexicon.IS_QUERY_ORDERABLE, false));
+        assertThat(prop, hasProperty(name("mode:desc"), "ex:property description"));
+        assertThat(prop, hasProperty(name("mode:altName"), "Cool Property"));
+        Node node = node("ex:NodeType/jcr:childNodeDefinition");
+        assertThat(node, hasProperty(JcrLexicon.NAME, name("ex:node")));
+        assertThat(node, hasProperty(JcrLexicon.REQUIRED_PRIMARY_TYPES, new Object[] {name("ex:reqType1"), name("ex:reqType2")}));
+        assertThat(node, hasProperty(JcrLexicon.DEFAULT_PRIMARY_TYPE, name("ex:defaultType")));
+        assertThat(node, hasProperty(JcrLexicon.AUTO_CREATED, true));
+        assertThat(node, hasProperty(JcrLexicon.MANDATORY, true));
+        assertThat(node, hasProperty(JcrLexicon.PROTECTED, true));
+        assertThat(node, hasProperty(JcrLexicon.SAME_NAME_SIBLINGS, true));
+        assertThat(node, hasProperty(JcrLexicon.ON_PARENT_VERSION, "VERSION"));
+    }
+
+    @Test
+    public void shouldImportCndThatIsOnOneLine() throws IOException {
         String cnd = "<ns = 'http://namespace.com/ns'> "
                      + "[ns:NodeType] > ns:ParentType1, ns:ParentType2 abstract orderable mixin noquery primaryitem ex:property "
                      + "- ex:property (STRING) = 'default1', 'default2' mandatory autocreated protected multiple VERSION < 'constraint1', 'constraint2' "

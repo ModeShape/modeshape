@@ -33,6 +33,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.text.ParsingException;
@@ -79,6 +81,23 @@ public class CndImporter {
                                                                                                             "=", "<>", "<", "<=",
                                                                                                             ">", ">=", "LIKE"})));
 
+    /**
+     * The default flag for using vendor extensions is {@value} .
+     */
+    public static final boolean DEFAULT_USE_VENDOR_EXTENSIONS = true;
+
+    /**
+     * The default flag for supporting pre-JCR 2.0 CND format is {@value} .
+     */
+    public static final boolean DEFAULT_COMPATIBLE_WITH_PREJCR2 = true;
+
+    /**
+     * The regular expression used to capture the vendor property name and the value. The expression is "
+     * <code>([^\s]+)(\s+(.*))</code>".
+     */
+    protected final String VENDOR_PATTERN_STRING = "([^\\s]+)(\\s+(.*))";
+    protected final Pattern VENDOR_PATTERN = Pattern.compile(VENDOR_PATTERN_STRING);
+
     protected final Destination destination;
     protected final Path outputPath;
     protected final PropertyFactory propertyFactory;
@@ -86,6 +105,34 @@ public class CndImporter {
     protected final NameFactory nameFactory;
     protected final ValueFactories valueFactories;
     protected final boolean jcr170;
+    protected final boolean useVendorExtensions;
+
+    /**
+     * Create a new importer that will place the content in the supplied destination under the supplied path.
+     * 
+     * @param destination the destination where content is to be written
+     * @param parentPath the path in the destination below which the generated content is to appear
+     * @param compatibleWithPreJcr2 true if this parser should accept the CND format that was used in the reference implementation
+     *        prior to JCR 2.0.
+     * @param useVendorExtensions true if the vendor extensions should be used, or false if they should be ignored
+     * @throws IllegalArgumentException if either parameter is null
+     */
+    public CndImporter( Destination destination,
+                        Path parentPath,
+                        boolean compatibleWithPreJcr2,
+                        boolean useVendorExtensions ) {
+        CheckArg.isNotNull(destination, "destination");
+        CheckArg.isNotNull(parentPath, "parentPath");
+        this.destination = destination;
+        this.outputPath = parentPath;
+        ExecutionContext context = destination.getExecutionContext();
+        this.valueFactories = context.getValueFactories();
+        this.propertyFactory = context.getPropertyFactory();
+        this.pathFactory = valueFactories.getPathFactory();
+        this.nameFactory = valueFactories.getNameFactory();
+        this.jcr170 = compatibleWithPreJcr2;
+        this.useVendorExtensions = useVendorExtensions;
+    }
 
     /**
      * Create a new importer that will place the content in the supplied destination under the supplied path.
@@ -99,21 +146,12 @@ public class CndImporter {
     public CndImporter( Destination destination,
                         Path parentPath,
                         boolean compatibleWithPreJcr2 ) {
-        CheckArg.isNotNull(destination, "destination");
-        CheckArg.isNotNull(parentPath, "parentPath");
-        this.destination = destination;
-        this.outputPath = parentPath;
-        ExecutionContext context = destination.getExecutionContext();
-        this.valueFactories = context.getValueFactories();
-        this.propertyFactory = context.getPropertyFactory();
-        this.pathFactory = valueFactories.getPathFactory();
-        this.nameFactory = valueFactories.getNameFactory();
-        this.jcr170 = compatibleWithPreJcr2;
+        this(destination, parentPath, compatibleWithPreJcr2, DEFAULT_USE_VENDOR_EXTENSIONS);
     }
 
     /**
      * Create a new importer that will place the content in the supplied destination under the supplied path. This parser will
-     * accept the CND format that was used in the reference implementation prior to JCR 2.0.
+     * accept the CND format that was used in the reference implementation prior to JCR 2.0, and will support vendor extensions.
      * 
      * @param destination the destination where content is to be written
      * @param parentPath the path in the destination below which the generated content is to appear
@@ -121,7 +159,7 @@ public class CndImporter {
      */
     public CndImporter( Destination destination,
                         Path parentPath ) {
-        this(destination, parentPath, true);
+        this(destination, parentPath, DEFAULT_COMPATIBLE_WITH_PREJCR2, DEFAULT_USE_VENDOR_EXTENSIONS);
     }
 
     /**
@@ -177,7 +215,7 @@ public class CndImporter {
      * @throws ParsingException if there is a problem parsing the content
      */
     protected void parse( String content ) {
-        Tokenizer tokenizer = new CndTokenizer(false, false);
+        Tokenizer tokenizer = new CndTokenizer(false, true);
         TokenStream tokens = new TokenStream(content, tokenizer, false);
         tokens.start();
         while (tokens.hasNext()) {
@@ -231,7 +269,7 @@ public class CndImporter {
         List<Name> supertypes = parseSupertypes(tokens);
         properties.add(propertyFactory.create(JcrLexicon.SUPERTYPES, supertypes)); // even if empty
 
-        // Read the node type options ...
+        // Read the node type options (and vendor extensions) ...
         parseNodeTypeOptions(tokens, properties);
         destination.create(nodeTypePath, properties);
 
@@ -351,6 +389,8 @@ public class CndImporter {
                 // variant on-parent-version
                 onParentVersion = tokens.consume();
                 tokens.canConsume('?');
+            } else if (tokens.matches(CndTokenizer.VENDOR_EXTENSION)) {
+                parseVendorExtensions(tokens, properties);
             } else {
                 // No more valid options on the stream, so stop ...
                 break;
@@ -412,11 +452,14 @@ public class CndImporter {
         // Parse the default values ...
         parseDefaultValues(tokens, properties);
 
-        // Parse the property attributes ...
+        // Parse the property attributes (and vendor extensions) ...
         parsePropertyAttributes(tokens, properties, name, path);
 
         // Parse the property constraints ...
         parseValueConstraints(tokens, properties);
+
+        // Parse the vendor extensions (appearing after the constraints) ...
+        parseVendorExtensions(tokens, properties);
 
         // Create the node in the destination ...
         destination.create(path, properties);
@@ -538,6 +581,8 @@ public class CndImporter {
                 // Then this child node is considered the primary item ...
                 Property primaryItem = propertyFactory.create(JcrLexicon.PRIMARY_ITEM_NAME, propDefnName);
                 destination.setProperties(propDefnPath.getParent(), primaryItem);
+            } else if (tokens.matches(CndTokenizer.VENDOR_EXTENSION)) {
+                parseVendorExtensions(tokens, properties);
             } else {
                 break;
             }
@@ -693,6 +738,8 @@ public class CndImporter {
                 // Then this child node is considered the primary item ...
                 Property primaryItem = propertyFactory.create(JcrLexicon.PRIMARY_ITEM_NAME, childNodeDefnName);
                 destination.setProperties(childNodeDefnPath.getParent(), primaryItem);
+            } else if (tokens.matches(CndTokenizer.VENDOR_EXTENSION)) {
+                parseVendorExtensions(tokens, properties);
             } else {
                 break;
             }
@@ -723,5 +770,51 @@ public class CndImporter {
     protected final String removeQuotes( String text ) {
         // Remove leading and trailing quotes, if there are any ...
         return text.replaceFirst("^['\"]+", "").replaceAll("['\"]+$", "");
+    }
+
+    /**
+     * Parse the vendor extensions that may appear next on the tokenzied stream.
+     * 
+     * @param tokens token stream; may not be null
+     * @param properties the list of properties to which any vendor extension properties should be added
+     */
+    protected final void parseVendorExtensions( TokenStream tokens,
+                                                List<Property> properties ) {
+        while (tokens.matches(CndTokenizer.VENDOR_EXTENSION)) {
+            Property extension = parseVendorExtension(tokens.consume());
+            if (extension != null) properties.add(extension);
+        }
+    }
+
+    /**
+     * Parse the vendor extension, including the curly braces in the CND content.
+     * 
+     * @param vendorExtension the vendor extension string
+     * @return the property representing the vendor extension, or null if the vendor extension is incomplete
+     */
+    protected final Property parseVendorExtension( String vendorExtension ) {
+        if (vendorExtension == null) return null;
+        // Remove the curly braces ...
+        String extension = vendorExtension.replaceFirst("^[{]", "").replaceAll("[}]$", "");
+        if (extension.trim().length() == 0) return null;
+        return parseVendorExtensionContent(extension);
+    }
+
+    /**
+     * Parse the content of the vendor extension excluding the curly braces in the CND content.
+     * 
+     * @param vendorExtension the vendor extension string; never null
+     * @return the property representing the vendor extension, or null if the vendor extension is incomplete
+     */
+    protected final Property parseVendorExtensionContent( String vendorExtension ) {
+        Matcher matcher = VENDOR_PATTERN.matcher(vendorExtension);
+        if (!matcher.find()) return null;
+        String vendorName = removeQuotes(matcher.group(1));
+        String vendorValue = removeQuotes(matcher.group(3));
+        assert vendorName != null;
+        assert vendorValue != null;
+        assert vendorName.length() != 0;
+        assert vendorValue.length() != 0;
+        return propertyFactory.create(nameFactory.create(vendorName), vendorValue);
     }
 }
