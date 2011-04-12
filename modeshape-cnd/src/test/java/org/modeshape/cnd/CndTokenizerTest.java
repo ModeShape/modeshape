@@ -26,12 +26,12 @@ package org.modeshape.cnd;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import java.util.LinkedList;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.text.Position;
 import org.modeshape.common.text.TokenStream.CharacterArrayStream;
 import org.modeshape.common.text.TokenStream.Tokens;
-import org.junit.Before;
-import org.junit.Test;
 
 public class CndTokenizerTest {
 
@@ -44,12 +44,14 @@ public class CndTokenizerTest {
         tokenizer = new CndTokenizer(true, false);
         final LinkedList<int[]> tokenValues = new LinkedList<int[]>();
         tokenFactory = new Tokens() {
+            @Override
             public void addToken( Position position,
                                   int index ) {
                 int[] token = new int[] {index, index + 1, 0};
                 tokenValues.add(token);
             }
 
+            @Override
             public void addToken( Position position,
                                   int startIndex,
                                   int endIndex ) {
@@ -57,6 +59,7 @@ public class CndTokenizerTest {
                 tokenValues.add(token);
             }
 
+            @Override
             public void addToken( Position position,
                                   int startIndex,
                                   int endIndex,

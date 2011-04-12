@@ -43,6 +43,12 @@ import org.modeshape.common.annotation.Immutable;
 @Immutable
 public class JdbcMetadataCollector implements MetadataCollector {
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.connector.meta.jdbc.MetadataCollector#getCatalogNames(java.sql.Connection)
+     */
+    @Override
     public List<String> getCatalogNames( Connection conn ) throws JdbcMetadataException {
         List<String> catalogNames = new LinkedList<String>();
 
@@ -64,6 +70,13 @@ public class JdbcMetadataCollector implements MetadataCollector {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.connector.meta.jdbc.MetadataCollector#getColumns(java.sql.Connection, java.lang.String,
+     *      java.lang.String, java.lang.String, java.lang.String)
+     */
+    @Override
     public List<ColumnMetadata> getColumns( Connection conn,
                                             String catalogName,
                                             String schemaName,
@@ -107,6 +120,12 @@ public class JdbcMetadataCollector implements MetadataCollector {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.connector.meta.jdbc.MetadataCollector#getSchemaNames(java.sql.Connection, java.lang.String)
+     */
+    @Override
     public List<String> getSchemaNames( Connection conn,
                                         String catalogName ) throws JdbcMetadataException {
         List<String> schemaNames = new LinkedList<String>();
@@ -149,6 +168,13 @@ public class JdbcMetadataCollector implements MetadataCollector {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.connector.meta.jdbc.MetadataCollector#getTables(java.sql.Connection, java.lang.String, java.lang.String,
+     *      java.lang.String)
+     */
+    @Override
     public List<TableMetadata> getTables( Connection conn,
                                           String catalogName,
                                           String schemaName,
@@ -188,6 +214,13 @@ public class JdbcMetadataCollector implements MetadataCollector {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.connector.meta.jdbc.MetadataCollector#getProcedures(java.sql.Connection, java.lang.String,
+     *      java.lang.String, java.lang.String)
+     */
+    @Override
     public List<ProcedureMetadata> getProcedures( Connection conn,
                                                   String catalogName,
                                                   String schemaName,

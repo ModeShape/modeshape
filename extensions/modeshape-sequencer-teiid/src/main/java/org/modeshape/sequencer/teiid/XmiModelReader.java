@@ -29,9 +29,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
-import java.util.Map.Entry;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.text.Jsr283Encoder;
 import org.modeshape.common.text.TextEncoder;
@@ -725,7 +725,6 @@ public class XmiModelReader extends XmiGraphReader {
                 for (UUID mmuuid : mmuuids) {
                     PropertySet props = reader.propertiesFor(mmuuid, true);
                     // Process the description ...
-                    String desc = reader.firstValue(annotation, "description");
                     props.add(CoreLexicon.DESCRIPTION, reader.firstValue(annotation, "description"));
                     props.add(JcrLexicon.MIXIN_TYPES, CoreLexicon.ANNOTATED);
                     // Process the tags ...

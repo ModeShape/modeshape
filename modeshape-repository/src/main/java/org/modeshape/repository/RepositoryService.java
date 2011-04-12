@@ -225,7 +225,6 @@ public class RepositoryService implements AdministeredService, Observer {
     }
 
     public String getJndiName() {
-        // TODO
         return null;
     }
 

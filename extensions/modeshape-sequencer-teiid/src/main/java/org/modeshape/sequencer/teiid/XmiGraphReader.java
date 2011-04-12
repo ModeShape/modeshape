@@ -442,7 +442,7 @@ public class XmiGraphReader {
         if (property == null) return null;
         String mmuuid = stringFactory.create(property.getFirstValue());
         if (mmuuid.startsWith("mmuuid:")) mmuuid = mmuuid.substring(7);
-        UUID result = property == null ? null : this.uuidFactory.create(mmuuid);
+        UUID result = this.uuidFactory.create(mmuuid);
         assert result != null;
         return result;
     }

@@ -26,7 +26,6 @@ package org.modeshape.extractor.teiid;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -73,7 +72,7 @@ public class TeiidVdbTextExtractor implements TextExtractor {
     @Override
     public void extractFrom( InputStream stream,
                              TextExtractorOutput output,
-                             TextExtractorContext context ) throws IOException {
+                             TextExtractorContext context ) {
         ValueFactory<String> stringFactory = context.getValueFactories().getStringFactory();
         AtomicInteger version = new AtomicInteger(0);
 

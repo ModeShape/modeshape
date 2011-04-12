@@ -32,10 +32,10 @@ import javax.naming.Reference;
 import javax.naming.StringRefAddr;
 import javax.naming.spi.ObjectFactory;
 import javax.sql.DataSource;
-import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.annotation.Category;
 import org.modeshape.common.annotation.Description;
 import org.modeshape.common.annotation.Label;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.Logger;
 import org.modeshape.connector.meta.jdbc.JdbcMetadataRepository.JdbcMetadataTransaction;
@@ -241,6 +241,12 @@ public class JdbcMetadataSource extends AbstractRepositorySource implements Obje
         return this.dataSource;
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.connector.RepositorySource#getCapabilities()
+     */
+    @Override
     public RepositorySourceCapabilities getCapabilities() {
         return this.capabilities;
     }
@@ -303,6 +309,12 @@ public class JdbcMetadataSource extends AbstractRepositorySource implements Obje
 
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.connector.RepositorySource#getConnection()
+     */
+    @Override
     public RepositoryConnection getConnection() throws RepositorySourceException {
         if (this.getName() == null || this.getName().trim().length() == 0) {
             throw new RepositorySourceException(JdbcMetadataI18n.repositorySourceMustHaveName.text());
@@ -323,6 +335,12 @@ public class JdbcMetadataSource extends AbstractRepositorySource implements Obje
         return new Connection<PathNode, JdbcMetadataWorkspace>(this, repository);
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.naming.Referenceable#getReference()
+     */
+    @Override
     public Reference getReference() {
         String className = getClass().getName();
         String factoryClassName = this.getClass().getName();
@@ -355,6 +373,13 @@ public class JdbcMetadataSource extends AbstractRepositorySource implements Obje
         return ref;
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.naming.spi.ObjectFactory#getObjectInstance(java.lang.Object, javax.naming.Name, javax.naming.Context,
+     *      java.util.Hashtable)
+     */
+    @Override
     public Object getObjectInstance( Object obj,
                                      javax.naming.Name name,
                                      Context nameCtx,
@@ -605,6 +630,7 @@ public class JdbcMetadataSource extends AbstractRepositorySource implements Obje
      * 
      * @return the name of the workspace that should be used by default, or null if there is no default workspace
      */
+    @Override
     public String getDefaultWorkspaceName() {
         return defaultWorkspace;
     }
@@ -709,6 +735,7 @@ public class JdbcMetadataSource extends AbstractRepositorySource implements Obje
      * @param updatesAllowed must be true
      * @throws RepositorySourceException if {@code updatesAllowed != true}.
      */
+    @Override
     public void setUpdatesAllowed( boolean updatesAllowed ) {
         if (updatesAllowed == false) {
             throw new RepositorySourceException(JdbcMetadataI18n.sourceIsReadOnly.text(this.getName()));

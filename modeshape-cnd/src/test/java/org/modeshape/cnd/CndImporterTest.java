@@ -28,11 +28,8 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.modeshape.graph.IsNodeWithProperty.hasProperty;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
@@ -106,8 +103,6 @@ public class CndImporterTest {
                          String childNodeName,
                          String nameValue ) {
         Node a = graph.getNodeAt("/a/" + pathToNode);
-        List<Location> children = a.getChildren();
-
         for (Location childLocation : a.getChildren()) {
             if (!childLocation.getPath().getLastSegment().getName().equals(name(childNodeName))) continue;
             Node child = graph.getNodeAt(childLocation);
@@ -124,11 +119,11 @@ public class CndImporterTest {
         return graph.getNodeAt("/a/" + pathToNode);
     }
 
-    protected InputStream openCndStream( String cndFileName ) throws IOException {
+    protected InputStream openCndStream( String cndFileName ) {
         return this.getClass().getClassLoader().getResourceAsStream("cnd/" + cndFileName);
     }
 
-    protected File openCndFile( String cndFileName ) throws IOException, URISyntaxException {
+    protected File openCndFile( String cndFileName ) {
         File result = new File(CND_FILE_PATH + cndFileName);
         assertThat(result.exists(), is(true));
         return result;
@@ -207,7 +202,7 @@ public class CndImporterTest {
     }
 
     @Test
-    public void shouldImportCndThatUsesAllFeatures() throws IOException {
+    public void shouldImportCndThatUsesAllFeatures() {
         // importer.setDebug(true);
         String cnd = "<ex = 'http://namespace.com/ns'>\n"
                      + "[ex:NodeType] > ex:ParentType1, ex:ParentType2 abstract orderable mixin noquery primaryitem ex:property\n"
@@ -244,22 +239,22 @@ public class CndImporterTest {
     }
 
     @Test
-    public void shouldImportCndThatIsOnOneLine() throws IOException {
+    public void shouldImportCndThatIsOnOneLine() {
         String cnd = "<ns = 'http://namespace.com/ns'> "
                      + "[ns:NodeType] > ns:ParentType1, ns:ParentType2 abstract orderable mixin noquery primaryitem ex:property "
                      + "- ex:property (STRING) = 'default1', 'default2' mandatory autocreated protected multiple VERSION < 'constraint1', 'constraint2' "
                      + " queryops '=, <>, <, <=, >, >=, LIKE' nofulltext noqueryorder "
                      + "+ ns:node (ns:reqType1, ns:reqType2) = ns:defaultType mandatory autocreated protected sns version";
-        // importer.importFrom(cnd, problems, "string");
+        importer.importFrom(cnd, problems, "string");
     }
 
     @Test
-    public void shouldImportCndThatHasNoChildren() throws IOException {
+    public void shouldImportCndThatHasNoChildren() {
         String cnd = "<ns = 'http://namespace.com/ns'>\n"
                      + "[ns:NodeType] > ns:ParentType1, ns:ParentType2 abstract orderable mixin noquery primaryitem ex:property\n"
                      + "- ex:property (STRING) = 'default1', 'default2' mandatory autocreated protected multiple VERSION < 'constraint1', 'constraint2'\n"
                      + " queryops '=, <>, <, <=, >, >=, LIKE' nofulltext noqueryorder";
-        // importer.importFrom(cnd, problems, "string");
+        importer.importFrom(cnd, problems, "string");
     }
 
     @Test
@@ -624,8 +619,8 @@ public class CndImporterTest {
         } else {
             assertThat(nodeType, hasProperty(JcrLexicon.ON_PARENT_VERSION, "COPY")); // it's copy by default
         }
-        assertThat(nodeType, hasProperty(JcrLexicon.IS_FULL_TEXT_SEARCHABLE,
-                                         !options.contains(PropertyOptions.FullTextSearchable)));
+        assertThat(nodeType,
+                   hasProperty(JcrLexicon.IS_FULL_TEXT_SEARCHABLE, !options.contains(PropertyOptions.FullTextSearchable)));
         assertThat(nodeType, hasProperty(JcrLexicon.IS_QUERY_ORDERABLE, !options.contains(PropertyOptions.QueryOrderable)));
         if (valueConstraints.length != 0) {
             assertThat(nodeType, hasProperty(JcrLexicon.VALUE_CONSTRAINTS, (Object[])valueConstraints));

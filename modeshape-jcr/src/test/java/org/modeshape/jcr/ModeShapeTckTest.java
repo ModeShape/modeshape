@@ -163,8 +163,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
     }
 
     protected boolean useDeprecatedApi() {
-        return true;
-        // return false; // TODO: fix this when we've implemented the new version methods
+        return false;
     }
 
     @SuppressWarnings( "deprecation" )
