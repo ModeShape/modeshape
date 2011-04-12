@@ -466,7 +466,6 @@ public class JcrMetaDataTeiidSupportTest extends ResultsComparator {
         expected.put("getMaxTableNameLength", new Integer(NO_LIMIT));
         expected.put("getMaxTablesInSelect", new Integer(NO_LIMIT));
         expected.put("getMaxUserNameLength", new Integer(NO_LIMIT));
-        // TODO: change expected value;
         expected.put("getSQLStateType", new Integer(0));
 
         // return type -- String

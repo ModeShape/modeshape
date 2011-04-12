@@ -32,8 +32,8 @@ import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.Subgraph;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NamespaceRegistry;
-import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.NamespaceRegistry.Namespace;
+import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.basic.LocalNamespaceRegistry;
 import org.modeshape.graph.sequencer.SequencerOutput;
 import org.modeshape.graph.sequencer.StreamSequencer;
@@ -81,6 +81,7 @@ public class ModelSequencer implements StreamSequencer {
      * @see org.modeshape.graph.sequencer.StreamSequencer#sequence(java.io.InputStream,
      *      org.modeshape.graph.sequencer.SequencerOutput, org.modeshape.graph.sequencer.StreamSequencerContext)
      */
+    @Override
     public void sequence( InputStream stream,
                           SequencerOutput output,
                           StreamSequencerContext context ) {

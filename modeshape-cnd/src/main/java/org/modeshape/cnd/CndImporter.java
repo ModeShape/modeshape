@@ -57,8 +57,8 @@ import org.modeshape.graph.property.ValueFormatException;
 
 /**
  * A class that imports the node types contained in a JCR Compact Node Definition (CND) file into graph content. The content is
- * written using the graph structured defined by JCR and the "{@code nt:nodeType}", "{@code nt:propertyDefinition}", and "{@code
- * nt:childNodeDefinition}" node types.
+ * written using the graph structured defined by JCR and the "{@code nt:nodeType}", "{@code nt:propertyDefinition}", and "
+ * {@code nt:childNodeDefinition}" node types.
  * <p>
  * Although instances of this class never change their behavior and all processing is done in local contexts, {@link Destination}
  * is not thread-safe and therefore this component may not be considered thread-safe.
@@ -166,7 +166,7 @@ public class CndImporter {
             parse(content);
             destination.submit();
         } catch (RuntimeException e) {
-            problems.addError(e, CndI18n.errorImportingCndContent, (Object)resourceName, e.getMessage());
+            problems.addError(e, CndI18n.errorImportingCndContent, resourceName, e.getMessage());
         }
     }
 

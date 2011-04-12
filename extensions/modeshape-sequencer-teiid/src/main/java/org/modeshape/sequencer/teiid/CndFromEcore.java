@@ -327,17 +327,17 @@ public class CndFromEcore {
                 // Write out the property and child node definitions ...
                 for (Location feature : classifier.getChildren()) {
                     SubgraphNode structuralFeature = classifier.getNode(feature.getPath().getLastSegment());
-                    String featureType = firstValue(structuralFeature, "xsi:type"); // e.g., 'ecore:EAttribute'
+                    // String featureType = firstValue(structuralFeature, "xsi:type"); // e.g., 'ecore:EAttribute'
                     Name featureName = nameFrom(firstValue(structuralFeature, "name"));
                     long upperBound = firstValue(structuralFeature, "upperBound", 1L);
                     long lowerBound = firstValue(structuralFeature, "lowerBound", 0L);
                     boolean isSingle = upperBound == 1;
                     boolean isRequired = lowerBound > 0;
-                    boolean isReference = "ecore:EReference".equals(featureType);
-                    boolean isTransient = firstValue(structuralFeature, "transient", false);
+                    // boolean isReference = "ecore:EReference".equals(featureType);
+                    // boolean isTransient = firstValue(structuralFeature, "transient", false);
                     boolean isContainment = firstValue(structuralFeature, "containment", false);
-                    boolean isUnsettable = firstValue(structuralFeature, "unsettable", false);
-                    boolean isVolatile = firstValue(structuralFeature, "volatile", false);
+                    // boolean isUnsettable = firstValue(structuralFeature, "unsettable", false);
+                    // boolean isVolatile = firstValue(structuralFeature, "volatile", false);
                     boolean isChangeble = firstValue(structuralFeature, "changeable", true);
                     Name dataType = nameFrom(firstValue(structuralFeature, "eType"));
                     String defaultValue = firstValue(structuralFeature, "defaultValueLiteral");
@@ -352,7 +352,6 @@ public class CndFromEcore {
 
                     if (isContainment) {
                         // This is a child node definition ...
-                        int x = 0;
                     } else {
                         // This is a property definition ...
                         String propDefnName = stringFrom(featureName);

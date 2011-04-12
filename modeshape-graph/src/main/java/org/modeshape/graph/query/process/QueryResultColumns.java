@@ -192,10 +192,6 @@ public class QueryResultColumns implements Columns {
                     String columnNameWithSelector = column.selectorName() + "." + columnNameWithoutSelector;
                     columnIndex = wrappedAround.columnIndexForName(columnNameWithSelector);
                 }
-                if (columnIndex == null) {
-                    // The column may have been a residual property that was not defined in the schema ...
-                    int x = 0;
-                }
             }
             assert columnIndex != null;
             columnIndexByColumnName.put(columnName, columnIndex);

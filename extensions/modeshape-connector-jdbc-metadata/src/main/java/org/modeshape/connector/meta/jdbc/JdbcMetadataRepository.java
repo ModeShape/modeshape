@@ -42,9 +42,9 @@ import org.modeshape.graph.connector.base.PathTransaction;
 import org.modeshape.graph.connector.base.Repository;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
+import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.PropertyFactory;
-import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.request.InvalidWorkspaceException;
 
 @ThreadSafe
@@ -97,8 +97,8 @@ public class JdbcMetadataRepository extends Repository<PathNode, JdbcMetadataWor
             rootNodeProperties.put(propName, propFactory.create(propName, databaseMinorVersion));
 
             rootNodeProperties.put(JcrLexicon.PRIMARY_TYPE, propFactory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.ROOT));
-            rootNodeProperties.put(JcrLexicon.MIXIN_TYPES, propFactory.create(JcrLexicon.MIXIN_TYPES,
-                                                                              JdbcMetadataLexicon.DATABASE_ROOT));
+            rootNodeProperties.put(JcrLexicon.MIXIN_TYPES,
+                                   propFactory.create(JcrLexicon.MIXIN_TYPES, JdbcMetadataLexicon.DATABASE_ROOT));
 
             rootNodeProperties = Collections.unmodifiableMap(rootNodeProperties);
         } catch (SQLException se) {
@@ -152,10 +152,12 @@ public class JdbcMetadataRepository extends Repository<PathNode, JdbcMetadataWor
             throw new RepositorySourceException(JdbcMetadataI18n.sourceIsReadOnly.text(source().getName()));
         }
 
+        @Override
         public boolean destroyWorkspace( JdbcMetadataWorkspace workspace ) throws InvalidWorkspaceException {
             throw new RepositorySourceException(JdbcMetadataI18n.sourceIsReadOnly.text(source().getName()));
         }
 
+        @Override
         public JdbcMetadataWorkspace getWorkspace( String name,
                                                    JdbcMetadataWorkspace originalToClone ) throws InvalidWorkspaceException {
             if (name.equals(source().getDefaultWorkspaceName())) {

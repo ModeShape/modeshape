@@ -61,6 +61,7 @@ public class CndTokenizer implements Tokenizer {
      * 
      * @see org.modeshape.common.text.TokenStream.Tokenizer#tokenize(CharacterStream, Tokens)
      */
+    @Override
     public void tokenize( CharacterStream input,
                           Tokens tokens ) throws ParsingException {
         while (input.hasNext()) {
@@ -92,7 +93,6 @@ public class CndTokenizer implements Tokenizer {
                     int startIndex = input.index();
                     Position startingPosition = input.position(startIndex);
                     boolean foundClosingBrace = false;
-                    String vendorName = "";
                     while (input.hasNext()) {
                         c = input.next();
                         if (c == '\\' && input.isNext('}')) {
