@@ -39,7 +39,7 @@
       <fileMode>0744</fileMode>
     </file>
     <file>
-      <source>src/main/resources/log4j.properties</source>
+      <source>logback.xml</source>
       <fileMode>0644</fileMode>
     </file>
   </files>
