@@ -62,6 +62,8 @@ import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.common.collection.LinkedListMultimap;
+import org.modeshape.common.collection.Multimap;
 import org.modeshape.common.collection.UnmodifiableProperties;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.text.Inflector;
@@ -120,8 +122,6 @@ import org.modeshape.jcr.query.JcrQomQueryParser;
 import org.modeshape.jcr.query.JcrSql2QueryParser;
 import org.modeshape.jcr.query.JcrSqlQueryParser;
 import org.modeshape.jcr.xpath.XPathQueryParser;
-import com.google.common.collect.LinkedListMultimap;
-import com.google.common.collect.Multimap;
 
 /**
  * Creates JCR {@link Session sessions} to an underlying repository (which may be a federated repository).

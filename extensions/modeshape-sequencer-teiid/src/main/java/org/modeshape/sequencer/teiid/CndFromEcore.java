@@ -28,6 +28,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import org.modeshape.common.collection.ArrayListMultimap;
+import org.modeshape.common.collection.Multimap;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.i18n.I18n;
@@ -43,8 +45,6 @@ import org.modeshape.graph.property.NamespaceRegistry.Namespace;
 import org.modeshape.graph.property.basic.LocalNamespaceRegistry;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
 
 /**
  * Utility class to generate a CND file from an ECore model.

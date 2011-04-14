@@ -28,9 +28,9 @@ import java.util.HashSet;
 import java.util.Set;
 import javax.jcr.nodetype.NodeType;
 import org.modeshape.common.annotation.Immutable;
+import org.modeshape.common.collection.LinkedListMultimap;
+import org.modeshape.common.collection.Multimap;
 import org.modeshape.graph.property.Name;
-import com.google.common.collect.LinkedListMultimap;
-import com.google.common.collect.Multimap;
 
 /**
  * A utility class that maintains a quick-lookup cache of all the child node definitions and property definitions for a series of

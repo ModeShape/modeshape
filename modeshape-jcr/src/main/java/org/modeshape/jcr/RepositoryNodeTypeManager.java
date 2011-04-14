@@ -966,7 +966,7 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                     throw new IllegalStateException("Should be unreachable: " + typeToCheck);
             }
 
-            matchingDefs.addAll(propDefs);
+            if (!propDefs.isEmpty()) matchingDefs.addAll(propDefs);
         }
 
         return matchingDefs;

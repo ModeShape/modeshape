@@ -36,6 +36,8 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.modeshape.common.annotation.Immutable;
+import org.modeshape.common.collection.ArrayListMultimap;
+import org.modeshape.common.collection.Multimap;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.Location;
@@ -44,8 +46,6 @@ import org.modeshape.graph.query.model.Column;
 import org.modeshape.graph.query.model.Constraint;
 import org.modeshape.graph.query.model.FullTextSearch;
 import org.modeshape.graph.query.model.Visitors;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
 
 /**
  * Defines the columns associated with the results of a query. This definition allows the values to be accessed

@@ -33,6 +33,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 import org.modeshape.common.annotation.NotThreadSafe;
+import org.modeshape.common.collection.ArrayListMultimap;
+import org.modeshape.common.collection.Multimap;
 import org.modeshape.common.text.Jsr283Encoder;
 import org.modeshape.common.text.TextEncoder;
 import org.modeshape.graph.JcrLexicon;
@@ -58,8 +60,6 @@ import org.modeshape.sequencer.teiid.lexicon.TransformLexicon;
 import org.modeshape.sequencer.teiid.lexicon.VdbLexicon;
 import org.modeshape.sequencer.teiid.lexicon.XmiLexicon;
 import org.modeshape.sequencer.teiid.lexicon.XsiLexicon;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
 
 /**
  * 

@@ -46,10 +46,6 @@
       <artifactId>hsqldb</artifactId>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>com.google.collections</groupId>
-      <artifactId>google-collections</artifactId>
-    </dependency>
     <!-- 
     Testing (note the scope)
     -->

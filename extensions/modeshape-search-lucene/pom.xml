@@ -53,10 +53,6 @@
       <artifactId>lucene-misc</artifactId>
       <version>3.0.2</version>
     </dependency>
-      <dependency>
-         <groupId>com.google.collections</groupId>
-         <artifactId>google-collections</artifactId>
-      </dependency>
     <!-- 
     Testing (note the scope)
     -->
