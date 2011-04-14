@@ -41,4 +41,13 @@
 			</plugin>
     </plugins>
   </build>
+
+	<repositories>
+		<!-- Required when modeshape-parent is not yet in local maven repo -->
+		<repository>
+			<id>jboss</id>
+			<url>http://repository.jboss.org/nexus/content/groups/public/</url>
+		</repository>
+	</repositories>
+  
 </project>
