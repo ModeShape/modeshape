@@ -21,6 +21,7 @@ import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
+import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.ValueFactory;
 import javax.jcr.lock.LockException;
 import javax.jcr.lock.LockManager;
@@ -1880,6 +1881,43 @@ public class ModeShapeTckTest extends AbstractJCRTest {
             tmp.remove();
             session1.save();
             session1.logout();
+        }
+    }
+
+    @FixFor( "MODE-1089" )
+    public void testShouldNotFailGettingVersionHistoryForNodeMadeVersionableSinceLastSave() throws Exception {
+        Session session1 = getHelper().getSuperuserSession();
+        VersionManager vm = session1.getWorkspace().getVersionManager();
+
+        // Create node structure
+        Node root = session1.getRootNode();
+        Node area = root.addNode("tmp2", "nt:unstructured");
+
+        Node outer = area.addNode("outerFolder");
+        Node inner = outer.addNode("innerFolder");
+        Node file = inner.addNode("testFile.dat");
+        file.setProperty("jcr:mimeType", "text/plain");
+        file.setProperty("jcr:data", "Original content");
+        session1.save();
+
+        file.addMixin("mix:versionable");
+        // session.save();
+
+        isVersionable(vm, file); // here's the problem
+        session1.save();
+
+        Version v1 = vm.checkin(file.getPath());
+        assertThat(v1, is(notNullValue()));
+        // System.out.println("Created version: " + v1);
+    }
+
+    boolean isVersionable( VersionManager vm,
+                           Node node ) throws RepositoryException {
+        try {
+            vm.getVersionHistory(node.getPath());
+            return true;
+        } catch (UnsupportedRepositoryOperationException e) {
+            return false;
         }
     }
 }
