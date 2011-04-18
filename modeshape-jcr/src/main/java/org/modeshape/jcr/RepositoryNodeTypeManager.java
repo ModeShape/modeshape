@@ -1599,8 +1599,8 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
     }
 
     /**
-     * Registers a new node type or updates an existing node type using the specified definition and returns the resulting
-     * {@code NodeType} object.
+     * Registers a new node type or updates an existing node type using the specified definition and returns the resulting {@code
+     * NodeType} object.
      * <p>
      * For details, see {@link #registerNodeTypes(Iterable)}.
      * </p>
@@ -1614,27 +1614,33 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
      */
     JcrNodeType registerNodeType( NodeTypeDefinition ntd )
         throws InvalidNodeTypeDefinitionException, NodeTypeExistsException, RepositoryException {
-        assert ntd != null;
-        List<JcrNodeType> result = registerNodeTypes(Collections.singletonList(ntd));
-        return result.isEmpty() ? null : result.get(0);
+
+        return registerNodeType(ntd, true);
     }
 
     /**
-     * Registers or updates the specified {@link NodeTypeDefinition} objects.
+     * Registers a new node type or updates an existing node type using the specified definition and returns the resulting {@code
+     * NodeType} object.
      * <p>
      * For details, see {@link #registerNodeTypes(Iterable)}.
      * </p>
      * 
-     * @param ntds the node type definitions
-     * @return the newly registered (or updated) {@link NodeType NodeTypes}
-     * @throws InvalidNodeTypeDefinitionException
-     * @throws NodeTypeExistsException
-     * @throws RepositoryException
+     * @param ntd the {@code NodeTypeDefinition} to register
+     * @param failIfNodeTypeExists indicates whether the registration should proceed if there is already a type with the same
+     *        name; {@code true} indicates that the registration should fail with an error if a node type with the same name
+     *        already exists
+     * @return the newly registered (or updated) {@code NodeType}
+     * @throws InvalidNodeTypeDefinitionException if the {@code NodeTypeDefinition} is invalid
+     * @throws NodeTypeExistsException if <code>allowUpdate</code> is false and the {@code NodeTypeDefinition} specifies a node
+     *         type name that is already registered
+     * @throws RepositoryException if another error occurs
      */
-    List<JcrNodeType> registerNodeTypes( NodeTypeDefinition[] ntds )
+    JcrNodeType registerNodeType( NodeTypeDefinition ntd,
+                                  boolean failIfNodeTypeExists )
         throws InvalidNodeTypeDefinitionException, NodeTypeExistsException, RepositoryException {
-        assert ntds != null;
-        return registerNodeTypes(Arrays.asList(ntds));
+        assert ntd != null;
+        List<JcrNodeType> result = registerNodeTypes(Collections.singletonList(ntd), failIfNodeTypeExists);
+        return result.isEmpty() ? null : result.get(0);
     }
 
     /**
