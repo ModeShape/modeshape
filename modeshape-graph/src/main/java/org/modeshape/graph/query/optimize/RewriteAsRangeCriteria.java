@@ -30,6 +30,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import org.modeshape.common.annotation.Immutable;
+import org.modeshape.common.collection.ArrayListMultimap;
+import org.modeshape.common.collection.Multimap;
 import org.modeshape.graph.property.ValueComparators;
 import org.modeshape.graph.query.QueryContext;
 import org.modeshape.graph.query.model.And;
@@ -46,8 +48,6 @@ import org.modeshape.graph.query.model.Visitor;
 import org.modeshape.graph.query.plan.PlanNode;
 import org.modeshape.graph.query.plan.PlanNode.Property;
 import org.modeshape.graph.query.plan.PlanNode.Type;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
 
 /**
  * An {@link OptimizerRule optimizer rule} that rewrites two {@link And AND-ed} {@link Constraint}s that constraint a dynamic

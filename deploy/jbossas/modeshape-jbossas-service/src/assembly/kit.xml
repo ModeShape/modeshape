@@ -42,7 +42,6 @@
 
             <!-- 3rd party dependencies required by the ModeShape JCR engine -->
             <include>joda-time:joda-time</include>
-            <include>com.google.collections:google-collections</include>
             <include>org.apache.lucene:lucene-core</include>
             <include>org.apache.lucene:lucene-analyzers</include>
             <include>org.apache.lucene:lucene-snowball</include>

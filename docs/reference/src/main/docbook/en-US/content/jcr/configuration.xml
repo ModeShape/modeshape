@@ -1201,7 +1201,6 @@ deploy/modeshape-jboss-beans.xml
 deploy/modeshape-services.jar/
 deploy/modeshape-services.jar/META-INF/
 deploy/modeshape-services.jar/aperture-1.1.0.Beta1.jar 
-deploy/modeshape-services.jar/google-collections-1.0.jar  
 deploy/modeshape-services.jar/joda-time-1.6.jar  
 deploy/modeshape-services.jar/lucene-analyzers-3.0.2.jar  
 deploy/modeshape-services.jar/lucene-core-3.0.2.jar  

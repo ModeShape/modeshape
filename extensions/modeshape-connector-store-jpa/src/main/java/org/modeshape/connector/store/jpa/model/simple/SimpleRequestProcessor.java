@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.modeshape.common.collection.LinkedListMultimap;
 import org.modeshape.connector.store.jpa.JpaConnectorI18n;
 import org.modeshape.connector.store.jpa.JpaSource;
 import org.modeshape.graph.ExecutionContext;
@@ -20,7 +21,6 @@ import org.modeshape.graph.request.CreateWorkspaceRequest;
 import org.modeshape.graph.request.InvalidRequestException;
 import org.modeshape.graph.request.ReadBranchRequest;
 import org.modeshape.graph.request.processor.RequestProcessor;
-import com.google.common.collect.LinkedListMultimap;
 
 /**
  * Extension of the {@link MapRequestProcessor} that provides a {@link #process(ReadBranchRequest)} implementation optimized for

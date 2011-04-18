@@ -33,6 +33,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.xml.parsers.SAXParser;
 import org.modeshape.common.annotation.NotThreadSafe;
+import org.modeshape.common.collection.LinkedHashMultimap;
+import org.modeshape.common.collection.Multimap;
 import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.text.XmlNameEncoder;
 import org.modeshape.common.util.CheckArg;
@@ -49,8 +51,6 @@ import org.modeshape.graph.property.PropertyFactory;
 import org.modeshape.graph.property.basic.LocalNamespaceRegistry;
 import org.xml.sax.Attributes;
 import org.xml.sax.ext.DefaultHandler2;
-import com.google.common.collect.LinkedHashMultimap;
-import com.google.common.collect.Multimap;
 
 /**
  * A {@link DefaultHandler2} specialization that responds to XML content events by creating the corresponding content in the

@@ -192,7 +192,6 @@
 		<!--
 		Global dependency version information
 		-->
-		<google.collections.version>1.0-rc3</google.collections.version>
 		<joda.time.version>1.6</joda.time.version>
 		<junit.version>4.8.2</junit.version>
 		<hamcrest.version>1.1</hamcrest.version>
@@ -1014,15 +1013,6 @@
 				<artifactId>modeshape-unit-test</artifactId>
 				<version>${project.version}</version>
 				<scope>test</scope>
-			</dependency>
-			<!--
-			   Collections
-			-->
-			<dependency>
-				<groupId>com.google.collections</groupId>
-				<artifactId>google-collections</artifactId>
-				<version>${google.collections.version}</version>
-				<scope>compile</scope>
 			</dependency>
 			<!-- 
 		    Time and Date

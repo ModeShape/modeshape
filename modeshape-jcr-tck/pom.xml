@@ -82,9 +82,5 @@
       <groupId>org.picketbox</groupId>
       <artifactId>picketbox-bare</artifactId>
     </dependency>
-    <dependency>
-         <groupId>com.google.collections</groupId>
-         <artifactId>google-collections</artifactId>
-    </dependency>
   </dependencies>
 </project>

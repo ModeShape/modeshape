@@ -35,10 +35,6 @@
       <groupId>joda-time</groupId>
       <artifactId>joda-time</artifactId>
     </dependency>
-	  <dependency>
-         <groupId>com.google.collections</groupId>
-         <artifactId>google-collections</artifactId>
-      </dependency>
     <!-- 
     Testing (note the scope)
     -->

@@ -36,11 +36,13 @@ import javax.jcr.Value;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.version.OnParentVersionAction;
-import org.modeshape.common.annotation.Immutable;
-import org.modeshape.common.annotation.NotThreadSafe;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.document.Field.Store;
+import org.modeshape.common.annotation.Immutable;
+import org.modeshape.common.annotation.NotThreadSafe;
+import org.modeshape.common.collection.LinkedHashMultimap;
+import org.modeshape.common.collection.Multimap;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NameFactory;
@@ -55,8 +57,6 @@ import org.modeshape.graph.query.validate.ImmutableSchemata;
 import org.modeshape.graph.query.validate.Schemata;
 import org.modeshape.search.lucene.IndexRules;
 import org.modeshape.search.lucene.LuceneSearchEngine;
-import com.google.common.collect.LinkedHashMultimap;
-import com.google.common.collect.Multimap;
 
 /**
  * A {@link Schemata} implementation that is constructed from the {@link NodeType}s and {@link PropertyDefinition}s contained
