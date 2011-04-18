@@ -391,6 +391,13 @@ public class XPathToQueryTranslatorTest {
         xpath("//element(*, employee)[@secretary and @assistant]");
     }
 
+    @FixFor( "MODE-1144" )
+    @Test
+    public void shouldTranslateFromXPathContainingContainsCriteria() {
+        assertThat(xpath("//*[@jcr:primaryType='mgnl:content']//*[jcr:contains(., 'paragraph')]"),
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE (nodeSet1.[jcr:primaryType] = 'mgnl:content' AND CONTAINS(nodeSet1.*,'paragraph'))"));
+    }
+
     // ----------------------------------------------------------------------------------------------------------------
     // utility methods
     // ----------------------------------------------------------------------------------------------------------------

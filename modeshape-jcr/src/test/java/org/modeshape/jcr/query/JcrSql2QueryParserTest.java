@@ -32,6 +32,7 @@ import java.util.Comparator;
 import java.util.Set;
 import javax.jcr.Value;
 import javax.jcr.ValueFactory;
+import javax.jcr.query.qom.EquiJoinCondition;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -438,6 +439,36 @@ public class JcrSql2QueryParserTest {
         query = parse("select [nt:base].[jcr:primaryType] FROM [nt:base] WHERE [nt:base].[jcr:score] <= 1.3");
     }
 
+    @Test
+    public void shouldParseQuery() {
+        query = parse("SELECT post.\"jcr:uuid\", post.\"text\", post.\"user\" FROM [fincayra.Post] AS post JOIN [fincayra.User] AS u ON post.\"user\"=u.\"jcr:uuid\"");
+        System.out.println(query);
+        // SELECT * ...
+        assertThat(query.columns().size(), is(3));
+        assertThat(query.columns().get(0).selectorName(), is(selectorName("post")));
+        assertThat(query.columns().get(0).columnName(), is("jcr:uuid"));
+        assertThat(query.columns().get(0).propertyName(), is("jcr:uuid"));
+        assertThat(query.columns().get(1).selectorName(), is(selectorName("post")));
+        assertThat(query.columns().get(1).columnName(), is("text"));
+        assertThat(query.columns().get(1).propertyName(), is("text"));
+        assertThat(query.columns().get(2).selectorName(), is(selectorName("post")));
+        assertThat(query.columns().get(2).columnName(), is("user"));
+        assertThat(query.columns().get(2).propertyName(), is("user"));
+        // FROM ...
+        Join join = isJoin(query.source());
+        assertThat(join.left(), is((Source)namedSelector(selectorName("fincayra.Post"), selectorName("post"))));
+        assertThat(join.right(), is((Source)namedSelector(selectorName("fincayra.User"), selectorName("u"))));
+        assertThat(join.type(), is(JoinType.INNER));
+        EquiJoinCondition joinCondition = isEquiJoinCondition(join.joinCondition());
+        assertThat(joinCondition.getSelector1Name(), is("post"));
+        assertThat(joinCondition.getSelector2Name(), is("u"));
+        assertThat(joinCondition.getProperty1Name(), is("user"));
+        assertThat(joinCondition.getProperty2Name(), is("jcr:uuid"));
+
+        // WHERE ...
+        assertThat(query.constraint(), is(nullValue()));
+    }
+
     protected Join isJoin( Source source ) {
         assertThat(source, is(instanceOf(Join.class)));
         return (Join)source;
@@ -461,6 +492,11 @@ public class JcrSql2QueryParserTest {
     protected SameNodeJoinCondition isSameNodeJoinCondition( JoinCondition condition ) {
         assertThat(condition, is(instanceOf(SameNodeJoinCondition.class)));
         return (SameNodeJoinCondition)condition;
+    }
+
+    protected EquiJoinCondition isEquiJoinCondition( JoinCondition condition ) {
+        assertThat(condition, is(instanceOf(EquiJoinCondition.class)));
+        return (EquiJoinCondition)condition;
     }
 
     protected DescendantNodeJoinCondition isDescendantNodeJoinCondition( JoinCondition condition ) {

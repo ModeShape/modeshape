@@ -39,8 +39,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.text.FilenameEncoder;
 import org.modeshape.common.util.FileUtil;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
+import org.modeshape.common.collection.HashMultimap;
+import org.modeshape.common.collection.Multimap;
 
 public class LuceneConfigurationsTest {
 

@@ -51,6 +51,7 @@ public class CndSequencer implements StreamSequencer {
      * @see org.modeshape.graph.sequencer.StreamSequencer#sequence(java.io.InputStream,
      *      org.modeshape.graph.sequencer.SequencerOutput, org.modeshape.graph.sequencer.StreamSequencerContext)
      */
+    @Override
     public void sequence( InputStream stream,
                           SequencerOutput output,
                           StreamSequencerContext context ) {
@@ -89,6 +90,7 @@ public class CndSequencer implements StreamSequencer {
          * 
          * @see org.modeshape.graph.io.Destination#getExecutionContext()
          */
+        @Override
         public ExecutionContext getExecutionContext() {
             return context;
         }
@@ -116,6 +118,7 @@ public class CndSequencer implements StreamSequencer {
          * 
          * @see org.modeshape.graph.io.Destination#create(Path, Iterable)
          */
+        @Override
         public void create( Path path,
                             Iterable<Property> properties ) {
             path = checkPath(path);
@@ -130,6 +133,7 @@ public class CndSequencer implements StreamSequencer {
          * @see org.modeshape.graph.io.Destination#create(org.modeshape.graph.property.Path,
          *      org.modeshape.graph.property.Property, org.modeshape.graph.property.Property[])
          */
+        @Override
         public void create( Path path,
                             Property firstProperty,
                             Property... additionalProperties ) {
@@ -160,6 +164,7 @@ public class CndSequencer implements StreamSequencer {
          * @see org.modeshape.graph.io.Destination#setProperties(org.modeshape.graph.property.Path,
          *      org.modeshape.graph.property.Property[])
          */
+        @Override
         public void setProperties( Path path,
                                    Property... properties ) {
             path = checkPath(path);
@@ -187,6 +192,7 @@ public class CndSequencer implements StreamSequencer {
          * 
          * @see org.modeshape.graph.io.Destination#submit()
          */
+        @Override
         public void submit() {
             // nothing to call on the sequencer output ...
         }

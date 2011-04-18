@@ -58,10 +58,6 @@
       <groupId>org.modeshape</groupId>
       <artifactId>modeshape-search-lucene</artifactId>
     </dependency>
-    <dependency>
-      <groupId>com.google.collections</groupId>
-      <artifactId>google-collections</artifactId>
-    </dependency>
     <!-- 
     Testing (note the scope)
     -->

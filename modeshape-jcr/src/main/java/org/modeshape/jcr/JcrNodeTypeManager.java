@@ -297,6 +297,22 @@ public class JcrNodeTypeManager implements NodeTypeManager {
                                                             skipProtected);
     }
 
+    final JcrPropertyDefinition findPropertyDefinition( Name primaryTypeName,
+                                                        List<Name> mixinTypeNames,
+                                                        Name propertyName,
+                                                        Value value,
+                                                        boolean checkMultiValuedDefinitions,
+                                                        boolean skipProtected,
+                                                        boolean checkTypesAndConstraints ) {
+        return repositoryTypeManager.findPropertyDefinition(primaryTypeName,
+                                                            mixinTypeNames,
+                                                            propertyName,
+                                                            value,
+                                                            checkMultiValuedDefinitions,
+                                                            skipProtected,
+                                                            checkTypesAndConstraints);
+    }
+
     /**
      * Searches the supplied primary node type and the mixin node types for a property definition that is the best match for the
      * given property name, property type, and value. with the given name and property type that allows the supplied values.
@@ -346,6 +362,20 @@ public class JcrNodeTypeManager implements NodeTypeManager {
                                                         Value[] values,
                                                         boolean skipProtected ) {
         return repositoryTypeManager.findPropertyDefinition(primaryTypeName, mixinTypeNames, propertyName, values, skipProtected);
+    }
+
+    final JcrPropertyDefinition findPropertyDefinition( Name primaryTypeName,
+                                                        List<Name> mixinTypeNames,
+                                                        Name propertyName,
+                                                        Value[] values,
+                                                        boolean skipProtected,
+                                                        boolean checkTypeAndConstraints ) {
+        return repositoryTypeManager.findPropertyDefinition(primaryTypeName,
+                                                            mixinTypeNames,
+                                                            propertyName,
+                                                            values,
+                                                            skipProtected,
+                                                            checkTypeAndConstraints);
     }
 
     /**
@@ -458,7 +488,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
             throw new AccessDeniedException(ace);
         }
         try {
-            return this.repositoryTypeManager.registerNodeType(template);
+            return this.repositoryTypeManager.registerNodeType(template, !allowUpdate);
         } finally {
             schemata = null;
         }
@@ -495,7 +525,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
             throw new AccessDeniedException(ace);
         }
         try {
-            return new JcrNodeTypeIterator(repositoryTypeManager.registerNodeTypes(templates));
+            return new JcrNodeTypeIterator(repositoryTypeManager.registerNodeTypes(templates, !allowUpdates));
         } finally {
             schemata = null;
         }
@@ -567,7 +597,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         }
 
         try {
-            return new JcrNodeTypeIterator(this.repositoryTypeManager.registerNodeTypes(ntds));
+            return new JcrNodeTypeIterator(this.repositoryTypeManager.registerNodeTypes(Arrays.asList(ntds), !allowUpdate));
         } finally {
             schemata = null;
         }

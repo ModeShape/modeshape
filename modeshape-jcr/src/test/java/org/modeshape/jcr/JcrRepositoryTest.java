@@ -56,9 +56,9 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
-import org.modeshape.graph.JaasSecurityContext.UserPasswordCallbackHandler;
 import org.modeshape.graph.MockSecurityContext;
 import org.modeshape.graph.Node;
+import org.modeshape.graph.JaasSecurityContext.UserPasswordCallbackHandler;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryConnectionFactory;
 import org.modeshape.graph.connector.RepositorySource;
@@ -270,9 +270,46 @@ public class JcrRepositoryTest {
         repository.login();
     }
 
+    @Test( expected = javax.jcr.LoginException.class )
+    public void shouldNotAllowLoginWithCredentialsWhenAnonymousAuthenticationIsEnabledButTryAnonymousAuthenticationIsNotEnabled()
+        throws Exception {
+        // This would work iff this code was executing in a privileged block, but it's not
+        Map<Option, String> options = new HashMap<Option, String>();
+        options.put(Option.USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN, "false"); // disable anonymous authentication
+        repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null, descriptors, options,
+                                       null);
+
+        repository.login(new SimpleCredentials("InvalidUserID", "InvalidPassword".toCharArray()));
+    }
+
     @Test
     public void shouldAllowLoginWithNoCredentialsWhenAnonymousAuthenticationIsEnabled() throws Exception {
+        Map<Option, String> options = new HashMap<Option, String>();
+        options.put(Option.USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN, "true"); // enable anonymous authentication
+        repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null, descriptors, options,
+                                       null);
+
         repository.login();
+    }
+
+    @Test( expected = javax.jcr.LoginException.class )
+    public void shouldNotAllowLoginWithInvalidCredentialsWhenAnonymousAuthenticationIsNotEnabled() throws Exception {
+        Map<Option, String> options = new HashMap<Option, String>();
+        options.put(Option.ANONYMOUS_USER_ROLES, ""); // disable anonymous authentication
+        repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null, descriptors, options,
+                                       null);
+        repository.login(new SimpleCredentials("InvalidUserID", "InvalidPassword".toCharArray()));
+    }
+
+    @Test
+    public void shouldAllowLoginWithInvalidCredentialsWhenAnonymousAuthenticationIsEnabled() throws Exception {
+        Map<Option, String> options = new HashMap<Option, String>();
+        options.put(Option.USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN, "true"); // disable anonymous authentication
+        repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null, descriptors, options,
+                                       null);
+
+        Session session = repository.login(new SimpleCredentials("InvalidUserID", "InvalidPassword".toCharArray()));
+        assertThat(session.getUserID(), is(JcrRepository.ANONYMOUS_USER_NAME));
     }
 
     @SuppressWarnings( "cast" )
@@ -300,7 +337,8 @@ public class JcrRepositoryTest {
 
     @Test
     public void shouldAllowLoginWithNoCredentialsIfAnonAccessEnabled() throws Exception {
-        Map<JcrRepository.Option, String> options = new HashMap<JcrRepository.Option, String>();
+        Map<Option, String> options = new HashMap<Option, String>();
+        options.put(Option.USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN, "true"); // enable anonymous authentication
         options.put(JcrRepository.Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.READONLY);
         JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null,
                                                      descriptors, options, null);

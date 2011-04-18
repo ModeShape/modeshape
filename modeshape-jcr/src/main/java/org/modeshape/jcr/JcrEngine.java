@@ -40,8 +40,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import javax.jcr.PropertyType;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
-import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.cnd.CndImporter;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.collection.Problem;
 import org.modeshape.common.collection.Problem.Status;
 import org.modeshape.common.collection.Problems;
@@ -504,7 +504,7 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
                         GraphBatchDestination destination = new GraphBatchDestination(batch);
 
                         Path nodeTypesAbsPath = pathFactory.create(repositoryPath, JcrLexicon.NODE_TYPES);
-                        CndImporter importer = new CndImporter(destination, nodeTypesAbsPath, true);
+                        CndImporter importer = new CndImporter(destination, nodeTypesAbsPath, true, false);
                         InputStream is = IoUtil.getResourceAsStream(resource, classLoader, getClass());
                         Problems cndProblems = new SimpleProblems();
                         if (is == null) {

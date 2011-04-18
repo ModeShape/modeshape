@@ -54,8 +54,8 @@ import org.modeshape.graph.property.Path;
 import org.modeshape.jcr.JcrRepository.DefaultOption;
 import org.modeshape.jcr.JcrRepository.Option;
 import org.modeshape.repository.ModeShapeConfiguration;
-import org.modeshape.repository.ModeShapeConfiguration.ConfigurationDefinition;
 import org.modeshape.repository.ModeShapeLexicon;
+import org.modeshape.repository.ModeShapeConfiguration.ConfigurationDefinition;
 
 public class JcrConfigurationTest {
 
@@ -260,6 +260,7 @@ public class JcrConfigurationTest {
         options.put(Option.EXPOSE_WORKSPACE_NAMES_IN_DESCRIPTOR, DefaultOption.EXPOSE_WORKSPACE_NAMES_IN_DESCRIPTOR);
         options.put(Option.VERSION_HISTORY_STRUCTURE, DefaultOption.VERSION_HISTORY_STRUCTURE);
         options.put(Option.REPOSITORY_JNDI_LOCATION, DefaultOption.REPOSITORY_JNDI_LOCATION);
+        options.put(Option.USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN, DefaultOption.USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN);
         String defaultRemoveDerivedValue = DefaultOption.REMOVE_DERIVED_CONTENT_WITH_ORIGINAL;
         if (engine.getSequencingService().getSequencers().isEmpty()) {
             defaultRemoveDerivedValue = Boolean.FALSE.toString();

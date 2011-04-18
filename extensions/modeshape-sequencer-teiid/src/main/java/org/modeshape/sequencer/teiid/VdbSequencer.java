@@ -43,10 +43,7 @@ import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.JcrMixLexicon;
 import org.modeshape.graph.ModeShapeLexicon;
-import org.modeshape.graph.property.BinaryFactory;
-import org.modeshape.graph.property.DateTimeFactory;
 import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.NameFactory;
 import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
@@ -73,13 +70,11 @@ public class VdbSequencer implements StreamSequencer {
      * @see org.modeshape.graph.sequencer.StreamSequencer#sequence(java.io.InputStream,
      *      org.modeshape.graph.sequencer.SequencerOutput, org.modeshape.graph.sequencer.StreamSequencerContext)
      */
+    @Override
     public void sequence( InputStream stream,
                           SequencerOutput output,
                           StreamSequencerContext context ) {
-        BinaryFactory binaryFactory = context.getValueFactories().getBinaryFactory();
-        DateTimeFactory dateFactory = context.getValueFactories().getDateFactory();
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
-        NameFactory nameFactory = context.getValueFactories().getNameFactory();
         ValueFactory<String> stringFactory = context.getValueFactories().getStringFactory();
         AtomicInteger version = new AtomicInteger(0);
 
@@ -155,7 +150,6 @@ public class VdbSequencer implements StreamSequencer {
                         modelEntry = vdbArchive.getEntry("/" + model.getPathInVdb());
                     }
                     if (modelEntry != null) {
-                        String pathInVdb = model.getPathInVdb();
                         sequencer.sequence(vdbArchive.getInputStream(modelEntry), output, context);
                     }
                 }

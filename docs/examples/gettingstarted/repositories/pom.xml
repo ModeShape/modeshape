@@ -48,6 +48,7 @@
       <groupId>hsqldb</groupId>
       <artifactId>hsqldb</artifactId>
       <version>${jdbc.hsqldb.version}</version>
+      <scope>runtime</scope>
     </dependency>
     <!-- 
     Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for running) 

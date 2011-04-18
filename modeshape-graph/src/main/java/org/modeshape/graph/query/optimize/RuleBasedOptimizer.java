@@ -74,6 +74,7 @@ public class RuleBasedOptimizer implements Optimizer {
         }
         ruleStack.addFirst(RewriteAsRangeCriteria.INSTANCE);
         if (hints.hasJoin) {
+            ruleStack.addFirst(AddJoinConditionColumnsToSources.INSTANCE);
             ruleStack.addFirst(ChooseJoinAlgorithm.USE_ONLY_NESTED_JOIN_ALGORITHM);
             ruleStack.addFirst(RewriteIdentityJoins.INSTANCE);
         }

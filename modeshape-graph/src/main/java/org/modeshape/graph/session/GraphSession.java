@@ -39,6 +39,8 @@ import java.util.UUID;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.common.collection.LinkedListMultimap;
+import org.modeshape.common.collection.ListMultimap;
 import org.modeshape.common.collection.ReadOnlyIterator;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
@@ -70,8 +72,6 @@ import org.modeshape.graph.request.MoveBranchRequest;
 import org.modeshape.graph.request.Request;
 import org.modeshape.graph.request.RequestException;
 import org.modeshape.graph.session.GraphSession.Authorizer.Action;
-import com.google.common.collect.LinkedListMultimap;
-import com.google.common.collect.ListMultimap;
 
 /**
  * This class represents an interactive session for working with the content within a graph. This session maintains a cache of

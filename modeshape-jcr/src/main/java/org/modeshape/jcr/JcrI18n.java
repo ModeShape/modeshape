@@ -44,6 +44,7 @@ public final class JcrI18n {
     public static I18n mustBeInPrivilegedAction;
     public static I18n loginConfigNotFound;
     public static I18n credentialsMustReturnLoginContext;
+    public static I18n usingAnonymousUser;
     public static I18n unknownCredentialsImplementation;
     public static I18n defaultWorkspaceName;
     public static I18n pathNotFound;
@@ -200,6 +201,12 @@ public final class JcrI18n {
     public static I18n noDefinition;
     public static I18n noSnsDefinition;
     public static I18n missingMandatoryItem;
+    public static I18n valueViolatesConstraintsOnDefinition;
+    public static I18n valuesViolateConstraintsOnDefinition;
+    public static I18n referenceValueViolatesConstraintsOnDefinition;
+    public static I18n referenceValuesViolateConstraintsOnDefinition;
+    public static I18n weakReferenceValueViolatesConstraintsOnDefinition;
+    public static I18n weakReferenceValuesViolateConstraintsOnDefinition;
 
     public static I18n allNodeTypeTemplatesMustComeFromSameSession;
 

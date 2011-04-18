@@ -118,7 +118,6 @@ public class DefaultProperties {
     }
 
     protected static List<String> findSupertypes( String nodeTypeDefnLine ) {
-        int keywordStart = nodeTypeDefnLine.length();
         String[] words = nodeTypeDefnLine.split("[\\s?,]");
         List<String> supertypeNames = new ArrayList<String>();
         for (String word : words) {

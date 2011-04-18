@@ -28,11 +28,8 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.modeshape.graph.IsNodeWithProperty.hasProperty;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
@@ -106,8 +103,6 @@ public class CndImporterTest {
                          String childNodeName,
                          String nameValue ) {
         Node a = graph.getNodeAt("/a/" + pathToNode);
-        List<Location> children = a.getChildren();
-
         for (Location childLocation : a.getChildren()) {
             if (!childLocation.getPath().getLastSegment().getName().equals(name(childNodeName))) continue;
             Node child = graph.getNodeAt(childLocation);
@@ -124,11 +119,11 @@ public class CndImporterTest {
         return graph.getNodeAt("/a/" + pathToNode);
     }
 
-    protected InputStream openCndStream( String cndFileName ) throws IOException {
+    protected InputStream openCndStream( String cndFileName ) {
         return this.getClass().getClassLoader().getResourceAsStream("cnd/" + cndFileName);
     }
 
-    protected File openCndFile( String cndFileName ) throws IOException, URISyntaxException {
+    protected File openCndFile( String cndFileName ) {
         File result = new File(CND_FILE_PATH + cndFileName);
         assertThat(result.exists(), is(true));
         return result;
@@ -207,7 +202,7 @@ public class CndImporterTest {
     }
 
     @Test
-    public void shouldImportCndThatUsesAllFeatures() throws IOException {
+    public void shouldImportCndThatUsesAllFeatures() {
         // importer.setDebug(true);
         String cnd = "<ex = 'http://namespace.com/ns'>\n"
                      + "[ex:NodeType] > ex:ParentType1, ex:ParentType2 abstract orderable mixin noquery primaryitem ex:property\n"
@@ -244,22 +239,62 @@ public class CndImporterTest {
     }
 
     @Test
-    public void shouldImportCndThatIsOnOneLine() throws IOException {
+    public void shouldImportCndThatUsesExtensions() {
+        // importer.setDebug(true);
+        String cnd = "<ex = 'http://namespace.com/ns'>\n"
+                     + "[ex:NodeType] > ex:ParentType1, ex:ParentType2 abstract {mode:desc 'ex:NodeType description'} orderable mixin noquery primaryitem ex:property\n"
+                     + "- ex:property (STRING) = 'default1', 'default2' mandatory autocreated protected multiple VERSION\n"
+                     + " queryops '=, <>, <, <=, >, >=, LIKE' {mode:desc 'ex:property description'} {mode:altName Cool Property} nofulltext noqueryorder < 'constraint1', 'constraint2'"
+                     + "+ ex:node (ex:reqType1, ex:reqType2) = ex:defaultType {} mandatory autocreated protected sns version";
+        importer.importFrom(cnd, problems, "string");
+        // assertThat(problems.size(), is(1));
+        // printProblems();
+        context.getNamespaceRegistry().register("ex", "http://namespace.com/ns");
+        Node nodeType = node("ex:NodeType");
+        assertThat(nodeType, hasProperty(JcrLexicon.IS_ABSTRACT, true));
+        assertThat(nodeType, hasProperty(name("mode:desc"), "ex:NodeType description"));
+        Node prop = node("ex:NodeType/jcr:propertyDefinition");
+        assertThat(prop, hasProperty(JcrLexicon.NAME, name("ex:property")));
+        assertThat(prop, hasProperty(JcrLexicon.REQUIRED_TYPE, "STRING"));
+        assertThat(prop, hasProperty(JcrLexicon.DEFAULT_VALUES, new Object[] {"default1", "default2"}));
+        assertThat(prop, hasProperty(JcrLexicon.AUTO_CREATED, true));
+        assertThat(prop, hasProperty(JcrLexicon.MANDATORY, true));
+        assertThat(prop, hasProperty(JcrLexicon.PROTECTED, true));
+        assertThat(prop, hasProperty(JcrLexicon.MULTIPLE, true));
+        assertThat(prop, hasProperty(JcrLexicon.ON_PARENT_VERSION, "VERSION"));
+        assertThat(prop, hasProperty(JcrLexicon.VALUE_CONSTRAINTS, new Object[] {"constraint1", "constraint2"}));
+        assertThat(prop, hasProperty(JcrLexicon.IS_FULL_TEXT_SEARCHABLE, false));
+        assertThat(prop, hasProperty(JcrLexicon.IS_QUERY_ORDERABLE, false));
+        assertThat(prop, hasProperty(name("mode:desc"), "ex:property description"));
+        assertThat(prop, hasProperty(name("mode:altName"), "Cool Property"));
+        Node node = node("ex:NodeType/jcr:childNodeDefinition");
+        assertThat(node, hasProperty(JcrLexicon.NAME, name("ex:node")));
+        assertThat(node, hasProperty(JcrLexicon.REQUIRED_PRIMARY_TYPES, new Object[] {name("ex:reqType1"), name("ex:reqType2")}));
+        assertThat(node, hasProperty(JcrLexicon.DEFAULT_PRIMARY_TYPE, name("ex:defaultType")));
+        assertThat(node, hasProperty(JcrLexicon.AUTO_CREATED, true));
+        assertThat(node, hasProperty(JcrLexicon.MANDATORY, true));
+        assertThat(node, hasProperty(JcrLexicon.PROTECTED, true));
+        assertThat(node, hasProperty(JcrLexicon.SAME_NAME_SIBLINGS, true));
+        assertThat(node, hasProperty(JcrLexicon.ON_PARENT_VERSION, "VERSION"));
+    }
+
+    @Test
+    public void shouldImportCndThatIsOnOneLine() {
         String cnd = "<ns = 'http://namespace.com/ns'> "
                      + "[ns:NodeType] > ns:ParentType1, ns:ParentType2 abstract orderable mixin noquery primaryitem ex:property "
                      + "- ex:property (STRING) = 'default1', 'default2' mandatory autocreated protected multiple VERSION < 'constraint1', 'constraint2' "
                      + " queryops '=, <>, <, <=, >, >=, LIKE' nofulltext noqueryorder "
                      + "+ ns:node (ns:reqType1, ns:reqType2) = ns:defaultType mandatory autocreated protected sns version";
-        // importer.importFrom(cnd, problems, "string");
+        importer.importFrom(cnd, problems, "string");
     }
 
     @Test
-    public void shouldImportCndThatHasNoChildren() throws IOException {
+    public void shouldImportCndThatHasNoChildren() {
         String cnd = "<ns = 'http://namespace.com/ns'>\n"
                      + "[ns:NodeType] > ns:ParentType1, ns:ParentType2 abstract orderable mixin noquery primaryitem ex:property\n"
                      + "- ex:property (STRING) = 'default1', 'default2' mandatory autocreated protected multiple VERSION < 'constraint1', 'constraint2'\n"
                      + " queryops '=, <>, <, <=, >, >=, LIKE' nofulltext noqueryorder";
-        // importer.importFrom(cnd, problems, "string");
+        importer.importFrom(cnd, problems, "string");
     }
 
     @Test
@@ -624,8 +659,8 @@ public class CndImporterTest {
         } else {
             assertThat(nodeType, hasProperty(JcrLexicon.ON_PARENT_VERSION, "COPY")); // it's copy by default
         }
-        assertThat(nodeType, hasProperty(JcrLexicon.IS_FULL_TEXT_SEARCHABLE,
-                                         !options.contains(PropertyOptions.FullTextSearchable)));
+        assertThat(nodeType,
+                   hasProperty(JcrLexicon.IS_FULL_TEXT_SEARCHABLE, !options.contains(PropertyOptions.FullTextSearchable)));
         assertThat(nodeType, hasProperty(JcrLexicon.IS_QUERY_ORDERABLE, !options.contains(PropertyOptions.QueryOrderable)));
         if (valueConstraints.length != 0) {
             assertThat(nodeType, hasProperty(JcrLexicon.VALUE_CONSTRAINTS, (Object[])valueConstraints));

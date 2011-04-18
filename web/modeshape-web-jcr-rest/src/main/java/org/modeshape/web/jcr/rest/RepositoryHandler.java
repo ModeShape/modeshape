@@ -36,12 +36,15 @@ class RepositoryHandler extends AbstractHandler {
         Session session = getSession(request, rawRepositoryName, null);
         rawRepositoryName = URL_ENCODER.encode(rawRepositoryName);
 
+        String uri = request.getRequestURI();
+        uri = uri.substring(0, uri.length() - rawRepositoryName.length() - 1);
+
         for (String name : session.getWorkspace().getAccessibleWorkspaceNames()) {
             if (name.trim().length() == 0) {
                 name = EMPTY_WORKSPACE_NAME;
             }
             name = URL_ENCODER.encode(name);
-            workspaces.put(name, new WorkspaceEntry(request.getContextPath(), rawRepositoryName, name));
+            workspaces.put(name, new WorkspaceEntry(uri, rawRepositoryName, name));
         }
 
         return workspaces;

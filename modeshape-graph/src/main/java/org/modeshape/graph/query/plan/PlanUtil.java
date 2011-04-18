@@ -73,6 +73,7 @@ import org.modeshape.graph.query.model.Visitors;
 import org.modeshape.graph.query.model.Visitors.AbstractVisitor;
 import org.modeshape.graph.query.plan.PlanNode.Property;
 import org.modeshape.graph.query.plan.PlanNode.Type;
+import org.modeshape.graph.query.validate.ImmutableColumn;
 import org.modeshape.graph.query.validate.Schemata;
 import org.modeshape.graph.query.validate.Schemata.Table;
 import org.modeshape.graph.query.validate.Schemata.View;
@@ -1041,13 +1042,21 @@ public class PlanUtil {
 
         // Get the Schemata columns defined by the view ...
         List<org.modeshape.graph.query.validate.Schemata.Column> viewColumns = view.getColumns();
-        assert viewColumns.size() == projectedColumns.size();
 
         for (int i = 0; i != viewColumns.size(); ++i) {
             Column projectedColunn = projectedColumns.get(i);
             String viewColumnName = viewColumns.get(i).getName();
             mapping.map(viewColumnName, projectedColunn);
         }
+        if (viewColumns.size() < projectedColumns.size()) {
+            // There are some extra projected columns, likely because the view did not know about them ...
+            for (int i = viewColumns.size(); i != projectedColumns.size(); ++i) {
+                Column projectedColunn = projectedColumns.get(i);
+                String viewColumnName = projectedColunn.propertyName();
+                mapping.map(viewColumnName, projectedColunn);
+            }
+        }
+
         return mapping;
     }
 
@@ -1065,13 +1074,22 @@ public class PlanUtil {
 
         // Get the Schemata columns defined by the view ...
         List<org.modeshape.graph.query.validate.Schemata.Column> viewColumns = view.getColumns();
-        assert viewColumns.size() == projectedColumns.size();
 
         for (int i = 0; i != viewColumns.size(); ++i) {
             Column projectedColunn = projectedColumns.get(i);
             String viewColumnName = viewColumns.get(i).getName();
             mapping.map(viewColumnName, projectedColunn);
         }
+
+        if (viewColumns.size() < projectedColumns.size()) {
+            // There are some extra projected columns, likely because the view did not know about them ...
+            for (int i = viewColumns.size(); i != projectedColumns.size(); ++i) {
+                Column projectedColunn = projectedColumns.get(i);
+                String viewColumnName = projectedColunn.propertyName();
+                mapping.map(viewColumnName, projectedColunn);
+            }
+        }
+
         return mapping;
     }
 
@@ -1243,5 +1261,53 @@ public class PlanUtil {
             return new BindVariableName(variableName);
         }
         return staticOperand;
+    }
+
+    public static PlanNode addMissingProjectColumns( QueryContext context,
+                                                     PlanNode node,
+                                                     List<Column> allProjectedColumns ) {
+        PlanNode project = node.findAtOrBelow(Type.PROJECT);
+        if (project == null) return node;
+        PlanNode source = node.findAtOrBelow(Type.SOURCE);
+        List<Schemata.Column> sourceColumns = source.getPropertyAsList(Property.SOURCE_COLUMNS, Schemata.Column.class);
+
+        List<Column> projected = project.getPropertyAsList(Property.PROJECT_COLUMNS, Column.class);
+        List<String> projectedTypes = project.getPropertyAsList(Property.PROJECT_COLUMN_TYPES, String.class);
+        Set<String> projectedPropertyNames = new HashSet<String>();
+        for (Column p : projected) {
+            projectedPropertyNames.add(p.propertyName());
+        }
+
+        String defaultTypeName = context.getTypeSystem().getDefaultType();
+        List<Schemata.Column> newSourceColumns = new ArrayList<Schemata.Column>(sourceColumns);
+        boolean added = false;
+        for (Column expected : allProjectedColumns) {
+            if (!project.getSelectors().contains(expected.selectorName())) {
+                // The column does not belong to this project node ...
+                continue;
+            }
+            if (projectedPropertyNames.contains(expected.propertyName())) continue;
+            // Add the column ...
+            projected.add(expected);
+            projectedTypes.add(defaultTypeName);
+
+            // Now add a Schemata column for the missing column ...
+            Schemata.Column sourceColumn = new AbsentColumn(expected.propertyName(), defaultTypeName);
+            newSourceColumns.add(sourceColumn);
+            added = true;
+        }
+
+        if (added) {
+            source.setProperty(Property.SOURCE_COLUMNS, newSourceColumns);
+        }
+
+        return node;
+    }
+
+    protected static class AbsentColumn extends ImmutableColumn {
+        protected AbsentColumn( String name,
+                                String type ) {
+            super(name, type);
+        }
     }
 }

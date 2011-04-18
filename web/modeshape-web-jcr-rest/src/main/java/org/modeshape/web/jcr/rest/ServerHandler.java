@@ -23,13 +23,18 @@ class ServerHandler extends AbstractHandler {
         assert request != null;
 
         Map<String, RepositoryEntry> repositories = new HashMap<String, RepositoryEntry>();
+        String uri = request.getRequestURI();
+
+        if (uri.endsWith("/")) {
+            uri = uri.substring(0, uri.length() - 1);
+        }
 
         for (String name : RepositoryFactory.getJcrRepositoryNames()) {
             if (name.trim().length() == 0) {
                 name = EMPTY_REPOSITORY_NAME;
             }
             name = URL_ENCODER.encode(name);
-            repositories.put(name, new RepositoryEntry(request.getContextPath(), name));
+            repositories.put(name, new RepositoryEntry(uri, name));
         }
 
         return repositories;

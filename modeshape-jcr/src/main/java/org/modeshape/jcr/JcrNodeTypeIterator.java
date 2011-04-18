@@ -53,7 +53,6 @@ final class JcrNodeTypeIterator implements NodeTypeIterator {
      * @see javax.jcr.nodetype.NodeTypeIterator#nextNodeType()
      */
     public NodeType nextNodeType() {
-        // TODO: Does this really need to return a copy of the node type to prevent manipulation?
         position++;
         return iterator.next();
     }

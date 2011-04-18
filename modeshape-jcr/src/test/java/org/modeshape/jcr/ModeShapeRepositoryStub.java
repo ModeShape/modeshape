@@ -166,7 +166,6 @@ public class ModeShapeRepositoryStub extends RepositoryStub {
     @SuppressWarnings( "unused" )
     @Override
     public Principal getKnownPrincipal( Session session ) throws RepositoryException {
-        // TODO: initial implementation
         return null;
     }
 
@@ -178,7 +177,6 @@ public class ModeShapeRepositoryStub extends RepositoryStub {
     @SuppressWarnings( "unused" )
     @Override
     public Principal getUnknownPrincipal( Session session ) throws RepositoryException, NotExecutableException {
-        // TODO: initial implementation
         return null;
     }
 
