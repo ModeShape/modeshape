@@ -64,20 +64,18 @@
       <scope>test</scope>
     </dependency>
     <!-- 
-    Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing) 
+    Logging (require SLF4J API for compiling, but use Logback binding for running) 
     -->
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
     </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-log4j12</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>log4j</groupId>
-      <artifactId>log4j</artifactId>
-    </dependency>
+    <dependency> 
+        <groupId>ch.qos.logback</groupId> 
+        <artifactId>logback-classic</artifactId> 
+        <version>0.9.28</version>
+        <scope>runtime</scope> 
+    </dependency> 
     <!-- 
       Java Content Repository API 
     -->
@@ -94,6 +92,20 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+  <dependencyManagement>
+      <dependencies>
+          <dependency>
+              <groupId>org.slf4j</groupId>
+              <artifactId>slf4j-api</artifactId>
+              <version>1.6.1</version>
+          </dependency>
+          <dependency>
+              <groupId>org.slf4j</groupId>
+              <artifactId>slf4j-ext</artifactId>
+              <version>1.6.1</version>
+          </dependency>
+      </dependencies>
+  </dependencyManagement>
 
   <build>
     <plugins>
@@ -114,35 +126,35 @@
           </execution>
         </executions>
       </plugin>
-			<!--
-				Build a test-jar for each project, so that src/test/* resources and
-				classes can be used in other projects. Also customize how the jar
-				files are assembled.
-			-->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
-				<version>${maven.jar.plugin.version}</version>
-				<executions>
-					<execution>
-						<id>test-jar</id>
-						<goals>
-							<goal>test-jar</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<archive>
-						<manifest>
-							<addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-							<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-						</manifest>
-						<manifestEntries>
-							<Implementation-URL>${project.url}</Implementation-URL>
-						</manifestEntries>
-					</archive>
-				</configuration>
-			</plugin>
+        <!--
+                Build a test-jar for each project, so that src/test/* resources and
+                classes can be used in other projects. Also customize how the jar
+                files are assembled.
+        -->
+        <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>${maven.jar.plugin.version}</version>
+                <executions>
+                        <execution>
+                                <id>test-jar</id>
+                                <goals>
+                                        <goal>test-jar</goal>
+                                </goals>
+                        </execution>
+                </executions>
+                <configuration>
+                        <archive>
+                                <manifest>
+                                        <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                                        <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                                </manifest>
+                                <manifestEntries>
+                                        <Implementation-URL>${project.url}</Implementation-URL>
+                                </manifestEntries>
+                        </archive>
+                </configuration>
+        </plugin>
     </plugins>
   </build>
 
