@@ -1,13 +1,22 @@
 # Release Notes for ModeShape &version;
 
+ModeShape &version; includes several new minor improvements and changes since 2.5.0.Beta1, including:
+* upgrades of several third-party dependencies
+* smaller JAR files (no longer dependent upon Google Collections or the JCIP libraries)
+* versioning-related fixes and performance improvements
+* about twenty bug fixes
+
+The 2.5.0.Beta1 release included:
+* new javax.jcr.Credentials classes for anonymous and HTTP servlet authentication
+* a built-in profiling framework enabling use of Byteman runtime bytecode injection
+* refactored the build process, which now uses Maven 3
+* switch to PicketBox for the JAAS implementation used in unit tests
+* performance improvements
+* almost two dozen bug fixes
+
 ## JCR Supported Features
 
-ModeShape &version; includes several new minor improvements, such as new javax.jcr.Credentials classes for 
-anonymous and HTTP servlet authentication, a built-in profiling framework enabling use of Byteman runtime
-bytecode injection, and a switch to Maven 3 and refactoring of the build process. The release also contains
-fixes for almost two dozen bugs. ModeShape also uses PicketBox for the JAAS implementation used in tests.
-
-This means that **ModeShape now implements all of the required JCR 2.0 features** (repository acquisition, 
+**ModeShape implements all of the required JCR 2.0 features** (repository acquisition, 
 authentication, reading/navigating, query, export, node type discovery, and permissions and capability 
 checking) and **most of the optional JCR 2.0 features** (writing, import, observation, workspace management
 versioning, locking, node type management, same-name siblings, shareable nodes, and orderable 
@@ -28,36 +37,8 @@ used in the second parameter of the CONTAINS(...) function of the JCR-SQL2 langu
   [7]:  http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#fulltext-search-query-language
   [8]:  http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#jcr-sql2-full-text-search-constraints
 
-As with previous releases, ModeShape &version; integrates with [JAAS][9], [web application security][10],
-or you can easily [integrate it with other systems][11]. ModeShape can use a variety of back-ends to store 
-information ([RDBMSes][12], [Infinispan data grid][13], [memory][14], [JBoss Cache][15], [JCR repositories][16]), can access content
-in multiple systems ([file systems][17], [SVN repositories][18], [JDBC metadata][19]), can [federate][20] multiple stores and
-systems into a single JCR repository, or can access other systems using [custom connectors][21].
-ModeShape is also able to automatically extract and store useful content from files you upload into 
-the repository using its library of [sequencers][22], making that information much more accessible and 
-searchable than if it remains locked up inside the stored files. And ModeShape provides
-[WebDAV and RESTful services][23] to allow various clients to access the content. For details, see the [Reference Guide][24].
-
-  [9]:  http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#jcr-sessions-jaas
-  [10]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#jcr-sessions-servlet
-  [11]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#jcr-sessions-custom
-  [12]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#jdbc-storage-connector
-  [13]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#infinispan-connector
-  [14]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#in-memory-connector
-  [15]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#jboss-cache-connector
-  [16]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#jcr-connector
-  [17]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#file-system-connector
-  [18]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#subversion-connector
-  [19]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#jdbc-metadata-connector
-  [20]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#federation-connector
-  [21]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#custom-connectors
-  [22]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#sequencing_framework
-  [23]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#web-access
-  [24]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html
-
 The &version; release has not yet been certified to be fully compliant with JCR 2.0. The ModeShape 
 project plans to focus on attaining this certification in the very near future.
-
 
 ### Accessing the Repository
 - JAAS Authentication
@@ -115,7 +96,36 @@ project plans to focus on attaining this certification in the very near future.
 - Versioning
 - Shareable Nodes
 
-## ModeShape-Specific Features
+
+## Connectors, Sequencers, and Other Features
+
+As with previous releases, ModeShape &version; integrates with [JAAS][9], [web application security][10],
+or you can easily [integrate it with other systems][11]. ModeShape can use a variety of back-ends to store 
+information ([RDBMSes][12], [Infinispan data grid][13], [memory][14], [JBoss Cache][15], [JCR repositories][16]), can access content
+in multiple systems ([file systems][17], [SVN repositories][18], [JDBC metadata][19]), can [federate][20] multiple stores and
+systems into a single JCR repository, or can access other systems using [custom connectors][21].
+ModeShape is also able to automatically extract and store useful content from files you upload into 
+the repository using its library of [sequencers][22], making that information much more accessible and 
+searchable than if it remains locked up inside the stored files. And ModeShape provides
+[WebDAV and RESTful services][23] to allow various clients to access the content. For details, see the [Reference Guide][24].
+
+  [9]:  http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#jcr-sessions-jaas
+  [10]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#jcr-sessions-servlet
+  [11]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#jcr-sessions-custom
+  [12]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#jdbc-storage-connector
+  [13]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#infinispan-connector
+  [14]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#in-memory-connector
+  [15]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#jboss-cache-connector
+  [16]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#jcr-connector
+  [17]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#file-system-connector
+  [18]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#subversion-connector
+  [19]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#jdbc-metadata-connector
+  [20]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#federation-connector
+  [21]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#custom-connectors
+  [22]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#sequencing_framework
+  [23]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#web-access
+  [24]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html
+
 
 ### Connectors
 - Federated Connector
