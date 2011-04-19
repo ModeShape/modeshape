@@ -1,18 +1,18 @@
 # Release Notes for ModeShape &version;
 
 ModeShape &version; includes several new minor improvements and changes since 2.5.0.Beta1, including:
-* upgrades of several third-party dependencies
-* smaller JAR files (no longer dependent upon Google Collections or the JCIP libraries)
-* versioning-related fixes and performance improvements
-* about twenty bug fixes
+- upgrades of several third-party dependencies
+- smaller JAR files (no longer dependent upon Google Collections or the JCIP libraries)
+- versioning-related fixes and performance improvements
+- about twenty bug fixes
 
 The 2.5.0.Beta1 release included:
-* new javax.jcr.Credentials classes for anonymous and HTTP servlet authentication
-* a built-in profiling framework enabling use of Byteman runtime bytecode injection
-* refactored the build process, which now uses Maven 3
-* switch to PicketBox for the JAAS implementation used in unit tests
-* performance improvements
-* almost two dozen bug fixes
+- new javax.jcr.Credentials classes for anonymous and HTTP servlet authentication
+- a built-in profiling framework enabling use of Byteman runtime bytecode injection
+- refactored the build process, which now uses Maven 3
+- switch to PicketBox for the JAAS implementation used in unit tests
+- performance improvements
+- almost two dozen bug fixes
 
 ## JCR Supported Features
 
