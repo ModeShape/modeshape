@@ -232,6 +232,11 @@
 						then a new UUID is generated.</entry>
 				</row>
 				<row>
+					<entry>schemaName</entry>
+					<entry>Optional property that, if set, specifies the name of the schema in which this repository source will read and write data.  If no schema name
+						is specified, then data will be read from the default schema associated with the database connection.</entry>
+				</row>
+				<row>
 					<entry>updatesAllowed</entry>
 					<entry>Determines whether the content in the database is can be updated ("true"), or if the content may only be read ("false").
 						The default value is "true".</entry>
