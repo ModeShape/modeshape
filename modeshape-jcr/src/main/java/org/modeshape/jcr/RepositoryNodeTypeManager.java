@@ -1750,9 +1750,13 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
 
                 List<JcrNodeType> supertypes = supertypesFor(nodeTypeDefn, typesPendingRegistration);
                 JcrNodeType nodeType = nodeTypeFrom(nodeTypeDefn, supertypes);
-                validate(nodeType, supertypes, typesPendingRegistration);
 
+                /*
+                 * Add this new node type to the pending registration list first in case it has a child node
+                 * definition that references itself (q.v., MODE-1050).
+                 */
                 typesPendingRegistration.add(nodeType);
+                validate(nodeType, supertypes, typesPendingRegistration);
             }
 
             // Make sure the nodes have primary types that are either already registered, or pending registration ...

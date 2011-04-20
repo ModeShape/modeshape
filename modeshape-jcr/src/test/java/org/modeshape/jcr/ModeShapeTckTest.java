@@ -26,6 +26,8 @@ import javax.jcr.ValueFactory;
 import javax.jcr.lock.LockException;
 import javax.jcr.lock.LockManager;
 import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.nodetype.NodeDefinitionTemplate;
+import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.nodetype.PropertyDefinitionTemplate;
 import javax.jcr.version.Version;
@@ -1919,5 +1921,24 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         } catch (UnsupportedRepositoryOperationException e) {
             return false;
         }
+    }
+
+    @SuppressWarnings( "unchecked" )
+    @FixFor( "MODE-1050" )
+    public void testShouldSuccessfullyRegisterChildAndParentSameTypes() throws RepositoryException {
+        Session session = getHelper().getSuperuserSession();
+
+        session.getWorkspace().getNamespaceRegistry().registerNamespace("mx", "urn:test");
+        final NodeTypeManager nodeTypeMgr = session.getWorkspace().getNodeTypeManager();
+
+        final NodeTypeTemplate nodeType = nodeTypeMgr.createNodeTypeTemplate();
+        nodeType.setName("mx:type");
+        nodeType.setDeclaredSuperTypeNames(new String[] {"nt:folder"});
+
+        final NodeDefinitionTemplate subTypes = nodeTypeMgr.createNodeDefinitionTemplate();
+        subTypes.setRequiredPrimaryTypeNames(new String[] {"mx:type"});
+        nodeType.getNodeDefinitionTemplates().add(subTypes);
+
+        nodeTypeMgr.registerNodeType(nodeType, false);
     }
 }
