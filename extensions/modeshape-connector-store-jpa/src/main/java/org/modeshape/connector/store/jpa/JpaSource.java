@@ -44,8 +44,6 @@ import javax.naming.spi.ObjectFactory;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
-import org.modeshape.common.annotation.Immutable;
-import org.modeshape.common.annotation.ThreadSafe;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Environment;
@@ -54,7 +52,9 @@ import org.hibernate.engine.SessionFactoryImplementor;
 import org.modeshape.common.annotation.AllowedValues;
 import org.modeshape.common.annotation.Category;
 import org.modeshape.common.annotation.Description;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.Label;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
@@ -116,6 +116,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     protected static final String DIALECT = "dialect";
     protected static final String USERNAME = "username";
     protected static final String PASSWORD = "password";
+    protected static final String SCHEMA_NAME = "schemaName";
     protected static final String URL = "url";
     protected static final String DRIVER_CLASS_NAME = "driverClassName";
     protected static final String DRIVER_CLASSLOADER_NAME = "driverClassloaderName";
@@ -176,6 +177,8 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      * The initial {@link #getDefaultWorkspaceName() name of the default workspace} is "{@value} ", unless otherwise specified.
      */
     public static final String DEFAULT_NAME_OF_DEFAULT_WORKSPACE = "default";
+
+    public static final String DEFAULT_SCHEMA_NAME = null;
 
     /**
      * The default value for {@link #setIsolationLevel(Integer)} is 'null', meaning this source does not explicitly set the
@@ -238,6 +241,11 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     @Label( i18n = JpaConnectorI18n.class, value = "passwordPropertyLabel" )
     @Category( i18n = JpaConnectorI18n.class, value = "passwordPropertyCategory" )
     private volatile String password;
+
+    @Description( i18n = JpaConnectorI18n.class, value = "schemaNamePropertyDescription" )
+    @Label( i18n = JpaConnectorI18n.class, value = "schemaNamePropertyLabel" )
+    @Category( i18n = JpaConnectorI18n.class, value = "schemaNamePropertyCategory" )
+    private volatile String schemaName = DEFAULT_SCHEMA_NAME;
 
     @Description( i18n = JpaConnectorI18n.class, value = "urlPropertyDescription" )
     @Label( i18n = JpaConnectorI18n.class, value = "urlPropertyLabel" )
@@ -731,6 +739,20 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     }
 
     /**
+     * @return schemaName
+     */
+    public String getSchemaName() {
+        return schemaName;
+    }
+
+    /**
+     * @param schemaName Sets schemaName to the specified value.
+     */
+    public synchronized void setSchemaName( String schemaName ) {
+        this.schemaName = schemaName;
+    }
+
+    /**
      * @return url
      */
     public String getUrl() {
@@ -1009,6 +1031,9 @@ public class JpaSource implements RepositorySource, ObjectFactory {
         ref.add(new StringRefAddr(DIALECT, getDialect()));
         ref.add(new StringRefAddr(USERNAME, getUsername()));
         ref.add(new StringRefAddr(PASSWORD, getPassword()));
+        if (getSchemaName() != null) {
+            ref.add(new StringRefAddr(SCHEMA_NAME, getSchemaName()));
+        }
         ref.add(new StringRefAddr(URL, getUrl()));
         ref.add(new StringRefAddr(DRIVER_CLASS_NAME, getDriverClassName()));
         ref.add(new StringRefAddr(DRIVER_CLASSLOADER_NAME, getDriverClassloaderName()));
@@ -1075,6 +1100,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
             String dialect = values.get(DIALECT);
             String username = values.get(USERNAME);
             String password = values.get(PASSWORD);
+            String schemaName = values.get(SCHEMA_NAME);
             String url = values.get(URL);
             String driverClassName = values.get(DRIVER_CLASS_NAME);
             String driverClassloaderName = values.get(DRIVER_CLASSLOADER_NAME);
@@ -1110,6 +1136,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
             if (dialect != null) source.setDialect(dialect);
             if (username != null) source.setUsername(username);
             if (password != null) source.setPassword(password);
+            if (schemaName != null) source.setSchemaName(schemaName);
             if (url != null) source.setUrl(url);
             if (driverClassName != null) source.setDriverClassName(driverClassName);
             if (driverClassloaderName != null) source.setDriverClassloaderName(driverClassloaderName);
@@ -1161,6 +1188,9 @@ public class JpaSource implements RepositorySource, ObjectFactory {
             }
             if (this.isolationLevel != null) {
                 setProperty(configurator, Environment.ISOLATION, this.isolationLevel);
+            }
+            if (this.schemaName != null) {
+                setProperty(configurator, Environment.DEFAULT_SCHEMA, this.schemaName);
             }
 
             // Configure additional properties, which may be overridden by subclasses ...
