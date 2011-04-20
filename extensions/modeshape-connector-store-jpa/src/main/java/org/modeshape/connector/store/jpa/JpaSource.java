@@ -343,9 +343,9 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     @Category( i18n = JpaConnectorI18n.class, value = "isolationLevelPropertyCategory" )
     private volatile Integer isolationLevel = DEFAULT_ISOLATION_LEVEL;
 
-    @Description( i18n = JpaConnectorI18n.class, value = "predefinedWorkspacesPropertyDescription" )
-    @Label( i18n = JpaConnectorI18n.class, value = "predefinedWorkspacesPropertyLabel" )
-    @Category( i18n = JpaConnectorI18n.class, value = "predefinedWorkspacesPropertyCategory" )
+    @Description( i18n = JpaConnectorI18n.class, value = "predefinedWorkspaceNamesPropertyDescription" )
+    @Label( i18n = JpaConnectorI18n.class, value = "predefinedWorkspaceNamesPropertyLabel" )
+    @Category( i18n = JpaConnectorI18n.class, value = "predefinedWorkspaceNamesPropertyCategory" )
     private volatile String[] predefinedWorkspaces = new String[] {};
 
     private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(
@@ -1234,9 +1234,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
                 setProperty(configurator, Environment.POOL_SIZE, 0); // don't use the built-in pool
                 if (this.maximumConnectionsInPool > 0) {
                     // Set the connection pooling properties (to use C3P0) ...
-                    setProperty(configurator,
-                                Environment.CONNECTION_PROVIDER,
-                                "org.hibernate.connection.C3P0ConnectionProvider");
+                    setProperty(configurator, Environment.CONNECTION_PROVIDER, "org.hibernate.connection.C3P0ConnectionProvider");
                     setProperty(configurator, Environment.C3P0_MAX_SIZE, this.maximumConnectionsInPool);
                     setProperty(configurator, Environment.C3P0_MIN_SIZE, this.minimumConnectionsInPool);
                     setProperty(configurator, Environment.C3P0_TIMEOUT, this.maximumConnectionIdleTimeInSeconds);

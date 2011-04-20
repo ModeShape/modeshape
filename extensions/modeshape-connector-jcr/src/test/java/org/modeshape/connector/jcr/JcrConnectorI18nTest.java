@@ -23,11 +23,17 @@
  */
 package org.modeshape.connector.jcr;
 
+import org.junit.Test;
 import org.modeshape.common.AbstractI18nTest;
 
 public class JcrConnectorI18nTest extends AbstractI18nTest {
 
     public JcrConnectorI18nTest() {
         super(JcrConnectorI18n.class);
+    }
+
+    @Test
+    public void shouldHaveI18nConstantsAndPropertiesForJcrRepositorySource() throws Exception {
+        verifyI18nForAnnotationsOnObject(new JcrRepositorySource());
     }
 }

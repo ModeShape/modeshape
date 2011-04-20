@@ -23,8 +23,8 @@
  */
 package org.modeshape.connector.svn;
 
+import org.junit.Test;
 import org.modeshape.common.AbstractI18nTest;
-import org.modeshape.connector.svn.SvnRepositoryConnectorI18n;
 
 /**
  */
@@ -33,4 +33,10 @@ public class SvnRepositoryConnectorI18nTest extends AbstractI18nTest {
     public SvnRepositoryConnectorI18nTest() {
         super(SvnRepositoryConnectorI18n.class);
     }
+
+    @Test
+    public void shouldHaveI18nConstantsAndPropertiesForSvnRepositorySource() throws Exception {
+        verifyI18nForAnnotationsOnObject(new SvnRepositorySource());
+    }
+
 }

@@ -23,12 +23,17 @@
  */
 package org.modeshape.connector.meta.jdbc;
 
-
+import org.junit.Test;
 import org.modeshape.common.AbstractI18nTest;
 
 public class JdbcMetadataI18nTest extends AbstractI18nTest {
 
     public JdbcMetadataI18nTest() {
         super(JdbcMetadataI18nTest.class);
+    }
+
+    @Test
+    public void shouldHaveI18nConstantsAndPropertiesForJdbcMetadataSource() throws Exception {
+        verifyI18nForAnnotationsOnObject(new JdbcMetadataSource());
     }
 }

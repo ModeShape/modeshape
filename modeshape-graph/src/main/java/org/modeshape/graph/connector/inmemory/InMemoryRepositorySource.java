@@ -43,12 +43,12 @@ import javax.naming.RefAddr;
 import javax.naming.Reference;
 import javax.naming.StringRefAddr;
 import javax.naming.spi.ObjectFactory;
-import org.modeshape.common.annotation.GuardedBy;
-import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.annotation.Category;
 import org.modeshape.common.annotation.Description;
+import org.modeshape.common.annotation.GuardedBy;
 import org.modeshape.common.annotation.Label;
 import org.modeshape.common.annotation.ReadOnly;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
@@ -122,9 +122,9 @@ public class InMemoryRepositorySource implements BaseRepositorySource, ObjectFac
     @Category( i18n = GraphI18n.class, value = "rootNodeUuidPropertyCategory" )
     private UUID rootNodeUuid = UUID.randomUUID();
 
-    @Description( i18n = GraphI18n.class, value = "predefinedWorkspacesPropertyDescription" )
-    @Label( i18n = GraphI18n.class, value = "predefinedWorkspacesPropertyLabel" )
-    @Category( i18n = GraphI18n.class, value = "predefinedWorkspacesPropertyCategory" )
+    @Description( i18n = GraphI18n.class, value = "predefinedWorkspaceNamesPropertyDescription" )
+    @Label( i18n = GraphI18n.class, value = "predefinedWorkspaceNamesPropertyLabel" )
+    @Category( i18n = GraphI18n.class, value = "predefinedWorkspaceNamesPropertyCategory" )
     private volatile String[] predefinedWorkspaces = new String[] {};
 
     @Description( i18n = GraphI18n.class, value = "retryLimitPropertyDescription" )

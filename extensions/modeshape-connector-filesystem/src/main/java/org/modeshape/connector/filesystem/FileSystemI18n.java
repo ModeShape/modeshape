@@ -64,6 +64,9 @@ public final class FileSystemI18n {
     public static I18n exclusionPatternPropertyDescription;
     public static I18n exclusionPatternPropertyLabel;
     public static I18n exclusionPatternPropertyCategory;
+    public static I18n inclusionPatternPropertyDescription;
+    public static I18n inclusionPatternPropertyLabel;
+    public static I18n inclusionPatternPropertyCategory;
     public static I18n maxPathLengthPropertyDescription;
     public static I18n maxPathLengthPropertyLabel;
     public static I18n maxPathLengthPropertyCategory;

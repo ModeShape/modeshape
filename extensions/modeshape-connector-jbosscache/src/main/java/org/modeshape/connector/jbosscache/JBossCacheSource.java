@@ -45,15 +45,15 @@ import javax.naming.Reference;
 import javax.naming.Referenceable;
 import javax.naming.StringRefAddr;
 import javax.naming.spi.ObjectFactory;
-import org.modeshape.common.annotation.GuardedBy;
-import org.modeshape.common.annotation.ThreadSafe;
 import org.jboss.cache.Cache;
 import org.jboss.cache.CacheFactory;
 import org.jboss.cache.DefaultCacheFactory;
 import org.jboss.cache.config.ConfigurationException;
 import org.modeshape.common.annotation.Category;
 import org.modeshape.common.annotation.Description;
+import org.modeshape.common.annotation.GuardedBy;
 import org.modeshape.common.annotation.Label;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.HashCode;
 import org.modeshape.common.util.Logger;
@@ -133,7 +133,7 @@ public class JBossCacheSource implements BaseRepositorySource, ObjectFactory {
 
     @Description( i18n = JBossCacheConnectorI18n.class, value = "cacheFactoryJndiNamePropertyDescription" )
     @Label( i18n = JBossCacheConnectorI18n.class, value = "cacheFactoryJndiNamePropertyLabel" )
-    @Category( i18n = JBossCacheConnectorI18n.class, value = "cacheFactoryrJndiNamePropertyCategory" )
+    @Category( i18n = JBossCacheConnectorI18n.class, value = "cacheFactoryJndiNamePropertyCategory" )
     private volatile String cacheFactoryJndiName;
 
     @Description( i18n = JBossCacheConnectorI18n.class, value = "cacheJndiNamePropertyDescription" )
@@ -151,9 +151,9 @@ public class JBossCacheSource implements BaseRepositorySource, ObjectFactory {
     @Category( i18n = JBossCacheConnectorI18n.class, value = "defaultWorkspaceNamePropertyCategory" )
     private volatile String defaultWorkspace;
 
-    @Description( i18n = JBossCacheConnectorI18n.class, value = "predefinedWorkspacesPropertyDescription" )
-    @Label( i18n = JBossCacheConnectorI18n.class, value = "predefinedWorkspacesPropertyLabel" )
-    @Category( i18n = JBossCacheConnectorI18n.class, value = "predefinedWorkspacesPropertyCategory" )
+    @Description( i18n = JBossCacheConnectorI18n.class, value = "predefinedWorkspaceNamesPropertyDescription" )
+    @Label( i18n = JBossCacheConnectorI18n.class, value = "predefinedWorkspaceNamesPropertyLabel" )
+    @Category( i18n = JBossCacheConnectorI18n.class, value = "predefinedWorkspaceNamesPropertyCategory" )
     private volatile String[] predefinedWorkspaces = new String[] {};
 
     @Description( i18n = JBossCacheConnectorI18n.class, value = "updatesAllowedPropertyDescription" )

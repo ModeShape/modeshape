@@ -23,6 +23,7 @@
  */
 package org.modeshape.connector.infinispan;
 
+import org.junit.Test;
 import org.modeshape.common.AbstractI18nTest;
 
 /**
@@ -32,5 +33,15 @@ public class InfinispanConnectorI18nTest extends AbstractI18nTest {
 
     public InfinispanConnectorI18nTest() {
         super(InfinispanConnectorI18n.class);
+    }
+
+    @Test
+    public void shouldHaveI18nConstantsAndPropertiesForInfinispanSource() throws Exception {
+        verifyI18nForAnnotationsOnObject(new InfinispanSource());
+    }
+
+    @Test
+    public void shouldHaveI18nConstantsAndPropertiesForRemoteInfinispanSource() throws Exception {
+        verifyI18nForAnnotationsOnObject(new RemoteInfinispanSource());
     }
 }

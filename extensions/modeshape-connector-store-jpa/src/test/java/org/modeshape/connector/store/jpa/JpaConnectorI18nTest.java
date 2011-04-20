@@ -23,6 +23,7 @@
  */
 package org.modeshape.connector.store.jpa;
 
+import org.junit.Test;
 import org.modeshape.common.AbstractI18nTest;
 
 /**
@@ -32,5 +33,10 @@ public class JpaConnectorI18nTest extends AbstractI18nTest {
 
     public JpaConnectorI18nTest() {
         super(JpaConnectorI18n.class);
+    }
+
+    @Test
+    public void shouldHaveI18nConstantsAndPropertiesForJpaSourceAnnotations() throws Exception {
+        verifyI18nForAnnotationsOnObject(new JpaSource());
     }
 }

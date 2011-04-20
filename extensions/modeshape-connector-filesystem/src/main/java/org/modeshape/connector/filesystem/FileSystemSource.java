@@ -36,10 +36,10 @@ import javax.naming.Context;
 import javax.naming.Reference;
 import javax.naming.StringRefAddr;
 import javax.naming.spi.ObjectFactory;
-import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.annotation.Category;
 import org.modeshape.common.annotation.Description;
 import org.modeshape.common.annotation.Label;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
@@ -152,9 +152,9 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
     @Category( i18n = FileSystemI18n.class, value = "workspaceRootPathPropertyCategory" )
     private volatile String workspaceRootPath;
 
-    @Description( i18n = FileSystemI18n.class, value = "predefinedWorkspacesPropertyDescription" )
-    @Label( i18n = FileSystemI18n.class, value = "predefinedWorkspacesPropertyLabel" )
-    @Category( i18n = FileSystemI18n.class, value = "predefinedWorkspacesPropertyCategory" )
+    @Description( i18n = FileSystemI18n.class, value = "predefinedWorkspaceNamesPropertyDescription" )
+    @Label( i18n = FileSystemI18n.class, value = "predefinedWorkspaceNamesPropertyLabel" )
+    @Category( i18n = FileSystemI18n.class, value = "predefinedWorkspaceNamesPropertyCategory" )
     private volatile String[] predefinedWorkspaces = new String[] {};
 
     @Description( i18n = FileSystemI18n.class, value = "maxPathLengthPropertyDescription" )
@@ -326,8 +326,8 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
      * @throws InstantiationException if the filename filter represents an abstract class, an interface, an array class, a
      *         primitive type, or void; or if the class has no nullary constructor; or if the instantiation fails for some other
      *         reason.
-     * @throws ClassCastException if the class named by {@code filenameFilterClassName} does not implement the {@code
-     *         FilenameFilter} interface
+     * @throws ClassCastException if the class named by {@code filenameFilterClassName} does not implement the
+     *         {@code FilenameFilter} interface
      */
     public synchronized void setFilenameFilter( String filenameFilterClassName )
         throws ClassCastException, ClassNotFoundException, IllegalAccessException, InstantiationException {
@@ -388,8 +388,8 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
      * <p>
      * The length of any path is calculated relative to the file system root, NOT the repository root. That is, if a workspace
      * {@code foo} is mapped to the {@code /tmp/foo/bar} directory on the file system, then the path {@code /node1/node2} in the
-     * {@code foo} workspace has an effective length of 23 for the purposes of the {@code maxPathLength} calculation ({@code
-     * /tmp/foo/bar} has length 11, {@code /node1/node2} has length 12, 11 + 12 = 23).
+     * {@code foo} workspace has an effective length of 23 for the purposes of the {@code maxPathLength} calculation (
+     * {@code /tmp/foo/bar} has length 11, {@code /node1/node2} has length 12, 11 + 12 = 23).
      * </p>
      * 
      * @param maxPathLength the maximum absolute path length supported by this source; must be non-negative
@@ -587,8 +587,8 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
      * @throws InstantiationException if the custom properties factory represents an abstract class, an interface, an array class,
      *         a primitive type, or void; or if the class has no nullary constructor; or if the instantiation fails for some other
      *         reason.
-     * @throws ClassCastException if the class named by {@code customPropertiesFactoryClassName} does not implement the {@code
-     *         CustomPropertiesFactory} interface
+     * @throws ClassCastException if the class named by {@code customPropertiesFactoryClassName} does not implement the
+     *         {@code CustomPropertiesFactory} interface
      * @see #setExtraPropertiesBehavior(String)
      */
     public synchronized void setCustomPropertiesFactory( String customPropertiesFactoryClassName )

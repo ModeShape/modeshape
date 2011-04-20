@@ -23,6 +23,7 @@
  */
 package org.modeshape.connector.filesystem;
 
+import org.junit.Test;
 import org.modeshape.common.AbstractI18nTest;
 
 /**
@@ -32,5 +33,10 @@ public class FileSystemI18nTest extends AbstractI18nTest {
 
     public FileSystemI18nTest() {
         super(FileSystemI18n.class);
+    }
+
+    @Test
+    public void shouldHaveI18nConstantsAndPropertiesForFileSystemSource() throws Exception {
+        verifyI18nForAnnotationsOnObject(new FileSystemSource());
     }
 }

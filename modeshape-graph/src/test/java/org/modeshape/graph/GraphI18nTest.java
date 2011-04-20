@@ -23,8 +23,14 @@
  */
 package org.modeshape.graph;
 
+import static org.mockito.Mockito.mock;
+import org.junit.Test;
 import org.modeshape.common.AbstractI18nTest;
-import org.modeshape.graph.GraphI18n;
+import org.modeshape.graph.connector.RepositoryConnectionPool;
+import org.modeshape.graph.connector.RepositorySource;
+import org.modeshape.graph.connector.federation.FederatedRepositorySource;
+import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
+import org.modeshape.graph.connector.xmlfile.XmlFileRepositorySource;
 
 /**
  * @author Randall Hauch
@@ -33,5 +39,26 @@ public class GraphI18nTest extends AbstractI18nTest {
 
     public GraphI18nTest() {
         super(GraphI18n.class);
+    }
+
+    @Test
+    public void shouldHaveI18nConstantsAndPropertiesForInMemoryRepositorySource() throws Exception {
+        verifyI18nForAnnotationsOnObject(new InMemoryRepositorySource());
+    }
+
+    @Test
+    public void shouldHaveI18nConstantsAndPropertiesForFederatedRepositorySource() throws Exception {
+        verifyI18nForAnnotationsOnObject(new FederatedRepositorySource());
+    }
+
+    @Test
+    public void shouldHaveI18nConstantsAndPropertiesForXmlFileRepositorySource() throws Exception {
+        verifyI18nForAnnotationsOnObject(new XmlFileRepositorySource());
+    }
+
+    @Test
+    public void shouldHaveI18nConstantsAndPropertiesForRepositoryConnectionPool() throws Exception {
+        RepositorySource source = mock(RepositorySource.class);
+        verifyI18nForAnnotationsOnObject(new RepositoryConnectionPool(source));
     }
 }

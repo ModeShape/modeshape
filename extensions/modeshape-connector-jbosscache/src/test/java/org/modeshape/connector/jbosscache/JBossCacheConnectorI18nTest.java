@@ -23,6 +23,7 @@
  */
 package org.modeshape.connector.jbosscache;
 
+import org.junit.Test;
 import org.modeshape.common.AbstractI18nTest;
 
 /**
@@ -32,5 +33,10 @@ public class JBossCacheConnectorI18nTest extends AbstractI18nTest {
 
     public JBossCacheConnectorI18nTest() {
         super(JBossCacheConnectorI18n.class);
+    }
+
+    @Test
+    public void shouldHaveI18nConstantsAndPropertiesForJBossCacheSource() throws Exception {
+        verifyI18nForAnnotationsOnObject(new JBossCacheSource());
     }
 }
