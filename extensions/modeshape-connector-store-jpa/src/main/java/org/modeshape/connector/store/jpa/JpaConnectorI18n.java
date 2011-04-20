@@ -91,6 +91,9 @@ public final class JpaConnectorI18n {
     public static I18n passwordPropertyDescription;
     public static I18n passwordPropertyLabel;
     public static I18n passwordPropertyCategory;
+    public static I18n schemaNamePropertyDescription;
+    public static I18n schemaNamePropertyLabel;
+    public static I18n schemaNamePropertyCategory;
     public static I18n usernamePropertyDescription;
     public static I18n usernamePropertyLabel;
     public static I18n usernamePropertyCategory;
