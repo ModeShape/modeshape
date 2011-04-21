@@ -138,6 +138,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     protected static final String PREDEFINED_WORKSPACE_NAMES = "predefinedWorkspaceNames";
     protected static final String ALLOW_CREATING_WORKSPACES = "allowCreatingWorkspaces";
     protected static final String AUTO_GENERATE_SCHEMA = "autoGenerateSchema";
+    protected static final String TRANSACTION_MANAGER_STRATEGY = "transactionManagerStrategy";
 
     /**
      * This source supports events.
@@ -1095,6 +1096,9 @@ public class JpaSource implements RepositorySource, ObjectFactory {
             ref.add(new StringRefAddr(MODEL_NAME, getModel()));
         }
         ref.add(new StringRefAddr(RETRY_LIMIT, Integer.toString(getRetryLimit())));
+        if (getTransactionManagerStrategy() != null) {
+            ref.add(new StringRefAddr(TRANSACTION_MANAGER_STRATEGY, getTransactionManagerStrategy()));
+        }
         return ref;
     }
 
@@ -1160,6 +1164,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
                 List<String> paths = StringUtil.splitLines(combinedWorkspaceNames);
                 workspaceNames = paths.toArray(new String[paths.size()]);
             }
+            String transactionManagerStrategy = values.get(TRANSACTION_MANAGER_STRATEGY);
 
             // Create the source instance ...
             JpaSource source = new JpaSource();
@@ -1190,6 +1195,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
             if (createWorkspaces != null) source.setCreatingWorkspacesAllowed(Boolean.parseBoolean(createWorkspaces));
             if (workspaceNames != null && workspaceNames.length != 0) source.setPredefinedWorkspaceNames(workspaceNames);
             if (autoGenerateSchema != null) source.setAutoGenerateSchema(autoGenerateSchema);
+            if (transactionManagerStrategy != null) source.setTransactionManagerStrategy(transactionManagerStrategy);
             return source;
         }
         return null;
