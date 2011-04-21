@@ -1132,6 +1132,24 @@
 							<attach>false</attach>
 		        </configuration>
 		      </plugin>
+          <plugin>
+            <!-- Copy the JDBC driver (with dependencies) JAR file into the distribution's target directory and rename ... -->
+            <artifactId>maven-antrun-plugin</artifactId>
+            <executions>
+              <execution>
+                <phase>package</phase>
+                <configuration>
+                  <tasks>
+                    <copy file="../utils/modeshape-jdbc/target/modeshape-jdbc-${project.version}-jar-with-dependencies.jar"
+                          tofile="${project.build.directory}/modeshape-${project.version}-client.jar" />
+                  </tasks>
+                </configuration>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
 		    </plugins>
 		  </build>
     </profile>
@@ -1344,7 +1362,25 @@
 							<attach>false</attach>
 		        </configuration>
 		      </plugin>
-				</plugins>
+          <plugin>
+            <!-- Copy the JDBC driver (with dependencies) JAR file into the distribution's target directory and rename ... -->
+            <artifactId>maven-antrun-plugin</artifactId>
+            <executions>
+              <execution>
+                <phase>package</phase>
+                <configuration>
+                  <tasks>
+                    <copy file="../utils/modeshape-jdbc/target/modeshape-jdbc-${project.version}-jar-with-dependencies.jar"
+                          tofile="${project.build.directory}/modeshape-${project.version}-client.jar" />
+                  </tasks>
+                </configuration>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
 			</build>
 		</profile>
   </profiles>

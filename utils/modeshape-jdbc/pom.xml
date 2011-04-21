@@ -274,7 +274,7 @@
                     <phase>package</phase>
                     <configuration>
                         <tasks>
-                            <unzip src="target/modeshape-jdbc-${project.version}-http-jar-with-dependencies.jar" dest="target/tempjars" />
+                            <unzip src="target/modeshape-jdbc-${project.version}-jar-with-dependencies.jar" dest="target/tempjars" />
                             
                             <unzip src="target/tempjars/jaxrs-api-1.2.1.GA.jar" dest="target/temploc" />                                   
                             <unzip src="target/tempjars/jcr-2.0.jar" dest="target/temploc" />                                   
@@ -329,13 +329,13 @@
                              </copy>
                                                                                                      
                             
-                            <delete file="target/modeshape-jdbc-${project.version}-http-jar-with-dependencies.jar" />
-                            <jar destfile="target/modeshape-jdbc-${project.version}-http-jar-with-dependencies.jar" basedir="target/temploc" />
+                            <delete file="target/modeshape-jdbc-${project.version}-jar-with-dependencies.jar" />
+                            <jar destfile="target/modeshape-jdbc-${project.version}-jar-with-dependencies.jar" basedir="target/temploc" />
                             
                              <delete dir="target/tempjars" />
                              <delete dir="target/temploc" />
                              <delete dir="target/tempproviders" />
-                             <delete file="target/modeshape-jdbc-${project.version}-http-jar-with-dependencies.zip" />
+                             <delete file="target/modeshape-jdbc-${project.version}-jar-with-dependencies.zip" />
                         </tasks>
                     </configuration>
                     <goals>

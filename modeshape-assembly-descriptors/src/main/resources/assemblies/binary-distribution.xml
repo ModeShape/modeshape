@@ -34,6 +34,16 @@
 		  <outputDirectory>lib/test</outputDirectory>
 		</dependencySet>
 	</dependencySets>
+	<files>
+	  <file>
+		  <!--
+			Gather into the distribution the client JAR (renamed)
+		  -->
+		  <source>../utils/modeshape-jdbc/target/modeshape-jdbc-${project.version}-jar-with-dependencies.jar</source>
+		  <outputDirectory>lib</outputDirectory>
+		  <destName>modeshape-client-${project.version}.jar</destName>
+	  </file>
+	</files>
   <fileSets>
 		<fileSet>
 		  <!--
