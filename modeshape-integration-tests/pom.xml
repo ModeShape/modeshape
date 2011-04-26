@@ -216,6 +216,18 @@
         </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-sequencer-sramp</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-sequencer-xsd</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-zip</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>

@@ -39,7 +39,7 @@ import org.modeshape.graph.property.ValueFormatException;
  * <p>
  * What distinguishes one property definition from another is not well documented in the JSR-170 specification. The closest this
  * version of the spec gets is Section 6.7.15, but that merely says that more than one property definition can have the same name.
- * The proposed draft of the JSR-283 specification does clarify this more: Section 4.7.15 says :
+ * The JSR-283 specification does clarify this more: Section 3.7.2.1.3 says :
  * </p>
  * <p>
  * <quote>"A node type may have two or more property definitions with identical name attributes (the value returned by

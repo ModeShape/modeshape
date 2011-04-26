@@ -40,22 +40,18 @@ import org.modeshape.graph.property.ValueFactory;
 
 /**
  * <p>
- * An implementation of {@link PropertyFactory} which provides the feature for
- * substituting special decorated variables (i.e., ${variable}) with a system
- * property. This will support the following decorated syntax options:
+ * An implementation of {@link PropertyFactory} which provides the feature for substituting special decorated variables (i.e.,
+ * ${variable}) with a system property. This will support the following decorated syntax options:
  * <li>${variable}</li>
  * <li>${variable [,variable,..] }</li>
  * <li>${variable [:defaultvalue] }</li>
  * </p>
  * <p>
- * Where the <i>variable</i> represents a value to be looked up in the System
- * properties and <i>defaultvalue</i> indicates what to use when the System
- * property is not found.
+ * Where the <i>variable</i> represents a value to be looked up in the System properties and <i>defaultvalue</i> indicates what to
+ * use when the System property is not found.
  * </p>
- * Notice that the syntax supports multiple <i>variables</i>. The logic will
- * process the <i>variables</i> from let to right, until a System property is
- * found. And at that point, it will stop and will not attempt to find values
- * for the other <i>variables</i>.
+ * Notice that the syntax supports multiple <i>variables</i>. The logic will process the <i>variables</i> from let to right, until
+ * a System property is found. And at that point, it will stop and will not attempt to find values for the other <i>variables</i>.
  * <p>
  */
 @Immutable
@@ -68,14 +64,14 @@ public class SystemPropertyFactory extends BasicPropertyFactory {
      * @throws IllegalArgumentException if the reference to the value factories is null
      */
     public SystemPropertyFactory( ValueFactories valueFactories ) {
-	super(valueFactories);
+        super(valueFactories);
         this.factories = valueFactories;
     }
-
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public Property create( Name name,
                             PropertyType desiredType,
                             Object... values ) {
@@ -104,10 +100,10 @@ public class SystemPropertyFactory extends BasicPropertyFactory {
             if (value instanceof Object[]) {
                 // The single value is an object array, so create the property with the array as the value(s)...
                 return create(name, desiredType, (Object[])value);
-            } 
+            }
             if (value instanceof String) {
-        	value = factory.create(getSubstitutedProperty((String)value));
-        	return new BasicSingleValueProperty(name, value);
+                value = factory.create(getSubstitutedProperty((String)value));
+                return new BasicSingleValueProperty(name, value);
             }
             value = factory.create(value);
             return new BasicSingleValueProperty(name, value);
@@ -123,6 +119,7 @@ public class SystemPropertyFactory extends BasicPropertyFactory {
     /**
      * {@inheritDoc}
      */
+    @Override
     @SuppressWarnings( "unchecked" )
     public Property create( Name name,
                             PropertyType desiredType,
@@ -151,7 +148,7 @@ public class SystemPropertyFactory extends BasicPropertyFactory {
         if (valueList.size() == 1) {
             Object o = valueList.get(0);
             if (o instanceof String) {
-        	o = getSubstitutedProperty( (String) o);
+                o = getSubstitutedProperty((String)o);
             }
             return new BasicSingleValueProperty(name, o);
         }
@@ -161,6 +158,7 @@ public class SystemPropertyFactory extends BasicPropertyFactory {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Property create( Name name,
                             PropertyType desiredType,
                             Iterator<?> values ) {
@@ -179,116 +177,117 @@ public class SystemPropertyFactory extends BasicPropertyFactory {
         if (valueList.size() == 1) {
             Object o = valueList.get(0);
             if (o instanceof String) {
-        	o = getSubstitutedProperty( (String) o);
+                o = getSubstitutedProperty((String)o);
             }
-          
+
             return new BasicSingleValueProperty(name, o);
         }
         return new BasicMultiValueProperty(name, valueList);
     }
-    
+
     private static final String CURLY_PREFIX = "${";
     private static final String CURLY_SUFFIX = "}";
     private static final String VAR_DELIM = ",";
     private static final String DEFAULT_DELIM = ":";
-   
-    
+
     /**
-     * getSubstitutedProperty is called to perform the property substitution on
-     * the value.
+     * getSubstitutedProperty is called to perform the property substitution on the value.
+     * 
      * @param value
      * @return String
      */
-    protected String getSubstitutedProperty(String value) {
+    protected String getSubstitutedProperty( String value ) {
 
-	if (value == null || value.trim().length() == 0) return null;
-	
-	StringBuffer sb = null;
+        if (value == null || value.trim().length() == 0) return null;
 
-	sb = new StringBuffer(value);
+        StringBuffer sb = null;
 
-	    // Get the index of the first constant, if any
-	int startName = sb.indexOf(CURLY_PREFIX);
+        sb = new StringBuffer(value);
 
-	if (startName == -1) return value;
-	    
-	// process as many different variable groupings that are defined, where one group will resolve to one property substitution
-	while (startName != -1) {
-		String defaultValue = null;
-		
-		int endName = sb.indexOf(CURLY_SUFFIX, startName);
+        // Get the index of the first constant, if any
+        int startName = sb.indexOf(CURLY_PREFIX);
 
-		if (endName == -1) {
-		    // if no suffix can be found, then this variable was probably defined incorrectly
-		    // but return what there is at this point
-		    return sb.toString();
-		}
+        if (startName == -1) return value;
 
-		String varString = sb.substring(startName + 2, endName);
-		if (varString.indexOf(DEFAULT_DELIM) > -1) {
-		    List<String> defaults = split(varString, DEFAULT_DELIM);
-		
-		// get the property(s) variables that are defined left of the default delimiter.
-		    varString = defaults.get(0);
-		
-		// if the default is defined, then capture in case none of the other properties are found
-		    if (defaults.size() == 2 ) {
-        		    defaultValue = defaults.get(1);
-		    }
-		}
-		
-		String constValue = null;
-		// split the property(s) based VAR_DELIM, when multiple property options are defined
-		List<String> vars = split(varString, VAR_DELIM);
-		for (String var : vars) {
-			constValue = System.getenv(var);
-			if (constValue == null) {
-			    constValue = System.getProperty(var);
-			}		    
-		    
-			// the first found property is the value to be substituted
-			if (constValue != null) {
-			    break;
-			}
-		}
+        // process as many different variable groupings that are defined, where one group will resolve to one property
+        // substitution
+        while (startName != -1) {
+            String defaultValue = null;
 
-		// if no property is found to substitute, then use the default value, if defined
-		if (constValue == null && defaultValue != null) {
-		    constValue = defaultValue;
-		}
-		
-		if (constValue != null) {
-		    sb = sb.replace(startName, endName + 1, constValue);
-		    // Checking for another constants
-		    startName = sb.indexOf(CURLY_PREFIX);
+            int endName = sb.indexOf(CURLY_SUFFIX, startName);
 
-		} else {
-		    // continue to try to substitute for other properties so that all defined variables
-		    // are tried to be substituted for
-		    startName = sb.indexOf(CURLY_PREFIX, endName);
-		    
-		}
+            if (endName == -1) {
+                // if no suffix can be found, then this variable was probably defined incorrectly
+                // but return what there is at this point
+                return sb.toString();
+            }
 
-	}
-	    
-	return sb.toString();
+            String varString = sb.substring(startName + 2, endName);
+            if (varString.indexOf(DEFAULT_DELIM) > -1) {
+                List<String> defaults = split(varString, DEFAULT_DELIM);
+
+                // get the property(s) variables that are defined left of the default delimiter.
+                varString = defaults.get(0);
+
+                // if the default is defined, then capture in case none of the other properties are found
+                if (defaults.size() == 2) {
+                    defaultValue = defaults.get(1);
+                }
+            }
+
+            String constValue = null;
+            // split the property(s) based VAR_DELIM, when multiple property options are defined
+            List<String> vars = split(varString, VAR_DELIM);
+            for (String var : vars) {
+                constValue = System.getenv(var);
+                if (constValue == null) {
+                    constValue = System.getProperty(var);
+                }
+
+                // the first found property is the value to be substituted
+                if (constValue != null) {
+                    break;
+                }
+            }
+
+            // if no property is found to substitute, then use the default value, if defined
+            if (constValue == null && defaultValue != null) {
+                constValue = defaultValue;
+            }
+
+            if (constValue != null) {
+                sb = sb.replace(startName, endName + 1, constValue);
+                // Checking for another constants
+                startName = sb.indexOf(CURLY_PREFIX);
+
+            } else {
+                // continue to try to substitute for other properties so that all defined variables
+                // are tried to be substituted for
+                startName = sb.indexOf(CURLY_PREFIX, endName);
+
+            }
+
+        }
+
+        return sb.toString();
     }
-    
-	/**
-	 * Split a string into pieces based on delimiters.  Similar to the perl function of
-	 * the same name.  The delimiters are not included in the returned strings.
-	 *
-	 * @param str Full string
-	 * @param splitter Characters to split on
-	 * @return List of String pieces from full string
-	 */
-    private static List<String> split(String str, String splitter) {
+
+    /**
+     * Split a string into pieces based on delimiters. Similar to the perl function of the same name. The delimiters are not
+     * included in the returned strings.
+     * 
+     * @param str Full string
+     * @param splitter Characters to split on
+     * @return List of String pieces from full string
+     */
+    private static List<String> split( String str,
+                                       String splitter ) {
         StringTokenizer tokens = new StringTokenizer(str, splitter);
         ArrayList<String> l = new ArrayList<String>(tokens.countTokens());
-        while(tokens.hasMoreTokens()) {
+        while (tokens.hasMoreTokens()) {
             l.add(tokens.nextToken());
         }
         return l;
-    }    
+    }
 
 }

@@ -28,6 +28,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -187,6 +188,22 @@ public class IoUtil {
             }
         }
         return sb.toString();
+    }
+
+    /**
+     * Write the entire contents of the supplied string to the given file.
+     * 
+     * @param content the content to write to the stream; may be null
+     * @param file the file to which the content is to be written
+     * @throws IOException
+     * @throws IllegalArgumentException if the stream is null
+     */
+    public static void write( String content,
+                              File file ) throws IOException {
+        CheckArg.isNotNull(file, "destination file");
+        if (content != null) {
+            write(content, new FileOutputStream(file));
+        }
     }
 
     /**

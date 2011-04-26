@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */ -->
+<xsd:schema targetNamespace="urn:uddi-org:subr_v3" xmlns:uddi="urn:uddi-org:api_v3" xmlns:uddi_sub="urn:uddi-org:sub_v3" xmlns:uddi_subr="urn:uddi-org:subr_v3" xmlns:xsd="http://www.w3.org/2001/XMLSchema" version="3.0.2" id="uddi_subcriptionListener">
+	<!--
+		Copyright (c) 2000-2002 by Accenture, Ariba, Inc., Commerce One, Inc.
+		Fujitsu Limited, Hewlett-Packard Company, i2 Technologies, Inc., Intel
+		Corporation, International Business Machines Corporation, Microsoft
+		Corporation, Oracle Corporation, SAP AG, Sun Microsystems, Inc., and
+		VeriSign, Inc. All Rights Reserved. Copyright (c) OASIS Open
+		2002-2004. All Rights Reserved. Version 3.0.2 This document and
+		translations of it may be copied and furnished to others, and
+		derivative works that comment on or otherwise explain it or assist in
+		its implementation may be prepared, copied, published and distributed,
+		in whole or in part, without restriction of any kind, provided that
+		the above copyright notice and this paragraph are included on all such
+		copies and derivative works. However, this document itself may not be
+		modified in any way, such as by removing the copyright notice or
+		references to OASIS, except as needed for the purpose of developing
+		OASIS specifications, in which case the procedures for copyrights
+		defined in the OASIS Intellectual Property Rights document must be
+		followed, or as required to translate it into languages other than
+		English.
+	-->
+	<xsd:import namespace="urn:uddi-org:api_v3" schemaLocation="uddi_v3.xsd"/>
+	<xsd:import namespace="urn:uddi-org:sub_v3" schemaLocation="uddi_v3subscription.xsd"/>
+	<xsd:element name="notify_subscriptionListener" type="uddi_subr:notify_subscriptionListener" final="restriction"/>
+	<xsd:complexType name="notify_subscriptionListener" final="restriction">
+		<xsd:sequence>
+			<xsd:element ref="uddi:authInfo" minOccurs="0"/>
+			<xsd:element ref="uddi_sub:subscriptionResultsList"/>
+		</xsd:sequence>
+	</xsd:complexType>
+</xsd:schema>
