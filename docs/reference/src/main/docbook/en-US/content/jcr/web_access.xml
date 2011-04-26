@@ -543,6 +543,18 @@ GET http://www.example.com/resources
 		"repository" : {
 			"name" : "modeshape%3arepository",
 			"resources" : { "workspaces":"/resources/modeshape%3arepository" }
+			"metadata" : {
+			   "jcr.specification.name" : "Content Repository for Java Technology API",
+         "jcr.specification.version" : "2.0",
+         "jcr.repository.name" : "ModeShape JCR Repository",
+         "jcr.repository.vendor.url" : "http://www.modeshape.org",
+         "jcr.repository.version" : "2.6.0.FINAL",
+         "option.versioning.supported" : "true",
+         
+         ... etc. ...
+
+         }
+			}
 		}
 	}
 }
@@ -552,6 +564,12 @@ GET http://www.example.com/resources
 		(the redundant "repository") and a list of available resources within the repository and their respective
 		URIs.  Note that ModeShape supports deploying multiple JCR repositories side-by-side on the same server,
 		so this response could easily contain multiple repositories in a real deployment.  
+	</para>
+	<para>
+	  Also, the "metadata" section is included only in responses from RESTful services starting with the version 2.5.0.Final release,
+	  and contains the <ulink url='&JcrApi;javax/jcr/Repository.html#getDescriptor(java.lang.String)'>JCR descriptors</ulink> 
+	  keys and values, where each value will either be a string or, if there are multiple values for the descriptor, an array of strings.
+	  Note not all the descriptors are shown in the above example.
 	</para>
 	<para>		
 		The only thing that you can do with a repository through the REST interface at this time is to

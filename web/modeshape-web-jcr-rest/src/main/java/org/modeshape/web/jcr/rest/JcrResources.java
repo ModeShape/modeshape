@@ -24,7 +24,6 @@
 package org.modeshape.web.jcr.rest;
 
 import java.io.IOException;
-import java.util.Map;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.query.InvalidQueryException;
@@ -42,22 +41,20 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
-import org.modeshape.common.annotation.Immutable;
 import org.codehaus.jettison.json.JSONException;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.UnauthorizedException;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.Base64;
-import org.modeshape.web.jcr.rest.model.RepositoryEntry;
-import org.modeshape.web.jcr.rest.model.WorkspaceEntry;
 import org.modeshape.web.jcr.spi.NoSuchRepositoryException;
 
 /**
- * RESTEasy handler to provide the JCR resources at the URIs below. Please note that these URIs assume a context of {@code
- * /resources} for the web application.
+ * RESTEasy handler to provide the JCR resources at the URIs below. Please note that these URIs assume a context of
+ * {@code /resources} for the web application.
  * <table border="1">
  * <tr>
  * <th>URI Pattern</th>
@@ -161,11 +158,13 @@ public class JcrResources extends AbstractHandler {
      * 
      * @param request the servlet request; may not be null
      * @return the list of JCR repositories available on this server
+     * @throws JSONException if there is an error encoding the node
+     * @throws RepositoryException if any other error occurs
      */
     @GET
     @Path( "/" )
     @Produces( "application/json" )
-    public Map<String, RepositoryEntry> getRepositories( @Context HttpServletRequest request ) {
+    public String getRepositories( @Context HttpServletRequest request ) throws JSONException, RepositoryException {
         return serverHandler.getRepositories(request);
     }
 
@@ -175,16 +174,15 @@ public class JcrResources extends AbstractHandler {
      * @param rawRepositoryName the name of the repository; may not be null
      * @param request the servlet request; may not be null
      * @return the list of workspaces available to this user within the named repository.
-     * @throws IOException if the given repository name does not map to any repositories and there is an error writing the error
-     *         code to the response.
+     * @throws JSONException if there is an error encoding the node
      * @throws RepositoryException if there is any other error accessing the list of available workspaces for the repository
      */
     @GET
     @Path( "/{repositoryName}" )
     @Produces( "application/json" )
-    public Map<String, WorkspaceEntry> getWorkspaces( @Context HttpServletRequest request,
-                                                      @PathParam( "repositoryName" ) String rawRepositoryName )
-        throws RepositoryException, IOException {
+    public String getWorkspaces( @Context HttpServletRequest request,
+                                 @PathParam( "repositoryName" ) String rawRepositoryName )
+        throws JSONException, RepositoryException {
         return repositoryHandler.getWorkspaces(request, rawRepositoryName);
     }
 
@@ -200,8 +198,8 @@ public class JcrResources extends AbstractHandler {
      * @param depth the depth of the node graph that should be returned if {@code path} refers to a node. @{code 0} means return
      *        the requested node only. A negative value indicates that the full subgraph under the node should be returned. This
      *        parameter defaults to {@code 0} and is ignored if {@code path} refers to a property.
-     * @return the JSON-encoded version of the item (and, if the item is a node, its subgraph, depending on the value of {@code
-     *         depth})
+     * @return the JSON-encoded version of the item (and, if the item is a node, its subgraph, depending on the value of
+     *         {@code depth})
      * @throws NotFoundException if the named repository does not exists, the named workspace does not exist, or the user does not
      *         have access to the named workspace
      * @throws JSONException if there is an error encoding the node
@@ -228,8 +226,8 @@ public class JcrResources extends AbstractHandler {
     /**
      * Adds the content of the request as a node (or subtree of nodes) at the location specified by {@code path}.
      * <p>
-     * The primary type and mixin type(s) may optionally be specified through the {@code jcr:primaryType} and {@code
-     * jcr:mixinTypes} properties.
+     * The primary type and mixin type(s) may optionally be specified through the {@code jcr:primaryType} and
+     * {@code jcr:mixinTypes} properties.
      * </p>
      * 
      * @param request the servlet request; may not be null or unauthenticated

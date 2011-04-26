@@ -25,6 +25,7 @@ package org.modeshape.web.jcr.rest.model;
 
 import javax.xml.bind.annotation.XmlElement;
 
+@Deprecated
 public class RepositoryResources {
     private String baseUri;
 
@@ -41,8 +42,7 @@ public class RepositoryResources {
         return baseUri;
     }
 
-    public void setWorkspaces(String workspaces) {
+    public void setWorkspaces( String workspaces ) {
         this.baseUri = workspaces;
     }
 }
-

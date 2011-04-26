@@ -26,6 +26,7 @@ package org.modeshape.web.jcr.rest.model;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
+@Deprecated
 @XmlRootElement( name = "repository" )
 public class RepositoryEntry {
 
@@ -48,7 +49,7 @@ public class RepositoryEntry {
         return name;
     }
 
-    public void setName(String name) {
+    public void setName( String name ) {
         this.name = name;
     }
 
@@ -57,7 +58,7 @@ public class RepositoryEntry {
         return resources;
     }
 
-    public void setResources(RepositoryResources resources) {
+    public void setResources( RepositoryResources resources ) {
         this.resources = resources;
     }
 }

@@ -26,6 +26,7 @@ package org.modeshape.web.jcr.rest.model;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
+@Deprecated
 @XmlRootElement( name = "workspace" )
 public class WorkspaceEntry {
 
@@ -49,7 +50,7 @@ public class WorkspaceEntry {
         return name;
     }
 
-    public void setName(String name) {
+    public void setName( String name ) {
         this.name = name;
     }
 
@@ -58,8 +59,7 @@ public class WorkspaceEntry {
         return resources;
     }
 
-    public void setResources(WorkspaceResources resources) {
+    public void setResources( WorkspaceResources resources ) {
         this.resources = resources;
     }
 }
-
