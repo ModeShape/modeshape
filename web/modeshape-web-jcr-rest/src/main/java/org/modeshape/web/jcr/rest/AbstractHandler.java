@@ -22,7 +22,6 @@ abstract class AbstractHandler {
     /** Name to be used when the workspace name is empty string as {@code "//"} is not a valid path. */
     public static final String EMPTY_WORKSPACE_NAME = "<default>";
 
-
     /**
      * Returns an active session for the given workspace name in the named repository.
      * 
@@ -33,8 +32,8 @@ abstract class AbstractHandler {
      * @throws RepositoryException if any other error occurs
      */
     protected Session getSession( HttpServletRequest request,
-                                String rawRepositoryName,
-                                String rawWorkspaceName ) throws RepositoryException {
+                                  String rawRepositoryName,
+                                  String rawWorkspaceName ) throws RepositoryException {
         assert request != null;
 
         return RepositoryFactory.getSession(request, repositoryNameFor(rawRepositoryName), workspaceNameFor(rawWorkspaceName));
@@ -70,6 +69,8 @@ abstract class AbstractHandler {
      * @throws RepositoryException if there is a problem accessing the value
      */
     protected String jsonEncodedStringFor( Value value ) throws RepositoryException {
+        if (value.getType() != PropertyType.BINARY) return value.getString();
+
         // Encode the binary value in Base64 ...
         InputStream stream = value.getBinary().getStream();
         try {
@@ -85,5 +86,4 @@ abstract class AbstractHandler {
             }
         }
     }
-    
 }

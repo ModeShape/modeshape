@@ -43,6 +43,8 @@ import org.codehaus.jettison.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.util.Base64;
+import org.modeshape.jcr.JcrI18n;
+import org.modeshape.jcr.api.Repository;
 
 /**
  * Test of the ModeShape JCR REST resource. Note that this test case uses a very low-level API to construct requests and
@@ -144,12 +146,29 @@ public class JcrResourcesTest {
         String body = getResponseFor(connection);
 
         JSONObject objFromResponse = new JSONObject(body);
+        JSONObject modeRepository = (JSONObject)objFromResponse.get("mode%3arepository");
+        JSONObject repository = (JSONObject)modeRepository.get("repository");
+        JSONObject metadata = (JSONObject)repository.get("metadata");
         JSONObject expected = new JSONObject(
                                              "{\"mode%3arepository\":{\"repository\":{\"name\":\"mode%3arepository\",\"resources\":{\"workspaces\":\""
                                              + SERVER_CONTEXT + "/mode%3arepository\"}}}}");
 
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
+        if (metadata != null) {
+            // put the metadata inside the expected value ...
+            ((JSONObject)((JSONObject)expected.get("mode%3arepository")).get("repository")).put("metadata", metadata);
+        }
         assertThat(objFromResponse.toString(), is(expected.toString()));
+
+        if (metadata != null) {
+            assertThat(metadata.get(Repository.SPEC_NAME_DESC), is((Object)JcrI18n.SPEC_NAME_DESC.text()));
+            assertThat(metadata.get(Repository.SPEC_VERSION_DESC), is((Object)"2.0"));
+            assertThat(metadata.get(Repository.REP_NAME_DESC), is((Object)"ModeShape JCR Repository"));
+            // assertThat(metadata.get(Repository.REP_VENDOR_DESC),is((Object)"JBoss, a division of Red Hat"));
+            assertThat(metadata.get(Repository.REP_VENDOR_URL_DESC), is((Object)"http://www.modeshape.org"));
+            assertThat(metadata.get(Repository.REP_VERSION_DESC).toString().startsWith("2."), is(true));
+            assertThat(metadata.get(Repository.OPTION_VERSIONING_SUPPORTED), is((Object)"true"));
+        }
         connection.disconnect();
     }
 
@@ -164,10 +183,8 @@ public class JcrResourcesTest {
         String body = getResponseFor(connection);
 
         JSONObject objFromResponse = new JSONObject(body);
-        JSONObject expected = new JSONObject(
-                                             "{\"default\":{\"workspace\":{\"name\":\"default\",\"resources\":{\"query\":\""
-                                             + SERVER_CONTEXT
-                                             + "/mode%3arepository/default/query\",\"items\":\""
+        JSONObject expected = new JSONObject("{\"default\":{\"workspace\":{\"name\":\"default\",\"resources\":{\"query\":\""
+                                             + SERVER_CONTEXT + "/mode%3arepository/default/query\",\"items\":\""
                                              + SERVER_CONTEXT + "/mode%3arepository/default/items\"}}}}");
 
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));

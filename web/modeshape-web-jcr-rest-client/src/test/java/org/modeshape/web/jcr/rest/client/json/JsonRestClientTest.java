@@ -103,7 +103,17 @@ public final class JsonRestClientTest {
     public void shouldGetRepositories() throws Exception {
         Collection<Repository> repositories = this.restClient.getRepositories(SERVER);
         assertThat(repositories.size(), equalTo(1));
-        assertThat(repositories.iterator().next(), is(REPOSITORY1));
+        Repository repo = repositories.iterator().next();
+        assertThat(repo, is(REPOSITORY1));
+        if (!repo.getMetadata().isEmpty()) {
+            Map<String, Object> metadata = repo.getMetadata();
+            assertThat(metadata.get("jcr.specification.name"), is((Object)"Content Repository for Java Technology API"));
+            assertThat(metadata.get("jcr.specification.version"), is((Object)"2.0"));
+            assertThat(metadata.get("jcr.repository.name"), is((Object)"ModeShape JCR Repository"));
+            assertThat(metadata.get("jcr.repository.vendor.url"), is((Object)"http://www.modeshape.org"));
+            assertThat(metadata.get("jcr.repository.version").toString().startsWith("2."), is(true));
+            assertThat(metadata.get("option.versioning.supported"), is((Object)"true"));
+        }
     }
 
     // Test is not currently working as a unit test, cause it throws an exception when using the default cargo setup
