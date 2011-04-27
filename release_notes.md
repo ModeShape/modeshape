@@ -1,14 +1,11 @@
 # Release Notes for ModeShape &version;
 
-ModeShape &version; includes several new minor improvements and changes since 2.5.0.Beta1, including:
+ModeShape &version; includes several minor features, improvements, and bug fixes since 2.4.0.Final, including:
 
 - upgrades of several third-party dependencies
 - smaller JAR files (no longer dependent upon Google Collections or the JCIP libraries)
 - versioning-related fixes and performance improvements
 - about twenty bug fixes
-
-The 2.5.0.Beta1 release included:
-
 - new javax.jcr.Credentials classes for anonymous and HTTP servlet authentication
 - a built-in profiling framework enabling use of Byteman runtime bytecode injection
 - refactored the build process, which now uses Maven 3
