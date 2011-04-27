@@ -23,16 +23,18 @@
  */
 package org.modeshape.web.jcr.rest.client.json;
 
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONObject;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
 import org.modeshape.web.jcr.rest.client.domain.Repository;
 import org.modeshape.web.jcr.rest.client.domain.Server;
-
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
 
 /**
  * The <code>ServerNode</code> class is responsible for knowing how to create a URL for a server, create a URL to obtain a
@@ -110,8 +112,34 @@ public final class ServerNode extends JsonNode {
 
         // keys are the repository names
         for (Iterator<String> itr = jsonObj.keys(); itr.hasNext();) {
-            String name = JsonUtils.decode(itr.next());
-            Repository repository = new Repository(name, this.server);
+            String encodedName = itr.next();
+            String name = JsonUtils.decode(encodedName);
+
+            // Get the metadata, if there ...
+            Map<String, Object> meta = new HashMap<String, Object>();
+            JSONObject named = (JSONObject)jsonObj.get(encodedName);
+            JSONObject repo = (JSONObject)named.get("repository");
+            if (repo != null) {
+                JSONObject metadata = (JSONObject)repo.get("metadata");
+                if (metadata != null) {
+                    for (Iterator<String> keyIter = metadata.keys(); keyIter.hasNext();) {
+                        String key = keyIter.next();
+                        Object values = metadata.get(key);
+                        if (values instanceof JSONArray) {
+                            // Extract the string values ...
+                            JSONArray vals = (JSONArray)values;
+                            String[] stringValues = new String[vals.length()];
+                            for (int i = 0; i != vals.length(); ++i) {
+                                stringValues[i] = vals.getString(i);
+                            }
+                            values = stringValues;
+                        }
+                        meta.put(key, values);
+                    }
+                    LOGGER.trace("getRepositories: found metadata {0}", meta);
+                }
+            }
+            Repository repository = new Repository(name, this.server, meta);
             repositories.add(repository);
             LOGGER.trace("getRepositories: adding repository={0}", repository);
         }

@@ -1,13 +1,11 @@
 package org.modeshape.web.jcr.rest;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.servlet.http.HttpServletRequest;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
 import org.modeshape.common.annotation.Immutable;
-import org.modeshape.web.jcr.rest.model.WorkspaceEntry;
 
 /**
  * Resource handler that implements REST methods for repositories and workspaces.
@@ -21,17 +19,16 @@ class RepositoryHandler extends AbstractHandler {
      * @param rawRepositoryName the name of the repository; may not be null
      * @param request the servlet request; may not be null
      * @return the list of workspaces available to this user within the named repository.
-     * @throws IOException if the given repository name does not map to any repositories and there is an error writing the error
-     *         code to the response.
+     * @throws JSONException if there is an error encoding the response
      * @throws RepositoryException if there is any other error accessing the list of available workspaces for the repository
      */
-    public Map<String, WorkspaceEntry> getWorkspaces( HttpServletRequest request,
-                                                      String rawRepositoryName ) throws RepositoryException, IOException {
+    public String getWorkspaces( HttpServletRequest request,
+                                 String rawRepositoryName ) throws JSONException, RepositoryException {
 
         assert request != null;
         assert rawRepositoryName != null;
 
-        Map<String, WorkspaceEntry> workspaces = new HashMap<String, WorkspaceEntry>();
+        JSONObject workspaces = new JSONObject();
 
         Session session = getSession(request, rawRepositoryName, null);
         rawRepositoryName = URL_ENCODER.encode(rawRepositoryName);
@@ -44,10 +41,21 @@ class RepositoryHandler extends AbstractHandler {
                 name = EMPTY_WORKSPACE_NAME;
             }
             name = URL_ENCODER.encode(name);
-            workspaces.put(name, new WorkspaceEntry(uri, rawRepositoryName, name));
+
+            JSONObject workspace = new JSONObject();
+            JSONObject resources = new JSONObject();
+            String uriPrefix = uri + "/" + rawRepositoryName + "/" + name;
+            resources.put("query", uriPrefix + "/query");
+            resources.put("items", uriPrefix + "/items");
+            workspace.put("name", name);
+            workspace.put("resources", resources);
+
+            JSONObject wrapper = new JSONObject();
+            wrapper.put("workspace", workspace);
+            workspaces.put(name, wrapper);
         }
 
-        return workspaces;
+        return workspaces.toString();
     }
 
 }

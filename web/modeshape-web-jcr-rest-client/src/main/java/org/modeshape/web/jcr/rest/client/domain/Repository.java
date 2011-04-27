@@ -23,8 +23,10 @@
  */
 package org.modeshape.web.jcr.rest.client.domain;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import org.modeshape.common.annotation.Immutable;
-
 import org.modeshape.common.util.HashCode;
 import org.modeshape.web.jcr.rest.client.RestClientI18n;
 
@@ -47,6 +49,7 @@ public class Repository implements IModeShapeObject {
      * The server where this repository resides.
      */
     private final Server server;
+    private final Map<String, Object> metadata;
 
     // ===========================================================================================================================
     // Constructors
@@ -61,10 +64,29 @@ public class Repository implements IModeShapeObject {
      */
     public Repository( String name,
                        Server server ) {
-    	assert name != null;
-    	assert server != null;
+        assert name != null;
+        assert server != null;
         this.name = name;
         this.server = server;
+        this.metadata = Collections.<String, Object>emptyMap();
+    }
+
+    /**
+     * Constructs a new <code>Repository</code>.
+     * 
+     * @param name the repository name (never <code>null</code>)
+     * @param server the server where this repository resides (never <code>null</code>)
+     * @param metadata the metadata; may be null or empty
+     * @throws IllegalArgumentException if the name or server argument is <code>null</code>
+     */
+    public Repository( String name,
+                       Server server,
+                       Map<String, Object> metadata ) {
+        assert name != null;
+        assert server != null;
+        this.name = name;
+        this.server = server;
+        this.metadata = metadata != null ? Collections.unmodifiableMap(new HashMap<String, Object>(metadata)) : Collections.<String, Object>emptyMap();
     }
 
     // ===========================================================================================================================
@@ -100,6 +122,16 @@ public class Repository implements IModeShapeObject {
      */
     public Server getServer() {
         return this.server;
+    }
+
+    /**
+     * Get the metadata for this repository. This metadata typically includes all of a JCR Repository's descriptors, where the
+     * values are usually strings or arrays of strings.
+     * 
+     * @return the immutable map of metadata; never null but possibly empty if the metadata is not known
+     */
+    public Map<String, Object> getMetadata() {
+        return metadata;
     }
 
     /**
