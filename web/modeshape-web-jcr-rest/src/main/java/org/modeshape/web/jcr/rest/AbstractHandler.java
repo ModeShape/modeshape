@@ -2,17 +2,11 @@ package org.modeshape.web.jcr.rest;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
 import javax.jcr.PropertyType;
-import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.servlet.http.HttpServletRequest;
-import org.codehaus.jettison.json.JSONArray;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
 import org.modeshape.common.text.UrlEncoder;
 import org.modeshape.common.util.Base64;
 import org.modeshape.web.jcr.RepositoryFactory;
@@ -92,32 +86,4 @@ abstract class AbstractHandler {
             }
         }
     }
-
-    protected JSONObject getRepositoryMetadata( Session session ) throws JSONException, RepositoryException {
-        JSONObject metadata = new JSONObject();
-        Repository repository = session.getRepository();
-        for (String key : repository.getDescriptorKeys()) {
-            Value[] values = repository.getDescriptorValues(key);
-            if (values == null) continue;
-            if (values.length == 1) {
-                Value value = values[0];
-                if (value == null) continue;
-                metadata.put(key, jsonEncodedStringFor(value));
-            } else {
-                List<String> valueStrings = new ArrayList<String>();
-                for (Value value : values) {
-                    if (value == null) continue;
-                    valueStrings.add(jsonEncodedStringFor(value));
-                }
-                if (valueStrings.isEmpty()) continue;
-                if (valueStrings.size() == 1) {
-                    metadata.put(key, valueStrings.get(0));
-                } else {
-                    metadata.put(key, new JSONArray(valueStrings));
-                }
-            }
-        }
-        return metadata;
-    }
-
 }
