@@ -26,19 +26,14 @@ package org.modeshape.web.jcr.webdav;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.Principal;
-import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.WeakHashMap;
-import javax.jcr.Binary;
 import javax.jcr.Item;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.Node;
@@ -56,8 +51,6 @@ import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.Logger;
-import org.modeshape.graph.mimetype.MimeTypeDetector;
-import org.modeshape.mimetype.aperture.ApertureMimeTypeDetector;
 import org.modeshape.web.jcr.RepositoryFactory;
 
 /**
@@ -73,75 +66,19 @@ public class ModeShapeWebdavStore implements IWebdavStore {
     /** OSX workaround */
     private static final Map<String, byte[]> OSX_DOUBLE_DATA = Collections.synchronizedMap(new WeakHashMap<String, byte[]>());
 
-    private static final String CONTENT_NODE_NAME = "jcr:content";
-    private static final String DATA_PROP_NAME = "jcr:data";
     private static final String CREATED_PROP_NAME = "jcr:created";
-    private static final String MODIFIED_PROP_NAME = "jcr:lastModified";
-    private static final String ENCODING_PROP_NAME = "jcr:encoding";
-    private static final String MIME_TYPE_PROP_NAME = "jcr:mimeType";
 
-    private static final String DEFAULT_CONTENT_PRIMARY_TYPES = "nt:resource, mode:resource";
-    private static final String DEFAULT_RESOURCE_PRIMARY_TYPES = "nt:file";
-    private static final String DEFAULT_NEW_FOLDER_PRIMARY_TYPE = "nt:folder";
-    private static final String DEFAULT_NEW_RESOURCE_PRIMARY_TYPE = "nt:file";
-    private static final String DEFAULT_NEW_CONTENT_PRIMARY_TYPE = "nt:resource";
-
-    private final Collection<String> contentPrimaryTypes;
-    private final Collection<String> filePrimaryTypes;
-    private final String newFolderPrimaryType;
-    private final String newResourcePrimaryType;
-    private final String newContentPrimaryType;
-    private final MimeTypeDetector mimeTypeDetector = new ApertureMimeTypeDetector();
     private final RequestResolver requestResolver;
+    private final ContentMapper contentMapper;
+
     private final Logger logger = Logger.getLogger(getClass());
 
-    public ModeShapeWebdavStore( RequestResolver uriResolver ) {
-        this(null, null, null, null, null, uriResolver);
-    }
-
-    public ModeShapeWebdavStore( String contentPrimaryTypes,
-                                 String filePrimaryTypes,
-                                 String newFolderPrimaryType,
-                                 String newResourcePrimaryType,
-                                 String newContentPrimaryType,
-                                 RequestResolver requestResolver ) {
+    public ModeShapeWebdavStore( RequestResolver requestResolver,
+                                 ContentMapper contentMapper ) {
         super();
-        logger.debug("WebDAV Servlet initial content primary types = " + contentPrimaryTypes);
-        logger.debug("WebDAV Servlet initial file primary types = " + filePrimaryTypes);
-        logger.debug("WebDAV Servlet initial new folder primary types = " + newFolderPrimaryType);
-        logger.debug("WebDAV Servlet initial new resource primary types = " + newResourcePrimaryType);
-        logger.debug("WebDAV Servlet initial new content primary types = " + newContentPrimaryType);
-        this.contentPrimaryTypes = split(contentPrimaryTypes != null ? contentPrimaryTypes : DEFAULT_CONTENT_PRIMARY_TYPES);
-        this.filePrimaryTypes = split(filePrimaryTypes != null ? filePrimaryTypes : DEFAULT_RESOURCE_PRIMARY_TYPES);
-        this.newFolderPrimaryType = newFolderPrimaryType != null ? newFolderPrimaryType : DEFAULT_NEW_FOLDER_PRIMARY_TYPE;
-        this.newResourcePrimaryType = newResourcePrimaryType != null ? newResourcePrimaryType : DEFAULT_NEW_RESOURCE_PRIMARY_TYPE;
-        this.newContentPrimaryType = newContentPrimaryType != null ? newContentPrimaryType : DEFAULT_NEW_CONTENT_PRIMARY_TYPE;
 
         this.requestResolver = requestResolver;
-    }
-
-    /**
-     * Returns an unmodifiable set containing the elements passed in to this method
-     * 
-     * @param elements a set of elements; may not be null
-     * @return an unmodifiable set containing all of the elements in {@code elements}; never null
-     */
-    private static final Set<String> setFor( String... elements ) {
-        Set<String> set = new HashSet<String>(elements.length);
-        set.addAll(Arrays.asList(elements));
-
-        return set;
-    }
-
-    /**
-     * Splits a comma-delimited string into an unmodifiable set containing the substrings between the commas in the source string.
-     * The elements in the set will be {@link String#trim() trimmed}.
-     * 
-     * @param commaDelimitedString input string; may not be null, but need not contain any commas
-     * @return an unmodifiable set whose elements are the trimmed substrings of the source string; never null
-     */
-    private static final Set<String> split( String commaDelimitedString ) {
-        return setFor(commaDelimitedString.split("\\s*,\\s*"));
+        this.contentMapper = contentMapper;
     }
 
     /**
@@ -220,7 +157,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
                 }
             }
             Node parentNode = nodeFor(transaction, resolvedParent);
-            parentNode.addNode(resourceName, newFolderPrimaryType);
+            contentMapper.createFolder(parentNode, resourceName);
 
         } catch (RepositoryException re) {
             throw new WebdavException(re);
@@ -263,13 +200,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
                 }
             }
             Node parentNode = nodeFor(transaction, resolvedParent);
-            Node resourceNode = parentNode.addNode(resourceName, newResourcePrimaryType);
-
-            Node contentNode = resourceNode.addNode(CONTENT_NODE_NAME, newContentPrimaryType);
-            contentNode.setProperty(DATA_PROP_NAME, "");
-            contentNode.setProperty(MODIFIED_PROP_NAME, Calendar.getInstance());
-            contentNode.setProperty(ENCODING_PROP_NAME, "UTF-8");
-            contentNode.setProperty(MIME_TYPE_PROP_NAME, "text/plain");
+            contentMapper.createFile(parentNode, resourceName);
 
         } catch (RepositoryException re) {
             throw new WebdavException(re);
@@ -295,7 +226,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
             Node node = nodeFor(transaction, resolved); // throws exception if not found
             logger.trace("WebDAV -> node: " + node);
 
-            if (isFile(node) || isContent(node)) return null; // no children
+            if (!isFolder(node)) return null; // no children
 
             List<String> children = namesOfChildren(node);
             logger.trace("WebDAV -> children: " + children);
@@ -329,9 +260,10 @@ public class ModeShapeWebdavStore implements IWebdavStore {
             }
             Node node = nodeFor(transaction, resolved); // throws exception if not found
             if (!isFile(node)) return null;
-            if (!node.hasNode(CONTENT_NODE_NAME)) return null;
-            return node.getProperty(CONTENT_NODE_NAME + "/" + DATA_PROP_NAME).getBinary().getStream();
+            return contentMapper.getResourceContent(node);
 
+        } catch (IOException ioe) {
+            throw new WebdavException(ioe);
         } catch (RepositoryException re) {
             throw new WebdavException(re);
         }
@@ -350,15 +282,10 @@ public class ModeShapeWebdavStore implements IWebdavStore {
                 return -1;
             }
             Node node = nodeFor(transaction, resolved); // throws exception if not found
-            if (!isFile(node)) return -1;
-            if (!node.hasNode(CONTENT_NODE_NAME)) return -1;
-            Property contentProp = node.getProperty(CONTENT_NODE_NAME + "/" + DATA_PROP_NAME);
-            long length = contentProp.getLength();
-            if (length != -1) return length;
 
-            String data = contentProp.getString();
-            return data.length();
-
+            return contentMapper.getResourceLength(node);
+        } catch (IOException ioe) {
+            throw new WebdavException(ioe);
         } catch (RepositoryException re) {
             throw new WebdavException(re);
         }
@@ -392,11 +319,8 @@ public class ModeShapeWebdavStore implements IWebdavStore {
             }
 
             Node node = nodeFor(transaction, resolved);
-            if (isContent(node)) {
-                return null;
-            }
 
-            if (!isFile(node)) {
+            if (isFolder(node)) {
                 ob.setFolder(true);
                 Date createDate = null;
                 if (node.hasProperty(CREATED_PROP_NAME)) {
@@ -407,10 +331,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
                 ob.setCreationDate(createDate);
                 ob.setLastModified(new Date());
                 ob.setResourceLength(0);
-
-            } else if (node.hasNode(CONTENT_NODE_NAME)) {
-                Node content = node.getNode(CONTENT_NODE_NAME);
-
+            } else if (isFile(node)) {
                 ob.setFolder(false);
                 Date createDate = null;
                 if (node.hasProperty(CREATED_PROP_NAME)) {
@@ -419,14 +340,31 @@ public class ModeShapeWebdavStore implements IWebdavStore {
                     createDate = new Date();
                 }
                 ob.setCreationDate(createDate);
-                ob.setLastModified(content.getProperty(MODIFIED_PROP_NAME).getDate().getTime());
-                ob.setResourceLength(content.getProperty(DATA_PROP_NAME).getLength());
+                ob.setLastModified(createDate);
+                // ob.setLastModified(content.getProperty(MODIFIED_PROP_NAME).getDate().getTime());
+                ob.setResourceLength(contentMapper.getResourceLength(node));
+
+                // } else if (node.hasNode(CONTENT_NODE_NAME)) {
+                // Node content = node.getNode(CONTENT_NODE_NAME);
+                //
+                // ob.setFolder(false);
+                // Date createDate = null;
+                // if (node.hasProperty(CREATED_PROP_NAME)) {
+                // createDate = node.getProperty(CREATED_PROP_NAME).getDate().getTime();
+                // } else {
+                // createDate = new Date();
+                // }
+                // ob.setCreationDate(createDate);
+                // ob.setLastModified(content.getProperty(MODIFIED_PROP_NAME).getDate().getTime());
+                // ob.setResourceLength(content.getProperty(DATA_PROP_NAME).getLength());
             } else {
                 ob.setNullResource(true);
             }
 
         } catch (PathNotFoundException pnfe) {
             return null;
+        } catch (IOException ioe) {
+            throw new WebdavException(ioe);
         } catch (RepositoryException re) {
             throw new WebdavException(re);
         }
@@ -500,26 +438,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
                 return -1;
             }
 
-            Node contentNode;
-            if (node.hasNode(CONTENT_NODE_NAME)) {
-                contentNode = node.getNode(CONTENT_NODE_NAME);
-            } else {
-                contentNode = node.addNode(CONTENT_NODE_NAME, newContentPrimaryType);
-            }
-
-            // contentNode.setProperty(MIME_TYPE_PROP_NAME, contentType != null ? contentType : "application/octet-stream");
-            contentNode.setProperty(ENCODING_PROP_NAME, characterEncoding != null ? characterEncoding : "UTF-8");
-            Binary binary = node.getSession().getValueFactory().createBinary(content);
-            contentNode.setProperty(DATA_PROP_NAME, binary);
-            contentNode.setProperty(MODIFIED_PROP_NAME, Calendar.getInstance());
-
-            // Copy the content to the property, THEN re-read the content from the Binary value to avoid discaring the first
-            // bytes of the stream
-            if (contentType == null) {
-                contentType = mimeTypeDetector.mimeTypeOf(resourceName, binary.getStream());
-            }
-
-            return contentNode.getProperty(DATA_PROP_NAME).getLength();
+            return contentMapper.setContent(node, resourceName, content, contentType, characterEncoding);
         } catch (RepositoryException re) {
             throw new WebdavException(re);
         } catch (IOException ioe) {
@@ -530,29 +449,21 @@ public class ModeShapeWebdavStore implements IWebdavStore {
     }
 
     /**
-     * @param node the node to check
-     * @return true if {@code node}'s primary type is one of the types in {@link #contentPrimaryTypes}; may not be null
-     * @throws RepositoryException if an error occurs checking the node's primary type
-     */
-    private boolean isContent( Node node ) throws RepositoryException {
-        for (String nodeType : contentPrimaryTypes) {
-            if (node.isNodeType(nodeType)) return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * @param node the node to check
-     * @return true if {@code node}'s primary type is one of the types in {@link #filePrimaryTypes}; may not be null
+     * @param node the node to check; may not be null
+     * @return true if {@code node} represents a file (as opposed to a folder or file content)
      * @throws RepositoryException if an error occurs checking the node's primary type
      */
     private boolean isFile( Node node ) throws RepositoryException {
-        for (String nodeType : filePrimaryTypes) {
-            if (node.isNodeType(nodeType)) return true;
-        }
+        return contentMapper.isFile(node);
+    }
 
-        return false;
+    /**
+     * @param node the node to check; may not be null
+     * @return true if {@code node} represents a folder (as opposed to a file or file content)
+     * @throws RepositoryException if an error occurs checking the node's primary type
+     */
+    private boolean isFolder( Node node ) throws RepositoryException {
+        return contentMapper.isFolder(node);
     }
 
     /**
@@ -821,4 +732,5 @@ public class ModeShapeWebdavStore implements IWebdavStore {
             return repositoryName + "/" + workspaceName;
         }
     }
+
 }

@@ -41,15 +41,11 @@ public class ModeShapeWebdavServlet extends WebdavServlet {
 
     private static final long serialVersionUID = 1L;
 
+    public static final String INIT_CONTENT_MAPPER_CLASS_NAME = "org.modeshape.web.jcr.webdav.CONTENT_MAPPER_CLASS_NAME";
     public static final String INIT_REQUEST_RESOLVER_CLASS_NAME = "org.modeshape.web.jcr.webdav.REQUEST_RESOLVER_CLASS_NAME";
 
-    public static final String INIT_CONTENT_PRIMARY_TYPE_NAMES = "org.modeshape.web.jcr.webdav.CONTENT_PRIMARY_TYPE_NAMES";
-    public static final String INIT_RESOURCE_PRIMARY_TYPES_NAMES = "org.modeshape.web.jcr.webdav.RESOURCE_PRIMARY_TYPE_NAMES";
-    public static final String INIT_NEW_FOLDER_PRIMARY_TYPE_NAME = "org.modeshape.web.jcr.webdav.NEW_FOLDER_PRIMARY_TYPE_NAME";
-    public static final String INIT_NEW_RESOURCE_PRIMARY_TYPE_NAME = "org.modeshape.web.jcr.webdav.NEW_RESOURCE_PRIMARY_TYPE_NAME";
-    public static final String INIT_NEW_CONTENT_PRIMARY_TYPE_NAME = "org.modeshape.web.jcr.webdav.NEW_CONTENT_PRIMARY_TYPE_NAME";
-
     private RequestResolver requestResolver;
+    private ContentMapper contentMapper;
 
     /**
      * {@inheritDoc}
@@ -57,10 +53,7 @@ public class ModeShapeWebdavServlet extends WebdavServlet {
     @Override
     protected IWebdavStore constructStore( String clazzName,
                                            File root ) {
-        return new ModeShapeWebdavStore(getParam(INIT_CONTENT_PRIMARY_TYPE_NAMES), getParam(INIT_RESOURCE_PRIMARY_TYPES_NAMES),
-                                        getParam(INIT_NEW_FOLDER_PRIMARY_TYPE_NAME),
-                                        getParam(INIT_NEW_RESOURCE_PRIMARY_TYPE_NAME),
-                                        getParam(INIT_NEW_CONTENT_PRIMARY_TYPE_NAME), requestResolver);
+        return new ModeShapeWebdavStore(requestResolver, contentMapper);
     }
 
     protected String getParam( String name ) {
@@ -89,9 +82,31 @@ public class ModeShapeWebdavServlet extends WebdavServlet {
         this.requestResolver.initialize(getServletContext());
     }
 
+    /**
+     * Loads and initializes the {@link #contentMapper}
+     */
+    private void constructContentMapper() {
+        // Initialize the request resolver
+        String contentMapperClassName = getParam(INIT_CONTENT_MAPPER_CLASS_NAME);
+        Logger.getLogger(getClass()).debug("WebDAV Servlet content mapper class name = " + contentMapperClassName);
+        if (contentMapperClassName == null) {
+            this.contentMapper = new DefaultContentMapper();
+        } else {
+            try {
+                Class<? extends ContentMapper> clazz = Class.forName(contentMapperClassName).asSubclass(ContentMapper.class);
+                this.contentMapper = clazz.newInstance();
+            } catch (Exception ex) {
+                throw new IllegalStateException(ex);
+            }
+        }
+        Logger.getLogger(getClass()).debug("WebDAV Servlet using content mapper class = " + contentMapper.getClass().getName());
+        this.contentMapper.initialize(getServletContext());
+    }
+
     @Override
     public void init() throws ServletException {
         constructRequestResolver();
+        constructContentMapper();
 
         super.init();
     }

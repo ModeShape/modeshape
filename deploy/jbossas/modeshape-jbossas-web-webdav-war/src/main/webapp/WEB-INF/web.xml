@@ -33,6 +33,16 @@
 	</context-param>
 
 	<!--
+		This parameter provides the fully-qualified name of a class that implements
+		the o.m.w.jcr.webdav.ContentMapper interface.  If no value is provided for this
+		parameter, o.m.w.jcr.webdav.DefaultContentMapper will be used.
+	-->
+	<context-param>
+		<param-name>org.modeshape.web.jcr.webdav.CONTENT_MAPPER_CLASS_NAME</param-name>
+		<param-value>org.modeshape.web.jcr.webdav.DefaultContentMapper</param-value>
+	</context-param>
+
+	<!--
 		This parameter, specific to the FactoryRepositoryProvider implementation, specifies
 		an URL that references a configuration file to initialize the repository or 
 		repositories.  ModeShape will first check for a file at this path in the filesystem.
@@ -43,6 +53,11 @@
         <param-name>org.modeshape.web.jcr.JCR_URL</param-name>
         <param-value>jndi:jcr/local</param-value>
     </context-param>
+
+    <!-- 
+       The following five context parameters are all specific to the o.m.w.j.webdav.DefaultContentMapper
+       implementation.  If a different ContentMapper implementation is used, these can be deleted.
+     -->
 
 	<!--
 		Nodes with any of the primary node types in this comma-delimited list will be treated by the 
