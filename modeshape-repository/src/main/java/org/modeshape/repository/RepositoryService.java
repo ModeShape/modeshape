@@ -425,29 +425,28 @@ public class RepositoryService implements AdministeredService, Observer {
                                                    configurationWorkspaceName);
                 setter.invoke(instance, value);
             } catch (SecurityException err) {
-                Logger.getLogger(getClass()).debug(err, "Error invoking {0}.{1}", instance.getClass(), setter);
+                problems.addWarning(err, RepositoryI18n.securityExceptionWhileSettingProperty, instance.getClass(), setter);
             } catch (IllegalArgumentException err) {
                 // Do nothing ... assume not a JavaBean property (but log)
-                String msg = "Invalid argument invoking {0} with parameter {1} on source at {2} in configuration repository {3} in workspace {4}";
-                Logger.getLogger(getClass()).debug(err,
-                                                   msg,
-                                                   setter,
-                                                   value,
-                                                   path,
-                                                   configurationSourceName,
-                                                   configurationWorkspaceName);
+                problems.addWarning(err,
+                                    RepositoryI18n.invalidArgumentExceptionWhileSettingProperty,
+                                    setter,
+                                    value,
+                                    path,
+                                    configurationSourceName,
+                                    configurationWorkspaceName);
             } catch (IllegalAccessException err) {
-                Logger.getLogger(getClass()).debug(err, "Error invoking {0}.{1}", instance.getClass(), setter);
+                problems.addWarning(err, RepositoryI18n.illegalAccessExceptionWhileSettingProperty,
+                                    instance.getClass(), setter);
             } catch (InvocationTargetException err) {
                 // Do nothing ... assume not a JavaBean property (but log)
-                String msg = "Error invoking {0} with parameter {1} on source at {2} in configuration repository {3} in workspace {4}";
-                Logger.getLogger(getClass()).debug(err.getTargetException(),
-                                                   msg,
-                                                   setter,
-                                                   value,
-                                                   path,
-                                                   configurationSourceName,
-                                                   configurationWorkspaceName);
+                problems.addWarning(err,
+                                    RepositoryI18n.invocationTargetExceptionWhileSettingProperty,
+                                    setter,
+                                    value,
+                                    path,
+                                    configurationSourceName,
+                                    configurationWorkspaceName);
             }
         }
 
@@ -467,7 +466,6 @@ public class RepositoryService implements AdministeredService, Observer {
             if (setter == null) continue;
 
             try {
-                setter.invoke(instance, value);
                 // Invoke the method ...
                 String msg = "Setting property {0} to {1} on object at {2} in configuration repository {3} in workspace {4}";
                 Logger.getLogger(getClass()).trace(msg,
@@ -478,29 +476,28 @@ public class RepositoryService implements AdministeredService, Observer {
                                                    configurationWorkspaceName);
                 setter.invoke(instance, value);
             } catch (SecurityException err) {
-                Logger.getLogger(getClass()).debug(err, "Error invoking {0}.{1}", instance.getClass(), setter);
+                problems.addWarning(err, RepositoryI18n.securityExceptionWhileSettingProperty, instance.getClass(), setter);
             } catch (IllegalArgumentException err) {
                 // Do nothing ... assume not a JavaBean property (but log)
-                String msg = "Invalid argument invoking {0} with parameter {1} on object at {2} in configuration repository {3} in workspace {4}";
-                Logger.getLogger(getClass()).debug(err,
-                                                   msg,
-                                                   setter,
-                                                   value,
-                                                   childPath,
-                                                   configurationSourceName,
-                                                   configurationWorkspaceName);
+                problems.addWarning(err,
+                                    RepositoryI18n.invalidArgumentExceptionWhileSettingProperty,
+                                    setter,
+                                    value,
+                                    childPath,
+                                    configurationSourceName,
+                                    configurationWorkspaceName);
             } catch (IllegalAccessException err) {
-                Logger.getLogger(getClass()).debug(err, "Error invoking {0}.{1}", instance.getClass(), setter);
+                problems.addWarning(err, RepositoryI18n.illegalAccessExceptionWhileSettingProperty,
+                                    instance.getClass(), setter);
             } catch (InvocationTargetException err) {
                 // Do nothing ... assume not a JavaBean property (but log)
-                String msg = "Error invoking {0} with parameter {1} on source at {2} in configuration repository {3} in workspace {4}";
-                Logger.getLogger(getClass()).debug(err.getTargetException(),
-                                                   msg,
-                                                   setter,
-                                                   value,
-                                                   childPath,
-                                                   configurationSourceName,
-                                                   configurationWorkspaceName);
+                problems.addWarning(err,
+                                    RepositoryI18n.invocationTargetExceptionWhileSettingProperty,
+                                    setter,
+                                    value,
+                                    childPath,
+                                    configurationSourceName,
+                                    configurationWorkspaceName);
             }
 
         }

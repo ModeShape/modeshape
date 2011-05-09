@@ -1,5 +1,7 @@
 package org.modeshape.test.integration;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -13,11 +15,13 @@ import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.collection.Problem;
+import org.modeshape.common.collection.Problems;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.connector.filesystem.FileSystemSource;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.JcrRepository;
+import org.modeshape.repository.RepositoryI18n;
 
 public class JcrOnFileSystemTest {
 
@@ -106,6 +110,39 @@ public class JcrOnFileSystemTest {
         session.getWorkspace().copy("/copySource.txt", "/createfile.mode");
         session.save();
 
+    }
+
+    @FixFor("MODE-986")
+    @Test
+    public void shouldGiveWarningForInvalidFilenameFilter() throws Exception {
+        JcrConfiguration config = new JcrConfiguration();
+
+        config.repositorySource(SOURCE_NAME).usingClass(FileSystemSource.class).setProperty("exclusionPattern", EXCLUSION_PATTERN).setProperty("workspaceRootPath",
+                                                                                                                                        STORAGE_PATH).setProperty("defaultWorkspaceName",
+                                                                                                                                                             "default").setProperty("updatesAllowed",
+                                                                                                                                                                                                true).setProperty("filenameFilter",
+                                                                                                                                                                                                                  "THISISNOTAVALIDCLASSNAME");
+        config.repository(REPO_NAME).setSource(SOURCE_NAME).setOption(JcrRepository.Option.ANONYMOUS_USER_ROLES, "readwrite");
+        
+        engine = config.build();
+        engine.start();
+
+        Problems problems = engine.getProblems();
+
+        assertTrue(problems.hasProblems());
+
+        int problemCount = 0;
+        for (Problem problem : problems) {
+            problemCount++;
+
+            assertThat(problem.getStatus(), is(Problem.Status.WARNING));
+            assertThat(problem.getMessage(), is(RepositoryI18n.invocationTargetExceptionWhileSettingProperty));
+
+        }
+
+        assertThat(problemCount, is(1));
+
+        engine.shutdownAndAwaitTermination(5, TimeUnit.SECONDS);
     }
 
     @FixFor( "MODE-1010" )

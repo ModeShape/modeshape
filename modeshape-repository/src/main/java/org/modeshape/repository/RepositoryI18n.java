@@ -93,6 +93,10 @@ public final class RepositoryI18n {
     public static I18n requiredNodeDoesNotExistRelativeToNode;
     public static I18n errorGettingNodeRelativeToNode;
     public static I18n unknownPropertyValueType;
+    public static I18n invalidArgumentExceptionWhileSettingProperty;
+    public static I18n illegalAccessExceptionWhileSettingProperty;
+    public static I18n invocationTargetExceptionWhileSettingProperty;
+    public static I18n securityExceptionWhileSettingProperty;
 
     // Path expressions
     public static I18n pathExpressionIsInvalid;
