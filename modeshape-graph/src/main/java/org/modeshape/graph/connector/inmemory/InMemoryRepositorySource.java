@@ -134,7 +134,7 @@ public class InMemoryRepositorySource implements BaseRepositorySource, ObjectFac
 
     private CachePolicy defaultCachePolicy;
     private transient InMemoryRepository repository;
-    private transient ExecutionContext defaultContext = new ExecutionContext();
+    private transient ExecutionContext defaultContext = new ExecutionContext(ExecutionContext.DEFAULT_CONTEXT);
     private transient RepositoryContext repositoryContext = new DefaultRepositoryContext();
 
     protected class DefaultRepositoryContext implements RepositoryContext {

@@ -88,7 +88,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
         initializeDefaultNamespaces(this.getNamespaceRegistry());
         assert securityContext != null;
 
-    }
+    } 
 
     /**
      * Create a copy of the supplied execution context.
@@ -96,7 +96,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      * @param original the original
      * @throws IllegalArgumentException if the original is null
      */
-    protected ExecutionContext( ExecutionContext original ) {
+    public ExecutionContext( ExecutionContext original ) {
         CheckArg.isNotNull(original, "original");
         this.securityContext = original.getSecurityContext();
         this.namespaceRegistry = original.getNamespaceRegistry();
@@ -321,7 +321,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
     public ExecutionContext with( NamespaceRegistry namespaceRegistry ) {
         // Don't supply the value factories or property factories, since they'll have to be recreated
         // to reference the supplied namespace registry ...
-        return new ExecutionContext(getSecurityContext(), namespaceRegistry, null, null, getMimeTypeDetector(),
+        return new ExecutionContext(getSecurityContext(), namespaceRegistry, null, getPropertyFactory(), getMimeTypeDetector(),
                                     getTextExtractor(), getClassLoaderFactory(), getData(), getProcessId());
     }
 
@@ -365,6 +365,19 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
         return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
                                     getMimeTypeDetector(), getTextExtractor(), classLoaderFactory, getData(), getProcessId());
     }
+    
+    /**
+     * Create a new execution context that mirrors this context but that uses the supplied {@link PropertyFactory 
+     * factory}.
+     * 
+     * @param propertyFactory the new propertyfactory implementation, or null if the default implementation should be used
+     * @return the execution context that is identical with this execution context, but which uses the supplied property
+     *         factory implementation; never null
+     */
+    public ExecutionContext with( PropertyFactory propertyFactory ) {
+        return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), propertyFactory,
+                                    getMimeTypeDetector(), getTextExtractor(), getClassLoaderFactory(), getData(), getProcessId());
+    }    
 
     /**
      * Create an {@link ExecutionContext} that is the same as this context, but which uses the supplied {@link SecurityContext
