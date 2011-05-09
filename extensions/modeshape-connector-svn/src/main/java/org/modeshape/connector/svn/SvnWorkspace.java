@@ -90,6 +90,14 @@ public class SvnWorkspace extends PathWorkspace<PathNode> {
     // The SVNRepository is a reference to the tmatesoft SVN repository class
     private final SVNRepository workspaceRoot;
 
+    /**
+     * The SVN library that we are using behaves slightly differently w.r.t. the path used when creating files and folders. DAV-
+     * and File-based URLs use repository implementations that will automatically keep the workspace name (e.g., "trunk") in the
+     * path when writing. SVN-based URLs utilize a different implementation that attempts to perform writes relative to the
+     * repository root. The flag below is used to compensate for this behavior.
+     */
+    private final boolean usingSvnUrl;
+
     public SvnWorkspace( SvnRepository repository,
                          SVNRepository workspaceRoot,
                          String name,
@@ -102,6 +110,8 @@ public class SvnWorkspace extends PathWorkspace<PathNode> {
         ISVNAuthenticationManager authManager = SVNWCUtil.createDefaultAuthenticationManager(repository.source().getUsername(),
                                                                                              repository.source().getPassword());
         workspaceRoot.setAuthenticationManager(authManager);
+        String svnProtocol = this.workspaceRoot.getLocation().getProtocol();
+        usingSvnUrl = svnProtocol.startsWith("svn");
     }
 
     public SvnWorkspace( String name,
@@ -111,6 +121,7 @@ public class SvnWorkspace extends PathWorkspace<PathNode> {
 
         this.repository = originalToClone.repository;
         this.workspaceRoot = workspaceRoot;
+        usingSvnUrl = this.workspaceRoot.getLocation().getProtocol().startsWith("svn");
 
         cloneWorkspace(originalToClone);
     }
@@ -404,41 +415,41 @@ public class SvnWorkspace extends PathWorkspace<PathNode> {
         String parentPath = node.getParent().getString(registry);
         String name = node.getName().getString(registry);
 
+        String workspacePath = this.usingSvnUrl ? "/" + this.getName() + parentPath : parentPath;
+
         if (primaryType == null || JcrNtLexicon.FOLDER.equals(primaryType)) {
             if (previousNode != null) {
                 return null;
             }
-            return new SvnPutFolderCommand(parentPath, name);
+            return new SvnPutFolderCommand(workspacePath, name);
         }
 
         if (JcrNtLexicon.FILE.equals(primaryType)) {
             if (previousNode != null) {
                 return null;
             }
-            return new SvnPutFileCommand(parentPath, name, EMPTY_BYTE_ARRAY);
+            return new SvnPutFileCommand(workspacePath, name, EMPTY_BYTE_ARRAY);
         }
 
         byte[] oldContent;
 
         if (previousNode != null) {
             Property oldContentProp = previousNode.getProperty(JcrLexicon.DATA);
-            Binary oldContentBin = oldContentProp == null ? null : context().getValueFactories()
-                                                                            .getBinaryFactory()
-                                                                            .create(oldContentProp.getFirstValue());
+            Binary oldContentBin = oldContentProp == null ? null : context().getValueFactories().getBinaryFactory().create(oldContentProp.getFirstValue());
             oldContent = oldContentBin == null ? EMPTY_BYTE_ARRAY : oldContentBin.getBytes();
         } else {
             oldContent = EMPTY_BYTE_ARRAY;
         }
 
         Property contentProp = node.getProperty(JcrLexicon.DATA);
-        Binary contentBin = contentProp == null ? null : context().getValueFactories()
-                                                                  .getBinaryFactory()
-                                                                  .create(contentProp.getFirstValue());
+        Binary contentBin = contentProp == null ? null : context().getValueFactories().getBinaryFactory().create(contentProp.getFirstValue());
         byte[] newContent = contentBin == null ? EMPTY_BYTE_ARRAY : contentBin.getBytes();
 
         // The path for a content node ends with the /jcr:content. Need to go up one level to get the file name.
         Path filePath = node.getParent();
         String fileDir = filePath.isRoot() ? "/" : filePath.getParent().getString(registry);
+        fileDir = this.usingSvnUrl ? "/" + this.getName() + fileDir : fileDir;
+
         String fileName = filePath.getLastSegment().getString(registry);
 
         return new SvnPutContentCommand(fileDir, fileName, oldContent, newContent);
@@ -465,19 +476,21 @@ public class SvnWorkspace extends PathWorkspace<PathNode> {
                 svnCommand.setEditor(editor);
                 svnCommand.apply();
             }
-        } catch (SVNException ex) {
-            commit = false;
-            throw new IllegalStateException(ex);
-        } finally {
-            if (editor != null) {
-                try {
-                    editor.closeDir();
-                } catch (SVNException ignore) {
+            editor.closeDir();
 
+        } catch (Throwable t) {
+            try {
+                if (editor != null) {
+                    editor.abortEdit();
                 }
+            } catch (SVNException ignore) {
+
             }
+
+            commit = false;
+            throw new IllegalStateException(t);
         }
-        assert editor != null;
+
         if (commit) {
             try {
                 SVNCommitInfo info = editor.closeEdit();
