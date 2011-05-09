@@ -66,6 +66,7 @@ import org.modeshape.graph.property.PathNotFoundException;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.basic.RootPath;
+import org.modeshape.graph.property.basic.SystemPropertyFactory;
 import org.modeshape.graph.request.InvalidWorkspaceException;
 import org.modeshape.graph.request.ReadBranchRequest;
 import org.modeshape.graph.sequencer.StreamSequencer;
@@ -284,7 +285,10 @@ public class ModeShapeConfiguration {
 
         // Import the information into the source ...
         Path pathToParent = path(path != null ? path : DEFAULT_PATH);
-        Graph graph = Graph.create(source, context);
+        
+	ExecutionContext loadContext = context.with(new SystemPropertyFactory(context.getValueFactories()));
+    
+        Graph graph = Graph.create(source, loadContext);
         graph.importXmlFrom(configurationFileInputStream).skippingRootElement(true).into(pathToParent);
 
         // The file was imported successfully, so now create the content information ...
