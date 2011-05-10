@@ -44,6 +44,8 @@ import org.modeshape.graph.property.Property;
 
 public class SvnIntegrationTest {
 
+    private static boolean SVN_SERVER_IS_WRITABLE = false;
+
     private ExecutionContext context;
     private SvnRepositorySource source;
     private String repositoryUrl;
@@ -52,17 +54,31 @@ public class SvnIntegrationTest {
     @Before
     public void beforeEach() {
         repositoryUrl = "http://anonsvn.jboss.org/repos/modeshape/";
+        // 'sudo svnserve -d -r /usr/local/ --foreground' to start this SVN repo
+        // repositoryUrl = "svn://localhost/repo";
+        // 'sudo apachectl start' to start this SVN repo
+        // repositoryUrl = "http://localhost/repo";
+
         predefinedWorkspaceNames = new String[] {"trunk", "tags", "branches"};
         context = new ExecutionContext();
         source = new SvnRepositorySource();
         source.setName("svn repository source");
         source.setRepositoryRootUrl(repositoryUrl);
-        source.setUsername("anonymous");
-        source.setPassword("");
         source.setCreatingWorkspacesAllowed(true);
         source.setPredefinedWorkspaceNames(predefinedWorkspaceNames);
         source.setDefaultWorkspaceName(predefinedWorkspaceNames[0]);
         source.setCreatingWorkspacesAllowed(false);
+
+        if (SVN_SERVER_IS_WRITABLE) {
+            source.setUpdatesAllowed(true);
+            source.setUsername("harry");
+            source.setPassword("harryssecret");
+        }
+        else {
+            source.setUsername("anonymous");
+            source.setPassword("");
+        }
+
         source.initialize(new RepositoryContext() {
 
             @Override
@@ -98,6 +114,8 @@ public class SvnIntegrationTest {
 
     @Test
     public void shouldConnectAndReadRootNode() {
+        if (SVN_SERVER_IS_WRITABLE) return;
+
         Graph graph = Graph.create(source, context);
         Map<Name, Property> properties = graph.getPropertiesByName().on("/");
         assertThat(properties, is(notNullValue()));
@@ -112,5 +130,29 @@ public class SvnIntegrationTest {
             // assertThat(child.getLocation(), is(childLocation));
             // assertThat(child.getLocation().getPath().getParent().isRoot(), is(true));
         }
+    }
+
+    /*
+     * This test will only pass if the SVN URL above points to a writable URL.
+     */
+    @Test
+    public void shouldConnectAndWriteTwoNodesDeep() {
+        if (!SVN_SERVER_IS_WRITABLE) return;
+
+        Graph graph = Graph.create(source, context);
+        Map<Name, Property> properties = graph.getPropertiesByName().on("/");
+        assertThat(properties, is(notNullValue()));
+
+        Graph.Batch batch = graph.batch();
+
+        batch.create("/testFolder").and();
+        batch.create("/testFolder/childFolder").and();
+        batch.create("/testFolder/foo.text").with("jcr:primaryType", "nt:file").and();
+        batch.create("/testFolder/foo.text/jcr:content").with("jcr:primaryType", "nt:resource").with("jcr:data", "foo").and();
+
+        batch.execute();
+
+        graph.getNodeAt("/testFolder/childFolder");
+
     }
 }
