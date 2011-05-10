@@ -49,6 +49,7 @@ import javax.persistence.Table;
 import org.hibernate.annotations.Index;
 import org.modeshape.common.text.Inflector;
 import org.modeshape.common.util.HashCode;
+import org.modeshape.connector.store.jpa.JpaSource;
 import org.modeshape.connector.store.jpa.model.common.NamespaceEntity;
 import org.modeshape.connector.store.jpa.util.Serializer;
 
@@ -111,8 +112,14 @@ public class NodeEntity {
     @Column( name = "ALLOWS_SNS", nullable = false, unique = false )
     private boolean allowsSameNameChildren;
 
+    /**
+     * The serialized map of properties that are too small to exceed the {@link JpaSource#setLargeValueSizeInBytes(long) large
+     * value threshold}. The length attribute on the {@code @Column} annotation is set to 1M to support DB2 and Derby, both of
+     * which will map LOB columns to binary data types with a maximum length of 255 bytes if this attribute is not specified.
+     * Other database use a variable-length LOB type with a maximum length that is DB-dependent, but very large.
+     */
     @Lob
-    @Column( name = "DATA", nullable = true, unique = false )
+    @Column( name = "DATA", nullable = true, unique = false, length = 32000 )
     private byte[] data;
 
     @Column( name = "NUM_PROPS", nullable = false )
