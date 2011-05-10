@@ -47,4 +47,5 @@
   - car:lengthInInches (double) < '(0,]'                   // any value greater than 0
   - car:wheelbaseInInches (double) < '(0,]'                // any value greater than 0
   - car:engine (string)
-
+  - car:alternateModels (reference)  < 'car:Car'
+  

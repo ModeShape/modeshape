@@ -90,7 +90,7 @@ public class JcrQueryManagerTest {
     protected static String[] carColumnNames() {
         return new String[] {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:engine", "car:mpgHighway",
             "car:valueRating", "jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model", "car:msrp", "jcr:created",
-            "jcr:createdBy", "jcr:name", "jcr:path", "jcr:score", "mode:depth", "mode:localName"};
+            "jcr:createdBy", "jcr:name", "jcr:path", "jcr:score", "mode:depth", "mode:localName", "car:alternateModels"};
     }
 
     protected static String[] minimumColumnNames() {
@@ -541,7 +541,7 @@ public class JcrQueryManagerTest {
         String[] expectedColumnNames = {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:engine",
             "car:mpgHighway", "car:valueRating", "car.jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model",
             "car:msrp", "jcr:created", "jcr:createdBy", "category.jcr:primaryType", "jcr:name", "jcr:path", "jcr:score",
-            "mode:depth", "mode:localName"};
+            "mode:depth", "mode:localName", "car:alternateModels"};
         assertResultsHaveColumns(result, expectedColumnNames);
     }
 
@@ -561,7 +561,7 @@ public class JcrQueryManagerTest {
             "car:mpgHighway", "car:valueRating", "car.jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model",
             "car:msrp", "jcr:created", "jcr:createdBy", "all.jcr:primaryType", "car.jcr:name", "car.jcr:path", "car.jcr:score",
             "car.mode:depth", "car.mode:localName", "all.jcr:name", "all.jcr:path", "all.jcr:score", "all.mode:depth",
-            "all.mode:localName"};
+            "all.mode:localName", "car:alternateModels"};
         assertResultsHaveColumns(result, expectedColumnNames);
     }
 
@@ -577,7 +577,7 @@ public class JcrQueryManagerTest {
             "car:mpgHighway", "car:valueRating", "car.jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model",
             "car:msrp", "jcr:created", "jcr:createdBy", "category.jcr:primaryType", "car.jcr:name", "car.jcr:path",
             "car.jcr:score", "car.mode:depth", "car.mode:localName", "category.jcr:name", "category.jcr:path",
-            "category.jcr:score", "category.mode:depth", "category.mode:localName"};
+            "category.jcr:score", "category.mode:depth", "category.mode:localName", "car:alternateModels"};
         assertResultsHaveColumns(result, expectedColumnNames);
     }
 
@@ -604,7 +604,7 @@ public class JcrQueryManagerTest {
         String[] expectedColumnNames = {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:engine",
             "car:mpgHighway", "car:valueRating", "car.jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model",
             "car:msrp", "jcr:created", "jcr:createdBy", "category.jcr:primaryType", "jcr:name", "jcr:path", "jcr:score",
-            "mode:depth", "mode:localName"};
+            "mode:depth", "mode:localName", "car:alternateModels"};
         assertResultsHaveColumns(result, expectedColumnNames);
     }
 
@@ -1421,7 +1421,8 @@ public class JcrQueryManagerTest {
                                  "car:lengthInInches",
                                  "car:valueRating",
                                  "car:wheelbaseInInches",
-                                 "car:msrp");
+                                 "car:msrp",
+                                 "car:alternateModels");
     }
 
     @SuppressWarnings( "deprecation" )
@@ -1687,7 +1688,8 @@ public class JcrQueryManagerTest {
                                  "car:lengthInInches",
                                  "car:valueRating",
                                  "car:wheelbaseInInches",
-                                 "car:msrp");
+                                 "car:msrp",
+                                 "car:alternateModels");
 
         // Query again with a different criteria that should return no nodes ...
         query = session.getWorkspace()

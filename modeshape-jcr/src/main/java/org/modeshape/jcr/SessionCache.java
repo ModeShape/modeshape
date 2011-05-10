@@ -58,8 +58,8 @@ import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.Logger;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
-import org.modeshape.graph.Graph.Batch;
 import org.modeshape.graph.Location;
+import org.modeshape.graph.Graph.Batch;
 import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.property.Binary;
 import org.modeshape.graph.property.BinaryFactory;
@@ -77,12 +77,12 @@ import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.ValueFormatException;
 import org.modeshape.graph.request.InvalidWorkspaceException;
 import org.modeshape.graph.session.GraphSession;
+import org.modeshape.graph.session.InvalidStateException;
+import org.modeshape.graph.session.ValidationException;
 import org.modeshape.graph.session.GraphSession.Node;
 import org.modeshape.graph.session.GraphSession.NodeId;
 import org.modeshape.graph.session.GraphSession.PropertyInfo;
 import org.modeshape.graph.session.GraphSession.Status;
-import org.modeshape.graph.session.InvalidStateException;
-import org.modeshape.graph.session.ValidationException;
 import org.modeshape.jcr.JcrRepository.Option;
 
 /**
@@ -1110,7 +1110,7 @@ class SessionCache {
                  * findPropertyDefinition checks constraints for all property types except REFERENCE.  To avoid unnecessary loading of nodes,
                  * REFERENCE constraints are only checked when the property is first set.
                  */
-                boolean referencePropMissedConstraints = skipReferenceValidation
+                boolean referencePropMissedConstraints = !skipReferenceValidation
                                                          && definition != null
                                                          && (definition.getRequiredType() == PropertyType.REFERENCE || definition.getRequiredType() == PropertyType.WEAKREFERENCE)
                                                          && !definition.canCastToTypeAndSatisfyConstraints(value);
@@ -1229,9 +1229,9 @@ class SessionCache {
          * @param name the property name; may not be null
          * @param values new property values, all of which must have the same {@link Value#getType() property type}; may not be
          *        null but may be empty
+         * @param valueType
          * @param skipProtected if true, attempts to set protected properties will fail. If false, attempts to set protected
          *        properties will be allowed.
-         * @param valueType
          * @return the JCR property object for the property; never null
          * @throws ConstraintViolationException if the property could not be set because of a node type constraint or property
          *         definition constraint
@@ -1244,6 +1244,35 @@ class SessionCache {
                                                 Value[] values,
                                                 int valueType,
                                                 boolean skipProtected )
+            throws AccessDeniedException, ConstraintViolationException, RepositoryException, javax.jcr.ValueFormatException,
+            VersionException {
+            return setProperty(name, values, valueType, skipProtected, false);
+        }
+
+        /**
+         * Set the values for the property. If the property does not exist, it will be added. If the property does exist, the
+         * existing values will be replaced with those that are supplied.
+         * 
+         * @param name the property name; may not be null
+         * @param values new property values, all of which must have the same {@link Value#getType() property type}; may not be
+         *        null but may be empty
+         * @param valueType
+         * @param skipProtected if true, attempts to set protected properties will fail. If false, attempts to set protected
+         *        properties will be allowed.
+         * @param skipReferenceValidation indicates whether constraints on REFERENCE properties should be enforced
+         * @return the JCR property object for the property; never null
+         * @throws ConstraintViolationException if the property could not be set because of a node type constraint or property
+         *         definition constraint
+         * @throws javax.jcr.ValueFormatException
+         * @throws AccessDeniedException if the current session does not have the requisite privileges to perform this task
+         * @throws VersionException if this node is not checked out
+         * @throws RepositoryException if any other error occurs
+         */
+        public AbstractJcrProperty setProperty( Name name,
+                                                Value[] values,
+                                                int valueType,
+                                                boolean skipProtected,
+                                                boolean skipReferenceValidation )
             throws AccessDeniedException, ConstraintViolationException, RepositoryException, javax.jcr.ValueFormatException,
             VersionException {
             assert name != null;
@@ -1340,7 +1369,8 @@ class SessionCache {
                  * findPropertyDefinition checks constraints for all property types except REFERENCE.  To avoid unnecessary loading of nodes,
                  * REFERENCE constraints are only checked when the property is first set.
                  */
-                boolean referencePropMissedConstraints = definition != null
+                boolean referencePropMissedConstraints = !skipReferenceValidation
+                                                         && definition != null
                                                          && (definition.getRequiredType() == PropertyType.REFERENCE || definition.getRequiredType() == PropertyType.WEAKREFERENCE)
                                                          && !definition.canCastToTypeAndSatisfyConstraints(newValues);
                 if (definition == null) {
@@ -1374,6 +1404,10 @@ class SessionCache {
                                            readable(node.getPath()),
                                            definition.getName(),
                                            definition.getDeclaringNodeType().getName());
+
+                    referencePropMissedConstraints = (definition.getRequiredType() == PropertyType.REFERENCE || definition.getRequiredType() == PropertyType.WEAKREFERENCE)
+                                                     && !definition.canCastToTypeAndSatisfyConstraints(newValues);
+
                     throw new ConstraintViolationException(msg);
                 }
             } else {

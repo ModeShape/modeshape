@@ -279,6 +279,10 @@
 			<sv:property sv:name="car:model" sv:type="String">
 				<sv:value>Continental</sv:value>
 			</sv:property>
+			<sv:property sv:name="car:alternateModels" sv:type="Reference">
+				<sv:value>7c513b8e-e77e-40f2-bf4d-147419037a75</sv:value>
+				<sv:value>30568ebe-6351-4e74-9502-71b136387142</sv:value>
+			</sv:property>
 		</sv:node>
 		<sv:node sv:name="Lexus IS350">
 			<sv:property sv:name="jcr:primaryType" sv:type="Name">
