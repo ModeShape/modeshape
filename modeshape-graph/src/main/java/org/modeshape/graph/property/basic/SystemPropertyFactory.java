@@ -28,10 +28,8 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
-
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.common.util.StringUtil;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.Property;
@@ -189,7 +187,7 @@ public class SystemPropertyFactory extends BasicPropertyFactory {
         return new BasicMultiValueProperty(name, valueList);
     }
     
-    private static final String CURYLY_PREFIX = "${";
+    private static final String CURLY_PREFIX = "${";
     private static final String CURLY_SUFFIX = "}";
     private static final String VAR_DELIM = ",";
     private static final String DEFAULT_DELIM = ":";
@@ -210,7 +208,7 @@ public class SystemPropertyFactory extends BasicPropertyFactory {
 	sb = new StringBuffer(value);
 
 	    // Get the index of the first constant, if any
-	int startName = sb.indexOf(CURYLY_PREFIX);
+	int startName = sb.indexOf(CURLY_PREFIX);
 
 	if (startName == -1) return value;
 	    
@@ -262,12 +260,12 @@ public class SystemPropertyFactory extends BasicPropertyFactory {
 		if (constValue != null) {
 		    sb = sb.replace(startName, endName + 1, constValue);
 		    // Checking for another constants
-		    startName = sb.indexOf(CURYLY_PREFIX);
+		    startName = sb.indexOf(CURLY_PREFIX);
 
 		} else {
 		    // continue to try to substitute for other properties so that all defined variables
 		    // are tried to be substituted for
-		    startName = sb.indexOf(CURYLY_PREFIX, endName);
+		    startName = sb.indexOf(CURLY_PREFIX, endName);
 		    
 		}
 
@@ -279,7 +277,6 @@ public class SystemPropertyFactory extends BasicPropertyFactory {
 	/**
 	 * Split a string into pieces based on delimiters.  Similar to the perl function of
 	 * the same name.  The delimiters are not included in the returned strings.
-	 * @see #join
 	 *
 	 * @param str Full string
 	 * @param splitter Characters to split on
