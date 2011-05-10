@@ -67,4 +67,17 @@ public class JcrImportExportIntegrationTest extends ModeShapeSingleUseTest {
         assertThat(property.getValue().getString().startsWith("[when]"), is(true));
     }
 
+    @FixFor( "MODE-1165" )
+    @Test
+    public void shouldBeAbleToImportGuvnorExport() throws Exception {
+        startEngineUsing("config/configRepositoryForDroolsImportExport.xml");
+        sessionTo("Repo");
+        assertNode("/", "mode:root");
+        // import the file ...
+        importContent(getClass(), "io/drools/sample-guvnor-repository.xml");
+        session().refresh(false);
+        // Verify the file was imported ...
+        assertNode("/drools:repository", "nt:folder");
+    }
+
 }

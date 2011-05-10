@@ -97,7 +97,7 @@ public class JcrEngineTest {
         repository = engine.getRepository("cars");
         session = repository.login();
 
-        assertNodeType("car:Car", false, false, true, false, null, 0, 11, "nt:unstructured", "mix:created");
+        assertNodeType("car:Car", false, false, true, false, null, 0, 12, "nt:unstructured", "mix:created");
     }
 
     @Test( expected = JcrConfigurationException.class )
@@ -265,7 +265,7 @@ public class JcrEngineTest {
         repository = engine.getRepository("cars");
         session = repository.login();
 
-        assertNodeType("car:Car", false, false, true, false, null, 0, 11, "nt:unstructured", "mix:created");
+        assertNodeType("car:Car", false, false, true, false, null, 0, 12, "nt:unstructured", "mix:created");
 
         // Check that the content is not there...
         assertThat(session.getRootNode().hasNode("Cars"), is(false));
@@ -291,7 +291,7 @@ public class JcrEngineTest {
         repository = engine.getRepository("cars");
         session = repository.login();
 
-        assertNodeType("car:Car", false, false, true, false, null, 0, 11, "nt:unstructured", "mix:created");
+        assertNodeType("car:Car", false, false, true, false, null, 0, 12, "nt:unstructured", "mix:created");
 
         // Check that the content is there...
         assertThat(session.getRootNode().hasNode("Cars"), is(true));

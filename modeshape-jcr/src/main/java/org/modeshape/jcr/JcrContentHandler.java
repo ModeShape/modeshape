@@ -830,22 +830,23 @@ class JcrContentHandler extends DefaultHandler {
                     }
 
                     List<Value> values = entry.getValue();
+                    AbstractJcrProperty prop;
 
                     if (values.size() == 1) {
-                        AbstractJcrProperty prop = newNodeEditor.setProperty(propertyName,
-                                                                             (JcrValue)values.get(0),
-                                                                             skipProtected,
-                                                                             false);
-                        if (prop.getType() == PropertyType.REFERENCE && prop.getDefinition().getValueConstraints().length != 0) {
-                            // This reference needs to be validated after all nodes have been imported ...
-                            refPropsRequiringConstraintValidation.add(prop);
-                        }
+                        prop = newNodeEditor.setProperty(propertyName, (JcrValue)values.get(0), skipProtected, true);
                     } else {
-                        newNodeEditor.setProperty(propertyName,
-                                                  values.toArray(new Value[values.size()]),
-                                                  PropertyType.UNDEFINED,
-                                                  skipProtected);
+                        prop = newNodeEditor.setProperty(propertyName,
+                                                         values.toArray(new Value[values.size()]),
+                                                         PropertyType.UNDEFINED,
+                                                         skipProtected,
+                                                         true);
                     }
+
+                    if (prop.getType() == PropertyType.REFERENCE && prop.getDefinition().getValueConstraints().length != 0) {
+                        // This reference needs to be validated after all nodes have been imported ...
+                        refPropsRequiringConstraintValidation.add(prop);
+                    }
+
                 }
 
                 node = child;
