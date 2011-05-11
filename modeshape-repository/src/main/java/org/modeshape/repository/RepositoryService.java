@@ -58,6 +58,7 @@ import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.PropertyType;
 import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.ValueFactory;
+import org.modeshape.graph.property.ValueFormatException;
 import org.modeshape.graph.request.CollectGarbageRequest;
 import org.modeshape.graph.request.ReadBranchRequest;
 import org.modeshape.repository.service.AbstractServiceAdministrator;
@@ -349,108 +350,114 @@ public class RepositoryService implements AdministeredService, Observer {
             if (property.isEmpty()) continue;
 
             Object value = null;
-            Method setter = null;
-            try {
-                setter = reflection.findFirstMethod("set" + javaPropertyName, false);
-                if (setter == null) continue;
-                // Determine the type of the one parameter ...
-                Class<?>[] parameterTypes = setter.getParameterTypes();
-                if (parameterTypes.length != 1) continue; // not a valid JavaBean property
-                Class<?> paramType = parameterTypes[0];
-                PropertyType allowedType = PropertyType.discoverType(paramType);
-                if (allowedType == null) continue; // assume not a JavaBean property with usable type
-                ValueFactory<?> factory = context.getValueFactories().getValueFactory(allowedType);
-                if (paramType.isArray()) {
-                    if (paramType.getComponentType().isArray()) continue; // array of array, which we don't do
-                    Object[] values = factory.create(property.getValuesAsArray());
-                    // Convert to an array of primitives if that's what the signature requires ...
-                    Class<?> componentType = paramType.getComponentType();
-                    if (Integer.TYPE.equals(componentType)) {
-                        int[] primitiveValues = new int[values.length];
-                        for (int i = 0; i != values.length; ++i) {
-                            primitiveValues[i] = ((Long)values[i]).intValue();
+
+            for (Method setter : reflection.findAllMethods("set" + javaPropertyName, false)) {
+                try {
+                    // Determine the type of the one parameter ...
+                    Class<?>[] parameterTypes = setter.getParameterTypes();
+                    if (parameterTypes.length != 1) continue; // not a valid JavaBean property
+                    Class<?> paramType = parameterTypes[0];
+                    PropertyType allowedType = PropertyType.discoverType(paramType);
+                    if (allowedType == null) continue; // assume not a JavaBean property with usable type
+                    ValueFactory<?> factory = context.getValueFactories().getValueFactory(allowedType);
+                    if (paramType.isArray()) {
+                        if (paramType.getComponentType().isArray()) continue; // array of array, which we don't do
+                        Object[] values = factory.create(property.getValuesAsArray());
+                        // Convert to an array of primitives if that's what the signature requires ...
+                        Class<?> componentType = paramType.getComponentType();
+                        if (Integer.TYPE.equals(componentType)) {
+                            int[] primitiveValues = new int[values.length];
+                            for (int i = 0; i != values.length; ++i) {
+                                primitiveValues[i] = ((Long)values[i]).intValue();
+                            }
+                            value = primitiveValues;
+                        } else if (Short.TYPE.equals(componentType)) {
+                            short[] primitiveValues = new short[values.length];
+                            for (int i = 0; i != values.length; ++i) {
+                                primitiveValues[i] = ((Long)values[i]).shortValue();
+                            }
+                            value = primitiveValues;
+                        } else if (Long.TYPE.equals(componentType)) {
+                            long[] primitiveValues = new long[values.length];
+                            for (int i = 0; i != values.length; ++i) {
+                                primitiveValues[i] = ((Long)values[i]).longValue();
+                            }
+                            value = primitiveValues;
+                        } else if (Double.TYPE.equals(componentType)) {
+                            double[] primitiveValues = new double[values.length];
+                            for (int i = 0; i != values.length; ++i) {
+                                primitiveValues[i] = ((Double)values[i]).doubleValue();
+                            }
+                            value = primitiveValues;
+                        } else if (Float.TYPE.equals(componentType)) {
+                            float[] primitiveValues = new float[values.length];
+                            for (int i = 0; i != values.length; ++i) {
+                                primitiveValues[i] = ((Double)values[i]).floatValue();
+                            }
+                            value = primitiveValues;
+                        } else if (Boolean.TYPE.equals(componentType)) {
+                            boolean[] primitiveValues = new boolean[values.length];
+                            for (int i = 0; i != values.length; ++i) {
+                                primitiveValues[i] = ((Boolean)values[i]).booleanValue();
+                            }
+                            value = primitiveValues;
+                        } else {
+                            value = values;
                         }
-                        value = primitiveValues;
-                    } else if (Short.TYPE.equals(componentType)) {
-                        short[] primitiveValues = new short[values.length];
-                        for (int i = 0; i != values.length; ++i) {
-                            primitiveValues[i] = ((Long)values[i]).shortValue();
-                        }
-                        value = primitiveValues;
-                    } else if (Long.TYPE.equals(componentType)) {
-                        long[] primitiveValues = new long[values.length];
-                        for (int i = 0; i != values.length; ++i) {
-                            primitiveValues[i] = ((Long)values[i]).longValue();
-                        }
-                        value = primitiveValues;
-                    } else if (Double.TYPE.equals(componentType)) {
-                        double[] primitiveValues = new double[values.length];
-                        for (int i = 0; i != values.length; ++i) {
-                            primitiveValues[i] = ((Double)values[i]).doubleValue();
-                        }
-                        value = primitiveValues;
-                    } else if (Float.TYPE.equals(componentType)) {
-                        float[] primitiveValues = new float[values.length];
-                        for (int i = 0; i != values.length; ++i) {
-                            primitiveValues[i] = ((Double)values[i]).floatValue();
-                        }
-                        value = primitiveValues;
-                    } else if (Boolean.TYPE.equals(componentType)) {
-                        boolean[] primitiveValues = new boolean[values.length];
-                        for (int i = 0; i != values.length; ++i) {
-                            primitiveValues[i] = ((Boolean)values[i]).booleanValue();
-                        }
-                        value = primitiveValues;
                     } else {
-                        value = values;
+                        value = factory.create(property.getFirstValue());
+                        // Convert to the correct primitive, if needed ...
+                        if (Integer.TYPE.equals(paramType)) {
+                            value = new Integer(((Long)value).intValue());
+                        } else if (Short.TYPE.equals(paramType)) {
+                            value = new Short(((Long)value).shortValue());
+                        } else if (Float.TYPE.equals(paramType)) {
+                            value = new Float(((Double)value).floatValue());
+                        }
                     }
-                } else {
-                    value = factory.create(property.getFirstValue());
-                    // Convert to the correct primitive, if needed ...
-                    if (Integer.TYPE.equals(paramType)) {
-                        value = new Integer(((Long)value).intValue());
-                    } else if (Short.TYPE.equals(paramType)) {
-                        value = new Short(((Long)value).shortValue());
-                    } else if (Float.TYPE.equals(paramType)) {
-                        value = new Float(((Double)value).floatValue());
-                    }
+                    // Invoke the method ...
+                    String msg = "Setting property {0} to {1} on source at {2} in configuration repository {3} in workspace {4}";
+                    Logger.getLogger(getClass()).trace(msg,
+                                                       javaPropertyName,
+                                                       value,
+                                                       path,
+                                                       configurationSourceName,
+                                                       configurationWorkspaceName);
+
+                    setter.invoke(instance, value);
+                    break;
+                } catch (ValueFormatException vfe) {
+                    // We picked the wrong setter or the user entered a bad value. Try again if possible.
+                } catch (SecurityException err) {
+                    problems.addWarning(err, RepositoryI18n.securityExceptionWhileSettingProperty, instance.getClass(), setter);
+                } catch (IllegalArgumentException err) {
+                    // Do nothing ... assume not a JavaBean property (but log)
+                    problems.addWarning(err,
+                                        RepositoryI18n.invalidArgumentExceptionWhileSettingProperty,
+                                        setter,
+                                        value,
+                                        path,
+                                        configurationSourceName,
+                                        configurationWorkspaceName);
+                } catch (IllegalAccessException err) {
+                    problems.addWarning(err,
+                                        RepositoryI18n.illegalAccessExceptionWhileSettingProperty,
+                                        instance.getClass(),
+                                        setter);
+                } catch (InvocationTargetException err) {
+                    // Do nothing ... assume not a JavaBean property (but log)
+                    problems.addWarning(err,
+                                        RepositoryI18n.invocationTargetExceptionWhileSettingProperty,
+                                        setter,
+                                        value,
+                                        path,
+                                        configurationSourceName,
+                                        configurationWorkspaceName);
                 }
-                // Invoke the method ...
-                String msg = "Setting property {0} to {1} on source at {2} in configuration repository {3} in workspace {4}";
-                Logger.getLogger(getClass()).trace(msg,
-                                                   javaPropertyName,
-                                                   value,
-                                                   path,
-                                                   configurationSourceName,
-                                                   configurationWorkspaceName);
-                setter.invoke(instance, value);
-            } catch (SecurityException err) {
-                problems.addWarning(err, RepositoryI18n.securityExceptionWhileSettingProperty, instance.getClass(), setter);
-            } catch (IllegalArgumentException err) {
-                // Do nothing ... assume not a JavaBean property (but log)
-                problems.addWarning(err,
-                                    RepositoryI18n.invalidArgumentExceptionWhileSettingProperty,
-                                    setter,
-                                    value,
-                                    path,
-                                    configurationSourceName,
-                                    configurationWorkspaceName);
-            } catch (IllegalAccessException err) {
-                problems.addWarning(err, RepositoryI18n.illegalAccessExceptionWhileSettingProperty,
-                                    instance.getClass(), setter);
-            } catch (InvocationTargetException err) {
-                // Do nothing ... assume not a JavaBean property (but log)
-                problems.addWarning(err,
-                                    RepositoryI18n.invocationTargetExceptionWhileSettingProperty,
-                                    setter,
-                                    value,
-                                    path,
-                                    configurationSourceName,
-                                    configurationWorkspaceName);
             }
         }
 
-        // Check for nested instances in the configuration
+        // Check for nested instances (i.e., objects rather than primitives) in the configuration
         for (Location childLocation : node.getChildren()) {
             assert childLocation.hasPath();
             Path childPath = childLocation.getPath();
@@ -462,8 +469,14 @@ public class RepositoryService implements AdministeredService, Observer {
             }
 
             String javaPropertyName = childName.getLocalName();
-            Method setter = reflection.findFirstMethod("set" + javaPropertyName, false);
-            if (setter == null) continue;
+            Method setter = null;
+
+            try {
+                setter = reflection.findBestMethodWithSignature("set" + javaPropertyName, false, value.getClass());
+            } catch (NoSuchMethodException nsme) {
+                // No matching method, continue
+                continue;
+            }
 
             try {
                 // Invoke the method ...
@@ -474,7 +487,10 @@ public class RepositoryService implements AdministeredService, Observer {
                                                    childPath,
                                                    configurationSourceName,
                                                    configurationWorkspaceName);
+
                 setter.invoke(instance, value);
+            } catch (ClassCastException vfe) {
+                // We picked the wrong setter or the user entered a bad value. Try again if possible.
             } catch (SecurityException err) {
                 problems.addWarning(err, RepositoryI18n.securityExceptionWhileSettingProperty, instance.getClass(), setter);
             } catch (IllegalArgumentException err) {
@@ -487,8 +503,7 @@ public class RepositoryService implements AdministeredService, Observer {
                                     configurationSourceName,
                                     configurationWorkspaceName);
             } catch (IllegalAccessException err) {
-                problems.addWarning(err, RepositoryI18n.illegalAccessExceptionWhileSettingProperty,
-                                    instance.getClass(), setter);
+                problems.addWarning(err, RepositoryI18n.illegalAccessExceptionWhileSettingProperty, instance.getClass(), setter);
             } catch (InvocationTargetException err) {
                 // Do nothing ... assume not a JavaBean property (but log)
                 problems.addWarning(err,
@@ -499,7 +514,6 @@ public class RepositoryService implements AdministeredService, Observer {
                                     configurationSourceName,
                                     configurationWorkspaceName);
             }
-
         }
 
         return instance;
