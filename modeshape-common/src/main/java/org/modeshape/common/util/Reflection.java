@@ -41,9 +41,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
-import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.Category;
 import org.modeshape.common.annotation.Description;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.Label;
 import org.modeshape.common.annotation.ReadOnly;
 import org.modeshape.common.i18n.I18n;
@@ -342,6 +342,38 @@ public class Reflection {
             }
         }
         return null;
+    }
+
+    /**
+     * Finds the methods on the target class that match the supplied method name.
+     * 
+     * @param methodName the name of the method that is to be found.
+     * @param caseSensitive true if the method name supplied should match case-sensitively, or false if case does not matter
+     * @return the Method objects that have a matching name, or empty if there are no methods that have a matching name.
+     */
+    public Iterable<Method> findAllMethods( String methodName,
+                                            boolean caseSensitive ) {
+        Pattern pattern = caseSensitive ? Pattern.compile(methodName) : Pattern.compile(methodName, Pattern.CASE_INSENSITIVE);
+        return findAllMethods(pattern);
+    }
+
+    /**
+     * Finds the methods on the target class that match the supplied method name.
+     * 
+     * @param methodNamePattern the regular expression pattern for the name of the method that is to be found.
+     * @return the Method objects that have a matching name, or empty if there are no methods that have a matching name.
+     */
+    public Iterable<Method> findAllMethods( Pattern methodNamePattern ) {
+        LinkedList<Method> methods = new LinkedList<Method>();
+
+        final Method[] allMethods = this.targetClass.getMethods();
+        for (int i = 0; i < allMethods.length; i++) {
+            final Method m = allMethods[i];
+            if (methodNamePattern.matcher(m.getName()).matches()) {
+                methods.add(m);
+            }
+        }
+        return methods;
     }
 
     /**

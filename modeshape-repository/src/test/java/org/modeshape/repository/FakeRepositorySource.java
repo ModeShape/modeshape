@@ -221,6 +221,14 @@ public class FakeRepositorySource implements PathRepositorySource {
         this.stringArrayParam = stringArrayParam;
     }
 
+    public void setOverloadedParam( int intParam ) {
+        setIntParam(intParam);
+    }
+
+    public void setOverloadedParam( boolean booleanParam ) {
+        setBooleanParam(booleanParam);
+    }
+
     @Override
     public boolean areUpdatesAllowed() {
         return false;

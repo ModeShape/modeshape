@@ -37,6 +37,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.util.Logger;
@@ -236,6 +237,36 @@ public class RepositoryServiceTest {
         assertThat(sourceA.getLongObjectArrayParam(), is(new Long[] {987654321L}));
         assertThat(sourceA.getBooleanObjectArrayParam(), is(new Boolean[] {Boolean.TRUE}));
         assertThat(sourceA.getStringArrayParam(), is(new String[] {"string value"}));
+    }
+
+    @FixFor( "MODE-1168" )
+    @Test
+    public void shouldUseCorrectSetterForOverloadedProperties() {
+        Path configPath = context.getValueFactories().getPathFactory().create("/mode:system");
+        service = new RepositoryService(configRepositorySource, configWorkspaceName, configPath, context, bus, problems);
+
+        // Set up the configuration repository ...
+        configRepository.useWorkspace("default");
+        configRepository.create("/mode:system").and();
+        configRepository.create("/mode:system/mode:sources").and();
+        configRepository.create("/mode:system/mode:sources/source A").and();
+
+        final String className = FakeRepositorySource.class.getName();
+        configRepository.set(ModeShapeLexicon.CLASSNAME).on("/mode:system/mode:sources/source A").to(className);
+        configRepository.set(ModeShapeLexicon.CLASSPATH).on("/mode:system/mode:sources/source A").to("");
+        configRepository.set("overloadedParam").on("/mode:system/mode:sources/source A").to("true");
+
+        // Now, start up the service ...
+        service.getAdministrator().start();
+
+        // Get the source, which should be configured ...
+        RepositorySource repositorySourceA = service.getRepositoryLibrary().getSource("source A");
+        assertThat(repositorySourceA, is(instanceOf(FakeRepositorySource.class)));
+        FakeRepositorySource sourceA = (FakeRepositorySource)repositorySourceA;
+
+        assertThat(sourceA.isBooleanParam(), is(true));
+
+
     }
 
 }
