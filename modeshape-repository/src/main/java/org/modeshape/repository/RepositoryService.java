@@ -472,7 +472,11 @@ public class RepositoryService implements AdministeredService, Observer {
             Method setter = null;
 
             try {
-                setter = reflection.findBestMethodWithSignature("set" + javaPropertyName, false, value.getClass());
+                Class<?> valueClass = null;
+                if (value != null) {
+                    valueClass = value.getClass();
+                }
+                setter = reflection.findBestMethodWithSignature("set" + javaPropertyName, false, valueClass);
             } catch (NoSuchMethodException nsme) {
                 // No matching method, continue
                 continue;
