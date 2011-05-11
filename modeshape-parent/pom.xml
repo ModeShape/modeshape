@@ -207,7 +207,7 @@
 		<hibernate.tools.version>3.2.4.GA</hibernate.tools.version>
 		<sun.xml.bind.jaxbimpl.version>2.1.12</sun.xml.bind.jaxbimpl.version>
 		<jdbc.mysql.version>5.0.7</jdbc.mysql.version>
-		<jdbc.derby.version>10.2.1.6</jdbc.derby.version>
+		<jdbc.derby.version>10.8.1.2</jdbc.derby.version>
 		<jdbc.hsqldb.version>1.8.0.2</jdbc.hsqldb.version>
 		<jdbc.h2.version>1.2.124</jdbc.h2.version>
 		<jdbc.postgresql.version>8.4-701.jdbc3</jdbc.postgresql.version>
@@ -1188,6 +1188,15 @@
 				<updatePolicy>never</updatePolicy>
 			</snapshots>
 		</repository>
+        <repository>
+          <id>qa.jboss.com</id>
+          <url>http://www.qa.jboss.com/jdbc-drivers/maven2</url>
+          <!--url>10.16.89.17/jdbc-drivers/maven2</url-->
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+        </repository>
+		
 	</repositories>
 	<pluginRepositories>
 		<pluginRepository>

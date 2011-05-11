@@ -49,6 +49,7 @@ import javax.persistence.Table;
 import org.hibernate.annotations.Index;
 import org.modeshape.common.text.Inflector;
 import org.modeshape.common.util.HashCode;
+import org.modeshape.connector.store.jpa.JpaSource;
 import org.modeshape.connector.store.jpa.model.common.NamespaceEntity;
 import org.modeshape.connector.store.jpa.util.Serializer;
 
@@ -111,8 +112,16 @@ public class NodeEntity {
     @Column( name = "ALLOWS_SNS", nullable = false, unique = false )
     private boolean allowsSameNameChildren;
 
+    /**
+     * The serialized map of all properties smaller than the {@link JpaSource#setLargeValueSizeInBytes(long) large value
+     * threshold}. The length attribute on the {@code @Column} annotation is set to 1MB, which will be used by the DB2 and Derby
+     * dialects, but which will be ignored by the Oracle, SQL Server, Sybase, MySQL, PostgreSQL, Informix, and Teradata dialects
+     * (these will each use a DB-specific length for the LOB type). If the 'length' value is not specified in the @Column
+     * annotation, DB2 and Derby will use a maximum LOB size of 255 bytes. For additional details, see
+     * [MODE-1015](https://issues.jboss.org/browse/MODE-1015).
+     */
     @Lob
-    @Column( name = "DATA", nullable = true, unique = false )
+    @Column( name = "DATA", nullable = true, unique = false, length = 1048576 )
     private byte[] data;
 
     @Column( name = "NUM_PROPS", nullable = false )

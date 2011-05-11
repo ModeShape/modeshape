@@ -34,6 +34,8 @@ public final class JpaDdlGenI18n {
     public static I18n invalidModel;
     
     public static I18n directoryLocationCreated;
+    public static I18n dialectRequiresModification;
+    public static I18n usage;
     
     static {
         try {

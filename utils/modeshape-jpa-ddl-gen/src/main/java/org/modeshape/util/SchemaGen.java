@@ -5,8 +5,9 @@ import java.io.IOException;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import org.hibernate.cfg.Environment;
+import org.hibernate.dialect.DB2Dialect;
+import org.hibernate.dialect.DerbyDialect;
 import org.hibernate.dialect.Dialect;
 import org.hibernate.ejb.Ejb3Configuration;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
@@ -65,6 +66,10 @@ public class SchemaGen {
                       String delimiter) {
 
         this.dialect = dialectFor(dialect);
+        if ((this.dialect instanceof DB2Dialect) | (this.dialect instanceof DerbyDialect)) {
+            System.err.println(JpaDdlGenI18n.dialectRequiresModification.text(this.dialect.getClass().getSimpleName()));
+        }
+
         this.delimiter = delimiter;
 
         this.model = JpaSource.Models.getModel(model);
@@ -78,7 +83,6 @@ public class SchemaGen {
         	
             String logMsg = JpaDdlGenI18n.directoryLocationCreated.text(this.outputPath.getAbsolutePath()); //$NON-NLS-1$
             logger.log(Level.INFO, logMsg);
-
         }
     }
     
@@ -142,9 +146,6 @@ public class SchemaGen {
         export.drop(false, false);
     }
 
-    public static final String USAGE = "./ddl-gen.sh -dialect <dialect name> -model <model_name> [-out <path to output directory>] [-delimiter <delim>] [-newline]\n"
-                                       + "\tExample: ./ddl-gen.sh -dialect HSQL -model Simple -out /tmp  -delimiter % -newline ";
-
     public static void main( String[] args ) throws IOException {
         String modelName = null;
         String dialectName = null;
@@ -185,7 +186,7 @@ public class SchemaGen {
      * Print the usage message and exit with a non-zero return code.
      */
     private static void printUsage() {
-        System.err.println(USAGE);
+        System.err.println(JpaDdlGenI18n.usage.text());
         System.exit(1);
     }
 
