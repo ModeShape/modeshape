@@ -7,6 +7,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.hibernate.cfg.Environment;
 import org.hibernate.dialect.DB2Dialect;
+import org.hibernate.dialect.DerbyDialect;
 import org.hibernate.dialect.Dialect;
 import org.hibernate.ejb.Ejb3Configuration;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
@@ -65,7 +66,7 @@ public class SchemaGen {
                       String delimiter) {
 
         this.dialect = dialectFor(dialect);
-        if (this.dialect instanceof DB2Dialect) {
+        if ((this.dialect instanceof DB2Dialect) | (this.dialect instanceof DerbyDialect)) {
             System.err.println(JpaDdlGenI18n.dialectRequiresModification.text(this.dialect.getClass().getSimpleName()));
         }
 

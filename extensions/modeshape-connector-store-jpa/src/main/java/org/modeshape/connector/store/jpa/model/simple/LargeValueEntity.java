@@ -98,12 +98,14 @@ public class LargeValueEntity {
     private Boolean compressed;
 
     /**
-     * Lazily-fetched value. The length attribute on the {@code @Column} annotation is set to 1G to support DB2 and Derby, both of
-     * which will map LOB columns to binary data types with a maximum length of 255 bytes if this attribute is not specified.
-     * Other databases use a variable-length LOB type with a maximum length that is DB-dependent, but very large.
+     * Lazily-fetched value. The length attribute on the {@code @Column} annotation is set to 1GB, which will be used by the DB2
+     * and Derby dialects, but which will be ignored by the Oracle, SQL Server, Sybase, MySQL, PostgreSQL, Informix, and Teradata
+     * dialects (these will each use a DB-specific length for the LOB type). If the 'length' value is not specified in the @Column
+     * annotation, DB2 and Derby will use a maximum LOB size of 255 bytes. For additional details, see
+     * [MODE-1015](https://issues.jboss.org/browse/MODE-1015).
      */
     @Lob
-    @Column( name = "DATA", nullable = false, length = 128000000 )
+    @Column( name = "DATA", nullable = false, length = 1073741824 )
     private byte[] data;
 
     public String getHash() {
