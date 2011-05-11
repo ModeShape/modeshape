@@ -207,7 +207,7 @@
 		<hibernate.tools.version>3.2.4.GA</hibernate.tools.version>
 		<sun.xml.bind.jaxbimpl.version>2.1.12</sun.xml.bind.jaxbimpl.version>
 		<jdbc.mysql.version>5.0.7</jdbc.mysql.version>
-		<jdbc.derby.version>10.2.1.6</jdbc.derby.version>
+		<jdbc.derby.version>10.8.1.2</jdbc.derby.version>
 		<jdbc.hsqldb.version>1.8.0.2</jdbc.hsqldb.version>
 		<jdbc.h2.version>1.2.124</jdbc.h2.version>
 		<jdbc.postgresql.version>8.4-701.jdbc3</jdbc.postgresql.version>
@@ -355,6 +355,39 @@
 				<jpaSource.driverClassName>org.hsqldb.jdbcDriver</jpaSource.driverClassName>
 				<jpaSource.url>jdbc:hsqldb:mem:modeshape</jpaSource.url>
 				<jpaSource.username>sa</jpaSource.username>
+				<jpaSource.password />
+			</properties>
+		</profile>
+
+		<!-- The Derby test environment -->
+		<profile>
+			<id>derby</id>
+			<activation>
+				<property>
+					<name>database</name>
+					<value>derby</value>
+				</property>
+			</activation>
+			<dependencies>
+				<dependency>
+					<groupId>org.apache.derby</groupId>
+					<artifactId>derby</artifactId>
+					<version>${jdbc.derby.version}</version>
+					<scope>test</scope>
+				</dependency>
+				<dependency>
+					<groupId>org.apache.derby</groupId>
+					<artifactId>derbyclient</artifactId>
+					<version>${jdbc.derby.version}</version>
+					<scope>test</scope>
+				</dependency>
+			</dependencies>
+			<properties>
+				<database>derby</database>
+				<jpaSource.dialect>org.hibernate.dialect.DerbyDialect</jpaSource.dialect>
+				<jpaSource.driverClassName>org.apache.derby.jdbc.ClientDriver</jpaSource.driverClassName>
+				<jpaSource.url>jdbc:derby:memory:modeshape;create=true</jpaSource.url>
+				<jpaSource.username></jpaSource.username>
 				<jpaSource.password />
 			</properties>
 		</profile>
