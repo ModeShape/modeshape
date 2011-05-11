@@ -37,6 +37,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.util.Logger;
@@ -236,6 +237,89 @@ public class RepositoryServiceTest {
         assertThat(sourceA.getLongObjectArrayParam(), is(new Long[] {987654321L}));
         assertThat(sourceA.getBooleanObjectArrayParam(), is(new Boolean[] {Boolean.TRUE}));
         assertThat(sourceA.getStringArrayParam(), is(new String[] {"string value"}));
+    }
+
+    @FixFor( "MODE-1168" )
+    @Test
+    public void shouldUseCorrectSetterForOverloadedSimpleProperties() {
+        Path configPath = context.getValueFactories().getPathFactory().create("/mode:system");
+        service = new RepositoryService(configRepositorySource, configWorkspaceName, configPath, context, bus, problems);
+
+        // Set up the configuration repository ...
+        configRepository.useWorkspace("default");
+        configRepository.create("/mode:system").and();
+        configRepository.create("/mode:system/mode:sources").and();
+        configRepository.create("/mode:system/mode:sources/source A").and();
+
+        final String className = FakeRepositorySource.class.getName();
+        configRepository.set(ModeShapeLexicon.CLASSNAME).on("/mode:system/mode:sources/source A").to(className);
+        configRepository.set(ModeShapeLexicon.CLASSPATH).on("/mode:system/mode:sources/source A").to("");
+        configRepository.set("overloadedParam").on("/mode:system/mode:sources/source A").to("true");
+
+        // Now, start up the service ...
+        service.getAdministrator().start();
+
+        // Get the source, which should be configured ...
+        RepositorySource repositorySourceA = service.getRepositoryLibrary().getSource("source A");
+        assertThat(repositorySourceA, is(instanceOf(FakeRepositorySource.class)));
+        FakeRepositorySource sourceA = (FakeRepositorySource)repositorySourceA;
+
+        assertThat(sourceA.isBooleanParam(), is(true));
+    }
+
+    @FixFor( "MODE-1168" )
+    @Test
+    public void shouldUseCorrectSetterForOverloadedObjectProperties() {
+        Path configPath = context.getValueFactories().getPathFactory().create("/mode:system");
+        service = new RepositoryService(configRepositorySource, configWorkspaceName, configPath, context, bus, problems);
+
+        // Set up the configuration repository ...
+        configRepository.useWorkspace("default");
+        configRepository.create("/mode:system").and();
+        configRepository.create("/mode:system/mode:sources").and();
+        configRepository.create("/mode:system/mode:sources/source A").and();
+
+        String className = FakeRepositorySource.class.getName();
+        configRepository.set(ModeShapeLexicon.CLASSNAME).on("/mode:system/mode:sources/source A").to(className);
+        configRepository.set(ModeShapeLexicon.CLASSPATH).on("/mode:system/mode:sources/source A").to("");
+
+        configRepository.create("/mode:system/mode:sources/source A/objectParam").and();
+
+        className = FakeRepositorySource.StringWrapperA.class.getName();
+        configRepository.set(ModeShapeLexicon.CLASSNAME).on("/mode:system/mode:sources/source A/objectParam").to(className);
+        configRepository.set(ModeShapeLexicon.CLASSPATH).on("/mode:system/mode:sources/source A/objectParam").to("");
+        configRepository.set("string").on("/mode:system/mode:sources/source A/objectParam").to("test string");
+
+        configRepository.create("/mode:system/mode:sources/source B").and();
+
+        configRepository.create("/mode:system/mode:sources/source B/objectParam").and();
+
+        className = FakeRepositorySource.StringWrapperB.class.getName();
+        configRepository.set(ModeShapeLexicon.CLASSNAME).on("/mode:system/mode:sources/source B/objectParam").to(className);
+        configRepository.set(ModeShapeLexicon.CLASSPATH).on("/mode:system/mode:sources/source B/objectParam").to("");
+        configRepository.set("string").on("/mode:system/mode:sources/source B/objectParam").to("test string");
+
+        className = FakeRepositorySource.class.getName();
+        configRepository.set(ModeShapeLexicon.CLASSNAME).on("/mode:system/mode:sources/source B").to(className);
+        configRepository.set(ModeShapeLexicon.CLASSPATH).on("/mode:system/mode:sources/source B").to("");
+        configRepository.set("overloadedParam").on("/mode:system/mode:sources/source B").to("true");
+
+        // Now, start up the service ...
+        service.getAdministrator().start();
+
+        // Get the first source, which should have a result decorated to indicate that it went through the correct setter
+        RepositorySource repositorySourceA = service.getRepositoryLibrary().getSource("source A");
+        assertThat(repositorySourceA, is(instanceOf(FakeRepositorySource.class)));
+        FakeRepositorySource sourceA = (FakeRepositorySource)repositorySourceA;
+
+        assertThat(sourceA.getStringParam(), is("test string A"));
+
+        // Get the second source, which should have a result decorated to indicate that it went through the correct setter
+        RepositorySource repositorySourceB = service.getRepositoryLibrary().getSource("source B");
+        assertThat(repositorySourceB, is(instanceOf(FakeRepositorySource.class)));
+        FakeRepositorySource sourceB = (FakeRepositorySource)repositorySourceB;
+
+        assertThat(sourceB.getStringParam(), is("test string B"));
     }
 
 }
