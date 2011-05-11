@@ -543,6 +543,26 @@ public class Reflection {
     public Method findBestMethodWithSignature( String methodName,
                                                Class<?>... argumentsClasses ) throws NoSuchMethodException, SecurityException {
 
+        return findBestMethodWithSignature(methodName, true, argumentsClasses);
+    }
+
+    /**
+     * Find the best method on the target class that matches the signature specified with the specified name and the list of
+     * argument classes. This method first attempts to find the method with the specified argument classes; if no such method is
+     * found, a NoSuchMethodException is thrown.
+     * 
+     * @param methodName the name of the method that is to be invoked.
+     * @param caseSensitive true if the method name supplied should match case-sensitively, or false if case does not matter
+     * @param argumentsClasses the list of Class instances that correspond to the classes for each argument passed to the method.
+     * @return the Method object that references the method that satisfies the requirements, or null if no satisfactory method
+     *         could be found.
+     * @throws NoSuchMethodException if a matching method is not found.
+     * @throws SecurityException if access to the information is denied.
+     */
+    public Method findBestMethodWithSignature( String methodName,
+                                               boolean caseSensitive,
+                                               Class<?>... argumentsClasses ) throws NoSuchMethodException, SecurityException {
+
         // Attempt to find the method
         Method result;
 
@@ -601,7 +621,21 @@ public class Reflection {
         // ------------------------------------------------------------------------
         // List argClass = argumentsClasses;
         for (int j = 0; j != 2; ++j) {
-            methodsWithSameName = this.methodMap.get(methodName);
+
+            if (caseSensitive) {
+                methodsWithSameName = this.methodMap.get(methodName);
+            } else {
+                methodsWithSameName = new LinkedList<Method>();
+                Pattern pattern = Pattern.compile(methodName, Pattern.CASE_INSENSITIVE);
+
+                for (Map.Entry<String, LinkedList<Method>> entry : this.methodMap.entrySet()) {
+                    // entry.getKey() is the method name
+                    if (pattern.matcher(entry.getKey()).matches()) {
+                        methodsWithSameName.addAll(entry.getValue());
+                    }
+                }
+            }
+
             if (methodsWithSameName == null) {
                 throw new NoSuchMethodException(methodName);
             }

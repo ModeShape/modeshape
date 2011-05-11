@@ -229,6 +229,14 @@ public class FakeRepositorySource implements PathRepositorySource {
         setBooleanParam(booleanParam);
     }
 
+    public void setObjectParam( StringWrapperA a ) {
+        setStringParam(a.getString() + " A");
+    }
+
+    public void setObjectParam( StringWrapperB b ) {
+        setStringParam(b.getString() + " B");
+    }
+
     @Override
     public boolean areUpdatesAllowed() {
         return false;
@@ -263,4 +271,27 @@ public class FakeRepositorySource implements PathRepositorySource {
         // NOP
     }
 
+    public static class StringWrapperA {
+        private String s;
+
+        public void setString( String s ) {
+            this.s = s;
+        }
+
+        public String getString() {
+            return s;
+        }
+    }
+
+    public static class StringWrapperB {
+        private String s;
+
+        public void setString( String s ) {
+            this.s = s;
+        }
+
+        public String getString() {
+            return s;
+        }
+    }
 }

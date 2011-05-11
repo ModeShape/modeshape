@@ -457,7 +457,7 @@ public class RepositoryService implements AdministeredService, Observer {
             }
         }
 
-        // Check for nested instances in the configuration
+        // Check for nested instances (i.e., objects rather than primitives) in the configuration
         for (Location childLocation : node.getChildren()) {
             assert childLocation.hasPath();
             Path childPath = childLocation.getPath();
@@ -469,47 +469,50 @@ public class RepositoryService implements AdministeredService, Observer {
             }
 
             String javaPropertyName = childName.getLocalName();
+            Method setter = null;
 
-            for (Method setter : reflection.findAllMethods("set" + javaPropertyName, false)) {
+            try {
+                setter = reflection.findBestMethodWithSignature("set" + javaPropertyName, false, value.getClass());
+            } catch (NoSuchMethodException nsme) {
+                // No matching method, continue
+                continue;
+            }
 
-                try {
-                    // Invoke the method ...
-                    String msg = "Setting property {0} to {1} on object at {2} in configuration repository {3} in workspace {4}";
-                    Logger.getLogger(getClass()).trace(msg,
-                                                       javaPropertyName,
-                                                       value,
-                                                       childPath,
-                                                       configurationSourceName,
-                                                       configurationWorkspaceName);
-                    setter.invoke(instance, value);
-                } catch (ValueFormatException vfe) {
-                    // We picked the wrong setter or the user entered a bad value. Try again if possible.
-                } catch (SecurityException err) {
-                    problems.addWarning(err, RepositoryI18n.securityExceptionWhileSettingProperty, instance.getClass(), setter);
-                } catch (IllegalArgumentException err) {
-                    // Do nothing ... assume not a JavaBean property (but log)
-                    problems.addWarning(err,
-                                        RepositoryI18n.invalidArgumentExceptionWhileSettingProperty,
-                                        setter,
-                                        value,
-                                        childPath,
-                                        configurationSourceName,
-                                        configurationWorkspaceName);
-                } catch (IllegalAccessException err) {
-                    problems.addWarning(err,
-                                        RepositoryI18n.illegalAccessExceptionWhileSettingProperty,
-                                        instance.getClass(),
-                                        setter);
-                } catch (InvocationTargetException err) {
-                    // Do nothing ... assume not a JavaBean property (but log)
-                    problems.addWarning(err,
-                                        RepositoryI18n.invocationTargetExceptionWhileSettingProperty,
-                                        setter,
-                                        value,
-                                        childPath,
-                                        configurationSourceName,
-                                        configurationWorkspaceName);
-                }
+            try {
+                // Invoke the method ...
+                String msg = "Setting property {0} to {1} on object at {2} in configuration repository {3} in workspace {4}";
+                Logger.getLogger(getClass()).trace(msg,
+                                                   javaPropertyName,
+                                                   value,
+                                                   childPath,
+                                                   configurationSourceName,
+                                                   configurationWorkspaceName);
+
+                setter.invoke(instance, value);
+            } catch (ClassCastException vfe) {
+                // We picked the wrong setter or the user entered a bad value. Try again if possible.
+            } catch (SecurityException err) {
+                problems.addWarning(err, RepositoryI18n.securityExceptionWhileSettingProperty, instance.getClass(), setter);
+            } catch (IllegalArgumentException err) {
+                // Do nothing ... assume not a JavaBean property (but log)
+                problems.addWarning(err,
+                                    RepositoryI18n.invalidArgumentExceptionWhileSettingProperty,
+                                    setter,
+                                    value,
+                                    childPath,
+                                    configurationSourceName,
+                                    configurationWorkspaceName);
+            } catch (IllegalAccessException err) {
+                problems.addWarning(err, RepositoryI18n.illegalAccessExceptionWhileSettingProperty, instance.getClass(), setter);
+            } catch (InvocationTargetException err) {
+                // Do nothing ... assume not a JavaBean property (but log)
+                problems.addWarning(err,
+                                    RepositoryI18n.invocationTargetExceptionWhileSettingProperty,
+                                    setter,
+                                    value,
+                                    childPath,
+                                    configurationSourceName,
+                                    configurationWorkspaceName);
             }
         }
 
