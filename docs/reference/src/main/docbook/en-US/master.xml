@@ -101,6 +101,7 @@
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/connectors/subversion.xml"/>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/connectors/jboss_cache.xml"/>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/connectors/infinispan.xml"/>
+  	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/connectors/disk.xml"/>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/connectors/jdbc_metadata.xml"/>
 	</part>
 	<part id="provided-sequencers-part">

@@ -45,6 +45,7 @@
 		<module>extensions/modeshape-sequencer-wsdl</module>
 		<module>extensions/modeshape-sequencer-zip</module>
 		<module>extensions/modeshape-sequencer-ddl</module>
+		<module>extensions/modeshape-connector-disk</module>
 		<module>extensions/modeshape-connector-filesystem</module>
 		<module>extensions/modeshape-connector-infinispan</module>
 		<module>extensions/modeshape-connector-jbosscache</module>
