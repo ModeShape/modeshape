@@ -44,6 +44,15 @@
 			<listitem>
 				<itemizedlist>
 					<listitem>
+						<para><emphasis role="strong">jcr:mixinTypes</emphasis> - "mode:derived"</para>
+					</listitem>
+					<listitem>
+						<para><emphasis role="strong">mode:derivedAt</emphasis> - the date that at which content was sequenced to produce this record</para>
+					</listitem>
+					<listitem>
+						<para><emphasis role="strong">mode:derivedFrom</emphasis> - the repository path to the content that was sequenced</para>
+					</listitem>
+					<listitem>
 						<para><emphasis role="strong">jcr:mimeType</emphasis> - optional string property for the mime type of the image</para>
 					</listitem>
 					<listitem>

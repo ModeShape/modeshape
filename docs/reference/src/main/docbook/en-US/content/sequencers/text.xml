@@ -84,7 +84,9 @@
 		child node of the row node.  The output graph takes the following form (all nodes have primary type <code>nt:unstructured</code>:  
 	</para>
 	<programlisting>
- &lt;graph root&gt;
+ &lt;graph root jcr:mixinTypes = mode:derived, 
+                mode:derivedAt="2011-05-13T13:12:03.925Z", 
+                mode:derivedFrom="/files/foo.dat"&gt;
      + text:row[1]
      |   + text:column[1] (jcr:mixinTypes = text:column, text:data = &lt;column1 data&gt;)
      |   + ...

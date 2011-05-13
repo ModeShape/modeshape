@@ -76,7 +76,10 @@
 		The default class file recorder creates a subgraph rooted at the output location that takes the following form:  
 	</para>
 	<programlisting language="XML" role="XML"><![CDATA[
-<nt:unstructured jcr:name="packageName1">
+<nt:unstructured jcr:name="packageName1"
+                 jcr:mixinTypes = mode:derived 
+                 mode:derivedAt="2011-05-13T13:12:03.925Z" 
+                 mode:derivedFrom="/files/org/modeshape/Foo.class">
 	...
     <nt:unstructured jcr:name="packageNameN">
 	    <class:class jcr:name="ClassName">
