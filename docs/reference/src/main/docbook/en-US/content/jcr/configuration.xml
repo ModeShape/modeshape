@@ -1160,10 +1160,10 @@ config.repository("repository A")
 					</listitem>
 					<listitem>
 						<para>A plugin for the embedded JBoss AS console, represented as a WAR file in the "<code>deploy</code>" directory.
-							This plugin also works with <ulink url="http://support.rhq-project.org/display/RHQ/Home">RHQ</ulink>/
-							<ulink url="http://jboss.org/jopr">JOPR</ulink> administration, monitoring, alerting, operational
+							This plugin also works with <ulink url="http://support.rhq-project.org/display/RHQ/Home">RHQ</ulink>
+							administration, monitoring, alerting, operational
 							control and configuration system.  <emphasis>(We plan to add more metrics and operations over the 
-							next few releases, as we gain more experience using the ModeShape JOPR plugin.)</emphasis>
+							next few releases, as we gain more experience using the ModeShape RHQ plugin.)</emphasis>
 						</para>
 					</listitem>
 					<listitem>
