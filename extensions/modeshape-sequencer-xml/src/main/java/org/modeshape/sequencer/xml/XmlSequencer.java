@@ -111,9 +111,13 @@ public class XmlSequencer implements StreamSequencer {
             setFeature(reader, RESOLVE_DTD_URIS_FEATURE, false);
             // Parse XML document
             reader.parse(new InputSource(stream));
+            if (context.getProblems().hasProblems()) {
+                System.out.println(context.getProblems());
+            }
         } catch (Exception error) {
             context.getLogger(getClass()).error(error, XmlSequencerI18n.fatalErrorSequencingXmlDocument, error);
             context.getProblems().addError(error, XmlSequencerI18n.fatalErrorSequencingXmlDocument, error);
+            error.printStackTrace();
         }
     }
 

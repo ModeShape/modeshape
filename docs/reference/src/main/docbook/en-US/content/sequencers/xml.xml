@@ -34,6 +34,105 @@
     This sequencer stores the structure and data of an XML file into the repository.  DTD, entity, comments, 
     and other content are maintained by the sequencer in the output structure.
   </para>
+      <sect1>
+        <title>Example</title>
+        <para>
+		For this XML document:
+	    </para>
+	    <programlisting language="XML" role="XML"><![CDATA[
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd" [
+<!ENTITY % RH-ENTITIES SYSTEM "Common_Config/rh-entities.ent">
+<!ENTITY versionNumber "0.1">
+<!ENTITY copyrightYear "2008">
+<!ENTITY copyrightHolder "Red Hat Middleware, LLC.">]>
+<?target content ?>
+<?target2 other stuff ?>
+<Cars xmlns:jcr="http://www.jcp.org/jcr/1.0">
+    <!-- This is a comment -->
+    <Hybrid>
+        <car jcr:name="Toyota Prius"/>
+    </Hybrid>
+    <Sports>
+    </Sports>
+</Cars>
+]]></programlisting>
+    <para>
+       The sequencer will generate this content (listed in document view) if the sequencer <code>outputtingTo</code> property
+       generates an output path ending in "myxml":
+    </para>
+	    <programlisting language="XML" role="XML"><![CDATA[
+ xml jcr:primaryType=nt:unstructured
+ <myxml jcr:primaryType="modexml:document"
+        jcr:mixinTypes="mode:derived"
+        mode:derivedAt="2011-05-13T13:12:03.925Z"
+        mode:derivedFrom="/files/docForReferenceGuide.xml"
+        modedtd:name="book"
+        modedtd:publicId="-//OASIS//DTD DocBook XML V4.4//EN"
+        modedtd:systemId="http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+  <modedtd:entity jcr:primaryType="modedtd:entity"
+                  modedtd:name="%RH-ENTITIES"
+                  modedtd:systemId="Common_Config/rh-entities.ent" />
+  <modedtd:entity[2] jcr:primaryType="modedtd:entity"
+                     modedtd:name="versionNumber"
+                     modedtd:value="0.1" />
+  <modedtd:entity[3] jcr:primaryType="modedtd:entity"
+                     modedtd:name="copyrightYear"
+                     modedtd:value="2008" />
+  <modedtd:entity[4] jcr:primaryType="modedtd:entity"
+                     modedtd:name="copyrightHolder"
+                     modedtd:value="Red Hat Middleware, LLC." />
+  <modexml:processingInstruction jcr:primaryType="modexml:processingInstruction"
+                                 modexml:processingInstructionContent="content"
+                                 modexml:target="target" />
+  <modexml:processingInstruction[2] jcr:primaryType="modexml:processingInstruction"
+                                    modexml:processingInstructionContent="other stuff"
+                                    modexml:target="target2" />
+  <Cars jcr:primaryType="modexml:element">
+    <modexml:comment jcr:primaryType="modexml:comment"
+                     modexml:commentContent="This is a comment" />
+    <Hybrid jcr:primaryType="modexml:element">
+      <car jcr:primaryType="modexml:element" />
+    </Hybrid>
+    <Sports jcr:primaryType="modexml:element" />
+  </Cars>
+</myxml>  
+]]></programlisting>
+    <para>
+       The CND used by this sequencer is provided below.  Note that the XML sequencer will parse CDATA into its own
+       node in the sequenced output even though the example above does not explicitly demonstrate this.
+    </para>
+    <programlisting><![CDATA[
+<modexml='http://www.modeshape.org/xml/1.0'>
+<modedtd='http://www.modeshape.org/dtd/1.0'>
+
+[modexml:document] > nt:unstructured, mix:mimeType
+  - modexml:cDataContent (string)
+
+[modexml:comment] > nt:unstructured
+  - modexml:commentContent (string)
+ 
+[modexml:element] > nt:unstructured
+ 
+[modexml:elementContent] > nt:unstructured
+  - modexml:elementContent (string)
+ 
+[modexml:cData] > nt:unstructured
+  - modexml:cDataContent (string)
+ 
+[modexml:processingInstruction] > nt:unstructured
+  - modexml:processingInstruction (string)
+  - modexml:target (string)
+ 
+[modedtd:entity] > nt:unstructured
+  - modexml:name (string)
+  - modexml:value (string)
+  - modexml:publicId (string)
+  - modexml:systemId (string)
+ 
+ ]]></programlisting>
+	      
+  
   <programlisting language="JAVA" role="JAVA"><![CDATA[
 JcrConfiguration config = ...
 
@@ -44,4 +143,5 @@ config.sequencer("XML Sequencer")
       .sequencingFrom("//(*.xml[*])/jcr:content[@jcr:data]")
       .andOutputtingTo("/xml/$1");	
 ]]></programlisting>  
+ </sect1>
 </chapter>

@@ -37,6 +37,74 @@
 	With spreadsheets, the sequencer extracts the names of the sheets.  And, the sequencer extracts for all the files the
 	general file information, including the name of the author, title, keywords, subject, comments, and various dates.
    </para>
+      <sect1>
+        <title>Example</title>
+	    <para>This sequencer generates a simple graph structure containing a variety of metadata from the Office document.
+	    The example below provides example output (in the JCR document view) from a Word document sequenced into /document.  
+	    </para>
+	    <programlisting language="XML" role="XML"><![CDATA[
+<document jcr:primaryType="msoffice:metadata"
+          jcr:mixinTypes="mode:derived"
+          mode:derivedAt="2011-05-13T13:12:03.925Z"
+          mode:derivedFrom="/files/docForReferenceGuide.xml"
+          msoffice:title="My Word Document"
+          msoffice:subject="My Subject"
+          msoffice:author="James Joyce"
+          msoffice:keywords="essay english term paper"
+          msoffice:comment="This is my English 101 term paper"
+          msoffice:template="term_paper.dot"
+          msoffice:last_saved_by="jjoyce"
+          msoffice:revision="42"
+          msoffice:total_editing_time="1023"
+          msoffice:last_printed="2011-05-12T14:33Z"
+          msoffice:created="2011-05-10T20:07Z"
+          msoffice:saved="2011-05-12T14:32Z"
+          msoffice:pages="14"
+          msoffice:words="3025"
+          msoffice:characters="12420"
+          msoffice:creating_application="MSWORD.EXE"
+          msoffice:thumbnail="..." />
+]]></programlisting>
+    <para>
+       As indicated in the CND below, sequencing Excel spreadsheets also populates the <code>msoffice:full_content</code> 
+       property with all text in the document and the <code>msoffice:sheets</code> multi-valued string property with one
+       value for each worksheet name.  Sequencing PowerPoint presentations adds a child node for each slide containing the title
+       (<code>msoffice:title</code>), slide text (<code>msoffice:text</code>), and thumbnail image (<code>msoffice:thumbnail)</code>
+       for each slide.
+    </para>
+    <programlisting><![CDATA[
+[msoffice:metadata] > nt:unstructured, mix:mimeType
+  - msoffice:title (string)
+  - msoffice:subject (string)
+  - msoffice:author (string)
+  - msoffice:keywords (string)
+  - msoffice:comment (string)
+  - msoffice:template (string)
+  - msoffice:last_saved_by (string)
+  - msoffice:revision (string)
+  - msoffice:total_editing_time (long)
+  - msoffice:last_printed (date)
+  - msoffice:created (date)
+  - msoffice:saved (date)
+  - msoffice:pages (long)
+  - msoffice:words (long)
+  - msoffice:characters (long)
+  - msoffice:creating_application (string)
+  - msoffice:thumbnail (binary)
+
+// PowerPoint specific data
+  + msoffice:slide (msoffice:pptslide) sns
+
+// Excel specific data
+  - msoffice:full_content (string)
+  - msoffice:sheet_name (string) multiple
+
+[msoffice:pptslide]
+  - msoffice:title (string)
+  - msoffice:text (string)
+  - msoffice:thumbnail (binary)    
+]]></programlisting>
+   
 <para>
 	To use this sequencer, simply include the <code>modeshape-sequencer-msoffice</code> JAR and all of the
 	<ulink url="http://poi.apache.org/">POI</ulink> JARs
@@ -52,4 +120,5 @@ config.sequencer("Microsoft Office Document Sequencer")
       .sequencingFrom("//(*.(*.(doc|docx|ppt|pps|xls)[*])/jcr:content[@jcr:data]")
       .andOutputtingTo("/msoffice/$1");	
 ]]></programlisting>
+  </sect1>
 </chapter>

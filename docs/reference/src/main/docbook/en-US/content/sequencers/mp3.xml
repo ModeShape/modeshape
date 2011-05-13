@@ -37,6 +37,35 @@
 					After extracting this information from the audio files, the sequencer then writes this structure into the repository,
 					where it can be further processed, analyzed, searched, navigated, or referenced.
 	      </para>
+      <sect1>
+        <title>Example</title>
+	    <para>This sequencer generates a node with the name <code>mp3:metadata</code> below the sequencing target.  That is if
+	    the <code>ouputtingTo</code> property from the sequencer configuration is /mp3s/LivinOnAPrayer, the sequencer will output 
+	    a node to /mp3s/LivinOnAPrayer/mp3:metadata.
+	    </para>
+	    <programlisting language="XML" role="XML"><![CDATA[
+<mp3:metadata jcr:primaryType="mp3:metadata"
+              jcr:mixinTypes="mode:derived"
+              mode:derivedAt="2011-05-13T13:12:03.925Z"
+              mode:derivedFrom="/files/LOP.mp3"
+              mp3:title="Livin' on a Prayer"
+              mp3:author="Bon Jovi"
+              mp3:album="Slippery When Wet"
+              mp3:year="1986"
+              mp3:comment="Rock 'n' roll!" />
+]]></programlisting>
+    <para>
+       The CND used by this sequencer is provided below.
+    </para>
+    <programlisting><![CDATA[
+[mp3:metadata] > nt:unstructured, mix:mimeType
+  - mp3:title (string)
+  - mp3:author (string)
+  - mp3:album (string)
+  - mp3:year (long)
+  - mp3:comment (string)
+]]></programlisting>
+	      
 				<para>
 					To use this sequencer, simply include the <code>modeshape-sequencer-mp3</code> JAR and the <ulink url="http://www.jthink.net/jaudiotagger/">JAudioTagger</ulink>
 					library in your application and configure the &JcrConfiguration; to use this sequencer using something similar to:
@@ -51,4 +80,5 @@ config.sequencer("MP3 Sequencer")
       .sequencingFrom("//(*.mp3[*])/jcr:content[@jcr:data]")
       .andOutputtingTo("/mp3s/$1");	
 ]]></programlisting>
+</sect1>
 </chapter>
