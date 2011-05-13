@@ -569,13 +569,13 @@
         <listitem>
           <para>
             <emphasis role="strong">modeshape-jbossas-console</emphasis>
-						defines the plugin for <ulink url="http://support.rhq-project.org/display/RHQ/Home">RHQ</ulink>/
-						<ulink url="http://jboss.org/jopr">JOPR</ulink> that enables administration, monitoring, alerting, operational
-						control and configuration. All of the major components within a ModeShape engine are exposed as JOPR
+						defines the plugin for <ulink url="http://support.rhq-project.org/display/RHQ/Home">RHQ</ulink>
+						that enables administration, monitoring, alerting, operational
+						control and configuration. All of the major components within a ModeShape engine are exposed as RHQ
 						resources, and the plugin provides a number of metrics and administrative operations as well as
 						exposing most configuration properties.
 						<emphasis>(We plan to add more metrics and operations over the next few releases, as we gain more
-						experience using the ModeShape JOPR plugin.)</emphasis>
+						experience using the ModeShape RHQ plugin.)</emphasis>
           </para>
         </listitem>
         <listitem>

@@ -33,7 +33,7 @@
 	<para>
 		ModeShape &versionNumber; provides a very capable JCR implementation with powerful and unique features not matched
 		by other implementations.  
-		Version &versionNumber; improves the JDBC driver, the JBoss AS deployment, and the JOPR/RHQ monitoring
+		Version &versionNumber; improves the JDBC driver, the JBoss AS deployment, and the RHQ monitoring
 		plugin, along with numerous other fixes and improvements.
 		Of course, the release also comes with quite a few <ulink url="&ReleaseNotes;">bug fixes and improvements</ulink>.
 	</para>
