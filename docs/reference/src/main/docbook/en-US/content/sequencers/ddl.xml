@@ -103,7 +103,12 @@ CREATE SCHEMA hollywood
 	      reference information and position of the statement in the text stream (e.g., line number, column number and character index)
 	      so the statement can be tied back to the original DDL:
 	    </para>
-	    <programlisting language="XML" role="XML"><![CDATA[<nt:unstructured jcr:name="statements" ddl:parserId="POSTGRES">
+	    <programlisting language="XML" role="XML"><![CDATA[
+<nt:unstructured jcr:name="statements" 
+                 jcr:mixinTypes = "mode:derived" 
+                 mode:derivedAt="2011-05-13T13:12:03.925Z" 
+                 mode:derivedFrom="/files/foo.sql"
+                 ddl:parserId="POSTGRES">
   <nt:unstructured jcr:name="hollywood" jcr:mixinTypes="ddl:createSchemaStatement" 
 	                 ddl:startLineNumber="1"
                    ddl:startColumnNumber="1"
