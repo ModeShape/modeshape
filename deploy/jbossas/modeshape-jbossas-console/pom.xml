@@ -12,10 +12,10 @@
 	<url>http://www.modeshape.org</url>
 
 	<properties>
-		<org.jboss.jopr.as5.version>1.2.0.GA</org.jboss.jopr.as5.version>
+		<org.jboss.rhq.as5.version>1.2.0.GA</org.jboss.rhq.as5.version>
 		<org.rhq.version>1.3.0.GA</org.rhq.version>
-		<jopr.jboss.as5.plugin.version>1.4.0.B01</jopr.jboss.as5.plugin.version>
-		<org.jboss.jopr.version>1.2.0.GA</org.jboss.jopr.version>
+		<rhq.jboss.as5.plugin.version>1.4.0.B01</rhq.jboss.as5.plugin.version>
+		<org.jboss.rhq.version>1.2.0.GA</org.jboss.rhq.version>
 		<apache.ant.version>1.7.0</apache.ant.version>
 		<java.persistence.api.version>1.0</java.persistence.api.version>
 		<jboss.embeddable.ejb3.hibernate.all.version>1.0.0.Alpha9</jboss.embeddable.ejb3.hibernate.all.version>
@@ -122,7 +122,7 @@
 			<groupId>org.jboss.jopr</groupId>
 			<artifactId>jopr-embedded-jbas5</artifactId>
 			<type>war</type>
-			<version>${org.jboss.jopr.as5.version}</version>
+			<version>${org.jboss.rhq.as5.version}</version>
 		</dependency>
 
 		<dependency>
@@ -140,7 +140,7 @@
 		<dependency>
 			<groupId>org.jboss.on</groupId>
 			<artifactId>jopr-jboss-as-5-plugin</artifactId>
-			<version>${jopr.jboss.as5.plugin.version}</version>
+			<version>${rhq.jboss.as5.plugin.version}</version>
 		</dependency>
 
 		<!-- See MODE-1140 -->
