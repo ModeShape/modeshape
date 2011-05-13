@@ -621,7 +621,9 @@ config.sequencer("Teiid Model Sequencer")
     </para>
   	<programlisting><![CDATA[
 PartsVirtual jcr:primaryType="xmi:model" 
-   - jcr:mixinTypes=["mmcore:model","mix:referenceable","xmi:referenceable"]
+   - jcr:mixinTypes=["mmcore:model","mix:referenceable","xmi:referenceable", "mode:derived"]
+   - mode:derivedAt="2011-05-13T13:12:03.925Z" 
+   - mode:derivedFrom="/files/foo.xmi"
    - jcr:uuid="d1a1b82f-055b-4db2-a3e7-a9668f3a70b6"
    - mmcore:maxSetSize="100"
    - mmcore:modelType="VIRTUAL"

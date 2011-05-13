@@ -166,7 +166,11 @@ config.sequencer("Teiid VDB Sequencer")
        Here is a representation of the nodes output by the sequencing of an example "<code>qe.2.vdb</code>" virtual database:
     </para>
   	<programlisting><![CDATA[
-qe jcr:primaryType="vdb:virtualDatabase" jcr:mixinTypes="mix:referenceable" jcr:uuid="1d110326-f8e9-4f5e-becd-2f3e4d63296e"
+qe jcr:primaryType="vdb:virtualDatabase" 
+  - jcr:mixinTypes=["mix:referenceable", "mode:derived"] 
+  - jcr:uuid="1d110326-f8e9-4f5e-becd-2f3e4d63296e"
+  - mode:derivedAt="2011-05-13T13:12:03.925Z" 
+  - mode:derivedFrom="/files/foo.vdb"
   - vdb:description="This VDB is for testing Recursive XML documents and Text Sources"
   - vdb:originalFile="/vdb/qe.vdb"
   - vdb:preview="false"
