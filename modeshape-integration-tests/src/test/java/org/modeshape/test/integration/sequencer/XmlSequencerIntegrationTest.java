@@ -27,6 +27,7 @@ import javax.jcr.Node;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 
 public class XmlSequencerIntegrationTest extends AbstractSequencerTest {
 
@@ -53,6 +54,16 @@ public class XmlSequencerIntegrationTest extends AbstractSequencerTest {
     @Override
     public void afterEach() throws Exception {
         super.afterEach();
+    }
+
+    @Test
+    public void generateSequencerOutputForXmlSequencerChapterOfReferenceGuide() throws Exception {
+        // Uncomment next line to get the output graph showin the XML Sequencer chapter of the Ref Guide
+        print = true;
+        uploadFile("docForReferenceGuide.xml", "/files/");
+
+        // Find the sequenced node ...
+        printSubgraph(waitUntilSequencedNodeIsAvailable("/sequenced/xml", "nt:unstructured"));
     }
 
     @Test
@@ -100,9 +111,7 @@ public class XmlSequencerIntegrationTest extends AbstractSequencerTest {
         printQuery("SELECT * FROM [modexml:elementContent]", 13);
     }
 
-    /*
-     * Validates FixFor( "MODE-981" )
-     */
+    @FixFor( "MODE-981" )
     @Test
     public void shouldSequence2XmlFiles2() throws Exception {
         // print = true;

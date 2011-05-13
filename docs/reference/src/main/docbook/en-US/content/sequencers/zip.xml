@@ -35,10 +35,45 @@
 		extracting the files and folders into the repository using JCR's <code>nt:file</code> and <code>nt:folder</code> 
 		built-in node types.  The structure of the output thus matches the logical structure of the contents of the ZIP file.
     </para>
+  
+      <sect1>
+        <title>Example</title>
+	    <para>This sequencer generates a graph structure that maps to the files and folders in the ZIP file.  An example  
+	    (listed in the JCR document view) from sequencing a ZIP file written into /a/foo and containing one file, /x/y/z.txt
+	    is provided below:
+	    </para>
+	    <programlisting language="XML" role="XML"><![CDATA[
+<foo jcr:primaryType="zip:file"
+     jcr:mixinTypes="mode:derived"
+     mode:derivedAt="2011-05-13T13:12:03.925Z"
+     mode:derivedFrom="/files/docForReferenceGuide.xml" >
+  <x jcr:primaryType="nt:folder" 
+     jcr:created="2011-05-12T20:07Z"
+     jcr:createdBy="currentJcrUser">
+    <y jcr:primaryType="nt:folder" 
+       jcr:created="2011-05-12T20:09Z"
+       jcr:createdBy="currentJcrUser">
+      <z.txt jcr:primaryType="nt:file">
+        <jcr:content jcr:primaryType="nt:resource"
+                     jcr:data="This is the file content"
+                     jcr:lastModified="2011-05-12T20:12Z"
+                     jcr:lastModifiedBy="currentJcrUser" 
+                     jcr:mimeType="text/plain" />
+      </z.txt>
+    </y>
+  </x>         
+</foo>
+]]></programlisting>
+    <para>
+       The CND for the zip:file node type is listed below.
+    </para>
+    <programlisting><![CDATA[
+[zip:file] > nt:folder, mix:mimeType    
+]]></programlisting>
 	<para>
 		To use this sequencer, simply include the <code>modeshape-sequencer-zip</code> JAR
 		in your application and configure the &JcrConfiguration; to use this sequencer using something similar to:
-    </para>
+	   </para>
    <programlisting language="JAVA" role="JAVA"><![CDATA[
 JcrConfiguration config = ...
 
@@ -49,4 +84,5 @@ config.sequencer("ZIP Sequencer")
       .sequencingFrom("//(*.(zip|gz|jar|war|ear)[*])/jcr:content[@jcr:data]")
       .andOutputtingTo("/zips/$1");	
 ]]></programlisting>
+  </sect1>
 </chapter>

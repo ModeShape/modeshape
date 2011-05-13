@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd" [
+<!ENTITY % RH-ENTITIES SYSTEM "Common_Config/rh-entities.ent">
+<!ENTITY versionNumber "0.1">
+<!ENTITY copyrightYear "2008">
+<!ENTITY copyrightHolder "Red Hat Middleware, LLC.">]>
+<?target content ?>
+<?target2 other stuff ?>
+<Cars xmlns:jcr="http://www.jcp.org/jcr/1.0">
+    <!-- This is a comment -->
+    <Hybrid>
+        <car jcr:name="Toyota Prius"/>
+    </Hybrid>
+    <Sports>
+    </Sports>
+</Cars>
