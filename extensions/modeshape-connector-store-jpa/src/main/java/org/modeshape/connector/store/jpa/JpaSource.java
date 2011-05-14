@@ -49,6 +49,7 @@ import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Environment;
 import org.hibernate.ejb.Ejb3Configuration;
 import org.hibernate.engine.SessionFactoryImplementor;
+import org.hibernate.transaction.TransactionManagerLookup;
 import org.modeshape.common.annotation.AllowedValues;
 import org.modeshape.common.annotation.Category;
 import org.modeshape.common.annotation.Description;
@@ -137,6 +138,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     protected static final String PREDEFINED_WORKSPACE_NAMES = "predefinedWorkspaceNames";
     protected static final String ALLOW_CREATING_WORKSPACES = "allowCreatingWorkspaces";
     protected static final String AUTO_GENERATE_SCHEMA = "autoGenerateSchema";
+    protected static final String TRANSACTION_MANAGER_STRATEGY = "transactionManagerStrategy";
 
     /**
      * This source supports events.
@@ -211,6 +213,11 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      * specified.
      */
     public static final String DEFAULT_AUTO_GENERATE_SCHEMA = "validate";
+
+    // Transaction values
+    protected static final String DEFAULT_TRANSACTION_MODE = "jta";
+    protected static final String DEFAULT_TRANSACTION_STRATEGY = "org.hibernate.transaction.JTATransactionFactory";
+    protected static final String DEFAULT_TRANSACTION_MANAGER_STRATEGY = null;
 
     /**
      * The first serialized version of this source.
@@ -359,6 +366,12 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     @Label( i18n = JpaConnectorI18n.class, value = "modelNamePropertyLabel" )
     @Category( i18n = JpaConnectorI18n.class, value = "modelNamePropertyCategory" )
     private volatile String modelName;
+
+    @Description( i18n = JpaConnectorI18n.class, value = "transactionManagerStrategyPropertyDescription" )
+    @Label( i18n = JpaConnectorI18n.class, value = "transactionManagerStrategyPropertyLabel" )
+    @Category( i18n = JpaConnectorI18n.class, value = "transactionManagerStrategyPropertyCategory" )
+    private volatile String transactionManagerStrategy = DEFAULT_TRANSACTION_MANAGER_STRATEGY;
+
     private transient Model model;
     private transient DataSource dataSource;
     private transient EntityManagers entityManagers;
@@ -1005,6 +1018,27 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     }
 
     /**
+     * Get the Hibernate setting dictating what is the {@link TransactionManagerLookup} implementation. For more information, see
+     * {@link #setTransactionManagerStrategy(String)}.
+     * 
+     * @return the setting
+     */
+    public String getTransactionManagerStrategy() {
+        return transactionManagerStrategy;
+    }
+
+    /**
+     * Set the Hibernate setting dictating what is the {@link TransactionManagerLookup} implementation.
+     * 
+     * @param transactionManagerStrategy
+     */
+    public void setTransactionManagerStrategy( String transactionManagerStrategy ) {
+        assert transactionManagerStrategy != null;
+        assert transactionManagerStrategy.trim().length() != 0;
+        this.transactionManagerStrategy = transactionManagerStrategy;
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see org.modeshape.graph.connector.RepositorySource#initialize(org.modeshape.graph.connector.RepositoryContext)
@@ -1062,6 +1096,9 @@ public class JpaSource implements RepositorySource, ObjectFactory {
             ref.add(new StringRefAddr(MODEL_NAME, getModel()));
         }
         ref.add(new StringRefAddr(RETRY_LIMIT, Integer.toString(getRetryLimit())));
+        if (getTransactionManagerStrategy() != null) {
+            ref.add(new StringRefAddr(TRANSACTION_MANAGER_STRATEGY, getTransactionManagerStrategy()));
+        }
         return ref;
     }
 
@@ -1127,6 +1164,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
                 List<String> paths = StringUtil.splitLines(combinedWorkspaceNames);
                 workspaceNames = paths.toArray(new String[paths.size()]);
             }
+            String transactionManagerStrategy = values.get(TRANSACTION_MANAGER_STRATEGY);
 
             // Create the source instance ...
             JpaSource source = new JpaSource();
@@ -1157,6 +1195,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
             if (createWorkspaces != null) source.setCreatingWorkspacesAllowed(Boolean.parseBoolean(createWorkspaces));
             if (workspaceNames != null && workspaceNames.length != 0) source.setPredefinedWorkspaceNames(workspaceNames);
             if (autoGenerateSchema != null) source.setAutoGenerateSchema(autoGenerateSchema);
+            if (transactionManagerStrategy != null) source.setTransactionManagerStrategy(transactionManagerStrategy);
             return source;
         }
         return null;
@@ -1203,8 +1242,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
                     Context context = new InitialContext();
                     dataSource = (DataSource)context.lookup(this.dataSourceJndiName);
                 } catch (Throwable t) {
-                    Logger.getLogger(getClass())
-                          .error(t, JpaConnectorI18n.errorFindingDataSourceInJndi, name, dataSourceJndiName);
+                    Logger.getLogger(getClass()).error(t, JpaConnectorI18n.errorFindingDataSourceInJndi, name, dataSourceJndiName);
                 }
             }
 
@@ -1343,8 +1381,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      */
     protected String determineDialect( EntityManager entityManager ) {
         // We need the connection in order to determine the dialect ...
-        SessionFactoryImplementor sessionFactory = (SessionFactoryImplementor)entityManager.unwrap(Session.class)
-                                                                                           .getSessionFactory();
+        SessionFactoryImplementor sessionFactory = (SessionFactoryImplementor)entityManager.unwrap(Session.class).getSessionFactory();
         return sessionFactory.getDialect().toString();
     }
 
@@ -1367,8 +1404,17 @@ public class JpaSource implements RepositorySource, ObjectFactory {
         setProperty(configuration, Environment.SHOW_SQL, String.valueOf(this.showSql)); // writes all SQL statements to console
         setProperty(configuration, Environment.FORMAT_SQL, "true");
         setProperty(configuration, Environment.USE_SQL_COMMENTS, "true");
-        if (!AUTO_GENERATE_SCHEMA_DISABLE.equalsIgnoreCase(this.autoGenerateSchema)) {
-            setProperty(configuration, Environment.HBM2DDL_AUTO, this.autoGenerateSchema);
+
+        // MODE-1123: Make this JPA Source JTA enabled if the transaction manager strategy is set
+        if (getTransactionManagerStrategy() != null) {
+            setProperty(configuration, Environment.HBM2DDL_AUTO, AUTO_GENERATE_SCHEMA_DISABLE);
+            setProperty(configuration, Environment.CURRENT_SESSION_CONTEXT_CLASS, DEFAULT_TRANSACTION_MODE);
+            setProperty(configuration, Environment.TRANSACTION_STRATEGY, DEFAULT_TRANSACTION_STRATEGY);
+            setProperty(configuration, Environment.TRANSACTION_MANAGER_STRATEGY, getTransactionManagerStrategy());
+        } else {
+            if (!AUTO_GENERATE_SCHEMA_DISABLE.equalsIgnoreCase(this.autoGenerateSchema)) {
+                setProperty(configuration, Environment.HBM2DDL_AUTO, this.autoGenerateSchema);
+            }
         }
     }
 
