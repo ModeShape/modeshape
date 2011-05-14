@@ -1030,7 +1030,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     /**
      * Set the Hibernate setting dictating what is the {@link TransactionManagerLookup} implementation.
      * 
-     * @param transactionManagerLookupClassName
+     * @param transactionManagerStrategy
      */
     public void setTransactionManagerStrategy( String transactionManagerStrategy ) {
         assert transactionManagerStrategy != null;

@@ -36,6 +36,12 @@
 		connector and is optimized for storing a graph structure.
 		(In other words, this connector does not expose as a graph the data in an existing database with an arbitrary schema.)
   </para>
+  <para>
+  		Support for participation in JTA transactions is included in this release as a Tech Preview.  This capability can be controlled
+  		by setting the <code>transactionManagerStrategy</code> property on the &JpaSource; as noted below.  Please note that this is
+  		not intended to be a full JTA implementation for JCR.  It is intended to provide some limited support for JTA for JCR
+  		transactions that only utilize a JpaSource.
+  </para>
 	<para>
 		The &JpaSource; class provides a number of JavaBean properties that control its behavior:
 	</para>
@@ -74,6 +80,7 @@
      				setting used in production, as it is a best-practice that DB administrators explicitly configure/upgrade production
      				database schemas (using scripts).</para></listitem>
 			      </itemizedlist>
+			        This value is ignored if the <code>transactionManagerStrategy</code> property is set to a non-null value.
 					</entry>
 				</row>
 				<row>
@@ -234,6 +241,21 @@
 				<row>
 					<entry>schemaName</entry>
 					<entry>Optional property that, if set, specifies the name of the schema in which this repository source will read and write data.  If no schema name
+						is specified, then data will be read from the default schema associated with the database connection.</entry>
+				</row>
+				<row>
+					<entry>transactionManagerStrategy</entry>
+					<entry>Optional property that, if set, specifies the name of the transaction manager that should be used for the JPA connection.  Since
+					    this connector uses Hibernate as its JPA implementation, the following things occur when this property is set to a non-null value:
+				      <itemizedlist>
+					      <listitem><para>The value of this property is passed to the <code></code> property in the Hibernate Environment.</para></listitem>
+					      <listitem><para>The Hibernate <code>hibernate.transaction.factory_class</code> property is set to "org.hibernate.transaction.JTATransactionFactory".</para></listitem>
+					      <listitem><para>The Hibernate <code>hibernate.current_session_context_class</code> property is set to "jta".</para></listitem>
+					      <listitem><para>The value of the <code>autoGenerateSchema</code> property is ignored (if set) and schema generation is disabled.</para></listitem>					    
+					    </itemizedlist>
+					    
+					    non-null values for this property are passed to the <code>hibernate.transaction.manager_lookup_class</code> 
+					    schema in which this repository source will read and write data.  If no schema name
 						is specified, then data will be read from the default schema associated with the database connection.</entry>
 				</row>
 				<row>
