@@ -149,6 +149,11 @@ public final class JpaConnectorI18n {
     public static I18n modelNamePropertyLabel;
     public static I18n modelNamePropertyCategory;
 
+    public static I18n transactionManagerStrategyPropertyDescription;
+    public static I18n transactionManagerStrategyPropertyLabel;
+    public static I18n transactionManagerStrategyPropertyCategory;
+
+
     static {
         try {
             I18n.initialize(JpaConnectorI18n.class);
