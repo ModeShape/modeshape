@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -558,6 +559,7 @@ class JcrContentHandler extends DefaultHandler {
 
         public void addPropertyValue( Name name,
                                       String value,
+                                      boolean forceMultiValued,
                                       int propertyType,
                                       TextDecoder decoder ) throws EnclosingSAXException {
         }
@@ -639,6 +641,7 @@ class JcrContentHandler extends DefaultHandler {
 
     protected class BasicNodeHandler extends NodeHandler {
         private final Map<Name, List<Value>> properties;
+        private final Set<Name> multiValuedPropertyNames;
         private final Name nodeName;
         private NodeHandler parentHandler;
         private AbstractJcrNode node;
@@ -651,6 +654,7 @@ class JcrContentHandler extends DefaultHandler {
             this.nodeName = name;
             this.parentHandler = parentHandler;
             this.properties = new HashMap<Name, List<Value>>();
+            this.multiValuedPropertyNames = new HashSet<Name>();
             this.uuidBehavior = uuidBehavior;
         }
 
@@ -684,8 +688,13 @@ class JcrContentHandler extends DefaultHandler {
         @Override
         public void addPropertyValue( Name name,
                                       String value,
+                                      boolean forceMultiValued,
                                       int propertyType,
                                       TextDecoder decoder ) throws EnclosingSAXException {
+            if (forceMultiValued) {
+                this.multiValuedPropertyNames.add(name);
+            }
+
             try {
                 if (node != null) {
                     if (JcrLexicon.PRIMARY_TYPE.equals(name)) return;
@@ -832,7 +841,7 @@ class JcrContentHandler extends DefaultHandler {
                     List<Value> values = entry.getValue();
                     AbstractJcrProperty prop;
 
-                    if (values.size() == 1) {
+                    if (values.size() == 1 && !this.multiValuedPropertyNames.contains(propertyName)) {
                         prop = newNodeEditor.setProperty(propertyName, (JcrValue)values.get(0), skipProtected, true);
                     } else {
                         prop = newNodeEditor.setProperty(propertyName,
@@ -895,11 +904,12 @@ class JcrContentHandler extends DefaultHandler {
         /**
          * {@inheritDoc}
          * 
-         * @see org.modeshape.jcr.JcrContentHandler.NodeHandler#addPropertyValue(Name, String, int, TextDecoder)
+         * @see org.modeshape.jcr.JcrContentHandler.NodeHandler#addPropertyValue(Name, String, boolean, int, TextDecoder)
          */
         @Override
         public void addPropertyValue( Name propertyName,
                                       String value,
+                                      boolean forceMultiValued,
                                       int propertyType,
                                       TextDecoder decoder ) {
             throw new UnsupportedOperationException();
@@ -914,11 +924,12 @@ class JcrContentHandler extends DefaultHandler {
         /**
          * {@inheritDoc}
          * 
-         * @see org.modeshape.jcr.JcrContentHandler.NodeHandler#addPropertyValue(Name, String, int, TextDecoder)
+         * @see org.modeshape.jcr.JcrContentHandler.NodeHandler#addPropertyValue(Name, String, boolean, int, TextDecoder)
          */
         @Override
         public void addPropertyValue( Name propertyName,
                                       String value,
+                                      boolean forceMultiValued,
                                       int propertyType,
                                       TextDecoder decoder ) {
             // do nothing ...
@@ -988,17 +999,20 @@ class JcrContentHandler extends DefaultHandler {
     private class SystemViewContentHandler extends DefaultHandler {
         private final String svNameName;
         private final String svTypeName;
+        private final String svMultipleName;
         private NodeHandler current;
         private final NodeHandlerFactory nodeHandlerFactory;
         private String currentPropertyName;
         private int currentPropertyType;
         private boolean currentPropertyValueIsBinary;
+        private boolean currentPropertyIsMultiValued;
         private StringBuilder currentPropertyValue;
 
         SystemViewContentHandler( AbstractJcrNode parent ) {
             super();
             this.svNameName = JcrSvLexicon.NAME.getString(namespaces());
             this.svTypeName = JcrSvLexicon.TYPE.getString(namespaces());
+            this.svMultipleName = JcrSvLexicon.MULTIPLE.getString(namespaces());
             this.current = new ExistingNodeHandler(parent, null);
             this.nodeHandlerFactory = new StandardNodeHandlerFactory();
         }
@@ -1026,11 +1040,15 @@ class JcrContentHandler extends DefaultHandler {
             } else if ("property".equals(localName)) {
                 currentPropertyName = atts.getValue(SYSTEM_VIEW_NAME_DECODER.decode(svNameName));
                 currentPropertyType = PropertyType.valueFromName(atts.getValue(svTypeName));
+
+                String svMultiple = atts.getValue(svMultipleName);
+                currentPropertyIsMultiValued = Boolean.TRUE.equals(Boolean.valueOf(svMultiple));
             } else if ("value".equals(localName)) {
                 // See if there is an "xsi:type" attribute on this element, which means the property value contained
                 // characters that cannot be represented in XML without escaping. See Section 11.2, Item 11.b ...
                 String xsiType = atts.getValue("http://www.w3.org/2001/XMLSchema-instance", "type");
                 currentPropertyValueIsBinary = "xs:base64Binary".equals(xsiType);
+
             } else if (!"value".equals(localName)) {
                 throw new IllegalStateException("Unexpected element '" + name + "' in system view");
             }
@@ -1068,6 +1086,7 @@ class JcrContentHandler extends DefaultHandler {
                 }
                 current.addPropertyValue(nameFor(currentPropertyName),
                                          currentPropertyString,
+                                         currentPropertyIsMultiValued,
                                          currentPropertyType,
                                          SYSTEM_VIEW_NAME_DECODER);
             } else if ("property".equals(localName)) {
@@ -1112,7 +1131,7 @@ class JcrContentHandler extends DefaultHandler {
                 if (value == null) continue;
                 value = DOCUMENT_VIEW_VALUE_DECODER.decode(value);
                 String propertyName = DOCUMENT_VIEW_NAME_DECODER.decode(atts.getQName(i));
-                current.addPropertyValue(nameFor(propertyName), value, PropertyType.STRING, null);
+                current.addPropertyValue(nameFor(propertyName), value, false, PropertyType.STRING, null);
             }
 
             // Now create the node ...
@@ -1141,9 +1160,10 @@ class JcrContentHandler extends DefaultHandler {
             current = nodeHandlerFactory.createFor(JcrLexicon.XMLTEXT, current, uuidBehavior);
             current.addPropertyValue(JcrLexicon.PRIMARY_TYPE,
                                      stringFor(JcrNtLexicon.UNSTRUCTURED),
+                                     false,
                                      PropertyType.NAME,
                                      DOCUMENT_VIEW_NAME_DECODER);
-            current.addPropertyValue(JcrLexicon.XMLCHARACTERS, value, PropertyType.STRING, null);// don't decode value
+            current.addPropertyValue(JcrLexicon.XMLCHARACTERS, value, false, PropertyType.STRING, null);// don't decode value
             current.finish();
             // Pop the stack ...
             current = current.parentHandler();

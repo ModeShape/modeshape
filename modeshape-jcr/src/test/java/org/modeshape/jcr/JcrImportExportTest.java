@@ -26,6 +26,7 @@ package org.modeshape.jcr;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -44,6 +45,7 @@ import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.Value;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeType;
 import org.junit.After;
@@ -557,6 +559,42 @@ public class JcrImportExportTest {
         assertNoNode("/a/b/Cars/Hybrid[2]");
         assertNoNode("/a/b/Cars/Hybrid/Toyota Prius[2]");
         assertNoNode("/a/b/Cars/Sports[2]");
+    }
+
+    @FixFor( "MODE-1171" )
+    @Test
+    public void shouldExportAndImportMultiValuedPropertyWithSingleValue() throws Exception {
+        Node rootNode = session.getRootNode();
+        Node nodeA = rootNode.addNode("a", "nt:unstructured");
+        Node nodeB = nodeA.addNode("b", "nt:unstructured");
+
+        Value v = session.getValueFactory().createValue("singleValue");
+        javax.jcr.Property prop = nodeB.setProperty("multiValuedProp", new Value[] {v});
+        assertTrue(prop.isMultiple());
+
+        prop = nodeB.setProperty("singleValuedProp", v);
+        assertTrue(!prop.isMultiple());
+
+        session.save();
+
+        File exportFile = export("/a");
+
+        nodeA.remove();
+        session.save();
+
+        assertImport(exportFile, "/", ImportBehavior.THROW);
+
+        prop = session.getProperty("/a/b/multiValuedProp");
+
+        assertTrue(prop.isMultiple());
+        assertThat(prop.getValues().length, is(1));
+        assertThat(prop.getValues()[0].getString(), is("singleValue"));
+
+        prop = session.getProperty("/a/b/singleValuedProp");
+
+        assertTrue(!prop.isMultiple());
+        assertThat(prop.getString(), is("singleValue"));
+
     }
 
     // ----------------------------------------------------------------------------------------------------------------

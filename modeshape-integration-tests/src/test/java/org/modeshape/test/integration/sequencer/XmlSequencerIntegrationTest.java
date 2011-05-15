@@ -58,8 +58,8 @@ public class XmlSequencerIntegrationTest extends AbstractSequencerTest {
 
     @Test
     public void generateSequencerOutputForXmlSequencerChapterOfReferenceGuide() throws Exception {
-        // Uncomment next line to get the output graph showin the XML Sequencer chapter of the Ref Guide
-        print = true;
+        // Uncomment next line to get the output graph showing the XML Sequencer chapter of the Ref Guide
+        // print = true;
         uploadFile("docForReferenceGuide.xml", "/files/");
 
         // Find the sequenced node ...
