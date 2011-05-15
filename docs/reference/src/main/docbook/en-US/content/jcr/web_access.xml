@@ -96,7 +96,6 @@
 		never change.  The ModeShape REST server also uses the &ModeShapeJcrDeployer; to get access to the JCR
 		repository, so the two servlets can be deployed in the same WAR.
 		</para>
-
 		<para>
 			Next we configure the ModeShape &JcrEngine; itself.
 		</para>
@@ -119,9 +118,30 @@
 		</para>
 
 		<para>
+			The &ContentMapper; implementation can also be configured, but this is optional.
+		</para>
+<programlisting language="XML" role="XML"><![CDATA[
+	<!--
+		This parameter provides the fully-qualified name of a class that implements
+		the o.m.w.jcr.webdav.ContentMapper interface.  If no value is provided for this
+		parameter, o.m.w.jcr.webdav.DefaultContentMapper will be used.
+	-->
+	<context-param>
+		<param-name>org.modeshape.web.jcr.webdav.CONTENT_MAPPER_CLASS_NAME</param-name>
+		<param-value>org.modeshape.web.jcr.webdav.DefaultContentMapper</param-value>
+	</context-param>
+]]></programlisting>			 
+		<para>
+		This class is used to prepare WebDAV responses from content nodes.  The &DefaultContentMapper; implementation
+		creates nodes with type <code>nt:folder</code> and <code>nt:file</code> for WebDAV requests to create WebDAV
+		folders and files, respectively.  Users can provide their own implementation that maps WebDAV content to other
+		node content or structures.
+		</para>
+		<para>
 			This is followed by some additional WebDAV configuration that controls the mapping between
-			JCR node types and WebDAV files and resources.  You can omit this section entirely to use the
-			default values.
+			JCR node types and WebDAV files and resources.  These parameters are all specific to the 
+			&DefaultContentMapper; implementation.  You can omit this section entirely to use the
+			default values or if a custom &ContentMapper; is used.
 		</para>
 <programlisting language="XML" role="XML"><![CDATA[
 <!--

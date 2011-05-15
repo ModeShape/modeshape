@@ -1,4 +1,4 @@
-<!ENTITY versionNumber "2.4.0.Final">
+<!ENTITY versionNumber "2.5.0.Beta2">
 <!ENTITY copyrightYears "2008-2010">
 <!ENTITY copyrightHolder "Red Hat, Inc.">
 
@@ -278,6 +278,8 @@
 <!ENTITY ServletCredentials				   	"<ulink url='&API;web/jcr/ServletCredentials.html'><interface>ServletCredentials</interface></ulink>">
 <!ENTITY ModeShapeJcrDeployer	  			"<ulink url='&API;web/jcr/ModeShapeJcrDeployer.html'><classname>ModeShapeJcrDeployer</classname></ulink>">
 <!ENTITY RepositoryProvider	  				"<ulink url='&API;web/jcr/spi/RepositoryProvider.html'><classname>RepositoryProvider</classname></ulink>">
+<!ENTITY ContentMapper	  				  "<ulink url='&API;web/jcr/webdav/ContentMapper.html'><classname>ContentMapper</classname></ulink>">
+<!ENTITY DefaultContentMapper	  				  "<ulink url='&API;web/jcr/webdav/DefaultContentMapper.html'><classname>DefaultContentMapper</classname></ulink>">
 <!ENTITY RequestResolver	  				  "<ulink url='&API;web/jcr/webdav/RequestResolver.html'><classname>RequestResolver</classname></ulink>">
 <!ENTITY MultiRepositoryRequestResolver	  "<ulink url='&API;web/jcr/webdav/MultiRepositoryRequestResolver.html'><classname>MultiRepositoryRequestResolver</classname></ulink>">
 <!ENTITY SingleRepositoryRequestResolver	  "<ulink url='&API;web/jcr/webdav/SingleRepositoryRequestResolver.html'><classname>SingleRepositoryRequestResolver</classname></ulink>">

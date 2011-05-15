@@ -65,7 +65,10 @@ public class ModeShapeWebdavStoreTest {
 
         RequestResolver uriResolver = new SingleRepositoryRequestResolver();
         uriResolver.initialize(context);
-        store = new ModeShapeWebdavStore(uriResolver);
+
+        ContentMapper contentMapper = new DefaultContentMapper();
+        contentMapper.initialize(context);
+        store = new ModeShapeWebdavStore(uriResolver, contentMapper);
 
         contextListener.contextInitialized(event);
 
