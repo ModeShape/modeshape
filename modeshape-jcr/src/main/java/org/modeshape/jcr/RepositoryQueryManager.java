@@ -38,6 +38,7 @@ import org.apache.lucene.util.Version;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.i18n.I18n;
+import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.common.text.TextEncoder;
 import org.modeshape.common.text.UrlEncoder;
 import org.modeshape.common.util.Logger;
@@ -236,8 +237,12 @@ abstract class RepositoryQueryManager {
                        RepositoryNodeTypeManager nodeTypeManager,
                        String indexDirectory,
                        boolean updateIndexesSynchronously,
+                       boolean dontForceIndexRebuild,
                        int maxDepthPerRead ) throws RepositoryException {
             super(nameOfSourceToBeSearchable);
+
+            // If there is no valid index, we need to ignore the dontForceIndexRebuild flag and rebuild anyway
+            boolean requireIndexRebuild = true;
 
             this.context = context;
             this.sourceName = nameOfSourceToBeSearchable;
@@ -260,18 +265,19 @@ abstract class RepositoryQueryManager {
                         throw new RepositoryException(msg.text(indexDirectory, sourceName));
                     }
                     if (!indexDir.canRead()) {
-                        // But we cannot write to it ...
+                        // But we cannot read from it ...
                         I18n msg = JcrI18n.searchIndexDirectoryOptionSpecifiesDirectoryThatCannotBeRead;
                         throw new RepositoryException(msg.text(indexDirectory, sourceName));
                     }
                     // The directory is usable
+                    requireIndexRebuild = false;
                 } else {
                     // The location doesn't exist,so try to make it ...
                     if (!indexDir.mkdirs()) {
                         I18n msg = JcrI18n.searchIndexDirectoryOptionSpecifiesDirectoryThatCannotBeCreated;
                         throw new RepositoryException(msg.text(indexDirectory, sourceName));
                     }
-                    // We successfully create the dirctory (or directories)
+                    // We successfully create the directory (or directories)
                 }
                 configuration = LuceneConfigurations.using(indexDir, encoder, encoder);
             } else {
@@ -372,8 +378,15 @@ abstract class RepositoryQueryManager {
             };
             this.queryEngine = new QueryEngine(planner, optimizer, processor);
 
-            // Index any existing content ...
-            reindexContent();
+            if (!dontForceIndexRebuild || requireIndexRebuild) {
+                // Index any existing content ...
+                Stopwatch sw = new Stopwatch();
+                sw.start();
+
+                reindexContent();
+                sw.stop();
+                System.out.println("Reindexed content in " + sw);
+            }
         }
 
         protected void process( Changes changes ) {

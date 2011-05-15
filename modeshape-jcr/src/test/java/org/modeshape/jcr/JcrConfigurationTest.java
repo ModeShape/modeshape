@@ -261,6 +261,7 @@ public class JcrConfigurationTest {
         options.put(Option.VERSION_HISTORY_STRUCTURE, DefaultOption.VERSION_HISTORY_STRUCTURE);
         options.put(Option.REPOSITORY_JNDI_LOCATION, DefaultOption.REPOSITORY_JNDI_LOCATION);
         options.put(Option.USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN, DefaultOption.USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN);
+        options.put(Option.DONT_FORCE_QUERY_INDEX_REBUILD_ON_STARTUP, DefaultOption.DONT_FORCE_QUERY_INDEX_REBUILD_ON_STARTUP);
         String defaultRemoveDerivedValue = DefaultOption.REMOVE_DERIVED_CONTENT_WITH_ORIGINAL;
         if (engine.getSequencingService().getSequencers().isEmpty()) {
             defaultRemoveDerivedValue = Boolean.FALSE.toString();

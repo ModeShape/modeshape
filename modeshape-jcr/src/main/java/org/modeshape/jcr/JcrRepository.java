@@ -363,7 +363,14 @@ public class JcrRepository implements Repository {
          * 
          * @see #ANONYMOUS_USER_ROLES
          */
-        USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN, ;
+        USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN,
+
+        /**
+         * Indicates whether the query index should be automatically rebuilt on startup. If this is set to {@code false}, the
+         * content for the entire JCR repository will be loaded and re-indexed each time that the repository is started. If this
+         * is set to {@code true}, re-indexing will only occur if there is no existing index. The default value is 'false'.
+         */
+        DONT_FORCE_QUERY_INDEX_REBUILD_ON_STARTUP, ;
 
         /**
          * Determine the option given the option name. This does more than {@link Option#valueOf(String)}, since this method first
@@ -495,6 +502,11 @@ public class JcrRepository implements Repository {
          * The default value for the {@link Option#USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN} option is {@value} .
          */
         public static final String USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN = Boolean.FALSE.toString();
+
+        /**
+         * The default value for the {@link Option#DONT_FORCE_QUERY_INDEX_REBUILD_ON_STARTUP} option is {@value} .
+         */
+        public static final String DONT_FORCE_QUERY_INDEX_REBUILD_ON_STARTUP = Boolean.FALSE.toString();
     }
 
     /**
@@ -558,6 +570,7 @@ public class JcrRepository implements Repository {
         defaults.put(Option.REPOSITORY_JNDI_LOCATION, DefaultOption.REPOSITORY_JNDI_LOCATION);
         defaults.put(Option.REMOVE_DERIVED_CONTENT_WITH_ORIGINAL, DefaultOption.REMOVE_DERIVED_CONTENT_WITH_ORIGINAL);
         defaults.put(Option.USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN, DefaultOption.USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN);
+        defaults.put(Option.DONT_FORCE_QUERY_INDEX_REBUILD_ON_STARTUP, DefaultOption.DONT_FORCE_QUERY_INDEX_REBUILD_ON_STARTUP);
         DEFAULT_OPTIONS = Collections.<Option, String>unmodifiableMap(defaults);
     }
 
@@ -804,11 +817,13 @@ public class JcrRepository implements Repository {
                 // Otherwise create a repository query manager that maintains its own search engine ...
                 String indexDirectory = this.options.get(Option.QUERY_INDEX_DIRECTORY);
                 boolean updateIndexesSynchronously = Boolean.valueOf(this.options.get(Option.QUERY_INDEXES_UPDATED_SYNCHRONOUSLY));
+                boolean dontForceIndexRebuild = Boolean.valueOf(this.options.get(Option.DONT_FORCE_QUERY_INDEX_REBUILD_ON_STARTUP));
                 int maxDepthToRead = Integer.valueOf(this.options.get(Option.INDEX_READ_DEPTH));
                 this.queryManager = new RepositoryQueryManager.SelfContained(this.executionContext, this.sourceName,
                                                                              connectionFactory, repositoryObservable,
                                                                              repositoryTypeManager, indexDirectory,
-                                                                             updateIndexesSynchronously, maxDepthToRead);
+                                                                             updateIndexesSynchronously, dontForceIndexRebuild,
+                                                                             maxDepthToRead);
             }
         } else {
             this.queryManager = new RepositoryQueryManager.Disabled(this.sourceName);
