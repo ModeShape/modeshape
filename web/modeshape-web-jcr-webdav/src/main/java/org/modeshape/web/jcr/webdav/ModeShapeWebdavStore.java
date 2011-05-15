@@ -340,23 +340,8 @@ public class ModeShapeWebdavStore implements IWebdavStore {
                     createDate = new Date();
                 }
                 ob.setCreationDate(createDate);
-                ob.setLastModified(createDate);
-                // ob.setLastModified(content.getProperty(MODIFIED_PROP_NAME).getDate().getTime());
+                ob.setLastModified(contentMapper.getLastModified(node));
                 ob.setResourceLength(contentMapper.getResourceLength(node));
-
-                // } else if (node.hasNode(CONTENT_NODE_NAME)) {
-                // Node content = node.getNode(CONTENT_NODE_NAME);
-                //
-                // ob.setFolder(false);
-                // Date createDate = null;
-                // if (node.hasProperty(CREATED_PROP_NAME)) {
-                // createDate = node.getProperty(CREATED_PROP_NAME).getDate().getTime();
-                // } else {
-                // createDate = new Date();
-                // }
-                // ob.setCreationDate(createDate);
-                // ob.setLastModified(content.getProperty(MODIFIED_PROP_NAME).getDate().getTime());
-                // ob.setResourceLength(content.getProperty(DATA_PROP_NAME).getLength());
             } else {
                 ob.setNullResource(true);
             }

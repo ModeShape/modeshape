@@ -2,6 +2,7 @@ package org.modeshape.web.jcr.webdav;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Date;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.servlet.ServletContext;
@@ -50,6 +51,14 @@ public interface ContentMapper {
      * @throws IOException if the content of the node cannot be accessed
      */
     long getResourceLength( Node node ) throws RepositoryException, IOException;
+
+    /**
+     * @param node the node to check; may not be null
+     * @return the date at which the file was last modified; null if node is a folder
+     * @throws RepositoryException if the node cannot be accessed
+     * @throws IOException if the content of the node cannot be accessed
+     */
+    Date getLastModified( Node node ) throws RepositoryException, IOException;
 
     /**
      * @param parentNode the parent node of the new folder; may not be null

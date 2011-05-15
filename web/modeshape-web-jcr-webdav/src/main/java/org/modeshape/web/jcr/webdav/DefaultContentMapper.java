@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import javax.jcr.Binary;
@@ -114,6 +115,13 @@ public class DefaultContentMapper implements ContentMapper {
         }
 
         return size;
+    }
+
+    @Override
+    public Date getLastModified( Node node ) throws RepositoryException, IOException {
+        if (!node.hasNode(CONTENT_NODE_NAME)) return null;
+
+        return node.getProperty(CONTENT_NODE_NAME + "/" + MODIFIED_PROP_NAME).getDate().getTime();
     }
 
     @Override
