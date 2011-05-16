@@ -39,6 +39,7 @@ public class JcrSvLexicon {
     }
 
     public static final Name NODE = new BasicName(Namespace.URI, "node");
+    public static final Name MULTIPLE = new BasicName(Namespace.URI, "multiple");
     public static final Name PROPERTY = new BasicName(Namespace.URI, "property");
     public static final Name NAME = new BasicName(Namespace.URI, "name");
     public static final Name TYPE = new BasicName(Namespace.URI, "type");
