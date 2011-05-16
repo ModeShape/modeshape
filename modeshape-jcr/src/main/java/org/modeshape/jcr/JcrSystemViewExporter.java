@@ -218,6 +218,15 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
                               PropertyType.nameFromValue(PropertyType.STRING),
                               PropertyType.nameFromValue(prop.getType()));
 
+        // and it's sv:multiple attribute
+        if (prop.isMultiple()) {
+            propAtts.addAttribute(JcrSvLexicon.TYPE.getNamespaceUri(),
+                                  JcrSvLexicon.TYPE.getLocalName(),
+                                  getPrefixedName(JcrSvLexicon.MULTIPLE),
+                                  PropertyType.nameFromValue(PropertyType.BOOLEAN),
+                                  Boolean.TRUE.toString());
+        }
+
         // output the sv:property element
         startElement(contentHandler, JcrSvLexicon.PROPERTY, propAtts);
 
