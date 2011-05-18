@@ -38,7 +38,6 @@ import org.apache.lucene.util.Version;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.i18n.I18n;
-import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.common.text.TextEncoder;
 import org.modeshape.common.text.UrlEncoder;
 import org.modeshape.common.util.Logger;
@@ -220,6 +219,8 @@ abstract class RepositoryQueryManager {
     }
 
     static class SelfContained extends RepositoryQueryManager {
+        private static final Logger LOGGER = Logger.getLogger(RepositoryQueryManager.class);
+
         private final ExecutionContext context;
         private final String sourceName;
         private final LuceneConfiguration configuration;
@@ -229,6 +230,7 @@ abstract class RepositoryQueryManager {
         private final QueryEngine queryEngine;
         private final RepositoryConnectionFactory connectionFactory;
         private final int maxDepthPerRead;
+        private final boolean forceIndexRebuild;
 
         SelfContained( ExecutionContext context,
                        String nameOfSourceToBeSearchable,
@@ -237,17 +239,17 @@ abstract class RepositoryQueryManager {
                        RepositoryNodeTypeManager nodeTypeManager,
                        String indexDirectory,
                        boolean updateIndexesSynchronously,
-                       boolean dontForceIndexRebuild,
+                       boolean forceIndexRebuild,
+                       boolean rebuildIndexSynchronously,
                        int maxDepthPerRead ) throws RepositoryException {
             super(nameOfSourceToBeSearchable);
-
-            // If there is no valid index, we need to ignore the dontForceIndexRebuild flag and rebuild anyway
-            boolean requireIndexRebuild = true;
 
             this.context = context;
             this.sourceName = nameOfSourceToBeSearchable;
             this.connectionFactory = connectionFactory;
             this.maxDepthPerRead = maxDepthPerRead;
+            this.forceIndexRebuild = forceIndexRebuild;
+
             // Define the configuration ...
             TextEncoder encoder = new UrlEncoder();
             if (indexDirectory != null) {
@@ -270,7 +272,6 @@ abstract class RepositoryQueryManager {
                         throw new RepositoryException(msg.text(indexDirectory, sourceName));
                     }
                     // The directory is usable
-                    requireIndexRebuild = false;
                 } else {
                     // The location doesn't exist,so try to make it ...
                     if (!indexDir.mkdirs()) {
@@ -378,14 +379,17 @@ abstract class RepositoryQueryManager {
             };
             this.queryEngine = new QueryEngine(planner, optimizer, processor);
 
-            if (!dontForceIndexRebuild || requireIndexRebuild) {
-                // Index any existing content ...
-                Stopwatch sw = new Stopwatch();
-                sw.start();
-
+            // Index any existing content ...
+            if (rebuildIndexSynchronously) {
                 reindexContent();
-                sw.stop();
-                System.out.println("Reindexed content in " + sw);
+            } else {
+                new Thread(new Runnable() {
+
+                    public void run() {
+                        reindexContent();
+                    }
+
+                }).start();
             }
         }
 
@@ -433,6 +437,10 @@ abstract class RepositoryQueryManager {
          */
         @Override
         public void reindexContent() {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(JcrI18n.indexRebuildingStarted.text());
+            }
+
             // Get the workspace names ...
             Set<String> workspaces = Graph.create(sourceName, connectionFactory, context).getWorkspaces();
 
@@ -440,7 +448,10 @@ abstract class RepositoryQueryManager {
             SearchEngineIndexer indexer = new SearchEngineIndexer(context, searchEngine, connectionFactory, maxDepthPerRead);
             try {
                 for (String workspace : workspaces) {
-                    indexer.index(workspace);
+                    indexer.reindex(workspace, forceIndexRebuild);
+                }
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug(JcrI18n.indexRebuildingComplete.text());
                 }
             } finally {
                 indexer.close();
@@ -455,9 +466,20 @@ abstract class RepositoryQueryManager {
          */
         @Override
         public void reindexContent( JcrWorkspace workspace ) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(JcrI18n.indexRebuildingStarted.text());
+            }
+
             SearchEngineIndexer indexer = new SearchEngineIndexer(context, searchEngine, connectionFactory, maxDepthPerRead);
             try {
+                /*
+                 * Instead of using indexer.reindex(String, boolean) and respecting the dontForceIndexRebuild parameter,
+                 * we always reindex the entire workspace in response to this explicit request.
+                 */
                 indexer.index(workspace.getName());
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug(JcrI18n.indexRebuildingComplete.text());
+                }
             } finally {
                 indexer.close();
             }

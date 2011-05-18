@@ -33,7 +33,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.i18n.I18n;
-import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.NamedThreadFactory;
@@ -120,6 +119,29 @@ public class SearchEngineIndexer {
      */
     public String getSourceName() {
         return sourceName;
+    }
+
+    /**
+     * Re-index all of the content in the named workspace within the {@link #getSourceName() source}. This method operates
+     * synchronously and returns when the requested indexing is completed. If {@code dontForceIndexRebuild == true} and the index
+     * for the workspace already exists, this method will not rebuild the index.
+     * 
+     * @param workspaceName the name of the workspace
+     * @param forceIndexRebuild indicates that the index should be rebuilt even if it already exists
+     * @return this object for convenience in method chaining; never null
+     * @throws IllegalArgumentException if the context or workspace name is null, or if the depth per read is not positive
+     * @throws RepositorySourceException if there is a problem accessing the content
+     * @throws SearchEngineException if there is a problem updating the indexes
+     * @throws InvalidWorkspaceException if the workspace does not exist
+     */
+    public SearchEngineIndexer reindex( String workspaceName,
+                                        boolean forceIndexRebuild ) throws RepositorySourceException, SearchEngineException {
+
+        if (forceIndexRebuild || !searchEngine.indexExists(workspaceName)) {
+            Path rootPath = context.getValueFactories().getPathFactory().createRootPath();
+            index(workspaceName, Location.create(rootPath));
+        }
+        return this;
     }
 
     /**
@@ -262,8 +284,6 @@ public class SearchEngineIndexer {
                                   int depth ) {
         int depthPerRead = Math.min(maxDepthPerRead, depth);
         // Read the first subgraph ...
-        Stopwatch sw = new Stopwatch();
-        sw.start();
         ReadBranchRequest readSubgraph = new ReadBranchRequest(startingLocation, workspaceName, depthPerRead);
         try {
             channel.addAndAwait(readSubgraph);
@@ -277,14 +297,10 @@ public class SearchEngineIndexer {
             process(new DeleteBranchRequest(startingLocation, workspaceName));
             return;
         }
-        sw.stop();
-        System.out.println("Reloaded content for " + startingLocation.getPath() + " in " + sw);
 
         Iterator<Location> locationIter = readSubgraph.iterator();
         assert locationIter.hasNext();
 
-        sw.reset();
-        sw.start();
         // Destroy the nodes at the supplied location ...
         if (startingLocation.getPath().isRoot()) {
             // Just delete the whole content ...
@@ -293,8 +309,7 @@ public class SearchEngineIndexer {
             // We can't delete the node, since later same-name-siblings might be changed. So delete the children ...
             process(new DeleteChildrenRequest(startingLocation, workspaceName));
         }
-        sw.stop();
-        System.out.println("Flushed existing content in " + sw);
+
         // Now update all of the properties, removing any that are no longer needed ...
         Location topNode = locationIter.next();
         assert topNode.equals(startingLocation);

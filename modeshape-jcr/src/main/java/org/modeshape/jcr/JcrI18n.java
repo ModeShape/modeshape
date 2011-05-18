@@ -38,6 +38,8 @@ public final class JcrI18n {
     public static I18n engineStopping;
     public static I18n engineStopped;
     public static I18n repositoryReferencesNonExistantSource;
+    public static I18n indexRebuildingStarted;
+    public static I18n indexRebuildingComplete;
 
     public static I18n cannotConvertValue;
     public static I18n credentialsMustProvideJaasMethod;

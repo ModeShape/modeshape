@@ -26,11 +26,11 @@ package org.modeshape.search.lucene;
 import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import org.modeshape.common.annotation.Immutable;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.Version;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.search.SearchEngineWorkspace;
 
@@ -45,7 +45,7 @@ public class LuceneSearchWorkspace implements SearchEngineWorkspace {
      */
     protected static final int CHANGES_BEFORE_OPTIMIZATION = 1;
 
-    protected static final String INDEX_NAME = "content";
+    public static final String INDEX_NAME = "content";
 
     /**
      * Given the name of a property field of the form "&lt;namespace>:&lt;local>" (where &lt;namespace> can be zero-length), this

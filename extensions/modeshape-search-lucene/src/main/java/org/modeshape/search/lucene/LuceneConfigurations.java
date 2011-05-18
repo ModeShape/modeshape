@@ -24,6 +24,7 @@
 package org.modeshape.search.lucene;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.lucene.store.Directory;
@@ -180,6 +181,11 @@ public class LuceneConfigurations {
                                                           String indexName ) throws SearchEngineException;
 
         protected abstract boolean doDestroy( DirectoryType directory ) throws SearchEngineException;
+
+        public boolean hasExistingIndex( String workspaceName,
+                                         String indexName ) throws SearchEngineException {
+            return false;
+        }
     }
 
     /**
@@ -389,6 +395,27 @@ public class LuceneConfigurations {
                                       LockFactory lockFactory ) throws IOException {
             return FSDirectory.open(directory, lockFactory);
         }
+
+        @Override
+        public boolean hasExistingIndex( String workspaceName,
+                                         String indexName ) throws SearchEngineException {
+            File workspaceDir = new File(parentFile, workspaceNameEncoder.encode(workspaceName));
+            if (!workspaceDir.exists()) return false;
+
+            final String encodedIndexName = indexNameEncoder.encode(indexName);
+            if (workspaceDir.listFiles(new FilenameFilter() {
+
+                @Override
+                public boolean accept( File file,
+                                       String fileName ) {
+                    return fileName.startsWith(encodedIndexName);
+                }
+
+            }).length == 0) return false;
+
+            return true;
+        }
+
     }
 
     @Immutable

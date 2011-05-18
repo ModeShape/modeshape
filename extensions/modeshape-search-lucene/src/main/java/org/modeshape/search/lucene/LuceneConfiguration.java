@@ -23,9 +23,9 @@
  */
 package org.modeshape.search.lucene;
 
-import org.modeshape.common.annotation.ThreadSafe;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.Version;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.graph.search.SearchEngineException;
 
 /**
@@ -64,5 +64,17 @@ public interface LuceneConfiguration {
      * @throws SearchEngineException if there is a problem creating the directory
      */
     boolean destroyDirectory( String workspaceName,
+                              String indexName ) throws SearchEngineException;
+
+    /**
+     * Return whether the index with the given name already exists for the given workspace name.
+     * 
+     * @param workspaceName the workspace name
+     * @param indexName the name of the index to be created
+     * @return true if the directory and any related files exist, or false if the directory or index files do not exist
+     * @throws IllegalArgumentException if the workspace name is null
+     * @throws SearchEngineException if there is a problem creating the directory
+     */
+    boolean hasExistingIndex( String workspaceName,
                               String indexName ) throws SearchEngineException;
 }
