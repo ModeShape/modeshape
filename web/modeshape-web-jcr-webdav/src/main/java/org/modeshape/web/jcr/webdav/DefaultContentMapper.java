@@ -97,7 +97,7 @@ public class DefaultContentMapper implements ContentMapper {
     }
 
     @Override
-    public InputStream getResourceContent( Node node ) throws RepositoryException, IOException {
+    public InputStream getResourceContent( Node node ) throws RepositoryException {
         if (!node.hasNode(CONTENT_NODE_NAME)) return null;
         return node.getProperty(CONTENT_NODE_NAME + "/" + DATA_PROP_NAME).getBinary().getStream();
     }
@@ -118,7 +118,7 @@ public class DefaultContentMapper implements ContentMapper {
     }
 
     @Override
-    public Date getLastModified( Node node ) throws RepositoryException, IOException {
+    public Date getLastModified( Node node ) throws RepositoryException {
         if (!node.hasNode(CONTENT_NODE_NAME)) return null;
 
         return node.getProperty(CONTENT_NODE_NAME + "/" + MODIFIED_PROP_NAME).getDate().getTime();
@@ -204,6 +204,5 @@ public class DefaultContentMapper implements ContentMapper {
         return contentNode.getProperty(DATA_PROP_NAME).getLength();
 
     }
-
 
 }
