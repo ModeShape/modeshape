@@ -993,6 +993,11 @@
 			</dependency>
 			<dependency>
 				<groupId>org.modeshape</groupId>
+				<artifactId>modeshape-sequencer-sramp</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.modeshape</groupId>
 				<artifactId>modeshape-sequencer-teiid</artifactId>
 				<version>${project.version}</version>
 			</dependency>
@@ -1004,6 +1009,11 @@
 			<dependency>
 				<groupId>org.modeshape</groupId>
 				<artifactId>modeshape-sequencer-xml</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.modeshape</groupId>
+				<artifactId>modeshape-sequencer-xsd</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>

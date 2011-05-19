@@ -28,6 +28,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Reader;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import org.modeshape.common.annotation.Immutable;
@@ -241,6 +245,41 @@ public class SecureHash {
     }
 
     /**
+     * Create an Reader instance that wraps another reader and that computes the secure hash (using the algorithm with the
+     * supplied name) as the returned Reader is used. This can be used to compute the hash while the content is being processed,
+     * and saves from having to process the same content twice.
+     * 
+     * @param algorithm the hashing function algorithm that should be used
+     * @param reader the reader containing the content that is to be hashed
+     * @param charset the character set used within the supplied reader; may not be null
+     * @return the hash of the contents as a byte array
+     * @throws NoSuchAlgorithmException
+     */
+    public static HashingReader createHashingReader( Algorithm algorithm,
+                                                     Reader reader,
+                                                     Charset charset ) throws NoSuchAlgorithmException {
+        return createHashingReader(algorithm.digestName(), reader, charset);
+    }
+
+    /**
+     * Create an Reader instance that wraps another reader and that computes the secure hash (using the algorithm with the
+     * supplied name) as the returned Reader is used. This can be used to compute the hash while the content is being processed,
+     * and saves from having to process the same content twice.
+     * 
+     * @param digestName the name of the hashing function (or {@link MessageDigest message digest}) that should be used
+     * @param reader the reader containing the content that is to be hashed
+     * @param charset the character set used within the supplied reader; may not be null
+     * @return the hash of the contents as a byte array
+     * @throws NoSuchAlgorithmException
+     */
+    public static HashingReader createHashingReader( String digestName,
+                                                     Reader reader,
+                                                     Charset charset ) throws NoSuchAlgorithmException {
+        MessageDigest digest = MessageDigest.getInstance(digestName);
+        return new HashingReader(digest, reader, charset);
+    }
+
+    /**
      * Get the string representation of the supplied binary hash.
      * 
      * @param hash the binary hash
@@ -331,6 +370,99 @@ public class SecureHash {
          * the stream has not yet been closed.
          * 
          * @return the hex-encoded representation of the binary hash of the contents, or null if the stream has not yet been
+         *         closed
+         */
+        public String getHashAsHexString() {
+            return SecureHash.asHexString(hash);
+        }
+    }
+
+    public static class HashingReader extends Reader {
+        private final MessageDigest digest;
+        private final Reader stream;
+        private byte[] hash;
+        private final CharsetEncoder encoder;
+
+        protected HashingReader( MessageDigest digest,
+                                 Reader input,
+                                 Charset charset ) {
+            this.digest = digest;
+            this.stream = input;
+            this.encoder = charset.newEncoder();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.io.Reader#read()
+         */
+        @Override
+        public int read() throws IOException {
+            int result = stream.read();
+            if (result != -1) {
+                digest.update((byte)result);
+            }
+            return result;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.io.Reader#read(char[], int, int)
+         */
+        @Override
+        public int read( char[] b,
+                         int off,
+                         int len ) throws IOException {
+            // Read from the stream ...
+            int n = stream.read(b, off, len);
+            if (n != -1) {
+                byte[] bytes = encoder.encode(CharBuffer.wrap(b)).array();
+                digest.update(bytes, off, n);
+            }
+            return n;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.io.Reader#read(char[])
+         */
+        @Override
+        public int read( char[] b ) throws IOException {
+            int n = stream.read(b);
+            if (n != -1) {
+                byte[] bytes = encoder.encode(CharBuffer.wrap(b)).array();
+                digest.update(bytes, 0, n);
+            }
+            return n;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.io.InputStream#close()
+         */
+        @Override
+        public void close() throws IOException {
+            stream.close();
+            if (hash == null) hash = digest.digest();
+        }
+
+        /**
+         * Get the hash of the content read by this reader. This method will return null if the reader has not yet been closed.
+         * 
+         * @return the hash of the contents as a byte array, or null if the reader has not yet been closed
+         */
+        public byte[] getHash() {
+            return hash;
+        }
+
+        /**
+         * Get the string representation of the binary hash of the content read by this reader. This method will return null if
+         * the reader has not yet been closed.
+         * 
+         * @return the hex-encoded representation of the binary hash of the contents, or null if the reader has not yet been
          *         closed
          */
         public String getHashAsHexString() {

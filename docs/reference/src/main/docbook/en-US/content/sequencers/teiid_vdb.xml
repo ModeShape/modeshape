@@ -127,7 +127,7 @@
     <title>Configuration</title>
     <para>
         To use this sequencer, simply include the <code>modeshape-sequencer-teiid-&versionNumber;.jar</code> file
-        in your application and define a sequencing configuration in the ModeShape configuration it using something similar to:
+        in your application and define a sequencing configuration in the ModeShape configuration, using something similar to:
     </para>
    	<programlisting language="XML" role="XML"><![CDATA[
 <configuration xmlns:mode="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">

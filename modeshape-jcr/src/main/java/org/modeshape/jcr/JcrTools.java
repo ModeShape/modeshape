@@ -540,7 +540,8 @@ public class JcrTools {
             Property property = node.getProperty(propertyName);
             sb = new StringBuilder();
             sb.append(nodeLead).append("  - ").append(propertyName).append('=');
-            boolean binary = property.getType() == PropertyType.BINARY;
+            int type = property.getType();
+            boolean binary = type == PropertyType.BINARY;
             if (property.isMultiple()) {
                 sb.append('[');
                 boolean first = true;
@@ -550,7 +551,7 @@ public class JcrTools {
                     if (binary) {
                         sb.append(value.getBinary());
                     } else {
-                        sb.append(value.getString());
+                        sb.append(getStringValue(value, type));
                     }
                 }
                 sb.append(']');
@@ -559,7 +560,7 @@ public class JcrTools {
                 if (binary) {
                     sb.append(value.getBinary());
                 } else {
-                    sb.append(value.getString());
+                    sb.append(getStringValue(value, type));
                 }
             }
             System.out.println(sb);
@@ -571,6 +572,15 @@ public class JcrTools {
                 printSubgraph(child, lead, depthOfSubgraph, maxDepthOfSubgraph);
             }
         }
+    }
+
+    protected String getStringValue( Value value,
+                                     int type ) throws RepositoryException {
+        String result = value.getString();
+        if (type == PropertyType.STRING) {
+            result = "\"" + result + "\"";
+        }
+        return result;
     }
 
 }
