@@ -318,7 +318,6 @@ final class JcrVersionManager implements VersionManager {
         final org.modeshape.graph.property.Property predecessorsProp = node.getProperty(JcrLexicon.PREDECESSORS).property();
         final List<org.modeshape.graph.property.Property> versionedProperties = versionedPropertiesFor(node);
         final Path historyPath = versionHistoryPathFor(jcrUuid);
-        final int onParentVersion = node.getDefinition().getOnParentVersion();
         final DateTime now = context().getValueFactories().getDateFactory().create();
         final Name versionName = name(NODE_ENCODER.encode(now.getString()));
         Path versionPath = path(historyPath, versionName);
@@ -339,7 +338,7 @@ final class JcrVersionManager implements VersionManager {
 
         for (NodeIterator childNodes = node.getNodes(); childNodes.hasNext();) {
             AbstractJcrNode childNode = (AbstractJcrNode)childNodes.nextNode();
-            versionNodeAt(childNode, frozenVersionPath, systemBatch, onParentVersion);
+            versionNodeAt(childNode, frozenVersionPath, systemBatch, childNode.getDefinition().getOnParentVersion());
         }
 
         // Execute the batch and get the results ...
@@ -419,8 +418,13 @@ final class JcrVersionManager implements VersionManager {
                     return;
                 }
 
-                // Otherwise, treat it as a copy, as per 8.2.11.2 in the 1.0.1 Spec
+                // Otherwise, treat it as a copy, as per section 3.13.9 bullet item 5 in JSR-283
             case OnParentVersionAction.COPY:
+                // Per section 3.13.9 item 5 in JSR-283, an OPV of COPY or VERSION (iff not versionable)
+                // results in COPY behavior "regardless of the OPV values of the sub-items".
+                // We can achieve this by making the onParentVersionAction always COPY for the
+                // recursive call ...
+                onParentVersionAction = OnParentVersionAction.COPY;
                 batch.create(childPath)
                      .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FROZEN_NODE)
                      .and(JcrLexicon.FROZEN_PRIMARY_TYPE, primaryTypeName)

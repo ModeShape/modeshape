@@ -666,14 +666,18 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         session.save();
 
         /*
-        * Create /checkinTest/copyNode/AbortNode with copyNode being versionable. This should be able
+        * Create /checkinTest/copyNode/copyNode/AbortNode with the first copyNode being versionable. This should be able
         * to be checked in, as the ABORT status of abortNode is ignored when copyNode is checked in.
         */
 
         Node copyNode = node.addNode("copyNode", "modetest:versionTest");
         copyNode.addMixin("mix:versionable");
 
-        Node abortNode = copyNode.addNode("abortNode", "modetest:versionTest");
+        Node midLevel = copyNode.addNode("copyNode", "modetest:versionTest");
+        midLevel.setProperty("ignoreProp", "ignorePropValue");
+        midLevel.setProperty("copyProp", "copyPropValue");
+
+        Node abortNode = midLevel.addNode("abortNode", "modetest:versionTest");
         abortNode.setProperty("ignoreProp", "ignorePropValue");
         abortNode.setProperty("copyProp", "copyPropValue");
 
@@ -693,10 +697,8 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
         // printSubgraph(session.getRootNode());
 
-        assertThat(version.getProperty("jcr:frozenNode/versionNode/jcr:primaryType").getString(), is("nt:frozenNode"));
-        assertThat(version.getProperty("jcr:frozenNode/versionNode/jcr:frozenPrimaryType").getString(),
-                   is("modetest:versionTest"));
-        assertThat(version.getProperty("jcr:frozenNode/abortNode/copyProp").getString(), is("copyPropValue"));
+        assertThat(version.getProperty("jcr:frozenNode/versionNode/jcr:primaryType").getString(), is("nt:versionedChild"));
+        assertThat(version.getProperty("jcr:frozenNode/copyNode/abortNode/copyProp").getString(), is("copyPropValue"));
         try {
             version.getProperty("jcr:frozenNode/abortNode/ignoreProp");
             fail("Property with OnParentVersionAction of IGNORE should not have been copied");
@@ -709,14 +711,14 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         assertThat(version2.getProperty("jcr:frozenNode/jcr:frozenUuid").getString(), is(versionNode.getIdentifier()));
     }
 
-    public void testShouldIgnoreAbortSemanticsOfChildNode() throws Exception {
+    public void testShouldThrowExceptionWhenVersioningChildNodeWithOnParentVersionSemanticsOfAbort() throws Exception {
         session = getHelper().getReadWriteSession();
         Node node = session.getRootNode().addNode("/checkInTest", "modetest:versionTest");
         session.save();
 
         /*
-        * Create /checkinTest/versionNode/abortNode with versionNode being versionable. This should not fail
-        * when versionNode is checked in, as the OnParentVersionAction semantics come from the checked-in node.
+        * Create /checkinTest/versionNode/abortNode with versionNode being versionable. This should fail
+        * when versionNode is checked in, as the OnParentVersionAction semantics come from the OPV of the child.
         */
 
         Node versionNode = node.addNode("versionNode", "modetest:versionTest");
@@ -728,15 +730,10 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
         session.save();
 
-        Version version = checkin(versionNode);
-
-        assertThat(version.getProperty("jcr:frozenNode/abortNode/jcr:primaryType").getString(), is("nt:frozenNode"));
-        assertThat(version.getProperty("jcr:frozenNode/abortNode/jcr:frozenPrimaryType").getString(), is("modetest:versionTest"));
-        assertThat(version.getProperty("jcr:frozenNode/abortNode/copyProp").getString(), is("copyPropValue"));
         try {
-            version.getProperty("jcr:frozenNode/abortNode/ignoreProp");
-            fail("Property with OnParentVersionAction of IGNORE should not have been copied");
-        } catch (PathNotFoundException pnfe) {
+            checkin(versionNode);
+            fail("Child node with OnParentVersionAction of ABORT should have resulted in exception.");
+        } catch (VersionException ve) {
             // Expected
         }
     }
@@ -763,12 +760,11 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
         Version version = checkin(versionNode);
 
-        assertThat(version.getProperty("jcr:frozenNode/copyNode/jcr:primaryType").getString(), is("nt:versionedChild"));
+        assertThat(version.getProperty("jcr:frozenNode/copyNode/jcr:primaryType").getString(), is("nt:frozenNode"));
         try {
             version.getProperty("jcr:frozenNode/copyNode/copyProp");
-            fail("Property should not be copied to versionable child of versioned node");
         } catch (PathNotFoundException pnfe) {
-            // Expected
+            fail("Property should be copied to versionable child of versioned node, because copyNode was copied (see Section 3.13.9 Item 5 of JSR-283)");
         }
 
         try {
@@ -777,13 +773,6 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         } catch (PathNotFoundException pnfe) {
             // Expected
         }
-
-        String childUuid = version.getProperty("jcr:frozenNode/copyNode/jcr:childVersionHistory").getString();
-        Node childNode = session.getNodeByIdentifier(childUuid);
-
-        Node rootNode = childNode.getNode("jcr:rootVersion");
-
-        assertThat(rootNode.getProperty("jcr:frozenNode/jcr:frozenPrimaryType").getString(), is("modetest:versionTest"));
     }
 
     public void testShouldRestorePropertiesOnVersionableNode() throws Exception {
