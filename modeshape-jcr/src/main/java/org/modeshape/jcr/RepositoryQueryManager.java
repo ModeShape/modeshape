@@ -219,6 +219,8 @@ abstract class RepositoryQueryManager {
     }
 
     static class SelfContained extends RepositoryQueryManager {
+        private static final Logger LOGGER = Logger.getLogger(RepositoryQueryManager.class);
+
         private final ExecutionContext context;
         private final String sourceName;
         private final LuceneConfiguration configuration;
@@ -228,6 +230,7 @@ abstract class RepositoryQueryManager {
         private final QueryEngine queryEngine;
         private final RepositoryConnectionFactory connectionFactory;
         private final int maxDepthPerRead;
+        private final boolean forceIndexRebuild;
 
         SelfContained( ExecutionContext context,
                        String nameOfSourceToBeSearchable,
@@ -236,6 +239,8 @@ abstract class RepositoryQueryManager {
                        RepositoryNodeTypeManager nodeTypeManager,
                        String indexDirectory,
                        boolean updateIndexesSynchronously,
+                       boolean forceIndexRebuild,
+                       boolean rebuildIndexSynchronously,
                        int maxDepthPerRead ) throws RepositoryException {
             super(nameOfSourceToBeSearchable);
 
@@ -243,6 +248,8 @@ abstract class RepositoryQueryManager {
             this.sourceName = nameOfSourceToBeSearchable;
             this.connectionFactory = connectionFactory;
             this.maxDepthPerRead = maxDepthPerRead;
+            this.forceIndexRebuild = forceIndexRebuild;
+
             // Define the configuration ...
             TextEncoder encoder = new UrlEncoder();
             if (indexDirectory != null) {
@@ -260,7 +267,7 @@ abstract class RepositoryQueryManager {
                         throw new RepositoryException(msg.text(indexDirectory, sourceName));
                     }
                     if (!indexDir.canRead()) {
-                        // But we cannot write to it ...
+                        // But we cannot read from it ...
                         I18n msg = JcrI18n.searchIndexDirectoryOptionSpecifiesDirectoryThatCannotBeRead;
                         throw new RepositoryException(msg.text(indexDirectory, sourceName));
                     }
@@ -271,7 +278,7 @@ abstract class RepositoryQueryManager {
                         I18n msg = JcrI18n.searchIndexDirectoryOptionSpecifiesDirectoryThatCannotBeCreated;
                         throw new RepositoryException(msg.text(indexDirectory, sourceName));
                     }
-                    // We successfully create the dirctory (or directories)
+                    // We successfully create the directory (or directories)
                 }
                 configuration = LuceneConfigurations.using(indexDir, encoder, encoder);
             } else {
@@ -373,7 +380,17 @@ abstract class RepositoryQueryManager {
             this.queryEngine = new QueryEngine(planner, optimizer, processor);
 
             // Index any existing content ...
-            reindexContent();
+            if (rebuildIndexSynchronously) {
+                reindexContent();
+            } else {
+                new Thread(new Runnable() {
+
+                    public void run() {
+                        reindexContent();
+                    }
+
+                }).start();
+            }
         }
 
         protected void process( Changes changes ) {
@@ -420,6 +437,10 @@ abstract class RepositoryQueryManager {
          */
         @Override
         public void reindexContent() {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(JcrI18n.indexRebuildingStarted.text());
+            }
+
             // Get the workspace names ...
             Set<String> workspaces = Graph.create(sourceName, connectionFactory, context).getWorkspaces();
 
@@ -427,7 +448,10 @@ abstract class RepositoryQueryManager {
             SearchEngineIndexer indexer = new SearchEngineIndexer(context, searchEngine, connectionFactory, maxDepthPerRead);
             try {
                 for (String workspace : workspaces) {
-                    indexer.index(workspace);
+                    indexer.reindex(workspace, forceIndexRebuild);
+                }
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug(JcrI18n.indexRebuildingComplete.text());
                 }
             } finally {
                 indexer.close();
@@ -442,9 +466,20 @@ abstract class RepositoryQueryManager {
          */
         @Override
         public void reindexContent( JcrWorkspace workspace ) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(JcrI18n.indexRebuildingStarted.text());
+            }
+
             SearchEngineIndexer indexer = new SearchEngineIndexer(context, searchEngine, connectionFactory, maxDepthPerRead);
             try {
+                /*
+                 * Instead of using indexer.reindex(String, boolean) and respecting the dontForceIndexRebuild parameter,
+                 * we always reindex the entire workspace in response to this explicit request.
+                 */
                 indexer.index(workspace.getName());
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug(JcrI18n.indexRebuildingComplete.text());
+                }
             } finally {
                 indexer.close();
             }

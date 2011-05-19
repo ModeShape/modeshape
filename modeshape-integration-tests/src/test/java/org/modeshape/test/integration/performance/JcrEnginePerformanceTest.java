@@ -26,15 +26,17 @@ package org.modeshape.test.integration.performance;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
+import java.io.File;
 import javax.jcr.Node;
 import org.jboss.byteman.contrib.bmunit.BMScript;
 import org.jboss.byteman.contrib.bmunit.BMUnitRunner;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.modeshape.common.statistic.Stopwatch;
+import org.modeshape.common.util.FileUtil;
 import org.modeshape.test.ModeShapeSingleUseTest;
 
-@Ignore
 @RunWith( BMUnitRunner.class )
 public class JcrEnginePerformanceTest extends ModeShapeSingleUseTest {
 
@@ -75,4 +77,66 @@ public class JcrEnginePerformanceTest extends ModeShapeSingleUseTest {
         startEngineUsing("config/configRepositoryForJdbc.xml");
         assertNode("/");
     }
+
+    @Test
+    public void shouldStartUpQuicklyAfterBeingShutdown() throws Exception {
+        File root = new File("./target/repoRoot");
+        if (root.exists()) FileUtil.delete(root);
+        root.mkdir();
+
+        File indexDir = new File("./target/index");
+        if (indexDir.exists()) FileUtil.delete(indexDir);
+        assertThat(indexDir.exists(), is(false));
+
+        final int FILE_CONTENT_SIZE = 1024;
+
+        StringBuilder buff = new StringBuilder(FILE_CONTENT_SIZE);
+        for (int x = 0; x < FILE_CONTENT_SIZE; x++) {
+            buff.append('x');
+        }
+        String longString = buff.toString();
+
+        Stopwatch sw = new Stopwatch();
+        sw.start();
+
+        startEngineUsing("config/configRepositoryForFileSystem.xml");
+        // startEngineUsing("config/configRepositoryForJdbc.xml");
+        Node rootNode = assertNode("/");
+
+        sw.stop();
+        System.out.println("Initial Startup (creating schema): " + sw);
+        sw.reset();
+
+        sw.start();
+        for (int i = 0; i < 10; i++) {
+            Node iNode = rootNode.addNode(String.valueOf(i), "nt:folder");
+            for (int j = 0; j < 10; j++) {
+                Node jNode = iNode.addNode(String.valueOf(j), "nt:folder");
+                for (int k = 0; k < 10; k++) {
+                    Node kNode = jNode.addNode(String.valueOf(k), "nt:file");
+                    Node content = kNode.addNode("jcr:content", "mode:resource");
+                    content.setProperty("jcr:data", longString);
+
+                }
+                session().save();
+            }
+        }
+        sw.stop();
+        System.out.println("Inserted nodes: " + sw);
+        sw.reset();
+
+        stopEngine();
+
+        sw.start();
+
+        System.out.println("Restarting engine...");
+        startEngineUsing("config/configRepositoryForFileSystem.xml");
+        // startEngineUsing("config/configRepositoryForJdbcNoValidation.xml");
+        assertNode("/");
+        sw.stop();
+
+        System.out.println("Subsequent Startup (no schema validation): " + sw);
+    }
+
+
 }

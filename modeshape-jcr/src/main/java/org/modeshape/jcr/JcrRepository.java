@@ -363,7 +363,24 @@ public class JcrRepository implements Repository {
          * 
          * @see #ANONYMOUS_USER_ROLES
          */
-        USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN, ;
+        USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN,
+
+        /**
+         * Indicates under what circumstances the query index should be automatically rebuilt on startup. If this is set to
+         * 'always', the content for the entire JCR repository will be loaded and re-indexed each time that the repository is
+         * started. If this is set to 'ifMissing', re-indexing will only occur if there is no existing index. The default value is
+         * 'ifMissing'.
+         */
+        REBUILD_QUERY_INDEX_ON_STARTUP,
+
+        /**
+         * Indicates whether the query indexes should be rebuilt on startup synchronously ('true') or asynchronously ('false').
+         * Rebuilding the query indexes can be an expensive operation on workspaces with large amounts of content, so setting this
+         * value to 'false' can cause a significant decrease in repository startup time. However, if this value is set to 'false',
+         * the query indexes may not accurately reflect the content in the repository while the rebuild is occurring. The default
+         * value is 'true'.
+         */
+        QUERY_INDEXES_REBUILT_SYNCHRONOUSLY, ;
 
         /**
          * Determine the option given the option name. This does more than {@link Option#valueOf(String)}, since this method first
@@ -392,6 +409,22 @@ public class JcrRepository implements Repository {
                 }
             }
         }
+    }
+
+    /**
+     * The possible values for the {@link Option#REBUILD_QUERY_INDEX_ON_STARTUP} option.
+     */
+    public static class RebuildQueryIndexOnStartupOption {
+        /**
+         * The value that indicates that the query index for each workspace should be rebuilt even if it already exists and
+         * appears to be valid.
+         */
+        public static final String ALWAYS = "always";
+        
+        /**
+         * The value that indicates that the query index for each workspace should be rebuilt only if it does not already exist.
+         */
+        public static final String IF_MISSING = "ifMissing";
     }
 
     /**
@@ -495,6 +528,17 @@ public class JcrRepository implements Repository {
          * The default value for the {@link Option#USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN} option is {@value} .
          */
         public static final String USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN = Boolean.FALSE.toString();
+
+        /**
+         * The default value for the {@link Option#REBUILD_QUERY_INDEX_ON_STARTUP} option is {@value} .
+         */
+        public static final String REBUILD_QUERY_INDEX_ON_STARTUP = RebuildQueryIndexOnStartupOption.IF_MISSING;
+
+        /**
+         * The default value for the {@link Option#QUERY_INDEXES_REBUILT_SYNCHRONOUSLY} option is {@value} .
+         */
+        public static final String QUERY_INDEXES_REBUILT_SYNCHRONOUSLY = Boolean.TRUE.toString();
+
     }
 
     /**
@@ -558,6 +602,9 @@ public class JcrRepository implements Repository {
         defaults.put(Option.REPOSITORY_JNDI_LOCATION, DefaultOption.REPOSITORY_JNDI_LOCATION);
         defaults.put(Option.REMOVE_DERIVED_CONTENT_WITH_ORIGINAL, DefaultOption.REMOVE_DERIVED_CONTENT_WITH_ORIGINAL);
         defaults.put(Option.USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN, DefaultOption.USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN);
+        defaults.put(Option.REBUILD_QUERY_INDEX_ON_STARTUP, DefaultOption.REBUILD_QUERY_INDEX_ON_STARTUP);
+        defaults.put(Option.QUERY_INDEXES_REBUILT_SYNCHRONOUSLY, DefaultOption.QUERY_INDEXES_REBUILT_SYNCHRONOUSLY);
+
         DEFAULT_OPTIONS = Collections.<Option, String>unmodifiableMap(defaults);
     }
 
@@ -804,11 +851,16 @@ public class JcrRepository implements Repository {
                 // Otherwise create a repository query manager that maintains its own search engine ...
                 String indexDirectory = this.options.get(Option.QUERY_INDEX_DIRECTORY);
                 boolean updateIndexesSynchronously = Boolean.valueOf(this.options.get(Option.QUERY_INDEXES_UPDATED_SYNCHRONOUSLY));
+                boolean forceIndexRebuild = RebuildQueryIndexOnStartupOption.ALWAYS.equalsIgnoreCase(this.options.get(Option.REBUILD_QUERY_INDEX_ON_STARTUP));
+                boolean rebuildIndexesSynchronously = Boolean.TRUE.equals(Boolean.valueOf(this.options.get(Option.QUERY_INDEXES_REBUILT_SYNCHRONOUSLY)));
+
                 int maxDepthToRead = Integer.valueOf(this.options.get(Option.INDEX_READ_DEPTH));
                 this.queryManager = new RepositoryQueryManager.SelfContained(this.executionContext, this.sourceName,
                                                                              connectionFactory, repositoryObservable,
                                                                              repositoryTypeManager, indexDirectory,
-                                                                             updateIndexesSynchronously, maxDepthToRead);
+                                                                             updateIndexesSynchronously, forceIndexRebuild,
+                                                                             rebuildIndexesSynchronously,
+                                                                             maxDepthToRead);
             }
         } else {
             this.queryManager = new RepositoryQueryManager.Disabled(this.sourceName);

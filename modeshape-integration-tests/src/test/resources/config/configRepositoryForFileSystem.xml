@@ -29,23 +29,11 @@
                xmlns:nt="http://www.jcp.org/jcr/nt/1.0">
     <!-- Define the sources from which content is made available.  -->
     <mode:sources jcr:primaryType="nt:unstructured">
-        <mode:source jcr:name="Store" mode:classname="org.modeshape.connector.store.jpa.JpaSource" 
-                     mode:autoGenerateSchema="create"
-        	mode:model="Simple"
-        	mode:dialect="${jpaSource.dialect}"
-        	mode:driverClassName="${jpaSource.driverClassName}"
-        	mode:username="${jpaSource.username}"
-        	mode:password="${jpaSource.password}"
-        	mode:url="${jpaSource.url}"
-        	mode:maximumConnectionsInPool="${jpaSource.maximumConnectionsInPool}"
-        	mode:referentialIntegrityEnforced="${jpaSource.referentialIntegrityEnforced}"
-        	mode:largeValueSizeInBytes="${jpaSource.largeValueSizeInBytes}"
-        	mode:retryLimit="${jpaSource.retryLimit}"
-        	mode:compressData="${jpaSource.compressData}"
-        	mode:predefinedWorkspaceNames="default, otherWorkspace"
-        	mode:showSql="${jpaSource.showSql}"
-            mode:creatingWorkspacesAllowed="true"
-        	mode:defaultWorkspaceName="default">
+        <mode:source jcr:name="Store" 
+                     mode:classname="org.modeshape.connector.filesystem.FileSystemSource"
+                   	 mode:workspaceRootPath="./target/repoRoot"
+ 		          	 mode:updatesAllowed="true"
+        >
             <defaultWorkspaceName>default</defaultWorkspaceName>
         </mode:source>
     </mode:sources>
@@ -144,6 +132,11 @@
                 <mode:resource>/org/modeshape/sequencer/ddl/dialect/postgres/PostgresDdl.cnd</mode:resource>
                 -->
             </jcr:nodeTypes>
+            <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names -->
+            <mode:options jcr:primaryType="mode:options">
+               <mode:option jcr:name="dontForceQueryIndexRebuildOnStartup" mode:value="false"/>
+               <mode:option jcr:name="queryIndexDirectory" mode:value="./target/index" />
+            </mode:options>
         </mode:repository>
     </mode:repositories>
 </configuration>
