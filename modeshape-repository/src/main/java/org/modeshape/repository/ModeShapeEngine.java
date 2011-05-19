@@ -40,8 +40,8 @@ import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
-import org.modeshape.common.util.Logger.Level;
 import org.modeshape.common.util.NamedThreadFactory;
+import org.modeshape.common.util.Logger.Level;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.JcrLexicon;
@@ -324,6 +324,8 @@ public class ModeShapeEngine {
         }
         if (errors) {
             // Then throw an exception ...
+            System.err.println(problems);
+            System.err.flush();
             throw newConfigurationException(RepositoryI18n.errorsPreventStarting.text(problems.size()));
         }
     }

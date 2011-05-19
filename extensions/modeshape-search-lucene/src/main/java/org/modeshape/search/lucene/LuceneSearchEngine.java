@@ -34,10 +34,10 @@ import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import org.modeshape.common.annotation.Immutable;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Field;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.text.FilenameEncoder;
 import org.modeshape.common.text.TextEncoder;
 import org.modeshape.common.text.UrlEncoder;
@@ -283,6 +283,11 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
         } finally {
             indexer.close();
         }
+    }
+
+    @Override
+    public boolean indexExists( String workspaceName ) throws SearchEngineException {
+        return configuration.hasExistingIndex(workspaceName, LuceneSearchWorkspace.INDEX_NAME);
     }
 
     protected static class WorkForWorkspaces implements Iterable<WorkspaceWork> {

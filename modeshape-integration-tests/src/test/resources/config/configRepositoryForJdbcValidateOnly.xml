@@ -30,7 +30,7 @@
     <!-- Define the sources from which content is made available.  -->
     <mode:sources jcr:primaryType="nt:unstructured">
         <mode:source jcr:name="Store" mode:classname="org.modeshape.connector.store.jpa.JpaSource" 
-                     mode:autoGenerateSchema="create"
+                     mode:autoGenerateSchema="validate"
         	mode:model="Simple"
         	mode:dialect="${jpaSource.dialect}"
         	mode:driverClassName="${jpaSource.driverClassName}"

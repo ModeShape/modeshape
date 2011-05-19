@@ -73,4 +73,6 @@ public interface SearchEngine {
      */
     void index( ExecutionContext context,
                 final Iterable<ChangeRequest> changes ) throws SearchEngineException;
+
+    boolean indexExists( String workspaceName ) throws SearchEngineException;
 }
