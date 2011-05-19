@@ -87,7 +87,7 @@ public abstract class ModeShapeUnitTest {
         openSessions.clear();
         tools = new JcrTools();
         print = false;
-        debug = true;
+        debug = false;
     }
 
     @After
@@ -448,6 +448,10 @@ public abstract class ModeShapeUnitTest {
             Thread.sleep(100);
         } catch (InterruptedException e) {
             fail(e.getMessage());
+        }
+
+        if (debug) {
+            System.out.println("---> Uploading '" + filename + "' into '" + nodePath + "'");
         }
 
         // Now use the JCR API to upload the file ...

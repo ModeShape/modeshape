@@ -1018,6 +1018,11 @@
 			</dependency>
 			<dependency>
 				<groupId>org.modeshape</groupId>
+				<artifactId>modeshape-sequencer-wsdl</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.modeshape</groupId>
 				<artifactId>modeshape-sequencer-zip</artifactId>
 				<version>${project.version}</version>
 			</dependency>

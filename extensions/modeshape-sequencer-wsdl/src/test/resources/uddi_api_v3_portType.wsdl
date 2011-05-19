@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */ -->
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/" xmlns:tns="urn:uddi-org:api_v3_portType" xmlns:uddi="urn:uddi-org:api_v3" targetNamespace="urn:uddi-org:api_v3_portType">
+	<!--
+		Copyright (c) 2000-2002 by Accenture, Ariba, Inc., Commerce One, Inc.
+		Fujitsu Limited, Hewlett-Packard Company, i2 Technologies, Inc., Intel
+		Corporation, International Business Machines Corporation, Microsoft
+		Corporation, Oracle Corporation, SAP AG, Sun Microsystems, Inc., and
+		VeriSign, Inc. All Rights Reserved. Copyright (c) OASIS Open
+		2002-2004. All Rights Reserved. Version 3.0.2 This document and
+		translations of it may be copied and furnished to others, and
+		derivative works that comment on or otherwise explain it or assist in
+		its implementation may be prepared, copied, published and distributed,
+		in whole or in part, without restriction of any kind, provided that
+		the above copyright notice and this paragraph are included on all such
+		copies and derivative works. However, this document itself may not be
+		modified in any way, such as by removing the copyright notice or
+		references to OASIS, except as needed for the purpose of developing
+		OASIS specifications, in which case the procedures for copyrights
+		defined in the OASIS Intellectual Property Rights document must be
+		followed, or as required to translate it into languages other than
+		English.
+	-->
+	<documentation>
+	        This WSDL document defines the portTypes for the following
+	        UDDI V3 API Sets: Inquiry; Publication and Security.
+	</documentation>
+	<types>
+		<xsd:schema targetNamespace="urn:uddi-org:api_v3_portType" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+			<xsd:import namespace="urn:uddi-org:api_v3" schemaLocation="uddi_v3.xsd"/>
+            <xsd:import namespace="urn:uddi-org:policy_v3" schemaLocation="uddi_v3policy.xsd"/>
+            <xsd:import namespace="urn:uddi-org:policy_v3_instanceParms" schemaLocation="uddi_v3policy_instanceParms.xsd"/>
+		</xsd:schema>
+	</types>
+	<message name="bindingDetailMessage">
+		<part name="body" element="uddi:bindingDetail"/>
+	</message>
+	<message name="businessDetailMessage">
+		<part name="body" element="uddi:businessDetail"/>
+	</message>
+	<message name="businessListMessage">
+		<part name="body" element="uddi:businessList"/>
+	</message>
+	<message name="dispositionReportFaultMessage">
+		<part name="body" element="uddi:dispositionReport"/>
+	</message>
+	<message name="find_bindingMessage">
+		<part name="body" element="uddi:find_binding"/>
+	</message>
+	<message name="find_businessMessage">
+		<part name="body" element="uddi:find_business"/>
+	</message>
+	<message name="find_relatedBusinessesMessage">
+		<part name="body" element="uddi:find_relatedBusinesses"/>
+	</message>
+	<message name="find_serviceMessage">
+		<part name="body" element="uddi:find_service"/>
+	</message>
+	<message name="find_tModelMessage">
+		<part name="body" element="uddi:find_tModel"/>
+	</message>
+	<message name="get_bindingDetailMessage">
+		<part name="body" element="uddi:get_bindingDetail"/>
+	</message>
+	<message name="get_businessDetailMessage">
+		<part name="body" element="uddi:get_businessDetail"/>
+	</message>
+	<message name="get_operationalInfoMessage">
+		<part name="body" element="uddi:get_operationalInfo"/>
+	</message>
+	<message name="get_serviceDetailMessage">
+		<part name="body" element="uddi:get_serviceDetail"/>
+	</message>
+	<message name="get_tModelDetailMessage">
+		<part name="body" element="uddi:get_tModelDetail"/>
+	</message>
+	<message name="operationalInfosMessage">
+		<part name="body" element="uddi:operationalInfos"/>
+	</message>
+	<message name="relatedBusinessesListMessage">
+		<part name="body" element="uddi:relatedBusinessesList"/>
+	</message>
+	<message name="serviceDetailMessage">
+		<part name="body" element="uddi:serviceDetail"/>
+	</message>
+	<message name="serviceListMessage">
+		<part name="body" element="uddi:serviceList"/>
+	</message>
+	<message name="tModelDetailMessage">
+		<part name="body" element="uddi:tModelDetail"/>
+	</message>
+	<message name="tModelListMessage">
+		<part name="body" element="uddi:tModelList"/>
+	</message>
+	<message name="add_publisherAssertionsMessage">
+		<part name="body" element="uddi:add_publisherAssertions"/>
+	</message>
+	<message name="assertionStatusReportMessage">
+		<part name="body" element="uddi:assertionStatusReport"/>
+	</message>
+	<message name="delete_bindingMessage">
+		<part name="body" element="uddi:delete_binding"/>
+	</message>
+	<message name="delete_businessMessage">
+		<part name="body" element="uddi:delete_business"/>
+	</message>
+	<message name="delete_publisherAssertionsMessage">
+		<part name="body" element="uddi:delete_publisherAssertions"/>
+	</message>
+	<message name="delete_serviceMessage">
+		<part name="body" element="uddi:delete_service"/>
+	</message>
+	<message name="delete_tModelMessage">
+		<part name="body" element="uddi:delete_tModel"/>
+	</message>
+	<message name="successMessage"/>
+	<message name="get_assertionStatusReportMessage">
+		<part name="body" element="uddi:get_assertionStatusReport"/>
+	</message>
+	<message name="get_publisherAssertionsMessage">
+		<part name="body" element="uddi:get_publisherAssertions"/>
+	</message>
+	<message name="get_registeredInfoMessage">
+		<part name="body" element="uddi:get_registeredInfo"/>
+	</message>
+	<message name="publisherAssertionsResponseMessage">
+		<part name="body" element="uddi:publisherAssertionsResponse"/>
+	</message>
+	<message name="publisherAssertionsMessage">
+		<part name="body" element="uddi:publisherAssertions"/>
+	</message>
+	<message name="registeredInfoMessage">
+		<part name="body" element="uddi:registeredInfo"/>
+	</message>
+	<message name="save_bindingMessage">
+		<part name="body" element="uddi:save_binding"/>
+	</message>
+	<message name="save_businessMessage">
+		<part name="body" element="uddi:save_business"/>
+	</message>
+	<message name="save_serviceMessage">
+		<part name="body" element="uddi:save_service"/>
+	</message>
+	<message name="save_tModelMessage">
+		<part name="body" element="uddi:save_tModel"/>
+	</message>
+	<message name="set_publisherAssertionsMessage">
+		<part name="body" element="uddi:set_publisherAssertions"/>
+	</message>
+	<message name="authTokenMessage">
+		<part name="body" element="uddi:authToken"/>
+	</message>
+	<message name="discard_authTokenMessage">
+		<part name="body" element="uddi:discard_authToken"/>
+	</message>
+	<message name="get_authTokenMessage">
+		<part name="body" element="uddi:get_authToken"/>
+	</message>
+	<portType name="UDDI_Inquiry_PortType">
+		<documentation>This portType defines all of the UDDI inquiry operations.</documentation>
+		<operation name="find_binding">
+			<input message="tns:find_bindingMessage"/>
+			<output message="tns:bindingDetailMessage"/>
+			<fault name="error" message="tns:dispositionReportFaultMessage"/>
+		</operation>
+		<operation name="find_business">
+			<input message="tns:find_businessMessage"/>
+			<output message="tns:businessListMessage"/>
+			<fault name="error" message="tns:dispositionReportFaultMessage"/>
+		</operation>
+		<operation name="find_relatedBusinesses">
+			<input message="tns:find_relatedBusinessesMessage"/>
+			<output message="tns:relatedBusinessesListMessage"/>
+			<fault name="error" message="tns:dispositionReportFaultMessage"/>
+		</operation>
+		<operation name="find_service">
+			<input message="tns:find_serviceMessage"/>
+			<output message="tns:serviceListMessage"/>
+			<fault name="error" message="tns:dispositionReportFaultMessage"/>
+		</operation>
+		<operation name="find_tModel">
+			<input message="tns:find_tModelMessage"/>
+			<output message="tns:tModelListMessage"/>
+			<fault name="error" message="tns:dispositionReportFaultMessage"/>
+		</operation>
+		<operation name="get_bindingDetail">
+			<input message="tns:get_bindingDetailMessage"/>
+			<output message="tns:bindingDetailMessage"/>
+			<fault name="error" message="tns:dispositionReportFaultMessage"/>
+		</operation>
+		<operation name="get_businessDetail">
+			<input message="tns:get_businessDetailMessage"/>
+			<output message="tns:businessDetailMessage"/>
+			<fault name="error" message="tns:dispositionReportFaultMessage"/>
+		</operation>
+		<operation name="get_operationalInfo">
+			<input message="tns:get_operationalInfoMessage"/>
+			<output message="tns:operationalInfosMessage"/>
+			<fault name="error" message="tns:dispositionReportFaultMessage"/>
+		</operation>
+		<operation name="get_serviceDetail">
+			<input message="tns:get_serviceDetailMessage"/>
+			<output message="tns:serviceDetailMessage"/>
+			<fault name="error" message="tns:dispositionReportFaultMessage"/>
+		</operation>
+		<operation name="get_tModelDetail">
+			<input message="tns:get_tModelDetailMessage"/>
+			<output message="tns:tModelDetailMessage"/>
+			<fault name="error" message="tns:dispositionReportFaultMessage"/>
+		</operation>
+	</portType>
+	<portType name="UDDI_Publication_PortType">
+		<documentation>This portType defines all of the UDDI publication operations.</documentation>
+		<operation name="add_publisherAssertions">
+			<input message="tns:add_publisherAssertionsMessage"/>
+			<output message="tns:successMessage"/>
+			<fault name="error" message="tns:dispositionReportFaultMessage"/>
+		</operation>
+		<operation name="delete_binding">
+			<input message="tns:delete_bindingMessage"/>
+			<output message="tns:successMessage"/>
+			<fault name="error" message="tns:dispositionReportFaultMessage"/>
+		</operation>
+		<operation name="delete_business">
+			<input message="tns:delete_businessMessage"/>
+			<output message="tns:successMessage"/>
+			<fault name="error" message="tns:dispositionReportFaultMessage"/>
+		</operation>
+		<operation name="delete_publisherAssertions">
+			<input message="tns:delete_publisherAssertionsMessage"/>
+			<output message="tns:successMessage"/>
+			<fault name="error" message="tns:dispositionReportFaultMessage"/>
+		</operation>
+		<operation name="delete_service">
+			<input message="tns:delete_serviceMessage"/>
+			<output message="tns:successMessage"/>
+			<fault name="error" message="tns:dispositionReportFaultMessage"/>
+		</operation>
+		<operation name="delete_tModel">
+			<input message="tns:delete_tModelMessage"/>
+			<output message="tns:successMessage"/>
+			<fault name="error" message="tns:dispositionReportFaultMessage"/>
+		</operation>
+		<operation name="get_assertionStatusReport">
+			<input message="tns:get_assertionStatusReportMessage"/>
+			<output message="tns:assertionStatusReportMessage"/>
+			<fault name="error" message="tns:dispositionReportFaultMessage"/>
+		</operation>
+		<operation name="get_publisherAssertions">
+			<input message="tns:get_publisherAssertionsMessage"/>
+			<output message="tns:publisherAssertionsResponseMessage"/>
+			<fault name="error" message="tns:dispositionReportFaultMessage"/>
+		</operation>
+		<operation name="get_registeredInfo">
+			<input message="tns:get_registeredInfoMessage"/>
+			<output message="tns:registeredInfoMessage"/>
+			<fault name="error" message="tns:dispositionReportFaultMessage"/>
+		</operation>
+		<operation name="save_binding">
+			<input message="tns:save_bindingMessage"/>
+			<output message="tns:bindingDetailMessage"/>
+			<fault name="error" message="tns:dispositionReportFaultMessage"/>
+		</operation>
+		<operation name="save_business">
+			<input message="tns:save_businessMessage"/>
+			<output message="tns:businessDetailMessage"/>
+			<fault name="error" message="tns:dispositionReportFaultMessage"/>
+		</operation>
+		<operation name="save_service">
+			<input message="tns:save_serviceMessage"/>
+			<output message="tns:serviceDetailMessage"/>
+			<fault name="error" message="tns:dispositionReportFaultMessage"/>
+		</operation>
+		<operation name="save_tModel">
+			<input message="tns:save_tModelMessage"/>
+			<output message="tns:tModelDetailMessage"/>
+			<fault name="error" message="tns:dispositionReportFaultMessage"/>
+		</operation>
+		<operation name="set_publisherAssertions">
+			<input message="tns:set_publisherAssertionsMessage"/>
+			<output message="tns:publisherAssertionsMessage"/>
+			<fault name="error" message="tns:dispositionReportFaultMessage"/>
+		</operation>
+	</portType>
+	<portType name="UDDI_Security_PortType">
+		<documentation>This portType defines all of the UDDI security operations.</documentation>
+		<operation name="discard_authToken">
+			<input message="tns:discard_authTokenMessage"/>
+			<output message="tns:successMessage"/>
+			<fault name="error" message="tns:dispositionReportFaultMessage"/>
+		</operation>
+		<operation name="get_authToken">
+			<input message="tns:get_authTokenMessage"/>
+			<output message="tns:authTokenMessage"/>
+			<fault name="error" message="tns:dispositionReportFaultMessage"/>
+		</operation>
+	</portType>
+</definitions>

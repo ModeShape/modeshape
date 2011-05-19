@@ -115,6 +115,7 @@
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/sequencers/compact_node_types.xml"/>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/sequencers/xml.xml"/>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/sequencers/xsd.xml"/>
+  	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/sequencers/wsdl.xml"/>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/sequencers/zip.xml"/>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/sequencers/microsoft_office.xml"/>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/sequencers/java_source.xml"/>

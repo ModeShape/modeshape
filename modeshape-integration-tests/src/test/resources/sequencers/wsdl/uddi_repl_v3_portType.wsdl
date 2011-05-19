@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */ -->
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/" xmlns:tns="urn:uddi-org:repl_v3_portType" xmlns:uddi_repl="urn:uddi-org:repl_v3" xmlns:uddi="urn:uddi-org:api_v3" targetNamespace="urn:uddi-org:repl_v3_portType">
+	<!--
+		Copyright (c) 2000-2002 by Accenture, Ariba, Inc., Commerce One, Inc.
+		Fujitsu Limited, Hewlett-Packard Company, i2 Technologies, Inc., Intel
+		Corporation, International Business Machines Corporation, Microsoft
+		Corporation, Oracle Corporation, SAP AG, Sun Microsystems, Inc., and
+		VeriSign, Inc. All Rights Reserved. Copyright (c) OASIS Open
+		2002-2004. All Rights Reserved. Version 3.0.2 This document and
+		translations of it may be copied and furnished to others, and
+		derivative works that comment on or otherwise explain it or assist in
+		its implementation may be prepared, copied, published and distributed,
+		in whole or in part, without restriction of any kind, provided that
+		the above copyright notice and this paragraph are included on all such
+		copies and derivative works. However, this document itself may not be
+		modified in any way, such as by removing the copyright notice or
+		references to OASIS, except as needed for the purpose of developing
+		OASIS specifications, in which case the procedures for copyrights
+		defined in the OASIS Intellectual Property Rights document must be
+		followed, or as required to translate it into languages other than
+		English.
+	-->
+	<documentation>
+	                This WSDL document defines the portTypes for the UDDI V3 Replication API Set.
+	</documentation>
+	<types>
+		<xsd:schema targetNamespace="urn:uddi-org:repl_v3_portType" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+			<xsd:import namespace="urn:uddi-org:api_v3" schemaLocation="uddi_v3.xsd"/>
+			<xsd:import namespace="urn:uddi-org:repl_v3" schemaLocation="uddi_v3replication.xsd"/>
+		</xsd:schema>
+	</types>
+	<message name="changeRecordsMessage">
+		<part name="body" element="uddi_repl:changeRecords"/>
+	</message>
+	<message name="dispositionReportFaultMessage">
+		<part name="body" element="uddi:dispositionReport"/>
+	</message>
+	<message name="successMessage"/>
+	<message name="do_pingMessage">
+		<part name="body" element="uddi_repl:do_ping"/>
+	</message>
+	<message name="get_changeRecordsMessage">
+		<part name="body" element="uddi_repl:get_changeRecords"/>
+	</message>
+	<message name="get_highWaterMarksMessage">
+		<part name="body" element="uddi_repl:get_highWaterMarks"/>
+	</message>
+	<message name="highWaterMarksMessage">
+		<part name="body" element="uddi_repl:highWaterMarks"/>
+	</message>
+	<message name="notify_changeRecordsAvailableMessage">
+		<part name="body" element="uddi_repl:notify_changeRecordsAvailable"/>
+	</message>
+	<message name="operatorNodeIDMessage">
+		<part name="body" element="uddi_repl:operatorNodeID"/>
+	</message>
+	<message name="transfer_custodyMessage">
+		<part name="body" element="uddi_repl:transfer_custody"/>
+	</message>
+	<portType name="UDDI_Replication_PortType">
+		<documentation>This portType defines all of the UDDI replication operations.</documentation>
+		<operation name="get_changeRecords">
+			<input message="tns:get_changeRecordsMessage"/>
+			<output message="tns:changeRecordsMessage"/>
+			<fault name="error" message="tns:dispositionReportFaultMessage"/>
+		</operation>
+		<operation name="notify_changeRecordsAvailable">
+			<input message="tns:notify_changeRecordsAvailableMessage"/>
+			<output message="tns:successMessage"/>
+			<fault name="error" message="tns:dispositionReportFaultMessage"/>
+		</operation>
+		<operation name="do_ping">
+			<input message="tns:do_pingMessage"/>
+			<output message="tns:operatorNodeIDMessage"/>
+			<fault name="error" message="tns:dispositionReportFaultMessage"/>
+		</operation>
+		<operation name="get_highWaterMarks">
+			<input message="tns:get_highWaterMarksMessage"/>
+			<output message="tns:highWaterMarksMessage"/>
+			<fault name="error" message="tns:dispositionReportFaultMessage"/>
+		</operation>
+		<operation name="transfer_custody">
+			<input message="tns:transfer_custodyMessage"/>
+			<output message="tns:successMessage"/>
+			<fault name="error" message="tns:dispositionReportFaultMessage"/>
+		</operation>
+	</portType>
+</definitions>
