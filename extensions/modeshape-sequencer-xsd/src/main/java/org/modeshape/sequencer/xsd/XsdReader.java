@@ -183,7 +183,6 @@ public class XsdReader {
             process(schema, encoding, mimeType, contentSize.get(), docPath);
 
         } catch (Exception e) {
-            e.printStackTrace();
             String location = context.getValueFactories().getStringFactory().create(context.getInputPath());
             context.getProblems().addError(e, XsdI18n.errorReadingXsdFile, location, e.getMessage());
         } finally {

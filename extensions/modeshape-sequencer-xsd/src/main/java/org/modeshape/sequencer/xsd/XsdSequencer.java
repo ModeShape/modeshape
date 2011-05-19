@@ -39,30 +39,6 @@ public class XsdSequencer implements StreamSequencer {
 
     protected static final boolean TRACE = true;
 
-    private String[] localPathsToCachedSchemas;
-
-    /**
-     * Get the paths to the local cache of XSD, DTD and other files that may be referenced or imported into the XML Schema
-     * documents.
-     * 
-     * @return the paths to directories on the file system where this sequencer should look for cached XML Schema documents, DTD
-     *         files, and other imported or referenced files; may be null or empty
-     */
-    public String[] getLocalPathsToCachedSchemas() {
-        return localPathsToCachedSchemas;
-    }
-
-    /**
-     * Set the paths to the local cache of XSD, DTD and other files that may be referenced or imported into the XML Schema
-     * documents.
-     * 
-     * @param localPathsToCachedSchemas the paths to directories on the file system where this sequencer should look for cached
-     *        XML Schema documents, DTD files, and other imported or referenced files; may be null or empty
-     */
-    public void setLocalPathsToCachedSchemas( String[] localPathsToCachedSchemas ) {
-        this.localPathsToCachedSchemas = localPathsToCachedSchemas != null && localPathsToCachedSchemas.length != 0 ? localPathsToCachedSchemas : null;
-    }
-
     /**
      * {@inheritDoc}
      * 
