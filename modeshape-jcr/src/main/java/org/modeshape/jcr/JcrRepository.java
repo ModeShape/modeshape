@@ -405,7 +405,11 @@ public class JcrRepository implements Repository {
                     if (underscored == null) {
                         throw e2;
                     }
-                    return Option.valueOf(underscored.toUpperCase());
+                    try {
+                        return Option.valueOf(underscored.toUpperCase());
+                    } catch (IllegalArgumentException e3) {
+                        return null;
+                    }
                 }
             }
         }

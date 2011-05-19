@@ -134,7 +134,7 @@
             </jcr:nodeTypes>
             <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names -->
             <mode:options jcr:primaryType="mode:options">
-               <mode:option jcr:name="dontForceQueryIndexRebuildOnStartup" mode:value="false"/>
+               <mode:option jcr:name="rebuildQueryIndexOnStartup" mode:value="ifMissing"/>
                <mode:option jcr:name="queryIndexDirectory" mode:value="./target/index" />
             </mode:options>
         </mode:repository>
