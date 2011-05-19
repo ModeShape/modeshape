@@ -182,6 +182,7 @@ public class LuceneConfigurations {
 
         protected abstract boolean doDestroy( DirectoryType directory ) throws SearchEngineException;
 
+        @Override
         public boolean hasExistingIndex( String workspaceName,
                                          String indexName ) throws SearchEngineException {
             return false;
