@@ -760,7 +760,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
         Version version = checkin(versionNode);
 
-        assertThat(version.getProperty("jcr:frozenNode/copyNode/jcr:primaryType").getString(), is("nt:frozenNode"));
+        assertThat(version.getProperty("jcr:frozenNode/copyNode/jcr:primaryType").getString(), is("modetest:versionTest"));
         try {
             version.getProperty("jcr:frozenNode/copyNode/copyProp");
         } catch (PathNotFoundException pnfe) {
@@ -769,9 +769,8 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
         try {
             version.getProperty("jcr:frozenNode/copyNode/ignoreProp");
-            fail("Property should not be copied to versionable child of versioned node");
         } catch (PathNotFoundException pnfe) {
-            // Expected
+            fail("Ignored property should be copied to versionable child of versioned node when in a COPY subgraph");
         }
     }
 
