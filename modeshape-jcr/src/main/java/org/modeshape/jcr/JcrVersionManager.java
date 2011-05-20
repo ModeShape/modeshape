@@ -69,20 +69,20 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
-import org.modeshape.graph.Graph.Batch;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.Results;
+import org.modeshape.graph.Graph.Batch;
 import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.DateTimeFactory;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NameFactory;
 import org.modeshape.graph.property.Path;
-import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.PropertyFactory;
 import org.modeshape.graph.property.Reference;
 import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.ValueFactory;
+import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.request.FunctionRequest;
 import org.modeshape.graph.request.Request;
 import org.modeshape.graph.session.GraphSession.Node;
@@ -1055,6 +1055,7 @@ final class JcrVersionManager implements VersionManager {
                 AbstractJcrNode targetChildNode;
 
                 boolean shouldRestore = !versionedChildrenThatShouldNotBeRestored.contains(targetChild);
+                boolean shouldRestoreMixinsAndUuid = false;
 
                 if (targetChild != null) {
                     // Reorder if necessary
@@ -1068,20 +1069,32 @@ final class JcrVersionManager implements VersionManager {
                     resolvedChild = inSourceOnly.get(sourceChild);
                     sourceChildNode = cache().findJcrNode(resolvedChild.getNodeId(), resolvedChild.getPath());
 
-                    Name primaryTypeName = name(resolvedChild.getProperty(JcrLexicon.FROZEN_PRIMARY_TYPE)
-                                                             .getProperty()
-                                                             .getFirstValue());
-                    PropertyInfo<JcrPropertyPayload> uuidProp = resolvedChild.getProperty(JcrLexicon.FROZEN_UUID);
-                    UUID desiredUuid = uuid(uuidProp.getProperty().getFirstValue());
+                    if (JcrNtLexicon.FROZEN_NODE.equals(resolvedChild.getProperty(JcrLexicon.PRIMARY_TYPE))) {
+                        Name primaryTypeName = name(resolvedChild.getProperty(JcrLexicon.FROZEN_PRIMARY_TYPE).getProperty().getFirstValue());
+                        PropertyInfo<JcrPropertyPayload> uuidProp = resolvedChild.getProperty(JcrLexicon.FROZEN_UUID);
+                        UUID desiredUuid = uuid(uuidProp.getProperty().getFirstValue());
 
-                    targetChildNode = targetEditor.createChild(sourceChild.getName(), desiredUuid, primaryTypeName);
+                        targetChildNode = targetEditor.createChild(sourceChild.getName(), desiredUuid, primaryTypeName);
+
+                        shouldRestoreMixinsAndUuid = true;
+
+                    } else {
+                        Name primaryTypeName = name(resolvedChild.getProperty(JcrLexicon.PRIMARY_TYPE).getProperty().getFirstValue());
+                        PropertyInfo<JcrPropertyPayload> uuidProp = resolvedChild.getProperty(JcrLexicon.UUID);
+                        UUID desiredUuid = uuidProp == null ? null : uuid(uuidProp.getProperty().getFirstValue());
+
+                        targetChildNode = targetEditor.createChild(sourceChild.getName(), desiredUuid, primaryTypeName);
+
+                    }
 
                     assert shouldRestore == true;
                 }
 
                 if (shouldRestore) {
                     // Have to do this first, as the properties below only exist for mix:versionable nodes
-                    restoreNodeMixins(sourceChildNode, targetChildNode);
+                    if (shouldRestoreMixinsAndUuid) {
+                        restoreNodeMixins(sourceChildNode, targetChildNode);
+                    }
 
                     if (sourceChildNode.getParent().isNodeType(JcrNtLexicon.VERSION)) {
                         clearCheckoutStatus(sourceChildNode, targetChildNode);
@@ -1225,6 +1238,11 @@ final class JcrVersionManager implements VersionManager {
             Name sourcePrimaryTypeName = name(sourceNode.getProperty(JcrLexicon.PRIMARY_TYPE).getProperty().getFirstValue());
 
             if (JcrNtLexicon.FROZEN_NODE.equals(sourcePrimaryTypeName)) return sourceNode;
+
+            if (!JcrNtLexicon.VERSIONED_CHILD.equals(sourcePrimaryTypeName)) {
+                return sourceNode;
+            }
+
             assert JcrNtLexicon.VERSIONED_CHILD.equals(sourcePrimaryTypeName);
 
             // Must be a versioned child - try to see if it's one of the versions we're restoring
@@ -1295,6 +1313,8 @@ final class JcrVersionManager implements VersionManager {
             throws ItemExistsException, RepositoryException {
 
             PropertyInfo<JcrPropertyPayload> uuidProp = sourceNode.getProperty(JcrLexicon.FROZEN_UUID);
+            if (uuidProp == null) return null;
+
             UUID sourceUuid = uuid(uuidProp.getProperty().getFirstValue());
 
             try {
