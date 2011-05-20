@@ -586,8 +586,15 @@ public class SystemFunctions {
             properties[2] = props.create(JcrLexicon.FROZEN_PRIMARY_TYPE, primaryType);
             properties[3] = props.create(JcrLexicon.FROZEN_MIXIN_TYPES, mixinTypes);
             if (versionPropertyList != null) {
-                for (int i = 0, p = 4; i != numVersionProps; ++i, ++p) {
-                    properties[p] = versionPropertyList.get(i);
+                for (int i = 0, p = 4; i != numVersionProps; ++i) {
+                    Property prop = versionPropertyList.get(i);
+                    // We want to skip the actual primary type, mixin types, and uuid since those are handled above ...
+                    Name name = prop.getName();
+                    if (JcrLexicon.PRIMARY_TYPE.equals(name)) continue;
+                    if (JcrLexicon.MIXIN_TYPES.equals(name)) continue;
+                    if (JcrLexicon.UUID.equals(name)) continue;
+                    // Otherwise, add in the property ...
+                    properties[p++] = versionPropertyList.get(i);
                 }
             }
             request = builder.createNode(versionNodeLocation, workspace, JcrLexicon.FROZEN_NODE, properties);
