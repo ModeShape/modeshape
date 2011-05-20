@@ -69,20 +69,20 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
-import org.modeshape.graph.Graph.Batch;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.Results;
+import org.modeshape.graph.Graph.Batch;
 import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.DateTimeFactory;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NameFactory;
 import org.modeshape.graph.property.Path;
-import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.PropertyFactory;
 import org.modeshape.graph.property.Reference;
 import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.ValueFactory;
+import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.request.FunctionRequest;
 import org.modeshape.graph.request.Request;
 import org.modeshape.graph.session.GraphSession.Node;
@@ -316,7 +316,7 @@ final class JcrVersionManager implements VersionManager {
         final Name primaryTypeName = node.getPrimaryTypeName();
         final List<Name> mixinTypeNames = node.getMixinTypeNames();
         final org.modeshape.graph.property.Property predecessorsProp = node.getProperty(JcrLexicon.PREDECESSORS).property();
-        final List<org.modeshape.graph.property.Property> versionedProperties = versionedPropertiesFor(node);
+        final List<org.modeshape.graph.property.Property> versionedProperties = versionedPropertiesFor(node, false);
         final Path historyPath = versionHistoryPathFor(jcrUuid);
         final DateTime now = context().getValueFactories().getDateFactory().create();
         final Name versionName = name(NODE_ENCODER.encode(now.getString()));
@@ -338,7 +338,7 @@ final class JcrVersionManager implements VersionManager {
 
         for (NodeIterator childNodes = node.getNodes(); childNodes.hasNext();) {
             AbstractJcrNode childNode = (AbstractJcrNode)childNodes.nextNode();
-            versionNodeAt(childNode, frozenVersionPath, systemBatch, childNode.getDefinition().getOnParentVersion());
+            versionNodeAt(childNode, frozenVersionPath, systemBatch, false);
         }
 
         // Execute the batch and get the results ...
@@ -386,23 +386,23 @@ final class JcrVersionManager implements VersionManager {
      * @param node the node for which the frozen version record should be created
      * @param verisonedParentPath the parent for the frozen version record for this node
      * @param batch the batch with which the frozen version should be created
-     * @param onParentVersionAction the {@link OnParentVersionAction} of the node whose {@link #checkin} resulted in this node
-     *        being versioned
+     * @param forceCopy true if the OPV should be ignored and a COPY is to be performed, or false if the OPV should be used
      * @throws RepositoryException if an error occurs accessing the repository
      */
     @SuppressWarnings( "fallthrough" )
     private void versionNodeAt( AbstractJcrNode node,
                                 Path verisonedParentPath,
                                 Graph.Batch batch,
-                                int onParentVersionAction ) throws RepositoryException {
+                                boolean forceCopy ) throws RepositoryException {
         Path childPath = path(verisonedParentPath, node.path().getLastSegment());
+        int onParentVersion = 0;
+        if (forceCopy) {
+            onParentVersion = OnParentVersionAction.COPY;
+        } else {
+            onParentVersion = node.getDefinition().getOnParentVersion();
+        }
 
-        Name primaryTypeName = node.getPrimaryTypeName();
-        List<Name> mixinTypeNames = node.getMixinTypeNames();
-        UUID uuid = UUID.randomUUID();
-        if (node.isReferenceable()) uuid = node.uuid();
-
-        switch (onParentVersionAction) {
+        switch (onParentVersion) {
             case OnParentVersionAction.ABORT:
                 throw new VersionException(JcrI18n.cannotCheckinNodeWithAbortChildNode.text(node.getName(), node.getParent()
                                                                                                                 .getName()));
@@ -424,14 +424,8 @@ final class JcrVersionManager implements VersionManager {
                 // results in COPY behavior "regardless of the OPV values of the sub-items".
                 // We can achieve this by making the onParentVersionAction always COPY for the
                 // recursive call ...
-                onParentVersionAction = OnParentVersionAction.COPY;
-                batch.create(childPath)
-                     .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FROZEN_NODE)
-                     .and(JcrLexicon.FROZEN_PRIMARY_TYPE, primaryTypeName)
-                     .and(JcrLexicon.FROZEN_MIXIN_TYPES, mixinTypeNames)
-                     .and(JcrLexicon.FROZEN_UUID, uuid)
-                     .and(versionedPropertiesFor(node))
-                     .and();
+                forceCopy = true;
+                batch.create(childPath).and(versionedPropertiesFor(node, forceCopy)).and();
                 break;
             case OnParentVersionAction.INITIALIZE:
             case OnParentVersionAction.COMPUTE:
@@ -439,22 +433,24 @@ final class JcrVersionManager implements VersionManager {
                 // Do nothing for these. No built-in types require initialize or compute for child nodes.
                 return;
             default:
-                throw new IllegalStateException("Unexpected value: " + onParentVersionAction);
+                throw new IllegalStateException("Unexpected value: " + onParentVersion);
         }
 
         for (NodeIterator childNodes = node.getNodes(); childNodes.hasNext();) {
             AbstractJcrNode childNode = (AbstractJcrNode)childNodes.nextNode();
-            versionNodeAt(childNode, childPath, batch, onParentVersionAction);
+            versionNodeAt(childNode, childPath, batch, forceCopy);
         }
 
     }
 
     /**
      * @param node the node for which the properties should be versioned
+     * @param forceCopy true if all of the properties should be copied, regardless of the property's OPV setting
      * @return the versioned properties for {@code node} (i.e., the properties to add the the frozen version of {@code node}
      * @throws RepositoryException if an error occurs accessing the repository
      */
-    private List<org.modeshape.graph.property.Property> versionedPropertiesFor( AbstractJcrNode node ) throws RepositoryException {
+    private List<org.modeshape.graph.property.Property> versionedPropertiesFor( AbstractJcrNode node,
+                                                                                boolean forceCopy ) throws RepositoryException {
 
         List<org.modeshape.graph.property.Property> props = new LinkedList<org.modeshape.graph.property.Property>();
 
@@ -466,21 +462,25 @@ final class JcrVersionManager implements VersionManager {
             AbstractJcrProperty property = (AbstractJcrProperty)iter.nextProperty();
 
             org.modeshape.graph.property.Property prop = property.property();
-            PropertyDefinitionId propDefnId = property.propertyInfo().getPayload().getPropertyDefinitionId();
-            JcrPropertyDefinition propDefn = cache().nodeTypes().getPropertyDefinition(propDefnId);
+            if (forceCopy) {
+                props.add(prop);
+            } else {
+                PropertyDefinitionId propDefnId = property.propertyInfo().getPayload().getPropertyDefinitionId();
+                JcrPropertyDefinition propDefn = cache().nodeTypes().getPropertyDefinition(propDefnId);
 
-            switch (propDefn.getOnParentVersion()) {
-                case OnParentVersionAction.ABORT:
-                    I18n msg = JcrI18n.cannotCheckinNodeWithAbortProperty;
-                    throw new VersionException(msg.text(property.getName(), node.getName()));
-                case OnParentVersionAction.COPY:
-                case OnParentVersionAction.VERSION:
-                    props.add(prop);
-                    break;
-                case OnParentVersionAction.INITIALIZE:
-                case OnParentVersionAction.COMPUTE:
-                case OnParentVersionAction.IGNORE:
-                    // Do nothing for these
+                switch (propDefn.getOnParentVersion()) {
+                    case OnParentVersionAction.ABORT:
+                        I18n msg = JcrI18n.cannotCheckinNodeWithAbortProperty;
+                        throw new VersionException(msg.text(property.getName(), node.getName()));
+                    case OnParentVersionAction.COPY:
+                    case OnParentVersionAction.VERSION:
+                        props.add(prop);
+                        break;
+                    case OnParentVersionAction.INITIALIZE:
+                    case OnParentVersionAction.COMPUTE:
+                    case OnParentVersionAction.IGNORE:
+                        // Do nothing for these
+                }
             }
         }
 
@@ -1055,6 +1055,7 @@ final class JcrVersionManager implements VersionManager {
                 AbstractJcrNode targetChildNode;
 
                 boolean shouldRestore = !versionedChildrenThatShouldNotBeRestored.contains(targetChild);
+                boolean shouldRestoreMixinsAndUuid = false;
 
                 if (targetChild != null) {
                     // Reorder if necessary
@@ -1068,20 +1069,32 @@ final class JcrVersionManager implements VersionManager {
                     resolvedChild = inSourceOnly.get(sourceChild);
                     sourceChildNode = cache().findJcrNode(resolvedChild.getNodeId(), resolvedChild.getPath());
 
-                    Name primaryTypeName = name(resolvedChild.getProperty(JcrLexicon.FROZEN_PRIMARY_TYPE)
-                                                             .getProperty()
-                                                             .getFirstValue());
-                    PropertyInfo<JcrPropertyPayload> uuidProp = resolvedChild.getProperty(JcrLexicon.FROZEN_UUID);
-                    UUID desiredUuid = uuid(uuidProp.getProperty().getFirstValue());
+                    if (JcrNtLexicon.FROZEN_NODE.equals(resolvedChild.getProperty(JcrLexicon.PRIMARY_TYPE))) {
+                        Name primaryTypeName = name(resolvedChild.getProperty(JcrLexicon.FROZEN_PRIMARY_TYPE).getProperty().getFirstValue());
+                        PropertyInfo<JcrPropertyPayload> uuidProp = resolvedChild.getProperty(JcrLexicon.FROZEN_UUID);
+                        UUID desiredUuid = uuid(uuidProp.getProperty().getFirstValue());
 
-                    targetChildNode = targetEditor.createChild(sourceChild.getName(), desiredUuid, primaryTypeName);
+                        targetChildNode = targetEditor.createChild(sourceChild.getName(), desiredUuid, primaryTypeName);
+
+                        shouldRestoreMixinsAndUuid = true;
+
+                    } else {
+                        Name primaryTypeName = name(resolvedChild.getProperty(JcrLexicon.PRIMARY_TYPE).getProperty().getFirstValue());
+                        PropertyInfo<JcrPropertyPayload> uuidProp = resolvedChild.getProperty(JcrLexicon.UUID);
+                        UUID desiredUuid = uuidProp == null ? null : uuid(uuidProp.getProperty().getFirstValue());
+
+                        targetChildNode = targetEditor.createChild(sourceChild.getName(), desiredUuid, primaryTypeName);
+
+                    }
 
                     assert shouldRestore == true;
                 }
 
                 if (shouldRestore) {
                     // Have to do this first, as the properties below only exist for mix:versionable nodes
-                    restoreNodeMixins(sourceChildNode, targetChildNode);
+                    if (shouldRestoreMixinsAndUuid) {
+                        restoreNodeMixins(sourceChildNode, targetChildNode);
+                    }
 
                     if (sourceChildNode.getParent().isNodeType(JcrNtLexicon.VERSION)) {
                         clearCheckoutStatus(sourceChildNode, targetChildNode);
@@ -1225,6 +1238,11 @@ final class JcrVersionManager implements VersionManager {
             Name sourcePrimaryTypeName = name(sourceNode.getProperty(JcrLexicon.PRIMARY_TYPE).getProperty().getFirstValue());
 
             if (JcrNtLexicon.FROZEN_NODE.equals(sourcePrimaryTypeName)) return sourceNode;
+
+            if (!JcrNtLexicon.VERSIONED_CHILD.equals(sourcePrimaryTypeName)) {
+                return sourceNode;
+            }
+
             assert JcrNtLexicon.VERSIONED_CHILD.equals(sourcePrimaryTypeName);
 
             // Must be a versioned child - try to see if it's one of the versions we're restoring
@@ -1295,6 +1313,8 @@ final class JcrVersionManager implements VersionManager {
             throws ItemExistsException, RepositoryException {
 
             PropertyInfo<JcrPropertyPayload> uuidProp = sourceNode.getProperty(JcrLexicon.FROZEN_UUID);
+            if (uuidProp == null) return null;
+
             UUID sourceUuid = uuid(uuidProp.getProperty().getFirstValue());
 
             try {
