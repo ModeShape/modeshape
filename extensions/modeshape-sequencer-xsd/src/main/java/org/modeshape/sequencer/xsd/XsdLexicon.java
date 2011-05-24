@@ -30,6 +30,7 @@ public class XsdLexicon {
     public static final Name SIMPLE_CONTENT = new BasicName(Namespace.URI, "simpleContent");
     public static final Name COMPLEX_CONTENT = new BasicName(Namespace.URI, "complexContent");
     public static final Name COMPLEX_TYPE_CONTENT = new BasicName(Namespace.URI, "complexTypeContent");
+    public static final Name ANNOTATION = new BasicName(Namespace.URI, "annotation");
 
     public static final Name IMPORTED_XSDS = new BasicName(Namespace.URI, "importedXsds");
     public static final Name INCLUDED_XSDS = new BasicName(Namespace.URI, "includedXsds");
@@ -70,5 +71,11 @@ public class XsdLexicon {
     public static final Name USE = new BasicName(Namespace.URI, "use");
     public static final Name PROCESS_CONTENTS = new BasicName(Namespace.URI, "processContents");
     public static final Name FORM = new BasicName(Namespace.URI, "form");
+
+    public static final Name ID = new BasicName(Namespace.URI, "id");
+
+    // Used as names for anonymous types ...
+    public static final Name COMPLEX_TYPE = new BasicName(Namespace.URI, "complexType");
+    public static final Name SIMPLE_TYPE = new BasicName(Namespace.URI, "simpleType");
 
 }

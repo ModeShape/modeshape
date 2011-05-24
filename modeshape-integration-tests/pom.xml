@@ -228,6 +228,12 @@
         </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-sequencer-wsdl</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-zip</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>

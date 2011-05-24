@@ -688,6 +688,21 @@ try {
 </dependency>
 <dependency>
   <groupId>org.modeshape</groupId>
+  <artifactId>modeshape-sequencer-xsd</artifactId>
+  <version>2.4.0.Final</version>
+</dependency>
+<dependency>
+  <groupId>org.modeshape</groupId>
+  <artifactId>modeshape-sequencer-wsdl</artifactId>
+  <version>2.4.0.Final</version>
+</dependency>
+<dependency>
+  <groupId>org.modeshape</groupId>
+  <artifactId>modeshape-sequencer-sramp</artifactId>
+  <version>2.4.0.Final</version>
+</dependency>
+<dependency>
+  <groupId>org.modeshape</groupId>
   <artifactId>modeshape-sequencer-teiid</artifactId>
   <version>2.4.0.Final</version>
 </dependency>

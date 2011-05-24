@@ -80,6 +80,13 @@ public class XsdSequencerTest {
     }
 
     @Test
+    public void shouldBeAbleToParseXsdForStockQuote() {
+        sequence("stockQuote.xsd");
+        print = true;
+        printOutput();
+    }
+
+    @Test
     public void shouldBeAbleToParseXsdForUddiV3() {
         sequence("uddi_v3.xsd");
         // print = true;

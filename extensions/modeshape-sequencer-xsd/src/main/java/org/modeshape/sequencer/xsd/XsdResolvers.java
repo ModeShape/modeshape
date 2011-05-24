@@ -25,6 +25,7 @@ package org.modeshape.sequencer.xsd;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * 
@@ -37,13 +38,55 @@ public class XsdResolvers {
      * target namespace the simple type definitions and complex type definitions share a single symbol space. See the <a
      * href="http://www.w3.org/TR/xmlschema-1/#concepts-nameSymbolSpaces">specification</a> for details.
      */
-    public static enum SymbolSpace {
-        ATTRIBUTE_DECLARATIONS,
-        ELEMENT_DECLARATION,
-        TYPE_DEFINITIONS,
-        ATTRIBUTE_GROUP_DEFINITIONS,
-        MODEL_GROUP_DEFINITIONS,
-        IDENTITY_CONSTRAINT_DEFINITIONS,
+    @Immutable
+    public static final class SymbolSpace {
+        public static final SymbolSpace ATTRIBUTE_DECLARATIONS = new SymbolSpace("AttributeDeclarations");
+        public static final SymbolSpace ELEMENT_DECLARATION = new SymbolSpace("ElementDeclarations");
+        public static final SymbolSpace TYPE_DEFINITIONS = new SymbolSpace("TypeDeclarations");
+        public static final SymbolSpace ATTRIBUTE_GROUP_DEFINITIONS = new SymbolSpace("AttributeGroupDeclarations");
+        public static final SymbolSpace MODEL_GROUP_DEFINITIONS = new SymbolSpace("ModelGroupDeclarations");
+        public static final SymbolSpace IDENTITY_CONSTRAINT_DEFINITIONS = new SymbolSpace("IdentityConstraintDeclarations");
+
+        private final String space;
+
+        public SymbolSpace( String space ) {
+            this.space = space;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#hashCode()
+         */
+        @Override
+        public int hashCode() {
+            return space.hashCode();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#equals(java.lang.Object)
+         */
+        @Override
+        public boolean equals( Object obj ) {
+            if (obj == this) return true;
+            if (obj instanceof SymbolSpace) {
+                SymbolSpace that = (SymbolSpace)obj;
+                return this.space.equals(that.space);
+            }
+            return false;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#toString()
+         */
+        @Override
+        public String toString() {
+            return space;
+        }
     }
 
     private final Map<SymbolSpace, NamespaceEntityResolver> resolversByKind = new HashMap<XsdResolvers.SymbolSpace, NamespaceEntityResolver>();

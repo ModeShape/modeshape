@@ -42,6 +42,7 @@
 		<module>extensions/modeshape-sequencer-text</module>
 		<module>extensions/modeshape-sequencer-xml</module>
 		<module>extensions/modeshape-sequencer-xsd</module>
+		<module>extensions/modeshape-sequencer-wsdl</module>
 		<module>extensions/modeshape-sequencer-zip</module>
 		<module>extensions/modeshape-sequencer-ddl</module>
 		<module>extensions/modeshape-connector-filesystem</module>

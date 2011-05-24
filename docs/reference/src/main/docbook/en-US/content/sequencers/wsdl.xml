@@ -1,0 +1,633 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ ModeShape (http://www.modeshape.org)
+  ~
+  ~ See the COPYRIGHT.txt file distributed with this work for information
+  ~ regarding copyright ownership.  Some portions may be licensed
+  ~ to Red Hat, Inc. under one or more contributor license agreements.
+  ~ See the AUTHORS.txt file in the distribution for a full listing of 
+  ~ individual contributors.
+  ~
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+  ~ is licensed to you under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ ModeShape is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+  ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
+  ~ for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public License
+  ~ along with this distribution; if not, write to:
+  ~ Free Software Foundation, Inc.
+  ~ 51 Franklin Street, Fifth Floor
+  ~ Boston, MA  02110-1301  USA
+  -->
+<!DOCTYPE preface PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"	[
+<!ENTITY % CustomDTD SYSTEM "../../custom.dtd">
+%CustomDTD;
+]>
+<chapter id="wsdl-sequencer">
+  <title>Web Service Definition Language (WSDL) 1.1 Sequencer</title>
+    <para>
+      The XSD sequencer included in ModeShape can parse WSDL files that adhere to the 
+      <ulink url="http://www.w3.org/TR/wsdl">W3C's Web Service Definition Language (WSDL) 1.1</ulink> specification, 
+      and output a representation of the WSDL file's messages, port types, bindings, services, types (including embedded XML Schemas),
+      documentation, and extension elements (including HTTP, SOAP and MIME bindings). 
+      This derived information is intended to mirror the structure and semantics
+      of the actual WSDL files while also making it possible for ModeShape users to easily navigate, query and search over this derived information.
+      This sequencer captures the namespace and names of all referenced components, and will resolve references to components appearing within 
+      the same file.
+    </para>
+    <para>
+      The design of this sequencer and it's output structure have been influenced by the SOA Repository Artifact Model and Protocol (S-RAMP)
+      draft specification, which is currently under development as an OASIS Technology Committee. S-RAMP defines a model for a variety
+      of file types, including WSDL and XSD. This sequencer's output was designed to mirror that model, and thus some of the properties
+      and node types used are defined within the "sramp" namespace. However, the structure derived by the ModeShape WSDL sequencer is
+      a superset of that defined by S-RAMP.
+    </para>
+    <para>
+      The WSDL specification allows for a fair amount of variation in WSDL files, and consequently this variation is reflected in the
+      derived output structure.
+    </para>
+    <para>
+      So let's look at an example WSDL file from the 
+      <ulink url="http://www.w3.org/TR/wsdl#_wsdl">WSDL 1.1 specification</ulink>:
+	  </para>
+	  <programlisting language="XML" role="XML"><![CDATA[
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<?xml version="1.0"?>
+<definitions name="StockQuote" 
+             targetNamespace="http://example.com/stockquote.wsdl"
+             xmlns:tns="http://example.com/stockquote.wsdl"
+             xmlns:xsd1="http://example.com/stockquote.xsd"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             xmlns="http://schemas.xmlsoap.org/wsdl/">
+
+    <types>
+       <schema targetNamespace="http://example.com/stockquote.xsd"
+              xmlns="http://www.w3.org/2001/XMLSchema">
+           <element name="TradePriceRequest">
+              <complexType>
+                  <all>
+                      <element name="tickerSymbol" type="string"/>
+                  </all>
+              </complexType>
+           </element>
+           <element name="TradePrice">
+              <complexType>
+                  <all>
+                      <element name="price" type="float"/>
+                  </all>
+              </complexType>
+           </element>
+       </schema>
+    </types>
+
+    <message name="GetLastTradePriceInput">
+        <part name="body" element="xsd1:TradePriceRequest"/>
+    </message>
+
+    <message name="GetLastTradePriceOutput">
+        <part name="body" element="xsd1:TradePrice"/>
+    </message>
+
+    <portType name="StockQuotePortType">
+        <operation name="GetLastTradePrice">
+           <input message="tns:GetLastTradePriceInput"/>
+           <output message="tns:GetLastTradePriceOutput"/>
+        </operation>
+    </portType>
+
+    <binding name="StockQuoteSoapBinding" type="tns:StockQuotePortType">
+        <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <operation name="GetLastTradePrice">
+           <soap:operation soapAction="http://example.com/GetLastTradePrice"/>
+           <input>
+               <soap:body use="literal"/>
+           </input>
+           <output>
+               <soap:body use="literal"/>
+           </output>
+        </operation>
+    </binding>
+
+    <service name="StockQuoteService">
+        <documentation>My first service</documentation>
+        <port name="StockQuotePort" binding="tns:StockQuoteBinding">
+           <soap:address location="http://example.com/stockquote"/>
+        </port>
+    </service>
+
+</definitions>]]></programlisting>
+    <para>
+      This WSDL definition includes an embedded XML Schema that defines the structure of two XML elements used in the web service messages,
+      and it defines a 'StockQuotePortType' port type with input and output messages, a SOAP binding, and a SOAP service.
+      The WSDL sequencer will derive from this file the following content:
+    </para>
+	    <programlisting language="XML" role="XML"><![CDATA[
+ stockQuote.wsdl jcr:primaryType=wsdl:wsdlDocument jcr:mixinTypes=[mode:derived] jcr:uuid=d69d9fac-c5b5-42fc-ae70-0947d5986744
+   - mode:derivedAt=2011-05-24T20:22:23.404Z
+   - mode:derivedFrom=/files/stockQuote.wsdl
+   - sramp:contentSize=2210
+   - sramp:contentType="application/wsdl"
+   wsdl:schema jcr:primaryType=xs:schemaDocument jcr:uuid=8e0b8a17-11d2-4611-bc83-ef067526329c
+     - sramp:contentSize=623
+     - sramp:contentType="application/xsd"
+     - targetNamespace="http://example.com/stockquote.xsd"
+     - xmlns:xmlns="http://www.w3.org/2001/XMLSchema"
+     TradePriceRequest jcr:primaryType=xs:elementDeclaration jcr:uuid=8407370d-9c6a-43ad-84ee-53f480524432
+       - xs:abstract=false
+       - xs:form="qualified"
+       - xs:namespace=http://example.com/stockquote.xsd
+       - xs:ncName="TradePriceRequest"
+       - xs:nillable=false
+       - xs:typeNamespace=http://example.com/stockquote.xsd
+       xs:complexType jcr:primaryType=xs:complexTypeDefinition jcr:uuid=5afc2fe3-e6c3-4cc2-8667-e5a9faf8963d
+         - xs:abstract=false
+         - xs:baseTypeName="anyType"
+         - xs:baseTypeNamespace="http://www.w3.org/2001/XMLSchema"
+         - xs:method="restriction"
+         - xs:mixed=false
+         - xs:namespace=http://example.com/stockquote.xsd
+         xs:all jcr:primaryType=xs:all jcr:uuid=e491f657-c20a-43e7-99b7-e5f76778c11e
+           - xs:maxOccurs=1
+           - xs:minOccurs=1
+           tickerSymbol jcr:primaryType=xs:elementDeclaration jcr:uuid=22c26a7f-e9fa-4c44-a346-7df3cf436c7a
+             - id="string"
+             - name="string"
+             - xs:abstract=false
+             - xs:form="qualified"
+             - xs:maxOccurs=1
+             - xs:minOccurs=1
+             - xs:ncName="tickerSymbol"
+             - xs:nillable=false
+             - xs:typeName="string"
+             - xs:typeNamespace=http://www.w3.org/2001/XMLSchema
+     TradePrice jcr:primaryType=xs:elementDeclaration jcr:uuid=5667cfcc-d87e-4ef3-811c-4e64dc27f263
+       - xs:abstract=false
+       - xs:form="qualified"
+       - xs:namespace=http://example.com/stockquote.xsd
+       - xs:ncName="TradePrice"
+       - xs:nillable=false
+       - xs:typeNamespace=http://example.com/stockquote.xsd
+       xs:complexType jcr:primaryType=xs:complexTypeDefinition jcr:uuid=b2eb5936-4a12-4d2f-854c-ca4b251c6a74
+         - xs:abstract=false
+         - xs:baseTypeName="anyType"
+         - xs:baseTypeNamespace="http://www.w3.org/2001/XMLSchema"
+         - xs:method="restriction"
+         - xs:mixed=false
+         - xs:namespace=http://example.com/stockquote.xsd
+         xs:all jcr:primaryType=xs:all jcr:uuid=57d8f62f-71b1-44c7-8807-a1faac3582a4
+           - xs:maxOccurs=1
+           - xs:minOccurs=1
+           price jcr:primaryType=xs:elementDeclaration jcr:uuid=049a905c-1c1d-4122-aa2f-7d2fe7d45bef
+             - id="float"
+             - name="float"
+             - xs:abstract=false
+             - xs:form="qualified"
+             - xs:maxOccurs=1
+             - xs:minOccurs=1
+             - xs:ncName="price"
+             - xs:nillable=false
+             - xs:typeName="float"
+             - xs:typeNamespace=http://www.w3.org/2001/XMLSchema
+   wsdl:messages jcr:primaryType=wsdl:messages jcr:uuid=3ae584b3-2807-4022-b1fb-c7d39d0cfc48
+     GetLastTradePriceInput jcr:primaryType=wsdl:message jcr:uuid=6eac84de-e7e3-4e12-ac5e-d5a8dfe11c7f
+       - wsdl:namespace=http://example.com/stockquote.wsdl
+       - wsdl:ncName="GetLastTradePriceInput"
+       body jcr:primaryType=wsdl:part jcr:uuid=28d5bc74-f21c-49c2-9850-a9992cbbf88e
+         - wsdl:elementName="TradePriceRequest"
+         - wsdl:elementNamespace=http://example.com/stockquote.xsd
+         - wsdl:ncName="body"
+     GetLastTradePriceOutput jcr:primaryType=wsdl:message jcr:uuid=1be232c8-898b-49ce-90c7-8e31b20f991f
+       - wsdl:namespace=http://example.com/stockquote.wsdl
+       - wsdl:ncName="GetLastTradePriceOutput"
+       body jcr:primaryType=wsdl:part jcr:uuid=06feaf78-f1ce-4f6c-a8e3-65eda3d600da
+         - wsdl:elementName="TradePrice"
+         - wsdl:elementNamespace=http://example.com/stockquote.xsd
+         - wsdl:ncName="body"
+   wsdl:portTypes jcr:primaryType=wsdl:portTypes jcr:uuid=44afcb97-9b19-4dd0-98ca-191ca14495b2
+     StockQuotePortType jcr:primaryType=wsdl:portType jcr:uuid=3e81f0fd-7759-445a-b540-1253605ce0fd
+       - wsdl:namespace=http://example.com/stockquote.wsdl
+       - wsdl:ncName="StockQuotePortType"
+       GetLastTradePrice jcr:primaryType=wsdl:operation jcr:uuid=bd5d2f23-5454-4de2-9962-93c30b1be6d9
+         - wsdl:ncName="GetLastTradePrice"
+         wsdl:input jcr:primaryType=wsdl:operationInput jcr:uuid=fba4398b-84c8-4ebe-8eb8-f83ce867329b
+           - wsdl:message=6eac84de-e7e3-4e12-ac5e-d5a8dfe11c7f
+           - wsdl:messageName="GetLastTradePriceInput"
+           - wsdl:messageNamespace="http://example.com/stockquote.wsdl"
+           - wsdl:ncName="GetLastTradePriceRequest"
+         wsdl:output jcr:primaryType=wsdl:operationOutput jcr:uuid=aa7a2ef8-883e-4598-a822-15283c0b63d4
+           - wsdl:message=1be232c8-898b-49ce-90c7-8e31b20f991f
+           - wsdl:messageName="GetLastTradePriceOutput"
+           - wsdl:messageNamespace="http://example.com/stockquote.wsdl"
+           - wsdl:ncName="GetLastTradePriceResponse"
+   wsdl:bindings jcr:primaryType=wsdl:bindings jcr:uuid=f736166e-cf40-45ec-b4a4-23243e241205
+     StockQuoteBinding jcr:primaryType=wsdl:binding jcr:uuid=b224c1f5-d223-483b-ab43-479ceef3e015
+       - wsdl:namespace=http://example.com/stockquote.wsdl
+       - wsdl:ncName="StockQuoteBinding"
+     StockQuoteSoapBinding jcr:primaryType=wsdl:binding jcr:uuid=cd65da16-bc97-479c-bb27-c9766ee5c946
+       - wsdl:namespace=http://example.com/stockquote.wsdl
+       - wsdl:ncName="StockQuoteSoapBinding"
+       - wsdl:type=3e81f0fd-7759-445a-b540-1253605ce0fd
+       - wsdl:typeName="StockQuotePortType"
+       - wsdl:typeNamespace="http://example.com/stockquote.wsdl"
+       GetLastTradePrice jcr:primaryType=wsdl:bindingOperation jcr:uuid=949919a7-23c4-4994-853a-5a14b1fd04ed
+         - wsdl:ncName="GetLastTradePrice"
+         wsdl:input jcr:primaryType=wsdl:bindingOperationInput jcr:uuid=76069b3a-c73e-4c23-be3d-b0ee6f874e7a
+           - wsdl:input="fba4398b-84c8-4ebe-8eb8-f83ce867329b"
+           - wsdl:inputName="GetLastTradePriceRequest"
+           - wsdl:ncName="GetLastTradePriceRequest"
+           wsdl:soapBody jcr:primaryType=wsdl:soapBody jcr:uuid=22bd5f19-5450-4720-ab23-e4d97c8adee5
+             - wsdl:use="literal"
+         wsdl:output jcr:primaryType=wsdl:bindingOperationOutput jcr:uuid=03b70411-d992-41db-ade1-de70ddd7822a
+           - wsdl:ncName="GetLastTradePriceResponse"
+           - wsdl:output="aa7a2ef8-883e-4598-a822-15283c0b63d4"
+           - wsdl:outputName="GetLastTradePriceResponse"
+           wsdl:soapBody jcr:primaryType=wsdl:soapBody jcr:uuid=5d9d8127-8617-4947-b142-6d31e0b84c03
+             - wsdl:use="literal"
+         wsdl:soapOperation jcr:primaryType=wsdl:soapOperation jcr:uuid=52ce3adf-b018-4148-a679-64822b870908
+           - wsdl:soapAction=http://example.com/GetLastTradePrice
+       wsdl:soapBinding jcr:primaryType=wsdl:soapBinding jcr:uuid=659102a6-206e-4ebc-8d51-9b21e5dcc431
+         - wsdl:style="document"
+         - wsdl:transport=http://schemas.xmlsoap.org/soap/http
+   wsdl:services jcr:primaryType=wsdl:services jcr:uuid=3dbd2a54-9d2d-4223-98a2-8362369e8f0d
+     StockQuoteService jcr:primaryType=wsdl:service jcr:uuid=72420bcb-dd3f-4a5e-ba13-811af5a98bd5
+       - sramp:description="My first service"
+       - wsdl:namespace=http://example.com/stockquote.wsdl
+       - wsdl:ncName="StockQuoteService"
+       StockQuotePort jcr:primaryType=wsdl:port jcr:uuid=24779c9f-ebe6-4030-b9cd-3f0e623b94fa
+         - wsdl:binding=b224c1f5-d223-483b-ab43-479ceef3e015
+         - wsdl:ncName="StockQuotePort"
+         wsdl:soapAddress jcr:primaryType=wsdl:soapAddress jcr:uuid=d015a2ee-fbae-4b28-bda8-16a8295d8e02
+           - wsdl:soapLocation=http://example.com/stockquote
+]]></programlisting>
+    <para>
+      The first thing to note is that the sequencer produces a node of type <code>wsdl:wsdlDocument</code> that includes
+      the <code>mode:derived</code> information (e.g., the time of sequencing and the path to the file from which this information
+      was derived), and information about the WSDL file itself. If the WSDL file contained <code>documentation</code> elements directly under
+      the root element, the content of those elements would have been placed inside an <code>sramp:description</code> property.
+    </para>
+    <para>
+      Secondly, the WSDL file contains an embedded XML Schema document, and this XSD was sequenced also. See the
+      <link id="xsd-sequencer">XML Schema sequencer</link> documentation for the structure of the XML Schema documents.
+      Any references to the XSD components in the embedded schema(s) will be captured as REFERENCE properties
+      as well as properties containing the local name and namespace of the components.
+    </para>
+    <para>
+      Thirdly, there are several "container" nodes underneath the top-level <code>wsdl:wsdlDocument</code> node, and
+      are named <code>wsdl:messages</code>, <code>wsdl:portTypes</code>, <code>wsdl:bindings</code>, and <code>wsdl:services</code>.
+      These container nodes serve to separate out the various kinds of definitions, since per the WSDL 1.1 specification the
+      name scope of each kind of component is distinct from the other kinds.
+    </para>
+    <para>
+      Within the <code>wsdl:messages</code> container node are all of the messages. In this case, there are two: the 
+      "<code>GetLastTradePriceInput</code>" input message and "<code>GetLastTradePriceOutput</code>" output message for the
+      "<code>GetLastTracePrice</code>" operation defined a bit later in the structure. Note how these messages contain
+      the name, namespace URI, and REFERENCE to the corresponding <code>element</code> node in the embedded schema content.
+      (If the element reference could not be resolved, REFERENCE property would not be set.)
+    </para>
+    <para>
+      Within the <code>wsdl:portTypes</code> container node are all of the port types. In this example, there is just one:
+      the "<code>StockQuotePortType</code>" that contains a single "<code>GetLastTradePrice</code>" operation. Here, the
+      operation's input and output reference the corresponding message nodes vi the name, namespace URI, and REFERENCE property.
+      Again, the REFERENCE property would not be set if the input and/or output use a message that is not in this WSDL file.
+    </para>
+    <para>
+      Within the <code>wsdl:bindings</code> container node are all of the bindings defined in the WSDL. In this example, there
+      is just a single binding that uses SOAP extensions, which describe all of the SOAP-specific information for the port type.
+      The sequencer also supports HTTP and MIME extensions. And node how the input, output and faults of each binding operation reference
+      (using the name, namespace URI, and REFERENCE properties) the corresponding input, output and fault (respectively)
+      in the correct port type.
+    </para>
+    <para>
+      Finally, within the <code>wsdl:services</code> container node are all of the services defined in the WSDL. In this example,
+      there is just a single SOAP service that references the "<code>StockQuotePortType</code>" port type.
+    </para>
+    <para>
+      This example shows the basic structure this sequencer derives from WSDL 1.1 files. Not only does this structure mirror
+      that of the actual WSDL file, but it makes this structure easy to navigate, search and query, especially when it includes
+      the names and namespace URIs of the referenced components (and setting REFERENCE properties to the referenced component where possible).
+    </para>
+  <sect1 id="wsdl-sequencer-nodetypes">
+    <title>Node Types</title>
+		<para>
+			The WSDL 1.1 sequencer follows JCR best-practices by defining all nodes to have a primary type that allows any single or multi-valued
+			property, meaning it's possible and valid for any node to have any property (with single or multiple values). This sequencer
+			doesn't add any such properties or nodes, but you are free to annotate the structure as needed.
+		</para>
+	  <sect2 id="wsdl-sequencer-namespace">
+	    <title>WSDL 1.1 Definition Namespace</title>
+			<para>
+				The compact node definitions for the "wsdl" namespace are as follows:
+			</para>
+<programlisting><![CDATA[
+<jcr='http://www.jcp.org/jcr/1.0'>
+<nt='http://www.jcp.org/jcr/nt/1.0'>
+<mix='http://www.jcp.org/jcr/mix/1.0'>
+<sramp = "http://s-ramp.org/xmlns/2010/s-ramp">
+<xs = "http://www.w3.org/2001/XMLSchema">
+<wsdl = "http://schemas.xmlsoap.org/wsdl/">
+
+//------------------------------------------------------------------------------
+// N O D E T Y P E S
+//------------------------------------------------------------------------------
+
+[wsdl:wsdlExtension] > sramp:derivedArtifactType
+- wsdl:ncName (string)
+- wsdl:namespace (uri) mandatory
+
+[wsdl:wsdlDerivedArtifactType] > sramp:derivedArtifactType abstract
+- wsdl:namespace (uri) mandatory
++ * (wsdl:wsdlExtension)
+
+[wsdl:namedWsdlDerivedArtifactType] > wsdl:wsdlDerivedArtifactType
+- wsdl:ncName (string) mandatory
+
+/*
+ * Messages and parts
+ */
+[wsdl:part] > wsdl:namedWsdlDerivedArtifactType
+- wsdl:element (reference) < 'xs:elementDeclaration'
+- wsdl:elementName (string)
+- wsdl:elementNamespace (uri)
+- wsdl:type (reference) < 'xs:simpleTypeDefinition'
+- wsdl:typeName (string)
+- wsdl:typeNamespace (uri)
+
+[wsdl:message] > wsdl:namedWsdlDerivedArtifactType
++ * (wsdl:part) = wsdl:part multiple
+
+/*
+ * Port types, operations, inputs, outputs, and faults
+ */
+[wsdl:operationInput] > wsdl:namedWsdlDerivedArtifactType
+- wsdl:message (reference) mandatory < 'wsdl:message'
+
+[wsdl:operationOutput] > wsdl:namedWsdlDerivedArtifactType
+- wsdl:message (reference) mandatory < 'wsdl:message'
+
+[wsdl:fault] > wsdl:namedWsdlDerivedArtifactType
+- wsdl:message (reference) mandatory < 'wsdl:message'
+
+[wsdl:operation] > wsdl:namedWsdlDerivedArtifactType
+- wsdl:parameterOrder (string) multiple
++ wsdl:input (wsdl:operationInput) = wsdl:operationInput
++ wsdl:output (wsdl:operationOutput) = wsdl:operationOutput
++ wsdl:fault (wsdl:fault) = wsdl:fault sns
+
+[wsdl:portType] > wsdl:namedWsdlDerivedArtifactType
++ * (wsdl:operation) sns
+
+/*
+ * Bindings, binding operations, inputs, outputs
+ */
+[wsdl:bindingOperationOutput] > wsdl:namedWsdlDerivedArtifactType
+- wsdl:input (reference) < 'wsdl:operationInput'
+- wsdl:inputName (string)
+
+[wsdl:bindingOperationInput] > wsdl:namedWsdlDerivedArtifactType
+- wsdl:output (reference) < 'wsdl:operationOutput'
+- wsdl:outputName (string)
+
+[wsdl:bindingOperationFault] > wsdl:namedWsdlDerivedArtifactType
+
+[wsdl:bindingOperation] > wsdl:namedWsdlDerivedArtifactType
++ wsdl:input (wsdl:bindingOperationInput) = wsdl:bindingOperationInput
++ wsdl:output (wsdl:bindingOperationOutput) = wsdl:bindingOperationOutput
++ wsdl:fault (wsdl:bindingOperationFault) = wsdl:bindingOperationFault sns
+
+[wsdl:binding] > wsdl:namedWsdlDerivedArtifactType
+- wsdl:type (reference) < 'wsdl:portType'
++ * (wsdl:bindingOperation) sns
+
+/*
+ * Ports and services
+ */
+[wsdl:port] > wsdl:namedWsdlDerivedArtifactType
+- wsdl:binding (reference) < 'wsdl:binding'
+- wsdl:bindingName (string)
+- wsdl:bindingNamespace (uri)
+
+[wsdl:service] > wsdl:namedWsdlDerivedArtifactType
++ * (wsdl:port) sns
+
+/*
+ * Types, schemas, and schema references
+ */
+[wsdl:referencedXsd] > sramp:derivedArtifactType abstract
+- xs:id (string)
+- xs:schemaLocation (string)
+- * (undefined) multiple 
+- * (undefined) 
+
+[wsdl:importedXsd] > wsdl:referencedXsd
+- xs:namespace (uri) mandatory
+
+[wsdl:includedXsd] > wsdl:referencedXsd
+
+[wsdl:redefinedXsd] > wsdl:referencedXsd
+
+/*
+ * The containers for the different kinds of components within WSDL documents.
+ * Strictly speaking, the containers should not allow SNS, but these components'
+ * names in WSDL are QNames, and we're only using the local part for the node name.
+ * Therefore, two components might have the same local part but different namespaces.
+ * (This is probably not a common occurance.)
+ */
+[wsdl:container] > sramp:derivedArtifactType abstract
+- * (string)
+- * (string) multiple
+
+[wsdl:messages] > wsdl:container
++ * (wsdl:message) = wsdl:message sns
+
+[wsdl:portTypes] > wsdl:container
++ * (wsdl:portType) = wsdl:portType sns
+
+[wsdl:bindings] > wsdl:container
++ * (wsdl:binding) = wsdl:binding sns
+
+[wsdl:services] > wsdl:container
++ * (wsdl:service) = wsdl:service sns
+
+/*
+ * WSDL documents
+ */
+[wsdl:wsdlDocument] > sramp:xmlDocument
+- wsdl:importedXsds (weakreference) multiple < 'xs:schemaDocument'
+- wsdl:includedXsds (weakreference) multiple < 'xs:schemaDocument'
+- wsdl:redefinedXsds (weakreference) multiple < 'xs:schemaDocument'
+- wsdl:importedWsdls (weakreference) multiple < 'wsdl:wsdlDocument'
++ wsdl:schema (xs:schemaDocument) = xs:schemaDocument sns
++ wsdl:importedXsd (wsdl:importedXsd) sns
++ wsdl:includedXsd (wsdl:includedXsd) sns
++ wsdl:redefinedXsd (wsdl:redefinedXsd) sns
++ wsdl:messages (wsdl:messages) = wsdl:messages
++ wsdl:portTypes (wsdl:portTypes) = wsdl:portTypes
++ wsdl:bindings (wsdl:bindings) = wsdl:bindings
++ wsdl:services (wsdl:services) = wsdl:services
+
+// -------------------------------------------------------
+// HTTPWSDL Model
+// -------------------------------------------------------
+
+[wsdl:httpExtension] > wsdl:wsdlExtension
+
+[wsdl:httpAddress] > wsdl:httpExtension
+- wsdl:location (uri) mandatory
+
+[wsdl:httpBinding] > wsdl:httpExtension
+- wsdl:verb (string) mandatory
+
+[wsdl:httpOperation] > wsdl:httpExtension
+- wsdl:location (uri) mandatory
+
+[wsdl:httpUrlEncoded] > wsdl:httpExtension
+
+[wsdl:httpUrlReplacement] > wsdl:httpExtension
+
+// -------------------------------------------------------
+// SOAPWSDL Model
+// -------------------------------------------------------
+
+[wsdl:soapExtension] > wsdl:wsdlExtension
+
+[wsdl:soapAddress] > wsdl:soapExtension
+- wsdl:soapLocation (uri) mandatory
+
+[wsdl:soapBinding] > wsdl:soapExtension
+- wsdl:style (string)
+- wsdl:transport (uri)
+
+[wsdl:soapOperation] > wsdl:soapExtension
+- wsdl:style (string)
+- wsdl:soapAction (uri)
+
+[wsdl:soapBody] > wsdl:soapExtension
+- wsdl:encodingStyle (uri) multiple
+- wsdl:parts (string)
+- wsdl:use (string) < 'literal','encoded'
+
+[wsdl:soapFault] > wsdl:soapExtension
+- wsdl:encodingStyle (uri) multiple
+- wsdl:use (string) < 'literal','encoded'
+
+[wsdl:soapHeader] > wsdl:soapExtension
+- wsdl:message (string)
+- wsdl:part (string)
+- wsdl:encodingStyle (uri) multiple
+- wsdl:use (string) < 'literal','encoded'
++ * (wsdl:soapHeaderFault) = wsdl:soapHeaderFault
+
+[wsdl:soapHeaderFault] > wsdl:soapExtension
+- wsdl:encodingStyle (uri) multiple
+- wsdl:use (string) < 'literal','encoded'
+
+// -------------------------------------------------------
+// SOAPMIME Model
+// -------------------------------------------------------
+
+[wsdl:mimeExtension] > wsdl:wsdlExtension
+
+[wsdl:mimeMultipartRelated] > wsdl:mimeExtension
++ wsdl:mimePart (wsdl:mimePart) sns
+
+[wsdl:mimePart] > wsdl:mimeExtension
++ * (wsdl:mimeExtension) sns
+
+[wsdl:mimeContent] > wsdl:mimeExtension
+- wsdl:mimeType (string)
+- wsdl:mimePart (string)
+
+[wsdl:mimeXml] > wsdl:mimeExtension
+- wsdl:mimePart (string)
+]]></programlisting>
+      <para>
+        These types use some of the node types and mixins defined in the "sramp" namespace:
+      </para>
+<programlisting><![CDATA[
+<jcr='http://www.jcp.org/jcr/1.0'>
+<nt='http://www.jcp.org/jcr/nt/1.0'>
+<mix='http://www.jcp.org/jcr/mix/1.0'>
+<sramp = "http://s-ramp.org/xmlns/2010/s-ramp">
+
+//------------------------------------------------------------------------------
+// N O D E T Y P E S
+//------------------------------------------------------------------------------
+
+// -------------------------------------------------------
+// S-RAMP Core Model Artifacts
+// -------------------------------------------------------
+
+[sramp:baseArtifactType] > mix:created, mix:lastModified, mix:referenceable, mix:versionable abstract mixin
+- sramp:classifiedBy (reference) multiple < 'owl:class'
+- sramp:description (string)
+- * (string)
+- * (string) multiple
+
+[sramp:documentArtifactType] > sramp:baseArtifactType abstract mixin
+- sramp:contentType (string)
+- sramp:contentSize (long)
+
+[sramp:xmlDocument] > sramp:documentArtifactType mixin
+- sramp:contentEncoding (string) mandatory
+
+[sramp:document] > sramp:documentArtifactType mixin
+
+[sramp:derivedArtifactType] > sramp:baseArtifactType abstract mixin
+- sramp:relatedDocuments (reference) < 'sramp:documentArtifactType'
+
+[sramp:userDefinedArtifactType] > sramp:baseArtifactType mixin
+- sramp:userType (string) mandatory
+
+[sramp:storedQuery] > nt:query
+- sramp:propertyList (string) multiple
+
+[sramp:relatedTo] mixin
+- * (weakreference) multiple
+]]></programlisting>
+		</sect2>
+	</sect1>
+  <sect1 id="wsdl-sequencer-using">
+    <title>Configuration</title>
+    <para>
+        To use this sequencer, simply include the appropriate version of the Maven artifact with a "<code>org.modeshape</code>" group ID and
+        "<code>modeshape-sequencer-wsdl</code>" artifact ID. Or, if you're using JAR files and manually setting up the classpath for your
+        application, use the "<code>modeshape-sequencer-wsdl-&versionNumber;-jar-with-dependencies.jar</code>" file.
+        Then, define a sequencing configuration in the ModeShape configuration, using something similar to:
+    </para>
+   	<programlisting language="XML" role="XML"><![CDATA[
+<configuration xmlns:mode="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+    <mode:sequencers>
+	      ...
+        <mode:sequencer jcr:name="WSDL Sequencer" mode:classname="org.modeshape.sequencer.wsdl.WsdlSequencer">
+            <mode:description>Sequences WSDL 1.1 files (e.g., *.wsdl) loaded into the repository under '/files', 
+                 extracting the WSDL components as well as any XSD components contained within an embedded XSD.</mode:description>        
+            <!-- Note this path expression captures the path below '/files' (in the 'store' source and 'default' workspace only), 
+                 including the filename, and places the sequenced content under the same relative path below '/sequenced/wsdl'. 
+                 For example, if a WSDL file is uploaded to '/files/my/favorites/Customers.wsdl', then the sequenced output will be placed at
+                 the '/sequenced/wsdl/my/favorites/Customer.wsdl' node, which will have a primary type of 'wsdl:wsdlDocument' and will
+                 contain under it the nodes representing the WSDL components. Of course, the path expression
+                 can be modified as needed; for example, to exclude the filename extension, or to exclude the relative path. -->
+            <mode:pathExpression>/files(//)*.wsdl[*]/jcr:content[@jcr:data] => /sequenced/wsdl/$1 </mode:pathExpression>
+        </mode:sequencer>
+        ...
+    </mode:sequencers>
+    ...
+</configuration>
+]]></programlisting>
+		<para>or using the &JcrConfiguration;:</para>
+   	<programlisting language="JAVA" role="JAVA"><![CDATA[
+JcrConfiguration config = ...
+
+config.sequencer("WSDL Sequencer")
+      .usingClass(WsdlSequencer.class)
+      .setDescription("Sequences WSDL 1.1 files")
+      .sequencingFrom("/files(//)(*.wsdl[*])/jcr:content[@jcr:data]")
+      .andOutputtingTo("/sequenced/wsdl/$1");
+]]></programlisting>
+	</sect1>
+</chapter>

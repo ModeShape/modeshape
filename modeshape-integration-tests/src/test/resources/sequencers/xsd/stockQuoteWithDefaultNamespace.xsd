@@ -1,0 +1,16 @@
+<schema targetNamespace="http://example.com/stockquote.xsd" xmlns="http://www.w3.org/2001/XMLSchema">
+  <element name="TradePriceRequest">
+    <complexType>
+      <all>
+        <element name="tickerSymbol" type="string" />
+      </all>
+    </complexType>
+  </element>
+  <element name="TradePrice">
+    <complexType>
+      <all>
+        <element name="price" type="float" />
+      </all>
+    </complexType>
+  </element>
+</schema>
