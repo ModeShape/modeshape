@@ -403,6 +403,24 @@
         </listitem>
         <listitem>
           <para>
+            <emphasis role="strong">modeshape-sequencer-xsd</emphasis>
+            is a ModeShape sequencer that extracts the structure and content from XML Schema Definition (XSD) files.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">modeshape-sequencer-wsdl</emphasis>
+            is a ModeShape sequencer that extracts the structure and content from Web Service Definition Language (WSDL) 1.1 files.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">modeshape-sequencer-sramp</emphasis>
+            is a library with reusable node types patterned after the core model of S-RAMP, and used by other ModeShape sequencers.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
             <emphasis role="strong">modeshape-sequencer-classfile</emphasis>
             is a ModeShape sequencer that extracts the package, class/type, member, documentation, annotations, and other information
             from Java class files.

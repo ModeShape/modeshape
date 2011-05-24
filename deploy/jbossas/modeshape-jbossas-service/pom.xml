@@ -122,6 +122,14 @@
       </dependency>            
       <dependency>
           <groupId>org.modeshape</groupId>
+          <artifactId>modeshape-sequencer-xsd</artifactId>
+      </dependency>   
+      <dependency>
+          <groupId>org.modeshape</groupId>
+          <artifactId>modeshape-sequencer-wsdl</artifactId>
+      </dependency>   
+      <dependency>
+          <groupId>org.modeshape</groupId>
           <artifactId>modeshape-sequencer-xml</artifactId>
       </dependency>   
       <dependency>

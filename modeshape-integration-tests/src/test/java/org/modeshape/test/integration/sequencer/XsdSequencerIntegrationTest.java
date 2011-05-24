@@ -26,6 +26,7 @@ package org.modeshape.test.integration.sequencer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.sequencer.sramp.SrampLexicon;
 
 public class XsdSequencerIntegrationTest extends AbstractSequencerTest {
 
@@ -43,13 +44,35 @@ public class XsdSequencerIntegrationTest extends AbstractSequencerTest {
     @Override
     public void beforeEach() throws Exception {
         super.beforeEach();
-        session().getWorkspace().getNamespaceRegistry().registerNamespace("sramp", "http://s-ramp.org/xmlns/2010/s-ramp");
+        session().getWorkspace()
+                 .getNamespaceRegistry()
+                 .registerNamespace(SrampLexicon.Namespace.PREFIX, SrampLexicon.Namespace.URI);
     }
 
     @After
     @Override
     public void afterEach() throws Exception {
         super.afterEach();
+    }
+
+    @Test
+    public void generateSequencerOutputForStockQuoteSchema() throws Exception {
+        // Uncomment next line to get the output graph showing the XSD Sequencer chapter of the Ref Guide
+        // print = true;
+        uploadFile("sequencers/xsd/stockQuote.xsd", "/files/");
+
+        // Find the sequenced node ...
+        printSubgraph(waitUntilSequencedNodeIsAvailable("/sequenced/xsd", "nt:unstructured"));
+    }
+
+    @Test
+    public void generateSequencerOutputForStockQuoteWithDefaultNamespaceSchema() throws Exception {
+        // Uncomment next line to get the output graph showing the XSD Sequencer chapter of the Ref Guide
+        // print = true;
+        uploadFile("sequencers/xsd/stockQuoteWithDefaultNamespace.xsd", "/files/");
+
+        // Find the sequenced node ...
+        printSubgraph(waitUntilSequencedNodeIsAvailable("/sequenced/xsd", "nt:unstructured"));
     }
 
     @Test

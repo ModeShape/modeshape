@@ -52,6 +52,8 @@
             <include>org.modeshape:modeshape-sequencer-cnd</include>
             <include>org.modeshape:modeshape-sequencer-ddl</include>
             <include>org.modeshape:modeshape-sequencer-text</include>
+            <include>org.modeshape:modeshape-sequencer-xsd</include>
+            <include>org.modeshape:modeshape-sequencer-wsdl</include>
             <include>org.modeshape:modeshape-sequencer-xml</include>
             <include>org.modeshape:modeshape-sequencer-zip</include>
             <include>org.modeshape:modeshape-sequencer-teiid</include>
@@ -77,6 +79,14 @@
             <include>org.modeshape:modeshape-mimetype-detector-aperture</include>
             <include>org.semanticdesktop:aperture</include>
             <include>org.semweb4j:rdf2go.api</include>
+            
+            <include>org.eclipse.xsd:xsd</include>
+            <include>org.eclipse.emf:common</include>
+            <include>org.eclipse.emf:ecore</include>
+            <include>org.eclipse.emf:ecore-changes</include>
+            <include>org.eclipse.emf:ecore-xmi</include>
+
+            <include>wsdl4j:wsdl4j</include>
 
             <!-- 
             Eclipse JDT artifacts declare their dependencies using ranges. (yikes!)

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */ -->
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/"
+             xmlns:uddi_api_v3_binding="urn:uddi-org:api_v3_binding"
+             xmlns:uddi_custody_v3_binding="urn:uddi-org:custody_v3_binding"
+             xmlns:uddi_repl_v3_binding="urn:uddi-org:repl_v3_binding"
+             xmlns:uddi_sub_v3_binding="urn:uddi-org:sub_v3_binding"
+             xmlns:uddi_subr_v3_binding="urn:uddi-org:subr_v3_binding"
+             xmlns:uddi_vs_v3_binding="urn:uddi-org:vs_v3_binding"
+             xmlns:uddi_vscache_v3_binding="urn:uddi-org:vscache_v3_binding"
+	     xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+	     targetNamespace="urn:uddi-org:v3_service">
+    <!--
+		Copyright (c) 2000-2002 by Accenture, Ariba, Inc., Commerce One, Inc.
+		Fujitsu Limited, Hewlett-Packard Company, i2 Technologies, Inc., Intel
+		Corporation, International Business Machines Corporation, Microsoft
+		Corporation, Oracle Corporation, SAP AG, Sun Microsystems, Inc., and
+		VeriSign, Inc. All Rights Reserved. Copyright (c) OASIS Open
+		2002-2004. All Rights Reserved. Version 3.0.2 This document and
+		translations of it may be copied and furnished to others, and
+		derivative works that comment on or otherwise explain it or assist in
+		its implementation may be prepared, copied, published and distributed,
+		in whole or in part, without restriction of any kind, provided that
+		the above copyright notice and this paragraph are included on all such
+		copies and derivative works. However, this document itself may not be
+		modified in any way, such as by removing the copyright notice or
+		references to OASIS, except as needed for the purpose of developing
+		OASIS specifications, in which case the procedures for copyrights
+		defined in the OASIS Intellectual Property Rights document must be
+		followed, or as required to translate it into languages other than
+		English.
+	-->
+    <documentation>WSDL service definition for UDDI 3.0.2 specification</documentation>
+    <import namespace="urn:uddi-org:api_v3_binding" location="uddi_api_v3_binding.wsdl"/>
+    <import namespace="urn:uddi-org:custody_v3_binding" location="uddi_custody_v3_binding.wsdl"/>
+    <import namespace="urn:uddi-org:repl_v3_binding" location="uddi_repl_v3_binding.wsdl"/>
+    <import namespace="urn:uddi-org:sub_v3_binding" location="uddi_sub_v3_binding.wsdl"/>
+    <import namespace="urn:uddi-org:subr_v3_binding" location="uddi_subr_v3_binding.wsdl"/>
+    <import namespace="urn:uddi-org:vs_v3_binding" location="uddi_vs_v3_binding.wsdl"/>
+    <import namespace="urn:uddi-org:vscache_v3_binding" location="uddi_vscache_v3_binding.wsdl"/>
+
+    <service name="UDDI_Service">
+        <!-- UDDI API Interface-->
+        <port name="UDDI_Inquiry_Port" binding="uddi_api_v3_binding:UDDI_Inquiry_SoapBinding">
+            <soap:address location="http://localhost/uddi/inquire/"/>
+        </port>
+        <port name="UDDI_Publication_Port" binding="uddi_api_v3_binding:UDDI_Publication_SoapBinding">
+            <soap:address location="http://localhost/uddi/publish/"/>
+        </port>
+        <port name="UDDI_Security_Port" binding="uddi_api_v3_binding:UDDI_Security_SoapBinding">
+            <soap:address location="http://localhost/uddi/security/"/>
+        </port>
+        
+        <!-- Custody Interface -->
+        <port name="UDDI_Custody_Port" binding="uddi_custody_v3_binding:UDDI_CustodyTransfer_SoapBinding">
+            <soap:address location="http://localhost/uddi/custody/"/>
+        </port>
+
+        <!-- Replication Interface -->
+        <port name="UDDI_Replication_Port" binding="uddi_repl_v3_binding:UDDI_Replication_SoapBinding">
+            <soap:address location="http://localhost/uddi/replication/"/>
+        </port>
+        
+        <!-- Subscription Interface -->
+        <port name="UDDI_Subscription_Port" binding="uddi_sub_v3_binding:UDDI_Subscription_SoapBinding">
+            <soap:address location="http://localhost/uddi/subscription/"/>
+        </port>
+
+        <!-- Subscription Listener Interface -->
+        <port name="UDDI_SubscriptionListener_Port" binding="uddi_subr_v3_binding:UDDI_SubscriptionListener_SoapBinding">
+            <soap:address location="http://localhost/uddi/subscriptionlistener/"/>
+        </port>
+
+        <!-- Value Set Validation Interface -->
+        <port name="UDDI_ValueSetValidation_Port" binding="uddi_vs_v3_binding:UDDI_ValueSetValidation_SoapBinding">
+            <soap:address location="http://localhost/uddi/valuesetvalidation/"/>
+        </port>
+
+        <!-- Value Set Caching Interface -->
+        <port name="UDDI_ValueSetCaching_Port" binding="uddi_vscache_v3_binding:UDDI_ValueSetCaching_SoapBinding">
+            <soap:address location="http://localhost/uddi/valuesetcaching/"/>
+        </port>
+    </service>
+
+</definitions>

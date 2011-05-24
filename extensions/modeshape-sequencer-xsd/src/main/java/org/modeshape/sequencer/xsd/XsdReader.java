@@ -103,13 +103,27 @@ public class XsdReader {
     protected final StreamSequencerContext context;
     protected final Logger logger = Logger.getLogger(getClass());
     protected final Map<Path, Multimap<Name, Integer>> namesByParentPath = new HashMap<Path, Multimap<Name, Integer>>();
-    protected final XsdResolvers resolvers = new XsdResolvers();
+    protected final XsdResolvers resolvers;
     protected List<ResolveFuture> resolveFutures = new LinkedList<ResolveFuture>();
 
     public XsdReader( SequencerOutput output,
-                      StreamSequencerContext context ) {
+                      StreamSequencerContext context,
+                      XsdResolvers resolvers ) {
         this.output = output;
         this.context = context;
+        this.resolvers = resolvers != null ? resolvers : new XsdResolvers();
+    }
+
+    public XsdReader( SequencerOutput output,
+                      StreamSequencerContext context ) {
+        this(output, context, null);
+    }
+
+    /**
+     * @return resolvers
+     */
+    public XsdResolvers getResolvers() {
+        return resolvers;
     }
 
     /**
@@ -227,6 +241,7 @@ public class XsdReader {
         }
         output.setProperty(path, SrampLexicon.CONTENT_SIZE, contentSize);
         output.setProperty(path, JcrLexicon.PRIMARY_TYPE, XsdLexicon.SCHEMA_DOCUMENT);
+        output.setProperty(path, JcrLexicon.UUID, UUID.randomUUID());
 
         // Parse the annotations first to aggregate them all into a single 'sramp:description' property ...
         @SuppressWarnings( "unchecked" )
@@ -295,15 +310,18 @@ public class XsdReader {
 
     protected Path process( XSDSimpleTypeDefinition type,
                             Path parentPath ) {
-        assert type.getName() != null;
+        boolean isAnonymous = type.getName() == null;
+        Name nodeName = isAnonymous ? XsdLexicon.SIMPLE_TYPE : name(type.getName());
         // This is a normal simple type definition ...
         logger.trace("Simple type: '{0}' in ns '{1}' ", type.getName(), type.getTargetNamespace());
-        Path path = nextPath(parentPath, name(type.getName()));
+        Path path = nextPath(parentPath, nodeName);
         output.setProperty(path, JcrLexicon.PRIMARY_TYPE, XsdLexicon.SIMPLE_TYPE_DEFINITION);
-        output.setProperty(path, XsdLexicon.NC_NAME, type.getName());
         output.setProperty(path, XsdLexicon.NAMESPACE, type.getTargetNamespace());
-        UUID uuid = setUuid(path);
-        resolvers.get(SymbolSpace.TYPE_DEFINITIONS).register(type.getTargetNamespace(), type.getName(), path, uuid);
+        if (!isAnonymous) {
+            output.setProperty(path, XsdLexicon.NC_NAME, type.getName());
+            UUID uuid = setUuid(path);
+            resolvers.get(SymbolSpace.TYPE_DEFINITIONS).register(type.getTargetNamespace(), type.getName(), path, uuid);
+        }
         processFacetsOf(type, path, type.getBaseType());
         processNonSchemaAttributes(type, path);
         return path;
@@ -372,12 +390,16 @@ public class XsdReader {
     protected Path process( XSDComplexTypeDefinition type,
                             Path parentPath ) {
         logger.trace("Complex type: '{0}' in ns '{1}' ", type.getName(), type.getTargetNamespace());
-        Path path = nextPath(parentPath, name(type.getName()));
+        boolean isAnonymous = type.getName() == null;
+        Name nodeName = isAnonymous ? XsdLexicon.COMPLEX_TYPE : name(type.getName());
+        Path path = nextPath(parentPath, nodeName);
         output.setProperty(path, JcrLexicon.PRIMARY_TYPE, XsdLexicon.COMPLEX_TYPE_DEFINITION);
-        output.setProperty(path, XsdLexicon.NC_NAME, type.getName());
         output.setProperty(path, XsdLexicon.NAMESPACE, type.getTargetNamespace());
-        UUID uuid = setUuid(path);
-        resolvers.get(SymbolSpace.TYPE_DEFINITIONS).register(type.getTargetNamespace(), type.getName(), path, uuid);
+        if (!isAnonymous) {
+            output.setProperty(path, XsdLexicon.NC_NAME, type.getName());
+            UUID uuid = setUuid(path);
+            resolvers.get(SymbolSpace.TYPE_DEFINITIONS).register(type.getTargetNamespace(), type.getName(), path, uuid);
+        }
         XSDTypeDefinition baseType = type.getBaseType();
         if (baseType == type) {
             // The base type is the anytype ...
@@ -441,6 +463,14 @@ public class XsdReader {
             output.setProperty(path, XsdLexicon.TYPE_NAME, type.getName());
             output.setProperty(path, XsdLexicon.TYPE_NAMESPACE, type.getTargetNamespace());
             setReference(path, XsdLexicon.TYPE_REFERENCE, SymbolSpace.TYPE_DEFINITIONS, type.getTargetNamespace(), type.getName());
+        }
+        if (decl.getAnonymousTypeDefinition() == type) {
+            // It's anonymous, so we need to process the definition here ...
+            if (type instanceof XSDComplexTypeDefinition) {
+                process((XSDComplexTypeDefinition)type, path);
+            } else if (type instanceof XSDSimpleTypeDefinition) {
+                process((XSDSimpleTypeDefinition)type, path);
+            }
         }
         processEnumerator(decl.getForm(), path, XsdLexicon.FORM);
 
@@ -902,7 +932,11 @@ public class XsdReader {
         return uuid;
     }
 
-    protected void resolveReferences() {
+    /**
+     * Attempt to resolve any references that remain unresolved. This should be called if sharing an {@link XsdResolvers} with
+     * multiple {@link XsdReader} instances.
+     */
+    public void resolveReferences() {
         if (resolveFutures.isEmpty()) return;
 
         List<ResolveFuture> futures = resolveFutures;
