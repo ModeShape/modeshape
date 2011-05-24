@@ -118,10 +118,10 @@ public final class ServerNode extends JsonNode {
             // Get the metadata, if there ...
             Map<String, Object> meta = new HashMap<String, Object>();
             JSONObject named = (JSONObject)jsonObj.get(encodedName);
-            JSONObject repo = (JSONObject)named.get("repository");
-            if (repo != null) {
-                JSONObject metadata = (JSONObject)repo.get("metadata");
-                if (metadata != null) {
+            if (named.has("repository")) {
+                JSONObject repo = (JSONObject)named.get("repository");
+                if (repo.has("metadata")) {
+                    JSONObject metadata = (JSONObject)repo.get("metadata");
                     for (Iterator<String> keyIter = metadata.keys(); keyIter.hasNext();) {
                         String key = keyIter.next();
                         Object values = metadata.get(key);
