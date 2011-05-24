@@ -518,6 +518,65 @@ config.repository("repository A")
 					</entry>
 				</row>
 				<row>
+					<entry>queryIndexesRebuiltSynchronously</entry>
+					<entry>
+						<para>
+							An <emphasis>advanced</emphasis> boolean flag that specifies whether the indexes should be rebuilt synchronously when the repository restarts.
+							If this flag is set to '<emphasis>true</emphasis>', query indexes for each workspace in the repository will be rebuilt synchronously 
+							the first time that the repository is accessed (e.g., at the first login).  If this flag is set to '<emphasis>false</emphasis>', the query
+							indexes for each workspace in the repository will be rebuilt asynchronously.
+						</para>
+						<para>
+						    Rebuilding the indexes synchronously can cause very significant latency in the initial repository access if the repository contains a significant amount of 
+						    content that must be reindexed.  Updating the indexes asynchronously eliminates this latency, but repository queries may generate inconsistent results
+						    while the indexes are being updated.  That is, query results may refer to content that is no longer in the repository or may fail to include appropriate
+						    results for nodes that had been added to the repository.
+						</para>
+						<para>
+							The default is value '<emphasis>true</emphasis>', meaning the rebuilds are performed synchronously.
+						</para>
+						<para>
+							The enumeration literal is <ulink url='&API;jcr/JcrRepository.Option.html#QUERY_INDEXES_REBUILT_SYNCHRONOUSLY'>Option.QUERY_INDEXES_REBUILT_SYNCHRONOUSLY</ulink>
+						</para>
+					</entry>
+				</row>
+				<row>
+					<entry>rebuildQueryIndexOnStartup</entry>
+					<entry>
+						<para>
+							An <emphasis>advanced</emphasis> setting that specifies the strategy used to determine which query indexes need to be rebuilt when the repository restarts.
+							ModeShape currently supports two strategies:
+							<itemizedlist>
+								<listitem>
+									<para>A value of "always" dictates that the query index for every workspace in the repository will be rebuilt each time that the repository restarts.
+									This can sharply increase the startup time for the repository, particularly if the <code>queryIndexesRebuiltSynchronously</code> option is set to 
+									'<emphasis>true</emphasis>' (the default).  However, this strategy ensures that any repository content that was modified outside of the repository 
+									(e.g., files in a &FileSystemSource; that were directly modified on the file system) are properly indexed.
+									</para>
+								</listitem>
+								<listitem>
+									<para>A value of "ifMissing" indicates that indexes should only be rebuilt if they do not currently exist or are obviously invalid.  This strategy is
+									always the most appropriate strategy for non-clustered repositories with repository sources that provide exclusive control over content (e.g., 
+									the &InfinispanSource;, the &JpaSource;) as it greatly reduces repository startup time for repositories with significant amounts of content.
+									</para>
+								</listitem>
+							</itemizedlist>
+							Note that repositories that do not configure the <code>queryIndexDirectory</code> option will always use an in-memory index.  This type of index
+							will not be persisted across repository restarts and will require ModeShape to rebuild the indexes each time the repository starts up even if the 
+							"ifMissing" strategy is specified.
+						</para>	
+						<para>	
+							The "always" strategy is used by default and in cases where the option's value does not case-independently match the one of these two values.  This was the only
+							strategy available prior to ModeShape 2.5.0.Beta3.
+						</para>
+						<para>
+							The enumeration literal is <ulink url='&API;jcr/JcrRepository.Option.html#QUERY_INDEXES_REBUILT_SYNCHRONOUSLY'>Option.QUERY_INDEXES_REBUILT_SYNCHRONOUSLY</ulink>,
+							and the values are <ulink url='&API;jcr/JcrRepository.RebuildQueryIndexOnStartupOption.html#ALWAYS'>RebuildQueryIndexOnStartupOption.ALWAYS</ulink> and
+							<ulink url='&API;jcr/JcrRepository.RebuildQueryIndexOnStartupOption.html#IF_MISSING'>RebuildQueryIndexOnStartupOption.IF_MISSING</ulink>
+					</para>
+					</entry>
+				</row>				
+				<row>
 					<entry>projectNodeTypes</entry>
 					<entry>
 						An <emphasis>advanced</emphasis> boolean flag that defines whether or not the node types should be exposed as content under the "/jcr:system/jcr:nodeTypes" node. 
@@ -595,13 +654,13 @@ config.repository("repository A")
 									</para>
 								</listitem>
 								<listitem>
-									<para>A value of "hierarchical" dictates that all "<code>nt:versionHistory</code>" nodes are stored under a hiearchical structure created by the first 
+									<para>A value of "hierarchical" dictates that all "<code>nt:versionHistory</code>" nodes are stored under a hierarchical structure created by the first 
 										8 characters of the UUID string. For example, given a "<code>mix:versionable</code>" node with the UUID <code>fae2b929-c5ef-4ce5-9fa1-514779ca0ae3</code>, 
 										the corresponding "<code>nt:versionHistory</code>" node will be at "<code>/jcr:system/jcr:versionStorage/fa/e2/b9/29/c5ef-4ce5-9fa1-514779ca0ae3</code>.
 									</para>
 								</listitem>
 							</itemizedlist>
-							The "hiearchical" structure is used by default and in cases where the option's value does not case-independently match the one of these two values.
+							The "hierarchical" structure is used by default and in cases where the option's value does not case-independently match the one of these two values.
 						</para>
 						<para>
 							The enumeration literal is <ulink url='&API;jcr/JcrRepository.Option.html#VERSION_HISTORY_STRUCTURE'>Option.VERSION_HISTORY_STRUCTURE</ulink>,
