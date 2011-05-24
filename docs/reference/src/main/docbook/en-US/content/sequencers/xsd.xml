@@ -165,7 +165,8 @@
        The XSD sequencer will derive the following content from the above XSD:
     </para>
 	    <programlisting language="XML" role="XML"><![CDATA[
- po.xsd jcr:primaryType=xs:schemaDocument jcr:mixinTypes=[mode:derived] jcr:uuid=ca46f972-6875-481d-b9e1-cfb64ae76f74
+ po.xsd jcr:primaryType=xs:schemaDocument jcr:mixinTypes=[mode:derived] 
+   - jcr:uuid=ca46f972-6875-481d-b9e1-cfb64ae76f74
    - mode:derivedAt=2011-05-18T18:34:08.922Z
    - mode:derivedFrom=/files/po.xsd
    - sramp:contentEncoding="UTF-8"
@@ -173,31 +174,36 @@
    - sramp:contentType="application/xsd"
    - sramp:description="Purchase order schema for Example.com.
    Copyright 2000 Example.com. All rights reserved."
-   purchaseOrder jcr:primaryType=xs:elementDeclaration jcr:uuid=eff3bcfb-42d1-4d55-805b-5133279e15eb
+   purchaseOrder jcr:primaryType=xs:elementDeclaration 
+     - jcr:uuid=eff3bcfb-42d1-4d55-805b-5133279e15eb
      - xs:abstract=false
      - xs:form="qualified"
      - xs:ncName="purchaseOrder"
      - xs:nillable=false
      - xs:type=5088dc05-ad30-4d7d-8d24-3edc548a777f
      - xs:typeName="PurchaseOrderType"
-   comment jcr:primaryType=xs:elementDeclaration jcr:uuid=2daaa747-01f1-41f3-b5c2-ec218d8a7290
+   comment jcr:primaryType=xs:elementDeclaration 
+     - jcr:uuid=2daaa747-01f1-41f3-b5c2-ec218d8a7290
      - xs:abstract=false
      - xs:form="qualified"
      - xs:ncName="comment"
      - xs:nillable=false
      - xs:typeName="string"
      - xs:typeNamespace=http://www.w3.org/2001/XMLSchema
-   PurchaseOrderType jcr:primaryType=xs:complexTypeDefinition jcr:uuid=5088dc05-ad30-4d7d-8d24-3edc548a777f
+   PurchaseOrderType jcr:primaryType=xs:complexTypeDefinition 
+     - jcr:uuid=5088dc05-ad30-4d7d-8d24-3edc548a777f
      - xs:abstract=false
      - xs:baseTypeName="anyType"
      - xs:baseTypeNamespace="http://www.w3.org/2001/XMLSchema"
      - xs:method="restriction"
      - xs:mixed=false
      - xs:ncName="PurchaseOrderType"
-     xs:sequence jcr:primaryType=xs:sequence jcr:uuid=1b87d92d-4d59-44ac-859f-2a51c3a48eb2
+     xs:sequence jcr:primaryType=xs:sequence 
+       - jcr:uuid=1b87d92d-4d59-44ac-859f-2a51c3a48eb2
        - xs:maxOccurs=1
        - xs:minOccurs=1
-       shipTo jcr:primaryType=xs:elementDeclaration jcr:uuid=994ba18b-c389-4635-8ce3-27d3a81cf97d
+       shipTo jcr:primaryType=xs:elementDeclaration 
+         - jcr:uuid=994ba18b-c389-4635-8ce3-27d3a81cf97d
          - xs:abstract=false
          - xs:form="qualified"
          - xs:maxOccurs=1
@@ -206,7 +212,8 @@
          - xs:nillable=false
          - xs:type=dd683707-83bb-4893-aa6e-f3ce81237e76
          - xs:typeName="USAddress"
-       billTo jcr:primaryType=xs:elementDeclaration jcr:uuid=e260c1aa-5a5a-4db5-a962-b02576359ee7
+       billTo jcr:primaryType=xs:elementDeclaration 
+         - jcr:uuid=e260c1aa-5a5a-4db5-a962-b02576359ee7
          - xs:abstract=false
          - xs:form="qualified"
          - xs:maxOccurs=1
@@ -215,7 +222,8 @@
          - xs:nillable=false
          - xs:type=dd683707-83bb-4893-aa6e-f3ce81237e76
          - xs:typeName="USAddress"
-       comment jcr:primaryType=xs:elementDeclaration jcr:uuid=a7796d20-0e7b-4833-96b6-16e0ac6676ca
+       comment jcr:primaryType=xs:elementDeclaration 
+         - jcr:uuid=a7796d20-0e7b-4833-96b6-16e0ac6676ca
          - xs:abstract=false
          - xs:form="qualified"
          - xs:maxOccurs=1
@@ -223,7 +231,8 @@
          - xs:nillable=false
          - xs:ref=2daaa747-01f1-41f3-b5c2-ec218d8a7290
          - xs:refName="comment"
-       items jcr:primaryType=xs:elementDeclaration jcr:uuid=02ab83d1-ea1a-4a7b-b66d-a1974f13ca63
+       items jcr:primaryType=xs:elementDeclaration 
+         - jcr:uuid=02ab83d1-ea1a-4a7b-b66d-a1974f13ca63
          - xs:abstract=false
          - xs:form="qualified"
          - xs:maxOccurs=1
@@ -232,22 +241,26 @@
          - xs:nillable=false
          - xs:type=7543bf0f-1753-4813-9a31-f2bbed34fd11
          - xs:typeName="Items"
-     orderDate jcr:primaryType=xs:attributeDeclaration jcr:uuid=8b23e048-c683-4d6d-8835-faf81df6912d
+     orderDate jcr:primaryType=xs:attributeDeclaration 
+       - jcr:uuid=8b23e048-c683-4d6d-8835-faf81df6912d
        - xs:ncName="orderDate"
        - xs:typeName="date"
        - xs:typeNamespace=http://www.w3.org/2001/XMLSchema
        - xs:use="optional"
-   USAddress jcr:primaryType=xs:complexTypeDefinition jcr:uuid=dd683707-83bb-4893-aa6e-f3ce81237e76
+   USAddress jcr:primaryType=xs:complexTypeDefinition 
+     - jcr:uuid=dd683707-83bb-4893-aa6e-f3ce81237e76
      - xs:abstract=false
      - xs:baseTypeName="anyType"
      - xs:baseTypeNamespace="http://www.w3.org/2001/XMLSchema"
      - xs:method="restriction"
      - xs:mixed=false
      - xs:ncName="USAddress"
-     xs:sequence jcr:primaryType=xs:sequence jcr:uuid=82411c47-7f1a-4b11-9778-acc310c9e51c
+     xs:sequence jcr:primaryType=xs:sequence 
+       - jcr:uuid=82411c47-7f1a-4b11-9778-acc310c9e51c
        - xs:maxOccurs=1
        - xs:minOccurs=1
-       name jcr:primaryType=xs:elementDeclaration jcr:uuid=40dcb6fc-386c-4d3a-841b-dab478348d74
+       name jcr:primaryType=xs:elementDeclaration 
+         - jcr:uuid=40dcb6fc-386c-4d3a-841b-dab478348d74
          - xs:abstract=false
          - xs:form="qualified"
          - xs:maxOccurs=1
@@ -256,7 +269,8 @@
          - xs:nillable=false
          - xs:typeName="string"
          - xs:typeNamespace=http://www.w3.org/2001/XMLSchema
-       street jcr:primaryType=xs:elementDeclaration jcr:uuid=a3ff1a2d-38e7-442a-a46b-141fa1ac4442
+       street jcr:primaryType=xs:elementDeclaration 
+         - jcr:uuid=a3ff1a2d-38e7-442a-a46b-141fa1ac4442
          - xs:abstract=false
          - xs:form="qualified"
          - xs:maxOccurs=1
@@ -265,7 +279,8 @@
          - xs:nillable=false
          - xs:typeName="string"
          - xs:typeNamespace=http://www.w3.org/2001/XMLSchema
-       city jcr:primaryType=xs:elementDeclaration jcr:uuid=30d4215f-cd44-4857-9589-3df127e42cf3
+       city jcr:primaryType=xs:elementDeclaration 
+         - jcr:uuid=30d4215f-cd44-4857-9589-3df127e42cf3
          - xs:abstract=false
          - xs:form="qualified"
          - xs:maxOccurs=1
@@ -274,7 +289,8 @@
          - xs:nillable=false
          - xs:typeName="string"
          - xs:typeNamespace=http://www.w3.org/2001/XMLSchema
-       state jcr:primaryType=xs:elementDeclaration jcr:uuid=061a58d9-94fd-4dca-84e2-6ced7fe523fe
+       state jcr:primaryType=xs:elementDeclaration 
+         - jcr:uuid=061a58d9-94fd-4dca-84e2-6ced7fe523fe
          - xs:abstract=false
          - xs:form="qualified"
          - xs:maxOccurs=1
@@ -283,7 +299,8 @@
          - xs:nillable=false
          - xs:typeName="string"
          - xs:typeNamespace=http://www.w3.org/2001/XMLSchema
-       zip jcr:primaryType=xs:elementDeclaration jcr:uuid=100dc3cc-b59f-4835-b14e-243b9e7a2ecf
+       zip jcr:primaryType=xs:elementDeclaration 
+         - jcr:uuid=100dc3cc-b59f-4835-b14e-243b9e7a2ecf
          - xs:abstract=false
          - xs:form="qualified"
          - xs:maxOccurs=1
@@ -292,28 +309,33 @@
          - xs:nillable=false
          - xs:typeName="decimal"
          - xs:typeNamespace=http://www.w3.org/2001/XMLSchema
-     country jcr:primaryType=xs:attributeDeclaration jcr:uuid=f323219f-bea0-4d6f-9ad5-f51cf8409f13
+     country jcr:primaryType=xs:attributeDeclaration 
+       - jcr:uuid=f323219f-bea0-4d6f-9ad5-f51cf8409f13
        - xs:ncName="country"
        - xs:typeName="NMTOKEN"
        - xs:typeNamespace=http://www.w3.org/2001/XMLSchema
        - xs:use="optional"
-   Items jcr:primaryType=xs:complexTypeDefinition jcr:uuid=7543bf0f-1753-4813-9a31-f2bbed34fd11
+   Items jcr:primaryType=xs:complexTypeDefinition 
+     - jcr:uuid=7543bf0f-1753-4813-9a31-f2bbed34fd11
      - xs:abstract=false
      - xs:baseTypeName="anyType"
      - xs:baseTypeNamespace="http://www.w3.org/2001/XMLSchema"
      - xs:method="restriction"
      - xs:mixed=false
      - xs:ncName="Items"
-     xs:sequence jcr:primaryType=xs:sequence jcr:uuid=d907da56-f370-40e3-b06e-e3a5ae957f4d
+     xs:sequence jcr:primaryType=xs:sequence 
+       - jcr:uuid=d907da56-f370-40e3-b06e-e3a5ae957f4d
        - xs:maxOccurs=1
        - xs:minOccurs=1
-       item jcr:primaryType=xs:elementDeclaration jcr:uuid=87cc1352-2f90-49f4-9f36-3db7b9ffcf26
+       item jcr:primaryType=xs:elementDeclaration 
+         - jcr:uuid=87cc1352-2f90-49f4-9f36-3db7b9ffcf26
          - xs:abstract=false
          - xs:form="qualified"
          - xs:minOccurs=0
          - xs:ncName="item"
          - xs:nillable=false
-   SKU jcr:primaryType=xs:simpleTypeDefinition jcr:uuid=4127108d-a699-461e-8210-3bb40c923318
+   SKU jcr:primaryType=xs:simpleTypeDefinition 
+     - jcr:uuid=4127108d-a699-461e-8210-3bb40c923318
      - xs:baseTypeName="string"
      - xs:baseTypeNamespace=http://www.w3.org/2001/XMLSchema
      - xs:ncName="SKU"
@@ -648,20 +670,28 @@
         Then, define a sequencing configuration in the ModeShape configuration, using something similar to:
     </para>
    	<programlisting language="XML" role="XML"><![CDATA[
-<configuration xmlns:mode="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+<configuration xmlns:mode="http://www.modeshape.org/1.0" 
+               xmlns:jcr="http://www.jcp.org/jcr/1.0">
     <mode:sequencers>
 	      ...
-        <mode:sequencer jcr:name="XSD Sequencer" mode:classname="org.modeshape.sequencer.xsd.XsdSequencer">
-            <mode:description>Sequences XML Schema Documents (e.g., *.xsd) loaded into the repository under '/files', 
-                 extracting the XSD attribute and element declarations, simple and complex type definitions, 
-                 attribute and element groups, annotations, imports, includes and any other component of XSDs.</mode:description>        
-            <!-- Note this path expression captures the path below '/files' but excludes the filename, and places the sequenced
-                 content under the same relative path below '/sequenced/xsd'. For example, if an XSD file is uploaded
-                 to '/files/my/favorites/Customers.xsd', then the sequenced output will be placed at
-                 the '/sequenced/xsd/my/favorites/Customer.xsd' node, which will have a primary type of 'xs:schemaDocument' and will
-                 contain under it the components within the schema document.  Of course, the path expression
-                 can be modified as needed. -->
-            <mode:pathExpression>/files(//)(*.xsd[*])/jcr:content[@jcr:data] => /sequenced/xsd/$1 </mode:pathExpression>
+        <mode:sequencer jcr:name="XSD Sequencer" 
+                        mode:classname="org.modeshape.sequencer.xsd.XsdSequencer">
+            <mode:description>Sequences XML Schema Documents (e.g., *.xsd) loaded 
+                 into the repository under '/files', extracting the XSD attribute
+                 and element declarations, simple and complex type definitions, 
+                 attribute and element groups, annotations, imports, includes and 
+                 any other component of XSDs.</mode:description>        
+            <!-- Note this path expression captures the path below '/files' but 
+                 excludes the filename, and places the sequenced content under the
+                 same relative path below '/sequenced/xsd'. For example, if an XSD
+                 file is uploaded to '/files/my/favorites/Customers.xsd', then the
+                 sequenced output will be placed at the 
+                 '/sequenced/xsd/my/favorites/Customer.xsd' node, which will have
+                 a primary type of 'xs:schemaDocument' and will contain under it
+                 the components within the schema document.  Of course, the path
+                 expression can be modified as needed. -->
+            <mode:pathExpression>/files(//)(*.xsd[*])/jcr:content[@jcr:data] 
+                              => /sequenced/xsd/$1 </mode:pathExpression>
         </mode:sequencer>
         ...
     </mode:sequencers>

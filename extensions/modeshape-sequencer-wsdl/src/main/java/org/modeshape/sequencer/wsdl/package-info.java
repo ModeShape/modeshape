@@ -22,7 +22,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 /**
- * The classes that make up the XML Schema Document sequencer.
+ * The classes that make up the Web Service Definition Lanaguage (WSDL) 1.1 sequencer.
  */
 
 package org.modeshape.sequencer.wsdl;
