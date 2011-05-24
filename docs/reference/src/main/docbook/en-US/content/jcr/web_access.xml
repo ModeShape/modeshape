@@ -87,7 +87,7 @@
   -->
   <context-param>
     <param-name>org.modeshape.web.jcr.REPOSITORY_PROVIDER</param-name>
-    <param-value>org.modeshape.web.jcr.spi.ModeShapeJcrRepositoryProvider</param-value>
+    <param-value>org.modeshape.web.jcr.spi.FactoryRepositoryProvider</param-value>
   </context-param>
 ]]></programlisting>			 
 		<para>
@@ -101,14 +101,14 @@
 		</para>
 <programlisting language="XML" role="XML"><![CDATA[
   <!--
-    This parameter, specific to the ModeShapeJcrRepositoryProvider implementation, specifies
+    This parameter, specific to the FactoryRepositoryProvider implementation, specifies
     the name of the configuration file to initialize the repository or repositories.
     This configuration file must be on the classpath and is given as a classpath-relative
     directory.
   -->
   <context-param>
-    <param-name>org.modeshape.web.jcr.CONFIG_FILE</param-name>
-    <param-value>/configRepository.xml</param-value>
+    <param-name>org.modeshape.web.jcr.JCR_URL</param-name>
+    <param-value>file:/configRepository.xml</param-value>
   </context-param>
 ]]></programlisting>			 
 		<para>
@@ -922,7 +922,7 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
   -->
   <context-param>
     <param-name>org.modeshape.web.jcr.REPOSITORY_PROVIDER</param-name>
-    <param-value>org.modeshape.web.jcr.spi.ModeShapeJcrRepositoryProvider</param-value>
+    <param-value>org.modeshape.web.jcr.spi.FactoryRepositoryProvider</param-value>
   </context-param>
 ]]></programlisting>			 
 		<para>
@@ -936,14 +936,14 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 		</para>
 <programlisting language="XML" role="XML"><![CDATA[
   <!--
-    This parameter, specific to the ModeShapeJcrRepositoryProvider implementation, specifies
+    This parameter, specific to the FactoryRepositoryProvider implementation, specifies
     the name of the configuration file to initialize the repository or repositories.
     This configuration file must be on the classpath and is given as a classpath-relative
     directory.
   -->
   <context-param>
-    <param-name>org.modeshape.web.jcr.CONFIG_FILE</param-name>
-    <param-value>/configRepository.xml</param-value>
+    <param-name>org.modeshape.web.jcr.JCR_URL</param-name>
+    <param-value>file:/configRepository.xml</param-value>
   </context-param>
 ]]></programlisting>			 
 		<para>
