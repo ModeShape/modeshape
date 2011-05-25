@@ -149,16 +149,16 @@ public class JpaSourceTest {
 
     @FixFor( "MODE-1102" )
     @Test
-    public void shouldTreatEmptyStringValueForAutoGenerateSchemaAsDisable() {
+    public void shouldTreatEmptyStringValueForAutoGenerateSchemaAsDefault() {
         source = new JpaSource();
         source.setName("Some name");
         source.setAutoGenerateSchema("");
-        assertThat(source.getAutoGenerateSchema(), is(JpaSource.AUTO_GENERATE_SCHEMA_DISABLE));
+        assertThat(source.getAutoGenerateSchema(), is(JpaSource.DEFAULT_AUTO_GENERATE_SCHEMA));
 
         // Verify it is set correctly on the Hibernate configuration ...
         Ejb3Configuration config = new Ejb3Configuration();
         source.configure(config);
-        assertThat(config.getProperties().get("hibernate.hbm2ddl.auto"), is(nullValue()));
+        assertThat(config.getProperties().get("hibernate.hbm2ddl.auto").toString(), is(JpaSource.DEFAULT_AUTO_GENERATE_SCHEMA));
     }
 
     @FixFor( "MODE-1102" )

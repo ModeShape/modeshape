@@ -480,9 +480,9 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      *        be treated as "disable".
      */
     public synchronized void setAutoGenerateSchema( String autoGenerateSchema ) {
-        if (autoGenerateSchema == null) autoGenerateSchema = DEFAULT_AUTO_GENERATE_SCHEMA;
+        if (autoGenerateSchema == null || autoGenerateSchema.length() == 0) autoGenerateSchema = DEFAULT_AUTO_GENERATE_SCHEMA;
         autoGenerateSchema = autoGenerateSchema.trim();
-        if (autoGenerateSchema.length() == 0 || autoGenerateSchema.equalsIgnoreCase(AUTO_GENERATE_SCHEMA_DISABLE)) autoGenerateSchema = AUTO_GENERATE_SCHEMA_DISABLE;
+        if (AUTO_GENERATE_SCHEMA_DISABLE.equalsIgnoreCase(autoGenerateSchema)) autoGenerateSchema = AUTO_GENERATE_SCHEMA_DISABLE;
         this.autoGenerateSchema = autoGenerateSchema;
         assert this.autoGenerateSchema != null;
         assert this.autoGenerateSchema.length() != 0;

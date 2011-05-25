@@ -104,7 +104,7 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
         // } catch (Exception ex) {
         // throw new IllegalStateException(ex);
         // }
-        JcrEngine engine = startEngineUsing("config/configRepositoryForJdbc.xml");
+        JcrEngine engine = startEngineUsing("config/configRepositoryForJdbc.xml", JcrDriverIntegrationTest.class);
         importContent(JcrDriverIntegrationTest.class, "jdbc/cars-system-view-with-uuids.xml", "Repo", null);
 
         // Use a session to load the contents ...

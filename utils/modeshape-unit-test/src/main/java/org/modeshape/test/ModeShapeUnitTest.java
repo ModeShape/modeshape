@@ -58,6 +58,7 @@ import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.graph.property.Path;
@@ -116,7 +117,26 @@ public abstract class ModeShapeUnitTest {
      * @return the JCR engine instance that is ready to use
      * @throws IOException if the ModeShape configuration file could not be found or was invalid
      */
-    protected static JcrEngine startEngineUsing( String pathToConfigurationFile ) throws IOException {
+    protected JcrEngine startEngineUsing( String pathToConfigurationFile ) throws IOException {
+        return startEngineUsing(pathToConfigurationFile, null);
+    }
+
+    /**
+     * Explicitly start the JCR engine so that it uses the supplied configuration file. If an engine is already running, it will
+     * first be shutdown.
+     * <p>
+     * This method can be called from the method annotated with {@link BeforeClass} annotation.
+     * </p>
+     * 
+     * @param pathToConfigurationFile the path to the ModeShape configuration file
+     * @param testClass the class under test, used to get the classloader if the configuration file is to be found on the
+     *        classpath; may be null if the configuration file is on the file system in a location relative to the directory where
+     *        the JVM was started or to the "src/test/resources" directory.
+     * @return the JCR engine instance that is ready to use
+     * @throws IOException if the ModeShape configuration file could not be found or was invalid
+     */
+    protected static JcrEngine startEngineUsing( String pathToConfigurationFile,
+                                                 Class<?> testClass ) throws IOException {
         assertThat(pathToConfigurationFile, is(notNullValue()));
         stopEngine();
         try {
@@ -125,6 +145,9 @@ public abstract class ModeShapeUnitTest {
                 configuration.loadFrom(pathToConfigurationFile);
             } catch (IOException e) {
                 boolean read = false;
+                if (classLoader == null && testClass != null) {
+                    classLoader = testClass.getClassLoader();
+                }
                 if (classLoader != null) {
                     // Try loading it from the classpath ...
                     URL url = classLoader.getResource(pathToConfigurationFile);

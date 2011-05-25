@@ -35,7 +35,7 @@ public class UnitTestsForModeShapeMultiUseTest extends ModeShapeMultiUseTest {
 
     @BeforeClass
     public static void beforeAll() throws Exception {
-        startEngineUsing("modeshape_configuration_inmemory.xml");
+        startEngineUsing("modeshape_configuration_inmemory.xml", UnitTestsForModeShapeMultiUseTest.class);
     }
 
     @AfterClass
