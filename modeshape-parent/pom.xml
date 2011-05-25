@@ -812,6 +812,7 @@
 						</property>
 					</systemProperties>
 					<argLine>-Xmx256M ${debug.argline} -XX:MaxPermSize=512m</argLine>
+					<runOrder>alphabetical</runOrder>
 				</configuration>
 			</plugin>
 
