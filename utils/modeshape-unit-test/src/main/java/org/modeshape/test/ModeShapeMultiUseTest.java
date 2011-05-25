@@ -30,7 +30,7 @@ package org.modeshape.test;
  * <pre>
  * @BeforeClass
  * public static void beforeAll() throws Exception {
- *     startEngineUsing("path/to/configuration.xml");
+ *     startEngineUsing("path/to/configuration.xml",ClassUnderTest.class);
  * }
  * @AfterClass
  * public static void afterAll() throws Exception {
