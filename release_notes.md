@@ -2,6 +2,10 @@
 
 ModeShape &version; includes several minor features, improvements, and bug fixes since 2.4.0.Final, including:
 
+- new sequencers for XSD and WSDL files
+- RESTful service exposes repository capabilities and metadata
+- JPA connector can now specify the database schema that should be used
+- JARs for most ModeShape modules are now OSGi bundles
 - upgrades of several third-party dependencies
 - smaller JAR files (no longer dependent upon Google Collections or the JCIP libraries)
 - versioning-related fixes and performance improvements
@@ -11,7 +15,7 @@ ModeShape &version; includes several minor features, improvements, and bug fixes
 - refactored the build process, which now uses Maven 3
 - switch to PicketBox for the JAAS implementation used in unit tests
 - performance improvements
-- almost two dozen bug fixes
+- almost four dozen bug fixes
 
 ## JCR Supported Features
 
@@ -147,6 +151,8 @@ searchable than if it remains locked up inside the stored files. And ModeShape p
 - MS Office Sequencer
 - Text Sequencers (Delimited and Fixed Width)
 - XML Sequencer
+- XML Schema Document (XSD) Sequencer
+- Web Service Definition Lanaguage (WSDL) 1.1 Sequencer
 - Zip File Sequencer (also WARs, JARs, and EARs)
 - Teiid Relational Model Sequencer
 - Teiid VDB Sequencer
