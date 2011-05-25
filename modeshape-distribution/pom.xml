@@ -113,6 +113,21 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
+      <artifactId>modeshape-sequencer-xsd</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>modeshape-sequencer-wsdl</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>modeshape-sequencer-sramp</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>modeshape-sequencer-zip</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -351,6 +366,24 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
+      <artifactId>modeshape-sequencer-xsd</artifactId>
+      <version>${project.version}</version>
+      <classifier>sources</classifier>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>modeshape-sequencer-wsdl</artifactId>
+      <version>${project.version}</version>
+      <classifier>sources</classifier>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>modeshape-sequencer-sramp</artifactId>
+      <version>${project.version}</version>
+      <classifier>sources</classifier>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>modeshape-sequencer-zip</artifactId>
       <version>${project.version}</version>
 			<classifier>sources</classifier>
@@ -578,9 +611,21 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
+      <artifactId>modeshape-sequencer-xsd</artifactId>
+      <version>${project.version}</version>
+      <classifier>tests</classifier>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>modeshape-sequencer-wsdl</artifactId>
+      <version>${project.version}</version>
+      <classifier>tests</classifier>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>modeshape-sequencer-zip</artifactId>
       <version>${project.version}</version>
-			<classifier>tests</classifier>
+      <classifier>tests</classifier>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -693,7 +738,7 @@
 
 
 		<!--
-		Source JARs
+		Test Source JARs
 		-->
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -808,6 +853,18 @@
       <artifactId>modeshape-sequencer-xml</artifactId>
       <version>${project.version}</version>
 			<classifier>test-sources</classifier>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>modeshape-sequencer-xsd</artifactId>
+      <version>${project.version}</version>
+      <classifier>test-sources</classifier>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>modeshape-sequencer-wsdl</artifactId>
+      <version>${project.version}</version>
+      <classifier>test-sources</classifier>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -999,6 +1056,18 @@
       <artifactId>modeshape-sequencer-xml</artifactId>
       <version>${project.version}</version>
 			<classifier>jar-with-dependencies</classifier>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>modeshape-sequencer-xsd</artifactId>
+      <version>${project.version}</version>
+      <classifier>jar-with-dependencies</classifier>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>modeshape-sequencer-wsdl</artifactId>
+      <version>${project.version}</version>
+      <classifier>jar-with-dependencies</classifier>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
