@@ -168,4 +168,6 @@ searchable than if it remains locked up inside the stored files. And ModeShape p
 - JDBC driver for accessing ModeShape content through JDBC API and JCR-SQL2 queries
 
 ## Bug Fixes, Features, and other Issues
+The following are the bugs, features and other issues that have been fixed in this release (since the 2.5.0.Beta2 release):
+
             
