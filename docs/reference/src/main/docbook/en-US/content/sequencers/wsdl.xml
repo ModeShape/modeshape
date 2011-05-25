@@ -51,8 +51,10 @@
       The WSDL specification allows for a fair amount of variation in WSDL files, and consequently this variation is reflected in the
       derived output structure.
     </para>
+  <sect1 id="wsdl-sequencer-example">
+    <title>Example</title>
     <para>
-      So let's look at an example WSDL file from the 
+      Let's look at an example WSDL file from the 
       <ulink url="http://www.w3.org/TR/wsdl#_wsdl">WSDL 1.1 specification</ulink>:
 	  </para>
 	  <programlisting language="XML" role="XML"><![CDATA[
@@ -346,6 +348,7 @@
       that of the actual WSDL file, but it makes this structure easy to navigate, search and query, especially when it includes
       the names and namespace URIs of the referenced components (and setting REFERENCE properties to the referenced component where possible).
     </para>
+  </sect1>
   <sect1 id="wsdl-sequencer-nodetypes">
     <title>Node Types</title>
 		<para>
@@ -353,8 +356,6 @@
 			property, meaning it's possible and valid for any node to have any property (with single or multiple values). This sequencer
 			doesn't add any such properties or nodes, but you are free to annotate the structure as needed.
 		</para>
-	  <sect2 id="wsdl-sequencer-namespace">
-	    <title>WSDL 1.1 Definition Namespace</title>
 			<para>
 				The compact node definitions for the "wsdl" namespace are as follows:
 			</para>
@@ -624,7 +625,6 @@
 [sramp:relatedTo] mixin
 - * (weakreference) multiple
 ]]></programlisting>
-		</sect2>
 	</sect1>
   <sect1 id="wsdl-sequencer-using">
     <title>Configuration</title>

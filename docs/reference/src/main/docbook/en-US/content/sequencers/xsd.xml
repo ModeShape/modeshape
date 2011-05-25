@@ -52,6 +52,8 @@
       complicated. But it also means that there is a lot of variation in XSDs, and consequently there is a lot of variation in the
       output structure that this sequencer derives from XSD files.
     </para>
+  <sect1 id="xsd-sequencer-example">
+    <title>Example</title>
     <para>
       So before we get too far, let's look at an example XML Schema Document taken from the 
       <ulink url="http://www.w3.org/TR/xmlschema-0/">XML Schema Primer</ulink>:
@@ -369,6 +371,7 @@
       sequencer was to output content that reflected as accurately as possible the structure of the XML Schema Documents while
       also making the content easy to navigate, search and query.
     </para>
+  </sect1>
   <sect1 id="xsd-sequencer-nodetypes">
     <title>Node Types</title>
 		<para>
@@ -379,8 +382,6 @@
 			However, it is still useful to capture the metadata about what that node represents, and so the sequencer use explicit node
 			type definitions and mixins for this.
 		</para>
-	  <sect2 id="xsd-sequencer-namespace">
-	    <title>XML Schema Document Namespace</title>
 			<para>
 				The compact node definitions for the "xs" namespace are as follows:
 			</para>
@@ -659,7 +660,6 @@
 [sramp:relatedTo] mixin
 - * (weakreference) multiple
 ]]></programlisting>
-		</sect2>
 	</sect1>
   <sect1 id="xsd-sequencer-using">
     <title>Configuration</title>
