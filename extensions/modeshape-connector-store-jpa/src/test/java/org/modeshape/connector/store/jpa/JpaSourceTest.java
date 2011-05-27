@@ -29,6 +29,7 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import java.util.ArrayList;
 import java.util.List;
+import org.hibernate.cfg.Environment;
 import org.hibernate.ejb.Ejb3Configuration;
 import org.junit.After;
 import org.junit.Before;
@@ -174,4 +175,32 @@ public class JpaSourceTest {
         source.configure(config);
         assertThat(config.getProperties().get("hibernate.hbm2ddl.auto"), is(nullValue()));
     }
+
+    @FixFor( "MODE-1157" )
+    @Test
+    public void shouldDisableAutoGenerateSchemaWhenJTAIsEnabled() {
+        source = new JpaSource();
+        source.setName("Some name");
+        source.setAutoGenerateSchema("create-drop");
+        source.setTransactionManagerStrategy("org.hibernate.transaction.JBossTransactionManagerLookup");
+
+        // Verify it is set correctly on the Hibernate configuration ...
+        Ejb3Configuration config = new Ejb3Configuration();
+        source.configure(config);
+        assertThat((String)config.getProperties().get("hibernate.hbm2ddl.auto"), is(JpaSource.AUTO_GENERATE_SCHEMA_DISABLE));
+    }
+
+    @FixFor( "MODE-1157" )
+    @Test
+    public void shouldEnableJTAWhenTransactionManagerStrategyIsEnabled() {
+        source = new JpaSource();
+        source.setName("Some name");
+        source.setTransactionManagerStrategy("org.hibernate.transaction.JBossTransactionManagerLookup");
+
+        // Verify it is set correctly on the Hibernate configuration ...
+        Ejb3Configuration config = new Ejb3Configuration();
+        source.configure(config);
+        assertThat((String)config.getProperties().get(Environment.TRANSACTION_STRATEGY), is("org.hibernate.transaction.JTATransactionFactory"));
+    }
+
 }
