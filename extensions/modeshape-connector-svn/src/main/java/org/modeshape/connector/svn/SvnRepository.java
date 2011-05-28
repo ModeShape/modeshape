@@ -117,8 +117,9 @@ public class SvnRepository extends Repository<PathNode, SvnWorkspace> {
         public SvnProcessor( Transaction<PathNode, SvnWorkspace> txn,
                              Repository<PathNode, SvnWorkspace> repository,
                              Observer observer,
-                             boolean updatesAllowed ) {
-            super(txn, repository, observer, updatesAllowed);
+                             boolean updatesAllowed,
+                             boolean creatingWorkspacesAllowed ) {
+            super(txn, repository, observer, updatesAllowed, creatingWorkspacesAllowed);
         }
 
         @Override

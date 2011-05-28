@@ -519,6 +519,14 @@ public class InMemoryRepositorySource implements BaseRepositorySource, ObjectFac
         return true;
     }
 
+    @Description( i18n = GraphI18n.class, value = "creatingWorkspacesAllowedPropertyDescription" )
+    @Label( i18n = GraphI18n.class, value = "creatingWorkspacesAllowedPropertyLabel" )
+    @Category( i18n = GraphI18n.class, value = "creatingWorkspacesAllowedPropertyCategory" )
+    @ReadOnly
+    public boolean isCreatingWorkspacesAllowed() {
+        return true;
+    }
+
     /**
      * In-memory connectors aren't shared and cannot be loaded from external sources if updates are not allowed. Therefore, in
      * order to avoid setting up an in-memory connector that is permanently empty (presumably, not a desired outcome), all

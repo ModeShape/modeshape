@@ -51,6 +51,13 @@ public interface BaseRepositorySource extends org.modeshape.graph.connector.Repo
     void setUpdatesAllowed( boolean updatesAllowed );
 
     /**
+     * Get whether this source allows workspaces to be created.
+     * 
+     * @return true if this source allows workspaces to be created by clients, or false if creating workspaces is not allowed
+     */
+    boolean isCreatingWorkspacesAllowed();
+
+    /**
      * Returns the {@link CachePolicy cache policy} for the repository source
      * 
      * @return the {@link CachePolicy cache policy} for the repository source

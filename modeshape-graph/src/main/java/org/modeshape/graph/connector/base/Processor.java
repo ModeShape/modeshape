@@ -79,18 +79,21 @@ public class Processor<NodeType extends Node, WorkspaceType extends Workspace> e
     private final PropertyFactory propertyFactory;
     private final Repository<NodeType, WorkspaceType> repository;
     private final boolean updatesAllowed;
+    private final boolean creatingWorkspacesAllowed;
     private final Transaction<NodeType, WorkspaceType> txn;
 
     public Processor( Transaction<NodeType, WorkspaceType> txn,
                       Repository<NodeType, WorkspaceType> repository,
                       Observer observer,
-                      boolean updatesAllowed ) {
+                      boolean updatesAllowed,
+                      boolean creatingWorkspacesAllowed ) {
         super(repository.getSourceName(), txn.getContext(), observer);
         this.txn = txn;
         this.repository = repository;
         this.pathFactory = txn.getContext().getValueFactories().getPathFactory();
         this.propertyFactory = txn.getContext().getPropertyFactory();
         this.updatesAllowed = updatesAllowed;
+        this.creatingWorkspacesAllowed = creatingWorkspacesAllowed;
     }
 
     /**
@@ -443,7 +446,7 @@ public class Processor<NodeType extends Node, WorkspaceType extends Workspace> e
      */
     @Override
     public void process( CreateWorkspaceRequest request ) {
-        if (!updatesAllowed(request)) return;
+        if (!creatingWorkspacesAllowed(request)) return;
 
         String clonedWorkspaceName = null;
         WorkspaceType workspace = repository.createWorkspace(txn,
@@ -542,6 +545,7 @@ public class Processor<NodeType extends Node, WorkspaceType extends Workspace> e
     @Override
     public void process( CloneWorkspaceRequest request ) {
         if (!updatesAllowed(request)) return;
+        if (!creatingWorkspacesAllowed(request)) return;
 
         // Find the original workspace that we're cloning ...
         String targetWorkspaceName = request.desiredNameOfTargetWorkspace();
@@ -634,6 +638,13 @@ public class Processor<NodeType extends Node, WorkspaceType extends Workspace> e
     protected boolean updatesAllowed( Request request ) {
         if (!updatesAllowed) {
             request.setError(new InvalidRequestException(GraphI18n.sourceIsReadOnly.text(getSourceName())));
+        }
+        return !request.hasError();
+    }
+
+    protected boolean creatingWorkspacesAllowed( Request request ) {
+        if (!creatingWorkspacesAllowed) {
+            request.setError(new InvalidRequestException(GraphI18n.sourceDoesNotAllowCreatingWorkspaces.text(getSourceName())));
         }
         return !request.hasError();
     }

@@ -265,7 +265,8 @@ public abstract class Repository<NodeType extends Node, WorkspaceType extends Wo
     public RequestProcessor createRequestProcessor( Transaction<NodeType, WorkspaceType> txn ) {
         RepositoryContext repositoryContext = this.source.getRepositoryContext();
         Observer observer = repositoryContext != null ? repositoryContext.getObserver() : null;
-        return new Processor<NodeType, WorkspaceType>(txn, this, observer, source.areUpdatesAllowed());
+        return new Processor<NodeType, WorkspaceType>(txn, this, observer, source.areUpdatesAllowed(),
+                                                      source.isCreatingWorkspacesAllowed());
     }
 
     /**

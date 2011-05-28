@@ -145,7 +145,7 @@ public class FileSystemRepository extends Repository<PathNode, FileSystemWorkspa
     public RequestProcessor createRequestProcessor( Transaction<PathNode, FileSystemWorkspace> txn ) {
         RepositoryContext repositoryContext = this.source.getRepositoryContext();
         Observer observer = repositoryContext != null ? repositoryContext.getObserver() : null;
-        return new FileSystemProcessor(txn, this, observer, source.areUpdatesAllowed());
+        return new FileSystemProcessor(txn, this, observer, source.areUpdatesAllowed(), source.isCreatingWorkspacesAllowed());
     }
 
     /**
@@ -242,8 +242,9 @@ public class FileSystemRepository extends Repository<PathNode, FileSystemWorkspa
         public FileSystemProcessor( Transaction<PathNode, FileSystemWorkspace> txn,
                                     Repository<PathNode, FileSystemWorkspace> repository,
                                     Observer observer,
-                                    boolean updatesAllowed ) {
-            super(txn, repository, observer, updatesAllowed);
+                                    boolean updatesAllowed,
+                                    boolean creatingWorkspacesAllowed ) {
+            super(txn, repository, observer, updatesAllowed, creatingWorkspacesAllowed);
             this.txn = (FileSystemTransaction)txn;
         }
 
