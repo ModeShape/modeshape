@@ -72,6 +72,15 @@ public abstract class AbstractRepositorySource implements BaseRepositorySource {
     /**
      * {@inheritDoc}
      * 
+     * @see org.modeshape.graph.connector.base.BaseRepositorySource#isCreatingWorkspacesAllowed()
+     */
+    public boolean isCreatingWorkspacesAllowed() {
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.modeshape.graph.connector.base.BaseRepositorySource#getRepositoryContext()
      */
     public RepositoryContext getRepositoryContext() {

@@ -454,6 +454,7 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
      * @see #getPredefinedWorkspaceNames()
      * @see #setCreatingWorkspacesAllowed(boolean)
      */
+    @Override
     public boolean isCreatingWorkspacesAllowed() {
         return capabilities.supportsCreatingWorkspaces();
     }

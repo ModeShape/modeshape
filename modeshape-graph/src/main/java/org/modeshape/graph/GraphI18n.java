@@ -118,6 +118,7 @@ public final class GraphI18n {
     public static I18n currentWorkspaceCannotBeDeleted;
     public static I18n sourceIsReadOnly;
     public static I18n workspaceIsReadOnly;
+    public static I18n sourceDoesNotAllowCreatingWorkspaces;
     public static I18n namePropertyDescription;
     public static I18n namePropertyLabel;
     public static I18n namePropertyCategory;
@@ -140,6 +141,9 @@ public final class GraphI18n {
     public static I18n updatesAllowedPropertyDescription;
     public static I18n updatesAllowedPropertyLabel;
     public static I18n updatesAllowedPropertyCategory;
+    public static I18n creatingWorkspacesAllowedPropertyDescription;
+    public static I18n creatingWorkspacesAllowedPropertyLabel;
+    public static I18n creatingWorkspacesAllowedPropertyCategory;
 
     /* XML File Connector */
     public static I18n contentPropertyDescription;
