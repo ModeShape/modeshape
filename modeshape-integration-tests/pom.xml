@@ -138,6 +138,12 @@
 		</dependency>
 		<dependency>
 			<groupId>org.modeshape</groupId>
+			<artifactId>modeshape-connector-disk</artifactId>
+			<version>${project.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.modeshape</groupId>
 			<artifactId>modeshape-connector-filesystem</artifactId>
 			<version>${project.version}</version>
 			<scope>test</scope>
