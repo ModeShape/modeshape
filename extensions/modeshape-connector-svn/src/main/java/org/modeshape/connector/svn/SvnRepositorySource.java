@@ -267,6 +267,7 @@ public class SvnRepositorySource extends AbstractRepositorySource implements Obj
      * @see #getPredefinedWorkspaceNames()
      * @see #setCreatingWorkspacesAllowed(boolean)
      */
+    @Override
     @Description( i18n = SvnRepositoryConnectorI18n.class, value = "creatingWorkspacesAllowedPropertyDescription" )
     @Label( i18n = SvnRepositoryConnectorI18n.class, value = "creatingWorkspacesAllowedPropertyLabel" )
     @Category( i18n = SvnRepositoryConnectorI18n.class, value = "creatingWorkspacesAllowedPropertyCategory" )

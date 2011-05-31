@@ -2,7 +2,6 @@ package org.modeshape.connector.disk;
 
 import java.io.File;
 import java.io.IOException;
-import javax.naming.NamingException;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.graph.Graph;
@@ -20,7 +19,7 @@ public class DiskConnectorReadableTest extends ReadableConnectorTest {
      * @see org.modeshape.graph.connector.test.AbstractConnectorTest#setUpSource()
      */
     @Override
-    protected RepositorySource setUpSource() throws NamingException {
+    protected RepositorySource setUpSource() {
         String[] predefinedWorkspaceNames = new String[] {"aircraft", "cars"};
         DiskSource source = new DiskSource();
         source.setName("Test Repository");

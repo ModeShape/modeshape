@@ -464,6 +464,7 @@ public class JBossCacheSource implements BaseRepositorySource, ObjectFactory {
      * @see #getPredefinedWorkspaceNames()
      * @see #setCreatingWorkspacesAllowed(boolean)
      */
+    @Override
     @Description( i18n = JBossCacheConnectorI18n.class, value = "creatingWorkspacesAllowedPropertyDescription" )
     @Label( i18n = JBossCacheConnectorI18n.class, value = "creatingWorkspacesAllowedPropertyLabel" )
     @Category( i18n = JBossCacheConnectorI18n.class, value = "creatingWorkspacesAllowedPropertyCategory" )
