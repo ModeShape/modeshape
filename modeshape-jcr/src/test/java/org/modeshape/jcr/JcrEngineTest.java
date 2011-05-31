@@ -246,6 +246,43 @@ public class JcrEngineTest {
         jcrSession.logout();
     }
 
+    @FixFor( "MODE-1180" )
+    @Test
+    public void shouldCreateRepositoriesUponStartup() throws Exception {
+        configuration = new JcrConfiguration();
+        configuration.repositorySource("car-source")
+                     .usingClass(InMemoryRepositorySource.class)
+                     .setDescription("The automobile content")
+                     .setProperty("defaultWorkspaceName", "default");
+        configuration.repository("cars")
+                     .setSource("car-source")
+                     .registerNamespace("car", "http://www.modeshape.org/examples/cars/1.0")
+                     .addNodeTypes(resourceUrl("cars.cnd"))
+                     .setInitialContent("src/test/resources/initialWorkspaceContent.xml", "default")
+                     .setOption(Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.ADMIN);
+        configuration.repositorySource("product-source")
+                     .usingClass(InMemoryRepositorySource.class)
+                     .setDescription("The products content")
+                     .setProperty("defaultWorkspaceName", "default");
+        configuration.repository("products")
+                     .setSource("product-source")
+                     .registerNamespace("car", "http://www.modeshape.org/examples/cars/1.0")
+                     .addNodeTypes(resourceUrl("cars.cnd"))
+                     .setInitialContent("src/test/resources/initialWorkspaceContent.xml", "default")
+                     .setOption(Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.ADMIN);
+        engine = configuration.build();
+        assertThat(engine.getProblems().hasErrors(), is(false));
+        engine.start(true);
+        repository = engine.getRepository("cars");
+        session = repository.login();
+
+        assertNodeType("car:Car", false, false, true, false, null, 0, 12, "nt:unstructured", "mix:created");
+
+        // Check that the content is there...
+        assertThat(session.getRootNode().hasNode("Cars"), is(true));
+        assertThat(session.getNode("/Cars"), is(notNullValue()));
+    }
+
     @FixFor( "MODE-1119" )
     @Test
     public void shouldCreateRepositoryConfiguredWithNoInitialContent() throws Exception {

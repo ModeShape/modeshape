@@ -32,8 +32,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -49,6 +53,7 @@ import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.Logger;
+import org.modeshape.common.util.NamedThreadFactory;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.Location;
@@ -235,6 +240,10 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
     /**
      * Start this engine to make it available for use, and optionally start each of the repositories in the configuration. Any
      * errors starting the repositories will be logged as problems.
+     * <p>
+     * This method starts each repository in parallel, and returns only after all repositories have been started (or failed
+     * startup).
+     * </p>
      * 
      * @param validateRepositoryConfigs true if the configurations of each repository should be validated and each repository
      *        started/initialized, or false otherwise
@@ -245,15 +254,97 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
      * @see #shutdown()
      */
     public void start( boolean validateRepositoryConfigs ) {
+        start(validateRepositoryConfigs, -1, TimeUnit.SECONDS);
+    }
+
+    /**
+     * Start this engine to make it available for use, and optionally start each of the repositories in the configuration. Any
+     * errors starting the repositories will be logged as problems.
+     * <p>
+     * This method starts each repository in parallel, and returns after the supplied timeout or after all repositories have been
+     * started (or failed startup), whichever comes first.
+     * </p>
+     * 
+     * @param validateRepositoryConfigs true if the configurations of each repository should be validated and each repository
+     *        started/initialized, or false otherwise
+     * @param timeout the maximum time to wait
+     * @param timeoutUnit the time unit of the {@code timeout} argument
+     * @throws IllegalStateException if this method is called when already shut down.
+     * @throws JcrConfigurationException if there is an error in the configuration or any of the services that prevents proper
+     *         startup
+     * @see #start()
+     * @see #shutdown()
+     */
+    public void start( boolean validateRepositoryConfigs,
+                       long timeout,
+                       TimeUnit timeoutUnit ) {
         start();
         if (validateRepositoryConfigs) {
-            for (String repositoryName : getRepositoryNames()) {
-                try {
-                    getRepository(repositoryName);
-                } catch (Throwable t) {
-                    // Record this in the problems ...
-                    this.problems.addError(t, JcrI18n.errorStartingRepositoryCheckConfiguration, repositoryName, t.getMessage());
+            try {
+                repositoriesLock.lock();
+                Set<String> repositoryNames = getRepositoryNames();
+                if (repositoryNames.size() > 1) {
+                    // There's more than one, so we should start them in parallel ...
+                    final CountDownLatch latch = new CountDownLatch(repositoryNames.size());
+                    final Problems problems = this.problems;
+
+                    // Create an executor service that we'll use to start the repos ...
+                    int numThreads = Math.min(repositoryNames.size(), 4);
+                    ThreadFactory threadFactory = new NamedThreadFactory("modeshape-start-repo");
+                    ExecutorService starters = Executors.newFixedThreadPool(numThreads, threadFactory);
+
+                    for (final String repositoryName : repositoryNames) {
+                        // Submit a job for each of the repositories ...
+                        starters.execute(new Runnable() {
+                            @SuppressWarnings( "synthetic-access" )
+                            public void run() {
+                                try {
+                                    getOrStartRepository(repositoryName);
+                                    log.info(JcrI18n.completedStartingRepository, repositoryName);
+                                } catch (Throwable t) {
+                                    // Record this in the problems ...
+                                    problems.addError(t,
+                                                      JcrI18n.errorStartingRepositoryCheckConfiguration,
+                                                      repositoryName,
+                                                      t.getMessage());
+                                } finally {
+                                    latch.countDown();
+                                }
+                            }
+                        });
+                    }
+                    // Shutdown the starter service in an orderly fashion by preventing new jobs,
+                    // but finishes already-submitted jobs ...
+                    starters.shutdown();
+
+                    // Now wait for the all the startups to complete ...
+                    try {
+                        if (timeout < 0L) {
+                            latch.await();
+                        } else {
+                            latch.await(timeout, timeoutUnit);
+                        }
+                    } catch (InterruptedException e) {
+                        this.problems.addError(e, JcrI18n.startingAllRepositoriesWasInterrupted, e.getMessage());
+                    }
+
+                } else {
+                    // Otherwise there's just 0 or 1, so simple to start in serial ...
+                    for (String repositoryName : repositoryNames) {
+                        try {
+                            getOrStartRepository(repositoryName);
+                            log.info(JcrI18n.completedStartingRepository, repositoryName);
+                        } catch (Throwable t) {
+                            // Record this in the problems ...
+                            this.problems.addError(t,
+                                                   JcrI18n.errorStartingRepositoryCheckConfiguration,
+                                                   repositoryName,
+                                                   t.getMessage());
+                        }
+                    }
                 }
+            } finally {
+                repositoriesLock.unlock();
             }
         }
     }
@@ -278,6 +369,29 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
     }
 
     /**
+     * Method that starts the named repository or, if it is already started, simply returns it. This method should be called
+     * within a block that uses the {@link #repositoriesLock}.
+     * 
+     * @param repositoryName the name of the repository
+     * @return the repository; never null
+     * @throws RepositoryException if there was a problem starting the repository
+     */
+    protected JcrRepository getOrStartRepository( String repositoryName ) throws RepositoryException {
+        JcrRepository repository = repositories.get(repositoryName);
+        if (repository == null) {
+            try {
+                repository = doCreateJcrRepository(repositoryName);
+            } catch (PathNotFoundException e) {
+                // The repository name is not a valid repository ...
+                String msg = JcrI18n.repositoryDoesNotExist.text(repositoryName);
+                throw new RepositoryException(msg);
+            }
+            repositories.put(repositoryName, repository);
+        }
+        return repository;
+    }
+
+    /**
      * Get the {@link Repository} implementation for the named repository.
      * 
      * @param repositoryName the name of the repository, which corresponds to the name of a configured {@link RepositorySource}
@@ -292,18 +406,7 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
 
         try {
             repositoriesLock.lock();
-            JcrRepository repository = repositories.get(repositoryName);
-            if (repository == null) {
-                try {
-                    repository = doCreateJcrRepository(repositoryName);
-                } catch (PathNotFoundException e) {
-                    // The repository name is not a valid repository ...
-                    String msg = JcrI18n.repositoryDoesNotExist.text(repositoryName);
-                    throw new RepositoryException(msg);
-                }
-                repositories.put(repositoryName, repository);
-            }
-            return repository;
+            return getOrStartRepository(repositoryName);
         } finally {
             repositoriesLock.unlock();
         }
