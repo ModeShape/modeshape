@@ -61,6 +61,8 @@ public final class JcrI18n {
     public static I18n failedToReadPropertyFromManifest;
     public static I18n errorLoadingNodeTypeDefintions;
     public static I18n errorStartingRepositoryCheckConfiguration;
+    public static I18n completedStartingRepository;
+    public static I18n startingAllRepositoriesWasInterrupted;
     public static I18n unableToFindNodeTypeDefinitionsOnClasspathOrFileOrUrl;
     public static I18n unableToFindResourceOnClasspathOrFileOrUrl;
     public static I18n unableToImportInitialContent;

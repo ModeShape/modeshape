@@ -344,6 +344,7 @@ public class DiskSource implements BaseRepositorySource, ObjectFactory {
      * @see #getPredefinedWorkspaceNames()
      * @see #setCreatingWorkspacesAllowed(boolean)
      */
+    @Override
     public boolean isCreatingWorkspacesAllowed() {
         return capabilities.supportsCreatingWorkspaces();
     }
@@ -454,7 +455,6 @@ public class DiskSource implements BaseRepositorySource, ObjectFactory {
         }
         return ref;
     }
-
 
     /**
      * {@inheritDoc}

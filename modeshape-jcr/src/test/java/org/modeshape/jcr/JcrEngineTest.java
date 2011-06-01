@@ -27,6 +27,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.net.URL;
+import java.util.concurrent.TimeUnit;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Workspace;
@@ -246,6 +247,44 @@ public class JcrEngineTest {
         jcrSession.logout();
     }
 
+    @FixFor( "MODE-1180" )
+    @Test
+    public void shouldCreateRepositoriesUponStartup() throws Exception {
+        configuration = new JcrConfiguration();
+        configuration.repositorySource("car-source")
+                     .usingClass(InMemoryRepositorySource.class)
+                     .setDescription("The automobile content")
+                     .setProperty("defaultWorkspaceName", "default");
+        configuration.repository("cars")
+                     .setSource("car-source")
+                     .registerNamespace("car", "http://www.modeshape.org/examples/cars/1.0")
+                     .addNodeTypes(resourceUrl("cars.cnd"))
+                     .setInitialContent("src/test/resources/initialWorkspaceContent.xml", "default")
+                     .setOption(Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.ADMIN);
+        configuration.repositorySource("product-source")
+                     .usingClass(InMemoryRepositorySource.class)
+                     .setDescription("The products content")
+                     .setProperty("defaultWorkspaceName", "default");
+        configuration.repository("products")
+                     .setSource("product-source")
+                     .registerNamespace("car", "http://www.modeshape.org/examples/cars/1.0")
+                     .addNodeTypes(resourceUrl("cars.cnd"))
+                     .setInitialContent("src/test/resources/initialWorkspaceContent.xml", "default")
+                     .setOption(Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.ADMIN);
+        engine = configuration.build();
+        assertThat(engine.getProblems().hasErrors(), is(false));
+        engine.start(true, 1L, TimeUnit.NANOSECONDS);
+        repository = engine.getRepository("products");
+        repository = engine.getRepository("cars");
+        session = repository.login();
+
+        assertNodeType("car:Car", false, false, true, false, null, 0, 12, "nt:unstructured", "mix:created");
+
+        // Check that the content is there...
+        assertThat(session.getRootNode().hasNode("Cars"), is(true));
+        assertThat(session.getNode("/Cars"), is(notNullValue()));
+    }
+
     @FixFor( "MODE-1119" )
     @Test
     public void shouldCreateRepositoryConfiguredWithNoInitialContent() throws Exception {
@@ -358,6 +397,31 @@ public class JcrEngineTest {
         assertThat(engine.getProblems().hasErrors(), is(true));
         assertThat(engine.getProblems().size(), is(1)); // one error
         assertThat(engine.getProblems().iterator().next().getStatus(), is(Problem.Status.ERROR));
+    }
+
+    @FixFor( "MODE-1119" )
+    @Test( expected = RepositoryException.class )
+    public void shouldRecordProblemWhenStartingRepositoriesConfiguredWithValidInitialContentPathButEmptyFileAndFailWhenGettingRepository()
+        throws Exception {
+        configuration = new JcrConfiguration();
+        configuration.repositorySource("car-source")
+                     .usingClass(InMemoryRepositorySource.class)
+                     .setDescription("The automobile content")
+                     .setProperty("defaultWorkspaceName", "default");
+        configuration.repository("cars")
+                     .setSource("car-source")
+                     .registerNamespace("car", "http://www.modeshape.org/examples/cars/1.0")
+                     .addNodeTypes(resourceUrl("cars.cnd"))
+                     .setInitialContent("src/test/resources/emptyFile.xml", "default")
+                     .setOption(Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.ADMIN);
+        engine = configuration.build();
+        assertThat(engine.getProblems().hasErrors(), is(false));
+        engine.start(true);
+        assertThat(engine.getProblems().hasErrors(), is(true));
+        assertThat(engine.getProblems().size(), is(1)); // one error
+        assertThat(engine.getProblems().iterator().next().getStatus(), is(Problem.Status.ERROR));
+        // The following will fail ...
+        engine.getRepository("cars");
     }
 
     @FixFor( "MODE-1119" )
