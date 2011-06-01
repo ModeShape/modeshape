@@ -94,6 +94,7 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
     private final Map<String, JcrRepositoryHolder> repositories;
     private final Lock repositoriesLock;
     private final Map<String, Object> descriptors = new HashMap<String, Object>();
+    private final ExecutorService repositoryStarterService;
 
     /**
      * Provides the ability to schedule lock clean-up
@@ -106,6 +107,10 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
         this.repositories = new HashMap<String, JcrRepositoryHolder>();
         this.repositoriesLock = new ReentrantLock();
         initDescriptors();
+
+        // Create an executor service that we'll use to start the repositories ...
+        ThreadFactory threadFactory = new NamedThreadFactory("modeshape-start-repo");
+        this.repositoryStarterService = Executors.newCachedThreadPool(threadFactory);
     }
 
     /**
@@ -134,6 +139,7 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
 
     @Override
     protected void preShutdown() {
+        repositoryStarterService.shutdown();
         scheduler.shutdown();
         super.preShutdown();
 
@@ -281,79 +287,33 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
         start();
         if (validateRepositoryConfigs) {
             Set<String> repositoryNames = getRepositoryNames();
-            if (repositoryNames.size() > 1) {
+            if (repositoryNames.isEmpty()) return;
 
-                // There's more than one, so we should start them in parallel ...
-                final CountDownLatch latch = new CountDownLatch(repositoryNames.size());
-                final Problems problems = this.problems;
+            final CountDownLatch latch = new CountDownLatch(repositoryNames.size());
 
-                // Create an executor service that we'll use to start the repos ...
-                int numThreads = Math.min(repositoryNames.size(), 4);
-                ThreadFactory threadFactory = new NamedThreadFactory("modeshape-start-repo");
-                ExecutorService starters = Executors.newFixedThreadPool(numThreads, threadFactory);
-
-                try {
-                    repositoriesLock.lock();
-                    // Put in a holder with a future for each repository
-                    // (this should proceed quickly, as nothing waits for the initialization) ...
-                    for (final String repositoryName : repositoryNames) {
-                        Callable<JcrRepository> initializer = new Callable<JcrRepository>() {
-                            public JcrRepository call() throws Exception {
-                                JcrRepository repository = null;
-                                try {
-                                    repository = doCreateJcrRepository(repositoryName);
-                                    getLogger().info(JcrI18n.completedStartingRepository, repositoryName);
-                                    return repository;
-                                } catch (Throwable t) {
-                                    // Record this in the problems ...
-                                    problems.addError(t,
-                                                      JcrI18n.errorStartingRepositoryCheckConfiguration,
-                                                      repositoryName,
-                                                      t.getMessage());
-                                } finally {
-                                    latch.countDown();
-                                }
-                                return repository;
-                            }
-                        };
-                        Future<JcrRepository> future = starters.submit(initializer);
-                        JcrRepositoryHolder holder = new JcrRepositoryHolder(repositoryName, future);
-                        this.repositories.put(repositoryName, holder);
-                    }
-
-                } finally {
-                    repositoriesLock.unlock();
+            try {
+                repositoriesLock.lock();
+                // Put in a holder with a future for each repository
+                // (this should proceed quickly, as nothing waits for the initialization) ...
+                for (final String repositoryName : repositoryNames) {
+                    RepositoryInitializer initializer = new RepositoryInitializer(repositoryName, latch);
+                    Future<JcrRepository> future = repositoryStarterService.submit(initializer);
+                    JcrRepositoryHolder holder = new JcrRepositoryHolder(repositoryName, future);
+                    this.repositories.put(repositoryName, holder);
                 }
+            } finally {
+                repositoriesLock.unlock();
+            }
 
-                // Shutdown the starter service in an orderly fashion by preventing new jobs,
-                // but finishes already-submitted jobs ...
-                starters.shutdown();
-
-                // Now wait for the all the startups to complete ...
-                try {
-                    if (timeout < 0L) {
-                        latch.await();
-                    } else {
-                        latch.await(timeout, timeoutUnit);
-                    }
-                } catch (InterruptedException e) {
-                    this.problems.addError(e, JcrI18n.startingAllRepositoriesWasInterrupted, e.getMessage());
+            // Now wait for the all the startups to complete ...
+            try {
+                if (timeout < 0L) {
+                    latch.await();
+                } else {
+                    latch.await(timeout, timeoutUnit);
                 }
-
-            } else {
-                // Otherwise there's just 0 or 1, so simple to start in serial ...
-                for (String repositoryName : repositoryNames) {
-                    try {
-                        getRepository(repositoryName);
-                        log.info(JcrI18n.completedStartingRepository, repositoryName);
-                    } catch (Throwable t) {
-                        // Record this in the problems ...
-                        this.problems.addError(t,
-                                               JcrI18n.errorStartingRepositoryCheckConfiguration,
-                                               repositoryName,
-                                               t.getMessage());
-                    }
-                }
+            } catch (InterruptedException e) {
+                this.problems.addError(e, JcrI18n.startingAllRepositoriesWasInterrupted, e.getMessage());
             }
         }
     }
@@ -399,31 +359,21 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
                 // and may be finished. But this call will block until the repository has completed initialization...
                 return holder.getRepository();
             }
-            // Have to create the holder and initialize the repository in this thread ...
-            holder = new JcrRepositoryHolder(repositoryName);
-            try {
-                // Get the repository, which blocks while initialization completes.
-                // This will throw a PathNotFoundException if the repository is not valid ...
-                JcrRepository repo = holder.getRepository();
-
-                // We're holding the lock while we block for a couple of reasons:
-                // 1) Nobody should be allowed to shutdown the engine while we're blocking; this is a simplistic
-                // approach, but we can be very certain about the concurrent behavior
-                // 2) If we put the holder (without initializing) into the map and released the lock, others
-                // could attempt to get the lock before we reacquire the lock and remove the (invalid) holder,
-                // and this could cause a conflict.
-                // 3) Initializing an invalid repository should be quick, so that will likely fail quickly anyway.
-                // 4) The caller has to wait for initialization anyway.
-                repositories.put(repositoryName, holder);
-                return repo;
-            } catch (PathNotFoundException e) {
+            if (!getRepositoryNames().contains(repositoryName)) {
                 // The repository name is not a valid repository ...
                 String msg = JcrI18n.repositoryDoesNotExist.text(repositoryName);
                 throw new RepositoryException(msg);
             }
+            // Now create the initializer and holder ...
+            RepositoryInitializer initializer = new RepositoryInitializer(repositoryName);
+            Future<JcrRepository> future = repositoryStarterService.submit(initializer);
+            holder = new JcrRepositoryHolder(repositoryName, future);
+            repositories.put(repositoryName, holder);
         } finally {
             repositoriesLock.unlock();
         }
+        JcrRepository repo = holder.getRepository();
+        return repo;
     }
 
     /**
@@ -759,15 +709,17 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
         private final String repositoryName;
         private JcrRepository repository;
         private Future<JcrRepository> future;
-
-        protected JcrRepositoryHolder( String repositoryName ) {
-            this.repositoryName = repositoryName;
-        }
+        private Throwable error;
 
         protected JcrRepositoryHolder( String repositoryName,
                                        Future<JcrRepository> future ) {
             this.repositoryName = repositoryName;
             this.future = future;
+            assert this.future != null;
+        }
+
+        public String getName() {
+            return repositoryName;
         }
 
         public synchronized JcrRepository getRepository() throws RepositoryException {
@@ -777,15 +729,17 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
                         // Otherwise it is still initializing, so wait for it ...
                         this.repository = future.get();
                     } catch (Throwable e) {
-                        // Record this in the problems ...
-                        problems().addError(e, JcrI18n.errorStartingRepositoryCheckConfiguration, repositoryName, e.getMessage());
-
+                        error = e.getCause();
+                        String msg = JcrI18n.errorStartingRepositoryCheckConfiguration.text(repositoryName, error.getMessage());
+                        throw new RepositoryException(msg, error);
                     } finally {
                         this.future = null;
                     }
-                } else {
-                    // Just create it in this thread ...
-                    this.repository = doCreateJcrRepository(repositoryName);
+                }
+                if (repository == null) {
+                    // There is no future, but the repository could not be initialized correctly ...
+                    String msg = JcrI18n.errorStartingRepositoryCheckConfiguration.text(repositoryName, error.getMessage());
+                    throw new RepositoryException(msg, error);
                 }
             }
             return this.repository;
@@ -823,5 +777,51 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
                 }
             }
         }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#toString()
+         */
+        @Override
+        public String toString() {
+            return repositoryName;
+        }
     }
+
+    protected class RepositoryInitializer implements Callable<JcrRepository> {
+        private final String repositoryName;
+        private final CountDownLatch latch;
+
+        protected RepositoryInitializer( String repositoryName ) {
+            this(repositoryName, null);
+        }
+
+        protected RepositoryInitializer( String repositoryName,
+                                         CountDownLatch latch ) {
+            this.repositoryName = repositoryName;
+            this.latch = latch;
+        }
+
+        public JcrRepository call() throws Exception {
+            JcrRepository repository = null;
+            try {
+                repository = doCreateJcrRepository(repositoryName);
+                getLogger().info(JcrI18n.completedStartingRepository, repositoryName);
+                return repository;
+            } catch (RepositoryException t) {
+                // Record this in the problems ...
+                problems().addError(t, JcrI18n.errorStartingRepositoryCheckConfiguration, repositoryName, t.getMessage());
+                throw t;
+            } catch (Throwable t) {
+                // Record this in the problems ...
+                problems().addError(t, JcrI18n.errorStartingRepositoryCheckConfiguration, repositoryName, t.getMessage());
+                String msg = JcrI18n.errorStartingRepositoryCheckConfiguration.text(repositoryName, t.getMessage());
+                throw new RepositoryException(msg, t);
+            } finally {
+                if (latch != null) latch.countDown();
+            }
+        }
+    }
+
 }

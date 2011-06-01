@@ -400,6 +400,31 @@ public class JcrEngineTest {
     }
 
     @FixFor( "MODE-1119" )
+    @Test( expected = RepositoryException.class )
+    public void shouldRecordProblemWhenStartingRepositoriesConfiguredWithValidInitialContentPathButEmptyFileAndFailWhenGettingRepository()
+        throws Exception {
+        configuration = new JcrConfiguration();
+        configuration.repositorySource("car-source")
+                     .usingClass(InMemoryRepositorySource.class)
+                     .setDescription("The automobile content")
+                     .setProperty("defaultWorkspaceName", "default");
+        configuration.repository("cars")
+                     .setSource("car-source")
+                     .registerNamespace("car", "http://www.modeshape.org/examples/cars/1.0")
+                     .addNodeTypes(resourceUrl("cars.cnd"))
+                     .setInitialContent("src/test/resources/emptyFile.xml", "default")
+                     .setOption(Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.ADMIN);
+        engine = configuration.build();
+        assertThat(engine.getProblems().hasErrors(), is(false));
+        engine.start(true);
+        assertThat(engine.getProblems().hasErrors(), is(true));
+        assertThat(engine.getProblems().size(), is(1)); // one error
+        assertThat(engine.getProblems().iterator().next().getStatus(), is(Problem.Status.ERROR));
+        // The following will fail ...
+        engine.getRepository("cars");
+    }
+
+    @FixFor( "MODE-1119" )
     @Test
     public void shouldRecordProblemWhenStartingRepositoriesConfiguredWithIncorrectInitialContentPath() throws Exception {
         configuration = new JcrConfiguration();
