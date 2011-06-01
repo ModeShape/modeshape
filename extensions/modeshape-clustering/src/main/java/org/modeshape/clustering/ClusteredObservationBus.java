@@ -192,7 +192,7 @@ public class ClusteredObservationBus implements ObservationBus {
      * A method that is used to instantiate the {@link JChannel} object with the supplied configuration. Subclasses can override
      * this method to specialize this behavior.
      * 
-     * @param configuration the configuration; may be null if the default configuration should be used
+     * @param configuration the configuration; may be null or empty string, if the default configuration should be used
      * @return the JChannel instance; never null
      * @throws ChannelException if there is a problem creating the new channel object
      */
