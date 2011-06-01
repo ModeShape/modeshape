@@ -267,8 +267,10 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
      * 
      * @param validateRepositoryConfigs true if the configurations of each repository should be validated and each repository
      *        started/initialized, or false otherwise
-     * @param timeout the maximum time to wait
-     * @param timeoutUnit the time unit of the {@code timeout} argument
+     * @param timeout the maximum time to wait; can be 0 or a positive number, but use a negative number to wait indefinitely
+     *        until all repositories are started (or failed)
+     * @param timeoutUnit the time unit of the {@code timeout} argument; may not be null, but ignored if <code>timeout</code> is
+     *        negative
      * @throws IllegalStateException if this method is called when already shut down.
      * @throws JcrConfigurationException if there is an error in the configuration or any of the services that prevents proper
      *         startup
