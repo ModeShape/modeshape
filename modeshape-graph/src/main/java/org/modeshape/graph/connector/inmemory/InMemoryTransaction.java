@@ -70,9 +70,7 @@ public class InMemoryTransaction extends MapTransaction<InMemoryNode, InMemoryWo
      * @see org.modeshape.graph.connector.base.Transaction#destroyWorkspace(org.modeshape.graph.connector.base.Workspace)
      */
     public boolean destroyWorkspace( InMemoryWorkspace workspace ) {
-        // The InMemoryRepository is holding onto the Workspace objects for us and will be cleaned up properly,
-        // so we can just return true here
-        return true;
+        return getRepository().destroyWorkspace(workspace.getName());
     }
 
     /**

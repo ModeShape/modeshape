@@ -167,7 +167,7 @@ public class FileSystemRepository extends Repository<PathNode, FileSystemWorkspa
 
         @Override
         public boolean destroyWorkspace( FileSystemWorkspace workspace ) throws InvalidWorkspaceException {
-            return true;
+            return this.getRepository().destroyWorkspace(workspace.getName());
         }
 
         @Override

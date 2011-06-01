@@ -26,8 +26,8 @@ package org.modeshape.connector.jbosscache;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.locks.Lock;
-import org.modeshape.common.annotation.NotThreadSafe;
 import org.jboss.cache.Cache;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.connector.base.MapTransaction;
 import org.modeshape.graph.property.Property;
@@ -89,7 +89,8 @@ public class JBossCacheTransaction extends MapTransaction<JBossCacheNode, JBossC
      */
     @Override
     public boolean destroyWorkspace( JBossCacheWorkspace workspace ) {
-        // Can't seem to tell Infinispan to destroy the cache, so perhaps we should destroy all the content ...
+        // Can't seem to tell JBoss Cache to destroy the cache, so perhaps we should destroy all the content ...
+        if (!getRepository().destroyWorkspace(workspace.getName())) return false;
         workspace.removeAll();
         return true;
     }

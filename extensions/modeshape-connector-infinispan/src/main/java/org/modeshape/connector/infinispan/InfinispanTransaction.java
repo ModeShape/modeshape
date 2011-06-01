@@ -26,8 +26,8 @@ package org.modeshape.connector.infinispan;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.locks.Lock;
-import org.modeshape.common.annotation.NotThreadSafe;
 import org.infinispan.Cache;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.connector.base.MapTransaction;
 import org.modeshape.graph.property.Property;
@@ -90,6 +90,7 @@ public class InfinispanTransaction extends MapTransaction<InfinispanNode, Infini
     @Override
     public boolean destroyWorkspace( InfinispanWorkspace workspace ) {
         // Can't seem to tell Infinispan to destroy the cache, so perhaps we should destroy all the content ...
+        if (!repository.destroyWorkspace(workspace.getName())) return false;
         workspace.destroy();
         return true;
     }

@@ -68,7 +68,7 @@ public class SvnRepository extends Repository<PathNode, SvnWorkspace> {
 
         @Override
         public boolean destroyWorkspace( SvnWorkspace workspace ) throws InvalidWorkspaceException {
-            return true;
+            return getRepository().destroyWorkspace(workspace.getName());
         }
 
         @Override

@@ -96,6 +96,8 @@ public class DiskTransaction extends MapTransaction<DiskNode, DiskWorkspace> {
      */
     @Override
     public boolean destroyWorkspace( DiskWorkspace workspace ) {
+        if (!getRepository().destroyWorkspace(workspace.getName())) return false;
+
         workspace.destroy();
         return true;
     }
