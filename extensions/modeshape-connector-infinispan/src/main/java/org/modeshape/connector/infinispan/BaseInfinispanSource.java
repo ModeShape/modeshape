@@ -34,11 +34,11 @@ import javax.naming.NamingException;
 import javax.naming.Reference;
 import javax.naming.StringRefAddr;
 import javax.naming.spi.ObjectFactory;
-import org.modeshape.common.annotation.ThreadSafe;
 import org.infinispan.manager.CacheContainer;
 import org.modeshape.common.annotation.Category;
 import org.modeshape.common.annotation.Description;
 import org.modeshape.common.annotation.Label;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.graph.cache.CachePolicy;
@@ -299,6 +299,7 @@ public abstract class BaseInfinispanSource implements BaseRepositorySource, Obje
      * @see #getPredefinedWorkspaceNames()
      * @see #setCreatingWorkspacesAllowed(boolean)
      */
+    @Override
     public boolean isCreatingWorkspacesAllowed() {
         return capabilities.supportsCreatingWorkspaces();
     }
