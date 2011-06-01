@@ -197,7 +197,7 @@ public class ClusteredObservationBus implements ObservationBus {
      * @throws ChannelException if there is a problem creating the new channel object
      */
     protected JChannel newChannel( String configuration ) throws ChannelException {
-        if (configuration == null) {
+        if (configuration == null || configuration.trim().length() == 0) {
             return new JChannel();
         }
         // Try the XML configuration first ...
