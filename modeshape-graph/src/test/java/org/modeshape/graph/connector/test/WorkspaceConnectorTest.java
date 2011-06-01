@@ -31,6 +31,7 @@ import static org.junit.Assert.fail;
 import java.util.List;
 import java.util.Set;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.Location;
@@ -288,4 +289,21 @@ public abstract class WorkspaceConnectorTest extends AbstractConnectorTest {
             }
         }
     }
+
+    @FixFor( "MODE-1182" )
+    @Test
+    public void shouldBeAbleToCreateThenDestroyThenRecreateWorkspace() throws Exception {
+        if (source.getCapabilities().supportsCreatingWorkspaces()) {
+            String defaultWorkspaceName = graph.getCurrentWorkspaceName();
+            String validWorkspaceName = generateNonExistantWorkspaceName();
+
+            graph.createWorkspace().named(validWorkspaceName);
+
+            graph.useWorkspace(defaultWorkspaceName);
+            graph.destroyWorkspace().named(validWorkspaceName);
+
+            graph.createWorkspace().named(validWorkspaceName);
+        }
+    }
+
 }

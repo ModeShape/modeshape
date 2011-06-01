@@ -66,4 +66,14 @@ public class SvnRepositoryConnectorCreateWorkspaceTest extends WorkspaceConnecto
         return new String[] {"tags"};
     }
 
+    @Override
+    protected String generateNonExistantWorkspaceName() {
+        // Need to override the default method to ensure that we get the name of an existing SVN workspace
+        return generateValidNamesForNewWorkspaces()[0];
+    }
+
+    @Override
+    public void shouldBeAbleToCreateThenDestroyThenRecreateWorkspace() throws Exception {
+        // Skipping this test for this connector, as the test bed does not support updating well
+    }
 }

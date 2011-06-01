@@ -27,19 +27,39 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import java.util.HashSet;
 import java.util.Set;
+import org.junit.Test;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.Workspace;
+import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.test.WorkspaceConnectorTest;
-import org.junit.Test;
 
 /**
  * These tests verify that the JPA connector behaves correctly when the source is configured to
  * {@link JpaSource#setCreatingWorkspacesAllowed(boolean) allow the creation of workspaces}.
  */
-public abstract class JpaConnectorCreateWorkspacesTest extends WorkspaceConnectorTest {
+public class JpaConnectorCreateWorkspacesTest extends WorkspaceConnectorTest {
 
     protected String[] predefinedWorkspaces;
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.connector.test.AbstractConnectorTest#setUpSource()
+     */
+    @Override
+    protected RepositorySource setUpSource() {
+        predefinedWorkspaces = new String[] {"default", "workspace1", "workspace2", "workspace3"};
+
+        // Set the connection properties using the environment defined in the POM files ...
+        JpaSource source = TestEnvironment.configureJpaSource("Test Repository", this);
+
+        // Override the inherited properties, since that's the focus of these tests ...
+        source.setCreatingWorkspacesAllowed(false);
+        source.setPredefinedWorkspaceNames(predefinedWorkspaces);
+
+        return source;
+    }
 
     /**
      * {@inheritDoc}
@@ -56,7 +76,7 @@ public abstract class JpaConnectorCreateWorkspacesTest extends WorkspaceConnecto
         boolean batch = true;
         for (String workspaceName : predefinedWorkspaces) {
             graph.useWorkspace(workspaceName);
-            createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+            createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, null, null);
         }
     }
 
