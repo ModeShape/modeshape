@@ -38,6 +38,16 @@
 	            <!-- The name of the JAAS application policy, used when clients get a session with credentials.
 	                   (This policy is defined in the 'jboss-modeshape-beans.xml' file). -->
                 <mode:option jcr:name="jaasLoginConfigName" mode:value="modeshape"/>
+				
+				<!-- Explicitly specify the directory where the index files should be stored. -->
+				<mode:option jcr:name="queryIndexDirectory" mode:value="${jboss.server.data.dir}/modeshape/repositories/store/indexes"/>				
+				
+                
+				<!--  Should  indexes should be rebuilt synchronously when the repository restarts, default true  -->                			
+                <mode:option jcr:name="queryIndexesRebuiltSynchronously" mode:value="true"/>
+                <!--  specifies the strategy (always or ifMissing) used to determine which query indexes need to be rebuilt when the repository restarts -->
+				<mode:option jcr:name="rebuildQueryIndexOnStartup" mode:value="ifMissing"/>
+                
             </mode:options>
             <!-- Define any custom node types. Importing CND files via JcrConfiguration is equivalent to specifying here.-->
             <jcr:nodeTypes>
@@ -196,4 +206,79 @@
             <mode:pathExpression>store:default:/files(//)(*.zip[*])/jcr:content[@jcr:data] => store:default:/sequenced/zip/$1 </mode:pathExpression>
         </mode:sequencer>                          
     </mode:sequencers>
+	
+	<!--  
+		Cluster Configuration options that use JGroups
+		
+		1.  Use the JGroups default configuration
+		2.  Define your own JGroups configuration, below is an example
+		
+		Uncomment one of the options to enable ModeShape clustering.
+	-->
+	
+	<!--  Option 1.  Use JGroups Default Configuration
+	   <mode:clustering clusterName="modeshape-cluster" >	
+	      <configuration>
+		  </configuration>
+	</mode:clustering>		
+	
+	-->
+	
+	<!-- Option 2.  Example of how to define your own JGroups configuration
+		  
+    <mode:clustering clusterName="modeshape-cluster" >	
+	      <configuration>
+			<![CDATA[<config>
+   <UDP mcast_addr="${jboss.jgroups.modeshape.mcast_addr:228.10.10.10}"
+        mcast_port="${jboss.jgroups.modeshape.mcast_port:45690}"
+		bind_port="${jboss.jgroups.modeshape.bind_port:55275}"
+        discard_incompatible_packets="true"
+        max_bundle_size="64000"
+        max_bundle_timeout="30"
+        ip_ttl="${jgroups.udp.ip_ttl:2}"
+        enable_bundling="true"
+        thread_pool.enabled="true"
+        thread_pool.min_threads="1"
+        thread_pool.max_threads="25"
+        thread_pool.keep_alive_time="5000"
+        thread_pool.queue_enabled="false"
+        thread_pool.queue_max_size="100"
+        thread_pool.rejection_policy="Run"
+        oob_thread_pool.enabled="true"
+        oob_thread_pool.min_threads="1"
+        oob_thread_pool.max_threads="8"
+        oob_thread_pool.keep_alive_time="5000"
+        oob_thread_pool.queue_enabled="false"
+        oob_thread_pool.queue_max_size="100"
+        oob_thread_pool.rejection_policy="Run"/>
+   <PING timeout="2000"
+           num_initial_members="3"/>
+   <MERGE2 max_interval="30000"
+           min_interval="10000"/>
+   <FD_SOCK/>
+   <FD timeout="10000" max_tries="5" />
+   <VERIFY_SUSPECT timeout="1500"  />
+   <BARRIER />
+   <pbcast.NAKACK use_mcast_xmit="false" gc_lag="0"
+                  retransmit_timeout="300,600,1200,2400,4800"
+                  discard_delivered_msgs="true"/>
+   <UNICAST timeout="300,600,1200,2400,3600"/>
+   <pbcast.STABLE stability_delay="1000" desired_avg_gossip="50000"
+                  max_bytes="400000"/>
+   <VIEW_SYNC avg_send_interval="60000"   />
+   <pbcast.GMS print_local_addr="true" join_timeout="3000"
+               view_bundling="true"/>
+   <FC max_credits="20000000"
+                   min_threshold="0.10"/>
+   <FRAG2 frag_size="60000"  />
+   <pbcast.STATE_TRANSFER  />  
+			</config>]]>
+
+		  </configuration>
+	</mode:clustering>
+	
+	-->
+	
+	
+	
 </configuration>

@@ -127,7 +127,7 @@ public final class ManagedEngine implements ModeShapeManagedObject {
 	@ManagementOperation(description = "Starts this engine", impact = Impact.Lifecycle)
 	public synchronized void start() {
 		if (!isRunning()) {
-			this.engine.start();
+			this.engine.start(true);
 		}
 	}
 
