@@ -38,6 +38,12 @@
 	            <!-- The name of the JAAS application policy, used when clients get a session with credentials.
 	                   (This policy is defined in the 'jboss-modeshape-beans.xml' file). -->
                 <mode:option jcr:name="jaasLoginConfigName" mode:value="modeshape"/>
+                
+				<!--  Should  indexes should be rebuilt synchronously when the repository restarts, default true  -->                			
+                <mode:option jcr:name="queryIndexesRebuiltSynchronously" mode:value="true"/>
+                <!--  specifies the strategy (always or ifMissing) used to determine which query indexes need to be rebuilt when the repository restarts -->
+				<mode:option jcr:name="rebuildQueryIndexOnStartup" mode:value="ifMissing"/>
+                
             </mode:options>
             <!-- Define any custom node types. Importing CND files via JcrConfiguration is equivalent to specifying here.-->
             <jcr:nodeTypes>
