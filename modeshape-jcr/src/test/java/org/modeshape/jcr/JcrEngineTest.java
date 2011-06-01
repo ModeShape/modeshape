@@ -27,6 +27,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.net.URL;
+import java.util.concurrent.TimeUnit;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Workspace;
@@ -272,7 +273,8 @@ public class JcrEngineTest {
                      .setOption(Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.ADMIN);
         engine = configuration.build();
         assertThat(engine.getProblems().hasErrors(), is(false));
-        engine.start(true);
+        engine.start(true, 1L, TimeUnit.NANOSECONDS);
+        repository = engine.getRepository("products");
         repository = engine.getRepository("cars");
         session = repository.login();
 
