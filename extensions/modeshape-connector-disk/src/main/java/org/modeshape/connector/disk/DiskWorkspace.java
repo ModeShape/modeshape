@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.UUID;
+import org.modeshape.common.util.FileUtil;
 import org.modeshape.graph.connector.base.MapWorkspace;
 
 /**
@@ -73,7 +74,7 @@ public class DiskWorkspace extends MapWorkspace<DiskNode> {
     }
 
     public void destroy() {
-        this.workspaceRoot.delete();
+        FileUtil.delete(workspaceRoot);
     }
 
     /**
