@@ -61,6 +61,8 @@
                 <mode:resource>/org/modeshape/sequencer/text/sequencer-text.cnd</mode:resource>
                 <mode:resource>/org/modeshape/sequencer/xml/xml.cnd</mode:resource>
                 <mode:resource>/org/modeshape/sequencer/zip/zip.cnd</mode:resource>
+                <mode:resource>/org/modeshape/sequencer/wsdl/wsdl.cnd</mode:resource>
+                <mode:resource>/org/modeshape/sequencer/xsd/xsd.cnd</mode:resource>				
                 <mode:resource>/org/modeshape/sequencer/ddl/StandardDdl.cnd</mode:resource>
                 <mode:resource>/org/modeshape/sequencer/ddl/dialect/derby/DerbyDdl.cnd</mode:resource>
                 <mode:resource>/org/modeshape/sequencer/ddl/dialect/oracle/OracleDdl.cnd</mode:resource>
@@ -172,7 +174,7 @@
                  the '/sequenced/wsdl/my/favorites/Customer.xsd' node, which will have a primary type of 'xs:schemaDocument' and will
                  contain under it the nodes representing the XSD components. Of course, the path expression
                  can be modified as needed; for example, to exclude the filename extension, or to exclude the relative path. -->
-            <mode:pathExpression>/files(//)*.xsd[*]/jcr:content[@jcr:data] => /sequenced/xsd/$1 </mode:pathExpression>
+            <mode:pathExpression>store:default:/files(//)*.xsd[*]/jcr:content[@jcr:data] => store:default:/sequenced/xsd/$1 </mode:pathExpression>
         </mode:sequencer>  
         <mode:sequencer jcr:name="WSDL File Sequencer" mode:classname="org.modeshape.sequencer.wsdl.WsdlSequencer">
             <mode:description>Sequences WSDL 1.1 files loaded into the repository under '/files', extracting the contents into the equivalent JCR graph structure.</mode:description>        
@@ -182,7 +184,7 @@
                  the '/sequenced/wsdl/my/favorites/Customer.wsdl' node, which will have a primary type of 'wsdl:wsdlDocument' and will
                  contain under it the nodes representing the WSDL components. Of course, the path expression
                  can be modified as needed; for example, to exclude the filename extension, or to exclude the relative path. -->
-            <mode:pathExpression>/files(//)*.wsdl[*]/jcr:content[@jcr:data] => /sequenced/wsdl/$1 </mode:pathExpression>
+            <mode:pathExpression>store:default:/files(//)*.wsdl[*]/jcr:content[@jcr:data] => store:default:/sequenced/wsdl/$1 </mode:pathExpression>
         </mode:sequencer>  
         <mode:sequencer jcr:name="XML File Sequencer" mode:classname="org.modeshape.sequencer.xml.XmlSequencer">
             <mode:description>Sequences XML files loaded under '/files', extracting the contents into the equivalent JCR graph structure.</mode:description>        
