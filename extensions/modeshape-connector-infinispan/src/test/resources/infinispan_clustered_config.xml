@@ -7,8 +7,8 @@
     </global>
     <default>
         <jmxStatistics enabled="true" />
-        <clustering mode="distribution">
-            <sync replTimeout="2000" />
+        <clustering mode="replication">
+            <sync replTimeout="20000" /> 
         </clustering>
     </default>
 </infinispan>

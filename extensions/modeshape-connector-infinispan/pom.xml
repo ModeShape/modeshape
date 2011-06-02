@@ -14,7 +14,7 @@
   <description>ModeShape Connector that accesses an in-process JBoss Infinispan instance.</description>
   <url>http://www.modeshape.org</url>
   <properties>
-      <version.infinispan>4.1.0.FINAL</version.infinispan>
+      <version.infinispan>4.2.1.FINAL</version.infinispan>
   </properties>
   <!--
   Define the dependencies.  Note that all version and scopes default to those 
