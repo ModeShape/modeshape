@@ -59,30 +59,27 @@ import org.modeshape.repository.ModeShapeEngine;
  */
 public class ConnectorBenchmarkTest {
 
-    /**
-     * Historically, we've compared performance of using a single batch vs. using multiple requests. At this point, it's no longer
-     * surprising when the batch is significantly faster than multiple requests.
-     */
-    private static final boolean TEST_WITHOUT_BATCH = false;
-
     private static final boolean FORCE_RUN = true;
 
     private ModeShapeEngine engine;
     private Graph graph;
-    private String currentConnectorName;
+    private String currentSourceName;
     private String[] validLargeValues;
     private Properties benchmarkProps;
     private Map<String, String> results = new HashMap<String, String>();
+    private boolean useLargeValues = true;
+    private boolean useUniqueLargeValues = true;
 
     /**
      * Scenario definitions. Each subarray defines a single scenario to be run. Scenarios are defined as an integer triple
      * consisting of {<test depth>, <test breadth>, <number of props per node>}. So the triple {3, 10, 7} indicates that the test
      * scenario should build a graph 3 nodes deep, with 10 child nodes per node and 7 properties per node.
      */
+    // TODO: Make this configurable by source
     private int[][] insertScenarios = new int[][] { {3, 10, 7}, {3, 10, 100}, {7, 3, 7}, {7, 3, 100},};
 
-    public String getConnectorName() {
-        return currentConnectorName;
+    private String getCurrentSourceName() {
+        return currentSourceName;
     }
 
     @BeforeClass
@@ -109,18 +106,18 @@ public class ConnectorBenchmarkTest {
 
     private void addResult( String testName,
                             Stopwatch sw ) {
-        results.put(testName + " (" + getConnectorName() + ")", String.valueOf(sw.getTotalDuration()));
+        results.put(testName + " (" + getCurrentSourceName() + ")", String.valueOf(sw.getTotalDuration()));
     }
 
     private String[] getValidWorkspaceNames() {
-        String rawWorkspaceNames = (String)benchmarkProps.get(getConnectorName() + ".validWorkspaceNames");
+        String rawWorkspaceNames = (String)benchmarkProps.get(getCurrentSourceName() + ".validWorkspaceNames");
         if (rawWorkspaceNames == null) return new String[] {"benchmark"};
 
         return rawWorkspaceNames.split(",");
     }
 
     private String getValidWorkspaceName() {
-        boolean useRandomWorkspaceName = Boolean.valueOf(benchmarkProps.getProperty(getConnectorName()
+        boolean useRandomWorkspaceName = Boolean.valueOf(benchmarkProps.getProperty(getCurrentSourceName()
                                                                                     + ".useRandomWorkspaceName"));
 
         if (useRandomWorkspaceName) {
@@ -188,7 +185,7 @@ public class ConnectorBenchmarkTest {
         for (String sourceName : sourceNames) {
             if (configSourceName.equals(sourceName)) continue;
 
-            this.currentConnectorName = sourceName;
+            this.currentSourceName = sourceName;
             System.out.println("Running test for source '" + sourceName + "'");
 
             if (engine == null) {
@@ -224,15 +221,18 @@ public class ConnectorBenchmarkTest {
                 t.printStackTrace();
             }
 
+            /*
+             *     re-read the same node (or subgraph) multiple times
+            random reads by path
+            random reads by uuid
+
+             */
+
             stopEngine();
         }
 
         printResults();
     }
-
-    /*
-     * Copied and pasted code from AbstractConnectorTest
-     */
 
     /**
      * Create a structured subgraph by generating nodes with the supplied number of properties and children, to the supplied
@@ -246,7 +246,7 @@ public class ConnectorBenchmarkTest {
      * @param stopwatch the stopwatch that should be used to measure the timings
      * @return the number of nodes created in the subgraph
      */
-    protected int createSubgraph( Graph graph,
+    private int createSubgraph( Graph graph,
                                   String initialPath,
                                   int depth,
                                   int numberOfChildrenPerNode,
@@ -270,19 +270,7 @@ public class ConnectorBenchmarkTest {
         return (int)totalNumberCreated;
     }
 
-    /**
-     * Utility to create a number of children.
-     * 
-     * @param useBatch
-     * @param parentPath
-     * @param nodePrefix
-     * @param number
-     * @param numProps
-     * @param depthRemaining
-     * @param output
-     * @return the number of children created
-     */
-    protected int createChildren( Graph.Batch useBatch,
+    private int createChildren( Graph.Batch useBatch,
                                   String parentPath,
                                   String nodePrefix,
                                   int number,
@@ -298,18 +286,20 @@ public class ConnectorBenchmarkTest {
             Graph.Create<Graph.Batch> create = batch.create(path);
             String value = originalValue;
             for (int j = 0; j != numProps; ++j) {
-                // value = value + originalValue;
-                // if ((useLargeValues) && i % 3 == 0) {
-                // if (false && i % 3 == 0) {
-                // // Use a large value for some properties ...
-                // String largeValue = originalValue;
-                // for (int k = 0; k != 100; ++k) {
-                // largeValue = largeValue + "(" + k + ")";
-                // }
-                // create = create.with("property" + (j + 1), largeValue);
-                // } else {
+                 value = value + originalValue;
+                 if ((useLargeValues) && i % 3 == 0) {
+                    String largeValue = validLargeValues[(int)Math.random() * validLargeValues.length];
+                    if (useUniqueLargeValues && i % 3 == 0) {
+                        // Use a large value for some properties ...
+                        largeValue = originalValue;
+                        for (int k = 0; k != 100; ++k) {
+                            largeValue = largeValue + "(" + k + ")";
+                        }
+                    }
+                    create = create.with("property" + (j + 1), largeValue);
+                 } else {
                 create = create.with("property" + (j + 1), value);
-                // }
+                 }
             }
             create.and();
         }
