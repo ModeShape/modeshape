@@ -13,24 +13,26 @@
             <predefinedWorkspaceNames>default</predefinedWorkspaceNames>
         </mode:source>
 
+<!-- 
         <mode:source jcr:name="Infinispan Store"
                      mode:classname="org.modeshape.connector.infinispan.InfinispanSource"
                      mode:retryLimit="3" mode:defaultWorkspaceName="default" >
         </mode:source>
-
         <mode:source jcr:name="Disk-Based Store"
                      mode:classname="org.modeshape.connector.disk.DiskSource"
                      mode:repositoryRootPath="./target/diskRepositoryRoot"
                      mode:retryLimit="3" mode:defaultWorkspaceName="default" >
         </mode:source>
-
+ -->
+ 
         <mode:source jcr:name="File Store"
                      mode:classname="org.modeshape.connector.filesystem.FileSystemSource"
                      mode:workspaceRootPath="./target/fileRepositoryRoot"
                      mode:updatesAllowed="true"
                      mode:retryLimit="3" mode:defaultWorkspaceName="default" >
         </mode:source>
-<!-- 
+
+ <!-- 
         <mode:source jcr:name="JPA Store"
                      mode:classname="org.modeshape.connector.store.jpa.JpaSource"
 		        	mode:model="Simple"

@@ -67,8 +67,8 @@ public class ConnectorBenchmarkTest {
     private String[] validLargeValues;
     private Properties benchmarkProps;
     private Map<String, String> results = new HashMap<String, String>();
-    private boolean useLargeValues = true;
-    private boolean useUniqueLargeValues = true;
+    private boolean useLargeValues = false;
+    private boolean useUniqueLargeValues = false;
 
     /**
      * Scenario definitions. Each subarray defines a single scenario to be run. Scenarios are defined as an integer triple
@@ -199,7 +199,6 @@ public class ConnectorBenchmarkTest {
             } catch (Throwable t) {
                 t.printStackTrace();
             }
-
             try {
                 benchmarkDestroyingEmptyWorkspace();
             } catch (Throwable t) {
@@ -220,13 +219,21 @@ public class ConnectorBenchmarkTest {
             } catch (Throwable t) {
                 t.printStackTrace();
             }
-
-            /*
-             *     re-read the same node (or subgraph) multiple times
-            random reads by path
-            random reads by uuid
-
-             */
+            try {
+                benchmarkRandomReadsByPath();
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
+            try {
+                benchmarkRandomReadsByUuid();
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
+            try {
+                benchmarkRepeatedReadOfSameNode();
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
 
             stopEngine();
         }
@@ -286,20 +293,17 @@ public class ConnectorBenchmarkTest {
             Graph.Create<Graph.Batch> create = batch.create(path);
             String value = originalValue;
             for (int j = 0; j != numProps; ++j) {
-                 value = value + originalValue;
-                 if ((useLargeValues) && i % 3 == 0) {
-                    String largeValue = validLargeValues[(int)Math.random() * validLargeValues.length];
-                    if (useUniqueLargeValues && i % 3 == 0) {
-                        // Use a large value for some properties ...
-                        largeValue = originalValue;
-                        for (int k = 0; k != 100; ++k) {
-                            largeValue = largeValue + "(" + k + ")";
-                        }
+                // value = value + originalValue;
+                if ((useLargeValues || useUniqueLargeValues) && i % 3 == 0) {
+                    // Use a large value for some properties ...
+                    String largeValue = originalValue;
+                    for (int k = 0; k != 100; ++k) {
+                        largeValue = largeValue + "(" + k + ")";
                     }
                     create = create.with("property" + (j + 1), largeValue);
-                 } else {
-                create = create.with("property" + (j + 1), value);
-                 }
+                } else {
+                    create = create.with("property" + (j + 1), value);
+                }
             }
             create.and();
         }
@@ -398,6 +402,7 @@ public class ConnectorBenchmarkTest {
     private void benchmarkReadingEntireGraphAsSubgraph() throws Exception {
         Stopwatch sw = new Stopwatch();
 
+        String defaultWorkspaceName = graph.getCurrentWorkspaceName();
         String workspaceName = getValidWorkspaceName();
         graph.createWorkspace().named(workspaceName);
 
@@ -410,6 +415,9 @@ public class ConnectorBenchmarkTest {
         sw.start();
         graph.getSubgraphOfDepth(Integer.MAX_VALUE).at("/");
         sw.stop();
+
+        graph.useWorkspace(defaultWorkspaceName);
+        graph.destroyWorkspace().named(workspaceName);
 
         addResult("Read " + depth + "x" + breadth + " Tree w/ " + numberOfProps + " properties - " + nodeCount + " - batch", sw);
     }
@@ -437,38 +445,170 @@ public class ConnectorBenchmarkTest {
 
         Path readPath;
         Stopwatch sw = new Stopwatch();
-        sw.start();
 
         for (int i = 0; i < ITERATIONS; i++) {
 
             // Read two nodes
             readPath = existingPaths.get((int)Math.floor(Math.random() * existingPaths.size()));
+            sw.start();
             graph.getNodeAt(readPath);
+            sw.stop();
 
             readPath = existingPaths.get((int)Math.floor(Math.random() * existingPaths.size()));
+            sw.start();
             graph.getNodeAt(readPath);
+            sw.stop();
 
             if (Math.random() * 100 < WRITE_PCT) {
                 // Write one node
                 Path newNode = path(readPath, "n" + (System.currentTimeMillis() % 10000));
 
+                sw.start();
                 graph.create(newNode).and();
+                sw.stop();
                 existingPaths.add(newNode);
 
             } else {
                 // or read a third node
                 readPath = existingPaths.get((int)Math.floor(Math.random() * existingPaths.size()));
+                sw.start();
                 graph.getNodeAt(readPath);
-
+                sw.stop();
             }
         }
-
-        sw.stop();
 
         graph.useWorkspace(defaultWorkspaceName);
         graph.destroyWorkspace().named(workspaceName);
 
         addResult("Read/Write " + INITIAL_DEPTH + "x" + INITIAL_BREADTH + " Tree w/ " + NUM_PROPS + " properties - " + WRITE_PCT
                   + "% writes", sw);
+    }
+
+    private void benchmarkRandomReadsByPath() throws Exception {
+        List<Path> existingPaths = new ArrayList<Path>();
+        final int INITIAL_DEPTH = 3;
+        final int INITIAL_BREADTH = 5;
+        final int NUM_PROPS = 7;
+        final int ITERATIONS = 1000;
+
+        String defaultWorkspaceName = graph.getCurrentWorkspaceName();
+        String workspaceName = getValidWorkspaceName();
+
+        graph.createWorkspace().named(workspaceName);
+        graph.useWorkspace(workspaceName);
+
+        createSubgraph(graph, "/", INITIAL_BREADTH, INITIAL_DEPTH, NUM_PROPS, null);
+
+        Subgraph sg = graph.getSubgraphOfDepth(Integer.MAX_VALUE).at("/");
+        for (SubgraphNode sgn : sg) {
+            existingPaths.add(sgn.getLocation().getPath());
+        }
+
+        Path readPath;
+        Stopwatch sw = new Stopwatch();
+
+        for (int i = 0; i < ITERATIONS; i++) {
+
+            // Read three nodes
+            readPath = existingPaths.get((int)Math.floor(Math.random() * existingPaths.size()));
+            sw.start();
+            graph.getNodeAt(readPath);
+            sw.stop();
+
+            readPath = existingPaths.get((int)Math.floor(Math.random() * existingPaths.size()));
+            sw.start();
+            graph.getNodeAt(readPath);
+            sw.stop();
+
+            readPath = existingPaths.get((int)Math.floor(Math.random() * existingPaths.size()));
+            sw.start();
+            graph.getNodeAt(readPath);
+            sw.stop();
+        }
+
+        graph.useWorkspace(defaultWorkspaceName);
+        graph.destroyWorkspace().named(workspaceName);
+
+        addResult("Read Random Path from " + INITIAL_DEPTH + "x" + INITIAL_BREADTH + " Tree w/ " + NUM_PROPS + " properties", sw);
+    }
+
+    private void benchmarkRandomReadsByUuid() throws Exception {
+        List<UUID> existingUuids = new ArrayList<UUID>();
+        final int INITIAL_DEPTH = 3;
+        final int INITIAL_BREADTH = 5;
+        final int NUM_PROPS = 7;
+        final int ITERATIONS = 1000;
+
+        String defaultWorkspaceName = graph.getCurrentWorkspaceName();
+        String workspaceName = getValidWorkspaceName();
+
+        graph.createWorkspace().named(workspaceName);
+        graph.useWorkspace(workspaceName);
+
+        graph.create("/uuidTest").and();
+        org.modeshape.graph.Node testNode = graph.getNodeAt("/uuidTest");
+        if (testNode.getLocation().getUuid() == null) return;
+
+        createSubgraph(graph, "/", INITIAL_BREADTH, INITIAL_DEPTH, NUM_PROPS, null);
+
+        Subgraph sg = graph.getSubgraphOfDepth(Integer.MAX_VALUE).at("/");
+        for (SubgraphNode sgn : sg) {
+            existingUuids.add(sgn.getLocation().getUuid());
+        }
+
+        UUID readUuid;
+        Stopwatch sw = new Stopwatch();
+
+        for (int i = 0; i < ITERATIONS; i++) {
+            // Read three nodes
+            readUuid = existingUuids.get((int)Math.floor(Math.random() * existingUuids.size()));
+            sw.start();
+            graph.getNodeAt(readUuid);
+            sw.stop();
+
+            readUuid = existingUuids.get((int)Math.floor(Math.random() * existingUuids.size()));
+            sw.start();
+            graph.getNodeAt(readUuid);
+            sw.stop();
+
+            readUuid = existingUuids.get((int)Math.floor(Math.random() * existingUuids.size()));
+            sw.start();
+            graph.getNodeAt(readUuid);
+            sw.stop();
+        }
+
+        graph.useWorkspace(defaultWorkspaceName);
+        graph.destroyWorkspace().named(workspaceName);
+
+        addResult("Read Random UUID from " + INITIAL_DEPTH + "x" + INITIAL_BREADTH + " Tree w/ " + NUM_PROPS + " properties", sw);
+    }
+
+    private void benchmarkRepeatedReadOfSameNode() throws Exception {
+        final int INITIAL_DEPTH = 3;
+        final int INITIAL_BREADTH = 5;
+        final int NUM_PROPS = 7;
+        final int ITERATIONS = 10;
+
+        String defaultWorkspaceName = graph.getCurrentWorkspaceName();
+        String workspaceName = getValidWorkspaceName();
+
+        graph.createWorkspace().named(workspaceName);
+        graph.useWorkspace(workspaceName);
+
+        createSubgraph(graph, "/", INITIAL_BREADTH, INITIAL_DEPTH, NUM_PROPS, null);
+
+        Stopwatch sw = new Stopwatch();
+
+        for (int i = 0; i < ITERATIONS; i++) {
+            sw.start();
+            graph.getNodeAt("/node1/node2");
+            sw.stop();
+        }
+
+        graph.useWorkspace(defaultWorkspaceName);
+        graph.destroyWorkspace().named(workspaceName);
+
+        addResult("Read Repeated Path from " + INITIAL_DEPTH + "x" + INITIAL_BREADTH + " Tree w/ " + NUM_PROPS + " properties",
+                  sw);
     }
 }
