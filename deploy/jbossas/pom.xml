@@ -47,6 +47,7 @@
 								<finalName>modeshape-jbossas-${project.version}</finalName>
 								<descriptors>
 									<descriptor>assembly/kit.xml</descriptor>
+									<descriptor>assembly/kit-as6.xml</descriptor>
 								</descriptors>
 								<outputDirectory>target/distribution</outputDirectory>
 								<workDirectory>target/assembly/work</workDirectory>
