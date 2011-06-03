@@ -20,11 +20,6 @@
         </fileSet>
 
         <fileSet>
-            <directory>modeshape-jbossas-service/src/assembly/unsigned-lib</directory>
-            <outputDirectory>server/modeshape/deploy/modeshape-services.jar</outputDirectory>
-        </fileSet>
-
-        <fileSet>
             <directory>modeshape-jbossas-service/target/distribution/modeshape-services-jar-content</directory>
             <outputDirectory>server/modeshape/deploy/modeshape-services.jar</outputDirectory>
         </fileSet>
