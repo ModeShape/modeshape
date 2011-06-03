@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.modeshape</groupId>
+    <artifactId>modeshape-parent</artifactId>
+    <version>2.5-SNAPSHOT</version>
+    <relativePath>../../modeshape-parent</relativePath>
+  </parent>
+  <!-- The groupId and version values are inherited from parent -->
+  <artifactId>modeshape-connector-benchmark</artifactId>
+  <packaging>jar</packaging>
+  <name>ModeShape Benchmark for Connectors</name>
+  <description>A series of benchmark scenarios to compare connector performance in different use cases.</description>
+  <url>http://www.modeshape.org</url>
+  <!--
+    Define the dependencies. Note that all version and scopes default to those defined in the dependencyManagement section of the
+    parent pom.
+  -->
+  <dependencies>
+    <dependency>
+    	<groupId>org.modeshape</groupId>
+    	<artifactId>modeshape-repository</artifactId>
+    </dependency>
+    <dependency>
+    	<groupId>org.modeshape</groupId>
+    	<artifactId>modeshape-connector-disk</artifactId>
+    </dependency>
+    <dependency>
+    	<groupId>org.modeshape</groupId>
+    	<artifactId>modeshape-connector-filesystem</artifactId>
+    </dependency>
+    <dependency>
+    	<groupId>org.modeshape</groupId>
+    	<artifactId>modeshape-connector-infinispan</artifactId>
+    </dependency>
+    <dependency>
+    	<groupId>org.modeshape</groupId>
+    	<artifactId>modeshape-connector-store-jpa</artifactId>
+    </dependency>
+        
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest-library</artifactId>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-all</artifactId>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+	<dependency>
+		<groupId>org.slf4j</groupId>
+		<artifactId>slf4j-log4j12</artifactId>
+		<scope>runtime</scope>
+	</dependency>
+	<dependency>
+		<groupId>log4j</groupId>
+		<artifactId>log4j</artifactId>
+		<scope>runtime</scope>
+	</dependency>	
+
+  </dependencies>
+  <build>
+    <plugins>
+			<!--
+				Adding OSGI metadata to the JAR without changing the packaging type.
+			-->
+			<plugin>
+				<artifactId>maven-jar-plugin</artifactId>
+				<configuration>
+					<archive>
+						<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+					</archive>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.felix</groupId>
+				<artifactId>maven-bundle-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>bundle-manifest</id>
+						<phase>process-classes</phase>
+						<goals>
+							<goal>manifest</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+    </plugins>
+  </build>
+</project>

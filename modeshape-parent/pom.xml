@@ -924,6 +924,11 @@
 			</dependency>
 			<dependency>
 				<groupId>org.modeshape</groupId>
+				<artifactId>modeshape-connector-disk</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.modeshape</groupId>
 				<artifactId>modeshape-connector-filesystem</artifactId>
 				<version>${project.version}</version>
 			</dependency>

@@ -1,3 +1,4 @@
+package org.modeshape.test.benchmark;
 /*
  * ModeShape (http://www.modeshape.org)
  * See the COPYRIGHT.txt file distributed with this work for information
@@ -21,7 +22,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.test.integration.performance;
+
 
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -64,6 +65,8 @@ public class ConnectorBenchmarkTest {
     private ModeShapeEngine engine;
     private Graph graph;
     private String currentSourceName;
+    @SuppressWarnings( "unused" )
+    // Unused if useLargeValues && useUniqueLargeValues == false
     private String[] validLargeValues;
     private Properties benchmarkProps;
     private Map<String, String> results = new HashMap<String, String>();
