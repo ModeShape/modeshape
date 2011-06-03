@@ -61,6 +61,7 @@
                 <mode:resource>/org/modeshape/sequencer/text/sequencer-text.cnd</mode:resource>
                 <mode:resource>/org/modeshape/sequencer/xml/xml.cnd</mode:resource>
                 <mode:resource>/org/modeshape/sequencer/zip/zip.cnd</mode:resource>
+                <mode:resource>/org/modeshape/sequencer/sramp/sramp.cnd</mode:resource>
                 <mode:resource>/org/modeshape/sequencer/wsdl/wsdl.cnd</mode:resource>
                 <mode:resource>/org/modeshape/sequencer/xsd/xsd.cnd</mode:resource>				
                 <mode:resource>/org/modeshape/sequencer/ddl/StandardDdl.cnd</mode:resource>
