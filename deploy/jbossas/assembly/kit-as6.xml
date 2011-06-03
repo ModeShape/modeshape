@@ -16,27 +16,33 @@
     <fileSets>
         <fileSet>
             <directory>kit/</directory>
-            <outputDirectory>/</outputDirectory>
+            <outputDirectory>server/modeshape/</outputDirectory>
+        </fileSet>
+
+        <fileSet>
+            <directory>modeshape-jbossas-service/src/assembly/unsigned-lib</directory>
+            <outputDirectory>server/modeshape/deploy/modeshape-services.jar</outputDirectory>
         </fileSet>
 
         <fileSet>
             <directory>modeshape-jbossas-service/target/distribution/modeshape-services-jar-content</directory>
-            <outputDirectory>deploy/modeshape-services.jar</outputDirectory>
+            <outputDirectory>server/modeshape/deploy/modeshape-services.jar</outputDirectory>
         </fileSet>
+
 
         <fileSet>
             <directory>modeshape-jbossas-web-rest-war/target/distribution/modeshape-rest-war-content</directory>
-            <outputDirectory>deploy/modeshape-rest.war</outputDirectory>
+            <outputDirectory>server/modeshape/deploy/modeshape-rest.war</outputDirectory>
         </fileSet>
 
         <fileSet>
             <directory>modeshape-jbossas-web-webdav-war/target/distribution/modeshape-webdav-war-content</directory>
-            <outputDirectory>deploy/modeshape-webdav.war</outputDirectory>
+            <outputDirectory>server/modeshape/deploy/modeshape-webdav.war</outputDirectory>
         </fileSet>
 
         <fileSet>
             <directory>modeshape-jbossas-console/target</directory>
-            <outputDirectory>deploy/admin-console.war/plugins</outputDirectory>
+            <outputDirectory>common/deploy/admin-console.war/plugins</outputDirectory>
             <includes>
                 <include>*.jar</include>
             </includes>
@@ -49,7 +55,7 @@
 
     <dependencySets>
         <dependencySet>
-            <outputDirectory>lib/</outputDirectory>
+            <outputDirectory>server/modeshape/lib/</outputDirectory>
             <includes>
                 <include>org.modeshape:modeshape-jcr-api</include>
                 <include>org.modeshape:modeshape-jdbc-local</include>
