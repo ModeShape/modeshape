@@ -52,6 +52,7 @@
             <include>org.modeshape:modeshape-sequencer-cnd</include>
             <include>org.modeshape:modeshape-sequencer-ddl</include>
             <include>org.modeshape:modeshape-sequencer-text</include>
+            <include>org.modeshape:modeshape-sequencer-sramp</include>
             <include>org.modeshape:modeshape-sequencer-xsd</include>
             <include>org.modeshape:modeshape-sequencer-wsdl</include>
             <include>org.modeshape:modeshape-sequencer-xml</include>
