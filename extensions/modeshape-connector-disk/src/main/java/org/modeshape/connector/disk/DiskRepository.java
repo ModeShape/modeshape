@@ -41,14 +41,24 @@ import org.modeshape.graph.connector.base.Repository;
 public class DiskRepository extends Repository<DiskNode, DiskWorkspace> {
 
     private final File repositoryRoot;
+    private File largeValuesRoot;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final Set<String> predefinedWorkspaceNames;
+    private final DiskSource diskSource;
 
     public DiskRepository( DiskSource source ) {
         super(source);
 
+        this.diskSource = source;
+
         repositoryRoot = new File(source.getRepositoryRootPath());
-        if (!repositoryRoot.exists()) repositoryRoot.mkdir();
+        if (!repositoryRoot.exists()) repositoryRoot.mkdirs();
+        assert repositoryRoot.exists();
+
+        largeValuesRoot = new File(repositoryRoot, source.getLargeValuePath());
+        if (!largeValuesRoot.exists()) largeValuesRoot.mkdirs();
+        assert largeValuesRoot.exists();
+
         Set<String> workspaceNames = new HashSet<String>();
         for (String workspaceName : source.getPredefinedWorkspaceNames()) {
             workspaceNames.add(workspaceName);
@@ -89,5 +99,13 @@ public class DiskRepository extends Repository<DiskNode, DiskWorkspace> {
         final Lock lock = readonly ? this.lock.readLock() : this.lock.writeLock();
         lock.lock();
         return new DiskTransaction(context, this, getRootNodeUuid(), lock);
+    }
+
+    DiskSource diskSource() {
+        return this.diskSource;
+    }
+
+    File largeValuesRoot() {
+        return this.largeValuesRoot;
     }
 }

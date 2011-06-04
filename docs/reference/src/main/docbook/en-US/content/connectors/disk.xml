@@ -68,6 +68,18 @@
 						if none is specified.</entry>
 				</row>
 				<row>
+					<entry>largeValuePath</entry>
+					<entry>Optional, advanced property that, if specified, specifies the path to the large value area.  <emphasis>This path is relative to the value of the <code>repositoryRootPath</code> property.</emphasis>
+						The default value for this property is <code>"largeValues"</code> and there is no need to change it, even if there may be a workspace named <code>"largeValues"</code>. 
+					</entry>
+				</row>
+				<row>
+					<entry>largeValueSizeInBytes</entry>
+					<entry>Optional property that, if specified, sets the threshold for large values.  Binary property values that exceed this size will be copied into the large
+					value area for this repository, where they can be shared between nodes and lazily loaded to improve node retrieval time.  The default value is "8192".
+					</entry>
+				</row>
+				<row>
 					<entry>name</entry>
 					<entry>The name of the repository source, which is used by the &RepositoryService; when obtaining a &RepositoryConnection; by name.</entry>
 				</row>
@@ -138,7 +150,7 @@ config.repositorySource("Disk Store")
     -->
     <mode:sources jcr:primaryType="nt:unstructured">
         <!-- 
-        The 'Disk Store' repository is a file system source with a three predefined workspaces 
+        The 'Disk Store' repository is a disk source with a three predefined workspaces 
         ("prod", "staging", and "dev").
         -->
         <mode:source jcr:name="Disk Store" 
@@ -151,13 +163,6 @@ config.repositorySource("Disk Store")
         	mode:updatesAllowed="true" >
             <mode:predefinedWorkspaceNames>staging</mode:predefinedWorkspaceNames>
             <mode:predefinedWorkspaceNames>dev</mode:predefinedWorkspaceNames>
-      	    <!-- 
-      	    If desired, specify a cache policy that caches items in memory for 5 minutes (300000 ms).
-      	    This fragment can be left out if the connector should not cache any content.
-      	    -->
-      	    <mode:cachePolicy jcr:name="cachePolicy" 
-      	      mode:classname="org.modeshape.graph.connector.path.cache.InMemoryWorkspaceCache$InMemoryCachePolicy"
-      	      mode:timeToLiveInMilliseconds="300000" />
         </mode:source>    
     </mode:sources>
 
