@@ -26,6 +26,7 @@ public class DiskConnectorWritableTest extends WritableConnectorTest {
         source.setDefaultWorkspaceName(predefinedWorkspaceNames[0]);
         source.setCreatingWorkspacesAllowed(true);
         source.setRepositoryRootPath(REPOSITORY_ROOT);
+        source.setLockFileUsed(true);
 
         return source;
     }

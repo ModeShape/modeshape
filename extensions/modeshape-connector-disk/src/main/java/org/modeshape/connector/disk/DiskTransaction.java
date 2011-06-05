@@ -26,7 +26,6 @@ package org.modeshape.connector.disk;
 import java.io.File;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.locks.Lock;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.text.FilenameEncoder;
 import org.modeshape.common.text.TextEncoder;
@@ -45,12 +44,12 @@ public class DiskTransaction extends MapTransaction<DiskNode, DiskWorkspace> {
     private static final TextEncoder FILE_ENCODER = new FilenameEncoder();
 
     private final DiskRepository repository;
-    private final Lock lock;
+    private final DiskRepository.DiskLock lock;
 
     protected DiskTransaction( ExecutionContext context,
-                                     DiskRepository repository,
-                                     UUID rootNodeUuid,
-                                     Lock lock ) {
+                               DiskRepository repository,
+                               UUID rootNodeUuid,
+                               DiskRepository.DiskLock lock ) {
         super(context, repository, rootNodeUuid);
         this.repository = repository;
         this.lock = lock;

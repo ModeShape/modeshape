@@ -27,6 +27,7 @@ public class DiskConnectorReadableTest extends ReadableConnectorTest {
         source.setDefaultWorkspaceName(predefinedWorkspaceNames[0]);
         source.setCreatingWorkspacesAllowed(false);
         source.setRepositoryRootPath(REPOSITORY_ROOT);
+        source.setLockFileUsed(true);
 
         return source;
     }
