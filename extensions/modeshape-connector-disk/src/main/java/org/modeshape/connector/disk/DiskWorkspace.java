@@ -31,6 +31,10 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.UUID;
 import org.modeshape.graph.connector.base.MapWorkspace;
+import org.modeshape.graph.connector.base.cache.BaseCachePolicy;
+import org.modeshape.graph.connector.base.cache.WorkspaceCache;
+import org.modeshape.graph.connector.base.cache.InMemoryWorkspaceCache.MapCachePolicy;
+
 
 /**
  * Workspace implementation for disk connector
@@ -38,6 +42,9 @@ import org.modeshape.graph.connector.base.MapWorkspace;
 public class DiskWorkspace extends MapWorkspace<DiskNode> {
 
     private File workspaceRoot;
+    private WorkspaceCache<UUID, DiskNode> cache;
+    private BaseCachePolicy<UUID, DiskNode> policy;
+    // private BaseCachePolicy<UUID, DiskNode> policy = new NoCachePolicy<UUID, DiskNode>();
 
     /**
      * Create a new workspace instance.
@@ -48,14 +55,20 @@ public class DiskWorkspace extends MapWorkspace<DiskNode> {
      */
     public DiskWorkspace( String name,
                           File workspaceRoot,
-                                DiskNode rootNode ) {
+                          DiskNode rootNode ) {
         super(name, rootNode);
         this.workspaceRoot = workspaceRoot;
+
+        MapCachePolicy<DiskNode> p = new MapCachePolicy<DiskNode>();
+        p.setTimeToLive(30);
+        this.policy = p;
+        this.cache = policy.newCache();
 
         File rootNodeFile = fileFor(rootNode.getUuid());
         if (!rootNodeFile.exists()) {
             putNode(rootNode);
         }
+
     }
 
     /**
@@ -67,9 +80,14 @@ public class DiskWorkspace extends MapWorkspace<DiskNode> {
      */
     public DiskWorkspace( String name,
                           File workspaceRoot,
-                                DiskWorkspace originalToClone ) {
+                          DiskWorkspace originalToClone ) {
         super(name, originalToClone);
         this.workspaceRoot = workspaceRoot;
+
+        MapCachePolicy<DiskNode> p = new MapCachePolicy<DiskNode>();
+        p.setTimeToLive(30);
+        this.policy = p;
+        cache = policy.newCache();
     }
 
     public void destroy() {
@@ -80,20 +98,27 @@ public class DiskWorkspace extends MapWorkspace<DiskNode> {
      * This method shuts down the workspace and makes it no longer usable. This method should also only be called once.
      */
     public void shutdown() {
+        cache.close();
     }
 
-    static int getCount = 0;
     @Override
     public DiskNode getNode( UUID uuid ) {
+        DiskNode node = cache.get(uuid);
+        if (node != null) return node;
+
         File nodeFile = fileFor(uuid);
         if (!nodeFile.exists()) return null;
 
-        return nodeFor(nodeFile);
+        node = nodeFor(nodeFile);
+
+        if (node != null) cache.put(uuid, node);
+        return node;
     }
 
     @Override
     public DiskNode putNode( DiskNode node ) {
         writeNode(node);
+        cache.put(node.getUuid(), node);
         return node;
     }
 
@@ -101,6 +126,8 @@ public class DiskWorkspace extends MapWorkspace<DiskNode> {
     public void removeAll() {
         this.workspaceRoot.delete();
         this.workspaceRoot.mkdir();
+
+        cache = policy.newCache();
     }
 
     @Override
@@ -111,6 +138,7 @@ public class DiskWorkspace extends MapWorkspace<DiskNode> {
         DiskNode node = nodeFor(nodeFile);
 
         nodeFile.delete();
+        cache.remove(uuid);
         return node;
     }
 
@@ -144,9 +172,11 @@ public class DiskWorkspace extends MapWorkspace<DiskNode> {
 
         } catch (IOException ioe) {
             throw new IllegalStateException(ioe);
-        }
-        finally {
-            try { if (ois != null) ois.close(); } catch (Exception ignore) { }
+        } finally {
+            try {
+                if (ois != null) ois.close();
+            } catch (Exception ignore) {
+            }
         }
     }
 

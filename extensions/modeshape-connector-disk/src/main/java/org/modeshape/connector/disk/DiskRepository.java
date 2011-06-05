@@ -44,6 +44,8 @@ public class DiskRepository extends Repository<DiskNode, DiskWorkspace> {
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final Set<String> predefinedWorkspaceNames;
 
+    // private final RepositoryCache<UUID, DiskNode> repositoryCache;
+
     public DiskRepository( DiskSource source ) {
         super(source);
 
@@ -54,6 +56,8 @@ public class DiskRepository extends Repository<DiskNode, DiskWorkspace> {
             workspaceNames.add(workspaceName);
         }
         this.predefinedWorkspaceNames = Collections.unmodifiableSet(workspaceNames);
+
+        // this.repositoryCache = new RepositoryCache<UUID, DiskNode>(new InMemoryWorkspaceCache.MapCachePolicy<DiskNode>());
         initialize();
     }
 
