@@ -70,7 +70,7 @@
 				<row>
 					<entry>largeValuePath</entry>
 					<entry>Optional, advanced property that, if specified, specifies the path to the large value area.  <emphasis>This path is relative to the value of the <code>repositoryRootPath</code> property.</emphasis>
-						The default value for this property is <code>"largeValues"</code> and there is no need to change it, even if there may be a workspace named <code>"largeValues"</code>. 
+						The default value for this property is <code>"largeValues"</code> and it only needs to be changed if there will be a workspace named <code>"largeValues"</code>. 
 					</entry>
 				</row>
 				<row>

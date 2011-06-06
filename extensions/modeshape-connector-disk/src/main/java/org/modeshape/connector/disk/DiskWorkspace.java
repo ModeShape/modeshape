@@ -42,6 +42,7 @@ import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.Base64;
 import org.modeshape.common.util.IoUtil;
+import org.modeshape.common.util.ObjectUtil;
 import org.modeshape.graph.connector.base.MapWorkspace;
 import org.modeshape.graph.property.Binary;
 import org.modeshape.graph.property.BinaryFactory;
@@ -57,7 +58,7 @@ import org.modeshape.graph.property.basic.FileSystemBinary;
 public class DiskWorkspace extends MapWorkspace<DiskNode> {
 
     /** A version number describing the on-disk format used to store this node */
-    private static final short CURRENT_VERSION = 1;
+    private static final byte CURRENT_VERSION = 1;
 
     private static final String DATA_EXTENSION = ".dat";
     private static final String BACK_REFERENCE_EXTENSION = ".ref";
@@ -183,7 +184,7 @@ public class DiskWorkspace extends MapWorkspace<DiskNode> {
         try {
             ois = new ObjectInputStream(new FileInputStream(nodeFile));
 
-            short version = ois.readShort();
+            byte version = ois.readByte();
             assert version == CURRENT_VERSION;
 
             UUID uuid = (UUID)ois.readObject();
@@ -440,7 +441,7 @@ public class DiskWorkspace extends MapWorkspace<DiskNode> {
             File nodeFile = fileFor(node.getUuid());
             oos = new ObjectOutputStream(new FileOutputStream(nodeFile));
 
-            oos.writeShort(CURRENT_VERSION);
+            oos.writeByte(CURRENT_VERSION);
             oos.writeObject(node.getUuid());
             oos.writeObject(node.getName());
             oos.writeObject(node.getParent());
@@ -479,26 +480,18 @@ public class DiskWorkspace extends MapWorkspace<DiskNode> {
 
         @Override
         public int hashCode() {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result + ((owningNodeUuid == null) ? 0 : owningNodeUuid.hashCode());
-            result = prime * result + ((workspaceName == null) ? 0 : workspaceName.hashCode());
-            return result;
+            return owningNodeUuid.hashCode();
         }
 
         @Override
         public boolean equals( Object obj ) {
             if (this == obj) return true;
-            if (obj == null) return false;
-            if (getClass() != obj.getClass()) return false;
-            ValueReference other = (ValueReference)obj;
-            if (owningNodeUuid == null) {
-                if (other.owningNodeUuid != null) return false;
-            } else if (!owningNodeUuid.equals(other.owningNodeUuid)) return false;
-            if (workspaceName == null) {
-                if (other.workspaceName != null) return false;
-            } else if (!workspaceName.equals(other.workspaceName)) return false;
-            return true;
+            if (obj instanceof ValueReference) {
+                ValueReference other = (ValueReference)obj;
+                return ObjectUtil.isEqualWithNulls(this.owningNodeUuid, other.owningNodeUuid)
+                       && ObjectUtil.isEqualWithNulls(this.workspaceName, other.workspaceName);
+            }
+            return false;
         }
     }
 

@@ -110,7 +110,7 @@ public class DiskSource implements BaseRepositorySource, ObjectFactory {
      * The initial path to the large values directory (relative to the repository root path) is "{@value} ", unless otherwise
      * specified.
      */
-    private static final String DEFAULT_LARGE_VALUE_PATH = "largeValues"; // 1 kilobyte
+    private static final String DEFAULT_LARGE_VALUE_PATH = "largeValues";
 
     private static final String ROOT_NODE_UUID = "rootNodeUuid";
     private static final String SOURCE_NAME = "sourceName";
