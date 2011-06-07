@@ -37,6 +37,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.Logger;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.connector.base.Repository;
@@ -62,7 +63,7 @@ public class DiskRepository extends Repository<DiskNode, DiskWorkspace> {
 
         repositoryRoot = new File(source.getRepositoryRootPath());
         if (!repositoryRoot.exists()) repositoryRoot.mkdir();
-        
+
         File repositoryLockFile = null;
         FileChannel lfc = null;
 
@@ -113,7 +114,6 @@ public class DiskRepository extends Repository<DiskNode, DiskWorkspace> {
         return repositoryRoot;
     }
 
-
     /**
      * {@inheritDoc}
      * 
@@ -121,7 +121,7 @@ public class DiskRepository extends Repository<DiskNode, DiskWorkspace> {
      */
     @Override
     public DiskTransaction startTransaction( ExecutionContext context,
-                                                   boolean readonly ) {
+                                             boolean readonly ) {
 
         DiskLock diskLock = readonly ? new DiskBackedReadLock(lock) : new DiskBackedWriteLock(lock);
         diskLock.lock();
@@ -146,40 +146,50 @@ public class DiskRepository extends Repository<DiskNode, DiskWorkspace> {
 
         public void lock() {
             this.lock.lock();
-            /*
-             * FileLocks are held on behalf of the entire JVM and are not reentrant (at least on OS X), so we
-             * need to track how many open read locks exist within this JVM.  If anyone knows a good Java implementation
-             * of a counting semaphore, that could be used instead.
-             */
-            synchronized (DiskRepository.this) {
-                int count = readLockCount.get();
-                assert count >= 0;
 
-                if (lockFileChannel != null && count == 0) {
-                    try {
-                        fileLock = lockFileChannel.lock(0, 1, true);
-                    } catch (IOException ioe) {
-                        LOGGER.warn(ioe, DiskConnectorI18n.problemAcquiringFileLock, getSourceName());
+            if (lockFileChannel != null) {
+                /*
+                 * FileLocks are held on behalf of the entire JVM and are not reentrant (at least on OS X), so we
+                 * need to track how many open read locks exist within this JVM.  If anyone knows a good Java implementation
+                 * of a counting semaphore, that could be used instead.
+                 */
+                try {
+                    synchronized (DiskRepository.this) {
+                        int count = readLockCount.get();
+                        assert count >= 0;
+
+                        if (count == 0) {
+                            fileLock = lockFileChannel.lock(0, 1, true);
+                        }
+                        readLockCount.getAndIncrement();
                     }
+                } catch (Throwable t) {
+                    this.lock.unlock();
+                    I18n msg = DiskConnectorI18n.problemAcquiringFileLock;
+                    throw new IllegalStateException(msg.text(DiskRepository.this.getSourceName()), t);
                 }
-                readLockCount.getAndIncrement();
             }
         }
 
         public void unlock() {
-            synchronized (DiskRepository.this) {
-                int count = readLockCount.getAndDecrement();
-                assert count >= 0;
+            try {
+                if (fileLock != null) {
+                    synchronized (DiskRepository.this) {
+                        int count = readLockCount.getAndDecrement();
+                        assert count >= 0;
 
-                if (fileLock != null && readLockCount.get() == 0) {
-                    try {
-                        fileLock.release();
-                    } catch (IOException ioe) {
-                        LOGGER.warn(ioe, DiskConnectorI18n.problemReleasingFileLock, getSourceName());
+                        if (readLockCount.get() == 0) {
+                            try {
+                                fileLock.release();
+                            } catch (IOException ioe) {
+                                LOGGER.warn(ioe, DiskConnectorI18n.problemReleasingFileLock, getSourceName());
+                            }
+                        }
                     }
                 }
+            } finally {
+                lock.unlock();
             }
-            lock.unlock();
         }
     }
 
@@ -198,21 +208,26 @@ public class DiskRepository extends Repository<DiskNode, DiskWorkspace> {
             if (lockFileChannel != null) {
                 try {
                     fileLock = lockFileChannel.lock(0, 1, false);
-                } catch (IOException ioe) {
-                    LOGGER.warn(ioe, DiskConnectorI18n.problemAcquiringFileLock, getSourceName());
+                } catch (Throwable t) {
+                    this.lock.unlock();
+                    I18n msg = DiskConnectorI18n.problemAcquiringFileLock;
+                    throw new IllegalStateException(msg.text(DiskRepository.this.getSourceName()), t);
                 }
             }
         }
 
         public void unlock() {
-            if (fileLock != null) {
-                try {
-                    fileLock.release();
-                } catch (IOException ioe) {
-                    LOGGER.warn(ioe, DiskConnectorI18n.problemReleasingFileLock, getSourceName());
+            try {
+                if (fileLock != null) {
+                    try {
+                        fileLock.release();
+                    } catch (IOException ioe) {
+                        LOGGER.warn(ioe, DiskConnectorI18n.problemReleasingFileLock, getSourceName());
+                    }
                 }
+            } finally {
+                this.lock.unlock();
             }
-            this.lock.unlock();
         }
     }
 

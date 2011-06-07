@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.graph.Graph;
-import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.test.WritableConnectorTest;
 import org.xml.sax.SAXException;
 
@@ -18,7 +17,7 @@ public class DiskConnectorWritableTest extends WritableConnectorTest {
      * @see org.modeshape.graph.connector.test.AbstractConnectorTest#setUpSource()
      */
     @Override
-    protected RepositorySource setUpSource() {
+    protected DiskSource setUpSource() {
         String[] predefinedWorkspaceNames = new String[] {"default"};
         DiskSource source = new DiskSource();
         source.setName("Test Repository");
@@ -26,7 +25,7 @@ public class DiskConnectorWritableTest extends WritableConnectorTest {
         source.setDefaultWorkspaceName(predefinedWorkspaceNames[0]);
         source.setCreatingWorkspacesAllowed(true);
         source.setRepositoryRootPath(REPOSITORY_ROOT);
-        source.setLockFileUsed(true);
+        source.setLockFileUsed(false);
 
         return source;
     }
