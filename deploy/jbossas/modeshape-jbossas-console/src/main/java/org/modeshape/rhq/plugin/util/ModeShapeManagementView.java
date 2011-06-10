@@ -1,5 +1,9 @@
 package org.modeshape.rhq.plugin.util;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
@@ -180,20 +184,34 @@ public class ModeShapeManagementView implements PluginConstants {
      */
     public static MetaValue executeManagedOperation( ManagedComponent mc,
                                                      String operation,
-                                                     @Nullable MetaValue... args ) throws Exception {
+                                                     @Nullable final MetaValue... args ) throws Exception {
 
-        for (ManagedOperation mo : mc.getOperations()) {
+        for (final ManagedOperation mo : mc.getOperations()) {
             String opName = mo.getName();
             if (opName.equals(operation)) {
                 try {
                     if (args == null || (args.length == 1 && args[0] == null)) {
-                        return mo.invoke();
+                        return AccessController.doPrivileged(new PrivilegedExceptionAction<MetaValue>() {
+                            @Override
+                            public MetaValue run() throws Exception {
+                                return mo.invoke();
+                            }
+                        });
                     }
-                    return mo.invoke(args);
+                    return AccessController.doPrivileged(new PrivilegedExceptionAction<MetaValue>() {
+                        @Override
+                        public MetaValue run() throws Exception {
+                            return mo.invoke(args);
+                        }
+                    });
                 } catch (Exception e) {
                     final String msg = "Exception invoking " + operation; //$NON-NLS-1$
-                    LOG.error(msg, e);
-                    throw e;
+                    Exception exception = e;
+                    if(e instanceof PrivilegedActionException){
+                        exception = ((PrivilegedActionException)e).getException();
+                    }
+                    LOG.error(msg, exception);
+                    throw exception;
                 }
             }
         }
@@ -212,21 +230,35 @@ public class ModeShapeManagementView implements PluginConstants {
     public static MetaValue executeManagedOperation( ManagedComponent mc,
                                                      String operation,
                                                      ExecutedResult operationResult,
-                                                     @Nullable MetaValue... args ) throws Exception {
+                                                     @Nullable final MetaValue... args ) throws Exception {
 
-        for (ManagedOperation mo : mc.getOperations()) {
+        for (final ManagedOperation mo : mc.getOperations()) {
             String opName = mo.getName();
             if (opName.equals(operation)) {
                 operationResult.setManagedOperation(mo);
                 try {
                     if (args == null || (args.length == 1 && args[0] == null)) {
-                        return mo.invoke();
+                       return AccessController.doPrivileged(new PrivilegedExceptionAction<MetaValue>() {
+                           @Override
+                           public MetaValue run() throws Exception {
+                               return mo.invoke();
+                           }
+                       });
                     }
-                    return mo.invoke(args);
+                    return AccessController.doPrivileged(new PrivilegedExceptionAction<MetaValue>() {
+                        @Override
+                        public MetaValue run() throws Exception {
+                            return mo.invoke(args);
+                        }
+                    });
                 } catch (Exception e) {
                     final String msg = "Exception invoking " + operation; //$NON-NLS-1$
-                    LOG.error(msg, e);
-                    throw e;
+                    Exception exception = e;
+                    if(e instanceof PrivilegedActionException){
+                        exception = ((PrivilegedActionException)e).getException();
+                    }
+                    LOG.error(msg, exception);
+                    throw exception;
                 }
             }
         }

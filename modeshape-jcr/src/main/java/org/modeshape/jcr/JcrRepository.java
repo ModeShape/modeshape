@@ -29,6 +29,8 @@ import java.lang.reflect.Method;
 import java.security.AccessControlContext;
 import java.security.AccessControlException;
 import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -1371,7 +1373,7 @@ public class JcrRepository implements Repository {
      *         </ul>
      * @see javax.jcr.Repository#login(javax.jcr.Credentials, java.lang.String)
      */
-    public synchronized Session login( Credentials credentials,
+    public synchronized Session login( final Credentials credentials,
                                        String workspaceName ) throws RepositoryException {
         // Ensure credentials are either null or provide a JAAS method
         Map<String, Object> sessionAttributes = new HashMap<String, Object>();
@@ -1418,8 +1420,12 @@ public class JcrRepository implements Repository {
                     } else {
                         // Look for a getter method ...
                         try {
-                            Method method = credentials.getClass().getMethod("getLoginContext");
-                            Object result = method.invoke(credentials);
+                            final Method method = credentials.getClass().getMethod("getLoginContext");
+                            Object result = AccessController.doPrivileged(new PrivilegedExceptionAction<Object>() {
+                                public Object run() throws Exception {
+                                    return method.invoke(credentials);
+                                }
+                            });
                             if (!(result instanceof LoginContext)) {
                                 String msg = JcrI18n.credentialsMustReturnLoginContext.text(credentials.getClass());
                                 throw new IllegalArgumentException(msg);
@@ -1449,6 +1455,10 @@ public class JcrRepository implements Repository {
                     throw error; // pass along
                 }
             } catch (Exception error) {
+                if(error instanceof PrivilegedActionException){
+                    //Get the wrapped exception from PrivilegedActionException
+                    throw new javax.jcr.LoginException(((PrivilegedActionException)error).getException());
+                }
                 throw new javax.jcr.LoginException(error); // wrap
             }
         }

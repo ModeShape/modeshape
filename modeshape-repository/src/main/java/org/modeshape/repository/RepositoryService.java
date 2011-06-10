@@ -25,6 +25,9 @@ package org.modeshape.repository;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
@@ -351,7 +354,7 @@ public class RepositoryService implements AdministeredService, Observer {
 
             Object value = null;
 
-            for (Method setter : reflection.findAllMethods("set" + javaPropertyName, false)) {
+            for (final Method setter : reflection.findAllMethods("set" + javaPropertyName, false)) {
                 try {
                     // Determine the type of the one parameter ...
                     Class<?>[] parameterTypes = setter.getParameterTypes();
@@ -424,7 +427,28 @@ public class RepositoryService implements AdministeredService, Observer {
                                                        configurationSourceName,
                                                        configurationWorkspaceName);
 
-                    setter.invoke(instance, value);
+                    final Object finalInstance = instance;
+                    final Object finalValue = value;
+                    try {
+                        AccessController.doPrivileged(new PrivilegedExceptionAction<Object>() {
+                            @Override
+                            public Object run() throws Exception {
+                                return setter.invoke(finalInstance, finalValue);
+                            }
+                        });
+                    } catch (PrivilegedActionException e) {
+                        if (e.getException() instanceof IllegalArgumentException) {
+                            throw (IllegalArgumentException) e.getException();
+                        }
+
+                        if (e.getException() instanceof IllegalAccessException) {
+                             throw (IllegalAccessException) e.getException();
+                        }
+
+                        if (e.getException() instanceof InvocationTargetException) {
+                            throw (InvocationTargetException) e.getException();
+                        }
+                    }
                     break;
                 } catch (ValueFormatException vfe) {
                     // We picked the wrong setter or the user entered a bad value. Try again if possible.
