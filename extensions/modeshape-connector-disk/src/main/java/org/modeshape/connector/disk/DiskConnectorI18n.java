@@ -35,6 +35,12 @@ public final class DiskConnectorI18n {
     public static I18n repositoryRootPathPropertyDescription;
     public static I18n repositoryRootPathPropertyLabel;
     public static I18n repositoryRootPathPropertyCategory;
+    public static I18n largeValueSizeInBytesPropertyDescription;
+    public static I18n largeValueSizeInBytesPropertyLabel;
+    public static I18n largeValueSizeInBytesPropertyCategory;
+    public static I18n largeValuePathPropertyDescription;
+    public static I18n largeValuePathPropertyLabel;
+    public static I18n largeValuePathPropertyCategory;
 
     static {
         try {
