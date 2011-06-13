@@ -23,6 +23,9 @@
  */
 package org.modeshape.connector.disk;
 
+import java.io.File;
+import org.junit.Before;
+import org.modeshape.common.util.FileUtil;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.test.WorkspaceConnectorTest;
@@ -32,6 +35,20 @@ import org.modeshape.graph.connector.test.WorkspaceConnectorTest;
  * {@link DiskSource#setCreatingWorkspacesAllowed(boolean) allow the creation of workspaces}.
  */
 public class DiskConnectorCreateWorkspacesTest extends WorkspaceConnectorTest {
+
+    private static final String REPO_ROOT_PATH = "./target/diskRepoRoot";
+
+    @Override
+    @Before
+    public void beforeEach() throws Exception {
+        File repoRootPath = new File(REPO_ROOT_PATH);
+        if (repoRootPath.exists()) {
+            FileUtil.delete(repoRootPath);
+        }
+        repoRootPath.mkdirs();
+
+        super.beforeEach();
+    }
 
     /**
      * {@inheritDoc}
@@ -47,7 +64,7 @@ public class DiskConnectorCreateWorkspacesTest extends WorkspaceConnectorTest {
         source.setDefaultWorkspaceName(predefinedWorkspaceNames[0]);
         source.setCreatingWorkspacesAllowed(true);
         source.setUpdatesAllowed(true);
-        source.setRepositoryRootPath("./target/diskRepoRoot");
+        source.setRepositoryRootPath(REPO_ROOT_PATH);
 
         return source;
     }

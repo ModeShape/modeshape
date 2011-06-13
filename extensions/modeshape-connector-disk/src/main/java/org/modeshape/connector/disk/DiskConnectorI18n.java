@@ -41,6 +41,12 @@ public final class DiskConnectorI18n {
     public static I18n lockFileUsedPropertyDescription;
     public static I18n lockFileUsedPropertyLabel;
     public static I18n lockFileUsedPropertyCategory;
+    public static I18n largeValueSizeInBytesPropertyDescription;
+    public static I18n largeValueSizeInBytesPropertyLabel;
+    public static I18n largeValueSizeInBytesPropertyCategory;
+    public static I18n largeValuePathPropertyDescription;
+    public static I18n largeValuePathPropertyLabel;
+    public static I18n largeValuePathPropertyCategory;
 
     static {
         try {

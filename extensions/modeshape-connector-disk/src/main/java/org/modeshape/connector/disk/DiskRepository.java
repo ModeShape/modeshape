@@ -40,7 +40,11 @@ import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.Logger;
 import org.modeshape.graph.ExecutionContext;
+import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.connector.base.Repository;
+import org.modeshape.graph.connector.base.Transaction;
+import org.modeshape.graph.request.InvalidWorkspaceException;
+import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
 
 /**
  * The representation of a disk-based repository and its content.
@@ -55,11 +59,15 @@ public class DiskRepository extends Repository<DiskNode, DiskWorkspace> {
     private final File repositoryRoot;
     protected final FileChannel lockFileChannel;
     protected AtomicInteger readLockCount = new AtomicInteger(0);
+    private File largeValuesRoot;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final Set<String> predefinedWorkspaceNames;
+    private final DiskSource diskSource;
 
     public DiskRepository( DiskSource source ) {
         super(source);
+
+        this.diskSource = source;
 
         repositoryRoot = new File(source.getRepositoryRootPath());
         if (!repositoryRoot.exists()) repositoryRoot.mkdir();
@@ -85,12 +93,70 @@ public class DiskRepository extends Repository<DiskNode, DiskWorkspace> {
 
         this.lockFileChannel = lfc;
 
+        if (!repositoryRoot.exists()) repositoryRoot.mkdirs();
+        assert repositoryRoot.exists();
+
+        largeValuesRoot = new File(repositoryRoot, source.getLargeValuePath());
+        if (!largeValuesRoot.exists()) largeValuesRoot.mkdirs();
+        assert largeValuesRoot.exists();
+
         Set<String> workspaceNames = new HashSet<String>();
         for (String workspaceName : source.getPredefinedWorkspaceNames()) {
             workspaceNames.add(workspaceName);
         }
         this.predefinedWorkspaceNames = Collections.unmodifiableSet(workspaceNames);
         initialize();
+    }
+
+    @Override
+    protected void initialize() {
+        super.initialize();
+
+        Transaction<DiskNode, DiskWorkspace> txn = startTransaction(context, false);
+
+        // Discover any existing workspaces
+        if (source.isCreatingWorkspacesAllowed()) {
+            try {
+                for (File file : repositoryRoot.listFiles()) {
+                    if (!file.isDirectory()) continue;
+                    String workspaceName = file.getName();
+
+                    if (largeValuesRoot != null && largeValuesRoot.getCanonicalPath().startsWith(file.getCanonicalPath())) continue;
+
+                    DiskWorkspace workspace = this.createWorkspace(txn, workspaceName, CreateConflictBehavior.DO_NOT_CREATE, null);
+                    if (workspace != null) {
+                        assert workspace.getRootNode() != null;
+                    }
+
+                }
+            } catch (IOException ioe) {
+                // This can really only come from the getCanonicalPath() calls, so this would be surprising
+                txn.rollback();
+                throw new RepositorySourceException(diskSource.getName(), ioe);
+            }
+        }
+
+        // Then build any missing predefined workspaces
+        for (String workspaceName : predefinedWorkspaceNames) {
+            this.createWorkspace(txn, workspaceName, CreateConflictBehavior.DO_NOT_CREATE, null);
+        }
+
+        txn.commit();
+
+    }
+
+    @Override
+    public DiskWorkspace createWorkspace( Transaction<DiskNode, DiskWorkspace> txn,
+                                          String name,
+                                          CreateConflictBehavior existingWorkspaceBehavior,
+                                          String nameOfWorkspaceToClone ) throws InvalidWorkspaceException {
+        DiskWorkspace workspace = super.createWorkspace(txn, name, existingWorkspaceBehavior, nameOfWorkspaceToClone);
+
+        if (workspace != null && workspace.getRootNode() == null) {
+            workspace.putNode(new DiskNode(diskSource.getRootNodeUuidObject()));
+        }
+
+        return workspace;
     }
 
     /**
@@ -127,6 +193,14 @@ public class DiskRepository extends Repository<DiskNode, DiskWorkspace> {
         diskLock.lock();
 
         return new DiskTransaction(context, this, getRootNodeUuid(), diskLock);
+    }
+
+    DiskSource diskSource() {
+        return this.diskSource;
+    }
+
+    File largeValuesRoot() {
+        return this.largeValuesRoot;
     }
 
     interface DiskLock {
@@ -230,5 +304,4 @@ public class DiskRepository extends Repository<DiskNode, DiskWorkspace> {
             }
         }
     }
-
 }

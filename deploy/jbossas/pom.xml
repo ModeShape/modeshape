@@ -1,72 +1,94 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>org.modeshape</groupId>
-    <artifactId>modeshape-parent</artifactId>
-    <version>2.5-SNAPSHOT</version>
-    <relativePath>../../modeshape-parent</relativePath>
-  </parent>
-  <packaging>pom</packaging>
-  <artifactId>jbossas</artifactId>
-  <name>ModeShape JBoss Deployment Components</name>
-  <url>http://www.modeshape.org</url>
-  <description>Builds the ModeShape components that can be deployed to JBoss</description>
-  <modules>
-     <module>modeshape-jbossas-service</module>
-     <module>modeshape-jbossas-console</module>
-     <module>modeshape-jbossas-web-rest-war</module>
-     <module>modeshape-jbossas-web-webdav-war</module>
-  </modules>
-  
-  <dependencies>
-         <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-jcr</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-jdbc</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>javax.jcr</groupId>
-            <artifactId>jcr</artifactId>
-        </dependency>
-  </dependencies>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.modeshape</groupId>
+		<artifactId>modeshape-parent</artifactId>
+		<version>2.5-SNAPSHOT</version>
+		<relativePath>../../modeshape-parent</relativePath>
+	</parent>
+	<packaging>pom</packaging>
+	<artifactId>jbossas</artifactId>
+	<name>ModeShape JBoss Deployment Components</name>
+	<url>http://www.modeshape.org</url>
+	<description>Builds the ModeShape components that can be deployed to JBoss</description>
+	<modules>
+		<module>modeshape-jbossas-service</module>
+		<module>modeshape-jbossas-console</module>
+		<module>modeshape-jbossas-web-rest-war</module>
+		<module>modeshape-jbossas-web-webdav-war</module>
+	</modules>
 
-  <profiles>
-  	    <profile>
+	<dependencies>
+		<dependency>
+			<groupId>org.modeshape</groupId>
+			<artifactId>modeshape-jcr</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.modeshape</groupId>
+			<artifactId>modeshape-jdbc</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>javax.jcr</groupId>
+			<artifactId>jcr</artifactId>
+		</dependency>
+	</dependencies>
+
+	<profiles>
+		<profile>
 			<id>assembly</id>
-				<build>
-                    <plugins>
-                        <plugin>
-                            <artifactId>maven-assembly-plugin</artifactId>
-							
-                             <configuration>
-								<finalName>modeshape-jbossas-${project.version}</finalName>
-								<descriptors>
-									<descriptor>assembly/kit.xml</descriptor>
-								</descriptors>
-								<outputDirectory>target/distribution</outputDirectory>
-								<workDirectory>target/assembly/work</workDirectory>
-								<archive>
-									<manifest>
-										<addClasspath>true</addClasspath>
-									</manifest>
-								</archive>
-                               </configuration>
-                                <executions>
-                                    <execution>
-                                        <phase>package</phase>
-                                            <goals>
-                                                <goal>single</goal>
-                                            </goals>
-                                    </execution>
-                                </executions>
-                        </plugin>                        
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-antrun-plugin</artifactId>
+						<version>1.6</version>
+						<executions>
+							<execution>
+								<id>unsign-eclipse-jars</id>
+								<phase>prepare-package</phase>
+								<goals>
+									<goal>run</goal>
+								</goals>
+								<inherited>false</inherited>
+								<configuration>
+									<target>
+										<ant antfile="build.xml" />
+									</target>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<artifactId>maven-assembly-plugin</artifactId>
+
+						<configuration>
+							<finalName>modeshape-jbossas-${project.version}</finalName>
+							<descriptors>
+								<descriptor>assembly/kit.xml</descriptor>
+								<descriptor>assembly/kit-as6.xml</descriptor>
+							</descriptors>
+							<outputDirectory>target/distribution</outputDirectory>
+							<workDirectory>target/assembly/work</workDirectory>
+							<archive>
+								<manifest>
+									<addClasspath>true</addClasspath>
+								</manifest>
+							</archive>
+						</configuration>
+						<executions>
+							<execution>
+								<phase>package</phase>
+								<goals>
+									<goal>single</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
 				</plugins>
-			</build>	
+			</build>
 		</profile>
- </profiles>
+	</profiles>
 </project>

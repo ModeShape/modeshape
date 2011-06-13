@@ -106,6 +106,17 @@ public class DiskSource implements BaseRepositorySource, ObjectFactory {
      */
     public static final boolean DEFAULT_LOCK_FILE_USED = false;
 
+    /**
+     * The initial value for the large value threshold is "{@value} ", unless otherwise specified.
+     */
+    private static final int DEFAULT_LARGE_VALUE_SIZE_IN_BYTES = 1 << 13; // 8 kilobytes
+
+    /**
+     * The initial path to the large values directory (relative to the repository root path) is "{@value} ", unless otherwise
+     * specified.
+     */
+    private static final String DEFAULT_LARGE_VALUE_PATH = "largeValues";
+
     private static final String ROOT_NODE_UUID = "rootNodeUuid";
     private static final String SOURCE_NAME = "sourceName";
     private static final String DEFAULT_CACHE_POLICY = "defaultCachePolicy";
@@ -116,6 +127,8 @@ public class DiskSource implements BaseRepositorySource, ObjectFactory {
     private static final String UPDATES_ALLOWED = "updatesAllowed";
     private static final String REPOSITORY_ROOT_PATH = "repositoryRootPath";
     private static final String LOCK_FILE_USED = "lockFileUsed";
+    private static final String LARGE_VALUE_SIZE_IN_BYTES = "largeValueSizeInBytes";
+    private static final String LARGE_VALUE_PATH = "largeValuePath";
 
     @Description( i18n = DiskConnectorI18n.class, value = "namePropertyDescription" )
     @Label( i18n = DiskConnectorI18n.class, value = "namePropertyLabel" )
@@ -156,6 +169,16 @@ public class DiskSource implements BaseRepositorySource, ObjectFactory {
     @Label( i18n = DiskConnectorI18n.class, value = "lockFileUsedPropertyLabel" )
     @Category( i18n = DiskConnectorI18n.class, value = "lockFileUsedPropertyCategory" )
     private volatile boolean lockFileUsed = DEFAULT_LOCK_FILE_USED;
+
+    @Description( i18n = DiskConnectorI18n.class, value = "largeValueSizeInBytesPropertyDescription" )
+    @Label( i18n = DiskConnectorI18n.class, value = "largeValueSizeInBytesPropertyLabel" )
+    @Category( i18n = DiskConnectorI18n.class, value = "largeValueSizeInBytesPropertyCategory" )
+    private volatile long largeValueSizeInBytes = DEFAULT_LARGE_VALUE_SIZE_IN_BYTES;
+
+    @Description( i18n = DiskConnectorI18n.class, value = "largeValuePathPropertyDescription" )
+    @Label( i18n = DiskConnectorI18n.class, value = "largeValuePathPropertyLabel" )
+    @Category( i18n = DiskConnectorI18n.class, value = "largeValuePathPropertyCategory" )
+    private volatile String largeValuePath = DEFAULT_LARGE_VALUE_PATH;
 
     private volatile CachePolicy defaultCachePolicy;
     private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(true, true, false, true, true);
@@ -242,6 +265,7 @@ public class DiskSource implements BaseRepositorySource, ObjectFactory {
     public synchronized void setRetryLimit( int limit ) {
         retryLimit = limit < 0 ? 0 : limit;
     }
+
 
     /**
      * Set the name of this source
@@ -344,6 +368,36 @@ public class DiskSource implements BaseRepositorySource, ObjectFactory {
             predefinedWorkspaceNames = predefinedWorkspaceNames[0].split("\\s*,\\s*");
         }
         this.predefinedWorkspaces = predefinedWorkspaceNames;
+    }
+
+    /**
+     * @return largeValueSizeInBytes
+     */
+    public long getLargeValueSizeInBytes() {
+        return largeValueSizeInBytes;
+    }
+
+    /**
+     * @param largeValueSizeInBytes Sets largeValueSizeInBytes to the specified value.
+     */
+    public void setLargeValueSizeInBytes( long largeValueSizeInBytes ) {
+        if (largeValueSizeInBytes < 0) largeValueSizeInBytes = DEFAULT_LARGE_VALUE_SIZE_IN_BYTES;
+        this.largeValueSizeInBytes = largeValueSizeInBytes;
+    }
+
+    /**
+     * @return largeValuePath
+     */
+    public String getLargeValuePath() {
+        return largeValuePath;
+    }
+
+    /**
+     * @param largeValuePath Sets largeValuePath to the specified value.
+     */
+    public void setLargeValuePath( String largeValuePath ) {
+        if (largeValuePath == null) largeValuePath = DEFAULT_LARGE_VALUE_PATH;
+        this.largeValuePath = largeValuePath;
     }
 
     /**
@@ -463,6 +517,9 @@ public class DiskSource implements BaseRepositorySource, ObjectFactory {
         ref.add(new StringRefAddr(REPOSITORY_ROOT_PATH, String.valueOf(getRepositoryRootPath())));
         ref.add(new StringRefAddr(ALLOW_CREATING_WORKSPACES, Boolean.toString(isCreatingWorkspacesAllowed())));
         ref.add(new StringRefAddr(LOCK_FILE_USED, Boolean.toString(isLockFileUsed())));
+        ref.add(new StringRefAddr(LARGE_VALUE_SIZE_IN_BYTES, String.valueOf(largeValueSizeInBytes)));
+        ref.add(new StringRefAddr(LARGE_VALUE_PATH, largeValuePath));
+
         String[] workspaceNames = getPredefinedWorkspaceNames();
         if (workspaceNames != null && workspaceNames.length != 0) {
             ref.add(new StringRefAddr(PREDEFINED_WORKSPACE_NAMES, StringUtil.combineLines(workspaceNames)));
@@ -544,6 +601,8 @@ public class DiskSource implements BaseRepositorySource, ObjectFactory {
             String updatesAllowed = (String)values.get(UPDATES_ALLOWED);
             String repositoryRootPath = (String)values.get(REPOSITORY_ROOT_PATH);
             String lockFileUsed = (String)values.get(LOCK_FILE_USED);
+            String largeValuePath = (String)values.get(LARGE_VALUE_PATH);
+            String largeValueSizeInBytes = (String)values.get(LARGE_VALUE_SIZE_IN_BYTES);
 
             String combinedWorkspaceNames = (String)values.get(PREDEFINED_WORKSPACE_NAMES);
             String[] workspaceNames = null;
@@ -564,6 +623,9 @@ public class DiskSource implements BaseRepositorySource, ObjectFactory {
             if (updatesAllowed != null) source.setUpdatesAllowed(Boolean.valueOf(updatesAllowed));
             if (repositoryRootPath != null) source.setRepositoryRootPath(repositoryRootPath);
             if (lockFileUsed != null) source.setLockFileUsed(Boolean.valueOf(lockFileUsed));
+            if (largeValuePath != null) source.setLargeValuePath(largeValuePath);
+            if (largeValueSizeInBytes != null) source.setLargeValueSizeInBytes(Long.valueOf(largeValueSizeInBytes));
+
             return source;
         }
         return null;
