@@ -13,6 +13,9 @@ public final class DiskConnectorI18n {
     public static I18n propertyIsRequired;
     public static I18n errorSerializingCachePolicyInSource;
     public static I18n unableToCreateWorkspace;
+    public static I18n couldNotCreateLockFile;
+    public static I18n problemAcquiringFileLock;
+    public static I18n problemReleasingFileLock;
 
     public static I18n namePropertyDescription;
     public static I18n namePropertyLabel;
@@ -35,6 +38,9 @@ public final class DiskConnectorI18n {
     public static I18n repositoryRootPathPropertyDescription;
     public static I18n repositoryRootPathPropertyLabel;
     public static I18n repositoryRootPathPropertyCategory;
+    public static I18n lockFileUsedPropertyDescription;
+    public static I18n lockFileUsedPropertyLabel;
+    public static I18n lockFileUsedPropertyCategory;
     public static I18n largeValueSizeInBytesPropertyDescription;
     public static I18n largeValueSizeInBytesPropertyLabel;
     public static I18n largeValueSizeInBytesPropertyCategory;

@@ -102,6 +102,11 @@ public class DiskSource implements BaseRepositorySource, ObjectFactory {
     public static final String DEFAULT_REPOSITORY_ROOT_PATH = "/tmp";
 
     /**
+     * The initial value for whether a lock file is used is "{@value} ", unless otherwise specified.
+     */
+    public static final boolean DEFAULT_LOCK_FILE_USED = false;
+
+    /**
      * The initial value for the large value threshold is "{@value} ", unless otherwise specified.
      */
     private static final int DEFAULT_LARGE_VALUE_SIZE_IN_BYTES = 1 << 13; // 8 kilobytes
@@ -121,6 +126,7 @@ public class DiskSource implements BaseRepositorySource, ObjectFactory {
     private static final String ALLOW_CREATING_WORKSPACES = "allowCreatingWorkspaces";
     private static final String UPDATES_ALLOWED = "updatesAllowed";
     private static final String REPOSITORY_ROOT_PATH = "repositoryRootPath";
+    private static final String LOCK_FILE_USED = "lockFileUsed";
     private static final String LARGE_VALUE_SIZE_IN_BYTES = "largeValueSizeInBytes";
     private static final String LARGE_VALUE_PATH = "largeValuePath";
 
@@ -158,6 +164,11 @@ public class DiskSource implements BaseRepositorySource, ObjectFactory {
     @Label( i18n = DiskConnectorI18n.class, value = "repositoryRootPathPropertyLabel" )
     @Category( i18n = DiskConnectorI18n.class, value = "repositoryRootPathPropertyCategory" )
     private volatile String repositoryRootPath = DEFAULT_REPOSITORY_ROOT_PATH;
+
+    @Description( i18n = DiskConnectorI18n.class, value = "lockFileUsedPropertyDescription" )
+    @Label( i18n = DiskConnectorI18n.class, value = "lockFileUsedPropertyLabel" )
+    @Category( i18n = DiskConnectorI18n.class, value = "lockFileUsedPropertyCategory" )
+    private volatile boolean lockFileUsed = DEFAULT_LOCK_FILE_USED;
 
     @Description( i18n = DiskConnectorI18n.class, value = "largeValueSizeInBytesPropertyDescription" )
     @Label( i18n = DiskConnectorI18n.class, value = "largeValueSizeInBytesPropertyLabel" )
@@ -457,6 +468,20 @@ public class DiskSource implements BaseRepositorySource, ObjectFactory {
     }
 
     /**
+     * @return whether a lock file should be used
+     */
+    public boolean isLockFileUsed() {
+        return this.lockFileUsed;
+    }
+
+    /**
+     * @param lockFileUsed whether a lock file should be used to coordinate repository locks across JVMs
+     */
+    public void setLockFileUsed( boolean lockFileUsed ) {
+        this.lockFileUsed = lockFileUsed;
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see org.modeshape.graph.connector.RepositorySource#getConnection()
@@ -491,6 +516,7 @@ public class DiskSource implements BaseRepositorySource, ObjectFactory {
         ref.add(new StringRefAddr(UPDATES_ALLOWED, String.valueOf(areUpdatesAllowed())));
         ref.add(new StringRefAddr(REPOSITORY_ROOT_PATH, String.valueOf(getRepositoryRootPath())));
         ref.add(new StringRefAddr(ALLOW_CREATING_WORKSPACES, Boolean.toString(isCreatingWorkspacesAllowed())));
+        ref.add(new StringRefAddr(LOCK_FILE_USED, Boolean.toString(isLockFileUsed())));
         ref.add(new StringRefAddr(LARGE_VALUE_SIZE_IN_BYTES, String.valueOf(largeValueSizeInBytes)));
         ref.add(new StringRefAddr(LARGE_VALUE_PATH, largeValuePath));
 
@@ -574,6 +600,7 @@ public class DiskSource implements BaseRepositorySource, ObjectFactory {
             String createWorkspaces = (String)values.get(ALLOW_CREATING_WORKSPACES);
             String updatesAllowed = (String)values.get(UPDATES_ALLOWED);
             String repositoryRootPath = (String)values.get(REPOSITORY_ROOT_PATH);
+            String lockFileUsed = (String)values.get(LOCK_FILE_USED);
             String largeValuePath = (String)values.get(LARGE_VALUE_PATH);
             String largeValueSizeInBytes = (String)values.get(LARGE_VALUE_SIZE_IN_BYTES);
 
@@ -595,8 +622,10 @@ public class DiskSource implements BaseRepositorySource, ObjectFactory {
             if (workspaceNames != null && workspaceNames.length != 0) source.setPredefinedWorkspaceNames(workspaceNames);
             if (updatesAllowed != null) source.setUpdatesAllowed(Boolean.valueOf(updatesAllowed));
             if (repositoryRootPath != null) source.setRepositoryRootPath(repositoryRootPath);
+            if (lockFileUsed != null) source.setLockFileUsed(Boolean.valueOf(lockFileUsed));
             if (largeValuePath != null) source.setLargeValuePath(largeValuePath);
             if (largeValueSizeInBytes != null) source.setLargeValueSizeInBytes(Long.valueOf(largeValueSizeInBytes));
+
             return source;
         }
         return null;
