@@ -3,8 +3,8 @@
  * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
-* See the AUTHORS.txt file in the distribution for a full listing of 
-* individual contributors.
+ * See the AUTHORS.txt file in the distribution for a full listing of 
+ * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
@@ -28,69 +28,44 @@
 
 package org.modeshape.common.util.log;
 
-
 import org.modeshape.common.util.ClassUtil;
 import org.modeshape.common.util.Logger;
 
 public abstract class LogFactory {
-    
+
     private static LogFactory LOGFACTORY;
-        
+
     static {
 	try {
 	    ClassUtil.loadClassStrict("org.apache.log4j.Logger");
 	    LOGFACTORY = new SLF4JLogFactory();
 
 	} catch (ClassNotFoundException cnfe) {
-	    LOGFACTORY = new JdkLogFactory();
+	    LOGFACTORY = new JdkLoggerFactory();
 	}
 
     }
-    
+
     public static LogFactory getLogFactory() {
 	return LOGFACTORY;
     }
 
-        
     /**
-     * Return a logger named corresponding to the class passed as parameter, using the statically bound {@link ILoggerFactory}
-     * instance.
+     * Return a logger named corresponding to the class passed as parameter.
      * 
-     * @param clazz the returned logger will be named after clazz
+     * @param clazz
+     *            the returned logger will be named after clazz
      * @return logger
      */
-    public abstract Logger getLogger( Class<?> clazz );
+    public abstract Logger getLogger(Class<?> clazz);
 
     /**
-     * Return a logger named according to the name parameter using the statically bound {@link ILoggerFactory} instance.
+     * Return a logger named according to the name parameter.
      * 
-     * @param name The name of the logger.
+     * @param name
+     *            The name of the logger.
      * @return logger
      */
-    public abstract Logger getLogger( String name );
+    public abstract Logger getLogger(String name);
 
 }
-
-final class SLF4JLogFactory extends LogFactory {
-    
-    public Logger getLogger( Class<?> clazz ) {
-	return getLogger(clazz.getName());
-    }
-
-    public Logger getLogger( String name ) {
-        return new SLF4JLoggerImpl(name);
-    } 
-    
-   
-}
-
-final class JdkLogFactory extends LogFactory {
-    public Logger getLogger( Class<?> clazz ) {
-	return getLogger(clazz.getName());
-    }
-
-    public Logger getLogger( String name ) {
-        return new JdkLoggerImpl(name);
-    } 
-}
-

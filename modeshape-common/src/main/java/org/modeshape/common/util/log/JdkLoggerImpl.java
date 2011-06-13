@@ -3,8 +3,8 @@
  * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
-* See the AUTHORS.txt file in the distribution for a full listing of 
-* individual contributors.
+ * See the AUTHORS.txt file in the distribution for a full listing of 
+ * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
@@ -31,10 +31,10 @@ import java.util.logging.Logger;
 
 /**
  * Logger that delivers messages to a JDK logger
- *
+ * 
  * @since 2.5
  */
-public class JdkLoggerImpl extends org.modeshape.common.util.Logger {
+public final class JdkLoggerImpl extends org.modeshape.common.util.Logger {
 
     private final java.util.logging.Logger logger;
 
@@ -67,71 +67,99 @@ public class JdkLoggerImpl extends org.modeshape.common.util.Logger {
 	}
     }
 
+    @Override
     public boolean isTraceEnabled() {
 	return logger.isLoggable(java.util.logging.Level.FINER);
     }
 
+    @Override
     public boolean isDebugEnabled() {
 	return logger.isLoggable(java.util.logging.Level.FINE);
     }
 
+    @Override
     public boolean isInfoEnabled() {
 	return logger.isLoggable(java.util.logging.Level.INFO);
     }
 
+    @Override
     public boolean isWarnEnabled() {
 	return logger.isLoggable(java.util.logging.Level.WARNING);
     }
 
+    @Override
     public boolean isErrorEnabled() {
 	return logger.isLoggable(java.util.logging.Level.SEVERE);
     }
 
     @Override
     public void debug(String message, Object... params) {
+	if (!isDebugEnabled())
+	    return;
+
 	log(java.util.logging.Level.FINE,
 		StringUtil.createString(message, params), null);
     }
 
     @Override
     public void debug(Throwable t, String message, Object... params) {
+	if (!isDebugEnabled())
+	    return;
+
 	log(java.util.logging.Level.FINE,
 		StringUtil.createString(message, params), t);
     }
 
     @Override
     public void error(I18n message, Object... params) {
+	if (!isErrorEnabled())
+	    return;
+
 	log(java.util.logging.Level.SEVERE,
 		message.text(LOGGING_LOCALE.get(), params), null);
     }
 
     @Override
     public void error(Throwable t, I18n message, Object... params) {
+	if (!isErrorEnabled())
+	    return;
+
 	log(java.util.logging.Level.SEVERE,
 		message.text(LOGGING_LOCALE.get(), params), t);
     }
 
     @Override
     public void info(I18n message, Object... params) {
+	if (!isInfoEnabled())
+	    return;
+
 	log(java.util.logging.Level.INFO,
 		message.text(LOGGING_LOCALE.get(), params), null);
     }
 
     @Override
     public void info(Throwable t, I18n message, Object... params) {
+	if (!isInfoEnabled())
+	    return;
+
 	log(java.util.logging.Level.INFO,
 		message.text(LOGGING_LOCALE.get(), params), t);
     }
 
     @Override
     public void trace(String message, Object... params) {
+	if (!isTraceEnabled())
+	    return;
+
 	log(java.util.logging.Level.FINER,
 		StringUtil.createString(message, params), null);
     }
 
     @Override
     public void trace(Throwable t, String message, Object... params) {
-	// TODO Auto-generated method stub
+	if (!isTraceEnabled())
+	    return;
+
 	log(java.util.logging.Level.FINER,
 		StringUtil.createString(message, params), t);
 
@@ -139,14 +167,32 @@ public class JdkLoggerImpl extends org.modeshape.common.util.Logger {
 
     @Override
     public void warn(I18n message, Object... params) {
+	if (!isWarnEnabled())
+	    return;
+
 	log(java.util.logging.Level.WARNING,
 		message.text(LOGGING_LOCALE.get(), params), null);
     }
 
     @Override
     public void warn(Throwable t, I18n message, Object... params) {
+	if (!isWarnEnabled())
+	    return;
+
 	log(java.util.logging.Level.WARNING,
 		message.text(LOGGING_LOCALE.get(), params), t);
 
+    }
+}
+
+final class JdkLoggerFactory extends LogFactory {
+    @Override
+    public org.modeshape.common.util.Logger getLogger(Class<?> clazz) {
+	return getLogger(clazz.getName());
+    }
+
+    @Override
+    public org.modeshape.common.util.Logger getLogger(String name) {
+	return new JdkLoggerImpl(name);
     }
 }

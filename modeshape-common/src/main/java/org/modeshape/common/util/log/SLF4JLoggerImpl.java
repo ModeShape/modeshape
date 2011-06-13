@@ -25,6 +25,7 @@
 package org.modeshape.common.util.log;
 
 import org.modeshape.common.i18n.I18n;
+import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.StringUtil;
 import org.slf4j.LoggerFactory;
 
@@ -33,37 +34,44 @@ import org.slf4j.LoggerFactory;
  * 
  * @since 2.5
  */
-public class SLF4JLoggerImpl extends org.modeshape.common.util.Logger {
+public final class SLF4JLoggerImpl extends org.modeshape.common.util.Logger {
     private final org.slf4j.Logger logger;
 
     public SLF4JLoggerImpl(String category) {
 	logger = LoggerFactory.getLogger(category);
     }
 
+    @Override
     public String getName() {
 	return logger.getName();
     }
 
+    @Override
     public boolean isTraceEnabled() {
 	return logger.isTraceEnabled();
     }
 
+    @Override
     public boolean isDebugEnabled() {
 	return logger.isDebugEnabled();
     }
 
+    @Override
     public boolean isInfoEnabled() {
 	return logger.isInfoEnabled();
     }
 
+    @Override
     public boolean isWarnEnabled() {
 	return logger.isWarnEnabled();
     }
 
+    @Override
     public boolean isErrorEnabled() {
 	return logger.isErrorEnabled();
     }
 
+    @Override
     public void warn(Throwable t, I18n message, Object... params) {
 	if (!isWarnEnabled())
 	    return;
@@ -78,6 +86,7 @@ public class SLF4JLoggerImpl extends org.modeshape.common.util.Logger {
 	logger.warn(message.text(LOGGING_LOCALE.get(), params), t);
     }
 
+    @Override
     public void warn(I18n message, Object... params) {
 	if (!isWarnEnabled())
 	    return;
@@ -99,6 +108,7 @@ public class SLF4JLoggerImpl extends org.modeshape.common.util.Logger {
      *            the parameter values that are to replace the variables in the
      *            format string
      */
+    @Override
     public void debug(String message, Object... params) {
 	if (!isDebugEnabled())
 	    return;
@@ -120,6 +130,7 @@ public class SLF4JLoggerImpl extends org.modeshape.common.util.Logger {
      *            the parameter values that are to replace the variables in the
      *            format string
      */
+    @Override
     public void debug(Throwable t, String message, Object... params) {
 	if (!isDebugEnabled())
 	    return;
@@ -147,6 +158,7 @@ public class SLF4JLoggerImpl extends org.modeshape.common.util.Logger {
      *            the parameter values that are to replace the variables in the
      *            format string
      */
+    @Override
     public void error(I18n message, Object... params) {
 	if (!isErrorEnabled())
 	    return;
@@ -168,6 +180,7 @@ public class SLF4JLoggerImpl extends org.modeshape.common.util.Logger {
      *            the parameter values that are to replace the variables in the
      *            format string
      */
+    @Override
     public void error(Throwable t, I18n message, Object... params) {
 	if (!isErrorEnabled())
 	    return;
@@ -195,6 +208,7 @@ public class SLF4JLoggerImpl extends org.modeshape.common.util.Logger {
      *            the parameter values that are to replace the variables in the
      *            format string
      */
+    @Override
     public void info(I18n message, Object... params) {
 	if (!isInfoEnabled())
 	    return;
@@ -216,6 +230,7 @@ public class SLF4JLoggerImpl extends org.modeshape.common.util.Logger {
      *            the parameter values that are to replace the variables in the
      *            format string
      */
+    @Override
     public void info(Throwable t, I18n message, Object... params) {
 	if (!isInfoEnabled())
 	    return;
@@ -243,6 +258,7 @@ public class SLF4JLoggerImpl extends org.modeshape.common.util.Logger {
      *            the parameter values that are to replace the variables in the
      *            format string
      */
+    @Override
     public void trace(String message, Object... params) {
 	if (!isTraceEnabled())
 	    return;
@@ -264,6 +280,7 @@ public class SLF4JLoggerImpl extends org.modeshape.common.util.Logger {
      *            the parameter values that are to replace the variables in the
      *            format string
      */
+    @Override
     public void trace(Throwable t, String message, Object... params) {
 	if (!isTraceEnabled())
 	    return;
@@ -276,6 +293,20 @@ public class SLF4JLoggerImpl extends org.modeshape.common.util.Logger {
 	    return;
 	}
 	logger.trace(StringUtil.createString(message, params), t);
+    }
+
+}
+
+final class SLF4JLogFactory extends LogFactory {
+
+    @Override
+    public Logger getLogger(Class<?> clazz) {
+	return getLogger(clazz.getName());
+    }
+
+    @Override
+    public Logger getLogger(String name) {
+	return new SLF4JLoggerImpl(name);
     }
 
 }
