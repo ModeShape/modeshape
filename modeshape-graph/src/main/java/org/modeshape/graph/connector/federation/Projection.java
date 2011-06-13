@@ -25,6 +25,9 @@ package org.modeshape.graph.connector.federation;
 
 import java.io.Serializable;
 import java.lang.reflect.Method;
+import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -154,18 +157,27 @@ public class Projection implements Comparable<Projection>, Serializable {
      * @param context the environment in which this method is being executed; may not be null
      * @return the rule, or null if the definition could not be parsed
      */
-    public static Rule fromString( String definition,
-                                   ExecutionContext context ) {
+    public static Rule fromString( final String definition,
+                                   final ExecutionContext context ) {
         CheckArg.isNotNull(context, "env");
-        definition = definition != null ? definition.trim() : "";
-        if (definition.length() == 0) return null;
-        for (Method method : parserMethods) {
+        final String trimmedDefinition = definition != null ? definition.trim() : "";
+        if (trimmedDefinition.length() == 0) return null;
+        for (final Method method : parserMethods) {
             try {
-                Rule rule = (Rule)method.invoke(null, definition, context);
+                Rule rule = AccessController.doPrivileged(new PrivilegedExceptionAction<Rule>() {
+                    public Rule run() throws Exception {
+                        return (Rule) method.invoke(null, trimmedDefinition, context);
+                    }
+                });
                 if (rule != null) return rule;
             } catch (Throwable err) {
                 String msg = "Error while parsing project rule definition \"{0}\" using {1}";
-                context.getLogger(Projection.class).trace(err, msg, definition, method);
+                Throwable error = err;
+                if(error instanceof PrivilegedActionException) {
+                    //Get the wrapped error
+                    error = ((PrivilegedActionException)err).getException();
+                }
+                context.getLogger(Projection.class).trace(error, msg, definition, method);
             }
         }
         return null;
