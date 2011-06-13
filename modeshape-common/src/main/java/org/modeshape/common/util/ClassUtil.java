@@ -37,68 +37,68 @@ import org.modeshape.common.annotation.Immutable;
  */
 @Immutable
 public final class ClassUtil {
-
+	
     private static void addObjectString( Object object,
-                                         int includeInheritedFieldDepth,
-                                         Class<?> clazz,
-                                         StringBuffer text ) {
-
+										int includeInheritedFieldDepth,
+										Class<?> clazz,
+										StringBuffer text ) {
+		
         // Add class's name
         text.append(nonPackageQualifiedName(clazz));
-
+		
         text.append('(');
-
+		
         // Add class's field names and object's corresponding values
         Field[] flds = clazz.getDeclaredFields();
         boolean separatorNeeded = false;
         for (int ndx = 0, len = flds.length; ndx < len; ++ndx) {
             Field fld = flds[ndx];
             try {
-
+				
                 // Attempt to ensure fields is accessible. Getting the value will throw an exception if the attempt failed.
                 makeAccessible(fld);
                 Object val = fld.get(object);
-
+				
                 // Skip static fields
                 if ((fld.getModifiers() & Modifier.STATIC) != 0) {
                     continue;
                 }
-
+				
                 // Skip synthetic fields
                 String name = fld.getName();
                 if (name.indexOf('$') >= 0) {
                     continue;
                 }
-
+				
                 // Add separator in text between fields
                 separatorNeeded = addSeparator(separatorNeeded, text);
-
+				
                 // Add field's name and value to text
                 text.append(fld.getName());
                 text.append('=');
                 text.append(val);
-
+				
             } catch (Exception err) {
             }
         }
-
+		
         // Add inheritied fields if requested
         if (includeInheritedFieldDepth > 0) {
             separatorNeeded = addSeparator(separatorNeeded, text);
             addObjectString(object, includeInheritedFieldDepth - 1, clazz.getSuperclass(), text);
         }
-
+		
         text.append(')');
     }
-
+	
     private static boolean addSeparator( boolean separatorNeeded,
-                                         StringBuffer text ) {
+										StringBuffer text ) {
         if (separatorNeeded) {
             text.append(", ");
         }
         return true;
     }
-
+	
     /**
      * @param object
      */
@@ -108,7 +108,7 @@ public final class ClassUtil {
                 object.setAccessible(true);
             } else {
                 AccessController.doPrivileged(new PrivilegedAction<Object>() {
-
+					
                     @Override
                     public Object run() {
                         object.setAccessible(true);
@@ -118,7 +118,7 @@ public final class ClassUtil {
             }
         }
     }
-
+	
     /**
      * @param clazz A class.
      * @return The non-package-qualified name of the specified class. Note, inner class names will still be qualified by their
@@ -131,7 +131,7 @@ public final class ClassUtil {
         String name = clazz.getName();
         return name.substring(name.lastIndexOf('.') + 1);
     }
-
+	
     /**
      * @param object An object.
      * @return The non-package-qualified name of the class of the specified object. Note, inner class names will still be
@@ -143,19 +143,19 @@ public final class ClassUtil {
         // }
         return nonPackageQualifiedName(object.getClass());
     }
-
+	
     /**
      * @param object
      * @param includeInheritedFieldDepth
      * @return A string representation of the specified object, consisting of its class name, properties, and property values.
      */
     public static String toString( Object object,
-                                   int includeInheritedFieldDepth ) {
+								  int includeInheritedFieldDepth ) {
         StringBuffer text = new StringBuffer();
         addObjectString(object, includeInheritedFieldDepth, object.getClass(), text);
         return text.toString();
     }
-
+	
     /**
      * Determine whether the supplied string represents a well-formed fully-qualified Java classname. This utility method enforces
      * no conventions (e.g., packages are all lowercase) nor checks whether the class is available on the classpath.
@@ -182,7 +182,23 @@ public final class ClassUtil {
         }
         return true;
     }
-
+    
+    /**
+     * Similar to {@link #loadClass(String)} except that any {@link ClassNotFoundException}s experienced is propagated
+     * to the caller.
+     *
+     * @param classname name of the class to load
+     * @return the class
+     * @throws ClassNotFoundException
+     */
+    public static Class<?> loadClassStrict(String classname) throws ClassNotFoundException {
+		ClassLoader cl = Thread.currentThread().getContextClassLoader();
+		if (cl == null)
+			cl = ClassLoader.getSystemClassLoader();
+		return cl.loadClass(classname);
+    }
+	
+	
     private ClassUtil() {
     }
 }
