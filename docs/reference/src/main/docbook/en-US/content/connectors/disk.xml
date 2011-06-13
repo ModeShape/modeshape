@@ -71,7 +71,8 @@
 					<entry>lockFileUsed</entry>
 					<entry>An advanced property that, if set to "true", indicates that repository read and write locks should be synchronized with file lock options 
 					on a file in the on-disk storage.  This causes a performance penalty, but allows disk sources in different JVMS (e.g., clustered disk sources) to
-					coordinate their locks.  This approach uses Java NIO file locking and is subject to the limitations of the Java NIO file locking for the current
+					coordinate their locks <emphasis>as long as all cluster members share the same disk</emphasis>.  This approach uses Java NIO file locking and is 
+					subject to the limitations of the Java NIO file locking for the current
 					JVM implementation.  The default value is "false", but this should always be set to "true" when used in a clustered environment.</entry>
 				</row>
 				<row>
