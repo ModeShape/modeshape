@@ -56,6 +56,8 @@ import org.modeshape.graph.connector.RepositorySourceCapabilities;
 import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.connector.base.BaseRepositorySource;
 import org.modeshape.graph.connector.base.Connection;
+import org.modeshape.graph.connector.base.cache.BaseCachePolicy;
+import org.modeshape.graph.connector.base.cache.NoCachePolicy;
 import org.modeshape.graph.observe.Observer;
 
 /**
@@ -100,6 +102,11 @@ public class DiskSource implements BaseRepositorySource, ObjectFactory {
      * The initial value for where content should be stored on disk is "{@value} ", unless otherwise specified.
      */
     public static final String DEFAULT_REPOSITORY_ROOT_PATH = "/tmp";
+
+    /**
+     * The initial cache policy.  The default is to not cache.
+     */
+    public static final BaseCachePolicy<UUID, DiskNode> DEFAULT_DEFAULT_CACHE_POLICY = new NoCachePolicy<UUID, DiskNode>();
 
     private static final String ROOT_NODE_UUID = "rootNodeUuid";
     private static final String SOURCE_NAME = "sourceName";
@@ -146,7 +153,7 @@ public class DiskSource implements BaseRepositorySource, ObjectFactory {
     @Category( i18n = DiskConnectorI18n.class, value = "repositoryRootPathPropertyCategory" )
     private volatile String repositoryRootPath = DEFAULT_REPOSITORY_ROOT_PATH;
 
-    private volatile CachePolicy defaultCachePolicy;
+    private volatile BaseCachePolicy<UUID, DiskNode> defaultCachePolicy = DEFAULT_DEFAULT_CACHE_POLICY;
     private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(true, true, false, true, true);
     private transient DiskRepository repository;
     private transient Context jndiContext;
@@ -199,17 +206,31 @@ public class DiskSource implements BaseRepositorySource, ObjectFactory {
      * @return the default cache policy, or null if this source has no explicit default cache policy
      */
     @Override
-    public CachePolicy getDefaultCachePolicy() {
+    public BaseCachePolicy<UUID, DiskNode> getDefaultCachePolicy() {
         return defaultCachePolicy;
     }
 
     /**
      * @param defaultCachePolicy Sets defaultCachePolicy to the specified value.
      */
-    public synchronized void setDefaultCachePolicy( CachePolicy defaultCachePolicy ) {
-        if (this.defaultCachePolicy == defaultCachePolicy || this.defaultCachePolicy != null
+    public synchronized void setDefaultCachePolicy( BaseCachePolicy<UUID, DiskNode> defaultCachePolicy ) {
+        if (defaultCachePolicy == null) {
+            defaultCachePolicy = DEFAULT_DEFAULT_CACHE_POLICY;
+        }
+
+        if (this.defaultCachePolicy == defaultCachePolicy
             && this.defaultCachePolicy.equals(defaultCachePolicy)) return; // unchanged
         this.defaultCachePolicy = defaultCachePolicy;
+        cachePolicyChanged(defaultCachePolicy);
+    }
+
+    /**
+     * Notifies the repository that the cache policy has changed and that its caches should be reset.
+     * 
+     * @param newCachePolicy the new cache policy; may not be null
+     */
+    private void cachePolicyChanged( BaseCachePolicy<UUID, DiskNode> newCachePolicy ) {
+        if (this.repository != null) repository.cachePolicyChanged(newCachePolicy);
     }
 
     /**
@@ -483,6 +504,7 @@ public class DiskSource implements BaseRepositorySource, ObjectFactory {
      * {@inheritDoc}
      */
     @Override
+    @SuppressWarnings( "unchecked" )
     public Object getObjectInstance( Object obj,
                                      javax.naming.Name name,
                                      Context nameCtx,
@@ -529,7 +551,7 @@ public class DiskSource implements BaseRepositorySource, ObjectFactory {
             DiskSource source = new DiskSource();
             if (sourceName != null) source.setName(sourceName);
             if (rootNodeUuidString != null) source.setRootNodeUuid(rootNodeUuidString);
-            if (defaultCachePolicy instanceof CachePolicy) source.setDefaultCachePolicy((CachePolicy)defaultCachePolicy);
+            if (defaultCachePolicy instanceof CachePolicy) source.setDefaultCachePolicy((BaseCachePolicy<UUID, DiskNode>)defaultCachePolicy);
             if (retryLimit != null) source.setRetryLimit(Integer.parseInt(retryLimit));
             if (defaultWorkspace != null) source.setDefaultWorkspaceName(defaultWorkspace);
             if (createWorkspaces != null) source.setCreatingWorkspacesAllowed(Boolean.parseBoolean(createWorkspaces));

@@ -49,6 +49,8 @@ import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.cache.BasicCachePolicy;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryContext;
+import org.modeshape.graph.connector.base.cache.BaseCachePolicy;
+import org.modeshape.graph.connector.base.cache.InMemoryWorkspaceCache.MapCachePolicy;
 
 /**
  */
@@ -144,8 +146,7 @@ public class DiskSourceTest {
 
     @Test
     public void shouldCreateJndiReferenceAndRecreatedObjectFromReference() throws Exception {
-        BasicCachePolicy cachePolicy = new BasicCachePolicy();
-        cachePolicy.setTimeToLive(1000L, TimeUnit.MILLISECONDS);
+        BaseCachePolicy<UUID, DiskNode> cachePolicy = new MapCachePolicy<DiskNode>(1000);
         convertToAndFromJndiReference(validName,
                                       validRootNodeUuid,
  repositoryRootPath,
@@ -164,7 +165,7 @@ public class DiskSourceTest {
     private void convertToAndFromJndiReference( String sourceName,
                                                 UUID rootNodeUuid,
                                                 String repositoryRootPath,
-                                                BasicCachePolicy cachePolicy,
+                                                BaseCachePolicy<UUID, DiskNode> cachePolicy,
                                                 int retryLimit ) throws Exception {
         source.setRetryLimit(retryLimit);
         source.setName(sourceName);
@@ -195,7 +196,10 @@ public class DiskSourceTest {
         assertThat(recoveredSource.getRootNodeUuid(), is(source.getRootNodeUuid()));
         assertThat(recoveredSource.getRetryLimit(), is(source.getRetryLimit()));
         assertThat(recoveredSource.getRepositoryRootPath(), is(source.getRepositoryRootPath()));
-        assertThat(recoveredSource.getDefaultCachePolicy(), is(source.getDefaultCachePolicy()));
+
+        // The deserialized cache policy won't be the same object after deserialization
+        assertThat(recoveredSource.getDefaultCachePolicy().getClass().getName(),
+                   is(source.getDefaultCachePolicy().getClass().getName()));
 
         assertThat(recoveredSource.equals(source), is(true));
         assertThat(source.equals(recoveredSource), is(true));

@@ -33,7 +33,6 @@ import java.util.UUID;
 import org.modeshape.graph.connector.base.MapWorkspace;
 import org.modeshape.graph.connector.base.cache.BaseCachePolicy;
 import org.modeshape.graph.connector.base.cache.WorkspaceCache;
-import org.modeshape.graph.connector.base.cache.InMemoryWorkspaceCache.MapCachePolicy;
 
 
 /**
@@ -44,7 +43,6 @@ public class DiskWorkspace extends MapWorkspace<DiskNode> {
     private File workspaceRoot;
     private WorkspaceCache<UUID, DiskNode> cache;
     private BaseCachePolicy<UUID, DiskNode> policy;
-    // private BaseCachePolicy<UUID, DiskNode> policy = new NoCachePolicy<UUID, DiskNode>();
 
     /**
      * Create a new workspace instance.
@@ -52,17 +50,16 @@ public class DiskWorkspace extends MapWorkspace<DiskNode> {
      * @param name the name of the workspace
      * @param workspaceRoot a pointer to the root of the workspace on disk
      * @param rootNode the root node for the workspace
+     * @param cachePolicy the caching policy; may not be null
      */
     public DiskWorkspace( String name,
                           File workspaceRoot,
-                          DiskNode rootNode ) {
+                          DiskNode rootNode,
+                          BaseCachePolicy<UUID, DiskNode> cachePolicy ) {
         super(name, rootNode);
         this.workspaceRoot = workspaceRoot;
 
-        MapCachePolicy<DiskNode> p = new MapCachePolicy<DiskNode>();
-        p.setTimeToLive(30);
-        this.policy = p;
-        this.cache = policy.newCache();
+        this.cache = cachePolicy.newCache();
 
         File rootNodeFile = fileFor(rootNode.getUuid());
         if (!rootNodeFile.exists()) {
@@ -77,17 +74,16 @@ public class DiskWorkspace extends MapWorkspace<DiskNode> {
      * @param name the name of the workspace
      * @param workspaceRoot a pointer to the root of the workspace on disk
      * @param originalToClone the workspace that is to be cloned
+     * @param cachePolicy the caching policy; may not be null
      */
     public DiskWorkspace( String name,
                           File workspaceRoot,
-                          DiskWorkspace originalToClone ) {
+                          DiskWorkspace originalToClone,
+                          BaseCachePolicy<UUID, DiskNode> cachePolicy ) {
         super(name, originalToClone);
         this.workspaceRoot = workspaceRoot;
 
-        MapCachePolicy<DiskNode> p = new MapCachePolicy<DiskNode>();
-        p.setTimeToLive(30);
-        this.policy = p;
-        cache = policy.newCache();
+        cache = cachePolicy.newCache();
     }
 
     public void destroy() {
@@ -99,6 +95,15 @@ public class DiskWorkspace extends MapWorkspace<DiskNode> {
      */
     public void shutdown() {
         cache.close();
+    }
+
+    /**
+     * Notifies this workspace that the cache policy has changed and the cache should be reset.
+     * 
+     * @param newCachePolicy the new cache policy; may not be null
+     */
+    void cachePolicyChanged( BaseCachePolicy<UUID, DiskNode> newCachePolicy ) {
+        this.cache = newCachePolicy.newCache();
     }
 
     @Override

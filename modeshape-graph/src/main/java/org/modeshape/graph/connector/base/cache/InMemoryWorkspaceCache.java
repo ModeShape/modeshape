@@ -144,6 +144,11 @@ public abstract class InMemoryWorkspaceCache<KeyType, NodeType extends Node> imp
 
         private long cacheTimeToLiveInSeconds;
 
+        public MapCachePolicy( long timeToLiveInSeconds ) {
+            super();
+            this.setTimeToLive(timeToLiveInSeconds);
+        }
+
         /**
          * @param node
          * @return true for all nodes
@@ -179,6 +184,11 @@ public abstract class InMemoryWorkspaceCache<KeyType, NodeType extends Node> imp
         private static final long serialVersionUID = 1L;
 
         private long cacheTimeToLiveInSeconds;
+
+        public PathCachePolicy( long timeToLiveInSeconds ) {
+            super();
+            this.setTimeToLive(timeToLiveInSeconds);
+        }
 
         /**
          * @return true for all nodes

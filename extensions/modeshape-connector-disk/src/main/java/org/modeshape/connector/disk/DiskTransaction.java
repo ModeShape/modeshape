@@ -84,9 +84,9 @@ public class DiskTransaction extends MapTransaction<DiskNode, DiskWorkspace> {
             }
         }
         if (originalToClone != null) {
-            return new DiskWorkspace(name, workspaceRoot, originalToClone);
+            return new DiskWorkspace(name, workspaceRoot, originalToClone, repository.cachePolicy());
         }
-        return new DiskWorkspace(name, workspaceRoot, new DiskNode(repository.getRootNodeUuid()));
+        return new DiskWorkspace(name, workspaceRoot, new DiskNode(repository.getRootNodeUuid()), repository.cachePolicy());
     }
 
     /**

@@ -155,8 +155,8 @@ config.repositorySource("Disk Store")
       	    If desired, specify a cache policy that caches items in memory for 5 minutes (300000 ms).
       	    This fragment can be left out if the connector should not cache any content.
       	    -->
-      	    <mode:cachePolicy jcr:name="cachePolicy" 
-      	      mode:classname="org.modeshape.graph.connector.path.cache.InMemoryWorkspaceCache$InMemoryCachePolicy"
+      	    <mode:cachePolicy jcr:name="defaultCachePolicy" 
+      	      mode:classname="org.modeshape.graph.connector.base.cache.InMemoryWorkspaceCache$MapCachePolicy"
       	      mode:timeToLiveInMilliseconds="300000" />
         </mode:source>    
     </mode:sources>
