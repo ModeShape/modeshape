@@ -12,7 +12,6 @@
 				<!-- Don't include the ModeShape core libraries and their dependencies -->
 				<exclude>org.modeshape:modeshape-common</exclude>
 				<exclude>org.modeshape:modeshape-graph</exclude>
-				<exclude>com.google.collections:*</exclude>
 				<exclude>joda-time:*</exclude>
 				<exclude>org.slf4j:*</exclude>
 			</excludes>
