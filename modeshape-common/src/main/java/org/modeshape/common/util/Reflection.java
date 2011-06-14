@@ -29,6 +29,10 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -396,8 +400,8 @@ public class Reflection {
      * @throws IllegalArgumentException
      */
     public Object invokeBestMethodOnTarget( String[] methodNames,
-                                            Object target,
-                                            Object... arguments )
+                                            final Object target,
+                                            final Object... arguments )
         throws NoSuchMethodException, SecurityException, IllegalArgumentException, IllegalAccessException,
         InvocationTargetException {
         Class<?>[] argumentClasses = buildArgumentClasses(arguments);
@@ -406,9 +410,28 @@ public class Reflection {
         for (String methodName : methodNames) {
             --remaining;
             try {
-                Method method = findBestMethodWithSignature(methodName, argumentClasses);
-                result = method.invoke(target, arguments);
+                final Method method = findBestMethodWithSignature(methodName, argumentClasses);
+                result = AccessController.doPrivileged(new PrivilegedExceptionAction<Object>() {
+                    @Override
+                    public Object run() throws Exception {
+                         return method.invoke(target, arguments);
+                    }
+                });
                 break;
+            } catch (PrivilegedActionException pae) {
+                //pae will be wrapping one of IllegalAccessException, IllegalArgumentException, InvocationTargetException
+                if (pae.getException() instanceof IllegalAccessException){
+                    throw (IllegalAccessException) pae.getException();
+                }
+
+                if (pae.getException() instanceof IllegalArgumentException){
+                    throw (IllegalArgumentException) pae.getException();
+                }
+
+                if (pae.getException() instanceof InvocationTargetException){
+                    throw (InvocationTargetException) pae.getException();
+                }
+
             } catch (NoSuchMethodException e) {
                 if (remaining == 0) throw e;
             }

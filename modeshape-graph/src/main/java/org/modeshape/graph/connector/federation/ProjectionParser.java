@@ -34,6 +34,9 @@ import org.modeshape.graph.connector.federation.Projection.Rule;
 import org.modeshape.graph.property.NamespaceRegistry;
 
 import java.lang.reflect.Method;
+import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -184,14 +187,18 @@ public class ProjectionParser {
      * @return the rule, or null if the definition could not be parsed
      */
     public Rule ruleFromString( String definition,
-                                ExecutionContext context ) {
+                                final ExecutionContext context ) {
         CheckArg.isNotNull(context, "env");
-        definition = definition != null ? definition.trim() : "";
-        if (definition.length() == 0) return null;
+        final String trimmedDefinition = definition != null ? definition.trim() : "";
+        if (trimmedDefinition.length() == 0) return null;
         Logger logger = context.getLogger(getClass());
-        for (Method method : parserMethods) {
+        for (final Method method : parserMethods) {
             try {
-                Rule rule = (Rule)method.invoke(null, definition, context);
+                Rule rule = AccessController.doPrivileged(new PrivilegedExceptionAction<Rule>() {
+                    public Rule run() throws Exception {
+                        return (Rule) method.invoke(null, trimmedDefinition, context);
+                    }
+                });
                 if (rule != null) {
                     if (logger.isTraceEnabled()) {
                         String msg = "Success parsing project rule definition \"{0}\" using {1}";
@@ -204,7 +211,12 @@ public class ProjectionParser {
                 }
             } catch (Throwable err) {
                 String msg = "Error while parsing project rule definition \"{0}\" using {1}";
-                logger.trace(err, msg, definition, method);
+                 Throwable error = err;
+                if(error instanceof PrivilegedActionException) {
+                    //Get the wrapped error
+                    error = ((PrivilegedActionException)err).getException();
+                }
+                logger.trace(error, msg, definition, method);
             }
         }
         return null;

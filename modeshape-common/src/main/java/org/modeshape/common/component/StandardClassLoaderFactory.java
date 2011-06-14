@@ -25,6 +25,9 @@ package org.modeshape.common.component;
 
 import org.modeshape.common.annotation.Immutable;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
 /**
  * A {@link ClassLoaderFactory} implementation that loads classes using the thread's {@link Thread#getContextClassLoader() context
  * class loader} or (optionally) a supplied class loader.
@@ -55,7 +58,12 @@ public class StandardClassLoaderFactory implements ClassLoaderFactory {
     @Override
     public ClassLoader getClassLoader( String... classpath ) {
         ClassLoader result = null;
-        if (this.useCurrentThreadContextClassLoader) result = Thread.currentThread().getContextClassLoader();
+        if (this.useCurrentThreadContextClassLoader) result = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+            @Override
+            public ClassLoader run() {
+                return Thread.currentThread().getContextClassLoader();
+            }
+        });
         if (result == null) result = this.delegate;
         return result;
     }

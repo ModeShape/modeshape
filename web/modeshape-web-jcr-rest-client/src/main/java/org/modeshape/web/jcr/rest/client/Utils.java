@@ -25,6 +25,8 @@ package org.modeshape.web.jcr.rest.client;
 
 import java.io.File;
 import java.io.InputStream;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Map;
 import org.modeshape.common.util.MimeTypeUtil;
 
@@ -71,13 +73,21 @@ public final class Utils {
         	ClassLoader cl = Thread.currentThread().getContextClassLoader();
         	try {	        		        	
 	        	Thread.currentThread().setContextClassLoader(Utils.class.getClassLoader());
-	        	
-	            InputStream stream =Thread.currentThread().getContextClassLoader().getResourceAsStream("org/modeshape/web/jcr/rest/client/mime.types");
+
+                final ClassLoader classLoader = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+                    @Override
+                    public ClassLoader run() {
+                        return Thread.currentThread().getContextClassLoader();
+                    }
+                });
+
+                InputStream stream = classLoader.getResourceAsStream("org/modeshape/web/jcr/rest/client/mime.types");
 	            Map<String, String> customMap = MimeTypeUtil.load(stream, null);
 	
 	            // construct
 	            mimeTypeUtils = new MimeTypeUtil(customMap, true);
         	} finally {
+                //restore original classloader
         		Thread.currentThread().setContextClassLoader(cl);
         	}
         }

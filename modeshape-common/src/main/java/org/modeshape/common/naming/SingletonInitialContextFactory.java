@@ -23,6 +23,8 @@
  */
 package org.modeshape.common.naming;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Hashtable;
 import javax.naming.Context;
 import javax.naming.spi.InitialContextFactory;
@@ -108,7 +110,14 @@ public class SingletonInitialContextFactory implements InitialContextFactory {
      * {@link SingletonInitialContextFactory factory class}.
      */
     static public void initialize() {
-        System.setProperty("java.naming.factory.initial", SingletonInitialContextFactory.class.getName());
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            @Override
+            public Void run() {
+                System.setProperty("java.naming.factory.initial", SingletonInitialContextFactory.class.getName());
+                return null;
+            }
+        });
+
     }
 
     /**
