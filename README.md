@@ -37,16 +37,17 @@ The general idea is to keep your 'master' branch in-sync with the 'upstream/mast
 
 ## Building ModeShape
 
-Then, we use Maven 2.2 to build our software. The following command compiles all the code, installs the JARs into your local Maven repository, and run all of the unit tests:
+Then, we use Maven 3.x to build our software. The following command compiles all the code, installs the JARs into your local Maven repository, and run all of the unit tests:
 
-	$ mvn clean install
+	$ mvn clean install -s settings.xml
 
-That takes a while -- we do have over 12K unit tests. So if need be, your builds can skip the tests:
+BTW, that '-s settings.xml' argument uses the 'settings.xml' file in our codebase, which is set up to use the JBoss Maven repository. 
 
-	$ mvn clean install -DskipTests
+That command takes a while -- we do have over 12K unit tests. So if need be, your builds can skip the tests:
+
+	$ mvn clean install -s settings.xml -DskipTests
 	
-If you have *any* trouble building, check the [detailed build instructions and tips](http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#maven) in our 
-[Reference Guide](http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html).
+If you have *any* trouble building (or don't like the '-s settings.xml' usage), check the [detailed build instructions and tips](http://community.jboss.org/wiki/ModeShapeAndMaven).
 
 ## Contribute fixes and features
 
