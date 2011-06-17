@@ -26,7 +26,6 @@ package org.modeshape.common.util.log;
 
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.StringUtil;
-
 import java.util.logging.Logger;
 
 /**
@@ -38,161 +37,158 @@ public final class JdkLoggerImpl extends org.modeshape.common.util.Logger {
 
     private final java.util.logging.Logger logger;
 
-    public JdkLoggerImpl(String category) {
-	logger = Logger.getLogger(category);
+    public JdkLoggerImpl( String category ) {
+        logger = Logger.getLogger(category);
     }
 
     @Override
     public String getName() {
-	return logger.getName();
+        return logger.getName();
     }
 
-    private void log(java.util.logging.Level level, String message, Throwable ex) {
-	if (logger.isLoggable(level)) {
-	    Throwable dummyException = new Throwable();
-	    StackTraceElement locations[] = dummyException.getStackTrace();
-	    String className = "unknown";
-	    String methodName = "unknown";
-	    int depth = 2;
-	    if (locations != null && locations.length > depth) {
-		StackTraceElement caller = locations[depth];
-		className = caller.getClassName();
-		methodName = caller.getMethodName();
-	    }
-	    if (ex == null) {
-		logger.logp(level, className, methodName, message);
-	    } else {
-		logger.logp(level, className, methodName, message, ex);
-	    }
-	}
+    private void log( java.util.logging.Level level,
+                      String message,
+                      Throwable ex ) {
+        if (logger.isLoggable(level)) {
+            Throwable dummyException = new Throwable();
+            StackTraceElement locations[] = dummyException.getStackTrace();
+            String className = "unknown";
+            String methodName = "unknown";
+            int depth = 2;
+            if (locations != null && locations.length > depth) {
+                StackTraceElement caller = locations[depth];
+                className = caller.getClassName();
+                methodName = caller.getMethodName();
+            }
+            if (ex == null) {
+                logger.logp(level, className, methodName, message);
+            } else {
+                logger.logp(level, className, methodName, message, ex);
+            }
+        }
     }
 
     @Override
     public boolean isTraceEnabled() {
-	return logger.isLoggable(java.util.logging.Level.FINER);
+        return logger.isLoggable(java.util.logging.Level.FINER);
     }
 
     @Override
     public boolean isDebugEnabled() {
-	return logger.isLoggable(java.util.logging.Level.FINE);
+        return logger.isLoggable(java.util.logging.Level.FINE);
     }
 
     @Override
     public boolean isInfoEnabled() {
-	return logger.isLoggable(java.util.logging.Level.INFO);
+        return logger.isLoggable(java.util.logging.Level.INFO);
     }
 
     @Override
     public boolean isWarnEnabled() {
-	return logger.isLoggable(java.util.logging.Level.WARNING);
+        return logger.isLoggable(java.util.logging.Level.WARNING);
     }
 
     @Override
     public boolean isErrorEnabled() {
-	return logger.isLoggable(java.util.logging.Level.SEVERE);
+        return logger.isLoggable(java.util.logging.Level.SEVERE);
     }
 
     @Override
-    public void debug(String message, Object... params) {
-	if (!isDebugEnabled())
-	    return;
+    public void debug( String message,
+                       Object... params ) {
+        if (!isDebugEnabled()) return;
 
-	log(java.util.logging.Level.FINE,
-		StringUtil.createString(message, params), null);
+        log(java.util.logging.Level.FINE, StringUtil.createString(message, params), null);
     }
 
     @Override
-    public void debug(Throwable t, String message, Object... params) {
-	if (!isDebugEnabled())
-	    return;
+    public void debug( Throwable t,
+                       String message,
+                       Object... params ) {
+        if (!isDebugEnabled()) return;
 
-	log(java.util.logging.Level.FINE,
-		StringUtil.createString(message, params), t);
+        log(java.util.logging.Level.FINE, StringUtil.createString(message, params), t);
     }
 
     @Override
-    public void error(I18n message, Object... params) {
-	if (!isErrorEnabled())
-	    return;
+    public void error( I18n message,
+                       Object... params ) {
+        if (!isErrorEnabled()) return;
 
-	log(java.util.logging.Level.SEVERE,
-		message.text(LOGGING_LOCALE.get(), params), null);
+        log(java.util.logging.Level.SEVERE, message.text(LOGGING_LOCALE.get(), params), null);
     }
 
     @Override
-    public void error(Throwable t, I18n message, Object... params) {
-	if (!isErrorEnabled())
-	    return;
+    public void error( Throwable t,
+                       I18n message,
+                       Object... params ) {
+        if (!isErrorEnabled()) return;
 
-	log(java.util.logging.Level.SEVERE,
-		message.text(LOGGING_LOCALE.get(), params), t);
+        log(java.util.logging.Level.SEVERE, message.text(LOGGING_LOCALE.get(), params), t);
     }
 
     @Override
-    public void info(I18n message, Object... params) {
-	if (!isInfoEnabled())
-	    return;
+    public void info( I18n message,
+                      Object... params ) {
+        if (!isInfoEnabled()) return;
 
-	log(java.util.logging.Level.INFO,
-		message.text(LOGGING_LOCALE.get(), params), null);
+        log(java.util.logging.Level.INFO, message.text(LOGGING_LOCALE.get(), params), null);
     }
 
     @Override
-    public void info(Throwable t, I18n message, Object... params) {
-	if (!isInfoEnabled())
-	    return;
+    public void info( Throwable t,
+                      I18n message,
+                      Object... params ) {
+        if (!isInfoEnabled()) return;
 
-	log(java.util.logging.Level.INFO,
-		message.text(LOGGING_LOCALE.get(), params), t);
+        log(java.util.logging.Level.INFO, message.text(LOGGING_LOCALE.get(), params), t);
     }
 
     @Override
-    public void trace(String message, Object... params) {
-	if (!isTraceEnabled())
-	    return;
+    public void trace( String message,
+                       Object... params ) {
+        if (!isTraceEnabled()) return;
 
-	log(java.util.logging.Level.FINER,
-		StringUtil.createString(message, params), null);
+        log(java.util.logging.Level.FINER, StringUtil.createString(message, params), null);
     }
 
     @Override
-    public void trace(Throwable t, String message, Object... params) {
-	if (!isTraceEnabled())
-	    return;
+    public void trace( Throwable t,
+                       String message,
+                       Object... params ) {
+        if (!isTraceEnabled()) return;
 
-	log(java.util.logging.Level.FINER,
-		StringUtil.createString(message, params), t);
+        log(java.util.logging.Level.FINER, StringUtil.createString(message, params), t);
 
     }
 
     @Override
-    public void warn(I18n message, Object... params) {
-	if (!isWarnEnabled())
-	    return;
+    public void warn( I18n message,
+                      Object... params ) {
+        if (!isWarnEnabled()) return;
 
-	log(java.util.logging.Level.WARNING,
-		message.text(LOGGING_LOCALE.get(), params), null);
+        log(java.util.logging.Level.WARNING, message.text(LOGGING_LOCALE.get(), params), null);
     }
 
     @Override
-    public void warn(Throwable t, I18n message, Object... params) {
-	if (!isWarnEnabled())
-	    return;
+    public void warn( Throwable t,
+                      I18n message,
+                      Object... params ) {
+        if (!isWarnEnabled()) return;
 
-	log(java.util.logging.Level.WARNING,
-		message.text(LOGGING_LOCALE.get(), params), t);
+        log(java.util.logging.Level.WARNING, message.text(LOGGING_LOCALE.get(), params), t);
 
     }
 }
 
 final class JdkLoggerFactory extends LogFactory {
     @Override
-    public org.modeshape.common.util.Logger getLogger(Class<?> clazz) {
-	return getLogger(clazz.getName());
+    public org.modeshape.common.util.Logger getLogger( Class<?> clazz ) {
+        return getLogger(clazz.getName());
     }
 
     @Override
-    public org.modeshape.common.util.Logger getLogger(String name) {
-	return new JdkLoggerImpl(name);
+    public org.modeshape.common.util.Logger getLogger( String name ) {
+        return new JdkLoggerImpl(name);
     }
 }
