@@ -28,30 +28,28 @@
 
 package org.modeshape.common.util.log;
 
-
 import org.modeshape.common.util.ClassUtil;
 import org.modeshape.common.util.Logger;
 
 public abstract class LogFactory {
-    
+
     private static LogFactory LOGFACTORY;
-        
+
     static {
-	try {
-	    ClassUtil.loadClassStrict("org.apache.log4j.Logger");
-	    LOGFACTORY = new SLF4JLogFactory();
+        try {
+            ClassUtil.loadClassStrict("org.apache.log4j.Logger");
+            LOGFACTORY = new SLF4JLogFactory();
 
-	} catch (ClassNotFoundException cnfe) {
-	    LOGFACTORY = new JdkLogFactory();
-	}
+        } catch (ClassNotFoundException cnfe) {
+            LOGFACTORY = new JdkLogFactory();
+        }
 
     }
-    
+
     public static LogFactory getLogFactory() {
-	return LOGFACTORY;
+        return LOGFACTORY;
     }
 
-        
     /**
      * Return a logger named corresponding to the class passed as parameter, using the statically bound {@link ILoggerFactory}
      * instance.
@@ -72,25 +70,23 @@ public abstract class LogFactory {
 }
 
 final class SLF4JLogFactory extends LogFactory {
-    
+
     public Logger getLogger( Class<?> clazz ) {
-	return getLogger(clazz.getName());
+        return getLogger(clazz.getName());
     }
 
     public Logger getLogger( String name ) {
         return new SLF4JLoggerImpl(name);
-    } 
-    
-   
+    }
+
 }
 
 final class JdkLogFactory extends LogFactory {
     public Logger getLogger( Class<?> clazz ) {
-	return getLogger(clazz.getName());
+        return getLogger(clazz.getName());
     }
 
     public Logger getLogger( String name ) {
         return new JdkLoggerImpl(name);
-    } 
+    }
 }
-
