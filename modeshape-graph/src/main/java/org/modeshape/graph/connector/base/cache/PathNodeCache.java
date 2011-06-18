@@ -1,8 +1,9 @@
 package org.modeshape.graph.connector.base.cache;
 
 import org.modeshape.graph.connector.base.PathNode;
+import org.modeshape.graph.property.Path;
 
-public interface PathWorkspaceCache<Path, N extends PathNode> extends WorkspaceCache<Path, N> {
+public interface PathNodeCache<N extends PathNode> extends NodeCache<Path, N> {
 
     /**
      * Invalidates all nodes in the cache that have the given path or have a path that is an ancestor of the given path

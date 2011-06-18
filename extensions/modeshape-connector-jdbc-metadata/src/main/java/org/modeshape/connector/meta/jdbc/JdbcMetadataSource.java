@@ -24,8 +24,12 @@
 package org.modeshape.connector.meta.jdbc;
 
 import java.beans.PropertyVetoException;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.Hashtable;
 import java.util.Map;
+import javax.naming.BinaryRefAddr;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.Reference;
@@ -40,23 +44,27 @@ import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.Logger;
 import org.modeshape.connector.meta.jdbc.JdbcMetadataRepository.JdbcMetadataTransaction;
 import org.modeshape.graph.ExecutionContext;
+import org.modeshape.graph.cache.CachePolicy;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositorySourceCapabilities;
 import org.modeshape.graph.connector.RepositorySourceException;
-import org.modeshape.graph.connector.base.AbstractRepositorySource;
+import org.modeshape.graph.connector.base.AbstractNodeCachingRepositorySource;
 import org.modeshape.graph.connector.base.Connection;
 import org.modeshape.graph.connector.base.PathNode;
+import org.modeshape.graph.connector.base.cache.NodeCachePolicy;
+import org.modeshape.graph.property.Path;
 import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 
 @ThreadSafe
-public class JdbcMetadataSource extends AbstractRepositorySource implements ObjectFactory {
+public class JdbcMetadataSource extends AbstractNodeCachingRepositorySource<Path, PathNode> implements ObjectFactory {
 
     private static final long serialVersionUID = 1L;
 
     private static final Logger LOGGER = Logger.getLogger(JdbcMetadataSource.class);
 
     protected static final String SOURCE_NAME = "sourceName";
+    protected static final String CACHE_POLICY = "cachePolicy";
     protected static final String ROOT_NODE_UUID = "rootNodeUuid";
     protected static final String DATA_SOURCE_JNDI_NAME = "dataSourceJndiName";
     protected static final String USERNAME = "username";
@@ -70,7 +78,6 @@ public class JdbcMetadataSource extends AbstractRepositorySource implements Obje
     protected static final String MAXIMUM_SIZE_OF_STATEMENT_CACHE = "maximumSizeOfStatementCache";
     protected static final String NUMBER_OF_CONNECTIONS_TO_BE_ACQUIRED_AS_NEEDED = "numberOfConnectionsToBeAcquiredAsNeeded";
     protected static final String IDLE_TIME_IN_SECONDS_BEFORE_TESTING_CONNECTIONS = "idleTimeInSecondsBeforeTestingConnections";
-    protected static final String CACHE_TIME_TO_LIVE_IN_MILLISECONDS = "cacheTimeToLiveInMilliseconds";
     protected static final String RETRY_LIMIT = "retryLimit";
     protected static final String DEFAULT_WORKSPACE = "defaultWorkspace";
     protected static final String DEFAULT_CATALOG_NAME = "defaultCatalogName";
@@ -370,6 +377,20 @@ public class JdbcMetadataSource extends AbstractRepositorySource implements Obje
         ref.add(new StringRefAddr(DEFAULT_SCHEMA_NAME, getDefaultSchemaName()));
         ref.add(new StringRefAddr(METADATA_COLLECTOR_CLASS_NAME, getMetadataCollectorClassName()));
 
+        if (getDefaultCachePolicy() != null) {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            CachePolicy policy = getDefaultCachePolicy();
+            try {
+                ObjectOutputStream oos = new ObjectOutputStream(baos);
+                oos.writeObject(policy);
+                ref.add(new BinaryRefAddr(CACHE_POLICY, baos.toByteArray()));
+            } catch (IOException e) {
+                I18n msg = JdbcMetadataI18n.errorSerializingCachePolicyInSource;
+                throw new RepositorySourceException(getName(), msg.text(policy.getClass().getName(), getName()), e);
+            }
+        }
+        addNodeCachePolicyReference(ref);
+
         return ref;
     }
 
@@ -379,6 +400,7 @@ public class JdbcMetadataSource extends AbstractRepositorySource implements Obje
      * @see javax.naming.spi.ObjectFactory#getObjectInstance(java.lang.Object, javax.naming.Name, javax.naming.Context,
      *      java.util.Hashtable)
      */
+    @SuppressWarnings( "unchecked" )
     @Override
     public Object getObjectInstance( Object obj,
                                      javax.naming.Name name,
@@ -409,10 +431,14 @@ public class JdbcMetadataSource extends AbstractRepositorySource implements Obje
         String defaultCatalogName = (String)values.get(DEFAULT_CATALOG_NAME);
         String defaultSchemaName = (String)values.get(DEFAULT_SCHEMA_NAME);
         String metadataCollectorClassName = (String)values.get(METADATA_COLLECTOR_CLASS_NAME);
+        Object defaultCachePolicy = values.get(CACHE_POLICY);
+        Object nodeCachePolicy = values.get(NODE_CACHE_POLICY);
 
         // Create the source instance ...
         JdbcMetadataSource source = new JdbcMetadataSource();
         if (sourceName != null) source.setName(sourceName);
+        if (defaultCachePolicy instanceof CachePolicy) source.setCachePolicy((CachePolicy)defaultCachePolicy);
+        if (nodeCachePolicy instanceof NodeCachePolicy) source.setNodeCachePolicy((NodeCachePolicy)nodeCachePolicy);
         if (rootNodeUuid != null) source.setRootNodeUuidObject(rootNodeUuid);
         if (dataSourceJndiName != null) source.setDataSourceJndiName(dataSourceJndiName);
         if (username != null) source.setUsername(username);

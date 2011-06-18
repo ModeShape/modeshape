@@ -26,8 +26,12 @@ import org.modeshape.graph.JcrNtLexicon;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.connector.RepositorySourceException;
+import org.modeshape.graph.connector.base.NodeCachingWorkspace;
 import org.modeshape.graph.connector.base.PathNode;
 import org.modeshape.graph.connector.base.PathWorkspace;
+import org.modeshape.graph.connector.base.cache.NodeCache;
+import org.modeshape.graph.connector.base.cache.NodeCachePolicy;
+import org.modeshape.graph.connector.base.cache.NodeCachePolicyChangedEvent;
 import org.modeshape.graph.mimetype.MimeTypeDetector;
 import org.modeshape.graph.property.Binary;
 import org.modeshape.graph.property.BinaryFactory;
@@ -48,7 +52,7 @@ import org.modeshape.graph.request.Request;
 /**
  * Workspace implementation for the file system connector.
  */
-class FileSystemWorkspace extends PathWorkspace<PathNode> {
+class FileSystemWorkspace extends PathWorkspace<PathNode> implements NodeCachingWorkspace<Path, PathNode> {
     private static final Map<Name, Property> NO_PROPERTIES = Collections.emptyMap();
     private static final String DEFAULT_MIME_TYPE = "application/octet";
     private static final Set<Name> VALID_PRIMARY_TYPES = new HashSet<Name>(Arrays.asList(new Name[] {JcrNtLexicon.FOLDER,
@@ -64,10 +68,14 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
     private final ValueFactory<String> stringFactory;
     private final NameFactory nameFactory;
 
-    public FileSystemWorkspace( String name,
+    private NodeCache<Path, PathNode> cache;
+    private NodeCachePolicy<Path, PathNode> policy;
+
+    public FileSystemWorkspace( ExecutionContext context,
+                                String name,
                                 FileSystemWorkspace originalToClone,
                                 File workspaceRoot ) {
-        super(name, originalToClone.getRootNodeUuid());
+        super(context, name, originalToClone.getRootNodeUuid());
 
         this.source = originalToClone.source;
         this.context = originalToClone.context;
@@ -79,12 +87,15 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
         this.stringFactory = context.getValueFactories().getStringFactory();
         this.nameFactory = context.getValueFactories().getNameFactory();
 
+        repository.source().addNodeCachePolicyChangedListener(this);
+
         cloneWorkspace(originalToClone);
     }
 
-    public FileSystemWorkspace( FileSystemRepository repository,
+    public FileSystemWorkspace( ExecutionContext context,
+                                FileSystemRepository repository,
                                 String name ) {
-        super(name, repository.getRootNodeUuid());
+        super(context, name, repository.getRootNodeUuid());
         this.workspaceRoot = repository.getWorkspaceDirectory(name);
         this.repository = repository;
         this.context = repository.getContext();
@@ -94,6 +105,8 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
         this.logger = Logger.getLogger(getClass());
         this.stringFactory = context.getValueFactories().getStringFactory();
         this.nameFactory = context.getValueFactories().getNameFactory();
+
+        repository.source().addNodeCachePolicyChangedListener(this);
     }
 
     private void cloneWorkspace( FileSystemWorkspace original ) {
@@ -105,6 +118,23 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
         } catch (IOException ioe) {
             throw new IllegalStateException(ioe);
         }
+    }
+
+    /**
+     * Notifies this workspace that the cache policy has changed and the cache should be reset.
+     * 
+     * @param event the cache policy changed event; may not be null
+     */
+    @Override
+    public void cachePolicyChanged( NodeCachePolicyChangedEvent<Path, PathNode> event ) {
+        this.policy = event.getNewPolicy();
+        this.cache = policy.newCache();
+
+    }
+
+    @Override
+    public NodeCache<Path, PathNode> getCache() {
+        return cache;
     }
 
     private void moveFile( File originalFileOrDirectory,

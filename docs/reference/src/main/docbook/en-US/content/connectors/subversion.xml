@@ -74,6 +74,11 @@
 					<entry>The name of the repository source, which is used by the &RepositoryService; when obtaining a &RepositoryConnection; by name.</entry>
 				</row>
 				<row>
+					<entry>nodeCachePolicy</entry>
+					<entry>Optional property that, if used, defines the cache policy to use for caching nodes within the connector.  
+					</entry>
+				</row>
+				<row>
 					<entry>password</entry>
 					<entry>
 						The password that should be used to establish a connection to the repository.  This is not required if the URL represents an
@@ -149,13 +154,13 @@ config.repositorySource("SVN Store")
                     mode:defaultWorkspaceName="default" >
           <mode:predefinedWorkspaceNames>tags</mode:predefinedWorkspaceNames>
           <mode:predefinedWorkspaceNames>trunk</mode:predefinedWorkspaceNames>
-          <!-- 
-          If desired, specify a cache policy that caches items in memory for 5 minutes (300000 ms).
-          This fragment can be left out if the connector should not cache any content.
-          -->
-          <mode:cachePolicy jcr:name="cachePolicy" 
-            mode:classname="org.modeshape.graph.connector.path.cache.InMemoryWorkspaceCache$InMemoryCachePolicy"
-            mode:timeToLiveInMilliseconds="300000" />
+      	    <!-- 
+      	    If desired, specify a cache policy that caches items in memory for 5 minutes (300 s).
+      	    This fragment can be left out if the connector should not cache any content.
+      	    -->
+      	    <mode:cachePolicy jcr:name="nodeCachePolicy" 
+      	      mode:classname="org.modeshape.graph.connector.base.cache.InMemoryNodeCache$PathCachePolicy"
+      	      mode:timeToLive="300" />
         </mode:source>
     </mode:sources>
     

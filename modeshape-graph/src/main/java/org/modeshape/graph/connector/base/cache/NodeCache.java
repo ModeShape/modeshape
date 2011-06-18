@@ -29,8 +29,8 @@ import org.modeshape.graph.connector.base.Node;
 /**
  * The basic contract for a workspace-level cache of paths to the nodes stored at that path.
  * <p>
- * Implementations must provide a no-argument constructor in order to be instantiated by {@link RepositoryCache}. After
- * instantiation, the {@link #assignPolicy(BaseCachePolicy)} method will be called to inject the cache policy into the
+ * Implementations must provide a no-argument constructor in order to be instantiated by {@link NodeCachePolicy}. After
+ * instantiation, the {@link #assignPolicy(NodeCachePolicy)} method will be called to inject the cache policy into the
  * implementation.
  * </p>
  * <p>
@@ -41,7 +41,7 @@ import org.modeshape.graph.connector.base.Node;
  * @param <NodeType> the node type that is being cached
  */
 @ThreadSafe
-public interface WorkspaceCache<KeyType, NodeType extends Node> {
+public interface NodeCache<KeyType, NodeType extends Node> {
 
     /**
      * Injects the cache policy into the cache
@@ -49,7 +49,7 @@ public interface WorkspaceCache<KeyType, NodeType extends Node> {
      * @param policy the active cache policy for the repository source with which this cache is associated
      * @throws IllegalStateException if this method is called on a cache that has already been initialized.
      */
-    public void assignPolicy( BaseCachePolicy<KeyType, NodeType> policy );
+    public void assignPolicy( NodeCachePolicy<KeyType, NodeType> policy );
 
     /**
      * Clears all statistics for this cache
@@ -72,8 +72,8 @@ public interface WorkspaceCache<KeyType, NodeType extends Node> {
     public NodeType get( KeyType path );
 
     /**
-     * Attempts to cache the given node. Implementations must call {@link BaseCachePolicy#shouldCache(Node)} on the the
-     * {@link #assignPolicy(BaseCachePolicy) assigned policy} to determine if the node should be cached.
+     * Attempts to cache the given node. Implementations must call {@link NodeCachePolicy#shouldCache(Node)} on the the
+     * {@link #assignPolicy(NodeCachePolicy) assigned policy} to determine if the node should be cached.
      * 
      * @param key the key for the node that is to be cached; may not be null
      * @param node the node that is to be cached; may not be null
@@ -88,6 +88,11 @@ public interface WorkspaceCache<KeyType, NodeType extends Node> {
      * @param key the key for the node that is to be removed; may not be null
      */
     public void remove( KeyType key );
+
+    /**
+     * Removes all nodes from the cache.
+     */
+    public void removeAll();
 
     /**
      * Indicates that the cache is no longer in use and should relinquish any resources.

@@ -140,4 +140,14 @@ public abstract class MapWorkspace<NodeType extends MapNode> implements Workspac
     public String toString() {
         return name;
     }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.connector.base.Workspace#hasNodeCache()
+     */
+    public boolean hasNodeCache() {
+        return false;
+    }
+
 }

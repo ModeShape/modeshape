@@ -36,7 +36,7 @@ import org.modeshape.graph.property.Path;
  * @param <NodeType>
  */
 @Immutable
-public class NoCachePolicy<KeyType, NodeType extends Node> implements BaseCachePolicy<KeyType, NodeType> {
+public class NoCachePolicy<KeyType, NodeType extends Node> implements NodeCachePolicy<KeyType, NodeType> {
 
     private static final long serialVersionUID = 1L;
 
@@ -57,11 +57,11 @@ public class NoCachePolicy<KeyType, NodeType extends Node> implements BaseCacheP
         return new NullCache();
     }
 
-    class NullCache implements WorkspaceCache<KeyType, NodeType> {
+    class NullCache implements NodeCache<KeyType, NodeType> {
 
         private DefaultCacheStatistics statistics = new DefaultCacheStatistics();
 
-        public void assignPolicy( BaseCachePolicy<KeyType, NodeType> policy ) {
+        public void assignPolicy( NodeCachePolicy<KeyType, NodeType> policy ) {
             // Do nothing
         }
 
@@ -80,6 +80,10 @@ public class NoCachePolicy<KeyType, NodeType extends Node> implements BaseCacheP
         }
 
         public void remove( KeyType key ) {
+            // Do nothing
+        }
+
+        public void removeAll() {
             // Do nothing
         }
 

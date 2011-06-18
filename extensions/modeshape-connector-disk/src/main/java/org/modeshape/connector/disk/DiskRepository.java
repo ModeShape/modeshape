@@ -32,7 +32,6 @@ import java.nio.channels.FileLock;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -44,7 +43,6 @@ import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.connector.base.Repository;
 import org.modeshape.graph.connector.base.Transaction;
-import org.modeshape.graph.connector.base.cache.BaseCachePolicy;
 import org.modeshape.graph.request.InvalidWorkspaceException;
 import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
 
@@ -182,30 +180,6 @@ public class DiskRepository extends Repository<DiskNode, DiskWorkspace> {
      */
     protected File getRepositoryRoot() {
         return repositoryRoot;
-    }
-
-    BaseCachePolicy<UUID, DiskNode> cachePolicy() {
-        return diskSource.getDefaultCachePolicy();
-    }
-
-    /**
-     * Notifies this repository that the cache policy has changed and the caches for each workspace should be reset.
-     * 
-     * @param newCachePolicy the new cache policy; may not be null
-     */
-    void cachePolicyChanged( BaseCachePolicy<UUID, DiskNode> newCachePolicy ) {
-        DiskTransaction txn = null;
-        try {
-            txn = startTransaction(this.getContext(), false);
-
-            for (String workspaceName : getWorkspaceNames()) {
-                DiskWorkspace workspace = getWorkspace(null, workspaceName);
-                workspace.cachePolicyChanged(newCachePolicy);
-            }
-        } finally {
-            if (txn != null) txn.commit();
-        }
-
     }
 
     /**

@@ -35,22 +35,22 @@ import org.modeshape.graph.connector.base.PathNode;
 import org.modeshape.graph.property.Path;
 
 /**
- * Implementation of {@link WorkspaceCache} that stores all nodes in-memory.
+ * Implementation of {@link NodeCache} that stores all nodes in-memory.
  * 
  * @param <KeyType> the key for the cache entries, normally the natural unique identifier for the node
  * @param <NodeType> the node type that is being cached
  */
 @ThreadSafe
-public abstract class InMemoryWorkspaceCache<KeyType, NodeType extends Node> implements WorkspaceCache<KeyType, NodeType> {
+public abstract class InMemoryNodeCache<KeyType, NodeType extends Node> implements NodeCache<KeyType, NodeType> {
     protected final ConcurrentMap<KeyType, CacheEntry> entriesByKey = new ConcurrentHashMap<KeyType, CacheEntry>();
-    protected BaseCachePolicy<KeyType, NodeType> policy = null;
+    protected NodeCachePolicy<KeyType, NodeType> policy = null;
     private DefaultCacheStatistics statistics = new DefaultCacheStatistics();
 
-    public InMemoryWorkspaceCache( BaseCachePolicy<KeyType, NodeType> policy ) {
+    public InMemoryNodeCache( NodeCachePolicy<KeyType, NodeType> policy ) {
         assignPolicy(policy);
     }
 
-    public void assignPolicy( BaseCachePolicy<KeyType, NodeType> policy) {
+    public void assignPolicy( NodeCachePolicy<KeyType, NodeType> policy) {
         if (this.policy != null) {
             throw new IllegalStateException();
         }
@@ -101,6 +101,10 @@ public abstract class InMemoryWorkspaceCache<KeyType, NodeType extends Node> imp
         entriesByKey.remove(key);
     }
 
+    public void removeAll() {
+        entriesByKey.clear();
+    }
+
     public void close() {
         assert this.statistics != null : "Attempt to close an already-closed cache";
 
@@ -138,11 +142,15 @@ public abstract class InMemoryWorkspaceCache<KeyType, NodeType extends Node> imp
      * 
      * @param <NodeType> the node type that is being cached
      */
-    public static class MapCachePolicy<NodeType extends MapNode> implements BaseCachePolicy<UUID, NodeType> {
+    public static class MapCachePolicy<NodeType extends MapNode> implements NodeCachePolicy<UUID, NodeType> {
 
         private static final long serialVersionUID = 1L;
 
         private long cacheTimeToLiveInSeconds;
+
+        public MapCachePolicy() {
+            super();
+        }
 
         public MapCachePolicy( long timeToLiveInSeconds ) {
             super();
@@ -152,7 +160,7 @@ public abstract class InMemoryWorkspaceCache<KeyType, NodeType extends Node> imp
         /**
          * @param node
          * @return true for all nodes
-         * @see BaseCachePolicy#shouldCache(Node)
+         * @see NodeCachePolicy#shouldCache(Node)
          */
         public boolean shouldCache( NodeType node ) {
             return true;
@@ -172,18 +180,22 @@ public abstract class InMemoryWorkspaceCache<KeyType, NodeType extends Node> imp
         }
     }
 
-    public static class MapCache<N extends MapNode> extends InMemoryWorkspaceCache<UUID, N> {
+    public static class MapCache<N extends MapNode> extends InMemoryNodeCache<UUID, N> {
 
-        public MapCache( BaseCachePolicy<UUID, N> policy ) {
+        public MapCache( NodeCachePolicy<UUID, N> policy ) {
             super(policy);
         }
     }
 
-    public static class PathCachePolicy implements BaseCachePolicy<Path, PathNode> {
+    public static class PathCachePolicy implements NodeCachePolicy<Path, PathNode> {
 
         private static final long serialVersionUID = 1L;
 
         private long cacheTimeToLiveInSeconds;
+
+        public PathCachePolicy() {
+            super();
+        }
 
         public PathCachePolicy( long timeToLiveInSeconds ) {
             super();
@@ -192,7 +204,7 @@ public abstract class InMemoryWorkspaceCache<KeyType, NodeType extends Node> imp
 
         /**
          * @return true for all nodes
-         * @see BaseCachePolicy#shouldCache(Node)
+         * @see NodeCachePolicy#shouldCache(Node)
          */
         public boolean shouldCache( PathNode node ) {
             return true;
@@ -212,9 +224,9 @@ public abstract class InMemoryWorkspaceCache<KeyType, NodeType extends Node> imp
         }
     }
 
-    public static class PathCache extends InMemoryWorkspaceCache<Path, PathNode> implements PathWorkspaceCache<Path, PathNode> {
+    public static class PathCache extends InMemoryNodeCache<Path, PathNode> implements PathNodeCache<PathNode> {
 
-        public PathCache( BaseCachePolicy<Path, PathNode> policy ) {
+        public PathCache( NodeCachePolicy<Path, PathNode> policy ) {
             super(policy);
         }
 

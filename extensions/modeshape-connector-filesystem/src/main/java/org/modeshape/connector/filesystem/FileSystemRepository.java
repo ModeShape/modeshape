@@ -93,6 +93,10 @@ public class FileSystemRepository extends Repository<PathNode, FileSystemWorkspa
         super.initialize();
     }
 
+    FileSystemSource source() {
+        return this.source;
+    }
+
     private void createDirectory( File directory ) {
         File parent = directory.getParentFile();
 
@@ -176,9 +180,9 @@ public class FileSystemRepository extends Repository<PathNode, FileSystemWorkspa
             FileSystemRepository repository = FileSystemRepository.this;
 
             if (originalToClone != null) {
-                return new FileSystemWorkspace(name, originalToClone, repository.getWorkspaceDirectory(name));
+                return new FileSystemWorkspace(this.getContext(), name, originalToClone, repository.getWorkspaceDirectory(name));
             }
-            return new FileSystemWorkspace(repository, name);
+            return new FileSystemWorkspace(this.getContext(), repository, name);
         }
 
         /**

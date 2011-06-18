@@ -92,6 +92,11 @@
 					<entry>The name of the repository source, which is used by the &RepositoryService; when obtaining a &RepositoryConnection; by name.</entry>
 				</row>
 				<row>
+					<entry>nodeCachePolicy</entry>
+					<entry>Optional property that, if used, defines the cache policy to use for caching nodes within the connector.  
+					</entry>
+				</row>
+				<row>
 					<entry>predefinedWorkspaceNames</entry>
 					<entry>Optional property that, if used, defines names of the workspaces that are predefined and need not be created before being used.
 						This can be coupled with a "false" value for the "creatingWorkspaceAllowed" property to allow only the use of only predefined workspaces.
@@ -172,12 +177,12 @@ config.repositorySource("Disk Store")
             <mode:predefinedWorkspaceNames>staging</mode:predefinedWorkspaceNames>
             <mode:predefinedWorkspaceNames>dev</mode:predefinedWorkspaceNames>
       	    <!-- 
-      	    If desired, specify a cache policy that caches items in memory for 5 minutes (300000 ms).
+      	    If desired, specify a cache policy that caches items in memory for 5 minutes (300 s).
       	    This fragment can be left out if the connector should not cache any content.
       	    -->
-      	    <mode:cachePolicy jcr:name="defaultCachePolicy" 
-      	      mode:classname="org.modeshape.graph.connector.base.cache.InMemoryWorkspaceCache$MapCachePolicy"
-      	      mode:timeToLiveInMilliseconds="300000" />
+      	    <mode:cachePolicy jcr:name="nodeCachePolicy" 
+      	      mode:classname="org.modeshape.graph.connector.base.cache.InMemoryNodeCache$MapCachePolicy"
+      	      mode:timeToLive="300" />
         </mode:source>    
     </mode:sources>
 

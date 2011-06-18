@@ -5,12 +5,12 @@ import org.modeshape.graph.cache.CachePolicy;
 import org.modeshape.graph.connector.base.Node;
 
 /**
- * Cache policy implementation for use with {@link WorkspaceCache workspace caches}.
+ * Cache policy implementation for use with {@link NodeCache workspace caches}.
  * 
  * @param <KeyType> the type of the unique identifier for the nodes that are to be cached
  * @param <NodeType> the type of nodes that are to be cached
  */
-public interface BaseCachePolicy<KeyType, NodeType extends Node> extends CachePolicy, Serializable {
+public interface NodeCachePolicy<KeyType, NodeType extends Node> extends CachePolicy, Serializable {
 
     /**
      * Indicates whether the node should be cached .
@@ -21,11 +21,11 @@ public interface BaseCachePolicy<KeyType, NodeType extends Node> extends CachePo
     boolean shouldCache( NodeType node );
 
     /**
-     * Return a new cache instance that {@link WorkspaceCache#assignPolicy(BaseCachePolicy) uses this policy}.
+     * Return a new cache instance that {@link NodeCache#assignPolicy(NodeCachePolicy) uses this policy}.
      * 
      * @return the cache class
      * @param <CacheType> the type of cache being returned
      */
-    <CacheType extends WorkspaceCache<KeyType, NodeType>> CacheType newCache();
+    <CacheType extends NodeCache<KeyType, NodeType>> CacheType newCache();
 
 }

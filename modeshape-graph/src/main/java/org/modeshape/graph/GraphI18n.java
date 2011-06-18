@@ -107,6 +107,8 @@ public final class GraphI18n {
 
     public static I18n errorNotifyingObserver;
 
+    public static I18n errorSerializingNodeCachePolicyInSource;
+
     /* In-Memory Connector */
     public static I18n nodeDoesNotExist;
     public static I18n errorSerializingInMemoryCachePolicyInSource;
