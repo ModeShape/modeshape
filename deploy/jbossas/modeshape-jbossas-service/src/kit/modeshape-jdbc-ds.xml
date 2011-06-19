@@ -18,7 +18,7 @@
     <connection-url>jdbc:jcr:jndi:jcr/local?repositoryName=repository</connection-url>
 
     <driver-class>org.modeshape.jdbc.LocalJcrDriver</driver-class>
-    <user>admin</user>
+    <user-name>admin</user-name>
     <password>admin</password>
 
       <metadata>
