@@ -27,8 +27,11 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import javax.jcr.Binary;
 import javax.jcr.Node;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
@@ -37,6 +40,7 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.collection.Problem;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.graph.JcrLexicon;
@@ -126,6 +130,48 @@ public class FileSystemRepositoryScalabilityTest {
         assertThat(node1, is(notNullValue()));
         assertThat(node1.getPrimaryNodeType().getName(), is("nt:folder"));
         assertThat(node1.getNodes().getSize(), is(33L));
+    }
+
+    @FixFor( "MODE-1201" )
+    @Test
+    public void shouldAvoidLoadingLargeStreamIntoMemory() throws Exception {
+        long fileSize = Runtime.getRuntime().maxMemory() + 1;
+
+        File newFile = new File("./target/largeFile");
+
+        if (!newFile.exists() || newFile.length() < fileSize) {
+            FileOutputStream fos = new FileOutputStream(newFile);
+            final int CHUNK_SIZE = 1024;
+            byte[] buff = new byte[CHUNK_SIZE];
+
+            // We might end up exceeding fileSize, but that's not an issue for this test
+            for (long i = 0; i < fileSize; i += CHUNK_SIZE) {
+                fos.write(buff);
+            }
+    
+            fos.close();
+        }
+
+        FileInputStream fis = new FileInputStream(newFile);
+
+        Session session = sessionFrom(engine, "modeshape-integration-tests");
+
+        if (session.nodeExists("/target/largeFile.bin")) {
+            session.getRootNode().getNode("target/largeFile.bin").remove();
+            session.save();
+        }
+
+        long start = System.currentTimeMillis();
+
+        Node fileNode = session.getRootNode().getNode("target").addNode("largeFile.bin", "nt:file");
+        Node resourceNode = fileNode.addNode("jcr:content", "mode:resource");
+        Binary value = session.getValueFactory().createBinary(fis);
+        resourceNode.setProperty("jcr:data", value);
+
+        session.save();
+        value.dispose();
+
+        System.out.println("Wrote " + fileSize + " bytes in " + (System.currentTimeMillis() - start) + "ms");
     }
 
     // ----------------------------------------------------------------------------------------------------------------
