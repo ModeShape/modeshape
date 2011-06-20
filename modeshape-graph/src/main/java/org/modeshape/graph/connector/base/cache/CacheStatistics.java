@@ -21,28 +21,33 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.graph.connector.base;
-
-import org.modeshape.graph.connector.base.cache.NoCachePolicy;
+package org.modeshape.graph.connector.base.cache;
 
 /**
- * The {@code MapWorkspace} stores state and other information about a workspace in a way that is independent of
- * {@link Transaction}s.
+ * This interface provides access to statistics for an individual workspace cache.
  */
-public interface Workspace {
+public interface CacheStatistics {
 
     /**
-     * Returns the name of the workspace. There can only be one workspace with a given name per repository.
-     * 
-     * @return the name of the workspace
+     * @return the number of times that a node was written to the cache
      */
-    String getName();
+    long getWrites();
 
     /**
-     * Indicates whether this workspace has a node cache. This method should return if the implementation is wired for cache
-     * support, even if it happens to be supporting a trivial implementation like {@link NoCachePolicy}.
-     * 
-     * @return true if this workspace has a node cache
+     * @return the number of times that a node was retrieved from the cache
      */
-    boolean hasNodeCache();
+    long getHits();
+
+    /**
+     * @return the number of times that an attempt to retrieve a node from the cache failed because the node was not yet in the
+     *         cache.
+     */
+    long getMisses();
+
+    /**
+     * @return the number of times that an attempt to retrieve a node from the cache failed because the node had previously been
+     *         placed in the cache, but the time to live for the node in the cache had expired
+     */
+    long getExpirations();
+
 }

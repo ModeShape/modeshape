@@ -44,6 +44,10 @@ import org.modeshape.common.util.Base64;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.ObjectUtil;
 import org.modeshape.graph.connector.base.MapWorkspace;
+import org.modeshape.graph.connector.base.NodeCachingWorkspace;
+import org.modeshape.graph.connector.base.cache.NodeCache;
+import org.modeshape.graph.connector.base.cache.NodeCachePolicy;
+import org.modeshape.graph.connector.base.cache.NodeCachePolicyChangedEvent;
 import org.modeshape.graph.property.Binary;
 import org.modeshape.graph.property.BinaryFactory;
 import org.modeshape.graph.property.Name;
@@ -55,7 +59,7 @@ import org.modeshape.graph.property.basic.FileSystemBinary;
 /**
  * Workspace implementation for disk connector
  */
-public class DiskWorkspace extends MapWorkspace<DiskNode> {
+public class DiskWorkspace extends MapWorkspace<DiskNode> implements NodeCachingWorkspace<UUID, DiskNode> {
 
     /** A version number describing the on-disk format used to store this node */
     private static final byte CURRENT_VERSION = 1;
@@ -67,6 +71,8 @@ public class DiskWorkspace extends MapWorkspace<DiskNode> {
     private final DiskRepository repository;
     private final BinaryFactory binFactory;
     private final PropertyFactory propFactory;
+    private NodeCache<UUID, DiskNode> cache;
+    private NodeCachePolicy<UUID, DiskNode> policy;
 
     /**
      * Create a new workspace instance.
@@ -91,10 +97,15 @@ public class DiskWorkspace extends MapWorkspace<DiskNode> {
         this.propFactory = repository.getContext().getPropertyFactory();
         this.binFactory = repository.getContext().getValueFactories().getBinaryFactory();
 
+        this.policy = repository.diskSource().getNodeCachePolicy();
+        this.cache = policy.newCache();
+
         File rootNodeFile = fileFor(rootNode.getUuid());
         if (!rootNodeFile.exists()) {
             putNode(rootNode);
         }
+
+        repository.diskSource().addNodeCachePolicyChangedListener(this);
     }
 
     /**
@@ -113,32 +124,65 @@ public class DiskWorkspace extends MapWorkspace<DiskNode> {
         assert workspaceRoot != null;
 
         this.workspaceRoot = workspaceRoot;
+
         this.repository = originalToClone.repository;
+        this.policy = repository.diskSource().getNodeCachePolicy();
+        this.cache = policy.newCache();
+
         this.propFactory = repository.getContext().getPropertyFactory();
         this.binFactory = repository.getContext().getValueFactories().getBinaryFactory();
+
+        repository.diskSource().addNodeCachePolicyChangedListener(this);
     }
+
 
     public void destroy() {
         this.workspaceRoot.delete();
+        repository.diskSource().removeNodeCachePolicyChangedListener(this);
     }
 
     /**
      * This method shuts down the workspace and makes it no longer usable. This method should also only be called once.
      */
     public void shutdown() {
+        cache.close();
+    }
+
+    /**
+     * Notifies this workspace that the cache policy has changed and the cache should be reset.
+     * 
+     * @param event the cache policy changed event; may not be null
+     */
+    @Override
+    public void cachePolicyChanged( NodeCachePolicyChangedEvent<UUID, DiskNode> event ) {
+        this.policy = event.getNewPolicy();
+        this.cache = policy.newCache();
+
+    }
+
+    @Override
+    public NodeCache<UUID, DiskNode> getCache() {
+        return cache;
     }
 
     @Override
     public DiskNode getNode( UUID uuid ) {
+        DiskNode node = cache.get(uuid);
+        if (node != null) return node;
+
         File nodeFile = fileFor(uuid);
         if (!nodeFile.exists()) return null;
 
-        return nodeFor(nodeFile);
+        node = nodeFor(nodeFile);
+
+        if (node != null) cache.put(uuid, node);
+        return node;
     }
 
     @Override
     public DiskNode putNode( DiskNode node ) {
         writeNode(node);
+        cache.put(node.getUuid(), node);
         return node;
     }
 
@@ -147,6 +191,7 @@ public class DiskWorkspace extends MapWorkspace<DiskNode> {
         this.workspaceRoot.delete();
         this.workspaceRoot.mkdir();
 
+        cache = policy.newCache();
         // This won't clean up any back-references from this workspace
     }
 
@@ -158,6 +203,7 @@ public class DiskWorkspace extends MapWorkspace<DiskNode> {
         DiskNode node = nodeFor(nodeFile);
 
         nodeFile.delete();
+        cache.remove(uuid);
         return node;
     }
 

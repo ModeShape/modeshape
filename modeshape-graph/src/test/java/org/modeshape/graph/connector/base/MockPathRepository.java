@@ -51,7 +51,7 @@ public class MockPathRepository extends Repository<MockPathNode, MockPathWorkspa
             if (originalToClone != null) {
                 workspace = new MockPathWorkspace(name, originalToClone);
             } else {
-                workspace = new MockPathWorkspace(name, getRepository().getRootNodeUuid());
+                workspace = new MockPathWorkspace(context, name, getRepository().getRootNodeUuid());
             }
 
             workspaces.put(name, workspace);

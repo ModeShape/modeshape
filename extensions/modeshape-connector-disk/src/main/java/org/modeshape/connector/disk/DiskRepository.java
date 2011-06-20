@@ -105,6 +105,8 @@ public class DiskRepository extends Repository<DiskNode, DiskWorkspace> {
             workspaceNames.add(workspaceName);
         }
         this.predefinedWorkspaceNames = Collections.unmodifiableSet(workspaceNames);
+
+        // this.repositoryCache = new RepositoryCache<UUID, DiskNode>(new InMemoryWorkspaceCache.MapCachePolicy<DiskNode>());
         initialize();
     }
 

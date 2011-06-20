@@ -49,6 +49,8 @@ import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.cache.BasicCachePolicy;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryContext;
+import org.modeshape.graph.connector.base.cache.NodeCachePolicy;
+import org.modeshape.graph.connector.base.cache.InMemoryNodeCache.MapCachePolicy;
 
 /**
  */
@@ -144,8 +146,7 @@ public class DiskSourceTest {
 
     @Test
     public void shouldCreateJndiReferenceAndRecreatedObjectFromReference() throws Exception {
-        BasicCachePolicy cachePolicy = new BasicCachePolicy();
-        cachePolicy.setTimeToLive(1000L, TimeUnit.MILLISECONDS);
+        NodeCachePolicy<UUID, DiskNode> cachePolicy = new MapCachePolicy<DiskNode>(1000);
         convertToAndFromJndiReference(validName,
                                       validRootNodeUuid,
  repositoryRootPath,
@@ -164,11 +165,11 @@ public class DiskSourceTest {
     private void convertToAndFromJndiReference( String sourceName,
                                                 UUID rootNodeUuid,
                                                 String repositoryRootPath,
-                                                BasicCachePolicy cachePolicy,
+                                                NodeCachePolicy<UUID, DiskNode> cachePolicy,
                                                 int retryLimit ) throws Exception {
         source.setRetryLimit(retryLimit);
         source.setName(sourceName);
-        source.setDefaultCachePolicy(cachePolicy);
+        if (cachePolicy != null) source.setCachePolicy(cachePolicy);
         source.setRootNodeUuid(rootNodeUuid != null ? rootNodeUuid.toString() : null);
         source.setRepositoryRootPath(repositoryRootPath);
 
@@ -195,7 +196,14 @@ public class DiskSourceTest {
         assertThat(recoveredSource.getRootNodeUuid(), is(source.getRootNodeUuid()));
         assertThat(recoveredSource.getRetryLimit(), is(source.getRetryLimit()));
         assertThat(recoveredSource.getRepositoryRootPath(), is(source.getRepositoryRootPath()));
-        assertThat(recoveredSource.getDefaultCachePolicy(), is(source.getDefaultCachePolicy()));
+
+        // The deserialized cache policy won't be the same object after deserialization
+        if (source.getDefaultCachePolicy() == null) {
+            assertThat(recoveredSource.getDefaultCachePolicy(), is(nullValue()));
+        } else {
+            assertThat(recoveredSource.getDefaultCachePolicy().getClass().getName(),
+                       is(source.getDefaultCachePolicy().getClass().getName()));
+        }
 
         assertThat(recoveredSource.equals(source), is(true));
         assertThat(source.equals(recoveredSource), is(true));

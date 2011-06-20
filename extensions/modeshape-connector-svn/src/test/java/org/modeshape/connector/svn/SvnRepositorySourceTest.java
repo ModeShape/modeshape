@@ -264,6 +264,7 @@ public class SvnRepositorySourceTest {
                    is(Boolean.toString(source.isCreatingWorkspacesAllowed())));
         assertThat((String)refAttributes.remove(SvnRepositorySource.DEFAULT_WORKSPACE), is(source.getDefaultWorkspaceName()));
         refAttributes.remove(SvnRepositorySource.PREDEFINED_WORKSPACE_NAMES);
+        assertThat(refAttributes.remove("nodeCachePolicy"), is(notNullValue()));
         assertThat(refAttributes.isEmpty(), is(true));
 
         // Recreate the object, use a newly constructed source ...
