@@ -138,40 +138,52 @@ public class FileSystemRepositoryScalabilityTest {
         long fileSize = Runtime.getRuntime().maxMemory() + 1;
 
         File newFile = new File("./target/largeFile");
+        try {
+            if (!newFile.exists() || newFile.length() < fileSize) {
+                FileOutputStream fos = new FileOutputStream(newFile);
+                final int CHUNK_SIZE = 1024;
+                byte[] buff = new byte[CHUNK_SIZE];
 
-        if (!newFile.exists() || newFile.length() < fileSize) {
-            FileOutputStream fos = new FileOutputStream(newFile);
-            final int CHUNK_SIZE = 1024;
-            byte[] buff = new byte[CHUNK_SIZE];
-
-            // We might end up exceeding fileSize, but that's not an issue for this test
-            for (long i = 0; i < fileSize; i += CHUNK_SIZE) {
-                fos.write(buff);
-            }
+                // We might end up exceeding fileSize, but that's not an issue for this test
+                for (long i = 0; i < fileSize; i += CHUNK_SIZE) {
+                    fos.write(buff);
+                }
     
-            fos.close();
-        }
+                fos.close();
+            }
 
-        FileInputStream fis = new FileInputStream(newFile);
+            FileInputStream fis = new FileInputStream(newFile);
 
-        Session session = sessionFrom(engine, "modeshape-integration-tests");
+            Session session = sessionFrom(engine, "modeshape-integration-tests");
 
-        if (session.nodeExists("/target/largeFile.bin")) {
-            session.getRootNode().getNode("target/largeFile.bin").remove();
+            if (session.nodeExists("/target/largeFile.bin")) {
+                session.getRootNode().getNode("target/largeFile.bin").remove();
+                session.save();
+            }
+
+            long start = System.currentTimeMillis();
+
+            Node fileNode = session.getRootNode().getNode("target").addNode("largeFile.bin", "nt:file");
+            Node resourceNode = fileNode.addNode("jcr:content", "mode:resource");
+            Binary value = session.getValueFactory().createBinary(fis);
+            resourceNode.setProperty("jcr:data", value);
+
             session.save();
+            value.dispose();
+
+            System.out.println("Wrote " + fileSize + " bytes in " + (System.currentTimeMillis() - start) + "ms");
+        } finally {
+            try {
+                if ( newFile != null && newFile.exists() ) {
+                    newFile.delete();
+                }
+            } finally {
+                newFile = new File("./target/largeFile.bin");
+                if ( newFile != null && newFile.exists() ) {
+                    newFile.delete();
+                }
+            }
         }
-
-        long start = System.currentTimeMillis();
-
-        Node fileNode = session.getRootNode().getNode("target").addNode("largeFile.bin", "nt:file");
-        Node resourceNode = fileNode.addNode("jcr:content", "mode:resource");
-        Binary value = session.getValueFactory().createBinary(fis);
-        resourceNode.setProperty("jcr:data", value);
-
-        session.save();
-        value.dispose();
-
-        System.out.println("Wrote " + fileSize + " bytes in " + (System.currentTimeMillis() - start) + "ms");
     }
 
     // ----------------------------------------------------------------------------------------------------------------
