@@ -98,6 +98,7 @@ public final class GraphI18n {
     public static I18n aliasesMappedToRealNamespacesButWereNotRegisteredInAliasNamespace;
     public static I18n noPropertiesToUpdate;
     public static I18n noPropertiesToRemove;
+    public static I18n streamTooLarge;
 
     public static I18n errorImportingContent;
     public static I18n unableToFindRepositorySourceWithName;
