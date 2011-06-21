@@ -24,14 +24,18 @@
 
 package org.modeshape.connector.filesystem;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+import javax.naming.BinaryRefAddr;
 import javax.naming.Context;
 import javax.naming.Reference;
 import javax.naming.StringRefAddr;
@@ -46,14 +50,17 @@ import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.connector.filesystem.FileSystemRepository.FileSystemTransaction;
 import org.modeshape.graph.ExecutionContext;
+import org.modeshape.graph.cache.CachePolicy;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.RepositorySourceCapabilities;
 import org.modeshape.graph.connector.RepositorySourceException;
-import org.modeshape.graph.connector.base.AbstractRepositorySource;
+import org.modeshape.graph.connector.base.AbstractNodeCachingRepositorySource;
 import org.modeshape.graph.connector.base.Connection;
 import org.modeshape.graph.connector.base.PathNode;
+import org.modeshape.graph.connector.base.cache.NodeCachePolicy;
 import org.modeshape.graph.property.Binary;
+import org.modeshape.graph.property.Path;
 import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
 
 /**
@@ -62,7 +69,7 @@ import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior
  * workspace. New workspaces can be created, as long as the names represent valid paths to existing directories.
  */
 @ThreadSafe
-public class FileSystemSource extends AbstractRepositorySource implements ObjectFactory {
+public class FileSystemSource extends AbstractNodeCachingRepositorySource<Path, PathNode> implements ObjectFactory {
 
     /**
      * The first serialized version of this source. Version {@value} .
@@ -75,6 +82,7 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
     public static final String DEFAULT_NAME_OF_DEFAULT_WORKSPACE = "default";
 
     protected static final String SOURCE_NAME = "sourceName";
+    protected static final String CACHE_POLICY = "cachePolicy";
     protected static final String DEFAULT_WORKSPACE = "defaultWorkspace";
     protected static final String WORKSPACE_ROOT = "workspaceRootPath";
     protected static final String PREDEFINED_WORKSPACE_NAMES = "predefinedWorkspaceNames";
@@ -659,12 +667,27 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
         ref.add(new StringRefAddr(EAGER_FILE_LOADING, Boolean.toString(isEagerFileLoading())));
         ref.add(new StringRefAddr(DETERMINE_MIME_TYPE_USING_CONTENT, Boolean.toString(isContentUsedToDetermineMimeType())));
 
+        if (getDefaultCachePolicy() != null) {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            CachePolicy policy = getDefaultCachePolicy();
+            try {
+                ObjectOutputStream oos = new ObjectOutputStream(baos);
+                oos.writeObject(policy);
+                ref.add(new BinaryRefAddr(CACHE_POLICY, baos.toByteArray()));
+            } catch (IOException e) {
+                I18n msg = FileSystemI18n.errorSerializingCachePolicyInSource;
+                throw new RepositorySourceException(getName(), msg.text(policy.getClass().getName(), getName()), e);
+            }
+        }
+        addNodeCachePolicyReference(ref);
+
         return ref;
     }
 
     /**
      * {@inheritDoc}
      */
+    @SuppressWarnings( "unchecked" )
     @Override
     public Object getObjectInstance( Object obj,
                                      javax.naming.Name name,
@@ -684,6 +707,8 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
             String extraPropertiesBehavior = (String)values.get(EXTRA_PROPERTIES);
             String eagerFileLoading = (String)values.get(EAGER_FILE_LOADING);
             String useContentForMimeType = (String)values.get(DETERMINE_MIME_TYPE_USING_CONTENT);
+            Object defaultCachePolicy = values.get(CACHE_POLICY);
+            Object nodeCachePolicy = values.get(NODE_CACHE_POLICY);
 
             String combinedWorkspaceNames = (String)values.get(PREDEFINED_WORKSPACE_NAMES);
             String[] workspaceNames = null;
@@ -695,6 +720,8 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
             // Create the source instance ...
             FileSystemSource source = new FileSystemSource();
             if (sourceName != null) source.setName(sourceName);
+            if (defaultCachePolicy instanceof CachePolicy) source.setCachePolicy((CachePolicy)defaultCachePolicy);
+            if (nodeCachePolicy instanceof NodeCachePolicy) source.setNodeCachePolicy((NodeCachePolicy)nodeCachePolicy);
             if (defaultWorkspace != null) source.setDefaultWorkspaceName(defaultWorkspace);
             if (createWorkspaces != null) source.setCreatingWorkspacesAllowed(Boolean.parseBoolean(createWorkspaces));
             if (workspaceNames != null && workspaceNames.length != 0) source.setPredefinedWorkspaceNames(workspaceNames);

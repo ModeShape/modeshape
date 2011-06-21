@@ -40,6 +40,7 @@ import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.connector.base.PathWorkspace.ChangeCommand;
+import org.modeshape.graph.connector.base.cache.NodeCache;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathNotFoundException;
@@ -124,7 +125,7 @@ public abstract class PathTransaction<NodeType extends PathNode, WorkspaceType e
                 if (node != null) return node;
             }
             // It hasn't been loaded already, so attempt to load it from the map owned by the workspace ...
-            node = workspace.getNode(rootPath);
+            node = getNode(workspace, rootPath);
             if (node != null) return node;
         }
         // Otherwise, look by path ...
@@ -137,7 +138,7 @@ public abstract class PathTransaction<NodeType extends PathNode, WorkspaceType e
 
             if (lowestNode == null) {
                 // No nodes on the path were change, go straight to the source
-                NodeType node = workspace.getNode(path);
+                NodeType node = getNode(workspace, path);
 
                 // If the source has no node at this location, default to a slow walk up the path from the root
                 if (node != null) return node;
@@ -148,6 +149,28 @@ public abstract class PathTransaction<NodeType extends PathNode, WorkspaceType e
         // Unable to find by UUID or by path, so fail ...
         Path lowestExisting = pathFactory.createRootPath();
         throw new PathNotFoundException(location, lowestExisting, GraphI18n.nodeDoesNotExist.text(readable(location)));
+    }
+
+    @SuppressWarnings( "unchecked" )
+    private NodeType getNode( WorkspaceType workspace,
+                              Path path ) {
+        NodeType node;
+        NodeCache<Path, NodeType> cache = null;
+
+        if (workspace.hasNodeCache()) {
+            cache = ((NodeCachingWorkspace<Path, NodeType>)workspace).getCache();
+            node = cache.get(path);
+            if (node != null) return node;
+        }
+        
+        node = workspace.getNode(path);
+
+        if (node != null && cache != null) {
+            // Cache miss, so push it into the cache
+            cache.put(path, node);
+        }
+
+        return node;
     }
 
     /**
@@ -209,7 +232,7 @@ public abstract class PathTransaction<NodeType extends PathNode, WorkspaceType e
             if (node != null) return node;
         }
         // It hasn't been loaded already, so attempt to load it from the map owned by the workspace ...
-        node = workspace.getNode(path);
+        node = getNode(workspace, path);
         return node;
     }
 
@@ -490,7 +513,7 @@ public abstract class PathTransaction<NodeType extends PathNode, WorkspaceType e
                 }
 
                 Path persistentPath = changes.persistentPathFor(childPath);
-                NodeType childNode = workspace.getNode(persistentPath);
+                NodeType childNode = getNode(workspace, persistentPath);
 
                 if (persistentPath.equals(childPath)) return childNode;
 

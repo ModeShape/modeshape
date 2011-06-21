@@ -42,6 +42,7 @@ import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.connector.UuidAlreadyExistsException;
+import org.modeshape.graph.connector.base.cache.NodeCache;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
@@ -68,8 +69,6 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
 
     /** The set of changes to the workspaces that have been made by this transaction */
     private Map<String, WorkspaceChanges> changesByWorkspaceName;
-    /** The set of nodes that have been read during this transaction */
-    private Map<WorkspaceType, Map<UUID, NodeType>> nodesByWorkspaceName;
 
     /**
      * Create a new transaction.
@@ -112,29 +111,8 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
     }
 
     /**
-     * Gets the map of changed nodes for the supplied workspace, populating the {@link #nodesByWorkspaceName transaction cache} as
-     * needed.
-     * 
-     * @param workspace the workspace; may not be null
-     * @return the map of changed nodes for that workspace; never null
-     */
-    protected Map<UUID, NodeType> getCachedNodesfor( WorkspaceType workspace ) {
-        if (nodesByWorkspaceName == null) {
-            nodesByWorkspaceName = new HashMap<WorkspaceType, Map<UUID, NodeType>>();
-        }
-
-        Map<UUID, NodeType> cachedNodes = nodesByWorkspaceName.get(workspace);
-        if (cachedNodes == null) {
-            cachedNodes = new HashMap<UUID, NodeType>();
-            nodesByWorkspaceName.put(workspace, cachedNodes);
-        }
-
-        return cachedNodes;
-    }
-
-    /**
-     * Returns the node with the given UUID in the given workspace from the transaction read cache, if it exists in that cache.
-     * Otherwise, this method uses {@link MapWorkspace#getNode(UUID)} to retrieve the node directly from the workspace.
+     * Returns the node with the given UUID in the given workspace from the node cache, if one exists in that cache. Otherwise,
+     * this method uses {@link MapWorkspace#getNode(UUID)} to retrieve the node directly from the workspace.
      * <p>
      * The values returned by this method do not take any node modifications or deletions from this session into consideration.
      * </p>
@@ -143,16 +121,26 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
      * @param uuid the UUID of the node to read; may not be null
      * @return the node with the given UUID in the given workspace
      */
+    @SuppressWarnings( "unchecked" )
     private NodeType getNode( WorkspaceType workspace,
                               UUID uuid ) {
-        Map<UUID, NodeType> cachedNodes = getCachedNodesfor(workspace);
-        NodeType cachedNode = cachedNodes.get(uuid);
-        if (cachedNode == null) {
-            cachedNode = workspace.getNode(uuid);
-            cachedNodes.put(uuid, cachedNode);
+        NodeType node;
+        NodeCache<UUID, NodeType> cache = null;
+
+        if (workspace.hasNodeCache()) {
+            cache = ((NodeCachingWorkspace<UUID, NodeType>)workspace).getCache();
+            node = cache.get(uuid);
+            if (node != null) return node;
         }
 
-        return cachedNode;
+        node = workspace.getNode(uuid);
+
+        if (node != null && cache != null) {
+            // Cache miss, so push it into the cache
+            cache.put(uuid, node);
+        }
+
+        return node;
     }
 
     /**
@@ -1036,16 +1024,25 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
 
         @SuppressWarnings( "unchecked" )
         public void commit() {
+            NodeCache<UUID, NodeType> cache = null;
+
+            if (workspace.hasNodeCache()) {
+                cache = ((NodeCachingWorkspace<UUID, NodeType>)workspace).getCache();
+            }
+
             if (removeAll) {
                 workspace.removeAll();
+                if (cache != null) cache.removeAll();
             }
             for (NodeType changed : changedOrAddedNodes.values()) {
                 workspace.putNode((NodeType)changed.freeze());
+                if (cache != null) cache.put(changed.getUuid(), changed);
             }
             for (UUID uuid : removedNodes) {
                 // the node may not exist in the workspace (i.e., it was created and then deleted in the txn)
                 // but this method call won't care ...
                 workspace.removeNode(uuid);
+                if (cache != null) cache.remove(uuid);
             }
         }
     }

@@ -22,8 +22,12 @@ import org.modeshape.graph.JcrNtLexicon;
 import org.modeshape.graph.ModeShapeIntLexicon;
 import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.connector.RepositorySourceException;
+import org.modeshape.graph.connector.base.NodeCachingWorkspace;
 import org.modeshape.graph.connector.base.PathNode;
 import org.modeshape.graph.connector.base.PathWorkspace;
+import org.modeshape.graph.connector.base.cache.NodeCache;
+import org.modeshape.graph.connector.base.cache.NodeCachePolicy;
+import org.modeshape.graph.connector.base.cache.NodeCachePolicyChangedEvent;
 import org.modeshape.graph.mimetype.MimeTypeDetector;
 import org.modeshape.graph.property.Binary;
 import org.modeshape.graph.property.BinaryFactory;
@@ -50,7 +54,7 @@ import org.tmatesoft.svn.core.wc.SVNWCUtil;
 /**
  * Workspace implementation for SVN repository connector
  */
-public class SvnWorkspace extends PathWorkspace<PathNode> {
+public class SvnWorkspace extends PathWorkspace<PathNode> implements NodeCachingWorkspace<Path, PathNode> {
     private static final String DEFAULT_MIME_TYPE = "application/octet-stream";
     protected static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
@@ -98,11 +102,14 @@ public class SvnWorkspace extends PathWorkspace<PathNode> {
      */
     private final boolean usingSvnUrl;
 
+    private NodeCache<Path, PathNode> cache;
+    private NodeCachePolicy<Path, PathNode> policy;
+
     public SvnWorkspace( SvnRepository repository,
                          SVNRepository workspaceRoot,
                          String name,
                          UUID rootNodeUuid ) {
-        super(name, rootNodeUuid);
+        super(repository.getContext(), name, rootNodeUuid);
 
         this.repository = repository;
         this.workspaceRoot = workspaceRoot;
@@ -112,18 +119,39 @@ public class SvnWorkspace extends PathWorkspace<PathNode> {
         workspaceRoot.setAuthenticationManager(authManager);
         String svnProtocol = this.workspaceRoot.getLocation().getProtocol();
         usingSvnUrl = svnProtocol.startsWith("svn");
+
+        repository.source().addNodeCachePolicyChangedListener(this);
     }
 
     public SvnWorkspace( String name,
                          SvnWorkspace originalToClone,
                          SVNRepository workspaceRoot ) {
-        super(name, originalToClone.getRootNodeUuid());
+        super(originalToClone.repository.getContext(), name, originalToClone.getRootNodeUuid());
 
         this.repository = originalToClone.repository;
         this.workspaceRoot = workspaceRoot;
         usingSvnUrl = this.workspaceRoot.getLocation().getProtocol().startsWith("svn");
 
+        repository.source().addNodeCachePolicyChangedListener(this);
+
         cloneWorkspace(originalToClone);
+    }
+
+    /**
+     * Notifies this workspace that the cache policy has changed and the cache should be reset.
+     * 
+     * @param event the cache policy changed event; may not be null
+     */
+    @Override
+    public void cachePolicyChanged( NodeCachePolicyChangedEvent<Path, PathNode> event ) {
+        this.policy = event.getNewPolicy();
+        this.cache = policy.newCache();
+
+    }
+
+    @Override
+    public NodeCache<Path, PathNode> getCache() {
+        return cache;
     }
 
     private void cloneWorkspace( SvnWorkspace original ) {
