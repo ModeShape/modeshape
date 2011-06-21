@@ -38,6 +38,7 @@ public final class FileSystemI18n {
     public static I18n pathForWorkspaceRootIsNotDirectory;
     public static I18n pathForWorkspaceRootCannotBeRead;
     public static I18n propertyIsRequired;
+    public static I18n errorSerializingCachePolicyInSource;
     public static I18n sameNameSiblingsAreNotAllowed;
     public static I18n nodeOrderingNotSupported;
     public static I18n onlyTheDefaultNamespaceIsAllowed;

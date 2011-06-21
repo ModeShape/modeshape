@@ -35,10 +35,13 @@
         The 'JCR' repository is an Infinispan source with a single default workspace (though others could be created, too).
         -->
         <mode:source jcr:name="Store" mode:classname="org.modeshape.connector.disk.DiskSource"
-                     mode:lockFileUsed="true" 
+                     mode:lockFileUsed="false" 
                      mode:retryLimit="3" mode:defaultWorkspaceName="default" mode:repositoryRootPath="./target/diskRepoRoot">
             <predefinedWorkspaceNames>default</predefinedWorkspaceNames>
-        </mode:source>    
+      	    <mode:cachePolicy jcr:name="nodeCachePolicy" 
+      	      mode:classname="org.modeshape.graph.connector.base.cache.InMemoryNodeCache$MapCachePolicy"
+      	      mode:timeToLive="300" />
+         </mode:source>    
     </mode:sources>
     <!-- 
     Define the mime type detectors. This is an optional section.  By default, each engine will use the 

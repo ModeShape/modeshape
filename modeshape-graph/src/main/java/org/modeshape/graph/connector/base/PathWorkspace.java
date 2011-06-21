@@ -27,8 +27,11 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
 import org.modeshape.common.annotation.NotThreadSafe;
+import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Location;
+import org.modeshape.graph.connector.base.cache.PathNodeCache;
 import org.modeshape.graph.property.Path;
+import org.modeshape.graph.property.PathFactory;
 
 /**
  * The {@link Workspace} implementation that represents all nodes as {@link PathNode} objects and stores them in an internal data
@@ -48,19 +51,25 @@ public abstract class PathWorkspace<NodeType extends PathNode> implements Worksp
 
     private final String name;
     private final UUID rootNodeUuid;
+    protected final PathFactory pathFactory;
 
     /**
      * Create a new instance of the workspace.
      * 
+     * @param context the execution context for this workspace; may not be null
      * @param name the workspace name; may not be null
      * @param rootNodeUuid the root node that is expected to already exist in the map
      */
-    public PathWorkspace( String name,
+    public PathWorkspace( ExecutionContext context,
+                          String name,
                           UUID rootNodeUuid ) {
         this.name = name;
         this.rootNodeUuid = rootNodeUuid;
         assert this.name != null;
         assert this.rootNodeUuid != null;
+        assert context != null;
+
+        this.pathFactory = context.getValueFactories().getPathFactory();
     }
 
     /**
@@ -73,8 +82,11 @@ public abstract class PathWorkspace<NodeType extends PathNode> implements Worksp
                           PathWorkspace<NodeType> originalToClone ) {
         this.name = name;
         this.rootNodeUuid = originalToClone.getRootNode().getUuid();
+        this.pathFactory = originalToClone.pathFactory;
+
         assert this.name != null;
         assert this.rootNodeUuid != null;
+
         throw new UnsupportedOperationException("Need to implement the ability to clone a workspace");
     }
 
@@ -191,6 +203,15 @@ public abstract class PathWorkspace<NodeType extends PathNode> implements Worksp
     }
 
     /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.connector.base.Workspace#hasNodeCache()
+     */
+    public boolean hasNodeCache() {
+        return false;
+    }
+
+    /**
      * Successively (and in order) apply the changes from the list of pending commands
      * <p>
      * All validation for each of the objects (including validation of resource availability in the underlying persistent store)
@@ -266,8 +287,14 @@ public abstract class PathWorkspace<NodeType extends PathNode> implements Worksp
             this.node = node;
         }
 
+        @SuppressWarnings( "unchecked" )
         public void apply() {
             PathWorkspace.this.putNode(node);
+
+            if (PathWorkspace.this.hasNodeCache()) {
+                Path path = pathFactory.create(node.getParent(), node.getName());
+                ((NodeCachingWorkspace<Path, NodeType>)PathWorkspace.this).getCache().put(path, node);
+            }
         }
 
         @Override
@@ -284,8 +311,13 @@ public abstract class PathWorkspace<NodeType extends PathNode> implements Worksp
             this.path = path;
         }
 
+        @SuppressWarnings( "unchecked" )
         public void apply() {
             PathWorkspace.this.removeNode(path);
+
+            if (PathWorkspace.this.hasNodeCache()) {
+                ((NodeCachingWorkspace<Path, NodeType>)PathWorkspace.this).getCache().remove(path);
+            }
         }
 
         @Override
@@ -305,8 +337,15 @@ public abstract class PathWorkspace<NodeType extends PathNode> implements Worksp
             this.newNode = newNode;
         }
 
+        @SuppressWarnings( "unchecked" )
         public void apply() {
             PathWorkspace.this.moveNode(node, newNode);
+
+            if (PathWorkspace.this.hasNodeCache()) {
+                Path path = pathFactory.create(node.getParent(), node.getName());
+                PathNodeCache<NodeType> cache = (PathNodeCache<NodeType>)((NodeCachingWorkspace<Path, NodeType>)PathWorkspace.this).getCache();
+                cache.invalidate(path);
+            }
         }
 
         @Override

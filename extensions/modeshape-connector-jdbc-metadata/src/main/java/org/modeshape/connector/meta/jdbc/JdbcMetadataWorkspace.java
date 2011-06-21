@@ -13,8 +13,12 @@ import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.JcrNtLexicon;
 import org.modeshape.graph.connector.RepositorySourceException;
+import org.modeshape.graph.connector.base.NodeCachingWorkspace;
 import org.modeshape.graph.connector.base.PathNode;
 import org.modeshape.graph.connector.base.PathWorkspace;
+import org.modeshape.graph.connector.base.cache.NodeCache;
+import org.modeshape.graph.connector.base.cache.NodeCachePolicy;
+import org.modeshape.graph.connector.base.cache.NodeCachePolicyChangedEvent;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
@@ -26,17 +30,39 @@ import org.modeshape.graph.property.Path.Segment;
  * Workspace implementation for the JDBC metadata connector.
  */
 @NotThreadSafe
-class JdbcMetadataWorkspace extends PathWorkspace<PathNode> {
+class JdbcMetadataWorkspace extends PathWorkspace<PathNode> implements NodeCachingWorkspace<Path, PathNode> {
 
     public final static String TABLES_SEGMENT_NAME = "tables";
     public final static String PROCEDURES_SEGMENT_NAME = "procedures";
 
     protected final JdbcMetadataRepository repository;
 
+    private NodeCache<Path, PathNode> cache;
+    private NodeCachePolicy<Path, PathNode> policy;
+
     public JdbcMetadataWorkspace( JdbcMetadataRepository repository,
                                   String name ) {
-        super(name, repository.source().getRootNodeUuidObject());
+        super(repository.getContext(), name, repository.source().getRootNodeUuidObject());
         this.repository = repository;
+
+        repository.source().addNodeCachePolicyChangedListener(this);
+    }
+
+    /**
+     * Notifies this workspace that the cache policy has changed and the cache should be reset.
+     * 
+     * @param event the cache policy changed event; may not be null
+     */
+    @Override
+    public void cachePolicyChanged( NodeCachePolicyChangedEvent<Path, PathNode> event ) {
+        this.policy = event.getNewPolicy();
+        this.cache = policy.newCache();
+
+    }
+
+    @Override
+    public NodeCache<Path, PathNode> getCache() {
+        return cache;
     }
 
     @Override
