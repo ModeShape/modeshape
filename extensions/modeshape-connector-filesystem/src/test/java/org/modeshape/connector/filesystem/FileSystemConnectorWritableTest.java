@@ -51,6 +51,7 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
 
     private static final String REPO_PATH = "./target/repositories/";
     private static final String REPO_SOURCE_PATH = "./src/test/resources/repositories/";
+    private static final String TEMP_STORAGE_PATH = "./target/tmp";
     private final String TEST_CONTENT = "Test content";
 
     protected File testWorkspaceRoot;
@@ -68,6 +69,9 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
         FileUtil.delete(scratchDirectory);
         FileUtil.copy(sourceRepo, scratchDirectory);
 
+        File tempStorage = new File(TEMP_STORAGE_PATH);
+        tempStorage.mkdirs();
+
         // Set the connection properties to be use the content of "./src/test/resources/repositories" as a repository ...
         String[] predefinedWorkspaceNames = new String[] {"test", "otherWorkspace", "airplanes", "cars"};
         source = new FileSystemSource();
@@ -79,6 +83,7 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
         source.setUpdatesAllowed(true);
         source.setExclusionPattern("\\.svn");
         source.setInclusionPattern(".+");
+        source.setTemporaryStoragePath(TEMP_STORAGE_PATH);
 
         testWorkspaceRoot = new File(REPO_PATH, "test");
         testWorkspaceRoot.mkdir();
