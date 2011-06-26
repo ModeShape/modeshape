@@ -183,6 +183,21 @@
 						following a communication failure. The default value is '0'.</entry>
 				</row>
 				<row>
+					<entry>temporaryStoragePath</entry>
+					<entry><para>Optional property that allows administrators to specify a specific location for the file system connector's temporary
+				     storage. When writing file content, this connector first writes the content to a file in the temporary storage area. After
+     				 that write succeeds in full, the temporary file is moved to its final location in the workspace. This extra step is taken
+     				 so that an error or failure while writing the file does not cause corruption in the target file.
+     				 </para>
+     				 <para>
+	     				However, if the temporary storage area is located on a different file system than the file that will ultimately be written
+						to, the rename operation cannot be used and a separate file copy must occur. Therefore,
+						administrators should set the value of this path to some path in the same file system as the
+						workspace root path as specified by the <code>workspaceRootPath</code> property.
+     				 </para>
+     				 </entry>
+				</row>
+				<row>
 					<entry>updatesAllowed</entry>
 					<entry>Determines whether the content in the file system can be updated ("true"), or if the content may only be read ("false").
 						The default value is "false" to avoid unintentional security vulnerabilities.</entry>

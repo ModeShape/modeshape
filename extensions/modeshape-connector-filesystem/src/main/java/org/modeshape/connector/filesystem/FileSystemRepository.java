@@ -139,6 +139,13 @@ public class FileSystemRepository extends Repository<PathNode, FileSystemWorkspa
         return directory;
     }
 
+    /**
+     * @return the directory in which pending files should be created
+     */
+    File pendingFileDir() {
+        return new File(source.getTemporaryStoragePath());
+    }
+
     @Override
     public FileSystemTransaction startTransaction( ExecutionContext context,
                                                    boolean readonly ) {
