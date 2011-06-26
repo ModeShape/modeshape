@@ -83,6 +83,9 @@ public final class FileSystemI18n {
     public static I18n customPropertiesFactoryPropertyDescription;
     public static I18n customPropertiesFactoryPropertyLabel;
     public static I18n customPropertiesFactoryPropertyCategory;
+    public static I18n temporaryStoragePathPropertyDescription;
+    public static I18n temporaryStoragePathPropertyLabel;
+    public static I18n temporaryStoragePathPropertyCategory;
 
     // Writable messages
     public static I18n parentIsReadOnly;
