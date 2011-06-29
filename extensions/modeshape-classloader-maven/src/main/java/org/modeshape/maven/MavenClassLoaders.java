@@ -26,6 +26,8 @@ package org.modeshape.maven;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -100,7 +102,13 @@ import org.modeshape.common.SystemFailureException;
 
     public ProjectClassLoader getClassLoader( ClassLoader parent,
                                               MavenId... mavenIds ) {
-        if (parent == null) parent = Thread.currentThread().getContextClassLoader();
+
+        if (parent == null) parent = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+            @Override
+            public ClassLoader run() {
+                return Thread.currentThread().getContextClassLoader();
+            }
+        });
         if (parent == null) parent = this.getClass().getClassLoader();
         ProjectClassLoader result = new ProjectClassLoader(parent);
         // Create a dependencies list for the desired projects ...

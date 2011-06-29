@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.modeshape</groupId>
     <artifactId>modeshape-parent</artifactId>
-    <version>2.5-SNAPSHOT</version>
+    <version>2.6-SNAPSHOT</version>
     <relativePath>../../modeshape-parent</relativePath>
   </parent>
   <!-- The groupId and version values are inherited from parent -->
@@ -14,7 +14,7 @@
   <description>ModeShape Connector that accesses an in-process JBoss Infinispan instance.</description>
   <url>http://www.modeshape.org</url>
   <properties>
-      <version.infinispan>4.1.0.FINAL</version.infinispan>
+      <version.infinispan>4.2.1.FINAL</version.infinispan>
   </properties>
   <!--
   Define the dependencies.  Note that all version and scopes default to those 

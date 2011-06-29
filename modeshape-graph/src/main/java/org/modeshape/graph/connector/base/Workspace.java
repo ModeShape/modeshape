@@ -23,6 +23,7 @@
  */
 package org.modeshape.graph.connector.base;
 
+import org.modeshape.graph.connector.base.cache.NoCachePolicy;
 
 /**
  * The {@code MapWorkspace} stores state and other information about a workspace in a way that is independent of
@@ -36,4 +37,12 @@ public interface Workspace {
      * @return the name of the workspace
      */
     String getName();
+
+    /**
+     * Indicates whether this workspace has a node cache. This method should return if the implementation is wired for cache
+     * support, even if it happens to be supporting a trivial implementation like {@link NoCachePolicy}.
+     * 
+     * @return true if this workspace has a node cache
+     */
+    boolean hasNodeCache();
 }

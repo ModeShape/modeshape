@@ -3,8 +3,8 @@
  * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
-* See the AUTHORS.txt file in the distribution for a full listing of 
-* individual contributors.
+ * See the AUTHORS.txt file in the distribution for a full listing of 
+ * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
@@ -27,16 +27,18 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.i18n.I18n;
-import org.slf4j.ILoggerFactory;
-import org.slf4j.LoggerFactory;
+import org.modeshape.common.util.log.LogFactory;
 
 /**
- * A simple logging interface that is fully compatible with multiple logging implementations. This interface does take advantage
- * of the variable arguments and autoboxing features in Java 5, reducing the number of methods that are necessary and allowing
- * callers to supply primitive values as parameters.
+ * A simple logging interface that is fully compatible with multiple logging implementations. If no log4j implementation is found,
+ * then its defaulted to the JDK Logger implementation. This interface does take advantage of the variable arguments and
+ * autoboxing features in Java 5, reducing the number of methods that are necessary and allowing callers to supply primitive
+ * values as parameters.
  */
 @ThreadSafe
-public final class Logger {
+public abstract class Logger {
+
+    static final LogFactory LOG_FACTORY;
 
     public enum Level {
         OFF,
@@ -47,7 +49,12 @@ public final class Logger {
         TRACE;
     }
 
-    private static final AtomicReference<Locale> LOGGING_LOCALE = new AtomicReference<Locale>(null);
+    static {
+        LOG_FACTORY = LogFactory.getLogFactory();
+
+    }
+
+    protected static final AtomicReference<Locale> LOGGING_LOCALE = new AtomicReference<Locale>(null);
 
     /**
      * Get the locale used for the logs. If null, the {@link Locale#getDefault() default locale} is used.
@@ -79,7 +86,7 @@ public final class Logger {
      * @return logger
      */
     public static Logger getLogger( Class<?> clazz ) {
-        return new Logger(LoggerFactory.getLogger(clazz));
+        return LOG_FACTORY.getLogger(clazz);
     }
 
     /**
@@ -89,13 +96,7 @@ public final class Logger {
      * @return logger
      */
     public static Logger getLogger( String name ) {
-        return new Logger(LoggerFactory.getLogger(name));
-    }
-
-    private final org.slf4j.Logger delegate;
-
-    private Logger( org.slf4j.Logger delegate ) {
-        this.delegate = delegate;
+        return LOG_FACTORY.getLogger(name);
     }
 
     /**
@@ -103,9 +104,7 @@ public final class Logger {
      * 
      * @return the logger's name
      */
-    public String getName() {
-        return this.delegate.getName();
-    }
+    public abstract String getName();
 
     /**
      * Log a message at the suplied level according to the specified format and (optional) parameters. The message should contain
@@ -184,12 +183,8 @@ public final class Logger {
      * @param message the message string
      * @param params the parameter values that are to replace the variables in the format string
      */
-    public void debug( String message,
-                       Object... params ) {
-        if (!isDebugEnabled()) return;
-        if (message == null) return;
-        this.delegate.debug(StringUtil.createString(message, params));
-    }
+    public abstract void debug( String message,
+                                Object... params );
 
     /**
      * Log an exception (throwable) at the DEBUG level with an accompanying message. If the exception is null, then this method
@@ -199,20 +194,9 @@ public final class Logger {
      * @param message the message accompanying the exception
      * @param params the parameter values that are to replace the variables in the format string
      */
-    public void debug( Throwable t,
-                       String message,
-                       Object... params ) {
-        if (!isDebugEnabled()) return;
-        if (t == null) {
-            debug(message, params);
-            return;
-        }
-        if (message == null) {
-            this.delegate.debug(null, t);
-            return;
-        }
-        this.delegate.debug(StringUtil.createString(message, params), t);
-    }
+    public abstract void debug( Throwable t,
+                                String message,
+                                Object... params );
 
     /**
      * Log a message at the ERROR level according to the specified format and (optional) parameters. The message should contain a
@@ -222,12 +206,8 @@ public final class Logger {
      * @param message the message string
      * @param params the parameter values that are to replace the variables in the format string
      */
-    public void error( I18n message,
-                       Object... params ) {
-        if (!isErrorEnabled()) return;
-        if (message == null) return;
-        this.delegate.error(message.text(LOGGING_LOCALE.get(), params));
-    }
+    public abstract void error( I18n message,
+                                Object... params );
 
     /**
      * Log an exception (throwable) at the ERROR level with an accompanying message. If the exception is null, then this method
@@ -237,20 +217,9 @@ public final class Logger {
      * @param message the message accompanying the exception
      * @param params the parameter values that are to replace the variables in the format string
      */
-    public void error( Throwable t,
-                       I18n message,
-                       Object... params ) {
-        if (!isErrorEnabled()) return;
-        if (t == null) {
-            error(message, params);
-            return;
-        }
-        if (message == null) {
-            this.delegate.error(null, t);
-            return;
-        }
-        this.delegate.error(message.text(LOGGING_LOCALE.get(), params), t);
-    }
+    public abstract void error( Throwable t,
+                                I18n message,
+                                Object... params );
 
     /**
      * Log a message at the INFO level according to the specified format and (optional) parameters. The message should contain a
@@ -260,12 +229,8 @@ public final class Logger {
      * @param message the message string
      * @param params the parameter values that are to replace the variables in the format string
      */
-    public void info( I18n message,
-                      Object... params ) {
-        if (!isInfoEnabled()) return;
-        if (message == null) return;
-        this.delegate.info(message.text(LOGGING_LOCALE.get(), params));
-    }
+    public abstract void info( I18n message,
+                               Object... params );
 
     /**
      * Log an exception (throwable) at the INFO level with an accompanying message. If the exception is null, then this method
@@ -275,20 +240,9 @@ public final class Logger {
      * @param message the message accompanying the exception
      * @param params the parameter values that are to replace the variables in the format string
      */
-    public void info( Throwable t,
-                      I18n message,
-                      Object... params ) {
-        if (!isInfoEnabled()) return;
-        if (t == null) {
-            info(message, params);
-            return;
-        }
-        if (message == null) {
-            this.delegate.info(null, t);
-            return;
-        }
-        this.delegate.info(message.text(LOGGING_LOCALE.get(), params), t);
-    }
+    public abstract void info( Throwable t,
+                               I18n message,
+                               Object... params );
 
     /**
      * Log a message at the TRACE level according to the specified format and (optional) parameters. The message should contain a
@@ -298,12 +252,8 @@ public final class Logger {
      * @param message the message string
      * @param params the parameter values that are to replace the variables in the format string
      */
-    public void trace( String message,
-                       Object... params ) {
-        if (!isTraceEnabled()) return;
-        if (message == null) return;
-        this.delegate.trace(StringUtil.createString(message, params));
-    }
+    public abstract void trace( String message,
+                                Object... params );
 
     /**
      * Log an exception (throwable) at the TRACE level with an accompanying message. If the exception is null, then this method
@@ -313,20 +263,9 @@ public final class Logger {
      * @param message the message accompanying the exception
      * @param params the parameter values that are to replace the variables in the format string
      */
-    public void trace( Throwable t,
-                       String message,
-                       Object... params ) {
-        if (!isTraceEnabled()) return;
-        if (t == null) {
-            this.trace(message, params);
-            return;
-        }
-        if (message == null) {
-            this.delegate.trace(null, t);
-            return;
-        }
-        this.delegate.trace(StringUtil.createString(message, params), t);
-    }
+    public abstract void trace( Throwable t,
+                                String message,
+                                Object... params );
 
     /**
      * Log a message at the WARNING level according to the specified format and (optional) parameters. The message should contain
@@ -336,12 +275,8 @@ public final class Logger {
      * @param message the message string
      * @param params the parameter values that are to replace the variables in the format string
      */
-    public void warn( I18n message,
-                      Object... params ) {
-        if (!isWarnEnabled()) return;
-        if (message == null) return;
-        this.delegate.warn(message.text(LOGGING_LOCALE.get(), params));
-    }
+    public abstract void warn( I18n message,
+                               Object... params );
 
     /**
      * Log an exception (throwable) at the WARNING level with an accompanying message. If the exception is null, then this method
@@ -351,65 +286,44 @@ public final class Logger {
      * @param message the message accompanying the exception
      * @param params the parameter values that are to replace the variables in the format string
      */
-    public void warn( Throwable t,
-                      I18n message,
-                      Object... params ) {
-        if (!isWarnEnabled()) return;
-        if (t == null) {
-            warn(message, params);
-            return;
-        }
-        if (message == null) {
-            this.delegate.warn(null, t);
-            return;
-        }
-        this.delegate.warn(message.text(LOGGING_LOCALE.get(), params), t);
-    }
+    public abstract void warn( Throwable t,
+                               I18n message,
+                               Object... params );
 
     /**
      * Return whether messages at the INFORMATION level are being logged.
      * 
      * @return true if INFORMATION log messages are currently being logged, or false otherwise.
      */
-    protected boolean isInfoEnabled() {
-        return this.delegate.isInfoEnabled();
-    }
+    public abstract boolean isInfoEnabled();
 
     /**
      * Return whether messages at the WARNING level are being logged.
      * 
      * @return true if WARNING log messages are currently being logged, or false otherwise.
      */
-    protected boolean isWarnEnabled() {
-        return this.delegate.isWarnEnabled();
-    }
+    public abstract boolean isWarnEnabled();
 
     /**
      * Return whether messages at the ERROR level are being logged.
      * 
      * @return true if ERROR log messages are currently being logged, or false otherwise.
      */
-    protected boolean isErrorEnabled() {
-        return this.delegate.isErrorEnabled();
-    }
+    public abstract boolean isErrorEnabled();
 
     /**
      * Return whether messages at the DEBUG level are being logged.
      * 
      * @return true if DEBUG log messages are currently being logged, or false otherwise.
      */
-    public boolean isDebugEnabled() {
-        return this.delegate.isDebugEnabled();
-    }
+    public abstract boolean isDebugEnabled();
 
     /**
      * Return whether messages at the TRACE level are being logged.
      * 
      * @return true if TRACE log messages are currently being logged, or false otherwise.
      */
-    public boolean isTraceEnabled() {
-        return this.delegate.isTraceEnabled();
-    }
+    public abstract boolean isTraceEnabled();
 
     /**
      * Get the logging level at which this logger is current set.

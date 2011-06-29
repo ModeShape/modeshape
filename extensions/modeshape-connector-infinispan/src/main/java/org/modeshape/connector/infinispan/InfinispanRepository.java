@@ -26,11 +26,15 @@ package org.modeshape.connector.infinispan;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import org.modeshape.common.annotation.ThreadSafe;
+import org.infinispan.Cache;
+import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.manager.CacheContainer;
+import org.infinispan.manager.EmbeddedCacheManager;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.connector.base.Repository;
 
@@ -66,7 +70,72 @@ public class InfinispanRepository extends Repository<InfinispanNode, InfinispanW
     public Set<String> getWorkspaceNames() {
         Set<String> names = new HashSet<String>(super.getWorkspaceNames());
         names.addAll(predefinedWorkspaceNames);
+        // Look for any new caches ...
+        names.addAll(getAllWorkspaceNames(names));
+
         return Collections.unmodifiableSet(names);
+    }
+
+    /**
+     * Utility method to obtain all of the names of the workspaces within the supplied cache container. In case the method needs
+     * to validate the caches to see if they are workspaces, this method also takes the names of the caches that are known to be
+     * valid workspaces.
+     * 
+     * @param alreadyKnownNames the names of the workspaces that are already known; may not be null but may be empty
+     * @return the names of all available workspaces in the supplied container; never null but possibly empty
+     */
+    protected Set<String> getAllWorkspaceNames( Set<String> alreadyKnownNames ) {
+        Set<String> cacheNames = null;
+        if (cacheContainer instanceof EmbeddedCacheManager) {
+            cacheNames = ((EmbeddedCacheManager)cacheContainer).getCacheNames();
+        } else if (cacheContainer instanceof RemoteCacheManager) {
+            // This might be coming in 5.0 ...
+            // cacheNames = ((RemoteCacheManager)container).getCacheNames();
+            // instead we currently have to do this ...
+            cacheNames = alreadyKnownNames;
+        } else {
+            cacheNames = alreadyKnownNames;
+        }
+
+        if (cacheNames.equals(alreadyKnownNames)) {
+            // There are the same caches available as there are known names ...
+            return cacheNames;
+        }
+
+        // Check each cache that is not already known to see if it is a valid workspace ...
+        final UUID rootNodeUuid = getRootNodeUuid();
+        Set<String> nonWorkspaceCacheNames = new HashSet<String>();
+        for (String cacheName : cacheNames) {
+            if (alreadyKnownNames.contains(cacheName)) continue;
+
+            // Otherwise check the cache to see if it has a root node ...
+            Cache<UUID, InfinispanNode> cache = cacheContainer.getCache(cacheName);
+            if (!cache.containsKey(rootNodeUuid)) {
+                nonWorkspaceCacheNames.add(cacheName);
+            }
+        }
+
+        // Remove all cache names that are not valid workspaces ...
+        if (!nonWorkspaceCacheNames.isEmpty()) cacheNames.removeAll(nonWorkspaceCacheNames);
+
+        return cacheNames;
+    }
+
+    protected Cache<UUID, InfinispanNode> getCacheOrCreateIfMissing( String cacheName ) {
+        if (cacheContainer instanceof EmbeddedCacheManager) {
+            EmbeddedCacheManager mgr = (EmbeddedCacheManager)cacheContainer;
+            if (mgr.isRunning(cacheName)) return mgr.getCache(cacheName);
+            if (mgr.getCacheNames().contains(cacheName)) {
+                // The cache exists but is not running ...
+                Cache<UUID, InfinispanNode> cache = mgr.getCache(cacheName);
+                cache.start();
+                return cache;
+            }
+            // Otherwise the cache does not yet exist ...
+            mgr.defineConfiguration(cacheName, mgr.getDefaultConfiguration());
+            return mgr.getCache(cacheName);
+        }
+        return cacheContainer.getCache(cacheName);
     }
 
     /**

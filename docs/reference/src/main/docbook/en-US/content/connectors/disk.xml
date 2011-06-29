@@ -67,9 +67,34 @@
 					<entry>Optional property that is initialized to <code>"default"</code> and which defines the name for the workspace that will be used by default
 						if none is specified.</entry>
 				</row>
+			   <row>
+					<entry>largeValuePath</entry>
+					<entry>Optional, advanced property that, if specified, specifies the path to the large value area.  <emphasis>This path is relative to the value of the <code>repositoryRootPath</code> property.</emphasis>
+						The default value for this property is <code>"largeValues"</code> and it only needs to be changed if there will be a workspace named <code>"largeValues"</code>. 
+					</entry>
+				</row>
+				<row>
+					<entry>largeValueSizeInBytes</entry>
+					<entry>Optional property that, if specified, sets the threshold for large values.  Binary property values that exceed this size will be copied into the large
+					value area for this repository, where they can be shared between nodes and lazily loaded to improve node retrieval time.  The default value is "8192".
+					</entry>
+				</row>
+				<row>
+					<entry>lockFileUsed</entry>
+					<entry>An advanced property that, if set to "true", indicates that repository read and write locks should be synchronized with file lock options 
+					on a file in the on-disk storage.  This causes a performance penalty, but allows disk sources in different JVMS (e.g., clustered disk sources) to
+					coordinate their locks <emphasis>as long as all cluster members share the same disk</emphasis>.  This approach uses Java NIO file locking and is 
+					subject to the limitations of the Java NIO file locking for the current
+					JVM implementation.  The default value is "false", but this should always be set to "true" when used in a clustered environment.</entry>
+			   </row>
 				<row>
 					<entry>name</entry>
 					<entry>The name of the repository source, which is used by the &RepositoryService; when obtaining a &RepositoryConnection; by name.</entry>
+				</row>
+				<row>
+					<entry>nodeCachePolicy</entry>
+					<entry>Optional property that, if used, defines the cache policy to use for caching nodes within the connector.  
+					</entry>
 				</row>
 				<row>
 					<entry>predefinedWorkspaceNames</entry>
@@ -138,7 +163,7 @@ config.repositorySource("Disk Store")
     -->
     <mode:sources jcr:primaryType="nt:unstructured">
         <!-- 
-        The 'Disk Store' repository is a file system source with a three predefined workspaces 
+        The 'Disk Store' repository is a disk source with a three predefined workspaces 
         ("prod", "staging", and "dev").
         -->
         <mode:source jcr:name="Disk Store" 
@@ -152,12 +177,12 @@ config.repositorySource("Disk Store")
             <mode:predefinedWorkspaceNames>staging</mode:predefinedWorkspaceNames>
             <mode:predefinedWorkspaceNames>dev</mode:predefinedWorkspaceNames>
       	    <!-- 
-      	    If desired, specify a cache policy that caches items in memory for 5 minutes (300000 ms).
+      	    If desired, specify a cache policy that caches items in memory for 5 minutes (300 s).
       	    This fragment can be left out if the connector should not cache any content.
       	    -->
-      	    <mode:cachePolicy jcr:name="cachePolicy" 
-      	      mode:classname="org.modeshape.graph.connector.path.cache.InMemoryWorkspaceCache$InMemoryCachePolicy"
-      	      mode:timeToLiveInMilliseconds="300000" />
+      	    <mode:cachePolicy jcr:name="nodeCachePolicy" 
+      	      mode:classname="org.modeshape.graph.connector.base.cache.InMemoryNodeCache$MapCachePolicy"
+      	      mode:timeToLive="300" />
         </mode:source>    
     </mode:sources>
 

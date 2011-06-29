@@ -43,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.Problem;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.common.util.IoUtil;
@@ -69,7 +70,7 @@ public class ConnectorBenchmarkTest {
     // Unused if useLargeValues && useUniqueLargeValues == false
     private String[] validLargeValues;
     private Properties benchmarkProps;
-    private Map<String, String> results = new HashMap<String, String>();
+    private Map<String, Map<String, TestResult>> results = new HashMap<String, Map<String, TestResult>>();
     private boolean useLargeValues = false;
     private boolean useUniqueLargeValues = false;
 
@@ -109,7 +110,14 @@ public class ConnectorBenchmarkTest {
 
     private void addResult( String testName,
                             Stopwatch sw ) {
-        results.put(testName + " (" + getCurrentSourceName() + ")", String.valueOf(sw.getTotalDuration()));
+        Map<String, TestResult> testResult = results.get(testName);
+        if (testResult == null) {
+            testResult = new HashMap<String, TestResult>();
+            results.put(testName, testResult);
+        }
+
+        testResult.put(getCurrentSourceName(), new TestResult(testName, getCurrentSourceName(),
+                                   sw.getTotalDuration().getDurationInMilliseconds().longValue()));
     }
 
     private String[] getValidWorkspaceNames() {
@@ -151,15 +159,70 @@ public class ConnectorBenchmarkTest {
     }
 
     private void printResults() throws Exception {
+        final int GRAPHS_PER_ROW = 3;
+
         List<String> testNames = new ArrayList<String>(results.keySet());
         Collections.sort(testNames);
 
+        File templateFile = new File("./src/test/resources/performance/benchmark.html");
+        String template = IoUtil.read(templateFile);
+
+        StringBuilder dataTable = new StringBuilder();
+        int testIndex = 0;
         for (String testName : testNames) {
-            System.out.println();
-            System.out.println(testName);
-            System.out.println(results.get(testName));
+            // var data = new google.visualization.DataTable();
+
+            dataTable.append("var data" + testIndex + " = new google.visualization.DataTable();\n");
+
+            // data.addColumn('number', 'In-Memory Store');
+            // data.addColumn('number', 'File Store');
+            // data.addRows(1);
+            // data.setValue(0, 0, 1); // In-Memory Store Value
+            // data.setValue(0, 1, 30); // File Store Value
+
+            Map<String, TestResult> testResult = results.get(testName);
+            List<String> connectorNames = new ArrayList<String>(testResult.keySet());
+            Collections.sort(connectorNames);
+
+            for (String connectorName : connectorNames) {
+                dataTable.append("data" + testIndex + ".addColumn('number', '" + connectorName + "');\n");
+            }
+
+            dataTable.append("data" + testIndex + ".addRows(" + connectorNames.size() + ");\n");
+
+            int index = 0;
+            for (String connectorName : connectorNames) {
+                TestResult connectorResult = testResult.get(connectorName);
+                dataTable.append("data" + testIndex + ".setValue(0, " + index++ + ", "
+                                 + connectorResult.getDurationInMilliseconds() + ");\n");
+            }
+
+            // var chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
+            // chart.draw(data, {width: 300, height: 240, hAxis: { textPosition: 'in'}, title: 'Red Repeated Path from 3x5 Tree w/
+            // 7 properties (In-Memory Store)'});
+            dataTable.append("var chart = new google.visualization.ColumnChart(document.getElementById('chart_div" + testIndex
+                          + "'));\n");
+            dataTable.append("chart.draw(data" + testIndex
+                             + ", {width: 300, height: 240, hAxis: { textPosition: 'in'}, vAxis: {minValue: 0}, title: '"
+                             + testName + "'});\n");
+            testIndex++;
         }
-        System.out.flush();
+
+        template = template.replaceFirst("\\$DATA\\$", dataTable.toString());
+
+        StringBuilder divs = new StringBuilder();
+
+        for (int i = 0; i < testIndex; i++) {
+            divs.append("<td><div id=\"chart_div" + i + "\"></div></td>\n");
+            if (i % GRAPHS_PER_ROW == GRAPHS_PER_ROW - 1 && i < testIndex - 1) {
+                divs.append("</tr><tr>\n");
+            }
+        }
+
+        template = template.replaceFirst("\\$DIVS\\$", divs.toString());
+
+        File outputFile = new File("./target/benchmark.html");
+        IoUtil.write(template, outputFile);
 
     }
 
@@ -174,6 +237,39 @@ public class ConnectorBenchmarkTest {
                        String leafSegment ) {
         PathFactory pathFactory = engine.getExecutionContext().getValueFactories().getPathFactory();
         return pathFactory.create(parentPath, leafSegment);
+    }
+
+    @Immutable
+    public class TestResult {
+        private String testName;
+        private String connectorName;
+        private long durationInMilliseconds;
+
+        public TestResult( String testName,
+                           String connector,
+                           long milliseconds ) {
+            super();
+            this.testName = testName;
+            this.connectorName = connector;
+            this.durationInMilliseconds = milliseconds;
+        }
+
+        public String getTestName() {
+            return testName;
+        }
+
+        public String getConnectorName() {
+            return connectorName;
+        }
+
+        public long getDurationInMilliseconds() {
+            return durationInMilliseconds;
+        }
+
+    }
+
+    private boolean skipTest(String testName) {
+        return benchmarkProps.getProperty("skippedTests").indexOf(getCurrentSourceName() + "." + testName) != -1;
     }
 
     @Test
@@ -198,42 +294,58 @@ public class ConnectorBenchmarkTest {
 
             // run benchmarks
             try {
-                benchmarkCreatingEmptyWorkspace();
+                if (!skipTest("benchmarkCreatingEmptyWorkspace")) {
+                    benchmarkCreatingEmptyWorkspace();
+                }
             } catch (Throwable t) {
                 t.printStackTrace();
             }
             try {
-                benchmarkDestroyingEmptyWorkspace();
+                if (!skipTest("benchmarkDestroyingEmptyWorkspace")) {
+                    benchmarkDestroyingEmptyWorkspace();
+                }
             } catch (Throwable t) {
                 t.printStackTrace();
             }
             try {
-                benchmarkReadingAndWritingToGraph();
+                if (!skipTest("benchmarkReadingAndWritingToGraph")) {
+                    benchmarkReadingAndWritingToGraph();
+                }
             } catch (Throwable t) {
                 t.printStackTrace();
             }
             try {
-                benchmarkInsertingNodes();
+                if (!skipTest("benchmarkInsertingNodes")) {
+                    benchmarkInsertingNodes();
+                }
             } catch (Throwable t) {
                 t.printStackTrace();
             }
             try {
-                benchmarkReadingEntireGraphAsSubgraph();
+                if (!skipTest("benchmarkReadingEntireGraphAsSubgraph")) {
+                    benchmarkReadingEntireGraphAsSubgraph();
+                }
             } catch (Throwable t) {
                 t.printStackTrace();
             }
             try {
-                benchmarkRandomReadsByPath();
+                if (!skipTest("benchmarkRandomReadsByPath")) {
+                    benchmarkRandomReadsByPath();
+                }
             } catch (Throwable t) {
                 t.printStackTrace();
             }
             try {
-                benchmarkRandomReadsByUuid();
+                if (!skipTest("benchmarkRandomReadsByUuid")) {
+                    benchmarkRandomReadsByUuid();
+                }
             } catch (Throwable t) {
                 t.printStackTrace();
             }
             try {
-                benchmarkRepeatedReadOfSameNode();
+                if (!skipTest("benchmarkRepeatedReadOfSameNode")) {
+                    benchmarkRepeatedReadOfSameNode();
+                }
             } catch (Throwable t) {
                 t.printStackTrace();
             }

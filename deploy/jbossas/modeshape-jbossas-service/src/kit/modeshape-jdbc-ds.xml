@@ -17,8 +17,8 @@
     <jndi-name>ModeShapeDS</jndi-name>
     <connection-url>jdbc:jcr:jndi:jcr/local?repositoryName=repository</connection-url>
 
-    <driver-class>org.modeshape.jdbc.JcrDriver</driver-class>
-    <user>admin</user>
+    <driver-class>org.modeshape.jdbc.LocalJcrDriver</driver-class>
+    <user-name>admin</user-name>
     <password>admin</password>
 
       <metadata>

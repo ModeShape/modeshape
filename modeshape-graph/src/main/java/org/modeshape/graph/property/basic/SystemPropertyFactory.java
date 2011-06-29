@@ -23,6 +23,8 @@
  */
 package org.modeshape.graph.property.basic;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -238,10 +240,17 @@ public class SystemPropertyFactory extends BasicPropertyFactory {
             String constValue = null;
             // split the property(s) based VAR_DELIM, when multiple property options are defined
             List<String> vars = split(varString, VAR_DELIM);
-            for (String var : vars) {
+            for (final String var : vars) {
                 constValue = System.getenv(var);
                 if (constValue == null) {
-                    constValue = System.getProperty(var);
+                    constValue = AccessController.doPrivileged(
+                            new PrivilegedAction<String>() {
+                                public String run() {
+                                    return System.getProperty(var);
+                                }
+                            }
+                    );
+
                 }
 
                 // the first found property is the value to be substituted

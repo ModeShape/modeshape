@@ -25,6 +25,8 @@ package org.modeshape.jcr;
 
 import java.io.File;
 import java.io.PrintStream;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.jcr.PropertyType;
@@ -47,7 +49,11 @@ public class Profiler {
     private static int counter = 0;
 
     public static void activated() {
-        String outputFilename = System.getProperty(PROFILE_FILENAME_PROPERTY_NAME);
+        String outputFilename = AccessController.doPrivileged(new PrivilegedAction<String>() {
+            public String run() {
+                return System.getProperty(PROFILE_FILENAME_PROPERTY_NAME);
+            }
+        });
         if (outputFilename != null) outputFilename = outputFilename.trim();
         if (outputFilename == null || outputFilename.length() == 0) {
             outputFilename = DEFAULT_FILENAME;

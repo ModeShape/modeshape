@@ -26,6 +26,8 @@ package org.modeshape.common.util;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -134,7 +136,13 @@ public class MimeTypeUtil {
      */
     protected static Map<String, String> getDefaultMappings() {
         Map<String, Set<String>> duplicates = new HashMap<String, Set<String>>();
-        return load(Thread.currentThread().getContextClassLoader().getResourceAsStream(MIME_TYPE_EXTENSIONS_RESOURCE_PATH),
+        ClassLoader contextClassLoader = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+            @Override
+            public ClassLoader run() {
+                return Thread.currentThread().getContextClassLoader();
+            }
+        });
+        return load(contextClassLoader.getResourceAsStream(MIME_TYPE_EXTENSIONS_RESOURCE_PATH),
                     duplicates);
     }
 

@@ -30,8 +30,8 @@ import org.infinispan.Cache;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.connector.base.MapTransaction;
-import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.Path.Segment;
+import org.modeshape.graph.property.Property;
 import org.modeshape.graph.request.InvalidWorkspaceException;
 
 /**
@@ -71,7 +71,7 @@ public class InfinispanTransaction extends MapTransaction<InfinispanNode, Infini
     @Override
     public InfinispanWorkspace getWorkspace( String name,
                                              InfinispanWorkspace originalToClone ) {
-        Cache<UUID, InfinispanNode> workspaceCache = repository.getCacheContainer().getCache(name);
+        Cache<UUID, InfinispanNode> workspaceCache = repository.getCacheOrCreateIfMissing(name);
         if (workspaceCache == null) {
             String msg = InfinispanConnectorI18n.unableToCreateWorkspace.text(name, repository.getSourceName());
             throw new InvalidWorkspaceException(msg);

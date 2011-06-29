@@ -37,6 +37,7 @@ public final class JdbcMetadataI18n {
     public static I18n errorObtainingConnection;
 
     public static I18n sourceIsReadOnly;
+    public static I18n errorSerializingCachePolicyInSource;
 
     public static I18n couldNotGetDatabaseMetadata;
     public static I18n couldNotGetCatalogNames;

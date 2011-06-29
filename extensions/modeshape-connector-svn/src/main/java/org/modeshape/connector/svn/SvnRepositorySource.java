@@ -23,9 +23,13 @@
  */
 package org.modeshape.connector.svn;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import javax.naming.BinaryRefAddr;
 import javax.naming.Context;
 import javax.naming.Name;
 import javax.naming.Reference;
@@ -41,13 +45,16 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.connector.svn.SvnRepository.SvnTransaction;
 import org.modeshape.graph.ExecutionContext;
+import org.modeshape.graph.cache.CachePolicy;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.RepositorySourceCapabilities;
 import org.modeshape.graph.connector.RepositorySourceException;
-import org.modeshape.graph.connector.base.AbstractRepositorySource;
+import org.modeshape.graph.connector.base.AbstractNodeCachingRepositorySource;
 import org.modeshape.graph.connector.base.Connection;
 import org.modeshape.graph.connector.base.PathNode;
+import org.modeshape.graph.connector.base.cache.NodeCachePolicy;
+import org.modeshape.graph.property.Path;
 import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
 
 /**
@@ -57,7 +64,7 @@ import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior
  * existing directories.
  */
 @ThreadSafe
-public class SvnRepositorySource extends AbstractRepositorySource implements ObjectFactory {
+public class SvnRepositorySource extends AbstractNodeCachingRepositorySource<Path, PathNode> implements ObjectFactory {
 
     /**
      * The first serialized version of this source. Version {@value} .
@@ -65,6 +72,7 @@ public class SvnRepositorySource extends AbstractRepositorySource implements Obj
     private static final long serialVersionUID = 1L;
 
     protected static final String SOURCE_NAME = "sourceName";
+    protected static final String CACHE_POLICY = "cachePolicy";
     protected static final String SVN_REPOSITORY_ROOT_URL = "repositoryRootURL";
     protected static final String SVN_USERNAME = "username";
     protected static final String SVN_PASSWORD = "password";
@@ -372,6 +380,21 @@ public class SvnRepositorySource extends AbstractRepositorySource implements Obj
         if (workspaceNames != null && workspaceNames.length != 0) {
             ref.add(new StringRefAddr(PREDEFINED_WORKSPACE_NAMES, StringUtil.combineLines(workspaceNames)));
         }
+
+        if (getDefaultCachePolicy() != null) {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            CachePolicy policy = getDefaultCachePolicy();
+            try {
+                ObjectOutputStream oos = new ObjectOutputStream(baos);
+                oos.writeObject(policy);
+                ref.add(new BinaryRefAddr(CACHE_POLICY, baos.toByteArray()));
+            } catch (IOException e) {
+                I18n msg = SvnRepositoryConnectorI18n.errorSerializingCachePolicyInSource;
+                throw new RepositorySourceException(getName(), msg.text(policy.getClass().getName(), getName()), e);
+            }
+        }
+        addNodeCachePolicyReference(ref);
+
         return ref;
 
     }
@@ -382,6 +405,7 @@ public class SvnRepositorySource extends AbstractRepositorySource implements Obj
      * @see javax.naming.spi.ObjectFactory#getObjectInstance(java.lang.Object, javax.naming.Name, javax.naming.Context,
      *      java.util.Hashtable)
      */
+    @SuppressWarnings( "unchecked" )
     @Override
     public Object getObjectInstance( Object obj,
                                      Name name,
@@ -399,6 +423,8 @@ public class SvnRepositorySource extends AbstractRepositorySource implements Obj
         String rootNodeUuid = (String)values.get(ROOT_NODE_UUID);
         String defaultWorkspace = (String)values.get(DEFAULT_WORKSPACE);
         String createWorkspaces = (String)values.get(ALLOW_CREATING_WORKSPACES);
+        Object defaultCachePolicy = values.get(CACHE_POLICY);
+        Object nodeCachePolicy = values.get(NODE_CACHE_POLICY);
 
         String combinedWorkspaceNames = (String)values.get(PREDEFINED_WORKSPACE_NAMES);
         String[] workspaceNames = null;
@@ -409,6 +435,8 @@ public class SvnRepositorySource extends AbstractRepositorySource implements Obj
         // Create the source instance ...
         SvnRepositorySource source = new SvnRepositorySource();
         if (sourceName != null) source.setName(sourceName);
+        if (defaultCachePolicy instanceof CachePolicy) source.setCachePolicy((CachePolicy)defaultCachePolicy);
+        if (nodeCachePolicy instanceof NodeCachePolicy) source.setNodeCachePolicy((NodeCachePolicy)nodeCachePolicy);
         if (repositoryRootUrl != null && repositoryRootUrl.length() > 0) source.setRepositoryRootUrl(repositoryRootUrl);
         if (username != null) source.setUsername(username);
         if (password != null) source.setPassword(password);

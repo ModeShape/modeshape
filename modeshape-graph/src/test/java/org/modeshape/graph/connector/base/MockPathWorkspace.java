@@ -17,9 +17,10 @@ public class MockPathWorkspace extends PathWorkspace<MockPathNode> {
     protected ExecutionContext context = new ExecutionContext();
     protected InternalNode rootNode;
 
-    public MockPathWorkspace( String name,
+    public MockPathWorkspace( ExecutionContext context,
+                              String name,
                               UUID rootNodeUuid ) {
-        super(name, rootNodeUuid);
+        super(context, name, rootNodeUuid);
     }
 
     public MockPathWorkspace( String name,
@@ -125,6 +126,10 @@ public class MockPathWorkspace extends PathWorkspace<MockPathNode> {
         parent.removeChild(target.getName());
 
         return pathNodeFor(target);
+    }
+
+    public boolean hasNodeCache() {
+        return false;
     }
 
     private class InternalNode {
