@@ -148,6 +148,18 @@ public final class GraphI18n {
     public static I18n creatingWorkspacesAllowedPropertyLabel;
     public static I18n creatingWorkspacesAllowedPropertyCategory;
 
+    public static I18n lockStrategyClassNamePropertyDescription;
+    public static I18n lockStrategyClassNamePropertyLabel;
+    public static I18n lockStrategyClassNamePropertyCategory;
+    public static I18n lockProviderClassNamePropertyDescription;
+    public static I18n lockProviderClassNamePropertyLabel;
+    public static I18n lockProviderClassNamePropertyCategory;
+
+    public static I18n lockProviderClassNotFound;
+    public static I18n lockProviderClassBadConstructor;
+    public static I18n lockStrategyClassNotFound;
+    public static I18n lockStrategyClassBadConstructor;
+
     /* XML File Connector */
     public static I18n contentPropertyDescription;
     public static I18n contentPropertyLabel;

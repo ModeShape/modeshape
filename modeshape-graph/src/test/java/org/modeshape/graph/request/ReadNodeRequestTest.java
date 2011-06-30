@@ -63,7 +63,7 @@ public class ReadNodeRequestTest extends AbstractRequestTest {
     public void shouldCreateValidRequestWithValidLocation() {
         request = new ReadNodeRequest(validPathLocation1, workspace1);
         assertThat(request.at(), is(sameInstance(validPathLocation1)));
-        assertThat(request.inWorkspace(), is(sameInstance(workspace1)));
+        assertThat(request.readWorkspace(), is(sameInstance(workspace1)));
         assertThat(request.hasError(), is(false));
         assertThat(request.getError(), is(nullValue()));
     }

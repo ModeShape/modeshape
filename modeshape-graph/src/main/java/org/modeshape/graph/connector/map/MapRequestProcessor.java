@@ -33,11 +33,11 @@ import java.util.Set;
 import java.util.UUID;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.Location;
+import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.observe.Observer;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
@@ -96,7 +96,7 @@ public class MapRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( ReadAllChildrenRequest request ) {
-        MapWorkspace workspace = getWorkspace(request, request.inWorkspace());
+        MapWorkspace workspace = getWorkspace(request, request.readWorkspace());
         MapNode node = getTargetNode(workspace, request, request.of());
         if (node == null) {
             assert request.hasError();
@@ -145,7 +145,7 @@ public class MapRequestProcessor extends RequestProcessor {
 
     @Override
     public void process( ReadAllPropertiesRequest request ) {
-        MapWorkspace workspace = getWorkspace(request, request.inWorkspace());
+        MapWorkspace workspace = getWorkspace(request, request.readWorkspace());
         MapNode node = getTargetNode(workspace, request, request.at());
         if (node == null) {
             assert request.hasError();
@@ -465,7 +465,7 @@ public class MapRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( VerifyWorkspaceRequest request ) {
-        MapWorkspace original = getWorkspace(request, request.workspaceName());
+        MapWorkspace original = getWorkspace(request, request.readWorkspace());
         if (original != null) {
             Path path = getExecutionContext().getValueFactories().getPathFactory().createRootPath();
             request.setActualRootLocation(Location.create(path, original.getRoot().getUuid()));
@@ -531,7 +531,7 @@ public class MapRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( AccessQueryRequest request ) {
-        MapWorkspace workspace = getWorkspace(request, request.workspace());
+        MapWorkspace workspace = getWorkspace(request, request.readWorkspace());
         if (workspace == null) return;
         final ExecutionContext context = getExecutionContext();
         QueryResults results = workspace.query(context, request);
@@ -549,7 +549,7 @@ public class MapRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( FullTextSearchRequest request ) {
-        MapWorkspace workspace = getWorkspace(request, request.workspace());
+        MapWorkspace workspace = getWorkspace(request, request.readWorkspace());
         if (workspace == null) return;
         final ExecutionContext context = getExecutionContext();
         QueryResults results = workspace.search(context, request.expression());

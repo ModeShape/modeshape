@@ -45,7 +45,7 @@ import org.modeshape.graph.property.Property;
  * at the bottom of the branch are not read.
  */
 @NotThreadSafe
-public class ReadBranchRequest extends CacheableRequest implements Iterable<Location> {
+public class ReadBranchRequest extends CacheableRequest implements ReadRequest, Iterable<Location> {
 
     private static final long serialVersionUID = 1L;
 
@@ -143,8 +143,19 @@ public class ReadBranchRequest extends CacheableRequest implements Iterable<Loca
      * Get the name of the workspace in which the branch exists.
      * 
      * @return the name of the workspace; never null
+     * @deprecated Use readWorkspaceName() instead
      */
+    @Deprecated
     public String inWorkspace() {
+        return workspaceName;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see ReadRequest#readWorkspace()
+     */
+    public String readWorkspace() {
         return workspaceName;
     }
 

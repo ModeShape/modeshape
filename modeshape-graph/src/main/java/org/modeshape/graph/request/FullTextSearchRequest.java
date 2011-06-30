@@ -28,10 +28,11 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.query.QueryResults.Columns;
 import org.modeshape.graph.query.QueryResults.Statistics;
 
+
 /**
  * A {@link Request} to perform a full-text search on a graph.
  */
-public class FullTextSearchRequest extends SearchRequest {
+public class FullTextSearchRequest extends SearchRequest implements ReadRequest {
 
     private static final long serialVersionUID = 1L;
 
@@ -77,10 +78,22 @@ public class FullTextSearchRequest extends SearchRequest {
      * Get the name of the workspace in which the node exists.
      * 
      * @return the name of the workspace; never null
+     * @deprecated Use readWorkspaceName() instead
      */
+    @Deprecated
     public String workspace() {
         return workspaceName;
     }
+    
+    /**
+     * {@inheritDoc}
+     * 
+     * @see ReadRequest#readWorkspace()
+     */
+    public String readWorkspace() {
+        return workspaceName;
+    }
+
 
     /**
      * Get the maximum number of results that should be returned.

@@ -402,7 +402,7 @@ public class GraphTest {
         Request request = executedRequests.poll();
         assertThat(request, is(instanceOf(AccessQueryRequest.class)));
         AccessQueryRequest access = (AccessQueryRequest)request;
-        assertThat(access.workspace(), is(workspaceName));
+        assertThat(access.readWorkspace(), is(workspaceName));
         assertThat(access.selectorName().name(), is(tableName));
         assertThat(access.resultColumns(), is(columns));
         assertThat(access.limit(), is(limit));
@@ -1500,7 +1500,7 @@ public class GraphTest {
         @Override
         public void process( VerifyWorkspaceRequest request ) {
             // Just update the actual location
-            String workspaceName = request.workspaceName();
+            String workspaceName = request.readWorkspace();
             if (workspaceName == null) workspaceName = "default";
             request.setActualWorkspaceName(workspaceName);
             request.setActualRootLocation(Location.create(context.getValueFactories().getPathFactory().createRootPath()));

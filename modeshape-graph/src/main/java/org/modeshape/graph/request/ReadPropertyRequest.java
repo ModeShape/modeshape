@@ -34,7 +34,7 @@ import org.modeshape.graph.property.Property;
 /**
  * Instruction to read a single property on the node at the specified location.
  */
-public class ReadPropertyRequest extends CacheableRequest {
+public class ReadPropertyRequest extends CacheableRequest implements ReadRequest {
 
     private static final long serialVersionUID = 1L;
 
@@ -86,8 +86,19 @@ public class ReadPropertyRequest extends CacheableRequest {
      * Get the name of the workspace in which the node exists.
      * 
      * @return the name of the workspace; never null
+     * @deprecated Use readWorkspaceName() instead
      */
+    @Deprecated
     public String inWorkspace() {
+        return workspaceName;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see ReadRequest#readWorkspace()
+     */
+    public String readWorkspace() {
         return workspaceName;
     }
 

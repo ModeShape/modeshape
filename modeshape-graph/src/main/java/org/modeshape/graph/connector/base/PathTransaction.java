@@ -49,6 +49,7 @@ import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.query.QueryResults;
 import org.modeshape.graph.request.AccessQueryRequest;
 import org.modeshape.graph.request.FullTextSearchRequest;
+import org.modeshape.graph.request.Request;
 
 /**
  * An implementation of {@link Transaction} that maintains a cache of nodes by their path.
@@ -68,10 +69,12 @@ public abstract class PathTransaction<NodeType extends PathNode, WorkspaceType e
      * 
      * @param repository the repository against which the transaction will be operating; may not be null
      * @param rootNodeUuid the UUID of the root node; may not be null
+     * @param request
      */
     protected PathTransaction( Repository<NodeType, WorkspaceType> repository,
-                               UUID rootNodeUuid ) {
-        super(repository.getContext(), repository, rootNodeUuid);
+                               UUID rootNodeUuid,
+                               Request request ) {
+        super(repository.getContext(), repository, rootNodeUuid, request);
     }
 
     /**

@@ -107,7 +107,7 @@ public class Connection<NodeType extends Node, WorkspaceType extends Workspace> 
         // Do any commands update/write?
 
         boolean commit = true;
-        Transaction<NodeType, WorkspaceType> txn = repository.startTransaction(context, request.isReadOnly());
+        Transaction<NodeType, WorkspaceType> txn = repository.startTransaction(context, request);
 
         RequestProcessor processor = repository.createRequestProcessor(txn);
         try {

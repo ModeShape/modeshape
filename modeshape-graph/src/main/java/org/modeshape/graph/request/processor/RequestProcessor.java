@@ -560,7 +560,7 @@ public abstract class RequestProcessor {
     public void process( ReadBlockOfChildrenRequest request ) {
         if (request == null) return;
         // Convert the request to a ReadAllChildrenRequest and execute it ...
-        ReadAllChildrenRequest readAll = new ReadAllChildrenRequest(request.of(), request.inWorkspace());
+        ReadAllChildrenRequest readAll = new ReadAllChildrenRequest(request.of(), request.readWorkspace());
         process(readAll);
         if (readAll.hasError()) {
             request.setError(readAll.getError());
@@ -601,7 +601,7 @@ public abstract class RequestProcessor {
         if (path != null) parentPath = path.getParent();
         if (parentPath == null) {
             // Need to find the parent path, so get the actual location of the sibling ...
-            VerifyNodeExistsRequest verifySibling = new VerifyNodeExistsRequest(request.startingAfter(), request.inWorkspace());
+            VerifyNodeExistsRequest verifySibling = new VerifyNodeExistsRequest(request.startingAfter(), request.readWorkspace());
             process(verifySibling);
             actualSiblingLocation = verifySibling.getActualLocationOfNode();
             parentPath = actualSiblingLocation.getPath().getParent();
@@ -609,7 +609,7 @@ public abstract class RequestProcessor {
         assert parentPath != null;
 
         // Convert the request to a ReadAllChildrenRequest and execute it ...
-        ReadAllChildrenRequest readAll = new ReadAllChildrenRequest(Location.create(parentPath), request.inWorkspace());
+        ReadAllChildrenRequest readAll = new ReadAllChildrenRequest(Location.create(parentPath), request.readWorkspace());
         process(readAll);
         if (readAll.hasError()) {
             request.setError(readAll.getError());
@@ -664,7 +664,7 @@ public abstract class RequestProcessor {
             if (read.depth > maxDepthPerRead) break;
 
             // Read the properties ...
-            ReadNodeRequest readNode = new ReadNodeRequest(read.location, request.inWorkspace());
+            ReadNodeRequest readNode = new ReadNodeRequest(read.location, request.readWorkspace());
             process(readNode);
             if (readNode.hasError()) {
                 request.setError(readNode.getError());
@@ -745,7 +745,7 @@ public abstract class RequestProcessor {
     public void process( ReadNodeRequest request ) {
         if (request == null) return;
         // Read the properties ...
-        ReadAllPropertiesRequest readProperties = new ReadAllPropertiesRequest(request.at(), request.inWorkspace());
+        ReadAllPropertiesRequest readProperties = new ReadAllPropertiesRequest(request.at(), request.readWorkspace());
         process(readProperties);
         if (readProperties.hasError()) {
             request.setError(readProperties.getError());
@@ -755,7 +755,7 @@ public abstract class RequestProcessor {
         request.setActualLocationOfNode(readProperties.getActualLocationOfNode());
 
         // Read the children ...
-        ReadAllChildrenRequest readChildren = new ReadAllChildrenRequest(request.at(), request.inWorkspace());
+        ReadAllChildrenRequest readChildren = new ReadAllChildrenRequest(request.at(), request.readWorkspace());
         process(readChildren);
         if (readChildren.hasError()) {
             request.setError(readChildren.getError());
@@ -783,7 +783,7 @@ public abstract class RequestProcessor {
      */
     public void process( ReadPropertyRequest request ) {
         if (request == null) return;
-        ReadAllPropertiesRequest readNode = new ReadAllPropertiesRequest(request.on(), request.inWorkspace());
+        ReadAllPropertiesRequest readNode = new ReadAllPropertiesRequest(request.on(), request.readWorkspace());
         process(readNode);
         if (readNode.hasError()) {
             request.setError(readNode.getError());
@@ -807,7 +807,7 @@ public abstract class RequestProcessor {
      */
     public void process( VerifyNodeExistsRequest request ) {
         if (request == null) return;
-        ReadAllPropertiesRequest readNode = new ReadAllPropertiesRequest(request.at(), request.inWorkspace());
+        ReadAllPropertiesRequest readNode = new ReadAllPropertiesRequest(request.at(), request.readWorkspace());
         process(readNode);
         if (readNode.hasError()) {
             request.setError(readNode.getError());
@@ -1131,7 +1131,7 @@ public abstract class RequestProcessor {
              * @see org.modeshape.graph.request.function.FunctionContext#workspace()
              */
             public String workspace() {
-                return functionRequest.inWorkspace();
+                return functionRequest.readWorkspace();
             }
 
             /**

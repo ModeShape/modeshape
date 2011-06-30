@@ -24,12 +24,12 @@
 package org.modeshape.graph.connector.inmemory;
 
 import java.util.UUID;
-import java.util.concurrent.locks.Lock;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.connector.base.MapTransaction;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.Path.Segment;
+import org.modeshape.graph.request.Request;
 
 /**
  * 
@@ -38,16 +38,13 @@ import org.modeshape.graph.property.Path.Segment;
 public class InMemoryTransaction extends MapTransaction<InMemoryNode, InMemoryWorkspace> {
 
     private final InMemoryRepository repository;
-    private final Lock lock;
 
     protected InMemoryTransaction( ExecutionContext context,
                                    InMemoryRepository repository,
                                    UUID rootNodeUuid,
-                                   Lock lock ) {
-        super(context, repository, rootNodeUuid);
+                                   Request request ) {
+        super(context, repository, rootNodeUuid, request);
         this.repository = repository;
-        this.lock = lock;
-        assert this.lock != null;
     }
 
     /**
@@ -85,34 +82,6 @@ public class InMemoryTransaction extends MapTransaction<InMemoryNode, InMemoryWo
                                        UUID parentUuid,
                                        Iterable<Property> properties ) {
         return new InMemoryNode(uuid, name, parentUuid, properties, null);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.connector.base.Transaction#commit()
-     */
-    @Override
-    public void commit() {
-        try {
-            super.commit();
-        } finally {
-            this.lock.unlock();
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.connector.base.Transaction#rollback()
-     */
-    @Override
-    public void rollback() {
-        try {
-            super.rollback();
-        } finally {
-            this.lock.unlock();
-        }
     }
 
 }

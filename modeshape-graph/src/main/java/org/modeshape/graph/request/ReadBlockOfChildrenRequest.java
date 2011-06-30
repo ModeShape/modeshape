@@ -41,7 +41,7 @@ import org.modeshape.graph.property.Property;
  * 
  * @see ReadNextBlockOfChildrenRequest
  */
-public class ReadBlockOfChildrenRequest extends CacheableRequest {
+public class ReadBlockOfChildrenRequest extends CacheableRequest implements ReadRequest {
 
     public static final int INDEX_NOT_USED = -1;
 
@@ -104,8 +104,19 @@ public class ReadBlockOfChildrenRequest extends CacheableRequest {
      * Get the name of the workspace in which the parent and children exist.
      * 
      * @return the name of the workspace; never null
+     * @deprecated Use readWorkspaceName() instead
      */
+    @Deprecated
     public String inWorkspace() {
+        return workspaceName;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see ReadRequest#readWorkspace()
+     */
+    public String readWorkspace() {
         return workspaceName;
     }
 

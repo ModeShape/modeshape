@@ -39,11 +39,12 @@ import org.modeshape.graph.query.QueryResults;
 import org.modeshape.graph.request.AccessQueryRequest;
 import org.modeshape.graph.request.FullTextSearchRequest;
 import org.modeshape.graph.request.InvalidWorkspaceException;
+import org.modeshape.graph.request.Request;
 import org.modeshape.graph.request.LockBranchRequest.LockScope;
 
 /**
  * A transaction in which all read and write operations against a repository are performed. The actual transaction instance is
- * obtained by calling {@link Repository#startTransaction(ExecutionContext,boolean)}.
+ * obtained by calling {@link Repository#startTransaction(ExecutionContext,Request)}.
  * <p>
  * Note that implementations are not required to be thread-safe, since they (and their corresponding {@link Connection}) are
  * expected to be used by a single thread.

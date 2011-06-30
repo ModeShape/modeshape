@@ -90,7 +90,7 @@ public class FunctionRequestTest extends AbstractRequestTest {
         request = new FunctionRequest(function, validPathLocation1, workspace1, inputs);
         assertThat(request.function(), is(sameInstance(function)));
         assertThat(request.at(), is(sameInstance(validPathLocation1)));
-        assertThat(request.inWorkspace(), is(sameInstance(workspace1)));
+        assertThat(request.readWorkspace(), is(sameInstance(workspace1)));
         assertThat(request.inputs().isEmpty(), is(true));
         assertThat(request.hasError(), is(false));
         assertThat(request.getError(), is(nullValue()));

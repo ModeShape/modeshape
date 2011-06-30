@@ -56,6 +56,7 @@ import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.query.QueryResults;
 import org.modeshape.graph.request.AccessQueryRequest;
 import org.modeshape.graph.request.FullTextSearchRequest;
+import org.modeshape.graph.request.Request;
 
 /**
  * An implementation of {@link Transaction} that maintains a cache of nodes by their hash (or {@link UUID}).
@@ -76,11 +77,13 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
      * @param context the execution context for this transaction; may not be null
      * @param repository the repository against which the transaction will be operating; may not be null
      * @param rootNodeUuid the UUID of the root node; may not be null
+     * @param request
      */
     protected MapTransaction( ExecutionContext context,
                               Repository<NodeType, WorkspaceType> repository,
-                              UUID rootNodeUuid ) {
-        super(context, repository, rootNodeUuid);
+                              UUID rootNodeUuid,
+                              Request request ) {
+        super(context, repository, rootNodeUuid, request);
     }
 
     /**

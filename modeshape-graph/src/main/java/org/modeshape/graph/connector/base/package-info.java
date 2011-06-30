@@ -64,7 +64,7 @@
  * </p>
  * <p>
  * The {@link org.modeshape.graph.connector.base.Repository} class manages a set of named {@link org.modeshape.graph.connector.base.Workspace} objects, but it is responsible for 
- * {@link org.modeshape.graph.connector.base.Repository#startTransaction(org.modeshape.graph.ExecutionContext, boolean) startTransaction(...) creating the Transaction}
+ * {@link org.modeshape.graph.connector.base.Repository#startTransaction(org.modeshape.graph.ExecutionContext, org.modeshape.graph.request.Request) startTransaction(...) creating the Transaction}
  * objects. Thus, Repository is an abstract class, so you must create a concrete subclass an instantiate it in
  * your BaseRepositorySource's {@link org.modeshape.graph.connector.base.BaseRepositorySource#getConnection() getConnection()} method.
  * </p>
