@@ -41,6 +41,7 @@ import java.util.UUID;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.Base64;
+import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.ObjectUtil;
 import org.modeshape.graph.connector.base.MapWorkspace;
@@ -137,7 +138,7 @@ public class DiskWorkspace extends MapWorkspace<DiskNode> implements NodeCaching
 
 
     public void destroy() {
-        this.workspaceRoot.delete();
+        FileUtil.delete(workspaceRoot);
         repository.diskSource().removeNodeCachePolicyChangedListener(this);
     }
 
