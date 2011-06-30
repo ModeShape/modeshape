@@ -34,7 +34,6 @@
                      mode:retryLimit="3" mode:defaultWorkspaceName="default" >
         </mode:source>
 -->        
- <!-- 
         <mode:source jcr:name="JPA Store"
                      mode:classname="org.modeshape.connector.store.jpa.JpaSource"
 		        	mode:model="Simple"
@@ -51,8 +50,7 @@
 		        	mode:predefinedWorkspaceNames="default, otherWorkspace"
 		        	mode:showSql="${jpaSource.showSql}"
 		            mode:creatingWorkspacesAllowed="true"
-                     mode:retryLimit="3" mode:defaultWorkspaceName="default" >
+                    mode:defaultWorkspaceName="default" >
         </mode:source>
- -->
     </mode:sources>
 </configuration>
