@@ -175,7 +175,7 @@
 		<jpaSource.referentialIntegrityEnforced>true</jpaSource.referentialIntegrityEnforced>
 		<jpaSource.largeValueSizeInBytes>150</jpaSource.largeValueSizeInBytes>
 		<jpaSource.autoGenerateSchema>create</jpaSource.autoGenerateSchema>
-		<jpaSource.compressData />
+		<jpaSource.compressData>true</jpaSource.compressData>
 		<jpaSource.cacheTimeToLiveInMilliseconds />
 		<jpaSource.creatingWorkspacesAllowed />
 		<jpaSource.defaultWorkspaceName />
@@ -920,6 +920,11 @@
 			<dependency>
 				<groupId>org.modeshape</groupId>
 				<artifactId>modeshape-connector-store-jpa</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.modeshape</groupId>
+				<artifactId>modeshape-connector-disk</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>

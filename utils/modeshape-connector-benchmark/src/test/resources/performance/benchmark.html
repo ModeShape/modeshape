@@ -1,0 +1,39 @@
+<html>
+	<head>
+	<title>ModeShape Benchmarks</title>
+	<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+	<script type="text/javascript">
+		google.load("visualization", "1", {packages:["corechart"]});
+		google.setOnLoadCallback(drawChart);
+		function drawChart() {
+/*
+			var data = new google.visualization.DataTable();
+			data.addColumn('number', 'In-Memory Store');
+			data.addColumn('number', 'File Store');
+			data.addRows(1);
+			data.setValue(0, 0, 1); // In-Memory Store Value
+			data.setValue(0, 1, 30);  // File Store Value
+
+			var chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
+			chart.draw(data, {width: 500, height: 360, hAxis: { textPosition: 'in'}, title: 'Read Repeated Path from 3x5 Tree w/ 7 properties (In-Memory Store)'});
+
+*/
+			$DATA$
+		}
+	</script>
+	<style media="screen" type="text/css">
+    h1 { font-size: x-large; text-align: center; font-family: Arial, sans-serif; }
+    h2 { font-size: large; text-align: center; font-family: Arial, sans-serif; }
+    h3 { font-size: medium; text-align: center; font-family: Arial, sans-serif; }
+	</style>
+</head>
+
+<body>
+<h1>ModeShape Benchmark Results</h1>
+<h3>Lower Is Better</h3>
+<p/>
+<table><tr>
+$DIVS$
+</tr></table>
+</body>
+</html>
