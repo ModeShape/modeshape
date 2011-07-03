@@ -29,7 +29,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import org.modeshape.common.annotation.ThreadSafe;
-import org.hibernate.ejb.Ejb3Configuration;
 import org.modeshape.graph.connector.RepositoryConnection;
 
 /**
@@ -50,13 +49,13 @@ import org.modeshape.graph.connector.RepositoryConnection;
 @ThreadSafe
 public class EntityManagers {
 
-    private final Ejb3Configuration configuration;
+    // private final Ejb3Configuration configuration;
     private final Map<EntityManager, AtomicInteger> referenceCounts = new HashMap<EntityManager, AtomicInteger>();
     private EntityManagerFactory factory;
-    private boolean canClose;
+    private boolean canClose = false;
 
-    EntityManagers( Ejb3Configuration configuration ) {
-        this.configuration = configuration;
+    EntityManagers( EntityManagerFactory factory ) {
+        this.factory = factory;
     }
 
     /**
@@ -72,7 +71,7 @@ public class EntityManagers {
     public synchronized EntityManager checkout() {
         if (factory == null) {
             // Create the factory ...
-            factory = configuration.buildEntityManagerFactory();
+            // factory = configuration.buildEntityManagerFactory();
             assert referenceCounts.isEmpty();
             canClose = false;
         }

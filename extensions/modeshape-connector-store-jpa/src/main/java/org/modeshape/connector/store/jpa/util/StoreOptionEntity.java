@@ -37,7 +37,7 @@ import org.modeshape.connector.store.jpa.Model;
  * An option for the store. This is typically used to save store-specific values.
  * <p>
  * This JPA entity is always added to the {@link Ejb3Configuration} in the {@link JpaSource#getConnection() JpaSource}, and
- * therefore should not be {@link Model#configure(Ejb3Configuration) added to the configuration} by a {@link Model}.
+ * therefore should not be {@link Model#getEntityClasses() added to the configuration} by a {@link Model}.
  * </p>
  */
 @Entity( name = "MODE_OPTIONS" )

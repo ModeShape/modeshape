@@ -28,6 +28,7 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import org.hibernate.cfg.Environment;
 import org.hibernate.ejb.Ejb3Configuration;
 import org.junit.After;
 import org.junit.Before;
@@ -73,7 +74,9 @@ public class JdbcConnectionTest {
 
             // Connect to the database ...
             Ejb3Configuration configurator = new Ejb3Configuration();
-            model.configure(configurator);
+            for (Class<?> clazz : model.getEntityClasses()) {
+                configurator.addAnnotatedClass(clazz);
+            }
             configurator.setProperty("hibernate.dialect", source.getDialect());
             configurator.setProperty("hibernate.connection.driver_class", source.getDriverClassName());
             configurator.setProperty("hibernate.connection.username", source.getUsername());
@@ -83,6 +86,7 @@ public class JdbcConnectionTest {
             configurator.setProperty("hibernate.format_sql", "true");
             configurator.setProperty("hibernate.use_sql_comments", "true");
             configurator.setProperty("hibernate.hbm2ddl.auto", "create");
+            configurator.setProperty(Environment.USE_SECOND_LEVEL_CACHE, "false");
             factory = configurator.buildEntityManagerFactory();
             manager = factory.createEntityManager();
         }
