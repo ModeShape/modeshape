@@ -31,10 +31,11 @@ import org.modeshape.jcr.api.SecurityContext;
  * Servlet-based {@link SecurityContext security context} that assumes servlet-based authentication and provides authorization
  * through the {@link HttpServletRequest#isUserInRole(String) servlet role-checking mechanism}.
  * <p>
- * This security context is really only valid for the life of the {@link HttpServletRequest servlet request} and should
- * only be used to support longer-lasting session scopes with great care. * 
+ * This security context is really only valid for the life of the {@link HttpServletRequest servlet request} and should only be
+ * used to support longer-lasting session scopes with great care. *
  * </p>
  */
+@Deprecated
 public class ServletSecurityContext implements SecurityContext {
 
     private final String userName;

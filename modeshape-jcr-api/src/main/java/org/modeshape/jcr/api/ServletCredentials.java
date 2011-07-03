@@ -21,11 +21,10 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.web.jcr;
+package org.modeshape.jcr.api;
 
 import javax.jcr.Credentials;
 import javax.servlet.http.HttpServletRequest;
-import org.modeshape.jcr.api.SecurityContextCredentials;
 
 /**
  * A {@link Credentials} implementation that assumes servlet-based authentication and provides authorization through the
@@ -34,20 +33,31 @@ import org.modeshape.jcr.api.SecurityContextCredentials;
  * These credentials are really only valid for the life of the {@link HttpServletRequest servlet request}, and thus should be used
  * to obtain a Session for each request.
  * </p>
- * 
- * @deprecated Use {@link org.modeshape.jcr.api.ServletCredentials} instead
+ * <p>
+ * Note that this class can only be used if the {@link HttpServletRequest} class is on the classpath.
+ * </p>
  */
-@Deprecated
-public class ServletCredentials extends SecurityContextCredentials {
+public class ServletCredentials implements Credentials {
 
     private static final long serialVersionUID = 1L;
 
+    private transient HttpServletRequest request;
+
     /**
-     * Create a {@link ServletSecurityContext} with the supplied {@link HttpServletRequest servlet information}.
+     * Create a {@link Credentials} using the supplied {@link HttpServletRequest servlet information}.
      * 
-     * @param request the servlet request; may not be null
+     * @param request the servlet request
      */
     public ServletCredentials( HttpServletRequest request ) {
-        super(new ServletSecurityContext(request));
+        this.request = request;
+    }
+
+    /**
+     * Get the Servlet request that this credentials applies to.
+     * 
+     * @return the request, or null if this credentials is no longer valid
+     */
+    public HttpServletRequest getRequest() {
+        return request;
     }
 }

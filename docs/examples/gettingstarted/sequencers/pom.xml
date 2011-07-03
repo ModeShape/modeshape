@@ -83,6 +83,15 @@
       <groupId>javax.jcr</groupId>
       <artifactId>jcr</artifactId>
     </dependency>
+    <!--
+      PicketBox (JAAS implementation used in test cases)
+    -->
+    <dependency>
+      <groupId>org.picketbox</groupId>
+      <artifactId>picketbox-bare</artifactId>
+        <version>${picketbox.version}</version>
+        <scope>compile</scope>
+    </dependency>
     <!-- 
       Test cases use JUnit
     -->

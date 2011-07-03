@@ -31,6 +31,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.jcr.JcrConfiguration;
+import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.JcrSecurityContextCredentials;
 import org.modeshape.jcr.JcrTools;
 import org.modeshape.sequencer.ddl.StandardDdlLexicon;
@@ -40,6 +41,7 @@ import org.modeshape.test.integration.sequencer.ddl.DdlIntegrationTestUtil;
 /**
  *
  */
+@SuppressWarnings( "deprecation" )
 public class OracleDdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
     private String resourceFolder = ddlTestResourceRootFolder + "/dialect/oracle/";
 
@@ -67,6 +69,7 @@ public class OracleDdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
               .addNodeTypes(getUrl(resourceFolder + "OracleDdl.cnd"))
               .registerNamespace(StandardDdlLexicon.Namespace.PREFIX, StandardDdlLexicon.Namespace.URI)
               .registerNamespace(OracleDdlLexicon.Namespace.PREFIX, OracleDdlLexicon.Namespace.URI)
+              .setOption(JcrRepository.Option.USE_SECURITY_CONTEXT_CREDENTIALS, "true")
               .setSource(repositorySource);
         // Set up the DDL sequencer ...
         config.sequencer("DDL Sequencer")

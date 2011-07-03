@@ -89,6 +89,7 @@
 -->
             <mode:options jcr:primaryType="mode:options">
                 <projectNodeTypes jcr:primaryType="mode:option" mode:value="false"/>
+                <useSecurityContextCredentials jcr:primaryType="mode:option" mode:value="true"/>
             </mode:options>
             <jcr:nodeTypes mode:resource="/tck/tck_test_types.cnd" />
             <!-- Define any namespaces for this repository, other than those already defined by JCR or ModeShape

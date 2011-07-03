@@ -220,6 +220,7 @@
 		<jdbc.mssql2008.version>2.0.1008.2</jdbc.mssql2008.version>
 		<java.version>1.6</java.version>
 		<java.version.jcr.graph>1.5</java.version.jcr.graph>
+		<javax.servlet.version>2.5</javax.servlet.version>
 		<!--
 		Maven plugin versions
 		-->
@@ -1068,6 +1069,12 @@
 				<version>${project.version}</version>
 				<scope>test</scope>
 			</dependency>
+      <dependency>
+        <groupId>javax.servlet</groupId>
+        <artifactId>servlet-api</artifactId>
+        <version>${javax.servlet.version}</version>
+				<scope>provided</scope>
+      </dependency>
 			<!-- 
 		    Time and Date
 		    -->

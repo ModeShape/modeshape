@@ -38,6 +38,7 @@ import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.graph.SecurityContext;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
+import org.modeshape.jcr.JcrRepository.Option;
 
 /**
  *
@@ -51,17 +52,18 @@ public class JcrToolsTest {
     private Problems problems;
     private Node NULL_NODE;
     private String NULL_STRING;
-    
+
     private static final String DEF_TYPE = "nt:unstructured";
-    
+
+    @SuppressWarnings( "deprecation" )
     @Before
-    public void before()  throws Exception {
+    public void before() throws Exception {
         tools = new JcrTools();
-        
+
         String repositoryName = "ddlRepository";
         String workspaceName = "default";
         String repositorySource = "ddlRepositorySource";
-                
+
         JcrConfiguration config = new JcrConfiguration();
         // Set up the in-memory source where we'll upload the content and where the sequenced output will be stored ...
         config.repositorySource(repositorySource)
@@ -69,7 +71,7 @@ public class JcrToolsTest {
               .setDescription("The repository for our content")
               .setProperty("defaultWorkspaceName", workspaceName);
         // Set up the JCR repository to use the source ...
-        config.repository(repositoryName).setSource(repositorySource);
+        config.repository(repositoryName).setSource(repositorySource).setOption(Option.USE_SECURITY_CONTEXT_CREDENTIALS, "true");
 
         config.save();
         this.engine = config.build();
@@ -77,17 +79,16 @@ public class JcrToolsTest {
 
         this.session = this.engine.getRepository(repositoryName)
                                   .login(new JcrSecurityContextCredentials(new MyCustomSecurityContext()), workspaceName);
-        
+
         Node rootNode = session.getRootNode();
-        
+
         personNode = rootNode.addNode("Person");
         personNode.setProperty("First Name", "Ryan");
         personNode.setProperty("Middle Name", "Joseph");
         personNode.setProperty("Last Name", "Franklin");
         personNode.setProperty("Age", 37);
-        personNode.setProperty("Children", new String[] {"Sally", "Brent", "Michael"} );
-        
-        
+        personNode.setProperty("Children", new String[] {"Sally", "Brent", "Michael"});
+
         addressNode = personNode.addNode("Address");
         addressNode.setProperty("Street", "Frost Avenue");
         addressNode.setProperty("House Number", 166);
@@ -98,7 +99,7 @@ public class JcrToolsTest {
 
         problems = new SimpleProblems();
     }
-    
+
     @After
     public void afterEach() throws Exception {
         if (this.session != null) {
@@ -108,7 +109,7 @@ public class JcrToolsTest {
             this.engine.shutdown();
         }
     }
-    
+
     protected class MyCustomSecurityContext implements SecurityContext {
         /**
          * {@inheritDoc}
@@ -138,11 +139,10 @@ public class JcrToolsTest {
         }
     }
 
-
-
     /**
      * Test method for {@link org.modeshape.jcr.JcrTools#getNode(javax.jcr.Node, java.lang.String, boolean)}.
-     * @throws RepositoryException 
+     * 
+     * @throws RepositoryException
      */
     @Test
     public void shouldGetNode() throws RepositoryException {
@@ -151,7 +151,7 @@ public class JcrToolsTest {
         assertThat(node.getName(), is("Person"));
         assertThat(problems.size(), is(0));
     }
-    
+
     @Test
     public void shouldFailGetNodeWithNoDoesntExist() {
         try {
@@ -160,7 +160,7 @@ public class JcrToolsTest {
             assertTrue(e instanceof PathNotFoundException);
         }
     }
-    
+
     @Test
     public void shouldFailGetNodeNullParent() {
         try {
@@ -169,7 +169,7 @@ public class JcrToolsTest {
             assertTrue(e instanceof IllegalArgumentException);
         }
     }
-    
+
     @Test
     public void shouldFailGetNodeNullPath() {
         try {
@@ -190,7 +190,8 @@ public class JcrToolsTest {
 
     /**
      * Test method for {@link org.modeshape.jcr.JcrTools#findOrCreateNode(javax.jcr.Session, java.lang.String)}.
-     * @throws RepositoryException 
+     * 
+     * @throws RepositoryException
      */
     @Test
     public void testCreateNodeSessionPath() throws RepositoryException {
@@ -198,7 +199,7 @@ public class JcrToolsTest {
         assertNotNull(node);
         assertThat(node.getName(), is("Hobby"));
     }
-    
+
     @Test
     public void testFindNodeSessionPath() throws RepositoryException {
         Node node = tools.findOrCreateNode(session, "Person");
@@ -215,7 +216,7 @@ public class JcrToolsTest {
             assertTrue(e instanceof IllegalArgumentException);
         }
     }
-    
+
     @Test
     public void shouldFailFindOrCreateNodeSessionPathNullPath() {
         try {
@@ -227,7 +228,8 @@ public class JcrToolsTest {
 
     /**
      * Test method for {@link org.modeshape.jcr.JcrTools#findOrCreateNode(javax.jcr.Session, java.lang.String, java.lang.String)}.
-     * @throws RepositoryException 
+     * 
+     * @throws RepositoryException
      */
     @Test
     public void testCreateNodeSessionPathType() throws RepositoryException {
@@ -235,7 +237,7 @@ public class JcrToolsTest {
         assertNotNull(node);
         assertThat(node.getName(), is("Hobby"));
     }
-    
+
     @Test
     public void testFindNodeSessionPathType() throws RepositoryException {
         Node node = tools.findOrCreateNode(session, "Person", DEF_TYPE);
@@ -252,7 +254,7 @@ public class JcrToolsTest {
             assertTrue(e instanceof IllegalArgumentException);
         }
     }
-    
+
     @Test
     public void shouldFailFindOrCreateNodeSessionPathTypeNullPath() {
         try {
@@ -263,8 +265,11 @@ public class JcrToolsTest {
     }
 
     /**
-     * Test method for {@link org.modeshape.jcr.JcrTools#findOrCreateNode(javax.jcr.Session, java.lang.String, java.lang.String, java.lang.String)}.
-     * @throws RepositoryException 
+     * Test method for
+     * {@link org.modeshape.jcr.JcrTools#findOrCreateNode(javax.jcr.Session, java.lang.String, java.lang.String, java.lang.String)}
+     * .
+     * 
+     * @throws RepositoryException
      */
     @Test
     public void testCreateNodeSessionPathTypeType() throws RepositoryException {
@@ -272,7 +277,7 @@ public class JcrToolsTest {
         assertNotNull(node);
         assertThat(node.getName(), is("Hobby"));
     }
-    
+
     @Test
     public void testFindNodeSessionPathTypeType() throws RepositoryException {
         Node node = tools.findOrCreateNode(session, "Person", DEF_TYPE, DEF_TYPE);
@@ -289,7 +294,7 @@ public class JcrToolsTest {
             assertTrue(e instanceof IllegalArgumentException);
         }
     }
-    
+
     @Test
     public void shouldFailFindOrCreateNodeSessionPathTypeTypeNullPath() {
         try {
@@ -298,10 +303,12 @@ public class JcrToolsTest {
             assertTrue(e instanceof IllegalArgumentException);
         }
     }
-    
+
     /**
-     * Test method for {@link org.modeshape.jcr.JcrTools#findOrCreateNode(javax.jcr.Node, java.lang.String, java.lang.String, java.lang.String)}.
-     * @throws RepositoryException 
+     * Test method for
+     * {@link org.modeshape.jcr.JcrTools#findOrCreateNode(javax.jcr.Node, java.lang.String, java.lang.String, java.lang.String)}.
+     * 
+     * @throws RepositoryException
      */
     @Test
     public void shouldCreateNodeNodePathTypeType() throws RepositoryException {
@@ -309,14 +316,14 @@ public class JcrToolsTest {
         assertNotNull(node);
         assertThat(node.getName(), is("Hobby"));
     }
-    
+
     @Test
     public void shouldFindNodeParentPathTypeType() throws RepositoryException {
         Node node = tools.findOrCreateNode(personNode, "Address", DEF_TYPE, DEF_TYPE);
         assertNotNull(node);
         assertThat(node.getName(), is("Address"));
     }
-    
+
     @Test
     public void shouldFailFindOrCreateNodeNodePathTypeTypeNullNode() {
         try {
@@ -325,7 +332,7 @@ public class JcrToolsTest {
             assertTrue(e instanceof IllegalArgumentException);
         }
     }
-    
+
     @Test
     public void shouldFailFindOrCreateNodeNodePathTypeTypeNullPath() {
         try {
@@ -337,7 +344,8 @@ public class JcrToolsTest {
 
     /**
      * Test method for {@link org.modeshape.jcr.JcrTools#findOrCreateChild(javax.jcr.Node, java.lang.String)}.
-     * @throws RepositoryException 
+     * 
+     * @throws RepositoryException
      */
     @Test
     public void shouldCreateChildNodeWithParentName() throws RepositoryException {
@@ -345,14 +353,14 @@ public class JcrToolsTest {
         assertNotNull(childNode);
         assertThat(childNode.getName(), is("Hobby"));
     }
-    
+
     @Test
     public void shouldFindChildNodeWithParentName() throws RepositoryException {
         Node childNode = tools.findOrCreateChild(personNode, "Address");
         assertNotNull(childNode);
         assertThat(childNode.getName(), is("Address"));
     }
-    
+
     @Test
     public void shouldFailFindOrCreateChildNodeStringNullNode() {
         try {
@@ -361,7 +369,7 @@ public class JcrToolsTest {
             assertTrue(e instanceof IllegalArgumentException);
         }
     }
-    
+
     @Test
     public void shouldFailFindOrCreateChildNodeStringNullPath() {
         try {
@@ -373,7 +381,8 @@ public class JcrToolsTest {
 
     /**
      * Test method for {@link org.modeshape.jcr.JcrTools#findOrCreateChild(javax.jcr.Node, java.lang.String, java.lang.String)}.
-     * @throws RepositoryException 
+     * 
+     * @throws RepositoryException
      */
     @Test
     public void testCreateChildNodeWithParentNameType() throws RepositoryException {
@@ -381,14 +390,14 @@ public class JcrToolsTest {
         assertNotNull(childNode);
         assertThat(childNode.getName(), is("Hobby"));
     }
-    
+
     @Test
     public void testFindChildNodeWithParentNameType() throws RepositoryException {
         Node childNode = tools.findOrCreateChild(personNode, "Address", DEF_TYPE);
         assertNotNull(childNode);
         assertThat(childNode.getName(), is("Address"));
     }
-    
+
     @Test
     public void shouldFailFindOrCreateChildWithNullParentNameType() {
         try {
@@ -397,7 +406,7 @@ public class JcrToolsTest {
             assertTrue(e instanceof IllegalArgumentException);
         }
     }
-    
+
     @Test
     public void shouldFailFindOrCreateChildNodeStringStringNullPath() {
         try {

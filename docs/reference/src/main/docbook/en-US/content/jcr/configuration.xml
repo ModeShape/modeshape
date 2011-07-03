@@ -413,6 +413,8 @@ config.repository("repository A")
 					<entry>
 						The JAAS <ulink url='&Java;javax/security/auth/login/Configuration.html'>JAAS application configuration name</ulink>
 						that specifies which login module should be used to validate credentials. By default, "modeshape-jcr" is used.
+						Set the option with an empty (zero-length) value to completely turn off JAAS authentication (see the
+						<link linkend="jcr-built-in-auth-providers">Built-In Providers section</link> for details).
 						The enumeration literal is <ulink url='&API;jcr/JcrRepository.Option.html#JAAS_LOGIN_CONFIG_NAME'>Option.JAAS_LOGIN_CONFIG_NAME</ulink>
 					</entry>
 				</row>
@@ -702,6 +704,18 @@ config.repository("repository A")
 						</para>
 					</entry>
 				</row>				
+				<row>
+					<entry>useSecurityContextCredentials</entry>
+					<entry>
+						Older versions of ModeShape allowed client applications to pass in &Credentials; implementations that had a <code>getSecurityContext()</code> method
+						that returned a &SecurityContext; object, which ModeShape would then use for authorization. However, since ModeShape now provides support for
+						customized authentication and authorization modules, this is no longer needed and has been deprecated. If, however, your applications were written
+						to use this &SecurityContextCredentials; implementation, then you can enable this option to turn the old behavior back on. Note, however, that
+						this option will be removed in the next major release.
+						Value is either "true" or "false" (default).
+						The enumeration literal is <ulink url='&API;jcr/JcrRepository.Option.html#USE_SECURITY_CONTEXT_CREDENTIALS'>Option.USE_SECURITY_CONTEXT_CREDENTIALS</ulink>
+					</entry>
+				</row>
 			</tbody>
 		</tgroup>
 	</table>
@@ -876,6 +890,293 @@ config.repository("repository A")
   ...
 </configuration>
 ]]></programlisting>
+  </sect1>
+  <sect1 id="jcr-security">
+	  <title>Authentication and Authorization</title>
+	  <para>
+	    ModeShape 2.6 introduced pluggable authentication and authorization modules. Several modules are included and configured out-of-the-box,
+	    but it is now possible to implement and configure customized authentication and authorization logic. This section describes how
+	    these modules work, what's there out-of-the-box, and how to implement and add your own modules.
+	  </para>
+	  <para>
+	    The &AuthenticationProvider; interface defines a single method:
+	  </para>
+ 		<programlisting language="JAVA" role="JAVA"><![CDATA[public interface AuthenticationProvider {
+
+  /**
+   * Authenticate the user that is using the supplied credentials. If the supplied
+   * credentials are authenticated, this method should construct an ExecutionContext 
+   * that reflects the authenticated environment, including the context's valid
+   * SecurityContext that will be used for authorization throughout the Session.
+   * <p>
+   * Note that each provider is handed a map into which it can place name-value 
+   * pairs that will be used in the Session attributes of the Session that results
+   * from this authentication attempt. ModeShape will ignore any attributes if 
+   * this provider does not authenticate the credentials.
+   * </p>
+   * 
+   * @param credentials the user's JCR credentials, which may be an 
+   *  AnonymousCredentials if authenticating as an anonymous user
+   * @param repositoryName the name of the JCR repository; never null
+   * @param workspaceName the name of the JCR workspace; never null
+   * @param repositoryContext the execution context of the repository, which 
+   * may be wrapped by this method
+   * @param sessionAttributes the map of name-value pairs that will be placed 
+   *  into the Session's attributes; never null
+   * @return the execution context for the authenticated user, or null if 
+   * this provider could not authenticate the user
+   */
+  ExecutionContext authenticate( Credentials credentials,
+                                 String repositoryName,
+                                 String workspaceName,
+                                 ExecutionContext repositoryContext,
+                                 Map<String,Object> sessionAttributes );
+
+}]]></programlisting>
+    <para>
+      When a client calls one of the &Repository;'s <code>login</code> methods, ModeShape calls the <code>authenticate</code> method
+      on each of the &AuthenticationProvider; implementations registered with the Repository. As soon as one provider returns a non-null
+      &ExecutionContext;, the caller is authenticated and ModeShape uses that ExecutionContext within the resulting &Session;. 
+    </para>
+    <para>
+      When the client uses the &Session; and attempts to perform actions on the content, ModeShape uses the ExecutionContext's
+      &SecurityContext; to determine whether the user has the necessary privileges. If the &SecurityContext; object implements the
+      &AuthorizationProvider; interface, then ModeShape will call the <code>hasPermission(...)</code> method, passing in the
+      ExecutionContext, the repository name, the name of the source used for the repository, the workspace name, the path of
+      the node upon which the actions are being applied, and the array of actions (see &ModeShapePermissions; for the possible values):
+    </para>
+ 		<programlisting language="JAVA" role="JAVA"><![CDATA[public interface AuthorizationProvider {
+
+  /**
+   * Determine if the supplied execution context has permission for all of the 
+   * named actions in the named workspace. If not all actions are allowed, the
+   * method returns false.
+   * 
+   * @param context the context in which the subject is performing the 
+   *        actions on the supplied workspace
+   * @param repositoryName the name of the repository containing the 
+   *        workspace content
+   * @param repositorySourceName the name of the repository's source
+   * @param workspaceName the name of the workspace in which the path exists
+   * @param path the path on which the actions are occurring
+   * @param actions the list of ModeShapePermissions actions to check
+   * @return true if the subject has privilege to perform all of the named 
+   *         actions on the content at the supplied path in the
+   *         given workspace within the repository, or false otherwise
+   */
+  boolean hasPermission( ExecutionContext context,
+                         String repositoryName,
+                         String repositorySourceName,
+                         String workspaceName,
+                         Path path,
+                         String... actions );
+}]]></programlisting>
+    <para>
+      If the &SecurityContext; does not implement &AuthorizationProvider;, then ModeShape uses role-based authorization by
+      <link linkend="modeshape_jcr_security">mapping the actions into roles</link> and then for each role calling the 
+      <link linkend="security">hasRole(...) method</link> on &SecurityContext;. Only if all of these invocations returns <code>true</code>
+      will the operation be allowed to continue.
+    </para>
+    <sect2 id="jcr-built-in-auth-providers">
+	    <title>Built-in Providers</title>
+	    <para>
+	      ModeShape comes with several &AuthorizationProvider; implementations that are automatically configured with every Repository,
+	      depending upon other settings and options. These providers are as follows:
+				<itemizedlist>
+					<listitem>
+						<para>&JaasProvider; uses <link linkend="jaas_security">JAAS</link> for all authentication and role-based authorization. 
+						 This provider authenticates clients that login to the &Repository; with a &SimpleCredentials; object, where the username and password match that
+						 in the JAAS policy, or a &JaasCredentials; constructed with a specific and already-authenticated JAAS &LoginContext;.
+						 This provider can be disabled by setting the <link linkend="jcr_repository_options">jaasLoginConfigName configuration option</link>
+						 to an empty (i.e., zero-length) value; otherwise, the option defines the name of the JAAS login configuration and
+						 will default to "modeshape-jcr" if not explicitly set.</para>
+					</listitem>
+					<listitem>
+						<para>&ServletProvider; delegates all authentication and role-based authorization to the servlet framework.
+						 This provider authenticates clients that login to the &Repository; with a &ServletCredentials; object, which can be constructed with the
+						 &HttpServletRequest;. Note this does require obtaining a session for each servlet request, which is actually how
+						 the JCR API was intended to be used within web applications.</para>
+					</listitem>
+					<listitem>
+						<para>&AnonymousProvider; will allow clients without &Credentials; to operate upon the repository, and will
+						 use role-based authorization based upon the roles defined by the 
+						 <link linkend="jcr_repository_options">anonymousUserRoles configuration option</link>.
+						 This provider authenticates clients that provide an &AnonymousCredentials; to the &Repository;'s <code>login(...)</code> methods or
+						 use one of the <code>login(...)</code> methods that does not take a &Credentials; object.</para>
+					</listitem>
+				</itemizedlist>
+				<note>
+				  <para>
+				    The &SecurityContextProvider; is also configured only when the
+				    <link linkend="jcr_repository_options">useSecurityContextCredentials configuration option</link> is set to 'true'.
+				    This provider authenticates clients that pass a &SecurityContextCredentials; object, and delegates all authentication to
+				    the embedded SecurityContext. This deprecated approach not enabled by default, and will be removed in the next major release of ModeShape.
+				    It remains in place to enable applications that use this approach to upgrade to ModeShape 2.6 (or later) without breaking their
+				    authentication mechanism.
+				  </para>
+				</note>
+	    </para>
+    </sect2>
+    <sect2 id="jcr-custom-auth-providers">
+	    <title>Custom Providers</title>
+	    <para>
+	      It is possible to provide your own authentication and authorization logic by providing one (or more) classes that implements
+	      the &AuthorizationProvider; interface, specifying the names of these classes in the configuration (see below), and making the classes available on the
+	      correct classpath.
+	    </para>
+	    <para>
+	      Implementing the &AuthorizationProvider; interface is pretty straightforward. Your class needs a no-arg constructor, and the
+	      <code>authenticate</code> method must simply authenticate the credentials for the named repository and workspace. If the
+	      credentials are not authenticated, simply return null. Otherwise, simply create an &ExecutionContext; instance (from the
+	      ExecutionContext supplied in the <code>repositoryContext</code> parameter) to contain an appropriate &SecurityContext; instance
+	      for the authenticated user. As mentioned above, the &SecurityContext; should also implement the &AuthorizationProvider; interface
+	      for non-role-based authorization.
+	    </para>
+	    <para>
+	      For example, let's imagine that our JCR application has its own authentication and authorization system. We can integrate with
+	      that by create a new &Credentials; implementation called <code>MyAppCredentials</code> to encapsulate any information needed by
+	      the authentication/authorization system, which we'll assume is accessed by a singleton class <code>SecurityService</code>.
+	      We can then implement &AuthenticationProvider; as follows:
+	    </para>
+ 		<programlisting language="JAVA" role="JAVA"><![CDATA[public class MyAppAuthorizationProvider implements AuthorizationProvider {
+
+  private String appName;
+  
+  /**
+   * Any public JavaBean properties can be set in the configuration
+   */
+  public void setApplicationName( String appName ) {
+    this.appName = appName;
+  }
+
+  /**
+   * Authenticate the user that is using the supplied credentials. If the supplied
+   * credentials are authenticated, this method should construct an ExecutionContext
+   * that reflects the authenticated environment, including the context's valid
+   * SecurityContext that will be used for authorization throughout the Session.
+   * <p>
+   * Note that each provider is handed a map into which it can place name-value 
+   * pairs that will be used in the Session attributes of the Session that results
+   * from this authentication attempt. ModeShape will ignore any attributes if 
+   * this provider does not authenticate the credentials.
+   * </p>
+   * 
+   * @param credentials the user's JCR credentials, which may be an 
+   *  AnonymousCredentials if authenticating as an anonymous user
+   * @param repositoryName the name of the JCR repository; never null
+   * @param workspaceName the name of the JCR workspace; never null
+   * @param repositoryContext the execution context of the repository, which 
+   * may be wrapped by this method
+   * @param sessionAttributes the map of name-value pairs that will be placed 
+   *  into the Session's attributes; never null
+   * @return the execution context for the authenticated user, or null if 
+   * this provider could not authenticate the user
+   */
+  public ExecutionContext authenticate( Credentials credentials,
+                                        String repositoryName,
+                                        String workspaceName,
+                                        ExecutionContext repositoryContext,
+                                        Map<String,Object> sessionAttributes );
+    if ( credentials instanceof MyAppCredentials ) {
+      // Try to authenticate ...
+      MyAppCredentials appCreds = (MyAppCredentials)credentials;
+      String user = appCreds.getUser();
+      Object token = appCreds.getToken();
+      AppCreds creds = SecurityService.login(appName,user,token);
+      if ( creds != null ) {
+        // We're in ...
+        SecurityContext securityContext = new MyAppSecurityContext(creds);
+        return repositoryContext.with(securityContext);
+      }
+    }
+    return null;    
+  }
+}]]></programlisting>
+      <para>
+        where the <code>MyAppSecurityContext</code> is as follows:
+      </para>
+ 		<programlisting language="JAVA" role="JAVA"><![CDATA[public class MyAppSecurityContext 
+            implements SecurityContext, AuthorizationProvider {
+  private final AppCreds creds;
+  public MyAppSecurityContext( AppCreds creds ) {
+    this.creds = creds;
+  }
+ 	
+  /**
+   * {@inheritDoc SecurityContext#getUserName()}
+   * 
+   * @see SecurityContext#getUserName()
+   */
+  public final String getUserName() {
+      return creds.getUser();
+  }
+
+  /**
+   * {@inheritDoc SecurityContext#hasRole(String)}
+   * 
+   * @see SecurityContext#hasRole(String)
+   */
+  public final boolean hasRole( String roleName ) {
+      // shouldn't be called since we've implemented AuthorizationProvider
+      return false;
+  }
+
+  /**
+   * {@inheritDoc}
+   * 
+   * @see org.modeshape.graph.SecurityContext#logout()
+   */
+  public void logout() {
+      creds.logout();
+  }
+  
+  /**
+   * {@inheritDoc}
+   * 
+   * @see org.modeshape.jcr.security.AuthorizationProvider.hasPermission
+   */
+  public boolean hasPermission( ExecutionContext context,
+                           String repositoryName,
+                           String repositorySourceName,
+                           String workspaceName,
+                           Path path,
+                           String... actions ) {
+    // This is imaginary and simplistic, but you'd implement any authorization logic here ...
+    return this.creds.isAuthorized(repositoryName,workspaceName,path);
+  }
+}]]></programlisting>
+      <para>
+        Then we just need to configure the Repository to use this provider. In the ModeShape configuration files, there is an optional
+        "<code>mode:authenticationProviders</code>" child element of "<code>mode:repository</code>", and within this fragment
+        you can define zero or more authentication providers by specifying a name, the class, an optional description,
+        and optionally any bean properties that should be called upon instantiation. (Note that the class will be instantiated
+        only once per Repository instance). Here's an example configuration file:
+      </para>
+   	<programlisting language="XML" role="XML"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<configuration xmlns:mode="http://www.modeshape.org/1.0" 
+	             xmlns:jcr="http://www.jcp.org/jcr/1.0">
+  <mode:repositories>
+    <mode:repository jcr:name="MyApp Repository" mode:source="Store">
+      ...
+      <mode:authenticationProviders>
+        <!-- Specify the providers in a manner similar to sequencer 
+             definitions are defined -->
+        <mode:authenticationProvider jcr:name="CustomProviderA" 
+                    mode:classname="org.example.MyAppAuthorizationProvider">
+          <mode:description>My authentication provider</mode:description>
+          <!-- Set JavaBean properties on provider if needed -->
+          <mode:appName>MyAppName</mode:appName>
+        </mode:authenticationProvider>
+        ...
+      </mode:authenticationProviders>
+      ...
+    </mode:repository>
+    ...
+  </mode:repositories>
+  ...
+</configuration>
+]]></programlisting>
+    </sect2>
   </sect1>
   <sect1 id="clustering">
 	  <title>Clustering</title>

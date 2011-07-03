@@ -27,6 +27,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import java.io.PrintStream;
 import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -43,6 +44,7 @@ import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.graph.observe.MockObservable;
 import org.modeshape.graph.property.PathFactory;
+import org.modeshape.jcr.JcrRepository.Option;
 
 /**
  * Support class for performance testing of various operations over subtrees of the content graph
@@ -54,6 +56,7 @@ public abstract class AbstractJcrAccessTest {
     private JcrSession session;
     private JcrRepository repository;
 
+    @SuppressWarnings( "deprecation" )
     @Before
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -83,7 +86,9 @@ public abstract class AbstractJcrAccessTest {
             }
         };
 
-        repository = new JcrRepository(context, connectionFactory, "unused", new MockObservable(), null, null, null, null);
+        Map<Option, String> options = Collections.singletonMap(Option.USE_SECURITY_CONTEXT_CREDENTIALS, "true");
+        repository = new JcrRepository(context, connectionFactory, "unused", new MockObservable(), null, null, options, null,
+                                       null);
 
         SecurityContext mockSecurityContext = new MockSecurityContext("testuser", Collections.singleton(ModeShapeRoles.READWRITE));
         session = (JcrSession)repository.login(new JcrSecurityContextCredentials(mockSecurityContext));

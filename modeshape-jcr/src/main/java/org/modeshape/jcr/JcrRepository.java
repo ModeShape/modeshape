@@ -25,12 +25,8 @@ package org.modeshape.jcr;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Method;
 import java.security.AccessControlContext;
 import java.security.AccessControlException;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -59,7 +55,6 @@ import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.query.Query;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import javax.security.auth.Subject;
 import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import org.modeshape.common.annotation.Immutable;
@@ -67,19 +62,20 @@ import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.collection.LinkedListMultimap;
 import org.modeshape.common.collection.Multimap;
 import org.modeshape.common.collection.UnmodifiableProperties;
+import org.modeshape.common.component.ComponentConfig;
+import org.modeshape.common.component.ComponentLibrary;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.text.Inflector;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.ClassUtil;
 import org.modeshape.common.util.Logger;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
+import org.modeshape.graph.Graph.Batch;
 import org.modeshape.graph.GraphI18n;
-import org.modeshape.graph.JaasSecurityContext;
 import org.modeshape.graph.Location;
-import org.modeshape.graph.SecurityContext;
 import org.modeshape.graph.Subgraph;
 import org.modeshape.graph.Workspace;
-import org.modeshape.graph.Graph.Batch;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryConnectionFactory;
 import org.modeshape.graph.connector.RepositoryContext;
@@ -106,8 +102,8 @@ import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.basic.GraphNamespaceRegistry;
 import org.modeshape.graph.query.QueryBuilder;
-import org.modeshape.graph.query.QueryResults;
 import org.modeshape.graph.query.QueryBuilder.ConstraintBuilder;
+import org.modeshape.graph.query.QueryResults;
 import org.modeshape.graph.query.model.QueryCommand;
 import org.modeshape.graph.query.model.Visitors;
 import org.modeshape.graph.query.parse.QueryParsers;
@@ -117,12 +113,16 @@ import org.modeshape.graph.request.ChangeRequest;
 import org.modeshape.graph.request.InvalidWorkspaceException;
 import org.modeshape.jcr.RepositoryQueryManager.PushDown;
 import org.modeshape.jcr.api.AnonymousCredentials;
-import org.modeshape.jcr.api.JaasCredentials;
 import org.modeshape.jcr.api.Repository;
-import org.modeshape.jcr.api.SecurityContextCredentials;
 import org.modeshape.jcr.query.JcrQomQueryParser;
 import org.modeshape.jcr.query.JcrSql2QueryParser;
 import org.modeshape.jcr.query.JcrSqlQueryParser;
+import org.modeshape.jcr.security.AnonymousProvider;
+import org.modeshape.jcr.security.AuthenticationProvider;
+import org.modeshape.jcr.security.AuthenticationProviders;
+import org.modeshape.jcr.security.JaasProvider;
+import org.modeshape.jcr.security.SecurityContextProvider;
+import org.modeshape.jcr.security.ServletProvider;
 import org.modeshape.jcr.xpath.XPathQueryParser;
 
 /**
@@ -146,6 +146,7 @@ import org.modeshape.jcr.xpath.XPathQueryParser;
  * not supported.
  * </p>
  */
+@SuppressWarnings( "deprecation" )
 @ThreadSafe
 public class JcrRepository implements Repository {
 
@@ -382,7 +383,17 @@ public class JcrRepository implements Repository {
          * the query indexes may not accurately reflect the content in the repository while the rebuild is occurring. The default
          * value is 'true'.
          */
-        QUERY_INDEXES_REBUILT_SYNCHRONOUSLY, ;
+        QUERY_INDEXES_REBUILT_SYNCHRONOUSLY,
+
+        /**
+         * Indicates whether {@link org.modeshape.jcr.api.SecurityContextCredentials} should be supported by the
+         * {@link Repository#login(Credentials)} and {@link Repository#login(Credentials, String)} methods. By default, this
+         * support is <strong>disabled</strong> and not recommended; instead, use custom {@link AuthenticationProvider}s.
+         * 
+         * @deprecated Use custom AuthenticationProvider implementations instead
+         */
+        @Deprecated
+        USE_SECURITY_CONTEXT_CREDENTIALS, ;
 
         /**
          * Determine the option given the option name. This does more than {@link Option#valueOf(String)}, since this method first
@@ -426,7 +437,7 @@ public class JcrRepository implements Repository {
          * appears to be valid.
          */
         public static final String ALWAYS = "always";
-        
+
         /**
          * The value that indicates that the query index for each workspace should be rebuilt only if it does not already exist.
          */
@@ -545,6 +556,10 @@ public class JcrRepository implements Repository {
          */
         public static final String QUERY_INDEXES_REBUILT_SYNCHRONOUSLY = Boolean.TRUE.toString();
 
+        /**
+         * The default value for the {@link Option#USE_SECURITY_CONTEXT_CREDENTIALS} option is {@value} .
+         */
+        public static final String USE_SECURITY_CONTEXT_CREDENTIALS = Boolean.FALSE.toString();
     }
 
     /**
@@ -562,14 +577,12 @@ public class JcrRepository implements Repository {
         /**
          * The standard JCR 1.0 XPath query language.
          */
-        @SuppressWarnings( "deprecation" )
         public static final String XPATH = Query.XPATH;
 
         /**
          * The SQL dialect that is based upon an enhanced version of the JCR-SQL query language defined by the JCR 1.0.1
          * specification.
          */
-        @SuppressWarnings( "deprecation" )
         public static final String JCR_SQL = Query.SQL;
 
         /**
@@ -610,6 +623,7 @@ public class JcrRepository implements Repository {
         defaults.put(Option.USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN, DefaultOption.USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN);
         defaults.put(Option.REBUILD_QUERY_INDEX_ON_STARTUP, DefaultOption.REBUILD_QUERY_INDEX_ON_STARTUP);
         defaults.put(Option.QUERY_INDEXES_REBUILT_SYNCHRONOUSLY, DefaultOption.QUERY_INDEXES_REBUILT_SYNCHRONOUSLY);
+        defaults.put(Option.USE_SECURITY_CONTEXT_CREDENTIALS, DefaultOption.USE_SECURITY_CONTEXT_CREDENTIALS);
 
         DEFAULT_OPTIONS = Collections.<Option, String>unmodifiableMap(defaults);
     }
@@ -627,8 +641,9 @@ public class JcrRepository implements Repository {
     private final FederatedRepositorySource federatedSource;
     private final GraphNamespaceRegistry persistentRegistry;
     private final RepositoryObservationManager repositoryObservationManager;
-    private final SecurityContext anonymousUserContext;
     private final QueryParsers queryParsers;
+    private final Credentials anonymousCredentialsIfSuppliedCredentialsFail;
+    private final AuthenticationProvider authenticator;
     private Set<String> cachedWorkspaceNames = new HashSet<String>();
 
     // Until the federated connector supports queries, we have to use a search engine ...
@@ -654,11 +669,11 @@ public class JcrRepository implements Repository {
      * @param options the optional {@link Option settings} for this repository; may be null
      * @param initialContentForNewWorkspaces the URL, file system path, or classpath resource path to the XML file containing the
      *        initial content for newly-created workspaces; may be null
+     * @param authenticationProviders the component library of AuthenticationProvider implementations; may be null or empty
      * @throws RepositoryException if there is a problem setting up this repository
      * @throws IllegalArgumentException If <code>executionContext</code>, <code>connectionFactory</code>,
      *         <code>repositorySourceName</code>, or <code>repositoryObservable</code> is <code>null</code>.
      */
-    @SuppressWarnings( "deprecation" )
     JcrRepository( ExecutionContext executionContext,
                    RepositoryConnectionFactory connectionFactory,
                    String repositorySourceName,
@@ -666,7 +681,8 @@ public class JcrRepository implements Repository {
                    RepositorySourceCapabilities repositorySourceCapabilities,
                    Map<String, String> descriptors,
                    Map<Option, String> options,
-                   String initialContentForNewWorkspaces ) throws RepositoryException {
+                   String initialContentForNewWorkspaces,
+                   ComponentLibrary<AuthenticationProvider, ComponentConfig> authenticationProviders ) throws RepositoryException {
         CheckArg.isNotNull(executionContext, "executionContext");
         CheckArg.isNotNull(connectionFactory, "connectionFactory");
         CheckArg.isNotNull(repositorySourceName, "repositorySourceName");
@@ -865,8 +881,7 @@ public class JcrRepository implements Repository {
                                                                              connectionFactory, repositoryObservable,
                                                                              repositoryTypeManager, indexDirectory,
                                                                              updateIndexesSynchronously, forceIndexRebuild,
-                                                                             rebuildIndexesSynchronously,
-                                                                             maxDepthToRead);
+                                                                             rebuildIndexesSynchronously, maxDepthToRead);
             }
         } else {
             this.queryManager = new RepositoryQueryManager.Disabled(this.sourceName);
@@ -897,10 +912,33 @@ public class JcrRepository implements Repository {
             });
         }
 
-        /*
-         * Set up the anonymous role, if appropriate
-         */
-        SecurityContext anonymousUserContext = null;
+        // Prepare to create the authenticators and authorizers ...
+        AuthenticationProviders authenticators = new AuthenticationProviders();
+
+        // Set up the JAAS providers ...
+        String policyName = this.options.get(Option.JAAS_LOGIN_CONFIG_NAME);
+        if (policyName != null && policyName.trim().length() != 0) {
+            try {
+                JaasProvider jaasProvider = new JaasProvider(policyName);
+                authenticators = authenticators.with(jaasProvider);
+            } catch (java.lang.SecurityException e) {
+                LOGGER.warn(JcrI18n.loginConfigNotFound, policyName, Option.JAAS_LOGIN_CONFIG_NAME, repositoryName());
+            } catch (javax.security.auth.login.LoginException e) {
+                LOGGER.warn(JcrI18n.loginConfigNotFound, policyName, Option.JAAS_LOGIN_CONFIG_NAME, repositoryName());
+            }
+        }
+
+        try {
+            // Try to set up the HTTP servlet request class ...
+            ClassUtil.loadClassStrict("javax.servlet.http.HttpServletRequest");
+            ServletProvider servletProvider = new ServletProvider();
+            authenticators = authenticators.with(servletProvider);
+        } catch (ClassNotFoundException cnfe) {
+            // Must not be able to load the class because of dependencies
+            LOGGER.debug("Failed to find 'javax.servlet.http.HttpServletRequest', so not loading 'o.m.j.security.ServletProvider'");
+        }
+
+        // Set up the anonymous provider (if appropriate) ...
         String rawAnonRoles = this.options.get(Option.ANONYMOUS_USER_ROLES);
         if (rawAnonRoles != null) {
             final Set<String> roles = new HashSet<String>();
@@ -908,24 +946,29 @@ public class JcrRepository implements Repository {
                 roles.add(role);
             }
             if (roles.size() > 0) {
-                anonymousUserContext = new SecurityContext() {
-
-                    public String getUserName() {
-                        return ANONYMOUS_USER_NAME;
-                    }
-
-                    public boolean hasRole( String roleName ) {
-                        return roles.contains(roleName);
-                    }
-
-                    public void logout() {
-                    }
-
-                };
+                AnonymousProvider anonProvider = new AnonymousProvider(ANONYMOUS_USER_NAME, roles);
+                authenticators = authenticators.with(anonProvider);
             }
         }
 
-        this.anonymousUserContext = anonymousUserContext;
+        // Set up the SecurityContext provider (for backward compatibility) unless configured otherwise ...
+        // Set up the JAAS providers ...
+        boolean useSecurityContextCredentials = Boolean.parseBoolean(this.options.get(Option.USE_SECURITY_CONTEXT_CREDENTIALS));
+        if (useSecurityContextCredentials) {
+            SecurityContextProvider provider = new SecurityContextProvider();
+            authenticators = authenticators.with(provider);
+        }
+
+        // Set up any custom AuthenticationProvider classes ...
+        if (authenticationProviders != null) {
+            for (AuthenticationProvider provider : authenticationProviders.getInstances()) {
+                if (provider != null) authenticators = authenticators.with(provider);
+            }
+        }
+
+        // Set up the authenticator and authorizer ...
+        this.anonymousCredentialsIfSuppliedCredentialsFail = Boolean.valueOf(this.options.get(Option.USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN)) ? new AnonymousCredentials() : null;
+        this.authenticator = authenticators;
 
         repositoryLockManager = new RepositoryLockManager(this);
 
@@ -1375,123 +1418,33 @@ public class JcrRepository implements Repository {
      */
     public synchronized Session login( final Credentials credentials,
                                        String workspaceName ) throws RepositoryException {
-        // Ensure credentials are either null or provide a JAAS method
         Map<String, Object> sessionAttributes = new HashMap<String, Object>();
-        ExecutionContext execContext = null;
 
-        if (credentials == null || credentials instanceof AnonymousCredentials) {
-            Subject subject = Subject.getSubject(AccessController.getContext());
-            if (subject != null) {
-                execContext = executionContext.with(new JaasSecurityContext(subject));
-            }
-            // Well. There's no JAAS subject. Try using an anonymous user (if that's enabled).
-            else if (anonymousUserContext != null) {
-                execContext = executionContext.with(this.anonymousUserContext);
-            } else {
-                throw new javax.jcr.LoginException(JcrI18n.mustBeInPrivilegedAction.text());
-            }
-        } else {
-            try {
-                if (credentials instanceof SimpleCredentials) {
-                    SimpleCredentials simple = (SimpleCredentials)credentials;
-                    String policyName = options.get(Option.JAAS_LOGIN_CONFIG_NAME);
-                    try {
-                        execContext = executionContext.with(new JaasSecurityContext(policyName, simple.getUserID(),
-                                                                                    simple.getPassword()));
-                    } catch (javax.security.auth.login.LoginException error) {
-                        throw new javax.jcr.LoginException(JcrI18n.loginConfigNotFound.text(policyName,
-                                                                                            Option.JAAS_LOGIN_CONFIG_NAME,
-                                                                                            repositoryName()), error);
-                    }
-                    for (String attributeName : simple.getAttributeNames()) {
-                        Object attributeValue = simple.getAttribute(attributeName);
-                        sessionAttributes.put(attributeName, attributeValue);
-                    }
-                } else if (credentials instanceof SecurityContextCredentials) {
-                    execContext = executionContext.with(contextFor((SecurityContextCredentials)credentials));
-                } else if (credentials instanceof JcrSecurityContextCredentials) {
-                    execContext = executionContext.with(((JcrSecurityContextCredentials)credentials).getSecurityContext());
-                } else {
-                    // Check if credentials provide a login context
-                    LoginContext loginContext = null;
-                    if (credentials instanceof JaasCredentials) {
-                        // Call directly ...
-                        loginContext = ((JaasCredentials)credentials).getLoginContext();
-                    } else {
-                        // Look for a getter method ...
-                        try {
-                            final Method method = credentials.getClass().getMethod("getLoginContext");
-                            Object result = AccessController.doPrivileged(new PrivilegedExceptionAction<Object>() {
-                                public Object run() throws Exception {
-                                    return method.invoke(credentials);
-                                }
-                            });
-                            if (!(result instanceof LoginContext)) {
-                                String msg = JcrI18n.credentialsMustReturnLoginContext.text(credentials.getClass());
-                                throw new IllegalArgumentException(msg);
-                            }
-                            loginContext = (LoginContext)result;
-                        } catch (NoSuchMethodException error) {
-                            String msg = JcrI18n.unknownCredentialsImplementation.text(credentials.getClass());
-                            throw new IllegalArgumentException(msg);
-                        }
-                    }
-                    if (loginContext == null) {
-                        throw new IllegalArgumentException(JcrI18n.credentialsMustReturnLoginContext.text(credentials.getClass()));
-                    }
-                    execContext = executionContext.with(new JaasSecurityContext(loginContext));
-                }
-            } catch (RuntimeException error) {
-                throw error; // pass along
-            } catch (javax.jcr.LoginException error) {
-                boolean tryAnonAccess = Boolean.valueOf(options.get(Option.USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN));
+        // Try to authenticate with the provider(s) ...
+        ExecutionContext sessionContext = authenticator.authenticate(credentials,
+                                                                     repositoryName(),
+                                                                     workspaceName,
+                                                                     executionContext,
+                                                                     sessionAttributes);
 
-                if (tryAnonAccess && anonymousUserContext != null) {
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug(JcrI18n.usingAnonymousUser.text());
-                    }
-                    execContext = executionContext.with(this.anonymousUserContext);
-                } else {
-                    throw error; // pass along
-                }
-            } catch (Exception error) {
-                if(error instanceof PrivilegedActionException){
-                    //Get the wrapped exception from PrivilegedActionException
-                    throw new javax.jcr.LoginException(((PrivilegedActionException)error).getException());
-                }
-                throw new javax.jcr.LoginException(error); // wrap
-            }
+        if (sessionContext == null && credentials != null && anonymousCredentialsIfSuppliedCredentialsFail != null) {
+            // Failed non-anonymous authentication, so try anonymous authentication ...
+            if (LOGGER.isDebugEnabled()) LOGGER.debug(JcrI18n.usingAnonymousUser.text());
+            sessionAttributes.clear();
+            sessionContext = authenticator.authenticate(anonymousCredentialsIfSuppliedCredentialsFail,
+                                                        repositoryName(),
+                                                        workspaceName,
+                                                        executionContext,
+                                                        sessionAttributes);
         }
-        return sessionForContext(execContext, workspaceName, sessionAttributes);
-    }
 
-    /**
-     * Adapts the modeshape-jcr-api {@link org.modeshape.jcr.api.SecurityContext} to the modeshape-graph {@link SecurityContext}
-     * needed for repository login.
-     * 
-     * @param credentials the credentials containing the modeshape-jcr-api {@code SecurityContext}
-     * @return an equivalent modeshape-graph {@code SecurityContext}
-     */
-    private SecurityContext contextFor( SecurityContextCredentials credentials ) {
-        assert credentials != null;
+        if (sessionContext == null) {
+            // Failed authentication ...
+            throw new javax.jcr.LoginException(JcrI18n.loginFailed.text(repositoryName(), workspaceName));
+        }
 
-        final org.modeshape.jcr.api.SecurityContext jcrSecurityContext = credentials.getSecurityContext();
-        assert jcrSecurityContext != null;
-
-        return new SecurityContext() {
-            public String getUserName() {
-                return jcrSecurityContext.getUserName();
-            }
-
-            public boolean hasRole( String roleName ) {
-                return jcrSecurityContext.hasRole(roleName);
-            }
-
-            public void logout() {
-                jcrSecurityContext.logout();
-            }
-
-        };
+        // We have successfully authenticated ...
+        return sessionForContext(sessionContext, workspaceName, sessionAttributes);
     }
 
     /**
@@ -1501,7 +1454,7 @@ public class JcrRepository implements Repository {
      * @param execContext the execution context to use for the new session; may not be null and must have a non-null
      *        {@link ExecutionContext#getSecurityContext() security context}
      * @param workspaceName the name of the workspace to connect to; null indicates that the default workspace should be used
-     * @param sessionAttributes the session attributes for this session; may not be null
+     * @param sessionAttributes the session attributes for this session; may be null
      * @return a valid session for the user to access the repository
      * @throws RepositoryException if an error occurs creating the session
      */
@@ -1561,7 +1514,11 @@ public class JcrRepository implements Repository {
         }
 
         // Create the workspace, which will create its own session ...
-        sessionAttributes = Collections.unmodifiableMap(sessionAttributes);
+        if (sessionAttributes == null) {
+            sessionAttributes = Collections.emptyMap();
+        } else {
+            sessionAttributes = Collections.unmodifiableMap(sessionAttributes);
+        }
         JcrWorkspace workspace = new JcrWorkspace(this, workspaceName, execContext, sessionAttributes);
 
         JcrSession session = (JcrSession)workspace.getSession();
@@ -1700,7 +1657,6 @@ public class JcrRepository implements Repository {
      * @param customDescriptors the custom descriptors; may be null
      * @return the custom descriptors (if any) combined with the default repository descriptors; never null or empty
      */
-    @SuppressWarnings( "deprecation" )
     private static Map<String, Object> initializeDescriptors( ValueFactories factories,
                                                               Map<String, String> customDescriptors ) {
         if (customDescriptors == null) customDescriptors = Collections.emptyMap();

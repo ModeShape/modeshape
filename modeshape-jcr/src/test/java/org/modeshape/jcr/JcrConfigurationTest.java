@@ -31,6 +31,7 @@ import static org.modeshape.graph.IsNodeWithChildren.hasChildren;
 import static org.modeshape.graph.IsNodeWithProperty.hasProperty;
 import java.io.File;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -44,6 +45,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
+import org.modeshape.graph.MockSecurityContext;
+import org.modeshape.graph.SecurityContext;
 import org.modeshape.graph.Subgraph;
 import org.modeshape.graph.cache.CachePolicy;
 import org.modeshape.graph.cache.ImmutableCachePolicy;
@@ -54,8 +57,8 @@ import org.modeshape.graph.property.Path;
 import org.modeshape.jcr.JcrRepository.DefaultOption;
 import org.modeshape.jcr.JcrRepository.Option;
 import org.modeshape.repository.ModeShapeConfiguration;
-import org.modeshape.repository.ModeShapeLexicon;
 import org.modeshape.repository.ModeShapeConfiguration.ConfigurationDefinition;
+import org.modeshape.repository.ModeShapeLexicon;
 
 public class JcrConfigurationTest {
 
@@ -216,6 +219,55 @@ public class JcrConfigurationTest {
     }
 
     @Test
+    public void shouldAllowSettingUpConfigurationRepositoryWithAuthenticationProviders() throws Exception {
+        InMemoryRepositorySource configSource = new InMemoryRepositorySource();
+        configSource.setName("config2");
+        configSource.setRetryLimit(5);
+        configuration.loadFrom(configSource, "workspaceXYZ");
+        configuration.repositorySource("Source2")
+                     .usingClass(InMemoryRepositorySource.class.getName())
+                     .loadedFromClasspath()
+                     .setDescription("description")
+                     .and()
+                     .repository("JCR Repository")
+                     .setSource("Source2")
+                     .setOption(Option.JAAS_LOGIN_CONFIG_NAME, "test")
+                     .authenticator("customAuth")
+                     .usingClass("org.modeshape.jcr.security.SecurityContextProvider")
+                     .loadedFromClasspath()
+                     .setDescription("customAuth Desc");
+        configuration.save();
+        // Save the configuration and start the engine ...
+        engine = configuration.build();
+        engine.start();
+
+        ConfigurationDefinition configDefn = configuration.getConfigurationDefinition();
+        assertThat(configDefn.getWorkspace(), is("workspaceXYZ"));
+        assertThat(configDefn.getPath(), is(path("/")));
+
+        // Get a graph to the configuration source ...
+        RepositorySource configReposSource = engine.getRepositoryService().getRepositoryLibrary().getSource("config2");
+        assertThat(configReposSource, is(notNullValue()));
+        assertThat(configReposSource, is(instanceOf(InMemoryRepositorySource.class)));
+        assertThat(configReposSource.getName(), is("config2"));
+        InMemoryRepositorySource configSource2 = (InMemoryRepositorySource)configReposSource;
+        assertThat(configSource2.getDefaultWorkspaceName(), is("")); // didn't change this
+
+        Graph graph = engine.getGraph("config2");
+        assertThat(graph, is(notNullValue()));
+        assertThat(graph.getNodeAt("/"), is(notNullValue()));
+        assertThat(graph.getNodeAt("/mode:sources"), is(notNullValue()));
+        assertThat(graph.getNodeAt("/mode:sources/Source2"), hasProperty(ModeShapeLexicon.DESCRIPTION, "description"));
+        assertThat(graph.getNodeAt("/mode:repositories/JCR Repository"), hasProperty(ModeShapeLexicon.SOURCE_NAME, "Source2"));
+        assertThat(graph.getNodeAt("/mode:repositories/JCR Repository/mode:authenticationProviders"), is(notNullValue()));
+
+        // Get the repository ...
+        JcrRepository repository = engine.getRepository("JCR Repository");
+        assertThat(repository, is(notNullValue()));
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
     public void shouldAllowSpecifyingOptions() throws Exception {
         configuration.repositorySource("Source2")
                      .usingClass(InMemoryRepositorySource.class.getName())
@@ -268,6 +320,7 @@ public class JcrConfigurationTest {
             defaultRemoveDerivedValue = Boolean.FALSE.toString();
         }
         options.put(Option.REMOVE_DERIVED_CONTENT_WITH_ORIGINAL, defaultRemoveDerivedValue);
+        options.put(Option.USE_SECURITY_CONTEXT_CREDENTIALS, DefaultOption.USE_SECURITY_CONTEXT_CREDENTIALS);
         assertThat(repository.getOptions(), is(options));
     }
 
@@ -416,6 +469,65 @@ public class JcrConfigurationTest {
             assertThat(ntm.getNodeType("modetest:nodeWithMandatoryProperty"), is(notNullValue())); // throws exception
             assertThat(ntm.getNodeType("modetest:nodeWithMandatoryChild"), is(notNullValue())); // throws exception
             assertThat(ntm.getNodeType("modetest:unorderableUnstructured"), is(notNullValue())); // throws exception
+        } finally {
+            if (session != null) session.logout();
+        }
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldLoadConfigurationWithCustomAuthenticators() throws Exception {
+        File file = new File("src/test/resources/config/configRepositoryWithAuthenticators.xml");
+        assertThat(file.exists(), is(true));
+        assertThat(file.canRead(), is(true));
+        assertThat(file.isFile(), is(true));
+
+        configuration.loadFrom("src/test/resources/config/configRepositoryWithAuthenticators.xml");
+
+        assertThat(configuration.getProblems().isEmpty(), is(true));
+
+        // Verify that the graph has been updated correctly ...
+        ModeShapeConfiguration.ConfigurationDefinition content = configuration.getConfigurationDefinition();
+        Subgraph subgraph = content.graph().getSubgraphOfDepth(6).at("/");
+
+        assertThat(subgraph.getNode("/mode:sources"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sources/Stuff"), is(notNullValue()));
+
+        assertThat(subgraph.getNode("/mode:repositories").getChildren(), hasChild(segment("My Repository")));
+        assertThat(subgraph.getNode("/mode:repositories/My Repository"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:repositories/My Repository"), hasProperty(ModeShapeLexicon.SOURCE_NAME, "Stuff"));
+        assertThat(subgraph.getNode("/mode:repositories/My Repository").getChildren(),
+                   hasChildren(segment("mode:options"), segment("mode:authenticationProviders")));
+        assertThat(subgraph.getNode("/mode:repositories/My Repository/mode:options"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:repositories/My Repository/mode:options").getChildren(),
+                   hasChild(segment("jaasLoginConfigName")));
+        assertThat(subgraph.getNode("/mode:repositories/My Repository/mode:options/jaasLoginConfigName"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:repositories/My Repository/mode:authenticationProviders"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:repositories/My Repository/mode:authenticationProviders/CustomProviderA"),
+                   is(notNullValue()));
+
+        // Initialize PicketBox ...
+        JaasTestUtil.initJaas("security/jaas.conf.xml");
+
+        // Create and start the engine ...
+        engine = configuration.build();
+        engine.start();
+        Repository repository = engine.getRepository("My Repository");
+        assertThat(repository, is(notNullValue()));
+
+        // Create a session, authenticating using one of the usernames defined by our JAAS policy file(s) ...
+        Session session = null;
+        try {
+            session = repository.login(new SimpleCredentials("superuser", "superuser".toCharArray()));
+        } finally {
+            if (session != null) session.logout();
+        }
+
+        // Create a session, authenticating using a SecurityContextCredentials
+        try {
+            SecurityContext mockSecurityContext = new MockSecurityContext("testuser",
+                                                                          Collections.singleton(ModeShapeRoles.READWRITE));
+            session = repository.login(new JcrSecurityContextCredentials(mockSecurityContext));
         } finally {
             if (session != null) session.logout();
         }

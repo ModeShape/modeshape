@@ -249,18 +249,28 @@
 <!ENTITY JcrNodeTypeManager       		"<ulink url='&API;jcr/JcrNodeTypeManager.html'><classname>JcrNodeTypeManager</classname></ulink>">
 <!ENTITY CndNodeTypeReader        		"<ulink url='&API;jcr/CndNodeTypeReader.html'><classname>CndNodeTypeReader</classname></ulink>">
 <!ENTITY JackrabbitXmlNodeTypeReader  "<ulink url='&API;jcr/JackrabbitXmlNodeTypeReader.html'><classname>JackrabbitXmlNodeTypeReader</classname></ulink>">
+<!ENTITY AuthenticationProvider			  "<ulink url='&API;jcr/security/AuthenticationProvider.html'><classname>AuthenticationProvider</classname></ulink>">
+<!ENTITY AuthenticationProviders		  "<ulink url='&API;jcr/security/AuthenticationProviders.html'><classname>AuthenticationProviders</classname></ulink>">
+<!ENTITY JaasProvider			            "<ulink url='&API;jcr/security/JaasProvider.html'><classname>JaasProvider</classname></ulink>">
+<!ENTITY ServletProvider			        "<ulink url='&API;jcr/security/ServletProvider.html'><classname>ServletProvider</classname></ulink>">
+<!ENTITY AnonymousProvider			      "<ulink url='&API;jcr/security/AnonymousProvider.html'><classname>AnonymousProvider</classname></ulink>">
+<!ENTITY SecurityContextProvider			"<ulink url='&API;jcr/security/SecurityContextProvider.html'><classname>SecurityContextProvider</classname></ulink>">
+<!ENTITY AuthorizationProvider        "<ulink url='&API;jcr/security/AuthorizationProvider.html'><classname>AuthorizationProvider</classname></ulink>">
+<!ENTITY ModeShapePermissions					"<ulink url='&API;jcr/ModeShapePermissions.html'><classname>ModeShapePermissions</classname></ulink>">
+
 
 <!-- Types in modeshape-jcr-api -->
 
 <!ENTITY SecurityContextCredentials   "<ulink url='&API;jcr/api/SecurityContextCredentials.html'><classname>SecurityContextCredentials</classname></ulink>">
 <!ENTITY AnonymousCredentials				  "<ulink url='&API;jcr/api/AnonymousCredentials.html'><classname>AnonymousCredentials</classname></ulink>">
 <!ENTITY JaasCredentials				  		"<ulink url='&API;jcr/api/JaasCredentials.html'><classname>JaasCredentials</classname></ulink>">
-<!ENTITY Repositories				  		"<ulink url='&API;jcr/api/Repositories.html'><classname>Repositories</classname></ulink>">
+<!ENTITY Repositories				  		    "<ulink url='&API;jcr/api/Repositories.html'><classname>Repositories</classname></ulink>">
+<!ENTITY ServletCredentials				  	"<ulink url='&API;jcr/api/ServletCredentials.html'><classname>ServletCredentials</classname></ulink>">
 
 <!-- Types in extensions/ -->
 
 <!ENTITY JcrRepositorySource  				"<ulink url='&API;connector/jcr/JcrRepositorySource.html'><classname>JcrRepositorySource</classname></ulink>">
-<!ENTITY DiskSource  						"<ulink url='&API;connector/disk/DiskSource.html'><classname>DiskSource</classname></ulink>">
+<!ENTITY DiskSource  						      "<ulink url='&API;connector/disk/DiskSource.html'><classname>DiskSource</classname></ulink>">
 <!ENTITY FileSystemSource  						"<ulink url='&API;connector/filesystem/FileSystemSource.html'><classname>FileSystemSource</classname></ulink>">
 <!ENTITY CustomPropertiesFactory  		"<ulink url='&API;connector/filesystem/CustomPropertiesFactory'><classname>CustomPropertiesFactory</classname></ulink>">
 <!ENTITY JpaSource  									"<ulink url='&API;connector/store/jpa/JpaSource.html'><classname>JpaSource</classname></ulink>">
@@ -280,8 +290,8 @@
 <!ENTITY ServletCredentials				   	"<ulink url='&API;web/jcr/ServletCredentials.html'><interface>ServletCredentials</interface></ulink>">
 <!ENTITY ModeShapeJcrDeployer	  			"<ulink url='&API;web/jcr/ModeShapeJcrDeployer.html'><classname>ModeShapeJcrDeployer</classname></ulink>">
 <!ENTITY RepositoryProvider	  				"<ulink url='&API;web/jcr/spi/RepositoryProvider.html'><classname>RepositoryProvider</classname></ulink>">
-<!ENTITY ContentMapper	  				  "<ulink url='&API;web/jcr/webdav/ContentMapper.html'><classname>ContentMapper</classname></ulink>">
-<!ENTITY DefaultContentMapper	  				  "<ulink url='&API;web/jcr/webdav/DefaultContentMapper.html'><classname>DefaultContentMapper</classname></ulink>">
+<!ENTITY ContentMapper	  				    "<ulink url='&API;web/jcr/webdav/ContentMapper.html'><classname>ContentMapper</classname></ulink>">
+<!ENTITY DefaultContentMapper	  		  "<ulink url='&API;web/jcr/webdav/DefaultContentMapper.html'><classname>DefaultContentMapper</classname></ulink>">
 <!ENTITY RequestResolver	  				  "<ulink url='&API;web/jcr/webdav/RequestResolver.html'><classname>RequestResolver</classname></ulink>">
 <!ENTITY MultiRepositoryRequestResolver	  "<ulink url='&API;web/jcr/webdav/MultiRepositoryRequestResolver.html'><classname>MultiRepositoryRequestResolver</classname></ulink>">
 <!ENTITY SingleRepositoryRequestResolver	  "<ulink url='&API;web/jcr/webdav/SingleRepositoryRequestResolver.html'><classname>SingleRepositoryRequestResolver</classname></ulink>">
