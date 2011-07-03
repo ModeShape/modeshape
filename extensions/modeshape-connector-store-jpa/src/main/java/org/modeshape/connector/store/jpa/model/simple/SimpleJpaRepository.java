@@ -454,6 +454,8 @@ public class SimpleJpaRepository extends MapRepository {
             Query query = entityManager.createNamedQuery("NodeEntity.findByNodeUuid");
             query.setParameter("workspaceId", workspaceId);
             query.setParameter("nodeUuidString", nodeUuid.toString());
+            query.setHint("org.hibernate.cacheable", true);
+
             try {
                 // Find the parent of the UUID ...
                 NodeEntity result = (NodeEntity)query.getSingleResult();

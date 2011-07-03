@@ -29,7 +29,7 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import java.util.ArrayList;
 import java.util.List;
-import org.hibernate.ejb.Ejb3Configuration;
+import java.util.Map;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -111,9 +111,9 @@ public class JpaSourceTest {
         assertThat(source.getAutoGenerateSchema(), is(JpaSource.DEFAULT_AUTO_GENERATE_SCHEMA));
 
         // Verify it is set correctly on the Hibernate configuration ...
-        Ejb3Configuration config = new Ejb3Configuration();
-        source.configure(config);
-        assertThat(config.getProperties().get("hibernate.hbm2ddl.auto").toString(), is(JpaSource.DEFAULT_AUTO_GENERATE_SCHEMA));
+        JpaAdapter adapter = new HibernateAdapter();
+        Map<String, String> config = adapter.getProperties(source);
+        assertThat(config.get("hibernate.hbm2ddl.auto").toString(), is(JpaSource.DEFAULT_AUTO_GENERATE_SCHEMA));
     }
 
     @FixFor( "MODE-1102" )
@@ -125,9 +125,9 @@ public class JpaSourceTest {
         assertThat(source.getAutoGenerateSchema(), is(JpaSource.DEFAULT_AUTO_GENERATE_SCHEMA));
 
         // Verify it is set correctly on the Hibernate configuration ...
-        Ejb3Configuration config = new Ejb3Configuration();
-        source.configure(config);
-        assertThat(config.getProperties().get("hibernate.hbm2ddl.auto").toString(), is(JpaSource.DEFAULT_AUTO_GENERATE_SCHEMA));
+        JpaAdapter adapter = new HibernateAdapter();
+        Map<String, String> config = adapter.getProperties(source);
+        assertThat(config.get("hibernate.hbm2ddl.auto").toString(), is(JpaSource.DEFAULT_AUTO_GENERATE_SCHEMA));
     }
 
     @FixFor( "MODE-1102" )
@@ -141,9 +141,9 @@ public class JpaSourceTest {
             assertThat(source.getAutoGenerateSchema(), is(value));
 
             // Verify it is set correctly on the Hibernate configuration ...
-            Ejb3Configuration config = new Ejb3Configuration();
-            source.configure(config);
-            assertThat(config.getProperties().get("hibernate.hbm2ddl.auto").toString(), is(value));
+            JpaAdapter adapter = new HibernateAdapter();
+            Map<String, String> config = adapter.getProperties(source);
+            assertThat(config.get("hibernate.hbm2ddl.auto").toString(), is(value));
         }
     }
 
@@ -156,9 +156,9 @@ public class JpaSourceTest {
         assertThat(source.getAutoGenerateSchema(), is(JpaSource.DEFAULT_AUTO_GENERATE_SCHEMA));
 
         // Verify it is set correctly on the Hibernate configuration ...
-        Ejb3Configuration config = new Ejb3Configuration();
-        source.configure(config);
-        assertThat(config.getProperties().get("hibernate.hbm2ddl.auto").toString(), is(JpaSource.DEFAULT_AUTO_GENERATE_SCHEMA));
+        JpaAdapter adapter = new HibernateAdapter();
+        Map<String, String> config = adapter.getProperties(source);
+        assertThat(config.get("hibernate.hbm2ddl.auto").toString(), is(JpaSource.DEFAULT_AUTO_GENERATE_SCHEMA));
     }
 
     @FixFor( "MODE-1102" )
@@ -170,8 +170,8 @@ public class JpaSourceTest {
         assertThat(source.getAutoGenerateSchema(), is(JpaSource.AUTO_GENERATE_SCHEMA_DISABLE));
 
         // Verify it is set correctly on the Hibernate configuration ...
-        Ejb3Configuration config = new Ejb3Configuration();
-        source.configure(config);
-        assertThat(config.getProperties().get("hibernate.hbm2ddl.auto"), is(nullValue()));
+        JpaAdapter adapter = new HibernateAdapter();
+        Map<String, String> config = adapter.getProperties(source);
+        assertThat(config.get("hibernate.hbm2ddl.auto"), is(nullValue()));
     }
 }

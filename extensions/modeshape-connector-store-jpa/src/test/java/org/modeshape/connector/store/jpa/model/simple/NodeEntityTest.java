@@ -30,6 +30,7 @@ import java.util.UUID;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Query;
+import org.hibernate.cfg.Environment;
 import org.hibernate.ejb.Ejb3Configuration;
 import org.junit.After;
 import org.junit.Before;
@@ -52,7 +53,9 @@ public class NodeEntityTest {
 
         // Connect to the database ...
         Ejb3Configuration configurator = new Ejb3Configuration();
-        model.configure(configurator);
+        for (Class<?> clazz : model.getEntityClasses()) {
+            configurator.addAnnotatedClass(clazz);
+        }
         configurator.setProperty("hibernate.dialect", "org.hibernate.dialect.HSQLDialect");
         configurator.setProperty("hibernate.connection.driver_class", "org.hsqldb.jdbcDriver");
         configurator.setProperty("hibernate.connection.username", "sa");
@@ -64,7 +67,8 @@ public class NodeEntityTest {
         configurator.setProperty("hibernate.hbm2ddl.auto", "create");
         if (USE_CACHE) {
             configurator.setProperty("hibernate.cache.provider_class", "org.hibernate.cache.HashtableCacheProvider");
-
+        } else {
+            configurator.setProperty(Environment.USE_SECOND_LEVEL_CACHE, "false");
         }
 
         factory = configurator.buildEntityManagerFactory();
