@@ -148,6 +148,9 @@ public final class JpaConnectorI18n {
     public static I18n modelNamePropertyDescription;
     public static I18n modelNamePropertyLabel;
     public static I18n modelNamePropertyCategory;
+    public static I18n jpaPersistenceUnitNamePropertyDescription;
+    public static I18n jpaPersistenceUnitNamePropertyLabel;
+    public static I18n jpaPersistenceUnitNamePropertyCategory;
 
     static {
         try {

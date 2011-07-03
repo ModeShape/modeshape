@@ -1,0 +1,45 @@
+<persistence xmlns="http://java.sun.com/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd"
+             version="2.0">
+    <!-- Basic configuration to allow ModeShape to connecto to a database and query the options -->           
+    <persistence-unit name="modeshape-connector-store-jpa-bootstrap">
+		<class>org.modeshape.connector.store.jpa.util.StoreOptionEntity</class>
+    
+    </persistence-unit>
+	<persistence-unit name="modeshape-connector-store-jpa">
+	
+		<class>org.modeshape.connector.store.jpa.util.StoreOptionEntity</class>
+		<class>org.modeshape.connector.store.jpa.model.common.ChangeLogEntity</class>
+		<class>org.modeshape.connector.store.jpa.model.common.NamespaceEntity</class>
+		<class>org.modeshape.connector.store.jpa.model.common.WorkspaceEntity</class>
+
+		<class>org.modeshape.connector.store.jpa.model.simple.LargeValueEntity</class>
+		<class>org.modeshape.connector.store.jpa.model.simple.NodeEntity</class>
+		<class>org.modeshape.connector.store.jpa.model.simple.SubgraphNodeEntity</class>
+		<class>org.modeshape.connector.store.jpa.model.simple.SubgraphQueryEntity</class>
+	
+		<properties>
+			<property name="hibernate.show_sql" value="false" />		
+<!--
+	UNCOMMENT THIS SECTION AND COMMENT THE CACHING SECTION TO DISABLE CACHING 
+			<property name="hibernate.cache.use_second_level_cache" value="false" />		
+ -->
+<!-- 
+	UNCOMMENT THIS SECTION TO ENABLE CACHING.  YOU MAY HAVE TO CHANGE THE CACHE STRATEGY FOR EACH ENTITY, 
+	DEPENDING ON THE CACHE PROVIDER THAT YOU USE (e.g., JBossCacheProvider DOES NOT SUPPORT READ-WRITE)
+-->	 
+			<property name="hibernate.cache.use_second_level_cache" value="true" />		
+			<property name="hibernate.cache.use_query_cache" value="true" />		
+			<property name="hibernate.cache.provider_class" value="org.hibernate.cache.HashtableCacheProvider" />
+			<!-- property name="hibernate.cache.provider_configuration_file_resource_path." value="" / -->		
+
+			<property name="hibernate.ejb.classcache.org.modeshape.connector.store.jpa.model.common.WorkspaceEntity" value="read-write" />		
+			<property name="hibernate.ejb.classcache.org.modeshape.connector.store.jpa.model.common.NamespaceEntity" value="read-write" />		
+			<property name="hibernate.ejb.classcache.org.modeshape.connector.store.jpa.model.simple.NodeEntity" value="read-write" />		
+			<property name="hibernate.ejb.classcache.org.modeshape.connector.store.jpa.model.simple.LargeValueEntity" value="read-write" />		
+			<property name="hibernate.ejb.collectioncache.org.modeshape.connector.store.jpa.model.simple.NodeEntity.children" value="read-write" />		
+			<property name="hibernate.ejb.collectioncache.org.modeshape.connector.store.jpa.model.simple.NodeEntity.largeValues" value="read-write" />		
+		</properties>
+	</persistence-unit>
+</persistence>

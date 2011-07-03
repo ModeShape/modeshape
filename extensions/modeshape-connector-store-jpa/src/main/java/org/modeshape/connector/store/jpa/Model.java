@@ -24,7 +24,6 @@
 package org.modeshape.connector.store.jpa;
 
 import java.util.Locale;
-import org.hibernate.ejb.Ejb3Configuration;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.connector.RepositoryConnection;
@@ -75,11 +74,11 @@ public abstract class Model {
     public abstract RepositoryConnection createConnection( JpaSource source );
 
     /**
-     * Configure the entity class that will be used by JPA to store information in the database.
+     * Return the entity classes that will be used by JPA to store information in the database.
      * 
-     * @param configurator the Hibernate {@link Ejb3Configuration} component; never null
+     * @return an array of the classes that will be used by this model; never null
      */
-    public abstract void configure( Ejb3Configuration configurator );
+    public abstract Class<?>[] getEntityClasses();
 
     @Override
     public final int hashCode() {
