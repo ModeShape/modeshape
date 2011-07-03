@@ -40,30 +40,37 @@ public class SLF4JLoggerImpl extends org.modeshape.common.util.Logger {
         logger = LoggerFactory.getLogger(category);
     }
 
+    @Override
     public String getName() {
         return logger.getName();
     }
 
+    @Override
     public boolean isTraceEnabled() {
         return logger.isTraceEnabled();
     }
 
+    @Override
     public boolean isDebugEnabled() {
         return logger.isDebugEnabled();
     }
 
+    @Override
     public boolean isInfoEnabled() {
         return logger.isInfoEnabled();
     }
 
+    @Override
     public boolean isWarnEnabled() {
         return logger.isWarnEnabled();
     }
 
+    @Override
     public boolean isErrorEnabled() {
         return logger.isErrorEnabled();
     }
 
+    @Override
     public void warn( Throwable t,
                       I18n message,
                       Object... params ) {
@@ -79,6 +86,7 @@ public class SLF4JLoggerImpl extends org.modeshape.common.util.Logger {
         logger.warn(message.text(LOGGING_LOCALE.get(), params), t);
     }
 
+    @Override
     public void warn( I18n message,
                       Object... params ) {
         if (!isWarnEnabled()) return;
@@ -94,6 +102,7 @@ public class SLF4JLoggerImpl extends org.modeshape.common.util.Logger {
      * @param message the message string
      * @param params the parameter values that are to replace the variables in the format string
      */
+    @Override
     public void debug( String message,
                        Object... params ) {
         if (!isDebugEnabled()) return;
@@ -109,6 +118,7 @@ public class SLF4JLoggerImpl extends org.modeshape.common.util.Logger {
      * @param message the message accompanying the exception
      * @param params the parameter values that are to replace the variables in the format string
      */
+    @Override
     public void debug( Throwable t,
                        String message,
                        Object... params ) {
@@ -132,6 +142,7 @@ public class SLF4JLoggerImpl extends org.modeshape.common.util.Logger {
      * @param message the message string
      * @param params the parameter values that are to replace the variables in the format string
      */
+    @Override
     public void error( I18n message,
                        Object... params ) {
         if (!isErrorEnabled()) return;
@@ -147,6 +158,7 @@ public class SLF4JLoggerImpl extends org.modeshape.common.util.Logger {
      * @param message the message accompanying the exception
      * @param params the parameter values that are to replace the variables in the format string
      */
+    @Override
     public void error( Throwable t,
                        I18n message,
                        Object... params ) {
@@ -170,6 +182,7 @@ public class SLF4JLoggerImpl extends org.modeshape.common.util.Logger {
      * @param message the message string
      * @param params the parameter values that are to replace the variables in the format string
      */
+    @Override
     public void info( I18n message,
                       Object... params ) {
         if (!isInfoEnabled()) return;
@@ -185,6 +198,7 @@ public class SLF4JLoggerImpl extends org.modeshape.common.util.Logger {
      * @param message the message accompanying the exception
      * @param params the parameter values that are to replace the variables in the format string
      */
+    @Override
     public void info( Throwable t,
                       I18n message,
                       Object... params ) {
@@ -208,6 +222,7 @@ public class SLF4JLoggerImpl extends org.modeshape.common.util.Logger {
      * @param message the message string
      * @param params the parameter values that are to replace the variables in the format string
      */
+    @Override
     public void trace( String message,
                        Object... params ) {
         if (!isTraceEnabled()) return;
@@ -223,6 +238,7 @@ public class SLF4JLoggerImpl extends org.modeshape.common.util.Logger {
      * @param message the message accompanying the exception
      * @param params the parameter values that are to replace the variables in the format string
      */
+    @Override
     public void trace( Throwable t,
                        String message,
                        Object... params ) {

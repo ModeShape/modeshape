@@ -43,8 +43,8 @@ import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.connector.base.Repository;
 import org.modeshape.graph.connector.base.Transaction;
-import org.modeshape.graph.request.InvalidWorkspaceException;
 import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
+import org.modeshape.graph.request.InvalidWorkspaceException;
 
 /**
  * The representation of a disk-based repository and its content.
@@ -220,6 +220,7 @@ public class DiskRepository extends Repository<DiskNode, DiskWorkspace> {
             this.lock = lock.readLock();
         }
 
+        @Override
         public void lock() {
             this.lock.lock();
 
@@ -247,6 +248,7 @@ public class DiskRepository extends Repository<DiskNode, DiskWorkspace> {
             }
         }
 
+        @Override
         public void unlock() {
             try {
                 if (fileLock != null) {
@@ -278,6 +280,7 @@ public class DiskRepository extends Repository<DiskNode, DiskWorkspace> {
             this.lock = lock.writeLock();
         }
 
+        @Override
         public void lock() {
             this.lock.lock();
 
@@ -292,6 +295,7 @@ public class DiskRepository extends Repository<DiskNode, DiskWorkspace> {
             }
         }
 
+        @Override
         public void unlock() {
             try {
                 if (fileLock != null) {
