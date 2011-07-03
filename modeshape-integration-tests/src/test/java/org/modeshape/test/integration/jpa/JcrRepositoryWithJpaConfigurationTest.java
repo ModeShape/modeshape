@@ -46,6 +46,7 @@ import org.modeshape.jcr.JcrSecurityContextCredentials;
 /**
  * 
  */
+@SuppressWarnings( "deprecation" )
 public class JcrRepositoryWithJpaConfigurationTest {
 
     @Test
@@ -108,6 +109,7 @@ public class JcrRepositoryWithJpaConfigurationTest {
                      .setSource("MySource")
                      // Set the options (all of which have good defaults) ...
                      .setOption(JcrRepository.Option.PROJECT_NODE_TYPES, false)
+                     .setOption(JcrRepository.Option.USE_SECURITY_CONTEXT_CREDENTIALS, true)
                      // Load up some node types ...
                      // .addNodeTypes(fileOrUrlOrString)
                      // Register 0 or more namespaces (we'll do an example one here) ...

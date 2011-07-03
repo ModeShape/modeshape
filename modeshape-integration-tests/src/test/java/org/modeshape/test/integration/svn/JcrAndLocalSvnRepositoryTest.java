@@ -42,10 +42,12 @@ import org.modeshape.connector.svn.SvnRepositorySource;
 import org.modeshape.graph.SecurityContext;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
+import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.JcrSecurityContextCredentials;
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.SVNURL;
 
+@SuppressWarnings( "deprecation" )
 public class JcrAndLocalSvnRepositoryTest {
     private boolean print;
     private JcrEngine engine;
@@ -68,20 +70,27 @@ public class JcrAndLocalSvnRepositoryTest {
         final String svnRepositorySource = "svnRepositorySource";
         final String repositoryName = "svnRepository";
         final JcrConfiguration configuration = new JcrConfiguration();
-        configuration.repositorySource(svnRepositorySource).usingClass(SvnRepositorySource.class).setProperty("password", "").setProperty("username",
-                                                                                                                                          "anonymous").setProperty("repositoryRootUrl",
-                                                                                                                                                                   repositoryUrl).setProperty("predefinedWorkspaceNames",
-                                                                                                                                                                                              predefinedWorkspaceNames).setProperty("defaultWorkspaceName",
-                                                                                                                                                                                                                                    predefinedWorkspaceNames[0]).setProperty("creatingWorkspacesAllowed",
-                                                                                                                                                                                                                                                                             false).setProperty("updatesAllowed",
-                                                                                                                                                                                                                                                                                                true).and().repository(repositoryName).setDescription("The JCR repository backed by a local SVN").setSource(svnRepositorySource);
+        configuration.repositorySource(svnRepositorySource)
+                     .usingClass(SvnRepositorySource.class)
+                     .setProperty("password", "")
+                     .setProperty("username", "anonymous")
+                     .setProperty("repositoryRootUrl", repositoryUrl)
+                     .setProperty("predefinedWorkspaceNames", predefinedWorkspaceNames)
+                     .setProperty("defaultWorkspaceName", predefinedWorkspaceNames[0])
+                     .setProperty("creatingWorkspacesAllowed", false)
+                     .setProperty("updatesAllowed", true)
+                     .and()
+                     .repository(repositoryName)
+                     .setDescription("The JCR repository backed by a local SVN")
+                     .setOption(JcrRepository.Option.USE_SECURITY_CONTEXT_CREDENTIALS, "true")
+                     .setSource(svnRepositorySource);
         this.engine = configuration.save().and().build();
         this.engine.start();
 
         print("Using local SVN repository " + repositoryUrl);
 
-        this.session = this.engine.getRepository(repositoryName).login(new JcrSecurityContextCredentials(
-                                                                                                         new MyCustomSecurityContext()));
+        this.session = this.engine.getRepository(repositoryName)
+                                  .login(new JcrSecurityContextCredentials(new MyCustomSecurityContext()));
 
     }
 

@@ -34,6 +34,7 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import javax.jcr.Credentials;
 import javax.jcr.ImportUUIDBehavior;
@@ -58,10 +59,12 @@ import org.modeshape.graph.connector.RepositoryConnectionFactory;
 import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.graph.observe.MockObservable;
+import org.modeshape.jcr.JcrRepository.Option;
 
 /**
  * Tests of round-trip importing/exporting of repository content.
  */
+@SuppressWarnings( "deprecation" )
 public class ImportExportTest {
 
     private enum ExportType {
@@ -105,7 +108,9 @@ public class ImportExportTest {
             }
         };
 
-        repository = new JcrRepository(context, connectionFactory, "unused", new MockObservable(), null, null, null, null);
+        Map<Option, String> options = Collections.singletonMap(Option.USE_SECURITY_CONTEXT_CREDENTIALS, "true");
+        repository = new JcrRepository(context, connectionFactory, "unused", new MockObservable(), null, null, options, null,
+                                       null);
 
         SecurityContext mockSecurityContext = new MockSecurityContext("testuser", Collections.singleton(ModeShapeRoles.ADMIN));
         credentials = new JcrSecurityContextCredentials(mockSecurityContext);

@@ -40,6 +40,7 @@ import org.modeshape.common.FixFor;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.jcr.JcrConfiguration;
+import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.JcrSecurityContextCredentials;
 import org.modeshape.jcr.JcrTools;
 import org.modeshape.sequencer.ddl.DdlParserScorer;
@@ -50,6 +51,7 @@ import org.modeshape.sequencer.ddl.node.AstNode;
 /**
  *
  */
+@SuppressWarnings( "deprecation" )
 public class DdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
     private JcrConfiguration config;
     private String repositoryName;
@@ -78,6 +80,7 @@ public class DdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
         config.repository(repositoryName)
               .addNodeTypes(getUrl("org/modeshape/sequencer/ddl/StandardDdl.cnd"))
               .registerNamespace(StandardDdlLexicon.Namespace.PREFIX, StandardDdlLexicon.Namespace.URI)
+              .setOption(JcrRepository.Option.USE_SECURITY_CONTEXT_CREDENTIALS, "true")
               .setSource(repositorySource);
         // Set up the DDL sequencer ...
         config.sequencer("DDL Sequencer")

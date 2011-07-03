@@ -2,7 +2,12 @@ package org.modeshape.jcr;
 
 import javax.jcr.Credentials;
 import org.modeshape.graph.SecurityContext;
+import org.modeshape.jcr.api.SecurityContextCredentials;
 
+/**
+ * @deprecated Use {@link SecurityContextCredentials} instead
+ */
+@Deprecated
 public class JcrSecurityContextCredentials implements Credentials {
     private static final long serialVersionUID = 1L;
     private final SecurityContext securityContext;

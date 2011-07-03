@@ -9,7 +9,10 @@ import javax.jcr.Credentials;
  * implementation without using JAAS. This class effectively bypasses ModeShape's internal authentication mechanisms, so it is
  * very important that this context be provided for <i>authenticated users only</i>.
  * </p>
+ * 
+ * @deprecated Configure each repository to use a custom AuthenthicationProvider implementation
  */
+@Deprecated
 public class SecurityContextCredentials implements Credentials {
     private static final long serialVersionUID = 1L;
     private final SecurityContext jcrSecurityContext;

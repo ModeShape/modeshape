@@ -32,6 +32,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.jcr.JcrConfiguration;
+import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.JcrSecurityContextCredentials;
 import org.modeshape.jcr.JcrTools;
 import org.modeshape.sequencer.ddl.StandardDdlLexicon;
@@ -41,6 +42,7 @@ import org.modeshape.test.integration.sequencer.ddl.DdlIntegrationTestUtil;
 /**
  *
  */
+@SuppressWarnings( "deprecation" )
 public class PostgresDdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
     private String resourceFolder = ddlTestResourceRootFolder + "/dialect/postgres/";
 
@@ -68,6 +70,7 @@ public class PostgresDdlSequencerIntegrationTest extends DdlIntegrationTestUtil 
               .addNodeTypes(getUrl(resourceFolder + "PostgresDdl.cnd"))
               .registerNamespace(StandardDdlLexicon.Namespace.PREFIX, StandardDdlLexicon.Namespace.URI)
               .registerNamespace(PostgresDdlLexicon.Namespace.PREFIX, PostgresDdlLexicon.Namespace.URI)
+              .setOption(JcrRepository.Option.USE_SECURITY_CONTEXT_CREDENTIALS, "true")
               .setSource(repositorySource);
         // Set up the DDL sequencer ...
         config.sequencer("DDL Sequencer")

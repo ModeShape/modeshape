@@ -96,7 +96,7 @@ public class ModelTest {
         }
 
         @Override
-        public Class[] getEntityClasses() {
+        public Class<?>[] getEntityClasses() {
             return new Class[] {};
         }
 
