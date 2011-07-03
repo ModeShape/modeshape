@@ -1,6 +1,5 @@
 package org.modeshape.graph.connector.base.cache;
 
-import java.io.Serializable;
 import org.modeshape.graph.cache.CachePolicy;
 import org.modeshape.graph.connector.base.Node;
 
@@ -10,7 +9,7 @@ import org.modeshape.graph.connector.base.Node;
  * @param <KeyType> the type of the unique identifier for the nodes that are to be cached
  * @param <NodeType> the type of nodes that are to be cached
  */
-public interface NodeCachePolicy<KeyType, NodeType extends Node> extends CachePolicy, Serializable {
+public interface NodeCachePolicy<KeyType, NodeType extends Node> extends CachePolicy {
 
     /**
      * Indicates whether the node should be cached .

@@ -8,9 +8,9 @@ import java.util.UUID;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
+import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.Property;
-import org.modeshape.graph.property.Path.Segment;
 
 public class MockPathWorkspace extends PathWorkspace<MockPathNode> {
 
@@ -65,7 +65,7 @@ public class MockPathWorkspace extends PathWorkspace<MockPathNode> {
         return pathNodeFor(rootNode());
     }
 
-    private MockPathNode pathNodeFor(InternalNode node) {
+    private MockPathNode pathNodeFor( InternalNode node ) {
         if (node.getParent() == null) {
             new MockPathNode(node.getUuid(), null, node.getName(), node.getProperties(), node.getChildren());
         }
@@ -78,20 +78,19 @@ public class MockPathWorkspace extends PathWorkspace<MockPathNode> {
         InternalNode target;
         if (node.getParent() == null) {
             target = rootNode;
-        }
-        else {
+        } else {
             InternalNode parent = nodeAt(node.getParent());
             target = parent.getChild(node.getName());
-            
+
             if (target == null) {
                 target = new InternalNode(parent, node.getName(), node.getProperties(), null);
                 parent.addChild(target);
                 return pathNodeFor(target);
             }
         }
-        
+
         target.setProperties(node.getProperties());
-        
+
         return pathNodeFor(target);
     }
 
@@ -119,15 +118,16 @@ public class MockPathWorkspace extends PathWorkspace<MockPathNode> {
             removeAll();
             return pathNodeFor(oldRoot);
         }
-        
+
         InternalNode target = nodeAt(path);
         InternalNode parent = target.getParent();
-        
+
         parent.removeChild(target.getName());
 
         return pathNodeFor(target);
     }
 
+    @Override
     public boolean hasNodeCache() {
         return false;
     }
@@ -144,17 +144,17 @@ public class MockPathWorkspace extends PathWorkspace<MockPathNode> {
         }
 
         protected InternalNode( InternalNode parent,
-                              Segment name,
-                              Map<Name, Property> properties,
-                              List<InternalNode> children ) {
+                                Segment name,
+                                Map<Name, Property> properties,
+                                List<InternalNode> children ) {
             this(null, parent, name, properties, children);
         }
 
         protected InternalNode( UUID uuid,
-                              InternalNode parent,
-                              Segment name,
-                              Map<Name, Property> properties,
-                              List<InternalNode> children ) {
+                                InternalNode parent,
+                                Segment name,
+                                Map<Name, Property> properties,
+                                List<InternalNode> children ) {
             this.uuid = uuid;
             this.parent = parent;
             this.name = name;

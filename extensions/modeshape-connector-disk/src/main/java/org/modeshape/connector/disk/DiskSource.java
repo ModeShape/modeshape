@@ -55,7 +55,6 @@ import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.RepositorySourceCapabilities;
 import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.connector.base.AbstractNodeCachingRepositorySource;
-import org.modeshape.graph.connector.base.BaseRepositorySource;
 import org.modeshape.graph.connector.base.Connection;
 import org.modeshape.graph.connector.base.cache.NodeCachePolicy;
 import org.modeshape.graph.observe.Observer;
@@ -74,8 +73,7 @@ import org.modeshape.graph.observe.Observer;
  * </p>
  */
 @ThreadSafe
-public class DiskSource extends AbstractNodeCachingRepositorySource<UUID, DiskNode>
-    implements BaseRepositorySource, ObjectFactory {
+public class DiskSource extends AbstractNodeCachingRepositorySource<UUID, DiskNode> implements ObjectFactory {
 
     private static final long serialVersionUID = 1L;
 
@@ -486,7 +484,7 @@ public class DiskSource extends AbstractNodeCachingRepositorySource<UUID, DiskNo
             if (sourceName != null) source.setName(sourceName);
             if (rootNodeUuidString != null) source.setRootNodeUuid(rootNodeUuidString);
             if (defaultCachePolicy instanceof CachePolicy) source.setCachePolicy((CachePolicy)defaultCachePolicy);
-            if (nodeCachePolicy instanceof NodeCachePolicy) source.setNodeCachePolicy((NodeCachePolicy)nodeCachePolicy);
+            if (nodeCachePolicy instanceof NodeCachePolicy) source.setNodeCachePolicy((NodeCachePolicy<UUID, DiskNode>)nodeCachePolicy);
             if (retryLimit != null) source.setRetryLimit(Integer.parseInt(retryLimit));
             if (defaultWorkspace != null) source.setDefaultWorkspaceName(defaultWorkspace);
             if (createWorkspaces != null) source.setCreatingWorkspacesAllowed(Boolean.parseBoolean(createWorkspaces));

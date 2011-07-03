@@ -438,7 +438,7 @@ public class JdbcMetadataSource extends AbstractNodeCachingRepositorySource<Path
         JdbcMetadataSource source = new JdbcMetadataSource();
         if (sourceName != null) source.setName(sourceName);
         if (defaultCachePolicy instanceof CachePolicy) source.setCachePolicy((CachePolicy)defaultCachePolicy);
-        if (nodeCachePolicy instanceof NodeCachePolicy) source.setNodeCachePolicy((NodeCachePolicy)nodeCachePolicy);
+        if (nodeCachePolicy instanceof NodeCachePolicy) source.setNodeCachePolicy((NodeCachePolicy<Path, PathNode>)nodeCachePolicy);
         if (rootNodeUuid != null) source.setRootNodeUuidObject(rootNodeUuid);
         if (dataSourceJndiName != null) source.setDataSourceJndiName(dataSourceJndiName);
         if (username != null) source.setUsername(username);

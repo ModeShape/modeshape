@@ -24,9 +24,9 @@
 
 package org.modeshape.common.util.log;
 
+import java.util.logging.Logger;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.StringUtil;
-import java.util.logging.Logger;
 
 /**
  * Logger that delivers messages to a JDK logger
@@ -68,22 +68,27 @@ public class JdkLoggerImpl extends org.modeshape.common.util.Logger {
         }
     }
 
+    @Override
     public boolean isTraceEnabled() {
         return logger.isLoggable(java.util.logging.Level.FINER);
     }
 
+    @Override
     public boolean isDebugEnabled() {
         return logger.isLoggable(java.util.logging.Level.FINE);
     }
 
+    @Override
     public boolean isInfoEnabled() {
         return logger.isLoggable(java.util.logging.Level.INFO);
     }
 
+    @Override
     public boolean isWarnEnabled() {
         return logger.isLoggable(java.util.logging.Level.WARNING);
     }
 
+    @Override
     public boolean isErrorEnabled() {
         return logger.isLoggable(java.util.logging.Level.SEVERE);
     }
