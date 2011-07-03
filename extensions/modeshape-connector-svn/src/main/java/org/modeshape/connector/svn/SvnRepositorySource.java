@@ -436,7 +436,7 @@ public class SvnRepositorySource extends AbstractNodeCachingRepositorySource<Pat
         SvnRepositorySource source = new SvnRepositorySource();
         if (sourceName != null) source.setName(sourceName);
         if (defaultCachePolicy instanceof CachePolicy) source.setCachePolicy((CachePolicy)defaultCachePolicy);
-        if (nodeCachePolicy instanceof NodeCachePolicy) source.setNodeCachePolicy((NodeCachePolicy)nodeCachePolicy);
+        if (nodeCachePolicy instanceof NodeCachePolicy) source.setNodeCachePolicy((NodeCachePolicy<Path, PathNode>)nodeCachePolicy);
         if (repositoryRootUrl != null && repositoryRootUrl.length() > 0) source.setRepositoryRootUrl(repositoryRootUrl);
         if (username != null) source.setUsername(username);
         if (password != null) source.setPassword(password);

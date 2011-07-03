@@ -30,7 +30,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
@@ -414,22 +413,22 @@ public class Reflection {
                 result = AccessController.doPrivileged(new PrivilegedExceptionAction<Object>() {
                     @Override
                     public Object run() throws Exception {
-                         return method.invoke(target, arguments);
+                        return method.invoke(target, arguments);
                     }
                 });
                 break;
             } catch (PrivilegedActionException pae) {
-                //pae will be wrapping one of IllegalAccessException, IllegalArgumentException, InvocationTargetException
-                if (pae.getException() instanceof IllegalAccessException){
-                    throw (IllegalAccessException) pae.getException();
+                // pae will be wrapping one of IllegalAccessException, IllegalArgumentException, InvocationTargetException
+                if (pae.getException() instanceof IllegalAccessException) {
+                    throw (IllegalAccessException)pae.getException();
                 }
 
-                if (pae.getException() instanceof IllegalArgumentException){
-                    throw (IllegalArgumentException) pae.getException();
+                if (pae.getException() instanceof IllegalArgumentException) {
+                    throw (IllegalArgumentException)pae.getException();
                 }
 
-                if (pae.getException() instanceof InvocationTargetException){
-                    throw (InvocationTargetException) pae.getException();
+                if (pae.getException() instanceof InvocationTargetException) {
+                    throw (InvocationTargetException)pae.getException();
                 }
 
             } catch (NoSuchMethodException e) {
@@ -701,7 +700,7 @@ public class Reflection {
 
         throw new NoSuchMethodException(methodName);
     }
-    
+
     /**
      * Get the representation of the named property (with the supplied labe, category, description, and allowed values) on the
      * target object.
@@ -762,7 +761,7 @@ public class Reflection {
             field = getField(targetClass, propertyName);
         } catch (NoSuchFieldException e) {
             // Nothing to do here
-        	
+
         }
         if (description == null) {
             Description desc = getAnnotation(Description.class, field, getters, setters);
@@ -797,35 +796,35 @@ public class Reflection {
         property.setInferred(inferred);
         return property;
     }
-    
+
     /**
-     * Get a Field intance for a given class and property. Iterate over super classes of a class
-     * when a  <@link NoSuchFieldException> occurs until no more super classes are found then re-throw
-     * the <@link NoSuchFieldException>.
+     * Get a Field intance for a given class and property. Iterate over super classes of a class when a <@link
+     * NoSuchFieldException> occurs until no more super classes are found then re-throw the <@link NoSuchFieldException>.
      * 
      * @param targetClass
      * @param propertyName
      * @return Field
      * @throws NoSuchFieldException
      */
-    protected Field getField(Class<?> targetClass, String propertyName) throws NoSuchFieldException{
-    	Field field = null;
-    	
-    	try{
-    		field = targetClass.getDeclaredField(Inflector.getInstance().lowerCamelCase(propertyName));
-    	}catch(NoSuchFieldException e){
-    		Class<?> clazz = targetClass.getSuperclass();
-    		if (clazz!=null){
-    				field = getField(clazz,propertyName);
-    		}else{
-    			throw e;
-    		}
-    	}
-    		
-    	return field;
+    protected Field getField( Class<?> targetClass,
+                              String propertyName ) throws NoSuchFieldException {
+        Field field = null;
+
+        try {
+            field = targetClass.getDeclaredField(Inflector.getInstance().lowerCamelCase(propertyName));
+        } catch (NoSuchFieldException e) {
+            Class<?> clazz = targetClass.getSuperclass();
+            if (clazz != null) {
+                field = getField(clazz, propertyName);
+            } else {
+                throw e;
+            }
+        }
+
+        return field;
     }
-    
- 	protected static <AnnotationType extends Annotation> AnnotationType getAnnotation( Class<AnnotationType> annotationType,
+
+    protected static <AnnotationType extends Annotation> AnnotationType getAnnotation( Class<AnnotationType> annotationType,
                                                                                        Field field,
                                                                                        Method[] getters,
                                                                                        Method[] setters ) {
