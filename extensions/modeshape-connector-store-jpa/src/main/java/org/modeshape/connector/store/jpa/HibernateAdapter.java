@@ -42,10 +42,8 @@ public class HibernateAdapter implements JpaAdapter {
             setProperty(jpaProperties, Environment.HBM2DDL_AUTO, source.getAutoGenerateSchema());
         }
 
-        if (source.getDataSource() != null) {
-            // Set the data source ...
-            if (true) throw new RuntimeException("DOH");
-            // configurator.setDataSource(this.dataSource);
+        if (source.getDataSourceJndiName() != null) {
+            setProperty(jpaProperties, Environment.DATASOURCE, source.getDataSourceJndiName());
         } else {
             // Set the context class loader, so that the driver could be found ...
             if (source.getRepositoryContext() != null && source.getDriverClassloaderName() != null) {
