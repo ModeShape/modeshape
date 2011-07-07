@@ -27,7 +27,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
-import static org.modeshape.jdbc.ConnectionResultsComparator.executeTest;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -72,10 +71,10 @@ import org.modeshape.test.ModeShapeMultiUseTest;
  * </p>
  * <p>
  * To create the expected results to be used to run a test, use the test and print method: example:
- * DriverTestUtil.executeTestAndPrint(this.connection, "SELECT * FROM [nt:base]"); This will print the expected results like this:
+ * ConnectionResultsComparator.executeTestAndPrint(this.connection, "SELECT * FROM [nt:base]"); This will print the expected results like this:
  * String[] expected = { "jcr:primaryType[STRING]", "mode:root", "car:Car", "car:Car", "nt:unstructured" } Now copy the expected
  * results to the test method. Then change the test to run the executeTest method passing in the <code>expected</code> results:
- * example: DriverTestUtil.executeTest(this.connection, "SELECT * FROM [nt:base]", expected);
+ * example: ConnectionResultsComparator.executeTest(this.connection, "SELECT * FROM [nt:base]", expected);
  * </p>
  */
 public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
@@ -212,7 +211,7 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
             "nt:unstructured    /Other/NodeA[3]    NodeA    1.0    NodeA    2",
             "nt:unstructured    /Other    Other    1.0    Other    1"};
 
-        executeTest(this.connection, "SELECT * FROM [nt:base]", expected, 23);
+        ConnectionResultsComparator.executeTest(this.connection, "SELECT * FROM [nt:base]", expected, 23);
     }
 
     @Test
@@ -751,27 +750,29 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
     @Test
     public void shouldGetAllColumnsFor1Table() throws SQLException {
         results.compareColumns = false;
-
+       
         String[] expected = {
             "TABLE_CAT[String]    TABLE_SCHEM[String]    TABLE_NAME[String]    COLUMN_NAME[String]    DATA_TYPE[Long]    TYPE_NAME[String]    COLUMN_SIZE[Long]    BUFFER_LENGTH[Long]    DECIMAL_DIGITS[Long]    NUM_PREC_RADIX[Long]    NULLABLE[Long]    REMARKS[String]    COLUMN_DEF[String]    SQL_DATA_TYPE[Long]    SQL_DATETIME_SUB[Long]    CHAR_OCTET_LENGTH[Long]    ORDINAL_POSITION[Long]    IS_NULLABLE[String]    SCOPE_CATLOG[String]    SCOPE_SCHEMA[String]    SCOPE_TABLE[String]    SOURCE_DATA_TYPE[Long]",
-            "Repo    NULL    car:Car    car:engine    12    String    50    NULL    0    0    2        NULL    0    0    0    1    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    car:lengthInInches    8    Double    20    NULL    0    0    2        NULL    0    0    0    2    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    car:maker    12    String    50    NULL    0    0    2        NULL    0    0    0    3    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    car:model    12    String    50    NULL    0    0    2        NULL    0    0    0    4    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    car:mpgCity    -5    Long    20    NULL    0    0    2        NULL    0    0    0    5    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    car:mpgHighway    -5    Long    20    NULL    0    0    2        NULL    0    0    0    6    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    car:msrp    12    String    50    NULL    0    0    2        NULL    0    0    0    7    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    car:userRating    -5    Long    20    NULL    0    0    2        NULL    0    0    0    8    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    car:valueRating    -5    Long    20    NULL    0    0    2        NULL    0    0    0    9    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    car:wheelbaseInInches    8    Double    20    NULL    0    0    2        NULL    0    0    0    10    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    car:year    12    String    50    NULL    0    0    2        NULL    0    0    0    11    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    jcr:name    12    String    20    NULL    0    0    2        NULL    0    0    0    12    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    jcr:path    12    String    50    NULL    0    0    2        NULL    0    0    0    13    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    jcr:primaryType    12    String    20    NULL    0    0    1        NULL    0    0    0    14    NO    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    jcr:score    8    Double    20    NULL    0    0    2        NULL    0    0    0    15    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    mode:depth    -5    Long    20    NULL    0    0    2        NULL    0    0    0    16    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    mode:localName    12    String    50    NULL    0    0    2        NULL    0    0    0    17    YES    NULL    NULL    NULL    0"};
-
+            "Repo    NULL    car:Car    car:engine    12    STRING    50    NULL    0    0    2        NULL    0    0    0    1    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:lengthInInches    8    DOUBLE    20    NULL    0    0    2        NULL    0    0    0    2    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:maker    12    STRING    50    NULL    0    0    2        NULL    0    0    0    3    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:model    12    STRING    50    NULL    0    0    2        NULL    0    0    0    4    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:mpgCity    -5    LONG    20    NULL    0    0    2        NULL    0    0    0    5    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:mpgHighway    -5    LONG    20    NULL    0    0    2        NULL    0    0    0    6    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:msrp    12    STRING    50    NULL    0    0    2        NULL    0    0    0    7    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:userRating    -5    LONG    20    NULL    0    0    2        NULL    0    0    0    8    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:valueRating    -5    LONG    20    NULL    0    0    2        NULL    0    0    0    9    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:wheelbaseInInches    8    DOUBLE    20    NULL    0    0    2        NULL    0    0    0    10    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:year    12    STRING    50    NULL    0    0    2        NULL    0    0    0    11    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    jcr:name    12    NAME    20    NULL    0    0    2        NULL    0    0    0    12    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    jcr:path    12    PATH    50    NULL    0    0    2        NULL    0    0    0    13    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    jcr:primaryType    12    NAME    20    NULL    0    0    1        NULL    0    0    0    14    NO    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    jcr:score    8    DOUBLE    20    NULL    0    0    2        NULL    0    0    0    15    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    mode:depth    -5    LONG    20    NULL    0    0    2        NULL    0    0    0    16    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    mode:localName    12    STRING    50    NULL    0    0    2        NULL    0    0    0    17    YES    NULL    NULL    NULL    0"
+            };
+        
+        
         ResultSet rs = dbmd.getColumns("%", "%", "car:Car", "%");
 
         results.assertResultsSetEquals(rs, expected);
@@ -785,11 +786,11 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
 
         String[] expected = {
             "TABLE_CAT[String]    TABLE_SCHEM[String]    TABLE_NAME[String]    COLUMN_NAME[String]    DATA_TYPE[Long]    TYPE_NAME[String]    COLUMN_SIZE[Long]    BUFFER_LENGTH[Long]    DECIMAL_DIGITS[Long]    NUM_PREC_RADIX[Long]    NULLABLE[Long]    REMARKS[String]    COLUMN_DEF[String]    SQL_DATA_TYPE[Long]    SQL_DATETIME_SUB[Long]    CHAR_OCTET_LENGTH[Long]    ORDINAL_POSITION[Long]    IS_NULLABLE[String]    SCOPE_CATLOG[String]    SCOPE_SCHEMA[String]    SCOPE_TABLE[String]    SOURCE_DATA_TYPE[Long]",
-            "Repo    NULL    mmcore:tags    jcr:name    12    String    20    NULL    0    0    2        NULL    0    0    0    1    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    mmcore:tags    jcr:path    12    String    50    NULL    0    0    2        NULL    0    0    0    2    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    mmcore:tags    jcr:score    8    Double    20    NULL    0    0    2        NULL    0    0    0    3    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    mmcore:tags    mode:depth    -5    Long    20    NULL    0    0    2        NULL    0    0    0    4    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    mmcore:tags    mode:localName    12    String    50    NULL    0    0    2        NULL    0    0    0    5    YES    NULL    NULL    NULL    0"};
+            "Repo    NULL    mmcore:tags    jcr:name    12    NAME    20    NULL    0    0    2        NULL    0    0    0    1    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    mmcore:tags    jcr:path    12    PATH    50    NULL    0    0    2        NULL    0    0    0    2    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    mmcore:tags    jcr:score    8    DOUBLE    20    NULL    0    0    2        NULL    0    0    0    3    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    mmcore:tags    mode:depth    -5    LONG    20    NULL    0    0    2        NULL    0    0    0    4    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    mmcore:tags    mode:localName    12    STRING    50    NULL    0    0    2        NULL    0    0    0    5    YES    NULL    NULL    NULL    0"};
 
         ResultSet rs = dbmd.getColumns("%", "%", "mmcore:tags", "%");
 
@@ -804,28 +805,30 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
 
         String[] expected = {
             "TABLE_CAT[String]    TABLE_SCHEM[String]    TABLE_NAME[String]    COLUMN_NAME[String]    DATA_TYPE[Long]    TYPE_NAME[String]    COLUMN_SIZE[Long]    BUFFER_LENGTH[Long]    DECIMAL_DIGITS[Long]    NUM_PREC_RADIX[Long]    NULLABLE[Long]    REMARKS[String]    COLUMN_DEF[String]    SQL_DATA_TYPE[Long]    SQL_DATETIME_SUB[Long]    CHAR_OCTET_LENGTH[Long]    ORDINAL_POSITION[Long]    IS_NULLABLE[String]    SCOPE_CATLOG[String]    SCOPE_SCHEMA[String]    SCOPE_TABLE[String]    SOURCE_DATA_TYPE[Long]",
-            "Repo    NULL    car:Car    car:engine    12    String    50    NULL    0    0    2        NULL    0    0    0    1    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    car:lengthInInches    8    Double    20    NULL    0    0    2        NULL    0    0    0    2    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    car:maker    12    String    50    NULL    0    0    2        NULL    0    0    0    3    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    car:model    12    String    50    NULL    0    0    2        NULL    0    0    0    4    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    car:mpgCity    -5    Long    20    NULL    0    0    2        NULL    0    0    0    5    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    car:mpgHighway    -5    Long    20    NULL    0    0    2        NULL    0    0    0    6    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    car:msrp    12    String    50    NULL    0    0    2        NULL    0    0    0    7    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    car:userRating    -5    Long    20    NULL    0    0    2        NULL    0    0    0    8    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    car:valueRating    -5    Long    20    NULL    0    0    2        NULL    0    0    0    9    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    car:wheelbaseInInches    8    Double    20    NULL    0    0    2        NULL    0    0    0    10    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    car:year    12    String    50    NULL    0    0    2        NULL    0    0    0    11    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    jcr:name    12    String    20    NULL    0    0    2        NULL    0    0    0    12    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    jcr:path    12    String    50    NULL    0    0    2        NULL    0    0    0    13    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    jcr:primaryType    12    String    20    NULL    0    0    1        NULL    0    0    0    14    NO    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    jcr:score    8    Double    20    NULL    0    0    2        NULL    0    0    0    15    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    mode:depth    -5    Long    20    NULL    0    0    2        NULL    0    0    0    16    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    mode:localName    12    String    50    NULL    0    0    2        NULL    0    0    0    17    YES    NULL    NULL    NULL    0"};
+            "Repo    NULL    car:Car    car:engine    12    STRING    50    NULL    0    0    2        NULL    0    0    0    1    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:lengthInInches    8    DOUBLE    20    NULL    0    0    2        NULL    0    0    0    2    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:maker    12    STRING    50    NULL    0    0    2        NULL    0    0    0    3    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:model    12    STRING    50    NULL    0    0    2        NULL    0    0    0    4    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:mpgCity    -5    LONG    20    NULL    0    0    2        NULL    0    0    0    5    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:mpgHighway    -5    LONG    20    NULL    0    0    2        NULL    0    0    0    6    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:msrp    12    STRING    50    NULL    0    0    2        NULL    0    0    0    7    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:userRating    -5    LONG    20    NULL    0    0    2        NULL    0    0    0    8    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:valueRating    -5    LONG    20    NULL    0    0    2        NULL    0    0    0    9    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:wheelbaseInInches    8    DOUBLE    20    NULL    0    0    2        NULL    0    0    0    10    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:year    12    STRING    50    NULL    0    0    2        NULL    0    0    0    11    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    jcr:name    12    NAME    20    NULL    0    0    2        NULL    0    0    0    12    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    jcr:path    12    PATH    50    NULL    0    0    2        NULL    0    0    0    13    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    jcr:primaryType    12    NAME    20    NULL    0    0    1        NULL    0    0    0    14    NO    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    jcr:score    8    DOUBLE    20    NULL    0    0    2        NULL    0    0    0    15    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    mode:depth    -5    LONG    20    NULL    0    0    2        NULL    0    0    0    16    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    mode:localName    12    STRING    50    NULL    0    0    2        NULL    0    0    0    17    YES    NULL    NULL    NULL    0"
+            };
 
         ResultSet rs = dbmd.getColumns("%", "%", "car%", "%");
 
         results.assertResultsSetEquals(rs, expected);
         results.assertRowCount(11);
+
 
     }
 
@@ -835,12 +838,14 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
 
         String[] expected = {
             "TABLE_CAT[String]    TABLE_SCHEM[String]    TABLE_NAME[String]    COLUMN_NAME[String]    DATA_TYPE[Long]    TYPE_NAME[String]    COLUMN_SIZE[Long]    BUFFER_LENGTH[Long]    DECIMAL_DIGITS[Long]    NUM_PREC_RADIX[Long]    NULLABLE[Long]    REMARKS[String]    COLUMN_DEF[String]    SQL_DATA_TYPE[Long]    SQL_DATETIME_SUB[Long]    CHAR_OCTET_LENGTH[Long]    ORDINAL_POSITION[Long]    IS_NULLABLE[String]    SCOPE_CATLOG[String]    SCOPE_SCHEMA[String]    SCOPE_TABLE[String]    SOURCE_DATA_TYPE[Long]",
-            "Repo    NULL    car:Car    car:msrp    12    String    50    NULL    0    0    2        NULL    0    0    0    1    YES    NULL    NULL    NULL    0"};
-
+            "Repo    NULL    car:Car    car:msrp    12    STRING    50    NULL    0    0    2        NULL    0    0    0    1    YES    NULL    NULL    NULL    0"
+            };
+        
         ResultSet rs = dbmd.getColumns("%", "%", "car:Car", "car:msrp");
+      
         results.assertResultsSetEquals(rs, expected);
         results.assertRowCount(1);
-
+        
     }
 
     @FixFor( "MODE-981" )
@@ -1200,5 +1205,4 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
         }
 
     }
-
 }

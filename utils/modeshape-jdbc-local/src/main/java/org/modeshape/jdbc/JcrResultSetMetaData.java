@@ -25,12 +25,12 @@ package org.modeshape.jdbc;
 
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.Types;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.query.QueryResult;
+import org.modeshape.jdbc.JcrType.DefaultDataTypes;
 
 /**
  * This driver's {@link ResultSetMetaData} implementation that obtains the metadata information from the JCR query result and
@@ -68,8 +68,7 @@ public class JcrResultSetMetaData implements ResultSetMetaData {
      */
     @Override
     public String getColumnClassName( int column ) {
-    	JcrType typeInfo = JcrType.typeInfo(getColumnTypeName(column));
-    	return typeInfo != null ? typeInfo.getRepresentationClass().getName() : String.class.getName();
+        return getJcrType(column).getRepresentationClass().getName();
     }
 
     /**
@@ -97,7 +96,7 @@ public class JcrResultSetMetaData implements ResultSetMetaData {
      */
     @Override
     public int getColumnDisplaySize( int column ) {
-    	return JcrType.typeInfo(getColumnTypeName(column)).getNominalDisplaySize();
+        return getJcrType(column).getNominalDisplaySize();
     }
 
     /**
@@ -131,8 +130,7 @@ public class JcrResultSetMetaData implements ResultSetMetaData {
      */
     @Override
     public int getColumnType( int column ) {
-    	JcrType typeInfo = JcrType.typeInfo(getColumnTypeName(column));
-    	return typeInfo != null ? typeInfo.getJdbcType() : Types.VARCHAR;
+        return getJcrType(column).getJdbcType();
     }
 
     /**
@@ -142,10 +140,7 @@ public class JcrResultSetMetaData implements ResultSetMetaData {
      */
     @Override
     public String getColumnTypeName( int column ) {
-        if (results instanceof org.modeshape.jcr.api.query.QueryResult) {
-            return ((org.modeshape.jcr.api.query.QueryResult)results).getColumnTypes()[column - 1]; // column value is 1-based
-        }
-        return PropertyType.nameFromValue(PropertyType.STRING);
+        return getJcrType(column).getJdbcTypeName();
     }
 
     /**
@@ -158,8 +153,7 @@ public class JcrResultSetMetaData implements ResultSetMetaData {
      */
     @Override
     public int getPrecision( int column ) {
-    	JcrType typeInfo = JcrType.typeInfo(getColumnTypeName(column));
-    	return typeInfo.getNominalDisplaySize();
+        return getJcrType(column).getNominalDisplaySize();
     }
 
     /**
@@ -173,7 +167,7 @@ public class JcrResultSetMetaData implements ResultSetMetaData {
      */
     @Override
     public int getScale( int column ) {
-        JcrType typeInfo = JcrType.typeInfo(getColumnTypeName(column));
+        JcrType typeInfo = getJcrType(column);
         if (typeInfo.getJcrType() == PropertyType.DOUBLE) {
             return 3; // pulled from thin air
         }
@@ -227,8 +221,7 @@ public class JcrResultSetMetaData implements ResultSetMetaData {
      */
     @Override
     public boolean isCaseSensitive( int column ) {
-        JcrType typeInfo = JcrType.typeInfo(getColumnTypeName(column));
-        return typeInfo.isCaseSensitive();
+        return getJcrType(column).isCaseSensitive();
     }
 
     /**
@@ -348,8 +341,7 @@ public class JcrResultSetMetaData implements ResultSetMetaData {
      */
     @Override
     public boolean isSigned( int column ) {
-    	JcrType typeInfo = JcrType.typeInfo(getColumnTypeName(column));
-    	return typeInfo.isSigned();
+        return getJcrType(column).isSigned();
     }
 
     /**
@@ -387,6 +379,19 @@ public class JcrResultSetMetaData implements ResultSetMetaData {
             return iface.cast(results);
         }
         throw new SQLException(JdbcLocalI18n.classDoesNotImplementInterface.text(ResultSetMetaData.class.getSimpleName(),
-                                                                            iface.getName()));
+                                                                                 iface.getName()));
     }
+
+    private JcrType getJcrType( int column ) {
+        JcrType typeInfo = null;
+        if (results instanceof org.modeshape.jcr.api.query.QueryResult) {
+            final String typeName = ((org.modeshape.jcr.api.query.QueryResult)results).getColumnTypes()[column - 1];
+            typeInfo = JcrType.typeInfo(typeName);
+        }
+        /**
+         * If no type is matched, then default to STRING
+         */
+        return (typeInfo != null ? typeInfo : JcrType.typeInfo(DefaultDataTypes.STRING));
+    }
+
 }
