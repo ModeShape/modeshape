@@ -41,6 +41,7 @@ public class NoCachePolicy<KeyType, NodeType extends Node> implements NodeCacheP
     private static final long serialVersionUID = 1L;
 
     /**
+     * @param node the node
      * @return false for all nodes
      * @see PathCachePolicy#shouldCache(PathNode)
      */

@@ -137,8 +137,8 @@ public class FileSystemSource extends AbstractNodeCachingRepositorySource<Path, 
     public static final boolean DEFAULT_DETERMINE_MIME_TYPE_USING_CONTENT = false;
 
     /**
-     * The default path to the temporary storage area, the default value uses the directory specified by the {@code
-     * java.io.tmpdir} system property.
+     * The default path to the temporary storage area, the default value uses the directory specified by the
+     * {@code java.io.tmpdir} system property.
      */
     public static final String DEFAULT_TEMPORARY_STORAGE_PATH = JAVA_TEMP_DIR;
 
@@ -771,7 +771,7 @@ public class FileSystemSource extends AbstractNodeCachingRepositorySource<Path, 
             FileSystemSource source = new FileSystemSource();
             if (sourceName != null) source.setName(sourceName);
             if (defaultCachePolicy instanceof CachePolicy) source.setCachePolicy((CachePolicy)defaultCachePolicy);
-            if (nodeCachePolicy instanceof NodeCachePolicy) source.setNodeCachePolicy((NodeCachePolicy)nodeCachePolicy);
+            if (nodeCachePolicy instanceof NodeCachePolicy) source.setNodeCachePolicy((NodeCachePolicy<Path, PathNode>)nodeCachePolicy);
             if (defaultWorkspace != null) source.setDefaultWorkspaceName(defaultWorkspace);
             if (createWorkspaces != null) source.setCreatingWorkspacesAllowed(Boolean.parseBoolean(createWorkspaces));
             if (workspaceNames != null && workspaceNames.length != 0) source.setPredefinedWorkspaceNames(workspaceNames);

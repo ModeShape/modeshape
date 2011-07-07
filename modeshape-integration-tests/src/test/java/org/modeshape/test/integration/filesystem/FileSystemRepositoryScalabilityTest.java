@@ -148,7 +148,7 @@ public class FileSystemRepositoryScalabilityTest {
                 for (long i = 0; i < fileSize; i += CHUNK_SIZE) {
                     fos.write(buff);
                 }
-    
+
                 fos.close();
             }
 
@@ -174,12 +174,12 @@ public class FileSystemRepositoryScalabilityTest {
             System.out.println("Wrote " + fileSize + " bytes in " + (System.currentTimeMillis() - start) + "ms");
         } finally {
             try {
-                if ( newFile != null && newFile.exists() ) {
+                if (newFile.exists()) {
                     newFile.delete();
                 }
             } finally {
                 newFile = new File("./target/largeFile.bin");
-                if ( newFile != null && newFile.exists() ) {
+                if (newFile.exists()) {
                     newFile.delete();
                 }
             }

@@ -18,7 +18,7 @@
                      mode:retryLimit="3" mode:defaultWorkspaceName="default" >
         </mode:source>
 
-        <mode:source jcr:name="Disk-Based Store"
+        <mode:source jcr:name="Disk-Based Store w/ cache"
                      mode:classname="org.modeshape.connector.disk.DiskSource"
                      mode:repositoryRootPath="./target/diskRepositoryRoot"
                      mode:retryLimit="3" mode:defaultWorkspaceName="default" >
@@ -27,16 +27,23 @@
                      	mode:classname="org.modeshape.graph.connector.base.cache.InMemoryNodeCache$MapCachePolicy" /> 
         </mode:source>
 
+        <mode:source jcr:name="Disk-Based Store w/o cache"
+                     mode:classname="org.modeshape.connector.disk.DiskSource"
+                     mode:repositoryRootPath="./target/diskNoCacheRepositoryRoot"
+                     mode:retryLimit="3" mode:defaultWorkspaceName="default" >
+        </mode:source>
+
         <mode:source jcr:name="File Store"
                      mode:classname="org.modeshape.connector.filesystem.FileSystemSource"
                      mode:workspaceRootPath="./target/fileRepositoryRoot"
                      mode:updatesAllowed="true"
                      mode:retryLimit="3" mode:defaultWorkspaceName="default" >
         </mode:source>
+
 <!--
-        <mode:source jcr:name="JPA Store"
-                     mode:classname="org.modeshape.connector.store.jpa.JpaSource"
-                     mode:autoGenerateSchema="create"
+        <mode:source jcr:name="JPA Store, no 2nd-Level Cache"
+              mode:classname="org.modeshape.connector.store.jpa.JpaSource"
+              mode:autoGenerateSchema="create"
 		        	mode:model="Simple"
 		        	mode:dialect="${jpaSource.dialect}"
 		        	mode:driverClassName="${jpaSource.driverClassName}"
@@ -50,8 +57,71 @@
 		        	mode:compressData="${jpaSource.compressData}"
 		        	mode:predefinedWorkspaceNames="default, otherWorkspace"
 		        	mode:showSql="${jpaSource.showSql}"
-		            mode:creatingWorkspacesAllowed="true"
-                    mode:defaultWorkspaceName="default" >
+		          mode:creatingWorkspacesAllowed="true"
+              mode:defaultWorkspaceName="default" >
+        </mode:source>
+
+        <mode:source jcr:name="JPA Store, Infinispan 2nd-level Cache"
+              mode:classname="org.modeshape.connector.store.jpa.JpaSource"
+              mode:autoGenerateSchema="create"
+		        	mode:model="Simple"
+		        	mode:dialect="${jpaSource.dialect}"
+		        	mode:driverClassName="${jpaSource.driverClassName}"
+		        	mode:username="${jpaSource.username}"
+		        	mode:password="${jpaSource.password}"
+		        	mode:url="${jpaSource.url}"
+		        	mode:maximumConnectionsInPool="${jpaSource.maximumConnectionsInPool}"
+		        	mode:referentialIntegrityEnforced="${jpaSource.referentialIntegrityEnforced}"
+		        	mode:largeValueSizeInBytes="${jpaSource.largeValueSizeInBytes}"
+		        	mode:retryLimit="${jpaSource.retryLimit}"
+		        	mode:compressData="${jpaSource.compressData}"
+		        	mode:predefinedWorkspaceNames="default, otherWorkspace"
+		        	mode:showSql="${jpaSource.showSql}"
+		          mode:creatingWorkspacesAllowed="true"
+              mode:defaultWorkspaceName="default"
+              mode:jpaPersistenceUnitName="modeshape-connector-jpa-infinispan">
+        </mode:source>
+
+        <mode:source jcr:name="JPA Store, Ehcache 2nd-level Cache"
+              mode:classname="org.modeshape.connector.store.jpa.JpaSource"
+              mode:autoGenerateSchema="create"
+		        	mode:model="Simple"
+		        	mode:dialect="${jpaSource.dialect}"
+		        	mode:driverClassName="${jpaSource.driverClassName}"
+		        	mode:username="${jpaSource.username}"
+		        	mode:password="${jpaSource.password}"
+		        	mode:url="${jpaSource.url}"
+		        	mode:maximumConnectionsInPool="${jpaSource.maximumConnectionsInPool}"
+		        	mode:referentialIntegrityEnforced="${jpaSource.referentialIntegrityEnforced}"
+		        	mode:largeValueSizeInBytes="${jpaSource.largeValueSizeInBytes}"
+		        	mode:retryLimit="${jpaSource.retryLimit}"
+		        	mode:compressData="${jpaSource.compressData}"
+		        	mode:predefinedWorkspaceNames="default, otherWorkspace"
+		        	mode:showSql="${jpaSource.showSql}"
+		          mode:creatingWorkspacesAllowed="true"
+              mode:defaultWorkspaceName="default"
+              mode:jpaPersistenceUnitName="modeshape-connector-jpa-ehcache">
+        </mode:source>
+
+        <mode:source jcr:name="JPA Store, Simple 2nd-level Cache"
+              mode:classname="org.modeshape.connector.store.jpa.JpaSource"
+              mode:autoGenerateSchema="create"
+		        	mode:model="Simple"
+		        	mode:dialect="${jpaSource.dialect}"
+		        	mode:driverClassName="${jpaSource.driverClassName}"
+		        	mode:username="${jpaSource.username}"
+		        	mode:password="${jpaSource.password}"
+		        	mode:url="${jpaSource.url}"
+		        	mode:maximumConnectionsInPool="${jpaSource.maximumConnectionsInPool}"
+		        	mode:referentialIntegrityEnforced="${jpaSource.referentialIntegrityEnforced}"
+		        	mode:largeValueSizeInBytes="${jpaSource.largeValueSizeInBytes}"
+		        	mode:retryLimit="${jpaSource.retryLimit}"
+		        	mode:compressData="${jpaSource.compressData}"
+		        	mode:predefinedWorkspaceNames="default, otherWorkspace"
+		        	mode:showSql="${jpaSource.showSql}"
+		          mode:creatingWorkspacesAllowed="true"
+              mode:defaultWorkspaceName="default"
+              mode:jpaPersistenceUnitName="modeshape-connector-jpa-simple">
         </mode:source>
 -->
     </mode:sources>
