@@ -146,7 +146,15 @@
                                                isolation level is currently set o
                                        </entry>
                                </row>
-                               <row>
+				<row>
+					<entry>jpaPersistenceUnitName</entry>
+					<entry>
+						An advanced string property that selects the JPA persistence unit to use for persistence configuration.  This can be set
+						to the name of one of several built-in configurations or a custom configuration provided by the ModeShape user.  This property
+						is discussed in more detail in <link linkend="jpa-connector-cache-configuration">the cache configuration section</link>.  
+					</entry>
+				</row>
+                 <row>
 					<entry>largeValueSizeInBytes</entry>
 					<entry>
 						An advanced boolean property that controls the size of property values at which they are considered to be "large values".  
@@ -432,6 +440,221 @@ ddl-gen.sh(.bat) -dialect &lt;dialect name&gt; -model &lt;model_name&gt; [-out &
 	       Other databases do not seem to be affected by this issue. 
 	     </para>
 	   </warning>
+	</sect1>
+	<sect1 id="jpa-connector-cache-configuration">
+		<title>Cache Configuration</title>
+		<para>
+			Although future versions of the &JpaSource; may allow users to select any JPA implementation, Hibernate is always used as 
+			the current implementation.  By setting the value of the <code>jpaPersistenceUnitName</code> property, ModeShape users can 
+			select from one of several predefined persistence mappings to utilize a 
+			particular cache, or provide their own persistence mapping from a custom persistence.xml file.
+		</para>
+		<para>
+			By default, ModeShape sets the <code>jpaPersistenceUnitName</code> property to "modeshape-connector-jpa-nocache", which 
+			does not utilize any second level cache.  This does not provide the best performance, but does guarantee that JPA content is never
+			stale, regardless of the ModeShape topology.  The particular configuration used looks like this:
+		</para>
+		<programlisting language="XML"><![CDATA[
+<persistence-unit name="modeshape-connector-jpa-nocache">
+
+	<class>org.modeshape.connector.store.jpa.util.StoreOptionEntity</class>
+	<class>org.modeshape.connector.store.jpa.model.common.ChangeLogEntity</class>
+	<class>org.modeshape.connector.store.jpa.model.common.NamespaceEntity</class>
+	<class>org.modeshape.connector.store.jpa.model.common.WorkspaceEntity</class>
+
+	<class>org.modeshape.connector.store.jpa.model.simple.LargeValueEntity</class>
+	<class>org.modeshape.connector.store.jpa.model.simple.NodeEntity</class>
+	<class>org.modeshape.connector.store.jpa.model.simple.SubgraphNodeEntity</class>
+	<class>org.modeshape.connector.store.jpa.model.simple.SubgraphQueryEntity</class>
+
+	<properties>
+		<property name="hibernate.show_sql" value="false" />		
+		<property name="hibernate.cache.use_second_level_cache" value="false" />		
+	</properties>
+</persistence-unit>
+]]></programlisting>
+		<para>
+			A second built-in configuration that provides basic caching is "modeshape-connector-jpa-simple".  This provides caching that does not
+			rely on external libraries or configuration, but <emphasis>is not recommended for production use.</emphasis>  The configuration (listed
+			below) enables read-write caching and query caching, reducing the amount of queries that the database must support.   
+		</para>
+		<programlisting language="XML"><![CDATA[
+<persistence-unit name="modeshape-connector-jpa-simple">
+
+	<class>org.modeshape.connector.store.jpa.util.StoreOptionEntity</class>
+	<class>org.modeshape.connector.store.jpa.model.common.ChangeLogEntity</class>
+	<class>org.modeshape.connector.store.jpa.model.common.NamespaceEntity</class>
+	<class>org.modeshape.connector.store.jpa.model.common.WorkspaceEntity</class>
+
+	<class>org.modeshape.connector.store.jpa.model.simple.LargeValueEntity</class>
+	<class>org.modeshape.connector.store.jpa.model.simple.NodeEntity</class>
+	<class>org.modeshape.connector.store.jpa.model.simple.SubgraphNodeEntity</class>
+	<class>org.modeshape.connector.store.jpa.model.simple.SubgraphQueryEntity</class>
+
+	<properties>
+		<property name="hibernate.show_sql" value="false" />		
+		<property name="hibernate.cache.use_second_level_cache" value="true" />		
+		<property name="hibernate.cache.use_query_cache" value="true" />		
+		<property name="hibernate.cache.provider_class" value="org.hibernate.cache.HashtableCacheProvider" />
+
+		<property 
+			name="hibernate.ejb.classcache.org.modeshape.connector.store.jpa.model.common.WorkspaceEntity" 
+			value="read-write" />		
+		<property 
+			name="hibernate.ejb.classcache.org.modeshape.connector.store.jpa.model.common.NamespaceEntity" 
+			value="read-write" />		
+		<property 
+			name="hibernate.ejb.classcache.org.modeshape.connector.store.jpa.model.simple.NodeEntity" 
+			value="read-write" />		
+		<property 
+			name="hibernate.ejb.classcache.org.modeshape.connector.store.jpa.model.simple.LargeValueEntity" 
+			value="read-write" />		
+		<property 
+			name="hibernate.ejb.collectioncache.org.modeshape.connector.store.jpa.model.simple.NodeEntity.children"
+			value="read-write" />		
+		<property 
+			name="hibernate.ejb.collectioncache.org.modeshape.connector.store.jpa.model.simple.NodeEntity.largeValues" 
+			value="read-write" />		
+	</properties>
+</persistence-unit>
+]]></programlisting>
+		<para>
+			A more sophisticated built-in configuration uses EHCache as a cache provider.  This configuration, "modeshape-connector-jpa-ehcache", configures 
+			reasonable per-entity default caches.  This configuration is suitable when ModeShape is deployed on a single server (i.e., ModeShape is not clustered
+			and does not require synchronization between any other ModeShape instances.  The JPA persistence configuration is very straightfoward:
+		</para>
+		<programlisting language="XML"><![CDATA[
+<persistence-unit name="modeshape-connector-jpa-ehcache">
+
+	<class>org.modeshape.connector.store.jpa.util.StoreOptionEntity</class>
+	<class>org.modeshape.connector.store.jpa.model.common.ChangeLogEntity</class>
+	<class>org.modeshape.connector.store.jpa.model.common.NamespaceEntity</class>
+	<class>org.modeshape.connector.store.jpa.model.common.WorkspaceEntity</class>
+
+	<class>org.modeshape.connector.store.jpa.model.simple.LargeValueEntity</class>
+	<class>org.modeshape.connector.store.jpa.model.simple.NodeEntity</class>
+	<class>org.modeshape.connector.store.jpa.model.simple.SubgraphNodeEntity</class>
+	<class>org.modeshape.connector.store.jpa.model.simple.SubgraphQueryEntity</class>
+
+	<properties>
+		<property name="hibernate.show_sql" value="false" />		
+		<property name="hibernate.cache.use_second_level_cache" value="true" />		
+		<property name="hibernate.cache.use_query_cache" value="true" />		
+		<property name="hibernate.cache.region.factory_class" value="net.sf.ehcache.hibernate.EhCacheRegionFactory" />
+		<property name="net.sf.ehcache.configurationResourceName" value="/META-INF/ehcache.xml" />		
+
+		<property 
+			name="hibernate.ejb.classcache.org.modeshape.connector.store.jpa.model.common.WorkspaceEntity" 
+			value="read-write" />		
+		<property 
+			name="hibernate.ejb.classcache.org.modeshape.connector.store.jpa.model.common.NamespaceEntity" 
+			value="read-write" />		
+		<property 
+			name="hibernate.ejb.classcache.org.modeshape.connector.store.jpa.model.simple.NodeEntity" 
+			value="read-write" />		
+		<property 
+			name="hibernate.ejb.classcache.org.modeshape.connector.store.jpa.model.simple.LargeValueEntity" 
+			value="read-write" />		
+		<property 
+			name="hibernate.ejb.collectioncache.org.modeshape.connector.store.jpa.model.simple.NodeEntity.children" 
+			value="read-write" />		
+		<property 
+			name="hibernate.ejb.collectioncache.org.modeshape.connector.store.jpa.model.simple.NodeEntity.largeValues" 
+			value="read-write" />		
+	</properties>
+</persistence-unit>
+]]></programlisting>
+		<para>
+			This configuration loads EHCache-specific configuration from the provided default configuration file "/META-INF/ehcache.xml"  <emphasis>The
+			default values in this file, listed below, may change in future releases.</emphasis>  For this reason alone, it is strongly recommended
+			that EHCache users provide their own cache configuration.  Also, the configuration below is not suitable for clustered use, as it does not
+			perform any cache coordination between individual nodes in the cluster.
+		</para>
+		<programlisting language="XML"><![CDATA[
+<?xml version="1.0" encoding="UTF-8" ?>
+<ehcache maxBytesOnHeap="256m" >
+
+	<defaultCache timeToLiveSeconds="30" />
+	
+	<cache name="org.modeshape.connector.store.jpa.model.common.NamespaceEntity"
+		maxElementsInMemory="100" 
+		timeToLiveSeconds="300" />
+	<cache name="org.modeshape.connector.store.jpa.model.common.WorkspaceEntity" 
+		maxElementsInMemory="200" 
+		timeToLiveSeconds="300" />
+
+	<!--  Need to keep this from squeezing out everything else in the cache -->
+	<cache name="org.modeshape.connector.store.jpa.model.simple.LargeValueEntity" 
+		maxElementsInMemory="20" 
+		timeToLiveSeconds="30"
+		 />
+		 
+	<cache name="org.modeshape.connector.store.jpa.model.simple.NodeEntity" 
+		maxElementsInMemory="100" 
+		timeToLiveSeconds="60" />
+	<cache name="org.modeshape.connector.store.jpa.model.simple.NodeEntity.children" 
+		maxElementsInMemory="1000" 
+		timeToLiveSeconds="60" />
+	<cache name="org.modeshape.connector.store.jpa.model.simple.NodeEntity.largeValues" 
+		maxElementsInMemory="1000" 
+		timeToLiveSeconds="60" />
+
+	<cache name="org.hibernate.cache.StandardQueryCache" 
+		timeToLiveSeconds="30" 
+		maxElementsInMemory="50" />
+
+	<cache name="org.hibernate.cache.UpdateTimestampsCache" 
+		timeToLiveSeconds="30" 
+		maxElementsInMemory="500" />
+</ehcache>
+]]></programlisting>
+		<para>
+			Finally, ModeShape provides a default configuration that is suitable for use in a cluster.  This configuration, "modeshape-connector-jpa-infinispan"
+			uses Infinispan as the Hibernate second level cache.  This provides transactional coordination between caches to help ensure that all nodes are aware
+			of data modifications.  The persistence configuration below uses the default Infinispan configuration, so users may wish to provide a custom persistence
+			configuration that references a customer Infinispan configuration.
+		</para>
+		<programlisting language="XML"><![CDATA[
+<persistence-unit name="modeshape-connector-jpa-infinispan">
+
+	<class>org.modeshape.connector.store.jpa.util.StoreOptionEntity</class>
+	<class>org.modeshape.connector.store.jpa.model.common.ChangeLogEntity</class>
+	<class>org.modeshape.connector.store.jpa.model.common.NamespaceEntity</class>
+	<class>org.modeshape.connector.store.jpa.model.common.WorkspaceEntity</class>
+
+	<class>org.modeshape.connector.store.jpa.model.simple.LargeValueEntity</class>
+	<class>org.modeshape.connector.store.jpa.model.simple.NodeEntity</class>
+	<class>org.modeshape.connector.store.jpa.model.simple.SubgraphNodeEntity</class>
+	<class>org.modeshape.connector.store.jpa.model.simple.SubgraphQueryEntity</class>
+
+	<properties>
+		<property name="hibernate.show_sql" value="false" />		
+		<property name="hibernate.cache.use_second_level_cache" value="true" />		
+		<property name="hibernate.cache.use_query_cache" value="true" />		
+		<property name="hibernate.cache.region.factory_class" value="org.hibernate.cache.infinispan.InfinispanRegionFactory" />
+
+		<property 
+			name="hibernate.ejb.classcache.org.modeshape.connector.store.jpa.model.common.WorkspaceEntity" 
+			value="transactional" />		
+		<property 
+			name="hibernate.ejb.classcache.org.modeshape.connector.store.jpa.model.common.NamespaceEntity" 
+			value="transactional" />		
+		<property 
+			name="hibernate.ejb.classcache.org.modeshape.connector.store.jpa.model.simple.NodeEntity" 
+			value="transactional" />		
+		<property 
+			name="hibernate.ejb.classcache.org.modeshape.connector.store.jpa.model.simple.LargeValueEntity" 
+			value="transactional" />		
+		<property 
+			name="hibernate.ejb.collectioncache.org.modeshape.connector.store.jpa.model.simple.NodeEntity.children" 
+			value="transactional" />		
+		<property 
+			name="hibernate.ejb.collectioncache.org.modeshape.connector.store.jpa.model.simple.NodeEntity.largeValues" 
+			value="transactional" />		
+	</properties>
+</persistence-unit>
+]]></programlisting>
+		
 	</sect1>
 </chapter>
 

@@ -174,7 +174,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     /**
      * The {@link #getJpaPersistenceUnitName() name of the JPA persistence unit} is "{@value} ", unless otherwise specified.
      */
-    public static final String DEFAULT_JPA_PERSISTENCE_UNIT_NAME = "modeshape-connector-store-jpa";
+    public static final String DEFAULT_JPA_PERSISTENCE_UNIT_NAME = "modeshape-connector-jpa-nocache";
 
     public static final String DEFAULT_SCHEMA_NAME = null;
 
@@ -210,7 +210,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      */
     public static final String DEFAULT_AUTO_GENERATE_SCHEMA = "validate";
 
-    public static final String BOOTSTRAP_PERSISTENCE_UNIT_NAME = "modeshape-connector-store-jpa-bootstrap";
+    public static final String BOOTSTRAP_PERSISTENCE_UNIT_NAME = "modeshape-connector-jpa-bootstrap";
 
     /**
      * The first serialized version of this source.
