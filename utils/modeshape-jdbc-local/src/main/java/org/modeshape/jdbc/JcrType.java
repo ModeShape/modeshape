@@ -71,19 +71,19 @@ public final class JcrType {
 
     static {
         Map<String, JcrType> types = new HashMap<String, JcrType>();
-        register(types, PropertyType.BINARY, Types.BLOB, "Blob", JcrBlob.class, 30, Integer.MAX_VALUE, new BlobTransform()); // assumed
-        register(types, PropertyType.BOOLEAN, Types.BOOLEAN, "Boolean", Boolean.class, 5, 1, new BooleanTransform()); // 'true' or 'false'
-        register(types, PropertyType.DATE, Types.TIMESTAMP, "Timestamp", Timestamp.class, 30, 10, new DateTransform()); // yyyy-MM-dd'T'HH:mm:ss.SSS+HH:mm
-        register(types, PropertyType.DOUBLE, Types.DOUBLE, "Double" ,Double.class, 20, 20, new DoubleTransform()); // assumed
-        register(types, PropertyType.DECIMAL, Types.DECIMAL, "Bigdecimal", BigDecimal.class, 20, 20, new DecimalTransform()); // assumed
-        register(types, PropertyType.LONG, Types.BIGINT, "Long", Long.class, 20, 19, new LongTransform()); // assumed
-        register(types, PropertyType.NAME, Types.VARCHAR, "String", String.class, 20, Integer.MAX_VALUE, new StringTransform()); // assumed
-        register(types, PropertyType.PATH, Types.VARCHAR, "String", String.class, 50, Integer.MAX_VALUE, new StringTransform()); // assumed
-        register(types, PropertyType.REFERENCE, Types.VARCHAR, "String", UUID.class, UUID_LENGTH, UUID_LENGTH, new UUIDTransform());
-        register(types, PropertyType.WEAKREFERENCE, Types.VARCHAR, "String", UUID.class, UUID_LENGTH, UUID_LENGTH, new UUIDTransform());
-        register(types, PropertyType.URI, Types.VARCHAR, "String", String.class, 50, Integer.MAX_VALUE, new StringTransform()); // assumed
-        register(types, PropertyType.STRING, Types.VARCHAR, "String", String.class, 50, Integer.MAX_VALUE, new StringTransform()); // assumed
-        register(types, PropertyType.UNDEFINED, Types.VARCHAR, "String", String.class, 50, Integer.MAX_VALUE, new StringTransform()); // same
+        register(types, PropertyType.BINARY, Types.BLOB, "BLOB", JcrBlob.class, 30, Integer.MAX_VALUE, new BlobTransform()); // assumed
+        register(types, PropertyType.BOOLEAN, Types.BOOLEAN, "BOOLEAN", Boolean.class, 5, 1, new BooleanTransform()); // 'true' or 'false'
+        register(types, PropertyType.DATE, Types.TIMESTAMP, "TIMESTAMP", Timestamp.class, 30, 10, new DateTransform()); // yyyy-MM-dd'T'HH:mm:ss.SSS+HH:mm
+        register(types, PropertyType.DOUBLE, Types.DOUBLE, "DOUBLE" ,Double.class, 20, 20, new DoubleTransform()); // assumed
+        register(types, PropertyType.DECIMAL, Types.DECIMAL, "BIGDECIMAL", BigDecimal.class, 20, 20, new DecimalTransform()); // assumed
+        register(types, PropertyType.LONG, Types.BIGINT, "LONG", Long.class, 20, 19, new LongTransform()); // assumed
+        register(types, PropertyType.NAME, Types.VARCHAR, "NAME", String.class, 20, Integer.MAX_VALUE, new StringTransform()); // assumed
+        register(types, PropertyType.PATH, Types.VARCHAR, "PATH", String.class, 50, Integer.MAX_VALUE, new StringTransform()); // assumed
+        register(types, PropertyType.REFERENCE, Types.VARCHAR, "STRING", UUID.class, UUID_LENGTH, UUID_LENGTH, new UUIDTransform());
+        register(types, PropertyType.WEAKREFERENCE, Types.VARCHAR, "STRING", UUID.class, UUID_LENGTH, UUID_LENGTH, new UUIDTransform());
+        register(types, PropertyType.URI, Types.VARCHAR, "STRING", String.class, 50, Integer.MAX_VALUE, new StringTransform()); // assumed
+        register(types, PropertyType.STRING, Types.VARCHAR, "STRING", String.class, 50, Integer.MAX_VALUE, new StringTransform()); // assumed
+        register(types, PropertyType.UNDEFINED, Types.VARCHAR, "STRING", String.class, 50, Integer.MAX_VALUE, new StringTransform()); // same
         // as
         // string
         TYPE_INFO = Collections.unmodifiableMap(types);
@@ -118,7 +118,7 @@ public final class JcrType {
                        int precision,
                        Transform transform ) {
         this.jcrType = jcrType;
-        this.jcrName = PropertyType.nameFromValue(jcrType);
+        this.jcrName = PropertyType.nameFromValue(jcrType).toUpperCase();
         this.clazz = clazz;
         this.displaySize = displaySize;
         this.jdbcType = jdbcType;
@@ -259,21 +259,17 @@ public final class JcrType {
         return jcrtype.translateValue(value);
     }
 
-    /**
-     * Get the immutable built-in map from the type names to the Java representation class.
-     * 
-     * @return the built-in type map
-     */
-    public static Map<String, JcrType> builtInTypeMap() {
-        return TYPE_INFO;
-    }
-
-    public static JcrType typeInfo( String typeName ) {
-        return TYPE_INFO.get(typeName);
+    public static JcrType typeInfo( String jcrTypeName ) {
+        return TYPE_INFO.get(jcrTypeName.toUpperCase());
     }
 
     public static JcrType typeInfo( int jcrType ) {
         return typeInfo(PropertyType.nameFromValue(jcrType));
+    }
+    
+    public static String jdbcType( String jcrTypeName ) {
+        JcrType t = typeInfo(jcrTypeName);
+        return t.getJdbcTypeName();
     }
 
 }

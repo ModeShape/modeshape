@@ -51,7 +51,7 @@ public class JcrResultSetMetaDataTest {
     public static final String PATH = TestUtil.PATH;
     public static final String REFERENCE = TestUtil.REFERENCE;
 
-    public static final Class<?> STRING_CLASS = JcrType.builtInTypeMap().get(STRING).getRepresentationClass();
+    public static final Class<?> STRING_CLASS = JcrType.typeInfo(STRING).getRepresentationClass();
 
     private JcrResultSetMetaData metadata;
     private JcrResultSetMetaData extMetadata;
@@ -145,8 +145,9 @@ public class JcrResultSetMetaDataTest {
     @Test
     public void shouldReturnActualTypeForColumnTypeWhenResultIsExtendedJcrQueryResult() {
         for (int i = 0; i != columnNames.length; ++i) {
-            assertThat(extMetadata.getColumnTypeName(i + 1), is(typeNames[i]));
             JcrType expectedType = JcrType.typeInfo(typeNames[i]);
+            
+            assertThat(extMetadata.getColumnTypeName(i + 1), is(expectedType.getJdbcTypeName()));
             assertThat(extMetadata.getColumnType(i + 1), is(expectedType.getJdbcType()));
             assertThat(extMetadata.getColumnClassName(i + 1), is(expectedType.getRepresentationClass().getName()));
         }

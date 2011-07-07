@@ -1274,9 +1274,18 @@ public class JcrResultSet implements ResultSet {
                 case PropertyType.DATE:       
                 	return value.getDate();
                 case PropertyType.DOUBLE:
+                    if (value.getType() != PropertyType.DOUBLE) {
+                        Object o = getValueObject(value, value.getType());
+                        return Double.parseDouble(o.toString());
+                    }                                     
                     return value.getDouble();
                 case PropertyType.LONG:
+                    if (value.getType() != PropertyType.LONG) {
+                        Object o = getValueObject(value, value.getType());
+                        return Long.parseLong(o.toString());
+                    } 
                     return value.getLong();
+
                 case PropertyType.BINARY:
                     return value.getBinary().getStream();
             }

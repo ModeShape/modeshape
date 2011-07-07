@@ -56,15 +56,15 @@ import org.mockito.Mockito;
  */
 public class TestUtil {
 
-    public static final String STRING = PropertyType.nameFromValue(PropertyType.STRING);
-    public static final String DOUBLE = PropertyType.nameFromValue(PropertyType.DOUBLE);
-    public static final String LONG = PropertyType.nameFromValue(PropertyType.LONG);
-    public static final String BOOLEAN = PropertyType.nameFromValue(PropertyType.BOOLEAN);
-    public static final String DATE = PropertyType.nameFromValue(PropertyType.DATE);
-    public static final String PATH = PropertyType.nameFromValue(PropertyType.PATH);
-    public static final String BINARY = PropertyType.nameFromValue(PropertyType.BINARY);
+    public static final String STRING = PropertyType.nameFromValue(PropertyType.STRING).toUpperCase();
+    public static final String DOUBLE = PropertyType.nameFromValue(PropertyType.DOUBLE).toUpperCase();
+    public static final String LONG = PropertyType.nameFromValue(PropertyType.LONG).toUpperCase();
+    public static final String BOOLEAN = PropertyType.nameFromValue(PropertyType.BOOLEAN).toUpperCase();
+    public static final String DATE = PropertyType.nameFromValue(PropertyType.DATE).toUpperCase();
+    public static final String PATH = PropertyType.nameFromValue(PropertyType.PATH).toUpperCase();
+    public static final String BINARY = PropertyType.nameFromValue(PropertyType.BINARY).toUpperCase();
 
-    public static final String REFERENCE = PropertyType.nameFromValue(PropertyType.REFERENCE);
+    public static final String REFERENCE = PropertyType.nameFromValue(PropertyType.REFERENCE).toUpperCase();
 
     public static String[] COLUMN_NAMES;
 
