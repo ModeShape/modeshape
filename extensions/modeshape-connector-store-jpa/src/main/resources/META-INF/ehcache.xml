@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ehcache maxBytesOnHeap="256m" >
+
+	<defaultCache timeToLiveSeconds="30" />
+	
+	<!-- cache name="org.modeshape.connector.store.jpa.util.StoreOptionEntity" timeToLiveSeconds="300" / -->
+	<!-- cache name="org.modeshape.connector.store.jpa.model.common.ChangeLogEntity" timeToLiveSeconds="300" / -->
+	<cache name="org.modeshape.connector.store.jpa.model.common.NamespaceEntity"
+		maxElementsInMemory="100" 
+		timeToLiveSeconds="300" />
+	<cache name="org.modeshape.connector.store.jpa.model.common.WorkspaceEntity" 
+		maxElementsInMemory="200" 
+		timeToLiveSeconds="300" />
+
+	<!--  Need to keep this from squeezing out everything else in the cache -->
+	<cache name="org.modeshape.connector.store.jpa.model.simple.LargeValueEntity" 
+		maxElementsInMemory="20" 
+		timeToLiveSeconds="30"
+		
+		 />
+		 
+	<cache name="org.modeshape.connector.store.jpa.model.simple.NodeEntity" 
+		maxElementsInMemory="100" 
+		timeToLiveSeconds="60" />
+	<cache name="org.modeshape.connector.store.jpa.model.simple.NodeEntity.children" 
+		maxElementsInMemory="1000" 
+		timeToLiveSeconds="60" />
+	<cache name="org.modeshape.connector.store.jpa.model.simple.NodeEntity.largeValues" 
+		maxElementsInMemory="1000" 
+		timeToLiveSeconds="60" />
+	<!--  cache name="org.modeshape.connector.store.jpa.model.common.SubgraphNodeEntity" timeToLiveSeconds="60" /  -->
+	<!--  cache name="org.modeshape.connector.store.jpa.model.common.SubgraphQueryEntity" timeToLiveSeconds="60" /  -->
+
+	<cache name="org.hibernate.cache.StandardQueryCache" 
+		timeToLiveSeconds="30" 
+		maxElementsInMemory="50" />
+
+	<cache name="org.hibernate.cache.UpdateTimestampsCache" 
+		timeToLiveSeconds="30" 
+		maxElementsInMemory="500" />
+
+</ehcache>
