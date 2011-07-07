@@ -886,28 +886,6 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     }
 
     /**
-     * Get the {@link DataSource} object that this source is to use.
-     * 
-     * @return the data source; may be null if no data source has been set or found in JNDI
-     * @see #setDataSource(DataSource)
-     * @see #setDataSourceJndiName(String)
-     */
-    /*package*/DataSource getDataSource() {
-        return dataSource;
-    }
-
-    /**
-     * Set the {@link DataSource} instance that this source should use.
-     * 
-     * @param dataSource the data source; may be null
-     * @see #getDataSource()
-     * @see #setDataSourceJndiName(String)
-     */
-    /*package*/synchronized void setDataSource( DataSource dataSource ) {
-        this.dataSource = dataSource;
-    }
-
-    /**
      * Get the model that will be used. This may be null if not yet connected, but after connections will reflect the type of
      * model that is being used in the store.
      * 
