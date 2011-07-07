@@ -129,7 +129,10 @@ public class SchemaGen {
     void generate() throws IOException {
         Ejb3Configuration configurator = new Ejb3Configuration();
         configurator.setProperty(Environment.DIALECT, dialect.toString());
-        model.configure(configurator);
+
+        for (Class<?> clazz : model.getEntityClasses()) {
+            configurator.addAnnotatedClass(clazz);
+        }
         configurator.addAnnotatedClass(StoreOptionEntity.class);
 
         // cfg.setProperties(properties);

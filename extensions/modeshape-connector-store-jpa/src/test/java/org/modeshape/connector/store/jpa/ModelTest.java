@@ -26,13 +26,12 @@ package org.modeshape.connector.store.jpa;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertThat;
-import org.hibernate.ejb.Ejb3Configuration;
-import org.modeshape.common.i18n.I18n;
-import org.modeshape.graph.connector.RepositoryConnection;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.modeshape.common.i18n.I18n;
+import org.modeshape.graph.connector.RepositoryConnection;
 
 /**
  * @author Randall Hauch
@@ -97,7 +96,8 @@ public class ModelTest {
         }
 
         @Override
-        public void configure( Ejb3Configuration configurator ) {
+        public Class[] getEntityClasses() {
+            return new Class[] {};
         }
 
         @SuppressWarnings( "synthetic-access" )

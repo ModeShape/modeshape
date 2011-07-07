@@ -99,6 +99,9 @@ public class TestEnvironment {
         value = properties.getProperty("jpaSource.showSql");
         if (isValue(value)) source.setShowSql(Boolean.parseBoolean(value));
 
+        value = properties.getProperty("jpaSource.jpaCacheProviderClassName");
+        if (isValue(value)) source.setDefaultWorkspaceName(value);
+
         return source;
     }
 

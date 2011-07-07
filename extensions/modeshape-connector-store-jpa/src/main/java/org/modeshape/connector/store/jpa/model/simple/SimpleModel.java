@@ -23,7 +23,6 @@
  */
 package org.modeshape.connector.store.jpa.model.simple;
 
-import org.hibernate.ejb.Ejb3Configuration;
 import org.modeshape.connector.store.jpa.JpaConnectorI18n;
 import org.modeshape.connector.store.jpa.JpaSource;
 import org.modeshape.connector.store.jpa.Model;
@@ -92,20 +91,11 @@ public class SimpleModel extends Model {
         super("Simple", JpaConnectorI18n.simpleModelDescription);
     }
 
-    /**
-     * Configure the entity class that will be used by JPA to store information in the database.
-     * 
-     * @param configurator the Hibernate {@link Ejb3Configuration} component; never null
-     */
     @Override
-    public void configure( Ejb3Configuration configurator ) {
+    public Class<?>[] getEntityClasses() {
         // Add the annotated classes ...
-        configurator.addAnnotatedClass(WorkspaceEntity.class);
-        configurator.addAnnotatedClass(NamespaceEntity.class);
-        configurator.addAnnotatedClass(LargeValueEntity.class);
-        configurator.addAnnotatedClass(NodeEntity.class);
-        configurator.addAnnotatedClass(SubgraphNodeEntity.class);
-        configurator.addAnnotatedClass(SubgraphQueryEntity.class);
+        return new Class[] {WorkspaceEntity.class, NamespaceEntity.class, LargeValueEntity.class, NodeEntity.class,
+            SubgraphQueryEntity.class, SubgraphNodeEntity.class,};
     }
 
     @Override

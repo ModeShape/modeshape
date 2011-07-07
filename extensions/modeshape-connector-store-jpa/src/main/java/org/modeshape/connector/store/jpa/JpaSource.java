@@ -33,7 +33,6 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.UUID;
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -43,26 +42,19 @@ import javax.naming.StringRefAddr;
 import javax.naming.spi.ObjectFactory;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
 import javax.sql.DataSource;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.hibernate.cfg.Environment;
-import org.hibernate.ejb.Ejb3Configuration;
-import org.hibernate.engine.SessionFactoryImplementor;
 import org.modeshape.common.annotation.AllowedValues;
 import org.modeshape.common.annotation.Category;
 import org.modeshape.common.annotation.Description;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.Label;
 import org.modeshape.common.annotation.ThreadSafe;
-import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.connector.store.jpa.model.simple.SimpleModel;
-import org.modeshape.connector.store.jpa.util.StoreOptionEntity;
 import org.modeshape.connector.store.jpa.util.StoreOptions;
-import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.cache.CachePolicy;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryContext;
@@ -137,6 +129,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     protected static final String PREDEFINED_WORKSPACE_NAMES = "predefinedWorkspaceNames";
     protected static final String ALLOW_CREATING_WORKSPACES = "allowCreatingWorkspaces";
     protected static final String AUTO_GENERATE_SCHEMA = "autoGenerateSchema";
+    protected static final String JPA_PERSISTENCE_UNIT_NAME = "jpaPersistenceUnitName";
 
     /**
      * This source supports events.
@@ -178,6 +171,11 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      */
     public static final String DEFAULT_NAME_OF_DEFAULT_WORKSPACE = "default";
 
+    /**
+     * The {@link #getJpaPersistenceUnitName() name of the JPA persistence unit} is "{@value} ", unless otherwise specified.
+     */
+    public static final String DEFAULT_JPA_PERSISTENCE_UNIT_NAME = "modeshape-connector-jpa-nocache";
+
     public static final String DEFAULT_SCHEMA_NAME = null;
 
     /**
@@ -188,7 +186,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
 
     private static final int DEFAULT_RETRY_LIMIT = 0;
     private static final int DEFAULT_CACHE_TIME_TO_LIVE_IN_SECONDS = 60 * 5; // 5 minutes
-    private static final int DEFAULT_MAXIMUM_FETCH_DEPTH = 3;
+    protected static final int DEFAULT_MAXIMUM_FETCH_DEPTH = 3;
     private static final int DEFAULT_MAXIMUM_CONNECTIONS_IN_POOL = 5;
     private static final int DEFAULT_MINIMUM_CONNECTIONS_IN_POOL = 0;
     private static final int DEFAULT_MAXIMUM_CONNECTION_IDLE_TIME_IN_SECONDS = 60 * 10; // 10 minutes
@@ -211,6 +209,8 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      * specified.
      */
     public static final String DEFAULT_AUTO_GENERATE_SCHEMA = "validate";
+
+    public static final String BOOTSTRAP_PERSISTENCE_UNIT_NAME = "modeshape-connector-jpa-bootstrap";
 
     /**
      * The first serialized version of this source.
@@ -338,6 +338,11 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     @Category( i18n = JpaConnectorI18n.class, value = "defaultWorkspaceNamePropertyCategory" )
     private volatile String defaultWorkspace = DEFAULT_NAME_OF_DEFAULT_WORKSPACE;
 
+    @Description( i18n = JpaConnectorI18n.class, value = "jpaPersistenceUnitNamePropertyDescription" )
+    @Label( i18n = JpaConnectorI18n.class, value = "jpaPersistenceUnitNamePropertyLabel" )
+    @Category( i18n = JpaConnectorI18n.class, value = "jpaPersistenceUnitNamePropertyCategory" )
+    private volatile String jpaPersistenceUnitName = DEFAULT_JPA_PERSISTENCE_UNIT_NAME;
+
     @Description( i18n = JpaConnectorI18n.class, value = "isolationLevelPropertyDescription" )
     @Label( i18n = JpaConnectorI18n.class, value = "isolationLevelPropertyLabel" )
     @Category( i18n = JpaConnectorI18n.class, value = "isolationLevelPropertyCategory" )
@@ -455,14 +460,14 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     }
 
     /**
-     * Sets the Hibernate setting dictating what it does with the database schema upon first connection. Valid values are as
-     * follows (though the value is not checked):
+     * Sets the setting dictating what the JPA implementation should do with the database schema upon first connection. Valid
+     * values are as follows (though the value is not checked):
      * <ul>
-     * <li>"<code>create</code>" - Create the database schema objects when the {@link EntityManagerFactory} is created (actually
-     * when Hibernate's {@link SessionFactory} is created by the entity manager factory). If a file named "import.sql" exists in
-     * the root of the class path (e.g., '/import.sql') Hibernate will read and execute the SQL statements in this file after it
-     * has created the database objects. Note that Hibernate first delete all tables, constraints, or any other database object
-     * that is going to be created in the process of building the schema.</li>
+     * <li>"<code>create</code>" - Create the database schema objects when the {@link EntityManagerFactory} is created. If a file
+     * named "import.sql" exists in the root of the class path (e.g., '/import.sql') the JPA implementation should read and
+     * execute the SQL statements in this file after it has created the database objects. Note that the JPA imimplementation must
+     * first delete all tables, constraints, or any other database object that is going to be created in the process of building
+     * the schema.</li>
      * <li>"<code>create-drop</code>" - Same as "<code>create</code>", except that the schema will be dropped after the
      * {@link EntityManagerFactory} is closed.</li>
      * <li>"<code>update</code>" - Attempt to update the database structure to the current mapping (but does not read and invoke
@@ -589,6 +594,29 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      */
     public synchronized void setDefaultWorkspaceName( String nameOfDefaultWorkspace ) {
         this.defaultWorkspace = nameOfDefaultWorkspace != null ? nameOfDefaultWorkspace : DEFAULT_NAME_OF_DEFAULT_WORKSPACE;
+    }
+
+    /**
+     * Get the name of the JPA cache provider class.
+     * 
+     * @return the class name of the JPA cache provider that should be used by default, or null if no JPA caching should be
+     *         performed.
+     */
+    public String getJpaPersistenceUnitName() {
+        return jpaPersistenceUnitName;
+    }
+
+    /**
+     * Set the class name of the JPA cache provider that should be used.
+     * 
+     * @param jpaPersistenceUnitName the class name of the JPA cache provider that should be used by default, or null if no JPA
+     *        caching should be performed
+     */
+    public synchronized void setJpaPersistenceUnitName( String jpaPersistenceUnitName ) {
+        if (jpaPersistenceUnitName != null && jpaPersistenceUnitName.trim().length() == 0) {
+            jpaPersistenceUnitName = null;
+        }
+        this.jpaPersistenceUnitName = jpaPersistenceUnitName;
     }
 
     /**
@@ -1037,6 +1065,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
         ref.add(new StringRefAddr(URL, getUrl()));
         ref.add(new StringRefAddr(DRIVER_CLASS_NAME, getDriverClassName()));
         ref.add(new StringRefAddr(DRIVER_CLASSLOADER_NAME, getDriverClassloaderName()));
+        ref.add(new StringRefAddr(JPA_PERSISTENCE_UNIT_NAME, getJpaPersistenceUnitName()));
         ref.add(new StringRefAddr(ISOLATION_LEVEL, Integer.toString(getIsolationLevel())));
         ref.add(new StringRefAddr(MAXIMUM_CONNECTIONS_IN_POOL, Integer.toString(getMaximumConnectionsInPool())));
         ref.add(new StringRefAddr(MINIMUM_CONNECTIONS_IN_POOL, Integer.toString(getMinimumConnectionsInPool())));
@@ -1118,6 +1147,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
             String compressData = values.get(COMPRESS_DATA);
             String refIntegrity = values.get(ENFORCE_REFERENTIAL_INTEGRITY);
             String defaultWorkspace = values.get(DEFAULT_WORKSPACE);
+            String persistenceUnitName = values.get(JPA_PERSISTENCE_UNIT_NAME);
             String createWorkspaces = values.get(ALLOW_CREATING_WORKSPACES);
             String autoGenerateSchema = values.get(AUTO_GENERATE_SCHEMA);
 
@@ -1154,6 +1184,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
             if (compressData != null) source.setCompressData(Boolean.parseBoolean(compressData));
             if (refIntegrity != null) source.setReferentialIntegrityEnforced(Boolean.parseBoolean(refIntegrity));
             if (defaultWorkspace != null) source.setDefaultWorkspaceName(defaultWorkspace);
+            if (persistenceUnitName != null) source.setJpaPersistenceUnitName(persistenceUnitName);
             if (createWorkspaces != null) source.setCreatingWorkspacesAllowed(Boolean.parseBoolean(createWorkspaces));
             if (workspaceNames != null && workspaceNames.length != 0) source.setPredefinedWorkspaceNames(workspaceNames);
             if (autoGenerateSchema != null) source.setAutoGenerateSchema(autoGenerateSchema);
@@ -1175,26 +1206,6 @@ public class JpaSource implements RepositorySource, ObjectFactory {
         assert rootNodeUuid != null;
         assert rootUuid != null;
         if (entityManagers == null) {
-            // Create the JPA EntityManagerFactory by programmatically configuring Hibernate Entity Manager ...
-            Ejb3Configuration configurator = new Ejb3Configuration();
-
-            // Configure the entity classes ...
-            configurator.addAnnotatedClass(StoreOptionEntity.class);
-
-            // Set the Hibernate properties used in all situations ...
-            if (this.dialect != null) {
-                // The dialect may be auto-determined ...
-                setProperty(configurator, Environment.DIALECT, this.dialect);
-            }
-            if (this.isolationLevel != null) {
-                setProperty(configurator, Environment.ISOLATION, this.isolationLevel);
-            }
-            if (this.schemaName != null) {
-                setProperty(configurator, Environment.DEFAULT_SCHEMA, this.schemaName);
-            }
-
-            // Configure additional properties, which may be overridden by subclasses ...
-            configure(configurator);
 
             // Now set the mandatory information, overwriting anything that the subclasses may have tried ...
             if (this.dataSource == null && this.dataSourceJndiName != null) {
@@ -1203,64 +1214,19 @@ public class JpaSource implements RepositorySource, ObjectFactory {
                     Context context = new InitialContext();
                     dataSource = (DataSource)context.lookup(this.dataSourceJndiName);
                 } catch (Throwable t) {
-                    Logger.getLogger(getClass())
-                          .error(t, JpaConnectorI18n.errorFindingDataSourceInJndi, name, dataSourceJndiName);
+                    Logger.getLogger(getClass()).error(t, JpaConnectorI18n.errorFindingDataSourceInJndi, name, dataSourceJndiName);
                 }
             }
 
-            if (this.dataSource != null) {
-                // Set the data source ...
-                configurator.setDataSource(this.dataSource);
-            } else {
-                // Set the context class loader, so that the driver could be found ...
-                if (this.repositoryContext != null && this.driverClassloaderName != null) {
-                    try {
-                        ExecutionContext context = this.repositoryContext.getExecutionContext();
-                        ClassLoader loader = context.getClassLoader(this.driverClassloaderName);
-                        if (loader != null) {
-                            Thread.currentThread().setContextClassLoader(loader);
-                        }
-                    } catch (Throwable t) {
-                        I18n msg = JpaConnectorI18n.errorSettingContextClassLoader;
-                        Logger.getLogger(getClass()).error(t, msg, name, driverClassloaderName);
-                    }
-                }
-                // Set the connection properties ...
-                setProperty(configurator, Environment.DRIVER, this.driverClassName);
-                setProperty(configurator, Environment.USER, this.username);
-                setProperty(configurator, Environment.PASS, this.password);
-                setProperty(configurator, Environment.URL, this.url);
-                setProperty(configurator, Environment.MAX_FETCH_DEPTH, DEFAULT_MAXIMUM_FETCH_DEPTH);
-                setProperty(configurator, Environment.POOL_SIZE, 0); // don't use the built-in pool
-                if (this.maximumConnectionsInPool > 0) {
-                    // Set the connection pooling properties (to use C3P0) ...
-                    setProperty(configurator, Environment.CONNECTION_PROVIDER, "org.hibernate.connection.C3P0ConnectionProvider");
-                    setProperty(configurator, Environment.C3P0_MAX_SIZE, this.maximumConnectionsInPool);
-                    setProperty(configurator, Environment.C3P0_MIN_SIZE, this.minimumConnectionsInPool);
-                    setProperty(configurator, Environment.C3P0_TIMEOUT, this.maximumConnectionIdleTimeInSeconds);
-                    setProperty(configurator, Environment.C3P0_MAX_STATEMENTS, this.maximumSizeOfStatementCache);
-                    setProperty(configurator, Environment.C3P0_IDLE_TEST_PERIOD, this.idleTimeInSecondsBeforeTestingConnections);
-                    setProperty(configurator, Environment.C3P0_ACQUIRE_INCREMENT, this.numberOfConnectionsToAcquireAsNeeded);
-                    setProperty(configurator, "hibernate.c3p0.validate", "false");
-                }
-            }
+            JpaAdapter jpaAdapter = new HibernateAdapter();
+            Map<String, String> jpaProperties = jpaAdapter.getProperties(this);
 
-            Logger logger = getLogger();
-            if (logger.isDebugEnabled()) {
-                logger.debug("Properties for Hibernate configuration used for ModeShape JPA Source {0}:", getName());
-                Properties props = configurator.getProperties();
-                for (Map.Entry<Object, Object> entry : props.entrySet()) {
-                    String propName = entry.getKey().toString();
-                    if (propName.startsWith("hibernate")) {
-                        logger.debug("  {0} = {1}", propName, entry.getValue());
-                    }
-                }
-            }
+            EntityManagerFactory bootstrapFactory = Persistence.createEntityManagerFactory(BOOTSTRAP_PERSISTENCE_UNIT_NAME,
+                                                                                           jpaProperties);
 
-            EntityManagerFactory entityManagerFactory = configurator.buildEntityManagerFactory();
             try {
                 // Establish a connection and obtain the store options...
-                EntityManager entityManager = entityManagerFactory.createEntityManager();
+                EntityManager entityManager = bootstrapFactory.createEntityManager();
                 try {
 
                     // Find and update/set the root node's UUID ...
@@ -1292,7 +1258,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
 
                     // Determine the dialect, if it was to be automatically discovered ...
                     if (this.dialect == null || this.dialect.trim().length() == 0) {
-                        this.dialect = determineDialect(entityManager);
+                        this.dialect = jpaAdapter.determineDialect(entityManager);
                     }
                     if (this.dialect == null || this.dialect.trim().length() == 0) {
                         // The dialect could not be determined ...
@@ -1304,14 +1270,14 @@ public class JpaSource implements RepositorySource, ObjectFactory {
                     entityManager.close();
                 }
             } finally {
-                entityManagerFactory.close();
+                bootstrapFactory.close();
             }
 
-            // The model has not yet configured itself, so do that now ...
-            model.configure(configurator);
+            EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory(getJpaPersistenceUnitName(),
+                                                                                               jpaProperties);
 
             // Now, create another entity manager with the classes from the correct model and without changing the schema...
-            entityManagers = new EntityManagers(configurator);
+            entityManagers = new EntityManagers(entityManagerFactory);
         }
 
         return model.createConnection(this);
@@ -1333,63 +1299,6 @@ public class JpaSource implements RepositorySource, ObjectFactory {
                 entityManagers = null;
             }
         }
-    }
-
-    /**
-     * Automatically determine the dialect.
-     * 
-     * @param entityManager the EntityManager instance; may not be null
-     * @return the name of the dialect, or null if the dialect cannot be determined
-     */
-    protected String determineDialect( EntityManager entityManager ) {
-        // We need the connection in order to determine the dialect ...
-        SessionFactoryImplementor sessionFactory = (SessionFactoryImplementor)entityManager.unwrap(Session.class)
-                                                                                           .getSessionFactory();
-        return sessionFactory.getDialect().toString();
-    }
-
-    /**
-     * Set up the JPA configuration using Hibernate, except for the entity classes (which will already be configured when this
-     * method is called) and the data source or connection information (which will be set after this method returns). Subclasses
-     * may override this method to customize the configuration.
-     * <p>
-     * This method sets up the C3P0 connection pooling, the cache provider, and some DDL options.
-     * </p>
-     * 
-     * @param configuration the Hibernate configuration; never null
-     */
-    protected void configure( Ejb3Configuration configuration ) {
-
-        // Disable the second-level cache ...
-        setProperty(configuration, Environment.CACHE_PROVIDER, "org.hibernate.cache.NoCacheProvider");
-
-        // Set up the schema and DDL options ...
-        setProperty(configuration, Environment.SHOW_SQL, String.valueOf(this.showSql)); // writes all SQL statements to console
-        setProperty(configuration, Environment.FORMAT_SQL, "true");
-        setProperty(configuration, Environment.USE_SQL_COMMENTS, "true");
-        if (!AUTO_GENERATE_SCHEMA_DISABLE.equalsIgnoreCase(this.autoGenerateSchema)) {
-            setProperty(configuration, Environment.HBM2DDL_AUTO, this.autoGenerateSchema);
-        }
-    }
-
-    protected void setProperty( Ejb3Configuration configurator,
-                                String propertyName,
-                                String propertyValue ) {
-        assert configurator != null;
-        assert propertyName != null;
-        assert propertyName.trim().length() != 0;
-        if (propertyValue != null) {
-            configurator.setProperty(propertyName, propertyValue.trim());
-        }
-    }
-
-    protected void setProperty( Ejb3Configuration configurator,
-                                String propertyName,
-                                int propertyValue ) {
-        assert configurator != null;
-        assert propertyName != null;
-        assert propertyName.trim().length() != 0;
-        configurator.setProperty(propertyName, Integer.toString(propertyValue));
     }
 
     @Immutable
