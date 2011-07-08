@@ -42,7 +42,6 @@ import javax.naming.StringRefAddr;
 import javax.naming.spi.ObjectFactory;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
 import javax.sql.DataSource;
 import org.modeshape.common.annotation.AllowedValues;
 import org.modeshape.common.annotation.Category;
@@ -129,7 +128,8 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     protected static final String PREDEFINED_WORKSPACE_NAMES = "predefinedWorkspaceNames";
     protected static final String ALLOW_CREATING_WORKSPACES = "allowCreatingWorkspaces";
     protected static final String AUTO_GENERATE_SCHEMA = "autoGenerateSchema";
-    protected static final String JPA_PERSISTENCE_UNIT_NAME = "jpaPersistenceUnitName";
+    protected static final String CACHE_PROVIDER_CLASS_NAME = "cacheProviderClassName";
+    protected static final String CACHE_CONCURRENCY_STRATEGY = "cacheConcurrencyStrategy";
 
     /**
      * This source supports events.
@@ -172,9 +172,14 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     public static final String DEFAULT_NAME_OF_DEFAULT_WORKSPACE = "default";
 
     /**
-     * The {@link #getJpaPersistenceUnitName() name of the JPA persistence unit} is "{@value} ", unless otherwise specified.
+     * The {@link #getCacheProviderClassName() class name of the JPA cache provider} is "{@value} ", unless otherwise specified.
      */
-    public static final String DEFAULT_JPA_PERSISTENCE_UNIT_NAME = "modeshape-connector-jpa-nocache";
+    public static final String DEFAULT_CACHE_PROVIDER_CLASS_NAME = "org.hibernate.cache.HashtableCacheProvider";
+
+    /**
+     * The {@link #getCacheConcurrencyStrategy() cache concurrency strategy} is "{@value} ", unless otherwise specified.
+     */
+    public static final String DEFAULT_CACHE_CONCURRENCY_STRATEGY = "read-write";
 
     public static final String DEFAULT_SCHEMA_NAME = null;
 
@@ -210,7 +215,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      */
     public static final String DEFAULT_AUTO_GENERATE_SCHEMA = "validate";
 
-    public static final String BOOTSTRAP_PERSISTENCE_UNIT_NAME = "modeshape-connector-jpa-bootstrap";
+    // public static final String BOOTSTRAP_PERSISTENCE_UNIT_NAME = "modeshape-connector-jpa-bootstrap";
 
     /**
      * The first serialized version of this source.
@@ -338,10 +343,15 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     @Category( i18n = JpaConnectorI18n.class, value = "defaultWorkspaceNamePropertyCategory" )
     private volatile String defaultWorkspace = DEFAULT_NAME_OF_DEFAULT_WORKSPACE;
 
-    @Description( i18n = JpaConnectorI18n.class, value = "jpaPersistenceUnitNamePropertyDescription" )
-    @Label( i18n = JpaConnectorI18n.class, value = "jpaPersistenceUnitNamePropertyLabel" )
-    @Category( i18n = JpaConnectorI18n.class, value = "jpaPersistenceUnitNamePropertyCategory" )
-    private volatile String jpaPersistenceUnitName = DEFAULT_JPA_PERSISTENCE_UNIT_NAME;
+    @Description( i18n = JpaConnectorI18n.class, value = "cacheProviderClassNamePropertyDescription" )
+    @Label( i18n = JpaConnectorI18n.class, value = "cacheProviderClassNamePropertyLabel" )
+    @Category( i18n = JpaConnectorI18n.class, value = "cacheProviderClassNamePropertyCategory" )
+    private volatile String cacheProviderClassName = DEFAULT_CACHE_PROVIDER_CLASS_NAME;
+
+    @Description( i18n = JpaConnectorI18n.class, value = "cacheConcurrencyStrategyPropertyDescription" )
+    @Label( i18n = JpaConnectorI18n.class, value = "cacheConcurrencyStrategyPropertyLabel" )
+    @Category( i18n = JpaConnectorI18n.class, value = "cacheConcurrencyStrategyPropertyCategory" )
+    private volatile String cacheConcurrencyStrategy = DEFAULT_CACHE_CONCURRENCY_STRATEGY;
 
     @Description( i18n = JpaConnectorI18n.class, value = "isolationLevelPropertyDescription" )
     @Label( i18n = JpaConnectorI18n.class, value = "isolationLevelPropertyLabel" )
@@ -602,21 +612,44 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      * @return the class name of the JPA cache provider that should be used by default, or null if no JPA caching should be
      *         performed.
      */
-    public String getJpaPersistenceUnitName() {
-        return jpaPersistenceUnitName;
+    public String getCacheProviderClassName() {
+        return cacheProviderClassName;
     }
 
     /**
      * Set the class name of the JPA cache provider that should be used.
      * 
-     * @param jpaPersistenceUnitName the class name of the JPA cache provider that should be used by default, or null if no JPA
+     * @param cacheProviderClassName the class name of the JPA cache provider that should be used by default, or null if no JPA
      *        caching should be performed
      */
-    public synchronized void setJpaPersistenceUnitName( String jpaPersistenceUnitName ) {
-        if (jpaPersistenceUnitName != null && jpaPersistenceUnitName.trim().length() == 0) {
-            jpaPersistenceUnitName = null;
+    public synchronized void setCacheProviderClassName( String cacheProviderClassName ) {
+        if (cacheProviderClassName != null && cacheProviderClassName.trim().length() == 0) {
+            cacheProviderClassName = null;
         }
-        this.jpaPersistenceUnitName = jpaPersistenceUnitName;
+        this.cacheProviderClassName = cacheProviderClassName;
+    }
+
+    /**
+     * Get the cache concurrency strategy.
+     * 
+     * @return the cache concurrency strategy being used; may be null
+     * @see #setCacheConcurrencyStrategy(String)
+     */
+    public String getCacheConcurrencyStrategy() {
+        return cacheConcurrencyStrategy;
+    }
+
+    /**
+     * Set the cache concurrency strategy. This value is JPA implementation specific. For Hibernate, this value should be
+     * "read-only", "nonstrict-read-write", "read-write", or "transactional", but other JPA providers may use different values.
+     * 
+     * @param cacheConcurrencyStrategy the cache concurrency strategy being used; may be null
+     */
+    public synchronized void setCacheConcurrencyStrategy( String cacheConcurrencyStrategy ) {
+        if (cacheConcurrencyStrategy != null && cacheConcurrencyStrategy.trim().length() == 0) {
+            cacheConcurrencyStrategy = null;
+        }
+        this.cacheConcurrencyStrategy = cacheConcurrencyStrategy;
     }
 
     /**
@@ -1043,7 +1076,8 @@ public class JpaSource implements RepositorySource, ObjectFactory {
         ref.add(new StringRefAddr(URL, getUrl()));
         ref.add(new StringRefAddr(DRIVER_CLASS_NAME, getDriverClassName()));
         ref.add(new StringRefAddr(DRIVER_CLASSLOADER_NAME, getDriverClassloaderName()));
-        ref.add(new StringRefAddr(JPA_PERSISTENCE_UNIT_NAME, getJpaPersistenceUnitName()));
+        ref.add(new StringRefAddr(CACHE_CONCURRENCY_STRATEGY, getCacheConcurrencyStrategy()));
+        ref.add(new StringRefAddr(CACHE_PROVIDER_CLASS_NAME, getCacheProviderClassName()));
         ref.add(new StringRefAddr(ISOLATION_LEVEL, Integer.toString(getIsolationLevel())));
         ref.add(new StringRefAddr(MAXIMUM_CONNECTIONS_IN_POOL, Integer.toString(getMaximumConnectionsInPool())));
         ref.add(new StringRefAddr(MINIMUM_CONNECTIONS_IN_POOL, Integer.toString(getMinimumConnectionsInPool())));
@@ -1125,7 +1159,8 @@ public class JpaSource implements RepositorySource, ObjectFactory {
             String compressData = values.get(COMPRESS_DATA);
             String refIntegrity = values.get(ENFORCE_REFERENTIAL_INTEGRITY);
             String defaultWorkspace = values.get(DEFAULT_WORKSPACE);
-            String persistenceUnitName = values.get(JPA_PERSISTENCE_UNIT_NAME);
+            String cacheConcurrencyStrategy = values.get(CACHE_CONCURRENCY_STRATEGY);
+            String cacheProviderClassName = values.get(CACHE_PROVIDER_CLASS_NAME);
             String createWorkspaces = values.get(ALLOW_CREATING_WORKSPACES);
             String autoGenerateSchema = values.get(AUTO_GENERATE_SCHEMA);
 
@@ -1162,7 +1197,8 @@ public class JpaSource implements RepositorySource, ObjectFactory {
             if (compressData != null) source.setCompressData(Boolean.parseBoolean(compressData));
             if (refIntegrity != null) source.setReferentialIntegrityEnforced(Boolean.parseBoolean(refIntegrity));
             if (defaultWorkspace != null) source.setDefaultWorkspaceName(defaultWorkspace);
-            if (persistenceUnitName != null) source.setJpaPersistenceUnitName(persistenceUnitName);
+            if (cacheConcurrencyStrategy != null) source.setCacheConcurrencyStrategy(cacheConcurrencyStrategy);
+            if (cacheProviderClassName != null) source.setCacheProviderClassName(cacheProviderClassName);
             if (createWorkspaces != null) source.setCreatingWorkspacesAllowed(Boolean.parseBoolean(createWorkspaces));
             if (workspaceNames != null && workspaceNames.length != 0) source.setPredefinedWorkspaceNames(workspaceNames);
             if (autoGenerateSchema != null) source.setAutoGenerateSchema(autoGenerateSchema);
@@ -1197,10 +1233,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
             }
 
             JpaAdapter jpaAdapter = new HibernateAdapter();
-            Map<String, String> jpaProperties = jpaAdapter.getProperties(this);
-
-            EntityManagerFactory bootstrapFactory = Persistence.createEntityManagerFactory(BOOTSTRAP_PERSISTENCE_UNIT_NAME,
-                                                                                           jpaProperties);
+            EntityManagerFactory bootstrapFactory = jpaAdapter.getEntityManagerFactory(this);
 
             try {
                 // Establish a connection and obtain the store options...
@@ -1251,8 +1284,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
                 bootstrapFactory.close();
             }
 
-            EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory(getJpaPersistenceUnitName(),
-                                                                                               jpaProperties);
+            EntityManagerFactory entityManagerFactory = jpaAdapter.getEntityManagerFactory(this);
 
             // Now, create another entity manager with the classes from the correct model and without changing the schema...
             entityManagers = new EntityManagers(entityManagerFactory);

@@ -26,7 +26,6 @@ package org.modeshape.connector.store.jpa.model.common;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import javax.persistence.Cacheable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EntityManager;
@@ -46,7 +45,6 @@ import org.modeshape.common.util.CheckArg;
  * one or more entities.
  */
 @Entity
-@Cacheable
 @Table( name = "DNA_WORKSPACES" )
 @org.hibernate.annotations.Table( appliesTo = "DNA_WORKSPACES", indexes = @Index( name = "WS_NAME_INX", columnNames = {"NAME"} ) )
 @NamedQueries( {@NamedQuery( name = "WorkspaceEntity.findAll", query = "select ws from WorkspaceEntity as ws" ),
