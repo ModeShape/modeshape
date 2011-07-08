@@ -87,7 +87,9 @@ public class InfinispanRepository extends Repository<InfinispanNode, InfinispanW
     protected Set<String> getAllWorkspaceNames( Set<String> alreadyKnownNames ) {
         Set<String> cacheNames = null;
         if (cacheContainer instanceof EmbeddedCacheManager) {
-            cacheNames = ((EmbeddedCacheManager)cacheContainer).getCacheNames();
+            // EmbeddedCacheManager.getCacheNames() returns an immutable set. Copy the elements so that
+            // we can remove any cache names that don't map to workspaces below.
+            cacheNames = new HashSet<String>(((EmbeddedCacheManager)cacheContainer).getCacheNames());
         } else if (cacheContainer instanceof RemoteCacheManager) {
             // This might be coming in 5.0 ...
             // cacheNames = ((RemoteCacheManager)container).getCacheNames();
