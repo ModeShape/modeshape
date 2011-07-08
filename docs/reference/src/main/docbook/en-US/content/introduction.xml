@@ -247,7 +247,7 @@
             For example, this module defines a &Repositories; interface that defines a way to look up <code>javax.jcr.Repository</code> 
             instances by name, and that is implemented by the ModeShape <code>JcrEngine</code>. It also defines several new
             interfaces that extend the JCR 2.0 API's Query Object Model with additional behavior, including more criteria options
-            (such as &Between;, &NodeDepth;, &NodePath;, &ReferenceValue;), a formal &Limit; clause, and a &SetQuery; for unions, intersects,
+            (such as &Between;, the &NodeDepth; and &NodePath; pseudo-columns, and the &ReferenceValue; function), formal &Limit; and &Offset; clauses, and a &SetQuery; for unions, intersects,
             and difference queries.
             This module is very small, only depends upon the JCR API, and was designed so that client applications can depend
             only upon this module without having to depend on the <code>modeshape-jcr</code> interfaces or its dependencies.
