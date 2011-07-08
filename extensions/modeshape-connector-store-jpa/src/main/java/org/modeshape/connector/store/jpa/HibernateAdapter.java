@@ -1,13 +1,23 @@
 package org.modeshape.connector.store.jpa;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 import org.hibernate.Session;
 import org.hibernate.cfg.Environment;
+import org.hibernate.ejb.Ejb3Configuration;
 import org.hibernate.engine.SessionFactoryImplementor;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.Logger;
+import org.modeshape.connector.store.jpa.model.common.ChangeLogEntity;
+import org.modeshape.connector.store.jpa.model.common.NamespaceEntity;
+import org.modeshape.connector.store.jpa.model.common.WorkspaceEntity;
+import org.modeshape.connector.store.jpa.model.simple.LargeValueEntity;
+import org.modeshape.connector.store.jpa.model.simple.NodeEntity;
+import org.modeshape.connector.store.jpa.model.simple.SubgraphNodeEntity;
+import org.modeshape.connector.store.jpa.model.simple.SubgraphQueryEntity;
+import org.modeshape.connector.store.jpa.util.StoreOptionEntity;
 import org.modeshape.graph.ExecutionContext;
 
 /**
@@ -18,8 +28,8 @@ public class HibernateAdapter implements JpaAdapter {
     private static final Logger LOGGER = Logger.getLogger(HibernateAdapter.class);
 
     @Override
-    public Map<String, String> getProperties( JpaSource source ) {
-        Map<String, String> jpaProperties = new HashMap<String, String>();
+    public Properties getProperties( JpaSource source ) {
+        Properties jpaProperties = new Properties();
 
         // Set the Hibernate properties used in all situations ...
         if (source.getDialect() != null) {
@@ -80,9 +90,35 @@ public class HibernateAdapter implements JpaAdapter {
             }
         }
 
+        if (source.getCacheProviderClassName() != null) {
+
+            setProperty(jpaProperties, Environment.USE_QUERY_CACHE, "true");
+            setProperty(jpaProperties, Environment.CACHE_PROVIDER, source.getCacheProviderClassName());
+
+            String cacheConcurrencyStrategy = source.getCacheConcurrencyStrategy();
+            setProperty(jpaProperties,
+                        "hibernate.ejb.classcache.org.modeshape.connector.store.jpa.model.common.WorkspaceEntity",
+                        cacheConcurrencyStrategy);
+            setProperty(jpaProperties,
+                        "hibernate.ejb.classcache.org.modeshape.connector.store.jpa.model.common.NamespaceEntity",
+                        cacheConcurrencyStrategy);
+            setProperty(jpaProperties,
+                        "hibernate.ejb.classcache.org.modeshape.connector.store.jpa.model.simple.NodeEntity",
+                        cacheConcurrencyStrategy);
+            setProperty(jpaProperties,
+                        "hibernate.ejb.classcache.org.modeshape.connector.store.jpa.model.simple.LargeValueEntity",
+                        cacheConcurrencyStrategy);
+            setProperty(jpaProperties,
+                        "hibernate.ejb.collectioncache.org.modeshape.connector.store.jpa.model.simple.NodeEntity.children",
+                        cacheConcurrencyStrategy);
+            setProperty(jpaProperties,
+                        "hibernate.ejb.collectioncache.org.modeshape.connector.store.jpa.model.simple.NodeEntity.largeValues",
+                        cacheConcurrencyStrategy);
+        }
+
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Properties for Hibernate configuration used for ModeShape JPA Source {0}:", source.getName());
-            for (Map.Entry<String, String> entry : jpaProperties.entrySet()) {
+            for (Map.Entry<Object, Object> entry : jpaProperties.entrySet()) {
                 String propName = entry.getKey().toString();
                 if (propName.startsWith("hibernate")) {
                     LOGGER.debug("  {0} = {1}", propName, entry.getValue());
@@ -93,7 +129,7 @@ public class HibernateAdapter implements JpaAdapter {
         return jpaProperties;
     }
 
-    protected void setProperty( Map<String, String> configurator,
+    protected void setProperty( Properties configurator,
                                 String propertyName,
                                 String propertyValue ) {
         assert configurator != null;
@@ -104,7 +140,7 @@ public class HibernateAdapter implements JpaAdapter {
         }
     }
 
-    protected void setProperty( Map<String, String> configurator,
+    protected void setProperty( Properties configurator,
                                 String propertyName,
                                 int propertyValue ) {
         assert configurator != null;
@@ -119,5 +155,21 @@ public class HibernateAdapter implements JpaAdapter {
         SessionFactoryImplementor sessionFactory = (SessionFactoryImplementor)entityManager.unwrap(Session.class).getSessionFactory();
         return sessionFactory.getDialect().toString();
     }
-    
+
+    @Override
+    public EntityManagerFactory getEntityManagerFactory( JpaSource source ) {
+        return new Ejb3Configuration()
+            .addAnnotatedClass(StoreOptionEntity.class)
+            .addAnnotatedClass(ChangeLogEntity.class)
+            .addAnnotatedClass(NamespaceEntity.class)
+            .addAnnotatedClass(WorkspaceEntity.class)
+            .addAnnotatedClass(LargeValueEntity.class)
+            .addAnnotatedClass(NodeEntity.class)
+            .addAnnotatedClass(SubgraphNodeEntity.class)
+            .addAnnotatedClass(SubgraphQueryEntity.class)
+            .addProperties(getProperties(source))
+            .buildEntityManagerFactory();
+
+        // return Persistence.createEntityManagerFactory(persistenceUnitName, getProperties(source));
+    }
 }

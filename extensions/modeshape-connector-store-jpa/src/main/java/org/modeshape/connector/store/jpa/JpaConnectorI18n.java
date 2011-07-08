@@ -148,10 +148,12 @@ public final class JpaConnectorI18n {
     public static I18n modelNamePropertyDescription;
     public static I18n modelNamePropertyLabel;
     public static I18n modelNamePropertyCategory;
-    public static I18n jpaPersistenceUnitNamePropertyDescription;
-    public static I18n jpaPersistenceUnitNamePropertyLabel;
-    public static I18n jpaPersistenceUnitNamePropertyCategory;
-
+    public static I18n cacheProviderClassNamePropertyDescription;
+    public static I18n cacheProviderClassNamePropertyLabel;
+    public static I18n cacheProviderClassNamePropertyCategory;
+    public static I18n cacheConcurrencyStrategyPropertyDescription;
+    public static I18n cacheConcurrencyStrategyPropertyLabel;
+    public static I18n cacheConcurrencyStrategyPropertyCategory;
     static {
         try {
             I18n.initialize(JpaConnectorI18n.class);

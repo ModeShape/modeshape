@@ -23,7 +23,6 @@
  */
 package org.modeshape.connector.store.jpa.model.common;
 
-import javax.persistence.Cacheable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -42,7 +41,6 @@ import org.modeshape.graph.property.basic.JodaDateTime;
  * a binary (and compressed) format.
  */
 @Entity
-@Cacheable
 @Table( name = "DNA_CHANGELOG" )
 @org.hibernate.annotations.Table( appliesTo = "DNA_CHANGELOG", indexes = @Index( name = "NS_CHANGE_TS_INX", columnNames = {"UTC_TIMESTAMP"} ) )
 @NamedQueries( {

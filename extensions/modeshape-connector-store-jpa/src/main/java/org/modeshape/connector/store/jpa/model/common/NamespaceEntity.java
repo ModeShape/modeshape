@@ -23,7 +23,6 @@
  */
 package org.modeshape.connector.store.jpa.model.common;
 
-import javax.persistence.Cacheable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EntityManager;
@@ -43,7 +42,6 @@ import org.modeshape.common.util.CheckArg;
  * one or more entities.
  */
 @Entity
-@Cacheable
 @Table( name = "DNA_NAMESPACES" )
 @org.hibernate.annotations.Table( appliesTo = "DNA_NAMESPACES", indexes = @Index( name = "NS_URI_INX", columnNames = {"URI"} ) )
 @NamedQueries( {@NamedQuery( name = "NamespaceEntity.findAll", query = "select ns from NamespaceEntity as ns" ),

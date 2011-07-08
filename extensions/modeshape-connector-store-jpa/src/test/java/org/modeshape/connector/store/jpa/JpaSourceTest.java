@@ -29,7 +29,7 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.Properties;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -112,7 +112,7 @@ public class JpaSourceTest {
 
         // Verify it is set correctly on the Hibernate configuration ...
         JpaAdapter adapter = new HibernateAdapter();
-        Map<String, String> config = adapter.getProperties(source);
+        Properties config = adapter.getProperties(source);
         assertThat(config.get("hibernate.hbm2ddl.auto").toString(), is(JpaSource.DEFAULT_AUTO_GENERATE_SCHEMA));
     }
 
@@ -126,7 +126,7 @@ public class JpaSourceTest {
 
         // Verify it is set correctly on the Hibernate configuration ...
         JpaAdapter adapter = new HibernateAdapter();
-        Map<String, String> config = adapter.getProperties(source);
+        Properties config = adapter.getProperties(source);
         assertThat(config.get("hibernate.hbm2ddl.auto").toString(), is(JpaSource.DEFAULT_AUTO_GENERATE_SCHEMA));
     }
 
@@ -142,7 +142,7 @@ public class JpaSourceTest {
 
             // Verify it is set correctly on the Hibernate configuration ...
             JpaAdapter adapter = new HibernateAdapter();
-            Map<String, String> config = adapter.getProperties(source);
+            Properties config = adapter.getProperties(source);
             assertThat(config.get("hibernate.hbm2ddl.auto").toString(), is(value));
         }
     }
@@ -157,7 +157,7 @@ public class JpaSourceTest {
 
         // Verify it is set correctly on the Hibernate configuration ...
         JpaAdapter adapter = new HibernateAdapter();
-        Map<String, String> config = adapter.getProperties(source);
+        Properties config = adapter.getProperties(source);
         assertThat(config.get("hibernate.hbm2ddl.auto").toString(), is(JpaSource.DEFAULT_AUTO_GENERATE_SCHEMA));
     }
 
@@ -171,7 +171,7 @@ public class JpaSourceTest {
 
         // Verify it is set correctly on the Hibernate configuration ...
         JpaAdapter adapter = new HibernateAdapter();
-        Map<String, String> config = adapter.getProperties(source);
+        Properties config = adapter.getProperties(source);
         assertThat(config.get("hibernate.hbm2ddl.auto"), is(nullValue()));
     }
 }
