@@ -255,6 +255,7 @@
 <!ENTITY SecurityContextCredentials   "<ulink url='&API;jcr/api/SecurityContextCredentials.html'><classname>SecurityContextCredentials</classname></ulink>">
 <!ENTITY AnonymousCredentials				  "<ulink url='&API;jcr/api/AnonymousCredentials.html'><classname>AnonymousCredentials</classname></ulink>">
 <!ENTITY JaasCredentials				  		"<ulink url='&API;jcr/api/JaasCredentials.html'><classname>JaasCredentials</classname></ulink>">
+<!ENTITY Repositories				  		"<ulink url='&API;jcr/api/Repositories.html'><classname>Repositories</classname></ulink>">
 
 <!-- Types in extensions/ -->
 
@@ -308,3 +309,11 @@
 
 <!ENTITY TikaTextExtractor   			    "<ulink url='&API;extractor/tika/TikaTextExtractor.html'><classname>TikaTextExtractor</classname></ulink>">
 
+<!-- References to Query Features -->
+<!ENTITY Between							"<link linkend='jcr-sql2-between-constraints'><code>BETWEEN</code></link>">
+<!ENTITY NodeDepth							"<link linkend='jcr-sql2-pseudo-columns'><code>mode:depth</code></link>">
+<!ENTITY NodePath							"<link linkend='jcr-sql2-pseudo-columns'><code>jcr:path</code></link>">
+<!ENTITY ReferenceValue						"<link linkend='jcr-sql2-dynamic-operands'><code>REFERENCE</code></link>">
+<!ENTITY SetQuery							"<link linkend='jcr-sql2-queries'>set query operators</link>">
+<!ENTITY Limit 								"<link linkend='jcr-sql2-limits'><code>LIMIT</code></link>">
+<!ENTITY Offset 								"<link linkend='jcr-sql2-limits'><code>OFFSET</code></link>">
