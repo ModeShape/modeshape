@@ -6,7 +6,10 @@ package org.modeshape.jcr.api;
  * <p>
  * This class is not thread-safe.
  * </p>
+ * 
+ * @deprecated Configure each repository to use a custom AuthenthicationProvider implementation
  */
+@Deprecated
 public interface SecurityContext {
 
     /**

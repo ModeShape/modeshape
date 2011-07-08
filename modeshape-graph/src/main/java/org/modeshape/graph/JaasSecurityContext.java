@@ -26,7 +26,7 @@ import org.modeshape.common.util.Reflection;
  * {@link LoginContext login context}.
  */
 @NotThreadSafe
-public final class JaasSecurityContext implements SecurityContext {
+public class JaasSecurityContext implements SecurityContext {
 
     private static final Logger LOGGER = Logger.getLogger(JaasSecurityContext.class);
 

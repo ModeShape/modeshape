@@ -53,6 +53,7 @@ import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathNotFoundException;
 import org.modeshape.graph.property.Property;
 import org.modeshape.jcr.JcrRepository.Option;
+import org.modeshape.jcr.security.AuthenticationProvider;
 import org.modeshape.repository.ModeShapeConfiguration;
 import org.modeshape.repository.ModeShapeConfigurationException;
 import org.xml.sax.SAXException;
@@ -264,6 +265,26 @@ public class JcrConfiguration extends ModeShapeConfiguration {
         RepositoryDefinition<ReturnType> setInitialContent( File file,
                                                             String firstWorkspace,
                                                             String... otherWorkspaces );
+
+        /**
+         * Obtain or create a definition for the {@link AuthenticationProvider authentication provider} with the supplied name or
+         * identifier. A new definition will be created if there currently is no authenticator defined with the supplied name.
+         * 
+         * @param name the name or identifier of the authenticator
+         * @return the details of the authenticator definition; never null
+         */
+        AuthenticatorDefinition<? extends RepositoryDefinition<ReturnType>> authenticator( String name );
+    }
+
+    /**
+     * Interface used to set up and define a {@link AuthenticationProvider authentication provider} instance.
+     * 
+     * @param <ReturnType> the type of the configuration component that owns this definition object
+     */
+    public interface AuthenticatorDefinition<ReturnType>
+        extends Returnable<ReturnType>, SetDescription<AuthenticatorDefinition<ReturnType>>,
+        SetProperties<AuthenticatorDefinition<ReturnType>>,
+        ChooseClass<AuthenticationProvider, AuthenticatorDefinition<ReturnType>>, Removable<ReturnType> {
     }
 
     private final Map<String, RepositoryDefinition<? extends JcrConfiguration>> repositoryDefinitions = new HashMap<String, RepositoryDefinition<? extends JcrConfiguration>>();
@@ -549,9 +570,27 @@ public class JcrConfiguration extends ModeShapeConfiguration {
         return definition;
     }
 
+    protected static class AuthenticatorBuilder<ReturnType>
+        extends GraphComponentBuilder<ReturnType, AuthenticatorDefinition<ReturnType>, AuthenticationProvider>
+        implements AuthenticatorDefinition<ReturnType> {
+
+        protected AuthenticatorBuilder( ReturnType returnObject,
+                                        Graph.Batch batch,
+                                        Path path,
+                                        Name... names ) {
+            super(returnObject, batch, path, names);
+        }
+
+        @Override
+        protected AuthenticatorDefinition<ReturnType> thisType() {
+            return this;
+        }
+    }
+
     protected class RepositoryBuilder<ReturnType> extends GraphReturnable<ReturnType, RepositoryDefinition<ReturnType>>
         implements RepositoryDefinition<ReturnType> {
         private final EnumMap<JcrRepository.Option, String> optionValues = new EnumMap<Option, String>(Option.class);
+        private final Map<String, AuthenticatorDefinition<? extends RepositoryDefinition<ReturnType>>> authenticatorDefinitions = new HashMap<String, AuthenticatorDefinition<? extends RepositoryDefinition<ReturnType>>>();
 
         protected RepositoryBuilder( ReturnType returnObject,
                                      Graph.Batch batch,
@@ -788,6 +827,27 @@ public class JcrConfiguration extends ModeShapeConfiguration {
             // And create the importer that will load the CND content into the repository ...
             return new CndImporter(destination, nodeTypesPath);
         }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.jcr.JcrConfiguration.RepositoryDefinition#authenticator(java.lang.String)
+         */
+        @SuppressWarnings( {"unchecked", "synthetic-access"} )
+        public AuthenticatorDefinition<? extends RepositoryDefinition<ReturnType>> authenticator( String name ) {
+            AuthenticatorDefinition<RepositoryDefinition<ReturnType>> definition = (AuthenticatorDefinition<RepositoryDefinition<ReturnType>>)authenticatorDefinitions.get(name);
+            if (definition == null) {
+                definition = new AuthenticatorBuilder<RepositoryDefinition<ReturnType>>(
+                                                                                        this,
+                                                                                        changes(),
+                                                                                        path,
+                                                                                        ModeShapeLexicon.AUTHENTICATION_PROVIDERS,
+                                                                                        name(name));
+                authenticatorDefinitions.put(name, definition);
+            }
+            return definition;
+        }
+
     }
 
 }

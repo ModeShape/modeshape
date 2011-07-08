@@ -48,6 +48,7 @@ import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.JcrSecurityContextCredentials;
 import org.modeshape.test.integration.jpa.JcrRepositoryWithJpaConfigurationTest.CustomSecurityContext;
 
+@SuppressWarnings( "deprecation" )
 public class JcrRepositoryWithJpaSourceTest {
 
     private JcrEngine engine;

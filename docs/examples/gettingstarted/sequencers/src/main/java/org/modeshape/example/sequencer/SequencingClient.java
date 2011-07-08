@@ -33,6 +33,7 @@ import java.util.Properties;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Binary;
+import javax.jcr.Credentials;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
@@ -41,14 +42,13 @@ import javax.jcr.PropertyIterator;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.SimpleCredentials;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.JcrTools;
-import org.modeshape.jcr.api.SecurityContext;
-import org.modeshape.jcr.api.SecurityContextCredentials;
 import org.modeshape.repository.sequencer.SequencingService;
 import org.modeshape.sequencer.classfile.ClassFileSequencer;
 import org.modeshape.sequencer.classfile.ClassFileSequencerLexicon;
@@ -558,13 +558,16 @@ public class SequencingClient {
      * @throws RepositoryException
      */
     protected Session createSession() throws RepositoryException {
-        // Normally we'd just use SimpleCredentials or some other custom Credentials implementation,
-        // but that would require JAAS (since ModeShape uses that used by default). Since we don't
-        // have a JAAS implementation, we will use the SecurityContextCredentials to wrap
-        // another SecurityContext implementation. This is how you might integrate a non-JAAS security
-        // system into ModeShape. See the repository example for how to set up with JAAS.
-        SecurityContext securityContext = new MyCustomSecurityContext();
-        SecurityContextCredentials credentials = new SecurityContextCredentials(securityContext);
+        // There are several options for authentication. We could just use anonymous authentication/authorization
+        // by not providing any Credentials object.
+        // Or, to authenticate with JAAS and use JAAS role-based authorization, we could just use java.jcr.SimpleCredentials.
+        // If this application were running within a servlet, we could use org.modeshape.jcr.api.ServletCredentials
+        // so that the repositroy delegates to the servlet for authentication and authorization. Finally, if we
+        // configured the repository with one or more custom org.modeshape.jcr.security.AuthorizationProvider implementations,
+        // we could even use other compatible javax.jcr.Credentials implementations.
+        //
+        // Here, our repository is configured to use JAAS, so we can just use SimpleCredentials ...
+        Credentials credentials = new SimpleCredentials("jsmith", "secret".toCharArray());
         return this.repository.login(credentials, workspaceName);
     }
 
@@ -586,37 +589,4 @@ public class SequencingClient {
         if (filename.endsWith(".clazz")) return "application/x-java-class";
         return null;
     }
-
-    protected class MyCustomSecurityContext implements SecurityContext {
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.jcr.api.SecurityContext#getUserName()
-         */
-        @Override
-        public String getUserName() {
-            return "Fred";
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.jcr.api.SecurityContext#hasRole(java.lang.String)
-         */
-        @Override
-        public boolean hasRole( String roleName ) {
-            return true;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.jcr.api.SecurityContext#logout()
-         */
-        @Override
-        public void logout() {
-            // do something
-        }
-    }
-
 }

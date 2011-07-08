@@ -42,6 +42,8 @@ public final class JcrI18n {
     public static I18n indexRebuildingComplete;
 
     public static I18n cannotConvertValue;
+    public static I18n loginFailed;
+    public static I18n noPrivilegeToGetLoginContextFromCredentials;
     public static I18n credentialsMustProvideJaasMethod;
     public static I18n mustBeInPrivilegedAction;
     public static I18n loginConfigNotFound;
@@ -68,6 +70,7 @@ public final class JcrI18n {
     public static I18n unableToImportInitialContent;
     public static I18n fileMustExistAndBeReadable;
     public static I18n invalidJcrUrl;
+    public static I18n unableToInitializeAuthenticationProvider;
 
     public static I18n rootNodeHasNoParent;
     public static I18n rootNodeIsNotProperty;

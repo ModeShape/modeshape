@@ -31,8 +31,7 @@ import javax.jcr.Session;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import org.modeshape.jcr.api.RepositoryFactory;
-import org.modeshape.jcr.api.SecurityContextCredentials;
-import org.modeshape.web.jcr.ServletSecurityContext;
+import org.modeshape.jcr.api.ServletCredentials;
 
 /**
  * Repository provider backed by the ModeShape {@link RepositoryFactory} implementation.
@@ -83,11 +82,11 @@ public class FactoryRepositoryProvider implements RepositoryProvider {
     }
 
     private final RepositoryFactory factory() {
-        
+
         for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
             return factory;
         }
-        
+
         throw new IllegalStateException("No RepositoryFactory implementation on the classpath");
     }
 
@@ -120,7 +119,6 @@ public class FactoryRepositoryProvider implements RepositoryProvider {
             return repository.login(workspaceName);
         }
 
-        return repository.login(new SecurityContextCredentials(new ServletSecurityContext(request)), workspaceName);
-
+        return repository.login(new ServletCredentials(request), workspaceName);
     }
 }

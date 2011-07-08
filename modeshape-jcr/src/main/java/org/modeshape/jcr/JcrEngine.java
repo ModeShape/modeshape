@@ -52,12 +52,16 @@ import org.modeshape.common.collection.Problem;
 import org.modeshape.common.collection.Problem.Status;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
+import org.modeshape.common.component.ComponentConfig;
+import org.modeshape.common.component.ComponentLibrary;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.NamedThreadFactory;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
+import org.modeshape.graph.JcrMixLexicon;
+import org.modeshape.graph.JcrNtLexicon;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.Node;
 import org.modeshape.graph.Subgraph;
@@ -76,6 +80,7 @@ import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.basic.GraphNamespaceRegistry;
 import org.modeshape.jcr.JcrRepository.Option;
 import org.modeshape.jcr.api.Repositories;
+import org.modeshape.jcr.security.AuthenticationProvider;
 import org.modeshape.repository.ModeShapeConfiguration;
 import org.modeshape.repository.ModeShapeConfigurationException;
 import org.modeshape.repository.ModeShapeEngine;
@@ -545,12 +550,62 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
             }
         }
 
+        // Set up the authenticators ...
+        ComponentLibrary<AuthenticationProvider, ComponentConfig> authenticators = new ComponentLibrary<AuthenticationProvider, ComponentConfig>();
+        for (Location authProvidersLocation : repoNode.getChildren(ModeShapeLexicon.AUTHENTICATION_PROVIDERS)) {
+            Node authProviders = subgraph.getNode(authProvidersLocation);
+            if (authProviders == null) continue;
+
+            for (Location authProviderLocation : authProviders.getChildren()) {
+                Node authProvider = subgraph.getNode(authProviderLocation);
+                if (authProvider == null) continue;
+
+                Set<Name> skipProperties = new HashSet<Name>();
+                skipProperties.add(ModeShapeLexicon.READABLE_NAME);
+                skipProperties.add(ModeShapeLexicon.DESCRIPTION);
+                skipProperties.add(ModeShapeLexicon.CLASSNAME);
+                skipProperties.add(ModeShapeLexicon.CLASSPATH);
+                skipProperties.add(ModeShapeLexicon.PATH_EXPRESSION);
+                Set<String> skipNamespaces = new HashSet<String>();
+                skipNamespaces.add(JcrLexicon.Namespace.URI);
+                skipNamespaces.add(JcrNtLexicon.Namespace.URI);
+                skipNamespaces.add(JcrMixLexicon.Namespace.URI);
+
+                String name = stringValueOf(authProvider, ModeShapeLexicon.READABLE_NAME);
+                if (name == null) name = stringValueOf(authProvider);
+                String desc = stringValueOf(authProvider, ModeShapeLexicon.DESCRIPTION);
+                String classname = stringValueOf(authProvider, ModeShapeLexicon.CLASSNAME);
+                String[] classpath = stringValuesOf(authProvider, ModeShapeLexicon.CLASSPATH);
+                Map<String, Object> properties = new HashMap<String, Object>();
+                for (Property authProp : authProvider.getProperties()) {
+                    Name propertyName = authProp.getName();
+                    if (skipNamespaces.contains(propertyName.getNamespaceUri())) continue;
+                    if (skipProperties.contains(propertyName)) continue;
+                    if (property.isSingle()) {
+                        properties.put(propertyName.getLocalName(), property.getFirstValue());
+                    } else {
+                        properties.put(propertyName.getLocalName(), property.getValuesAsArray());
+                    }
+                }
+                try {
+                    ComponentConfig config = new ComponentConfig(name, desc, properties, classname, classpath);
+                    authenticators.add(config);
+                } catch (Throwable t) {
+                    this.problems.addError(t,
+                                           JcrI18n.unableToInitializeAuthenticationProvider,
+                                           name,
+                                           repositoryName,
+                                           t.getMessage());
+                }
+            }
+        }
+
         // Find the capabilities ...
         RepositorySourceCapabilities capabilities = source.getCapabilities();
         // Create the repository ...
         JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName,
                                                      getRepositoryService().getRepositoryLibrary(), capabilities, descriptors,
-                                                     options, initialContentForNewWorkspaces);
+                                                     options, initialContentForNewWorkspaces, authenticators);
 
         // Register all the the node types ...
         Path nodeTypesPath = pathFactory.createRelativePath(ModeShapeLexicon.REPOSITORIES, repoName, JcrLexicon.NODE_TYPES);
@@ -640,6 +695,33 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
 
     protected final boolean isTrue( Object value ) {
         return context.getValueFactories().getBooleanFactory().create(value);
+    }
+
+    private String stringValueOf( Node node ) {
+        return node.getLocation().getPath().getLastSegment().getString(context.getNamespaceRegistry());
+    }
+
+    private String stringValueOf( Node node,
+                                  Name propertyName ) {
+        Property property = node.getProperty(propertyName);
+        if (property == null) {
+            // Check whether the property exists with no namespace ...
+            property = node.getProperty(context.getValueFactories().getNameFactory().create(propertyName.getLocalName()));
+            if (property == null) return null;
+        }
+        if (property.isEmpty()) return null;
+        return context.getValueFactories().getStringFactory().create(property.getFirstValue());
+    }
+
+    private String[] stringValuesOf( Node node,
+                                     Name propertyName ) {
+        Property property = node.getProperty(propertyName);
+        if (property == null) {
+            // Check whether the property exists with no namespace ...
+            property = node.getProperty(context.getValueFactories().getNameFactory().create(propertyName.getLocalName()));
+            if (property == null) return null;
+        }
+        return context.getValueFactories().getStringFactory().create(property.getValuesAsArray());
     }
 
     /**

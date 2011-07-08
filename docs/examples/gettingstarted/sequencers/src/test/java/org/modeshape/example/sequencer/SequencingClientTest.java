@@ -33,6 +33,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
@@ -43,6 +44,8 @@ import org.modeshape.sequencer.classfile.ClassFileSequencerLexicon;
 import org.modeshape.sequencer.java.JavaMetadataSequencer;
 import org.modeshape.sequencer.mp3.Mp3MetadataSequencer;
 import org.modeshape.sequencer.zip.ZipSequencer;
+import org.picketbox.config.PicketBoxConfiguration;
+import org.picketbox.factories.SecurityFactory;
 
 /**
  * @author Randall Hauch
@@ -59,6 +62,17 @@ public class SequencingClientTest {
     private URL csvUrl;
     private URL fixedWidthFileUrl;
     private SequencingClient client;
+
+    @BeforeClass
+    public static void beforeAll() {
+        SecurityFactory.prepare();
+        try {
+            PicketBoxConfiguration idtrustConfig = new PicketBoxConfiguration();
+            idtrustConfig.load("security/jaas.conf.xml");
+        } catch (Exception ex) {
+            throw new IllegalStateException(ex);
+        }
+    }
 
     @Before
     public void beforeEach() throws MalformedURLException {

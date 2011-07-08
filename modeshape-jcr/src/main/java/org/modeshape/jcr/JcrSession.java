@@ -84,6 +84,7 @@ import org.modeshape.jcr.JcrContentHandler.SaveMode;
 import org.modeshape.jcr.JcrNamespaceRegistry.Behavior;
 import org.modeshape.jcr.JcrRepository.Option;
 import org.modeshape.jcr.SessionCache.JcrPropertyPayload;
+import org.modeshape.jcr.security.AuthorizationProvider;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -436,7 +437,8 @@ class JcrSession implements Session {
     void checkPermission( String workspaceName,
                           Path path,
                           String actions ) {
-        if (hasPermission(workspaceName, path, actions)) return;
+        CheckArg.isNotEmpty(actions, "actions");
+        if (hasPermission(executionContext, workspaceName, path, actions.split(","))) return;
 
         String pathAsString = path != null ? path.getString(this.namespaces()) : "<unknown>";
         throw new AccessControlException(JcrI18n.permissionDenied.text(pathAsString, actions));
@@ -455,33 +457,74 @@ class JcrSession implements Session {
     public boolean hasPermission( String path,
                                   String actions ) {
         CheckArg.isNotEmpty(path, "path");
-
-        return hasPermission(this.workspace().getName(),
-                             executionContext.getValueFactories().getPathFactory().create(path),
-                             actions);
+        Path p = executionContext.getValueFactories().getPathFactory().create(path);
+        return hasPermission(executionContext, this.workspace().getName(), p, actions.split(","));
     }
 
-    private boolean hasPermission( String workspaceName,
-                                   Path path,
-                                   String actions ) {
-        CheckArg.isNotEmpty(actions, "actions");
-
+    /**
+     * Determine if the current user does not have permission for all of the named actions in the named workspace, otherwise
+     * returns silently.
+     * 
+     * @param context the context in which the subject is performing the actions on the supplied workspace
+     * @param workspaceName the name of the workspace in which the path exists
+     * @param path the path on which the actions are occurring
+     * @param actions the list of {@link ModeShapePermissions actions} to check
+     * @return true if the subject has privilege to perform all of the named actions on the content at the supplied path in the
+     *         given workspace within the repository, or false otherwise
+     */
+    boolean hasPermission( ExecutionContext context,
+                           String workspaceName,
+                           Path path,
+                           String... actions ) {
+        final String repositoryName = this.repository.repositoryName();
+        final String repositorySourceName = this.repository.getRepositorySourceName();
+        SecurityContext sec = context.getSecurityContext();
+        if (sec instanceof AuthorizationProvider) {
+            // Delegate to the security context ...
+            AuthorizationProvider authorizer = (AuthorizationProvider)sec;
+            return authorizer.hasPermission(context, repositoryName, repositorySourceName, workspaceName, path, actions);
+        }
+        // It is a role-based security context, so apply role-based authorization ...
         boolean hasPermission = true;
-        for (String action : actions.split(",")) {
+        for (String action : actions) {
             if (ModeShapePermissions.READ.equals(action)) {
-                hasPermission &= hasRole(ModeShapeRoles.READONLY, workspaceName)
-                                 || hasRole(ModeShapeRoles.READWRITE, workspaceName)
-                                 || hasRole(ModeShapeRoles.ADMIN, workspaceName);
+                hasPermission &= hasRole(sec, ModeShapeRoles.READONLY, repositoryName, repositorySourceName, workspaceName)
+                                 || hasRole(sec, ModeShapeRoles.READWRITE, repositoryName, repositorySourceName, workspaceName)
+                                 || hasRole(sec, ModeShapeRoles.ADMIN, repositoryName, repositorySourceName, workspaceName);
             } else if (ModeShapePermissions.REGISTER_NAMESPACE.equals(action)
                        || ModeShapePermissions.REGISTER_TYPE.equals(action) || ModeShapePermissions.UNLOCK_ANY.equals(action)
                        || ModeShapePermissions.CREATE_WORKSPACE.equals(action)
                        || ModeShapePermissions.DELETE_WORKSPACE.equals(action)) {
-                hasPermission &= hasRole(ModeShapeRoles.ADMIN, workspaceName);
+                hasPermission &= hasRole(sec, ModeShapeRoles.ADMIN, repositoryName, repositorySourceName, workspaceName);
             } else {
-                hasPermission &= hasRole(ModeShapeRoles.ADMIN, workspaceName) || hasRole(ModeShapeRoles.READWRITE, workspaceName);
+                hasPermission &= hasRole(sec, ModeShapeRoles.ADMIN, repositoryName, repositorySourceName, workspaceName)
+                                 || hasRole(sec, ModeShapeRoles.READWRITE, repositoryName, repositorySourceName, workspaceName);
             }
         }
         return hasPermission;
+    }
+
+    /**
+     * Returns whether the authenticated user has the given role.
+     * 
+     * @param context the security context
+     * @param roleName the name of the role to check
+     * @param repositoryName the name of the repository
+     * @param repositorySourceName the name of the repository's source
+     * @param workspaceName the workspace under which the user must have the role. This may be different from the current
+     *        workspace.
+     * @return true if the user has the role and is logged in; false otherwise
+     */
+    private final boolean hasRole( SecurityContext context,
+                                   String roleName,
+                                   String repositoryName,
+                                   String repositorySourceName,
+                                   String workspaceName ) {
+        if (context.hasRole(roleName)) return true;
+        roleName = roleName + "." + repositorySourceName;
+        if (context.hasRole(roleName)) return true;
+        roleName = roleName + "." + workspaceName;
+        return context.hasRole(roleName);
     }
 
     /**

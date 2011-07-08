@@ -45,6 +45,8 @@ public class ModeShapeLexicon extends org.modeshape.repository.ModeShapeLexicon 
     public static final Name NAMESPACE = new BasicName(Namespace.URI, "namespace");
     public static final Name NODE_TYPES = new BasicName(Namespace.URI, "nodeTypes");
     public static final Name REPOSITORIES = new BasicName(Namespace.URI, "repositories");
+    public static final Name AUTHENTICATION_PROVIDERS = new BasicName(Namespace.URI, "authenticationProviders");
+    public static final Name AUTHENTICATION_PROVIDER = new BasicName(Namespace.URI, "authenticationProvider");
     public static final Name SYSTEM = new BasicName(Namespace.URI, "system");
     public static final Name VERSION_STORAGE = new BasicName(Namespace.URI, "versionStorage");
     public static final Name VERSION_HISTORY_FOLDER = new BasicName(Namespace.URI, "versionHistoryFolder");
