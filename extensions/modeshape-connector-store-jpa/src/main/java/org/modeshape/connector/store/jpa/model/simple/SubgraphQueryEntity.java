@@ -23,7 +23,6 @@
  */
 package org.modeshape.connector.store.jpa.model.simple;
 
-import javax.persistence.Cacheable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -34,7 +33,6 @@ import javax.persistence.Id;
  * Represents a temporary working area for a query that retrieves the nodes in a subgraph.
  */
 @Entity( name = "MODE_SUBGRAPH_QUERIES" )
-@Cacheable
 public class SubgraphQueryEntity {
 
     @Id

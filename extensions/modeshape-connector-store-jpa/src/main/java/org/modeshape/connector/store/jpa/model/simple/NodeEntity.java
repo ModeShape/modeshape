@@ -28,7 +28,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import javax.persistence.Cacheable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EntityManager;
@@ -61,7 +60,6 @@ import org.modeshape.connector.store.jpa.util.Serializer;
  * there is one).
  */
 @Entity
-@Cacheable
 @org.hibernate.annotations.Table( appliesTo = "MODE_SIMPLE_NODE", indexes = {
     @Index( name = "NODEUUID_INX", columnNames = {"WORKSPACE_ID", "NODE_UUID"} ),
     @Index( name = "CHILDINDEX_INX", columnNames = {"WORKSPACE_ID", "PARENT_ID", "CHILD_INDEX"} ),

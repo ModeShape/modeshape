@@ -24,7 +24,6 @@
 package org.modeshape.connector.store.jpa.model.simple;
 
 import java.security.NoSuchAlgorithmException;
-import javax.persistence.Cacheable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EntityManager;
@@ -46,7 +45,6 @@ import org.modeshape.graph.property.PropertyType;
  * properties of nodes in different workspaces.
  */
 @Entity
-@Cacheable
 @Table( name = "MODE_SIMPLE_LARGE_VALUES" )
 @NamedQuery( name = "LargeValueEntity.deleteAllUnused", query = "delete LargeValueEntity lve where lve.hash not in (select values.hash from NodeEntity node join node.largeValues values)" )
 public class LargeValueEntity {
