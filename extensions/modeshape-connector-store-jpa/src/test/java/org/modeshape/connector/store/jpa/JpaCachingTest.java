@@ -15,9 +15,7 @@ public class JpaCachingTest extends AbstractConnectorTest {
         // Set the connection properties using the environment defined in the POM files ...
         JpaSource source = TestEnvironment.configureJpaSource("Test Repository", this);
         source.setShowSql(true);
-        source.setJpaPersistenceUnitName("modeshape-connector-jpa-ehcache");
-
-        // source.setJpaCacheProviderClassName("org.hibernate.cache.HashtableCacheProvider");
+        // source.setCacheProviderClassName("org.hibernate.cache.HashtableCacheProvider");
 
         return source;
     }
