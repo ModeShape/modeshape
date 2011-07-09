@@ -65,13 +65,13 @@ import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NameFactory;
 import org.modeshape.graph.property.Path;
-import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.property.PathNotFoundException;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.PropertyFactory;
 import org.modeshape.graph.property.Reference;
 import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.ValueFormatException;
+import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.query.QueryContext;
 import org.modeshape.graph.query.QueryEngine;
 import org.modeshape.graph.query.QueryResults;
@@ -94,11 +94,9 @@ import org.modeshape.graph.request.AccessQueryRequest;
 import org.modeshape.graph.request.BatchRequestBuilder;
 import org.modeshape.graph.request.CacheableRequest;
 import org.modeshape.graph.request.CloneWorkspaceRequest;
-import org.modeshape.graph.request.CloneWorkspaceRequest.CloneConflictBehavior;
 import org.modeshape.graph.request.CompositeRequest;
 import org.modeshape.graph.request.CreateNodeRequest;
 import org.modeshape.graph.request.CreateWorkspaceRequest;
-import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
 import org.modeshape.graph.request.DestroyWorkspaceRequest;
 import org.modeshape.graph.request.FullTextSearchRequest;
 import org.modeshape.graph.request.InvalidRequestException;
@@ -113,6 +111,8 @@ import org.modeshape.graph.request.RequestBuilder;
 import org.modeshape.graph.request.RequestType;
 import org.modeshape.graph.request.UnsupportedRequestException;
 import org.modeshape.graph.request.VerifyWorkspaceRequest;
+import org.modeshape.graph.request.CloneWorkspaceRequest.CloneConflictBehavior;
+import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
 import org.modeshape.graph.request.function.Function;
 import org.xml.sax.SAXException;
 
@@ -7287,6 +7287,7 @@ public class Graph {
 
         void addProperty( Property property ) {
             if (this.properties == null) this.properties = new HashMap<Name, Property>();
+            if (property == null) return;
             this.properties.put(property.getName(), property);
         }
 

@@ -25,10 +25,12 @@ package org.modeshape.repository.sequencer;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
@@ -45,15 +47,16 @@ import org.modeshape.graph.sequencer.SequencerOutput;
  * paths} and provides access to the nodes in a natural path-order.
  */
 @NotThreadSafe
-public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOutputMap.Entry> {
+public class SequencerOutputMap implements SequencerOutput, Iterable<Path> {
 
-    private final Map<Path, List<PropertyValue>> data;
-    private transient boolean valuesSorted = true;
+    private final Map<Path, List<PropertyValue>> overridingValues;
+    private final Map<Path, List<PropertyValue>> addedValues;
     private final ValueFactories factories;
 
     public SequencerOutputMap( ValueFactories factories ) {
         CheckArg.isNotNull(factories, "factories");
-        this.data = new LinkedHashMap<Path, List<PropertyValue>>();
+        this.overridingValues = new LinkedHashMap<Path, List<PropertyValue>>();
+        this.addedValues = new LinkedHashMap<Path, List<PropertyValue>>();
         this.factories = factories;
     }
 
@@ -72,11 +75,11 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
         CheckArg.isNotNull(propertyName, "property");
 
         // Find or create the entry for this node ...
-        List<PropertyValue> properties = this.data.get(nodePath);
+        List<PropertyValue> properties = this.overridingValues.get(nodePath);
         if (properties == null) {
             if (values == null || values.length == 0 || (values.length == 1 && values[0] == null)) return; // do nothing
             properties = new ArrayList<PropertyValue>();
-            this.data.put(nodePath, properties);
+            this.overridingValues.put(nodePath, properties);
         }
         if (values == null || values.length == 0 || (values.length == 1 && values[0] == null)) {
             properties.remove(new PropertyValue(propertyName, null));
@@ -84,7 +87,32 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
             Object propValue = values.length == 1 ? values[0] : values;
             PropertyValue value = new PropertyValue(propertyName, propValue);
             properties.add(value);
-            valuesSorted = false;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void addValues( Path nodePath,
+                           Name propertyName,
+                           Object... values ) {
+        CheckArg.isNotNull(nodePath, "nodePath");
+        CheckArg.isNotNull(propertyName, "property");
+
+        // Find or create the entry for this node ...
+        List<PropertyValue> properties = this.addedValues.get(nodePath);
+        if (properties == null) {
+            if (values == null || values.length == 0 || (values.length == 1 && values[0] == null)) return; // do nothing
+            properties = new ArrayList<PropertyValue>();
+            this.addedValues.put(nodePath, properties);
+        }
+        if (values == null || values.length == 0 || (values.length == 1 && values[0] == null)) {
+            properties.remove(new PropertyValue(propertyName, null));
+        } else {
+            Object propValue = values.length == 1 ? values[0] : values;
+            PropertyValue value = new PropertyValue(propertyName, propValue);
+            properties.add(value);
         }
     }
 
@@ -141,7 +169,7 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
      * @return the number of entries
      */
     public int size() {
-        return this.data.size();
+        return this.overridingValues.size() + this.addedValues.size();
     }
 
     /**
@@ -150,21 +178,32 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
      * @return true if this container is empty, or false otherwise
      */
     public boolean isEmpty() {
-        return this.data.isEmpty();
+        return this.overridingValues.isEmpty() && this.addedValues.isEmpty();
     }
 
     protected List<PropertyValue> removeProperties( Path nodePath ) {
-        return this.data.remove(nodePath);
+        return this.overridingValues.remove(nodePath);
     }
 
     /**
-     * Get the properties for the node given by the supplied path.
+     * Get the overriding property values for the node given by the supplied path.
      * 
      * @param nodePath the path to the node
      * @return the property values, or null if there are none
      */
-    protected List<PropertyValue> getProperties( Path nodePath ) {
-        return data.get(nodePath);
+    protected List<PropertyValue> getOverridingValues( Path nodePath ) {
+        return overridingValues.get(nodePath);
+    }
+
+    /**
+     * Get the added property values for the node given by the supplied path.
+     * 
+     * @param nodePath the path to the node
+     * @return the property values, or null if there are none
+     * @see #addValues(Path, Name, Object...)
+     */
+    protected List<PropertyValue> getAddedValues( Path nodePath ) {
+        return addedValues.get(nodePath);
     }
 
     /**
@@ -173,22 +212,27 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
      * {@inheritDoc}
      */
     @Override
-    public Iterator<Entry> iterator() {
-        // LinkedList<Path> paths = new LinkedList<Path>(data.keySet());
-        // Collections.sort(paths);
-        // sortValues();
-        // return new EntryIterator(paths.iterator());
-        return new EntryIterator(data.keySet().iterator());
+    public Iterator<Path> iterator() {
+        // De-duplicate paths, since we don't have a requirement that a path can't be set and the added
+        Set<Path> allPaths = new HashSet<Path>(addedValues.size() + overridingValues.size());
+
+        allPaths.addAll(addedValues.keySet());
+        allPaths.addAll(overridingValues.keySet());
+
+        List<Path> sortedPaths = new ArrayList<Path>(allPaths);
+        Collections.sort(sortedPaths);
+
+        return sortedPaths.iterator();
     }
 
-    protected void sortValues() {
-        if (!valuesSorted) {
-            for (List<PropertyValue> values : this.data.values()) {
-                if (values.size() > 1) Collections.sort(values);
-            }
-            valuesSorted = true;
-        }
-    }
+    // protected void sortValues() {
+    // if (!valuesSorted) {
+    // for (List<PropertyValue> values : this.overridingValues.values()) {
+    // if (values.size() > 1) Collections.sort(values);
+    // }
+    // valuesSorted = true;
+    // }
+    // }
 
     /**
      * {@inheritDoc}
@@ -197,7 +241,7 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
     public String toString() {
         StringBuilder sb = new StringBuilder();
         ValueFactory<String> strings = factories.getStringFactory();
-        for (Map.Entry<Path, List<PropertyValue>> entry : this.data.entrySet()) {
+        for (Map.Entry<Path, List<PropertyValue>> entry : this.overridingValues.entrySet()) {
             sb.append(strings.create(entry.getKey())).append(" = ");
             List<PropertyValue> values = entry.getValue();
             if (values.size() == 1) {
@@ -344,7 +388,7 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
          * @return value
          */
         public List<PropertyValue> getPropertyValues() {
-            return getProperties(path);
+            return getOverridingValues(path);
         }
     }
 
@@ -371,7 +415,7 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
         @Override
         public Entry next() {
             this.last = iter.next();
-            return new Entry(last, getProperties(last));
+            return new Entry(last, getOverridingValues(last));
         }
 
         /**

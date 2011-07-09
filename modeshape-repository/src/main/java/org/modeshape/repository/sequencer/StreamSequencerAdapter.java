@@ -50,13 +50,13 @@ import org.modeshape.graph.observe.NetChangeObserver.NetChange;
 import org.modeshape.graph.property.Binary;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
-import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.PathNotFoundException;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.PropertyFactory;
 import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.ValueFormatException;
+import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.sequencer.StreamSequencer;
 import org.modeshape.graph.sequencer.StreamSequencerContext;
 import org.modeshape.repository.ModeShapeLexicon;
@@ -386,31 +386,59 @@ public class StreamSequencerAdapter implements Sequencer {
         // prefix and name)
         final Set<Path> pathsOfTopLevelNodes = new HashSet<Path>();
         final Destination destination = context.getDestination();
-        for (SequencerOutputMap.Entry entry : output) {
-            Path path = entry.getPath();
+        for (Path path : output) {
             Path targetNodePath = pathStrategy.validate(path);
 
-            // Resolve this path relative to the output node path, handling any parent or self references ...
-            Path absolutePath = targetNodePath.isAbsolute() ? targetNodePath : outputNodePath.resolve(targetNodePath);
+            boolean pathAlreadyChecked = false;
 
-            Collection<Property> properties = new LinkedList<Property>();
-            // Set all of the properties on this
-            for (SequencerOutputMap.PropertyValue property : entry.getPropertyValues()) {
-                Object value = property.getValue();
-                Property newProperty = propertyFactory.create(property.getName(), value);
-                properties.add(newProperty);
-                // TODO: Handle reference properties - currently passed in as Paths
+            List<SequencerOutputMap.PropertyValue> overridingPropertyValues = output.getOverridingValues(targetNodePath);
+            if (overridingPropertyValues != null) {
+                // Resolve this path relative to the output node path, handling any parent or self references ...
+                Path absolutePath = targetNodePath.isAbsolute() ? targetNodePath : outputNodePath.resolve(targetNodePath);
+
+                Collection<Property> properties = new LinkedList<Property>();
+
+                // Set all of the properties on this
+                for (SequencerOutputMap.PropertyValue property : overridingPropertyValues) {
+                    Object value = property.getValue();
+                    Property newProperty = propertyFactory.create(property.getName(), value);
+                    properties.add(newProperty);
+                    // TODO: Handle reference properties - currently passed in as Paths
+                }
+
+                if (targetNodePath.size() <= 1 && addDerivedMixin && pathsOfTopLevelNodes.add(absolutePath)) {
+                    properties = addDerivedProperties(properties, context, derivedFromPath);
+                }
+
+                if (absolutePath.getParent() != null) {
+                    buildPathTo(absolutePath.getParent(), context, builtPaths);
+                }
+                pathAlreadyChecked = true;
+
+                destination.create(absolutePath, properties);
+                builtPaths.add(absolutePath);
             }
 
-            if (targetNodePath.size() <= 1 && addDerivedMixin && pathsOfTopLevelNodes.add(absolutePath)) {
-                properties = addDerivedProperties(properties, context, derivedFromPath);
-            }
+            List<SequencerOutputMap.PropertyValue> additionalPropertyValues = output.getAddedValues(path);
+            if (additionalPropertyValues != null) {
+                // Resolve this path relative to the output node path, handling any parent or self references ...
+                Path absolutePath = targetNodePath.isAbsolute() ? path : outputNodePath.resolve(path);
 
-            if (absolutePath.getParent() != null) {
-                buildPathTo(absolutePath.getParent(), context, builtPaths);
+                if (!pathAlreadyChecked) {
+                    if (absolutePath.getParent() != null) {
+                        buildPathTo(absolutePath.getParent(), context, builtPaths);
+                    }
+                    builtPaths.add(absolutePath);
+                }
+
+                // Set all of the properties on this
+                for (SequencerOutputMap.PropertyValue property : additionalPropertyValues) {
+                    Name propertyName = property.getName();
+
+                    destination.addPropertyValues(absolutePath, propertyName, property.getValue());
+                    // TODO: Handle reference properties - currently passed in as Paths
+                }
             }
-            destination.create(absolutePath, properties);
-            builtPaths.add(absolutePath);
         }
     }
 

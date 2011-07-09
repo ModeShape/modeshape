@@ -37,6 +37,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.junit.Before;
@@ -61,6 +62,7 @@ import org.modeshape.graph.sequencer.SequencerOutput;
 import org.modeshape.graph.sequencer.StreamSequencer;
 import org.modeshape.graph.sequencer.StreamSequencerContext;
 import org.modeshape.repository.ModeShapeLexicon;
+import org.modeshape.repository.sequencer.SequencerOutputMap.PropertyValue;
 import org.modeshape.repository.util.RepositoryNodePath;
 
 /**
@@ -106,10 +108,19 @@ public class StreamSequencerAdapterTest {
             public void sequence( InputStream stream,
                                   SequencerOutput output,
                                   StreamSequencerContext context ) {
-                for (SequencerOutputMap.Entry entry : finalOutput) {
-                    Path nodePath = entry.getPath();
-                    for (SequencerOutputMap.PropertyValue property : entry.getPropertyValues()) {
-                        output.setProperty(nodePath, property.getName(), property.getValue());
+                for (Path nodePath : finalOutput) {
+                    List<PropertyValue> overridingValues = finalOutput.getOverridingValues(nodePath);
+                    if (overridingValues != null) {
+                        for (SequencerOutputMap.PropertyValue property : overridingValues) {
+                            output.setProperty(nodePath, property.getName(), property.getValue());
+                        }
+                    }
+
+                    List<PropertyValue> addedValues = finalOutput.getAddedValues(nodePath);
+                    if (addedValues != null) {
+                        for (SequencerOutputMap.PropertyValue property : addedValues) {
+                            output.addValues(nodePath, property.getName(), property.getValue());
+                        }
                     }
                 }
             }
@@ -708,6 +719,132 @@ public class StreamSequencerAdapterTest {
 
         assertThat(props.size(), is(2)); // Need to add one to account for dna:uuid
         assertThat(props.get(nameFor("property1")).getFirstValue().toString(), is("value1"));
+    }
+
+    @FixFor( "MODE-456" )
+    @Test
+    public void shouldNotCreateExtraNodesWhenAddingValues() throws Exception {
+        SequencerOutputMap output = new SequencerOutputMap(context.getValueFactories());
+        Map<Name, Property> props = null;
+
+        graph.create("/a").and().create("/a/b").and().create("/a/b").byAppending().and();
+
+        /*
+         * Create several output properties and make sure the resulting graph
+         * does not contain duplicate nodes
+         */
+        output.addValues(path("a"), name("property1"), "value1");
+        output.addValues(path("a/b"), name("property1"), "value1");
+        output.addValues(path("a/b"), name("property2"), "value2");
+        output.addValues(path("a/b[2]"), name("property2"), "value2");
+
+        Set<Path> builtPaths = new HashSet<Path>();
+        sequencer.saveOutput(path("/input/path"), "/", output, seqContext, builtPaths, true);
+        seqContext.getDestination().submit();
+
+        Node rootNode = graph.getNodeAt("/");
+        assertThat(rootNode.getChildren().size(), is(1));
+
+        Node nodeA = graph.getNodeAt("/a");
+        props = nodeA.getPropertiesByName();
+
+        assertThat(nodeA.getChildren().size(), is(2));
+        assertThat(props.size(), is(2)); // Need to add one to account for dna:uuid
+        assertThat(props.get(nameFor("property1")).getFirstValue().toString(), is("value1"));
+
+        Node nodeB = graph.getNodeAt("/a/b[1]");
+        props = nodeB.getPropertiesByName();
+
+        assertThat(props.size(), is(3)); // Need to add one to account for dna:uuid
+        assertThat(props.get(nameFor("property1")).getFirstValue().toString(), is("value1"));
+        assertThat(props.get(nameFor("property2")).getFirstValue().toString(), is("value2"));
+
+        Node nodeB2 = graph.getNodeAt("/a/b[2]");
+        props = nodeB2.getPropertiesByName();
+
+        assertThat(props.size(), is(2)); // Need to add one to account for dna:uuid
+        assertThat(props.get(nameFor("property2")).getFirstValue().toString(), is("value2"));
+
+    }
+
+    @FixFor( "MODE-456" )
+    @Test
+    public void shouldBeAbleToAddValuesRepeatedly() throws Exception {
+        SequencerOutputMap output = new SequencerOutputMap(context.getValueFactories());
+        Map<Name, Property> props = null;
+
+        graph.create("/a").and();
+
+        /*
+         * Create several output properties and make sure the resulting graph
+         * does not contain duplicate nodes
+         */
+        output.addValues(path("a"), name("property1"), "value1");
+        output.addValues(path("a"), name("property1"), "value2");
+        output.addValues(path("a"), name("property1"), "value3", "value4");
+        output.addValues(path("a"), name("property2"), "value1");
+
+        Set<Path> builtPaths = new HashSet<Path>();
+        sequencer.saveOutput(path("/input/path"), "/", output, seqContext, builtPaths, true);
+        seqContext.getDestination().submit();
+
+        Node rootNode = graph.getNodeAt("/");
+        assertThat(rootNode.getChildren().size(), is(1));
+
+        Node nodeA = graph.getNodeAt("/a");
+        props = nodeA.getPropertiesByName();
+
+        assertThat(nodeA.getChildren().size(), is(0));
+        assertThat(props.size(), is(3)); // Need to add one to account for dna:uuid
+        assertThat(props.get(nameFor("property1")).size(), is(4));
+        assertThat(props.get(nameFor("property1")).getFirstValue().toString(), is("value1"));
+        assertThat(props.get(nameFor("property1")).getValuesAsArray()[1].toString(), is("value2"));
+        assertThat(props.get(nameFor("property1")).getValuesAsArray()[2].toString(), is("value3"));
+        assertThat(props.get(nameFor("property1")).getValuesAsArray()[3].toString(), is("value4"));
+
+        assertThat(props.get(nameFor("property2")).size(), is(1));
+        assertThat(props.get(nameFor("property2")).getFirstValue().toString(), is("value1"));
+    }
+
+    @FixFor( "MODE-456" )
+    @Test
+    public void shouldBeAbleToSetAndAddValueToSameNode() throws Exception {
+        SequencerOutputMap output = new SequencerOutputMap(context.getValueFactories());
+        Map<Name, Property> props = null;
+
+        output.setProperty(path("a"), name("property1"), "value1");
+        output.addValues(path("a"), name("property1"), "value2");
+
+        Set<Path> builtPaths = new HashSet<Path>();
+        sequencer.saveOutput(path("/input/path"), "/", output, seqContext, builtPaths, true);
+        seqContext.getDestination().submit();
+
+        Node rootNode = graph.getNodeAt("/");
+        assertThat(rootNode.getChildren().size(), is(1));
+
+        Node nodeA = graph.getNodeAt("/a");
+        props = nodeA.getPropertiesByName();
+
+        assertThat(nodeA.getChildren().size(), is(0));
+        assertThat(props.size(), is(2)); // Need to add one to account for dna:uuid
+        assertThat(props.get(nameFor("property1")).size(), is(2));
+        assertThat(props.get(nameFor("property1")).getFirstValue().toString(), is("value1"));
+        assertThat(props.get(nameFor("property1")).getValuesAsArray()[1].toString(), is("value2"));
+    }
+
+    @FixFor( "MODE-456" )
+    @Test( expected = PathNotFoundException.class )
+    public void shouldNotBeAbleToAddValueToNonExistentNode() throws Exception {
+        SequencerOutputMap output = new SequencerOutputMap(context.getValueFactories());
+
+        /*
+         * Try to add a value to a nonexistent node
+         */
+        output.addValues(path("a"), name("property1"), "value1");
+
+        Set<Path> builtPaths = new HashSet<Path>();
+        sequencer.saveOutput(path("/input/path"), "/", output, seqContext, builtPaths, true);
+        seqContext.getDestination().submit();
     }
 
     private void verifyProperty( StreamSequencerContext context,

@@ -337,58 +337,6 @@ public ConsoleInput( SequencerClient client ) {
   }
 }
   ]]></programlisting>
-		<para>
-			There is one more aspect of this example that is worth discussing.  While the repository example in the
-			<link linkend="repository_example">next chapter</link> does show how to use JAAS, this example intentionally shows how
-			you might integrate a different security system into ModeShape.  In the <code>createSession()</code> method,
-			the <code>RepositoryClient</code> creates a <code>SecurityContextCredentials</code> wrapper around a custom
-			<code>SecurityContext</code> implementation, then passes that credentials into the <code>login(Credentials,String)</code>
-			method:
-		</para>
-    <programlisting language="JAVA" role="JAVA"><![CDATA[
-protected Session createSession() throws RepositoryException {
-    SecurityContext securityContext = new MyCustomSecurityContext();
-    SecurityContextCredentials credentials = new SecurityContextCredentials(securityContext);
-    return this.repository.login(credentials, workspaceName);
-}
-  ]]></programlisting>
-		<para>
-			where the custom <code>SecurityContext</code> implementation is as follows:
-		</para>
-   <programlisting language="JAVA" role="JAVA"><![CDATA[
-protected class MyCustomSecurityContext implements SecurityContext {
-    /**
-     * @see org.modeshape.graph.SecurityContext#getUserName()
-     */
-    public String getUserName() {
-        return "Fred";
-    }
-
-    /**
-     * @see org.modeshape.graph.SecurityContext#hasRole(java.lang.String)
-     */
-    public boolean hasRole( String roleName ) {
-        return true;
-    }
-
-    /**
-     * @see org.modeshape.graph.SecurityContext#logout()
-     */
-    public void logout() {
-        // do something
-    }
-}
- ]]></programlisting>
-		<para>
-			Obviously you would want to implement this correctly.  If you're using ModeShape in a web application, your <code>SecurityContext</code>
-			implementation would likely delegate to the <code>HttpServletRequest</code>.
-		</para>
-		<para>
-			But if you're using JAAS, then you could just pass in a <code>javax.jcr.SimpleCredentials</code> with the username and password,
-			as long as your <code>JcrConfiguration</code>'s repository definitions are set up to use the correct JAAS login context name
-			(see the repository example in the <link linkend="repository_example">next chapter</link>).  Or, you could use the approach listed
-			above and supply an instance of the <code>JaasSecurityContext</code> to the <code>SecurityContextCredentials</code>.
-		</para>
 		<para>At this point, we've reviewed all of the interesting code in the example application related to ModeShape.  However, feel free
     to play with the application, trying different things.</para>
 	</sect1>
