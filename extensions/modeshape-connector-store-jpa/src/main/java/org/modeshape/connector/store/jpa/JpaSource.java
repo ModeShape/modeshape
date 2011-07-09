@@ -174,7 +174,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     /**
      * The {@link #getCacheProviderClassName() class name of the JPA cache provider} is "{@value} ", unless otherwise specified.
      */
-    public static final String DEFAULT_CACHE_PROVIDER_CLASS_NAME = "org.hibernate.cache.HashtableCacheProvider";
+    public static final String DEFAULT_CACHE_PROVIDER_CLASS_NAME = null;
 
     /**
      * The {@link #getCacheConcurrencyStrategy() cache concurrency strategy} is "{@value} ", unless otherwise specified.
