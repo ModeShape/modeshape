@@ -27,16 +27,14 @@ import java.sql.DriverPropertyInfo;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-
 import javax.jcr.Credentials;
 import javax.jcr.SimpleCredentials;
-
+import org.modeshape.common.text.TextDecoder;
+import org.modeshape.common.text.UrlEncoder;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.Repositories;
-import org.modeshape.jdbc.LocalJcrDriver;
 import org.modeshape.jdbc.JdbcLocalI18n;
-import org.modeshape.jdbc.util.StringUtil;
-import org.modeshape.jdbc.util.TextDecoder;
-import org.modeshape.jdbc.util.UrlEncoder;
+import org.modeshape.jdbc.LocalJcrDriver;
 
 /**
  * The ConnectionInfo contains the information used to connect to the Jcr Repository.
