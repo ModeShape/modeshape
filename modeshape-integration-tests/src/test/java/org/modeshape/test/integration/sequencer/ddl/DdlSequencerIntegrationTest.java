@@ -29,19 +29,21 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
+import javax.jcr.SimpleCredentials;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
+import org.modeshape.jcr.JaasTestUtil;
 import org.modeshape.jcr.JcrConfiguration;
-import org.modeshape.jcr.JcrRepository;
-import org.modeshape.jcr.JcrSecurityContextCredentials;
 import org.modeshape.jcr.JcrTools;
 import org.modeshape.sequencer.ddl.DdlParserScorer;
 import org.modeshape.sequencer.ddl.StandardDdlLexicon;
@@ -51,11 +53,21 @@ import org.modeshape.sequencer.ddl.node.AstNode;
 /**
  *
  */
-@SuppressWarnings( "deprecation" )
 public class DdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
     private JcrConfiguration config;
     private String repositoryName;
     private String workspaceName;
+
+    @BeforeClass
+    public static void beforeAll() {
+        // Initialize the JAAS configuration to allow for an admin login later
+        JaasTestUtil.initJaas("security/jaas.conf.xml");
+    }
+
+    @AfterClass
+    public static void afterAll() {
+        JaasTestUtil.releaseJaas();
+    }
 
     @Before
     public void beforeEach() throws Exception {
@@ -80,7 +92,6 @@ public class DdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
         config.repository(repositoryName)
               .addNodeTypes(getUrl("org/modeshape/sequencer/ddl/StandardDdl.cnd"))
               .registerNamespace(StandardDdlLexicon.Namespace.PREFIX, StandardDdlLexicon.Namespace.URI)
-              .setOption(JcrRepository.Option.USE_SECURITY_CONTEXT_CREDENTIALS, "true")
               .setSource(repositorySource);
         // Set up the DDL sequencer ...
         config.sequencer("DDL Sequencer")
@@ -93,8 +104,9 @@ public class DdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
         this.engine = config.build();
         this.engine.start();
 
-        this.session = this.engine.getRepository(repositoryName)
-                                  .login(new JcrSecurityContextCredentials(new MyCustomSecurityContext()), workspaceName);
+        this.session = this.engine.getRepository(repositoryName).login(new SimpleCredentials("superuser",
+                                                                                             "superuser".toCharArray()),
+                                                                       workspaceName);
 
     }
 
@@ -371,7 +383,9 @@ public class DdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
         this.engine.start();
 
         this.session = this.engine.getRepository(repositoryName)
-                                  .login(new JcrSecurityContextCredentials(new MyCustomSecurityContext()), workspaceName);
+.login(new SimpleCredentials("superuser",
+                                                                                             "superuser".toCharArray()),
+                                                                       workspaceName);
 
         ArgleDdlParser.parsed = 0;
         ArgleDdlParser.scored = 0;
@@ -390,7 +404,9 @@ public class DdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
         this.engine.start();
 
         this.session = this.engine.getRepository(repositoryName)
-                                  .login(new JcrSecurityContextCredentials(new MyCustomSecurityContext()), workspaceName);
+.login(new SimpleCredentials("superuser",
+                                                                                             "superuser".toCharArray()),
+                                                                       workspaceName);
         // Upload a file ...
         uploadFile(ddlTestResourceRootFolder, "create_schema.ddl", "shouldBeAbleToCreateAndExecuteJcrSql2QueryWithOrderBy");
         waitUntilSequencedNodesIs(1);

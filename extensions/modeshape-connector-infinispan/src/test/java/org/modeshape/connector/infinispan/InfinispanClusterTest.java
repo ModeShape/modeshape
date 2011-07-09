@@ -14,14 +14,10 @@ import org.junit.Test;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.Node;
-import org.modeshape.graph.Subgraph;
 import org.modeshape.graph.Workspace;
-import org.modeshape.graph.connector.RepositoryConnection;
-import org.modeshape.graph.connector.RepositoryConnectionFactory;
+import org.modeshape.graph.connector.MockRepositoryContext;
 import org.modeshape.graph.connector.RepositoryContext;
 import org.modeshape.graph.connector.RepositorySource;
-import org.modeshape.graph.connector.RepositorySourceException;
-import org.modeshape.graph.observe.Observer;
 import org.modeshape.graph.property.PathNotFoundException;
 
 /*
@@ -214,36 +210,6 @@ public class InfinispanClusterTest {
     }
 
     private final RepositoryContext repositoryContextFor( final RepositorySource source ) {
-        return new RepositoryContext() {
-
-            @Override
-            public Subgraph getConfiguration( int depth ) {
-                return null;
-            }
-
-            @SuppressWarnings( "synthetic-access" )
-            @Override
-            public ExecutionContext getExecutionContext() {
-                return context;
-            }
-
-            @Override
-            public Observer getObserver() {
-                return null;
-            }
-
-            @Override
-            public RepositoryConnectionFactory getRepositoryConnectionFactory() {
-                return new RepositoryConnectionFactory() {
-
-                    @Override
-                    public RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException {
-                        return source.getConnection();
-                    }
-
-                };
-            }
-
-        };
+        return new MockRepositoryContext(context, source);
     }
 }

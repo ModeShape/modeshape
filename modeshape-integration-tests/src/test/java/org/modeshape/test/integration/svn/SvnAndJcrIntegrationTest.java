@@ -31,21 +31,18 @@ import javax.jcr.NodeIterator;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 import javax.jcr.Session;
+import javax.jcr.SimpleCredentials;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.connector.svn.SvnRepositorySource;
-import org.modeshape.graph.SecurityContext;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
-import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.JcrRepository.Option;
-import org.modeshape.jcr.JcrSecurityContextCredentials;
 
 /**
  * 
  */
-@SuppressWarnings( "deprecation" )
 public class SvnAndJcrIntegrationTest {
     private JcrEngine engine;
     private Session session;
@@ -68,15 +65,15 @@ public class SvnAndJcrIntegrationTest {
 
         configuration.repository(repositoryName)
                      .setSource(svnRepositorySource)
-                     .setOption(Option.QUERY_EXECUTION_ENABLED, "true")
-                     .setOption(JcrRepository.Option.USE_SECURITY_CONTEXT_CREDENTIALS, "true");
-
+                     .setOption(Option.QUERY_EXECUTION_ENABLED, "true");
+    
         configuration.save();
         this.engine = configuration.build();
         this.engine.start();
 
         this.session = this.engine.getRepository(repositoryName)
-                                  .login(new JcrSecurityContextCredentials(new MyCustomSecurityContext()));
+                                  .login(new SimpleCredentials("superuser",
+                                                               "superuser".toCharArray()));
 
     }
 
@@ -110,38 +107,6 @@ public class SvnAndJcrIntegrationTest {
         for (PropertyIterator iter = resourceNodeOfPomFile.getProperties(); iter.hasNext();) {
             Property property = iter.nextProperty();
             assertThat(property.getName(), is(notNullValue()));
-        }
-    }
-
-    protected class MyCustomSecurityContext implements SecurityContext {
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.SecurityContext#getUserName()
-         */
-        @Override
-        public String getUserName() {
-            return "Fred";
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.SecurityContext#hasRole(java.lang.String)
-         */
-        @Override
-        public boolean hasRole( String roleName ) {
-            return true;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.SecurityContext#logout()
-         */
-        @Override
-        public void logout() {
-            // do something
         }
     }
 }
