@@ -62,9 +62,9 @@ import org.modeshape.common.util.FileUtil;
 import org.modeshape.connector.store.jpa.JpaSource;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
-import org.modeshape.jcr.JcrRepository.Option;
 import org.modeshape.jcr.ModeShapeRoles;
 import org.modeshape.jcr.NodeTypeAssertion;
+import org.modeshape.jcr.JcrRepository.Option;
 
 public class ClusteringTest {
 
@@ -105,7 +105,9 @@ public class ClusteringTest {
                      .setProperty("retryLimit", "3")
                      .setProperty("showSql", "false")
                      .setProperty("defaultWorkspaceName", "content")
+                     .setProperty("cacheProviderClassName",(String) null)
                      .setProperty("predefinedWorkspaceNames", new String[] {"content", "system"});
+                        
         configuration.repository("cars")
                      .setSource("car-source")
                      .registerNamespace("car", "http://www.modeshape.org/examples/cars/1.0")
