@@ -56,9 +56,8 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
-import org.modeshape.graph.JaasSecurityContext.UserPasswordCallbackHandler;
-import org.modeshape.graph.MockSecurityContext;
 import org.modeshape.graph.Node;
+import org.modeshape.graph.JaasSecurityContext.UserPasswordCallbackHandler;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryConnectionFactory;
 import org.modeshape.graph.connector.RepositorySource;
@@ -352,25 +351,14 @@ public class JcrRepositoryTest {
 
     }
 
-    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldAllowLoginWithProperCredentials() throws Exception {
         repository.login(credentials);
-        repository.login(new JcrSecurityContextCredentials(new MockSecurityContext(null,
-                                                                                   Collections.singleton(ModeShapeRoles.ADMIN))));
     }
 
-    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldAllowLoginWithNoWorkspaceName() throws Exception {
         Session session = repository.login(credentials, null);
-        assertThat(session, notNullValue());
-        session.logout();
-        session = repository.login(new JcrSecurityContextCredentials(
-                                                                     new MockSecurityContext(
-                                                                                             null,
-                                                                                             Collections.singleton(ModeShapeRoles.ADMIN))),
-                                   (String)null);
         assertThat(session, notNullValue());
         session.logout();
     }

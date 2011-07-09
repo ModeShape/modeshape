@@ -36,25 +36,36 @@ import javax.jcr.Node;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.SimpleCredentials;
 import javax.jcr.Workspace;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
-import org.modeshape.graph.SecurityContext;
 import org.modeshape.jcr.CndNodeTypeReader;
+import org.modeshape.jcr.JaasTestUtil;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
-import org.modeshape.jcr.JcrSecurityContextCredentials;
-import org.modeshape.test.integration.jpa.JcrRepositoryWithJpaConfigurationTest.CustomSecurityContext;
 
-@SuppressWarnings( "deprecation" )
 public class JcrRepositoryWithJpaSourceTest {
 
     private JcrEngine engine;
     private Repository repository;
     private Session session;
     private Credentials credentials;
+
+    @BeforeClass
+    public static void beforeAll() {
+        // Initialize the JAAS configuration to allow for an admin login later
+        JaasTestUtil.initJaas("security/jaas.conf.xml");
+    }
+
+    @AfterClass
+    public static void afterAll() {
+        JaasTestUtil.releaseJaas();
+    }
 
     @Before
     public void beforeEach() throws Exception {
@@ -71,8 +82,7 @@ public class JcrRepositoryWithJpaSourceTest {
         engine.start();
 
         // Set up the fake credentials ...
-        SecurityContext securityContext = new CustomSecurityContext("bill");
-        credentials = new JcrSecurityContextCredentials(securityContext);
+        credentials = new SimpleCredentials("superuser", "superuser".toCharArray());
 
         repository = engine.getRepository("Test Repository Source");
         assert repository != null;

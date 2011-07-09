@@ -27,13 +27,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
+import javax.jcr.SimpleCredentials;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
+import org.modeshape.jcr.JaasTestUtil;
 import org.modeshape.jcr.JcrConfiguration;
-import org.modeshape.jcr.JcrRepository;
-import org.modeshape.jcr.JcrSecurityContextCredentials;
 import org.modeshape.jcr.JcrTools;
 import org.modeshape.sequencer.ddl.StandardDdlLexicon;
 import org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon;
@@ -42,9 +44,19 @@ import org.modeshape.test.integration.sequencer.ddl.DdlIntegrationTestUtil;
 /**
  * @author blafond
  */
-@SuppressWarnings( "deprecation" )
 public class DerbyDdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
     private String resourceFolder = ddlTestResourceRootFolder + "/dialect/derby/";
+
+    @BeforeClass
+    public static void beforeAll() {
+        // Initialize the JAAS configuration to allow for an admin login later
+        JaasTestUtil.initJaas("security/jaas.conf.xml");
+    }
+
+    @AfterClass
+    public static void afterAll() {
+        JaasTestUtil.releaseJaas();
+    }
 
     @Before
     public void beforeEach() throws Exception {
@@ -60,31 +72,22 @@ public class DerbyDdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
 
         JcrConfiguration config = new JcrConfiguration();
         // Set up the in-memory source where we'll upload the content and where the sequenced output will be stored ...
-        config.repositorySource(repositorySource)
-              .usingClass(InMemoryRepositorySource.class)
-              .setDescription("The repository for our content")
-              .setProperty("defaultWorkspaceName", workspaceName);
+        config.repositorySource(repositorySource).usingClass(InMemoryRepositorySource.class).setDescription("The repository for our content").setProperty("defaultWorkspaceName",
+                                                                                                                                                          workspaceName);
         // Set up the JCR repository to use the source ..protected.
-        config.repository(repositoryName)
-              .addNodeTypes(getUrl("org/modeshape/sequencer/ddl/StandardDdl.cnd"))
-              .addNodeTypes(getUrl(resourceFolder + "DerbyDdl.cnd"))
-              .registerNamespace(StandardDdlLexicon.Namespace.PREFIX, StandardDdlLexicon.Namespace.URI)
-              .registerNamespace(DerbyDdlLexicon.Namespace.PREFIX, DerbyDdlLexicon.Namespace.URI)
-              .setOption(JcrRepository.Option.USE_SECURITY_CONTEXT_CREDENTIALS, "true")
-              .setSource(repositorySource);
+        config.repository(repositoryName).addNodeTypes(getUrl("org/modeshape/sequencer/ddl/StandardDdl.cnd")).addNodeTypes(getUrl(resourceFolder
+                                                                                                                                  + "DerbyDdl.cnd")).registerNamespace(StandardDdlLexicon.Namespace.PREFIX,
+                                                                                                                                                                       StandardDdlLexicon.Namespace.URI).registerNamespace(DerbyDdlLexicon.Namespace.PREFIX,
+                                                                                                                                                                                                                           DerbyDdlLexicon.Namespace.URI).setSource(repositorySource);
         // Set up the DDL sequencer ...
-        config.sequencer("DDL Sequencer")
-              .usingClass("org.modeshape.sequencer.ddl.DdlSequencer")
-              .loadedFromClasspath()
-              .setDescription("Sequences DDL files to extract individual statements and accompanying statement properties and values")
-              .sequencingFrom("(//(*.(ddl)[*]))/jcr:content[@jcr:data]")
-              .andOutputtingTo("/ddls/$1");
+        config.sequencer("DDL Sequencer").usingClass("org.modeshape.sequencer.ddl.DdlSequencer").loadedFromClasspath().setDescription("Sequences DDL files to extract individual statements and accompanying statement properties and values").sequencingFrom("(//(*.(ddl)[*]))/jcr:content[@jcr:data]").andOutputtingTo("/ddls/$1");
         config.save();
         this.engine = config.build();
         this.engine.start();
 
-        this.session = this.engine.getRepository(repositoryName)
-                                  .login(new JcrSecurityContextCredentials(new MyCustomSecurityContext()), workspaceName);
+        this.session = this.engine.getRepository(repositoryName).login(new SimpleCredentials("superuser",
+                                                                                             "superuser".toCharArray()),
+                                                                       workspaceName);
 
     }
 

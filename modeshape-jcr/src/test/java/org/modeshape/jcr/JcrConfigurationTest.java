@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import javax.jcr.Credentials;
 import javax.jcr.Repository;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
@@ -56,9 +57,10 @@ import org.modeshape.graph.mimetype.ExtensionBasedMimeTypeDetector;
 import org.modeshape.graph.property.Path;
 import org.modeshape.jcr.JcrRepository.DefaultOption;
 import org.modeshape.jcr.JcrRepository.Option;
+import org.modeshape.jcr.security.AuthenticationProvider;
 import org.modeshape.repository.ModeShapeConfiguration;
-import org.modeshape.repository.ModeShapeConfiguration.ConfigurationDefinition;
 import org.modeshape.repository.ModeShapeLexicon;
+import org.modeshape.repository.ModeShapeConfiguration.ConfigurationDefinition;
 
 public class JcrConfigurationTest {
 
@@ -474,7 +476,6 @@ public class JcrConfigurationTest {
         }
     }
 
-    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldLoadConfigurationWithCustomAuthenticators() throws Exception {
         File file = new File("src/test/resources/config/configRepositoryWithAuthenticators.xml");
@@ -527,9 +528,85 @@ public class JcrConfigurationTest {
         try {
             SecurityContext mockSecurityContext = new MockSecurityContext("testuser",
                                                                           Collections.singleton(ModeShapeRoles.READWRITE));
-            session = repository.login(new JcrSecurityContextCredentials(mockSecurityContext));
+            session = repository.login(new TestSecurityContextCredentials(mockSecurityContext));
         } finally {
             if (session != null) session.logout();
+        }
+    }
+
+    public static class TestSecurityContextCredentials implements Credentials {
+        private static final long serialVersionUID = 1L;
+        private final SecurityContext jcrSecurityContext;
+
+        /**
+         * Initializes the class with an existing {@link SecurityContext JCR security context}.
+         * 
+         * @param jcrSecurityContext the security context; may not be null
+         */
+        public TestSecurityContextCredentials( final SecurityContext jcrSecurityContext ) {
+            assert jcrSecurityContext != null;
+
+            this.jcrSecurityContext = jcrSecurityContext;
+        }
+
+        /**
+         * Returns the {@link SecurityContext JCR security context} for this instance.
+         * 
+         * @return the {@link SecurityContext JCR security context} for this instance; never null
+         */
+        public final SecurityContext getSecurityContext() {
+            return this.jcrSecurityContext;
+        }
+
+    }
+
+    public static class TestSecurityContextProvider implements AuthenticationProvider {
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.jcr.security.AuthenticationProvider#authenticate(javax.jcr.Credentials, java.lang.String,
+         *      java.lang.String, org.modeshape.graph.ExecutionContext, java.util.Map)
+         */
+        public ExecutionContext authenticate( Credentials credentials,
+                                              String repositoryName,
+                                              String workspaceName,
+                                              ExecutionContext repositoryContext,
+                                              Map<String, Object> sessionAttributes ) {
+            if (credentials instanceof TestSecurityContextCredentials) {
+                TestSecurityContextCredentials scc = (TestSecurityContextCredentials)credentials;
+                return repositoryContext.with(contextFor(scc));
+            }
+            return null;
+        }
+
+        /**
+         * Adapts the modeshape-jcr-api {@link org.modeshape.jcr.api.SecurityContext} to the modeshape-graph {@link SecurityContext}
+         * needed for repository login.
+         * 
+         * @param credentials the credentials containing the modeshape-jcr-api {@code SecurityContext}
+         * @return an equivalent modeshape-graph {@code SecurityContext}
+         */
+        private SecurityContext contextFor( TestSecurityContextCredentials credentials ) {
+            assert credentials != null;
+
+            final SecurityContext jcrSecurityContext = credentials.getSecurityContext();
+            assert jcrSecurityContext != null;
+
+            return new SecurityContext() {
+                public String getUserName() {
+                    return jcrSecurityContext.getUserName();
+                }
+
+                public boolean hasRole( String roleName ) {
+                    return jcrSecurityContext.hasRole(roleName);
+                }
+
+                public void logout() {
+                    jcrSecurityContext.logout();
+                }
+
+            };
         }
     }
 }

@@ -33,25 +33,36 @@ import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.SimpleCredentials;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.connector.svn.SvnRepositorySource;
-import org.modeshape.graph.SecurityContext;
+import org.modeshape.jcr.JaasTestUtil;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
-import org.modeshape.jcr.JcrRepository;
-import org.modeshape.jcr.JcrSecurityContextCredentials;
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.SVNURL;
 
-@SuppressWarnings( "deprecation" )
 public class JcrAndLocalSvnRepositoryTest {
     private boolean print;
     private JcrEngine engine;
     private Session session;
+
+    @BeforeClass
+    public static void beforeAll() {
+        // Initialize the JAAS configuration to allow for an admin login later
+        JaasTestUtil.initJaas("security/jaas.conf.xml");
+    }
+
+    @AfterClass
+    public static void afterAll() {
+        JaasTestUtil.releaseJaas();
+    }
 
     @Before
     public void beforeEach() throws Exception {
@@ -82,15 +93,14 @@ public class JcrAndLocalSvnRepositoryTest {
                      .and()
                      .repository(repositoryName)
                      .setDescription("The JCR repository backed by a local SVN")
-                     .setOption(JcrRepository.Option.USE_SECURITY_CONTEXT_CREDENTIALS, "true")
                      .setSource(svnRepositorySource);
         this.engine = configuration.save().and().build();
         this.engine.start();
 
         print("Using local SVN repository " + repositoryUrl);
 
-        this.session = this.engine.getRepository(repositoryName)
-                                  .login(new JcrSecurityContextCredentials(new MyCustomSecurityContext()));
+        this.session = this.engine.getRepository(repositoryName).login(new SimpleCredentials("superuser",
+                                                                                             "superuser".toCharArray()));
 
     }
 
@@ -175,38 +185,6 @@ public class JcrAndLocalSvnRepositoryTest {
         assertThat(jcrContent.getProperty("jcr:mimeType").getString(), is(mimeType));
         if (contents != null) {
             assertThat(jcrContent.getProperty("jcr:data").getString(), is(contents));
-        }
-    }
-
-    protected class MyCustomSecurityContext implements SecurityContext {
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.SecurityContext#getUserName()
-         */
-        @Override
-        public String getUserName() {
-            return "Fred";
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.SecurityContext#hasRole(java.lang.String)
-         */
-        @Override
-        public boolean hasRole( String roleName ) {
-            return true;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.SecurityContext#logout()
-         */
-        @Override
-        public void logout() {
-            // do something
         }
     }
 

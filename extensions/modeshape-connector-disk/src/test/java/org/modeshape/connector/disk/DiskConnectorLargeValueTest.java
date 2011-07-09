@@ -18,10 +18,7 @@ import org.modeshape.common.util.FileUtil;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.Node;
-import org.modeshape.graph.Subgraph;
-import org.modeshape.graph.connector.RepositoryConnectionFactory;
-import org.modeshape.graph.connector.RepositoryContext;
-import org.modeshape.graph.observe.Observer;
+import org.modeshape.graph.connector.MockRepositoryContext;
 import org.modeshape.graph.property.Binary;
 import org.modeshape.graph.property.BinaryFactory;
 import org.modeshape.graph.property.basic.FileSystemBinary;
@@ -55,29 +52,7 @@ public class DiskConnectorLargeValueTest {
         source.setName("Disk Source");
         source.setLargeValueSizeInBytes(LARGE_VALUE_THRESHOLD);
         source.setRepositoryRootPath(REPO_ROOT_PATH);
-        source.initialize(new RepositoryContext() {
-
-            @Override
-            public Subgraph getConfiguration( int depth ) {
-                return null;
-            }
-
-            @Override
-            public ExecutionContext getExecutionContext() {
-                return context;
-            }
-
-            @Override
-            public Observer getObserver() {
-                return null;
-            }
-
-            @Override
-            public RepositoryConnectionFactory getRepositoryConnectionFactory() {
-                return null;
-            }
-
-        });
+        source.initialize(new MockRepositoryContext(context));
 
         largeValuePath = new File(repoRootPath, source.getLargeValuePath());
 
@@ -401,30 +376,7 @@ public class DiskConnectorLargeValueTest {
         source.setLargeValueSizeInBytes(LARGE_VALUE_THRESHOLD);
         source.setRepositoryRootPath(REPO_ROOT_PATH);
         source.setLargeValuePath("large/values");
-
-        source.initialize(new RepositoryContext() {
-
-            @Override
-            public Subgraph getConfiguration( int depth ) {
-                return null;
-            }
-
-            @Override
-            public ExecutionContext getExecutionContext() {
-                return context;
-            }
-
-            @Override
-            public Observer getObserver() {
-                return null;
-            }
-
-            @Override
-            public RepositoryConnectionFactory getRepositoryConnectionFactory() {
-                return null;
-            }
-
-        });
+        source.initialize(new MockRepositoryContext(context));
 
         graph = Graph.create(source, context);
 
