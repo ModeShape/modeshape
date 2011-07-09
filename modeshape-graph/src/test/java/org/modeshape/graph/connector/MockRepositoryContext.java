@@ -6,13 +6,20 @@ import org.modeshape.graph.observe.Observer;
 
 public class MockRepositoryContext implements RepositoryContext {
     private final ExecutionContext context;
+    private final RepositorySource source;
 
     public MockRepositoryContext() {
-        this.context = new ExecutionContext();
+        this(new ExecutionContext(), null);
     }
 
     public MockRepositoryContext( ExecutionContext context ) {
+        this(context, null);
+    }
+
+    public MockRepositoryContext( ExecutionContext context,
+                                  RepositorySource source ) {
         this.context = context;
+        this.source = source;
     }
 
     public Subgraph getConfiguration( int depth ) {
@@ -28,7 +35,16 @@ public class MockRepositoryContext implements RepositoryContext {
     }
 
     public RepositoryConnectionFactory getRepositoryConnectionFactory() {
-        return null;
+        if (source == null) return null;
+
+        return new RepositoryConnectionFactory() {
+
+            @SuppressWarnings( "synthetic-access" )
+            public RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException {
+                return source.getConnection();
+            }
+
+        };
     }
 
 }

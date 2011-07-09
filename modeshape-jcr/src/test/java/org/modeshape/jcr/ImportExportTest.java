@@ -44,16 +44,17 @@ import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.SimpleCredentials;
 import javax.jcr.Value;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
 import org.modeshape.common.FixFor;
 import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.MockSecurityContext;
-import org.modeshape.graph.SecurityContext;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryConnectionFactory;
 import org.modeshape.graph.connector.RepositorySourceException;
@@ -64,7 +65,6 @@ import org.modeshape.jcr.JcrRepository.Option;
 /**
  * Tests of round-trip importing/exporting of repository content.
  */
-@SuppressWarnings( "deprecation" )
 public class ImportExportTest {
 
     private enum ExportType {
@@ -80,6 +80,17 @@ public class ImportExportTest {
     @SuppressWarnings( "unused" )
     private JcrTools tools;
     private Credentials credentials;
+
+    @BeforeClass
+    public static void beforeAll() {
+        // Initialize the JAAS configuration to allow for an admin login later
+        JaasTestUtil.initJaas("security/jaas.conf.xml");
+    }
+
+    @AfterClass
+    public static void afterAll() {
+        JaasTestUtil.releaseJaas();
+    }
 
     @Before
     public void beforeEach() throws Exception {
@@ -108,12 +119,11 @@ public class ImportExportTest {
             }
         };
 
-        Map<Option, String> options = Collections.singletonMap(Option.USE_SECURITY_CONTEXT_CREDENTIALS, "true");
+        Map<Option, String> options = Collections.emptyMap();
         repository = new JcrRepository(context, connectionFactory, "unused", new MockObservable(), null, null, options, null,
                                        null);
 
-        SecurityContext mockSecurityContext = new MockSecurityContext("testuser", Collections.singleton(ModeShapeRoles.ADMIN));
-        credentials = new JcrSecurityContextCredentials(mockSecurityContext);
+        credentials = new SimpleCredentials("superuser", "superuser".toCharArray());
         session = (JcrSession)repository.login(credentials);
     }
 

@@ -44,7 +44,6 @@ import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
 import javax.jcr.nodetype.NodeType;
 import org.modeshape.common.util.StringUtil;
-import org.modeshape.graph.SecurityContext;
 import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.JcrTools;
 import org.modeshape.repository.sequencer.SequencingService;
@@ -125,38 +124,6 @@ public class DdlIntegrationTestUtil {
             actualMillis += 100;
         }
         fail("Expected to find " + totalNumberOfNodesSequenced + " nodes sequenced, but found " + numFound);
-    }
-
-    public class MyCustomSecurityContext implements SecurityContext {
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.SecurityContext#getUserName()
-         */
-        @Override
-        public String getUserName() {
-            return "Fred";
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.SecurityContext#hasRole(java.lang.String)
-         */
-        @Override
-        public boolean hasRole( String roleName ) {
-            return true;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.SecurityContext#logout()
-         */
-        @Override
-        public void logout() {
-            // do something
-        }
     }
 
     public void verifyChildNode( Node parentNode,

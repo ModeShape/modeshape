@@ -27,13 +27,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
+import javax.jcr.SimpleCredentials;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
+import org.modeshape.jcr.JaasTestUtil;
 import org.modeshape.jcr.JcrConfiguration;
-import org.modeshape.jcr.JcrRepository;
-import org.modeshape.jcr.JcrSecurityContextCredentials;
 import org.modeshape.jcr.JcrTools;
 import org.modeshape.sequencer.ddl.StandardDdlLexicon;
 import org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon;
@@ -42,9 +44,19 @@ import org.modeshape.test.integration.sequencer.ddl.DdlIntegrationTestUtil;
 /**
  *
  */
-@SuppressWarnings( "deprecation" )
 public class PostgresDdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
     private String resourceFolder = ddlTestResourceRootFolder + "/dialect/postgres/";
+
+    @BeforeClass
+    public static void beforeAll() {
+        // Initialize the JAAS configuration to allow for an admin login later
+        JaasTestUtil.initJaas("security/jaas.conf.xml");
+    }
+
+    @AfterClass
+    public static void afterAll() {
+        JaasTestUtil.releaseJaas();
+    }
 
     @Before
     public void beforeEach() throws Exception {
@@ -70,7 +82,6 @@ public class PostgresDdlSequencerIntegrationTest extends DdlIntegrationTestUtil 
               .addNodeTypes(getUrl(resourceFolder + "PostgresDdl.cnd"))
               .registerNamespace(StandardDdlLexicon.Namespace.PREFIX, StandardDdlLexicon.Namespace.URI)
               .registerNamespace(PostgresDdlLexicon.Namespace.PREFIX, PostgresDdlLexicon.Namespace.URI)
-              .setOption(JcrRepository.Option.USE_SECURITY_CONTEXT_CREDENTIALS, "true")
               .setSource(repositorySource);
         // Set up the DDL sequencer ...
         config.sequencer("DDL Sequencer")
@@ -83,8 +94,9 @@ public class PostgresDdlSequencerIntegrationTest extends DdlIntegrationTestUtil 
         this.engine = config.build();
         this.engine.start();
 
-        this.session = this.engine.getRepository(repositoryName)
-                                  .login(new JcrSecurityContextCredentials(new MyCustomSecurityContext()), workspaceName);
+        this.session = this.engine.getRepository(repositoryName).login(new SimpleCredentials("superuser",
+                                                                                             "superuser".toCharArray()),
+                                                                       workspaceName);
 
     }
 

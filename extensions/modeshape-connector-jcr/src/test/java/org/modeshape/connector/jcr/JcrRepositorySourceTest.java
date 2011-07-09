@@ -38,12 +38,9 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.Subgraph;
+import org.modeshape.graph.connector.MockRepositoryContext;
 import org.modeshape.graph.connector.RepositoryConnection;
-import org.modeshape.graph.connector.RepositoryConnectionFactory;
-import org.modeshape.graph.connector.RepositoryContext;
 import org.modeshape.graph.connector.RepositorySourceException;
-import org.modeshape.graph.observe.Observer;
 
 public class JcrRepositorySourceTest {
 
@@ -71,37 +68,7 @@ public class JcrRepositorySourceTest {
         this.source.setRepositoryJndiName(validRepositoryJndiName);
 
         // Initialize ...
-        this.source.initialize(new RepositoryContext() {
-
-            @Override
-            public Subgraph getConfiguration( int depth ) {
-                return null;
-            }
-
-            @Override
-            public ExecutionContext getExecutionContext() {
-                return context;
-            }
-
-            @Override
-            public Observer getObserver() {
-                return null;
-            }
-
-            @Override
-            public RepositoryConnectionFactory getRepositoryConnectionFactory() {
-                return new RepositoryConnectionFactory() {
-
-                    @Override
-                    @SuppressWarnings( "synthetic-access" )
-                    public RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException {
-                        return source.getConnection();
-                    }
-
-                };
-            }
-
-        });
+        this.source.initialize(new MockRepositoryContext(context, source));
     }
 
     @After

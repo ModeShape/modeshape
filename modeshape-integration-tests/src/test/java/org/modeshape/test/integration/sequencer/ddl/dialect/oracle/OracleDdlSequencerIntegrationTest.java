@@ -26,13 +26,15 @@ package org.modeshape.test.integration.sequencer.ddl.dialect.oracle;
 import static org.junit.Assert.assertEquals;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
+import javax.jcr.SimpleCredentials;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
+import org.modeshape.jcr.JaasTestUtil;
 import org.modeshape.jcr.JcrConfiguration;
-import org.modeshape.jcr.JcrRepository;
-import org.modeshape.jcr.JcrSecurityContextCredentials;
 import org.modeshape.jcr.JcrTools;
 import org.modeshape.sequencer.ddl.StandardDdlLexicon;
 import org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon;
@@ -41,9 +43,19 @@ import org.modeshape.test.integration.sequencer.ddl.DdlIntegrationTestUtil;
 /**
  *
  */
-@SuppressWarnings( "deprecation" )
 public class OracleDdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
     private String resourceFolder = ddlTestResourceRootFolder + "/dialect/oracle/";
+
+    @BeforeClass
+    public static void beforeAll() {
+        // Initialize the JAAS configuration to allow for an admin login later
+        JaasTestUtil.initJaas("security/jaas.conf.xml");
+    }
+
+    @AfterClass
+    public static void afterAll() {
+        JaasTestUtil.releaseJaas();
+    }
 
     @Before
     public void beforeEach() throws Exception {
@@ -69,7 +81,6 @@ public class OracleDdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
               .addNodeTypes(getUrl(resourceFolder + "OracleDdl.cnd"))
               .registerNamespace(StandardDdlLexicon.Namespace.PREFIX, StandardDdlLexicon.Namespace.URI)
               .registerNamespace(OracleDdlLexicon.Namespace.PREFIX, OracleDdlLexicon.Namespace.URI)
-              .setOption(JcrRepository.Option.USE_SECURITY_CONTEXT_CREDENTIALS, "true")
               .setSource(repositorySource);
         // Set up the DDL sequencer ...
         config.sequencer("DDL Sequencer")
@@ -82,8 +93,9 @@ public class OracleDdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
         this.engine = config.build();
         this.engine.start();
 
-        this.session = this.engine.getRepository(repositoryName)
-                                  .login(new JcrSecurityContextCredentials(new MyCustomSecurityContext()), workspaceName);
+        this.session = this.engine.getRepository(repositoryName).login(new SimpleCredentials("superuser",
+                                                                                             "superuser".toCharArray()),
+                                                                       workspaceName);
 
     }
 

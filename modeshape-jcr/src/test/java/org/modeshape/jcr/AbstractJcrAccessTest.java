@@ -31,13 +31,14 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
+import javax.jcr.SimpleCredentials;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.mockito.MockitoAnnotations;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.MockSecurityContext;
-import org.modeshape.graph.SecurityContext;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryConnectionFactory;
 import org.modeshape.graph.connector.RepositorySourceException;
@@ -56,7 +57,17 @@ public abstract class AbstractJcrAccessTest {
     private JcrSession session;
     private JcrRepository repository;
 
-    @SuppressWarnings( "deprecation" )
+    @BeforeClass
+    public static void beforeAll() {
+        // Initialize the JAAS configuration to allow for an admin login later
+        JaasTestUtil.initJaas("security/jaas.conf.xml");
+    }
+
+    @AfterClass
+    public static void afterAll() {
+        JaasTestUtil.releaseJaas();
+    }
+
     @Before
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -86,12 +97,11 @@ public abstract class AbstractJcrAccessTest {
             }
         };
 
-        Map<Option, String> options = Collections.singletonMap(Option.USE_SECURITY_CONTEXT_CREDENTIALS, "true");
+        Map<Option, String> options = Collections.emptyMap();
         repository = new JcrRepository(context, connectionFactory, "unused", new MockObservable(), null, null, options, null,
                                        null);
 
-        SecurityContext mockSecurityContext = new MockSecurityContext("testuser", Collections.singleton(ModeShapeRoles.READWRITE));
-        session = (JcrSession)repository.login(new JcrSecurityContextCredentials(mockSecurityContext));
+        session = (JcrSession)repository.login(new SimpleCredentials("superuser", "superuser".toCharArray()));
     }
 
     @After

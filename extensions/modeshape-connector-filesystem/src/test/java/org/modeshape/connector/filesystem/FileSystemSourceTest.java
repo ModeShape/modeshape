@@ -33,12 +33,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.Subgraph;
+import org.modeshape.graph.connector.MockRepositoryContext;
 import org.modeshape.graph.connector.RepositoryConnection;
-import org.modeshape.graph.connector.RepositoryConnectionFactory;
-import org.modeshape.graph.connector.RepositoryContext;
 import org.modeshape.graph.connector.RepositorySourceException;
-import org.modeshape.graph.observe.Observer;
 
 /**
  * @author Randall Hauch
@@ -55,37 +52,7 @@ public class FileSystemSourceTest {
         // Set the mandatory properties ...
         this.source.setName("Test Repository");
         this.source.setWorkspaceRootPath("target");
-        this.source.initialize(new RepositoryContext() {
-
-            @Override
-            public Subgraph getConfiguration( int depth ) {
-                return null;
-            }
-
-            @Override
-            public ExecutionContext getExecutionContext() {
-                return context;
-            }
-
-            @Override
-            public Observer getObserver() {
-                return null;
-            }
-
-            @Override
-            public RepositoryConnectionFactory getRepositoryConnectionFactory() {
-                return new RepositoryConnectionFactory() {
-
-                    @Override
-                    @SuppressWarnings( "synthetic-access" )
-                    public RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException {
-                        return source.getConnection();
-                    }
-
-                };
-            }
-
-        });
+        this.source.initialize(new MockRepositoryContext(context, source));
     }
 
     @After

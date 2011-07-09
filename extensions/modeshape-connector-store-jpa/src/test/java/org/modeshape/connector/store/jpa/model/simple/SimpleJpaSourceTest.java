@@ -27,12 +27,8 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.connector.store.jpa.JpaSource;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.Subgraph;
+import org.modeshape.graph.connector.MockRepositoryContext;
 import org.modeshape.graph.connector.RepositoryConnection;
-import org.modeshape.graph.connector.RepositoryConnectionFactory;
-import org.modeshape.graph.connector.RepositoryContext;
-import org.modeshape.graph.observe.Observer;
 
 public class SimpleJpaSourceTest {
 
@@ -53,31 +49,7 @@ public class SimpleJpaSourceTest {
         source.setShowSql(false);
         source.setAutoGenerateSchema("create");
 
-        source.initialize(new RepositoryContext() {
-
-            private final ExecutionContext context = new ExecutionContext();
-
-            @Override
-            public Subgraph getConfiguration( int depth ) {
-                return null;
-            }
-
-            @Override
-            public ExecutionContext getExecutionContext() {
-                return context;
-            }
-
-            @Override
-            public Observer getObserver() {
-                return null;
-            }
-
-            @Override
-            public RepositoryConnectionFactory getRepositoryConnectionFactory() {
-                return null;
-            }
-
-        });
+        source.initialize(new MockRepositoryContext());
     }
 
     @Test
