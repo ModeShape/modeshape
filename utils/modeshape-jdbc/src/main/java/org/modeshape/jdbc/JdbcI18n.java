@@ -23,7 +23,7 @@
  */
 package org.modeshape.jdbc;
 
-import org.modeshape.jdbc.util.I18n;
+import org.modeshape.common.i18n.I18n;
 
 /**
  * The internationalized string constants for the <code>org.modeshape.jdbc*</code> packages.
