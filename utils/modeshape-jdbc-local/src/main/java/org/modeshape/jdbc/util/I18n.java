@@ -32,17 +32,18 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+import org.modeshape.common.SystemFailureException;
+import org.modeshape.common.i18n.ClasspathLocalizationRepository;
+import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.ClassUtil;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.jdbc.JdbcLocalI18n;
-import org.modeshape.jdbc.util.SystemFailureException;
-import org.modeshape.jdbc.util.CheckArg;
-import org.modeshape.jdbc.util.ClassUtil;
-import org.modeshape.jdbc.util.StringUtil;
 
 /**
  * An internalized string object, which manages the initialization of internationalization (i18n) files, substitution of values
@@ -50,7 +51,7 @@ import org.modeshape.jdbc.util.StringUtil;
  */
 public final class I18n {
 
-    private static final LocalizationRepository DEFAULT_LOCALIZATION_REPOSITORY = new ClasspathLocalizationRepository();
+    private static final org.modeshape.common.i18n.LocalizationRepository DEFAULT_LOCALIZATION_REPOSITORY = new org.modeshape.common.i18n.ClasspathLocalizationRepository();
 
     /**
      * The first level of this map indicates whether an i18n class has been localized to a particular locale. The second level
@@ -58,7 +59,7 @@ public final class I18n {
      */
     static final ConcurrentMap<Locale, Map<Class<?>, Set<String>>> LOCALE_TO_CLASS_TO_PROBLEMS_MAP = new ConcurrentHashMap<Locale, Map<Class<?>, Set<String>>>();
 
-    private static LocalizationRepository localizationRepository = DEFAULT_LOCALIZATION_REPOSITORY;
+    private static org.modeshape.common.i18n.LocalizationRepository localizationRepository = DEFAULT_LOCALIZATION_REPOSITORY;
 
     /**
      * Note, calling this method will <em>not</em> trigger localization of the supplied internationalization class.
@@ -121,7 +122,7 @@ public final class I18n {
      * 
      * @return localizationRepository
      */
-    public static LocalizationRepository getLocalizationRepository() {
+    public static org.modeshape.common.i18n.LocalizationRepository getLocalizationRepository() {
         return localizationRepository;
     }
 
@@ -132,7 +133,7 @@ public final class I18n {
      * @param localizationRepository the localization repository to use; may be <code>null</code> if the default repository should
      *        be used.
      */
-    public static void setLocalizationRepository( LocalizationRepository localizationRepository ) {
+    public static void setLocalizationRepository( org.modeshape.common.i18n.LocalizationRepository localizationRepository ) {
         I18n.localizationRepository = localizationRepository != null ? localizationRepository : DEFAULT_LOCALIZATION_REPOSITORY;
     }
 
@@ -223,7 +224,7 @@ public final class I18n {
                 return;
             }
             // Get the URL to the localization properties file ...
-            final LocalizationRepository repos = getLocalizationRepository();
+            final org.modeshape.common.i18n.LocalizationRepository repos = getLocalizationRepository();
             final String localizationBaseName = i18nClass.getName();
             URL url = repos.getLocalizationBundle(localizationBaseName, locale);
             if (url == null) {
@@ -414,14 +415,52 @@ public final class I18n {
         try {
             String rawText = rawText(locale == null ? Locale.getDefault() : locale);
             return StringUtil.createString(rawText, arguments);
-        } catch (IllegalArgumentException err) {
-            throw new IllegalArgumentException(JdbcLocalI18n.i18nRequiredToSuppliedParameterMismatch.text(id,
-                                                                                                       i18nClass,
-                                                                                                       err.getMessage()));
         } catch (SystemFailureException err) {
             return '<' + err.getMessage() + '>';
         }
     }
+    
+//    private String createString( String pattern,
+//                                       Object... parameters ) {
+//        CheckArg.isNotNull(pattern, "pattern");
+//        if (parameters == null) parameters = StringUtil.EMPTY_STRING_ARRAY;
+//        Matcher matcher = StringUtil.PARAMETER_COUNT_PATTERN.matcher(pattern);
+//        StringBuffer text = new StringBuffer();
+//        int requiredParameterCount = 0;
+//        boolean err = false;
+//        while (matcher.find()) {
+//            int ndx = Integer.valueOf(matcher.group(1));
+//            if (requiredParameterCount <= ndx) {
+//                requiredParameterCount = ndx + 1;
+//            }
+//            if (ndx >= parameters.length) {
+//                err = true;
+//                matcher.appendReplacement(text, matcher.group());
+//            } else {
+//                Object parameter = parameters[ndx];
+//
+//                // Automatically pretty-print arrays
+//                if (parameter != null && parameter.getClass().isArray()) {
+//                    parameter = Arrays.asList((Object[])parameter);
+//                }
+//
+//                matcher.appendReplacement(text, Matcher.quoteReplacement(parameter == null ? "null" : parameter.toString()));
+//            }
+//        }
+//        if (err || requiredParameterCount < parameters.length) {
+//            throw new SystemFailureException("Unable to create message, supplied parameters mismatch, # parameters:" + parameters.length + ", required:" + requiredParameterCount + ", text: " + text.toString());
+////            throw new IllegalArgumentException(
+////                                               JdbcLocalI18n.i18nRequiredToSuppliedParameterMismatch.text(parameters.length,
+////                                                                                                   parameters.length == 1 ? "" : "s",
+////                                                                                                   requiredParameterCount,
+////                                                                                                   requiredParameterCount == 1 ? "" : "s",
+////                                                                                                   pattern,
+////                                                                                                   text.toString()));
+//        }
+//        matcher.appendTail(text);
+//
+//        return text.toString();
+//    }
 
     /**
      * {@inheritDoc}
