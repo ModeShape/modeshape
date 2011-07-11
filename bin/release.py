@@ -180,10 +180,10 @@ def copy_artifacts_to_archive_location(archive_path,version):
 
   # Copy the 'deploy/jbossas' artifact(s) ...
   from_path = os.path.join('deploy','jbossas','target','distribution','modeshape-jbossas-%s-dist.zip' % (version))
-  to_path = os.path.join(archive_path,'modeshape-%s-jbossas-dist-as5.zip' % (version))
+  to_path = os.path.join(archive_path,'modeshape-%s-jbossas-5-dist.zip' % (version))
   shutil.copy(from_path,to_path)
   from_path = os.path.join('deploy','jbossas','target','distribution','modeshape-jbossas-%s-dist-as6.zip' % (version))
-  to_path = os.path.join(archive_path,'modeshape-%s-jbossas-dist-as6.zip' % (version))
+  to_path = os.path.join(archive_path,'modeshape-%s-jbossas-6-dist.zip' % (version))
   shutil.copy(from_path,to_path)
   
   # Make an area for the documentation ...
@@ -264,9 +264,9 @@ def upload_artifacts(base_dir, version):
 
   # Copy the 'deploy/jbossas' artifact(s) ...
   from_path = "%s/deploy/jbossas/target/distribution/modeshape-jbossas-%s-dist.zip" % (base_dir,version)
-  shutil.copy(from_path, "downloads/%s/modeshape-%s-jbossas-dist-as5.zip" % (version,version))
+  shutil.copy(from_path, "downloads/%s/modeshape-%s-jbossas-5-dist.zip" % (version,version))
   from_path = "%s/deploy/jbossas/target/distribution/modeshape-jbossas-%s-dist-as6.zip" % (base_dir,version)
-  shutil.copy(from_path, "downloads/%s/modeshape-%s-jbossas-dist-as6.zip" % (version,version))
+  shutil.copy(from_path, "downloads/%s/modeshape-%s-jbossas-6-dist.zip" % (version,version))
   
   # Copy the readme files ...
   for readme in ['release.html','release.txt']:
