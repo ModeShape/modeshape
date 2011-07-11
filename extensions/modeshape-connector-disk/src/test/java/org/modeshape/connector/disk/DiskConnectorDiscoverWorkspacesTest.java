@@ -10,10 +10,7 @@ import org.junit.Test;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
-import org.modeshape.graph.Subgraph;
-import org.modeshape.graph.connector.RepositoryConnectionFactory;
-import org.modeshape.graph.connector.RepositoryContext;
-import org.modeshape.graph.observe.Observer;
+import org.modeshape.graph.connector.MockRepositoryContext;
 
 public class DiskConnectorDiscoverWorkspacesTest {
 
@@ -39,29 +36,7 @@ public class DiskConnectorDiscoverWorkspacesTest {
         source.setName("Disk Source");
         source.setLargeValueSizeInBytes(LARGE_VALUE_THRESHOLD);
         source.setRepositoryRootPath(REPO_ROOT_PATH);
-        source.initialize(new RepositoryContext() {
-
-            @Override
-            public Subgraph getConfiguration( int depth ) {
-                return null;
-            }
-
-            @Override
-            public ExecutionContext getExecutionContext() {
-                return context;
-            }
-
-            @Override
-            public Observer getObserver() {
-                return null;
-            }
-
-            @Override
-            public RepositoryConnectionFactory getRepositoryConnectionFactory() {
-                return null;
-            }
-
-        });
+        source.initialize(new MockRepositoryContext(context));
 
         return Graph.create(source, context);
 

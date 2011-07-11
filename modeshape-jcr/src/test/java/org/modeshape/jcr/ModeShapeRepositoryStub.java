@@ -163,7 +163,6 @@ public class ModeShapeRepositoryStub extends RepositoryStub {
      * 
      * @see org.apache.jackrabbit.test.RepositoryStub#getKnownPrincipal(javax.jcr.Session)
      */
-    @SuppressWarnings( "unused" )
     @Override
     public Principal getKnownPrincipal( Session session ) throws RepositoryException {
         return null;
@@ -174,7 +173,6 @@ public class ModeShapeRepositoryStub extends RepositoryStub {
      * 
      * @see org.apache.jackrabbit.test.RepositoryStub#getUnknownPrincipal(javax.jcr.Session)
      */
-    @SuppressWarnings( "unused" )
     @Override
     public Principal getUnknownPrincipal( Session session ) throws RepositoryException, NotExecutableException {
         return null;

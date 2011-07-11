@@ -38,7 +38,7 @@
                 <mode:option jcr:name="jaasLoginConfigName" mode:value="modeshape-jcr"/>
             </mode:options>
             <mode:authenticationProviders>
-                <mode:authenticationProvider jcr:name="CustomProviderA" mode:classname="org.modeshape.jcr.security.SecurityContextProvider">
+                <mode:authenticationProvider jcr:name="CustomProviderA" mode:classname="org.modeshape.jcr.JcrConfigurationTest$TestSecurityContextProvider">
                     <mode:description>Authentication provider that allows using SecurityContextCredentials.</mode:description>        
                 </mode:authenticationProvider>
             </mode:authenticationProviders>

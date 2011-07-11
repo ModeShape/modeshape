@@ -46,13 +46,10 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
 import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.Subgraph;
 import org.modeshape.graph.cache.BasicCachePolicy;
+import org.modeshape.graph.connector.MockRepositoryContext;
 import org.modeshape.graph.connector.RepositoryConnection;
-import org.modeshape.graph.connector.RepositoryConnectionFactory;
-import org.modeshape.graph.connector.RepositoryContext;
 import org.modeshape.graph.connector.RepositorySourceException;
-import org.modeshape.graph.observe.Observer;
 
 /**
  * @author Serge Pagop
@@ -82,37 +79,7 @@ public class SvnRepositorySourceTest {
         this.source.setUsername("sp");
         this.source.setPassword("");
         this.source.setRepositoryRootUrl(url);
-        this.source.initialize(new RepositoryContext() {
-
-            @Override
-            public Subgraph getConfiguration( int depth ) {
-                return null;
-            }
-
-            @Override
-            @SuppressWarnings( "synthetic-access" )
-            public ExecutionContext getExecutionContext() {
-                return context;
-            }
-
-            @Override
-            public Observer getObserver() {
-                return null;
-            }
-
-            @Override
-            public RepositoryConnectionFactory getRepositoryConnectionFactory() {
-                return new RepositoryConnectionFactory() {
-
-                    @Override
-                    public RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException {
-                        return null;
-                    }
-
-                };
-            }
-
-        });
+        source.initialize(new MockRepositoryContext(context));
     }
 
     @After

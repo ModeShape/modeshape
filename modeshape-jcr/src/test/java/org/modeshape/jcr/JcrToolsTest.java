@@ -32,13 +32,13 @@ import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
-import org.modeshape.graph.SecurityContext;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
-import org.modeshape.jcr.JcrRepository.Option;
 
 /**
  *
@@ -55,7 +55,17 @@ public class JcrToolsTest {
 
     private static final String DEF_TYPE = "nt:unstructured";
 
-    @SuppressWarnings( "deprecation" )
+    @BeforeClass
+    public static void beforeAll() {
+        // Initialize the JAAS configuration to allow for an admin login later
+        JaasTestUtil.initJaas("security/jaas.conf.xml");
+    }
+
+    @AfterClass
+    public static void afterAll() {
+        JaasTestUtil.releaseJaas();
+    }
+
     @Before
     public void before() throws Exception {
         tools = new JcrTools();
@@ -71,14 +81,13 @@ public class JcrToolsTest {
               .setDescription("The repository for our content")
               .setProperty("defaultWorkspaceName", workspaceName);
         // Set up the JCR repository to use the source ...
-        config.repository(repositoryName).setSource(repositorySource).setOption(Option.USE_SECURITY_CONTEXT_CREDENTIALS, "true");
+        config.repository(repositoryName).setSource(repositorySource);
 
         config.save();
         this.engine = config.build();
         this.engine.start();
 
-        this.session = this.engine.getRepository(repositoryName)
-                                  .login(new JcrSecurityContextCredentials(new MyCustomSecurityContext()), workspaceName);
+        this.session = this.engine.getRepository(repositoryName).login(workspaceName);
 
         Node rootNode = session.getRootNode();
 
@@ -107,35 +116,6 @@ public class JcrToolsTest {
         }
         if (this.engine != null) {
             this.engine.shutdown();
-        }
-    }
-
-    protected class MyCustomSecurityContext implements SecurityContext {
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.SecurityContext#getUserName()
-         */
-        public String getUserName() {
-            return "Fred";
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.SecurityContext#hasRole(java.lang.String)
-         */
-        public boolean hasRole( String roleName ) {
-            return true;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.SecurityContext#logout()
-         */
-        public void logout() {
-            // do something
         }
     }
 
