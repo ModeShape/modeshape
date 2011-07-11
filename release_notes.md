@@ -1,21 +1,18 @@
 # Release Notes for ModeShape &version;
 
-ModeShape &version; includes several minor features, improvements, and bug fixes since 2.4.0.Final, including:
+ModeShape &version; includes several new features, improvements, and bug fixes since 2.4.0.Final, including:
 
-- new sequencers for XSD and WSDL files
-- RESTful service exposes repository capabilities and metadata
-- JPA connector can now specify the database schema that should be used
-- JARs for most ModeShape modules are now OSGi bundles
-- upgrades of several third-party dependencies
-- smaller JAR files (no longer dependent upon Google Collections or the JCIP libraries)
-- versioning-related fixes and performance improvements
-- about twenty bug fixes
-- new javax.jcr.Credentials classes for anonymous and HTTP servlet authentication
-- a built-in profiling framework enabling use of Byteman runtime bytecode injection
-- refactored the build process, which now uses Maven 3
-- switch to PicketBox for the JAAS implementation used in unit tests
-- performance improvements
-- almost four dozen bug fixes
+- improved overall performance
+- new disk-based storage connector
+- added cache support in several connectors
+- pluggable authentication and authorization
+- the JPA connector now support configuring/using Hibernate 2nd-level cache 
+- kits for JBoss Application Server 5.x and 6.x
+- improved BINARY property support for large files
+- automatically use the JDK logger if SLF4J binding is not available
+- upgraded to Infinispan 4.2.1.Final
+- faster startup of the ModeShape engine
+- over a dozen bug fixes
 
 ## JCR Supported Features
 
@@ -104,7 +101,7 @@ project plans to focus on attaining this certification in the very near future.
 
 As with previous releases, ModeShape &version; integrates with [JAAS][9], [web application security][10],
 or you can easily [integrate it with other systems][11]. ModeShape can use a variety of back-ends to store 
-information ([RDBMSes][12], [Infinispan data grid][13], [memory][14], [JBoss Cache][15], [JCR repositories][16]), can access content
+information ([RDBMSes][12], [Infinispan data grid][13], [disk-storage][25] [memory][14], [JBoss Cache][15], [JCR repositories][16]), can access content
 in multiple systems ([file systems][17], [SVN repositories][18], [JDBC metadata][19]), can [federate][20] multiple stores and
 systems into a single JCR repository, or can access other systems using [custom connectors][21].
 ModeShape is also able to automatically extract and store useful content from files you upload into 
@@ -128,12 +125,14 @@ searchable than if it remains locked up inside the stored files. And ModeShape p
   [22]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#sequencing_framework
   [23]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#web-access
   [24]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html
+  [25]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#disk-connector
 
 
 ### Connectors
 - Federated Connector
 - JPA Connector (read-write/persistent storage)
 - In-Memory Connector (read-write)
+- Disk-based Storage Connector (read-write)
 - JCR Connector (read-write)
 - Infinispan Connector (read-write/persistent storage)
 - JBoss Cache Connector (read-write/persistent storage)
@@ -164,10 +163,9 @@ searchable than if it remains locked up inside the stored files. And ModeShape p
 - OSGi-Compatible Archives
 - Access through RESTful Service
 - Access through WebDAV Service
-- Deploy as a service in JBoss Application Server, with JOPR monitoring
+- Deploy as a service in JBoss Application Server 5.x and 6.x, with JOPR monitoring
 - JDBC driver for accessing ModeShape content through JDBC API and JCR-SQL2 queries
 
 ## Bug Fixes, Features, and other Issues
-The following are the bugs, features and other issues that have been fixed in this release (since the 2.5.0.Beta2 release):
+The following are the bugs, features and other issues that have been fixed in this Beta release:
 
-            
