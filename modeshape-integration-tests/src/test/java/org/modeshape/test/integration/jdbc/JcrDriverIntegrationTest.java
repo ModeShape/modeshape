@@ -187,7 +187,7 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
     @Test
     public void shouldBeAbleToExecuteSqlSelectAllNodes() throws SQLException {
         String[] expected = {
-            "jcr:primaryType[STRING]    jcr:path[PATH]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
+            "jcr:primaryType[STRING]    jcr:path[STRING]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
             "mode:root    /        1.0        0", "car:Car    /Cars/Utility/Hummer H3    Hummer H3    1.0    Hummer H3    3",
             "car:Car    /Cars/Sports/Infiniti G37    Infiniti G37    1.0    Infiniti G37    3",
             "nt:unstructured    /Cars/Utility    Utility    1.0    Utility    2",
@@ -218,7 +218,7 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
     public void shouldBeAbleToExecuteSqlSelectAllCars() throws SQLException {
 
         String[] expected = {
-            "car:maker[STRING]    car:model[STRING]    car:year[STRING]    car:msrp[STRING]    car:userRating[LONG]    car:valueRating[LONG]    car:mpgCity[LONG]    car:mpgHighway[LONG]    car:lengthInInches[DOUBLE]    car:wheelbaseInInches[DOUBLE]    car:engine[STRING]    jcr:primaryType[STRING]    jcr:path[PATH]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
+            "car:maker[STRING]    car:model[STRING]    car:year[STRING]    car:msrp[STRING]    car:userRating[LONG]    car:valueRating[LONG]    car:mpgCity[LONG]    car:mpgHighway[LONG]    car:lengthInInches[DOUBLE]    car:wheelbaseInInches[DOUBLE]    car:engine[STRING]    jcr:primaryType[STRING]    jcr:path[STRING]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
             "Hummer    H3    2008    $30,595    3    4    13    16    null    null    null    car:Car    /Cars/Utility/Hummer H3    Hummer H3    1.5705448389053345    Hummer H3    3",
             "Infiniti    G37    2008    $34,900    3    4    18    24    null    null    null    car:Car    /Cars/Sports/Infiniti G37    Infiniti G37    1.5705448389053345    Infiniti G37    3",
             "Cadillac    DTS    2008    null    1    null    null    null    null    null    3.6 liter V6    car:Car    /Cars/Luxury/Cadillac DTS    Cadillac DTS    1.5705448389053345    Cadillac DTS    3",
@@ -237,7 +237,7 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
     @Test
     public void shouldBeAbleToExecuteSqlQueryWithOrderByClauseUsingDefault() throws SQLException {
         String[] expected = {
-            "car:maker[STRING]    car:model[STRING]    car:year[STRING]    car:msrp[STRING]    car:userRating[LONG]    car:valueRating[LONG]    car:mpgCity[LONG]    car:mpgHighway[LONG]    car:lengthInInches[DOUBLE]    car:wheelbaseInInches[DOUBLE]    car:engine[STRING]    jcr:primaryType[STRING]    jcr:path[PATH]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
+            "car:maker[STRING]    car:model[STRING]    car:year[STRING]    car:msrp[STRING]    car:userRating[LONG]    car:valueRating[LONG]    car:mpgCity[LONG]    car:mpgHighway[LONG]    car:lengthInInches[DOUBLE]    car:wheelbaseInInches[DOUBLE]    car:engine[STRING]    jcr:primaryType[STRING]    jcr:path[STRING]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
             "Aston Martin    DB9    2008    $171,600    5    null    12    19    185.5    108.0    5,935 cc 5.9 liters V 12    car:Car    /Cars/Sports/Aston Martin DB9    Aston Martin DB9    1.5705448389053345    Aston Martin DB9    3",
             "Bentley    Continental    2008    $170,990    null    null    10    17    null    null    null    car:Car    /Cars/Luxury/Bentley Continental    Bentley Continental    1.5705448389053345    Bentley Continental    3",
             "Cadillac    DTS    2008    null    1    null    null    null    null    null    3.6 liter V6    car:Car    /Cars/Luxury/Cadillac DTS    Cadillac DTS    1.5705448389053345    Cadillac DTS    3",
@@ -270,7 +270,7 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
     @Test
     public void shouldBeAbleToExecuteSqlQueryWithOrderedByClauseDesc() throws SQLException {
         String[] expected = {
-            "car:maker[STRING]    car:model[STRING]    car:year[STRING]    car:msrp[STRING]    car:userRating[LONG]    car:valueRating[LONG]    car:mpgCity[LONG]    car:mpgHighway[LONG]    car:lengthInInches[DOUBLE]    car:wheelbaseInInches[DOUBLE]    car:engine[STRING]    jcr:primaryType[STRING]    jcr:path[PATH]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
+            "car:maker[STRING]    car:model[STRING]    car:year[STRING]    car:msrp[STRING]    car:userRating[LONG]    car:valueRating[LONG]    car:mpgCity[LONG]    car:mpgHighway[LONG]    car:lengthInInches[DOUBLE]    car:wheelbaseInInches[DOUBLE]    car:engine[STRING]    jcr:primaryType[STRING]    jcr:path[STRING]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
             "Land Rover    LR3    2008    $48,525    5    2    12    17    null    null    null    car:Car    /Cars/Utility/Land Rover LR3    Land Rover LR3    1.5705448389053345    Land Rover LR3    3",
             "Lexus    IS350    2008    $36,305    4    5    18    25    null    null    null    car:Car    /Cars/Luxury/Lexus IS350    Lexus IS350    1.5705448389053345    Lexus IS350    3",
             "Infiniti    G37    2008    $34,900    3    4    18    24    null    null    null    car:Car    /Cars/Sports/Infiniti G37    Infiniti G37    1.5705448389053345    Infiniti G37    3",
@@ -321,7 +321,7 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
     @Test
     public void shouldBeAbleToExecuteSqlQueryToFindAllUnstructuredNodes() throws SQLException {
         String[] expected = {
-            "jcr:primaryType[STRING]    jcr:path[PATH]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
+            "jcr:primaryType[STRING]    jcr:path[STRING]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
             "car:Car    /Cars/Hybrid/Nissan Altima    Nissan Altima    0.003934855107218027    Nissan Altima    3",
             "car:Car    /Cars/Hybrid/Toyota Highlander    Toyota Highlander    0.003934855107218027    Toyota Highlander    3",
             "car:Car    /Cars/Hybrid/Toyota Prius    Toyota Prius    0.003934855107218027    Toyota Prius    3",
@@ -358,7 +358,7 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
     @Test
     public void shouldBeAbleToExecuteSqlQueryWithChildAxisCriteria() throws SQLException {
         String[] expected = {
-            "jcr:primaryType[STRING]    jcr:path[PATH]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
+            "jcr:primaryType[STRING]    jcr:path[STRING]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
             "nt:unstructured    /Cars/Utility    Utility    1.4142135381698608    Utility    2",
             "nt:unstructured    /Cars/Hybrid    Hybrid    1.4142135381698608    Hybrid    2",
             "nt:unstructured    /Cars/Sports    Sports    1.4142135381698608    Sports    2",
@@ -379,7 +379,7 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
     @Test
     public void shouldBeAbleToExecuteSqlQueryWithContainsCriteria() throws SQLException {
         String[] expected = {
-            "jcr:primaryType[STRING]    jcr:path[PATH]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
+            "jcr:primaryType[STRING]    jcr:path[STRING]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
             "nt:unstructured    /Cars/Utility    Utility    1.4142135381698608    Utility    2",
             "nt:unstructured    /Cars/Hybrid    Hybrid    1.4142135381698608    Hybrid    2",
             "nt:unstructured    /Cars/Sports    Sports    1.4142135381698608    Sports    2",
@@ -764,9 +764,9 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
             "Repo    NULL    car:Car    car:valueRating    -5    LONG    20    NULL    0    0    2        NULL    0    0    0    9    YES    NULL    NULL    NULL    0",
             "Repo    NULL    car:Car    car:wheelbaseInInches    8    DOUBLE    20    NULL    0    0    2        NULL    0    0    0    10    YES    NULL    NULL    NULL    0",
             "Repo    NULL    car:Car    car:year    12    STRING    50    NULL    0    0    2        NULL    0    0    0    11    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    jcr:name    12    NAME    20    NULL    0    0    2        NULL    0    0    0    12    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    jcr:path    12    PATH    50    NULL    0    0    2        NULL    0    0    0    13    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    jcr:primaryType    12    NAME    20    NULL    0    0    1        NULL    0    0    0    14    NO    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    jcr:name    12    STRING    20    NULL    0    0    2        NULL    0    0    0    12    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    jcr:path    12    STRING    50    NULL    0    0    2        NULL    0    0    0    13    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    jcr:primaryType    12    STRING    20    NULL    0    0    1        NULL    0    0    0    14    NO    NULL    NULL    NULL    0",
             "Repo    NULL    car:Car    jcr:score    8    DOUBLE    20    NULL    0    0    2        NULL    0    0    0    15    YES    NULL    NULL    NULL    0",
             "Repo    NULL    car:Car    mode:depth    -5    LONG    20    NULL    0    0    2        NULL    0    0    0    16    YES    NULL    NULL    NULL    0",
             "Repo    NULL    car:Car    mode:localName    12    STRING    50    NULL    0    0    2        NULL    0    0    0    17    YES    NULL    NULL    NULL    0"
@@ -786,8 +786,8 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
 
         String[] expected = {
             "TABLE_CAT[String]    TABLE_SCHEM[String]    TABLE_NAME[String]    COLUMN_NAME[String]    DATA_TYPE[Long]    TYPE_NAME[String]    COLUMN_SIZE[Long]    BUFFER_LENGTH[Long]    DECIMAL_DIGITS[Long]    NUM_PREC_RADIX[Long]    NULLABLE[Long]    REMARKS[String]    COLUMN_DEF[String]    SQL_DATA_TYPE[Long]    SQL_DATETIME_SUB[Long]    CHAR_OCTET_LENGTH[Long]    ORDINAL_POSITION[Long]    IS_NULLABLE[String]    SCOPE_CATLOG[String]    SCOPE_SCHEMA[String]    SCOPE_TABLE[String]    SOURCE_DATA_TYPE[Long]",
-            "Repo    NULL    mmcore:tags    jcr:name    12    NAME    20    NULL    0    0    2        NULL    0    0    0    1    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    mmcore:tags    jcr:path    12    PATH    50    NULL    0    0    2        NULL    0    0    0    2    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    mmcore:tags    jcr:name    12    STRING    20    NULL    0    0    2        NULL    0    0    0    1    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    mmcore:tags    jcr:path    12    STRING    50    NULL    0    0    2        NULL    0    0    0    2    YES    NULL    NULL    NULL    0",
             "Repo    NULL    mmcore:tags    jcr:score    8    DOUBLE    20    NULL    0    0    2        NULL    0    0    0    3    YES    NULL    NULL    NULL    0",
             "Repo    NULL    mmcore:tags    mode:depth    -5    LONG    20    NULL    0    0    2        NULL    0    0    0    4    YES    NULL    NULL    NULL    0",
             "Repo    NULL    mmcore:tags    mode:localName    12    STRING    50    NULL    0    0    2        NULL    0    0    0    5    YES    NULL    NULL    NULL    0"};
@@ -816,9 +816,9 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
             "Repo    NULL    car:Car    car:valueRating    -5    LONG    20    NULL    0    0    2        NULL    0    0    0    9    YES    NULL    NULL    NULL    0",
             "Repo    NULL    car:Car    car:wheelbaseInInches    8    DOUBLE    20    NULL    0    0    2        NULL    0    0    0    10    YES    NULL    NULL    NULL    0",
             "Repo    NULL    car:Car    car:year    12    STRING    50    NULL    0    0    2        NULL    0    0    0    11    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    jcr:name    12    NAME    20    NULL    0    0    2        NULL    0    0    0    12    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    jcr:path    12    PATH    50    NULL    0    0    2        NULL    0    0    0    13    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    jcr:primaryType    12    NAME    20    NULL    0    0    1        NULL    0    0    0    14    NO    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    jcr:name    12    STRING    20    NULL    0    0    2        NULL    0    0    0    12    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    jcr:path    12    STRING    50    NULL    0    0    2        NULL    0    0    0    13    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    jcr:primaryType    12    STRING    20    NULL    0    0    1        NULL    0    0    0    14    NO    NULL    NULL    NULL    0",
             "Repo    NULL    car:Car    jcr:score    8    DOUBLE    20    NULL    0    0    2        NULL    0    0    0    15    YES    NULL    NULL    NULL    0",
             "Repo    NULL    car:Car    mode:depth    -5    LONG    20    NULL    0    0    2        NULL    0    0    0    16    YES    NULL    NULL    NULL    0",
             "Repo    NULL    car:Car    mode:localName    12    STRING    50    NULL    0    0    2        NULL    0    0    0    17    YES    NULL    NULL    NULL    0"
@@ -856,7 +856,7 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
     @Test
     public void shouldSequence2XmlFiles() throws Exception {
         String[] expected1 = {
-            "jcr:primaryType[STRING]    jcr:path[PATH]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
+            "jcr:primaryType[STRING]    jcr:path[STRING]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
             "mode:root    /        1.0        0", "nt:unstructured    /Cars    Cars    1.0    Cars    1",
             "nt:unstructured    /Cars/Hybrid    Hybrid    1.0    Hybrid    2",
             "car:Car    /Cars/Hybrid/Nissan Altima    Nissan Altima    1.0    Nissan Altima    3",
@@ -883,7 +883,7 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
             "nt:resource    /files/docWithComments.xml/jcr:content    jcr:content    1.0    content    3"};
 
         String[] expected2 = {
-            "jcr:primaryType[STRING]    jcr:path[PATH]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
+            "jcr:primaryType[STRING]    jcr:path[STRING]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
             "mode:root    /        1.0        0", "nt:unstructured    /Cars    Cars    1.0    Cars    1",
             "nt:unstructured    /Cars/Hybrid    Hybrid    1.0    Hybrid    2",
             "car:Car    /Cars/Hybrid/Nissan Altima    Nissan Altima    1.0    Nissan Altima    3",
@@ -937,7 +937,7 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
     @Test
     public void shouldSequence2DdlFiles() throws Exception {
         String[] expected1 = {
-            "jcr:primaryType[STRING]    jcr:path[PATH]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
+            "jcr:primaryType[STRING]    jcr:path[STRING]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
             "car:Car    /Cars/Hybrid/Nissan Altima    Nissan Altima    1.0    Nissan Altima    3",
             "car:Car    /Cars/Hybrid/Toyota Highlander    Toyota Highlander    1.0    Toyota Highlander    3",
             "car:Car    /Cars/Hybrid/Toyota Prius    Toyota Prius    1.0    Toyota Prius    3",

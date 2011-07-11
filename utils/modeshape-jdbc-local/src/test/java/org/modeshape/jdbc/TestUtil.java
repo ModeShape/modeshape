@@ -61,7 +61,7 @@ public class TestUtil {
     public static final String LONG = PropertyType.nameFromValue(PropertyType.LONG).toUpperCase();
     public static final String BOOLEAN = PropertyType.nameFromValue(PropertyType.BOOLEAN).toUpperCase();
     public static final String DATE = PropertyType.nameFromValue(PropertyType.DATE).toUpperCase();
-    public static final String PATH = PropertyType.nameFromValue(PropertyType.PATH).toUpperCase();
+    public static final String PATH = PropertyType.nameFromValue(PropertyType.STRING).toUpperCase();
     public static final String BINARY = PropertyType.nameFromValue(PropertyType.BINARY).toUpperCase();
 
     public static final String REFERENCE = PropertyType.nameFromValue(PropertyType.REFERENCE).toUpperCase();
