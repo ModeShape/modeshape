@@ -199,6 +199,7 @@ public abstract class AbstractSessionTest {
         when(repository.getDescriptorValue(Repository.OPTION_RETENTION_SUPPORTED)).thenReturn(value(true));
     }
 
+    @SuppressWarnings( "unused" )
     protected List<NodeTypeDefinition> getTestTypes() throws ConstraintViolationException {
         return Collections.emptyList();
     }
