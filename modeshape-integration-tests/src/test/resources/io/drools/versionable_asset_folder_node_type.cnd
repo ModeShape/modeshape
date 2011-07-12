@@ -17,4 +17,6 @@
 
 // what it contains
 + * (drools:versionableNodeType)
-  ignore
+// Set OPV to copy. All child nodes of packageNodeType are converted into frozen nodes and copied into the version store
+//When a node is restored from a previous version via the Node.restore() method, all properties marked with the COPY attribute are restored and all child nodes attached the node are replaced with the versioned nodes.
+copy

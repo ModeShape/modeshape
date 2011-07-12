@@ -29,23 +29,36 @@
                xmlns:nt="http://www.jcp.org/jcr/nt/1.0">
     <!-- Define the sources from which content is made available.  -->
     <mode:sources jcr:primaryType="nt:unstructured">
-        <mode:source jcr:name="Store" mode:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource">
+        <mode:source jcr:name="Store" mode:classname="org.modeshape.connector.store.jpa.JpaSource" 
+            mode:autoGenerateSchema="update"
+        	mode:model="Simple"
+        	mode:dialect="org.hibernate.dialect.HSQLDialect"
+        	mode:driverClassName="org.hsqldb.jdbcDriver"
+        	mode:username="sa"
+        	mode:password=""
+        	mode:url="jdbc:hsqldb:target/database/ConfigurationTest/db"
+        	mode:maximumConnectionsInPool="2"
+        	mode:predefinedWorkspaceNames="default, otherWorkspace, system"
+        	mode:showSql="false"
+            mode:creatingWorkspacesAllowed="true"
+        	mode:defaultWorkspaceName="default">
             <defaultWorkspaceName>default</defaultWorkspaceName>
         </mode:source>
     </mode:sources>
     <!-- JCR Repositories.  This is required, with a separate repository for each JCR repository instance. -->
     <mode:repositories>
         <mode:repository jcr:name="Repo" mode:source="Store">
-            <jcr:nodeTypes>
-                <!-- Order is important! -->
-                <mode:resource>/io/drools/configuration_node_type.cnd</mode:resource>
-                <mode:resource>/io/drools/tag_node_type.cnd</mode:resource>
-                <mode:resource>/io/drools/state_node_type.cnd</mode:resource>
-                <mode:resource>/io/drools/versionable_node_type.cnd</mode:resource>
-                <mode:resource>/io/drools/versionable_asset_folder_node_type.cnd</mode:resource>
-                <mode:resource>/io/drools/rule_node_type.cnd</mode:resource>
-                <mode:resource>/io/drools/rulepackage_node_type.cnd</mode:resource>
-            </jcr:nodeTypes>
+            <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names-->
+            <mode:options jcr:primaryType="options" >
+                <!-- Explicitly specify the "system" workspace in the "SystemStore" source. -->
+                <mode:option jcr:name="systemSourceName" mode:value="system@Store"/>
+                <!-- Explicitly specify the directory where the index files should be stored. -->
+                <mode:option jcr:name="queryIndexDirectory" mode:value="target/database/ConfigurationTest/indexes"/>
+                <!--  Should  indexes should be rebuilt synchronously when the repository restarts, default true  -->                           
+                <mode:option jcr:name="queryIndexesRebuiltSynchronously" mode:value="true"/>
+                <!--  specifies the strategy (always or ifMissing) used to determine which query indexes need to be rebuilt when the repository restarts -->
+                <mode:option jcr:name="rebuildQueryIndexOnStartup" mode:value="ifMissing"/>
+            </mode:options>
         </mode:repository>
     </mode:repositories>
 </configuration>
