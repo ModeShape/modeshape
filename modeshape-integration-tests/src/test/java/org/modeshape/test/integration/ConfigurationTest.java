@@ -27,18 +27,27 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Credentials;
 import javax.jcr.Repository;
+import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
+import javax.jcr.nodetype.NodeType;
+import javax.jcr.nodetype.NodeTypeIterator;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.collection.Collections;
+import org.modeshape.common.util.FileUtil;
+import org.modeshape.jcr.CndNodeTypeReader;
 import org.modeshape.jcr.JaasTestUtil;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
@@ -229,4 +238,93 @@ public class ConfigurationTest {
         assertThat(repository, is(notNullValue()));
     }
 
+    @FixFor( "MODE-1216" )
+    @Test
+    public void shouldReadNodeTypesUponRestart() throws Exception {
+        // Delete the data files ...
+        FileUtil.delete("target/database/ConfigurationTest");
+
+        File file = new File("src/test/resources/config/configRepositoryForJpaWithDiskStorage.xml");
+        assertThat(file.exists(), is(true));
+        assertThat(file.canRead(), is(true));
+        assertThat(file.isFile(), is(true));
+
+        JcrConfiguration configuration = new JcrConfiguration();
+        JcrEngine engine = configuration.build();
+        configuration.loadFrom(file);
+
+        // Create and start the engine ...
+        engine = configuration.build();
+        engine.start();
+        Repository repository = engine.getRepository("Repo");
+        assertThat(repository, is(notNullValue()));
+
+        // Import the node types ...
+
+        // Check the node types ...
+        List<String> nodeTypeNames = new ArrayList<String>();
+        Session session = repository.login();
+        try {
+            readNodeTypes(session, "/io/drools/configuration_node_type.cnd");
+            readNodeTypes(session, "/io/drools/tag_node_type.cnd");
+            readNodeTypes(session, "/io/drools/state_node_type.cnd");
+            readNodeTypes(session, "/io/drools/versionable_node_type.cnd");
+            readNodeTypes(session, "/io/drools/versionable_asset_folder_node_type.cnd");
+            readNodeTypes(session, "/io/drools/rule_node_type.cnd");
+            readNodeTypes(session, "/io/drools/rulepackage_node_type.cnd");
+
+            NodeTypeIterator nodeTypes = session.getWorkspace().getNodeTypeManager().getAllNodeTypes();
+            while (nodeTypes.hasNext()) {
+                NodeType nodeType = nodeTypes.nextNodeType();
+                nodeTypeNames.add(nodeType.getName());
+            }
+        } finally {
+            session.logout();
+            engine.shutdownAndAwaitTermination(3, TimeUnit.SECONDS);
+        }
+
+        java.util.Collections.sort(nodeTypeNames);
+
+        // Restart ...
+        configuration = new JcrConfiguration();
+        configuration.loadFrom(file);
+        engine = configuration.build();
+        engine.start();
+
+        Repository repository2 = engine.getRepository("Repo");
+        assertThat(repository2, is(notNullValue()));
+
+        // Check the node types (again) ...
+        List<String> nodeTypeNames2 = new ArrayList<String>();
+        Session session2 = repository2.login();
+        try {
+            // Do NOT reload the node types ...
+
+            NodeTypeIterator nodeTypes = session2.getWorkspace().getNodeTypeManager().getAllNodeTypes();
+            while (nodeTypes.hasNext()) {
+                NodeType nodeType = nodeTypes.nextNodeType();
+                nodeTypeNames2.add(nodeType.getName());
+            }
+        } finally {
+            session.logout();
+            engine.shutdownAndAwaitTermination(3, TimeUnit.SECONDS);
+        }
+
+        java.util.Collections.sort(nodeTypeNames2);
+
+        // System.out.println("Node types:" + nodeTypeNames);
+        // System.out.println("Node types:" + nodeTypeNames2);
+        assertThat(nodeTypeNames, is(nodeTypeNames2));
+    }
+
+    protected void readNodeTypes( Session session,
+                                  String... cndResources ) throws IOException, RepositoryException {
+        for (String cndResource : cndResources) {
+            CndNodeTypeReader reader = new CndNodeTypeReader(session);
+            reader.read(cndResource); // or stream or resource file
+            assertThat(reader.getProblems().isEmpty(), is(true));
+            // Now import ...
+            session.getWorkspace().getNodeTypeManager().registerNodeTypes(reader.getNodeTypeDefinitions(), true);
+        }
+    }
 }
