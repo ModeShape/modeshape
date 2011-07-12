@@ -484,7 +484,7 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
         }
         String sourceName = context.getValueFactories().getStringFactory().create(property.getFirstValue());
 
-        // Verify the sourc exists ...
+        // Verify the source exists ...
         RepositorySource source = getRepositorySource(sourceName);
         if (source == null) {
             throw new RepositoryException(JcrI18n.repositoryReferencesNonExistantSource.text(repositoryName, sourceName));

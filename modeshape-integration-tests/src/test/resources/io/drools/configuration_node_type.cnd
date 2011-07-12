@@ -8,7 +8,12 @@
 <mix='http://www.jcp.org/jcr/mix/1.0'>
 
 // Node type name
-[drools:stateNodeType]
+[drools:configurationNodeType]
 
 // Supertypes
-> 'nt:hierarchyNode','mix:referenceable'
+> 'nt:hierarchyNode'
+
+- drools:title (string)
+  mandatory
+- drools:url (string)
+  mandatory

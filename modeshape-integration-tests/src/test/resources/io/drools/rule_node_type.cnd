@@ -29,6 +29,7 @@
   
 - drools:packageName (string)
   mandatory  
+  
 
 //for taxonomies/asset classification  
 - drools:categoryReference (reference)
