@@ -115,15 +115,15 @@ class NodeTypeSchemata implements Schemata {
         types.put(PropertyType.DECIMAL, typeSystem.getDecimalFactory().getTypeName());
         types.put(PropertyType.DOUBLE, typeSystem.getDoubleFactory().getTypeName());
         types.put(PropertyType.LONG, typeSystem.getLongFactory().getTypeName());
-        types.put(PropertyType.PATH, typeSystem.getPathFactory().getTypeName());
+        types.put(PropertyType.PATH, typeSystem.getStringFactory().getTypeName());
         types.put(PropertyType.REFERENCE, typeSystem.getReferenceFactory().getTypeName());
         types.put(PropertyType.WEAKREFERENCE, typeSystem.getReferenceFactory().getTypeName());
         types.put(PropertyType.STRING, typeSystem.getStringFactory().getTypeName());
         types.put(PropertyType.NAME, typeSystem.getStringFactory().getTypeName());
         types.put(PropertyType.URI, typeSystem.getStringFactory().getTypeName());
 
-        pseudoProperties.add(pseudoProperty(context, JcrLexicon.PATH, PropertyType.PATH));
-        pseudoProperties.add(pseudoProperty(context, JcrLexicon.NAME, PropertyType.NAME));
+        pseudoProperties.add(pseudoProperty(context, JcrLexicon.PATH, PropertyType.STRING));
+        pseudoProperties.add(pseudoProperty(context, JcrLexicon.NAME, PropertyType.STRING));
         pseudoProperties.add(pseudoProperty(context, JcrLexicon.SCORE, PropertyType.DOUBLE));
         pseudoProperties.add(pseudoProperty(context, ModeShapeLexicon.LOCALNAME, PropertyType.STRING));
         pseudoProperties.add(pseudoProperty(context, ModeShapeLexicon.DEPTH, PropertyType.LONG));

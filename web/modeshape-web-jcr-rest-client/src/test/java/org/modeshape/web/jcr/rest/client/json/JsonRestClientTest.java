@@ -383,7 +383,7 @@ public final class JsonRestClientTest {
         assertThat(row.getColumnNames().contains("jcr:primaryType"), is(true));
         assertThat(row.getColumnNames().contains("jcr:title"), is(true));
 
-        assertThat(row.getColumnType("jcr:path"), is("PATH"));
+        assertThat(row.getColumnType("jcr:path"), is("STRING"));
         assertThat(row.getColumnType("jcr:primaryType"), is("STRING"));
         assertThat(row.getColumnType("jcr:title"), is("STRING"));
 

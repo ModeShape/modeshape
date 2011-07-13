@@ -65,8 +65,8 @@ public final class JcrType {
         public static final String UNDEFINED = PropertyType.TYPENAME_UNDEFINED;
         public static final String BINARY = PropertyType.TYPENAME_BINARY;
         public static final String REFERENCE = PropertyType.TYPENAME_REFERENCE;
-        public static final String PATH = PropertyType.TYPENAME_PATH;
-        public static final String NAME = PropertyType.TYPENAME_NAME;
+        public static final String PATH = PropertyType.TYPENAME_STRING;
+        public static final String NAME = PropertyType.TYPENAME_STRING;
     }
 
     static {
@@ -77,8 +77,8 @@ public final class JcrType {
         register(types, PropertyType.DOUBLE, Types.DOUBLE, "DOUBLE" ,Double.class, 20, 20, new DoubleTransform()); // assumed
         register(types, PropertyType.DECIMAL, Types.DECIMAL, "BIGDECIMAL", BigDecimal.class, 20, 20, new DecimalTransform()); // assumed
         register(types, PropertyType.LONG, Types.BIGINT, "LONG", Long.class, 20, 19, new LongTransform()); // assumed
-        register(types, PropertyType.NAME, Types.VARCHAR, "NAME", String.class, 20, Integer.MAX_VALUE, new StringTransform()); // assumed
-        register(types, PropertyType.PATH, Types.VARCHAR, "PATH", String.class, 50, Integer.MAX_VALUE, new StringTransform()); // assumed
+        register(types, PropertyType.NAME, Types.VARCHAR, "STRING", String.class, 20, Integer.MAX_VALUE, new StringTransform()); // assumed
+        register(types, PropertyType.PATH, Types.VARCHAR, "STRING", String.class, 50, Integer.MAX_VALUE, new StringTransform()); // assumed
         register(types, PropertyType.REFERENCE, Types.VARCHAR, "STRING", UUID.class, UUID_LENGTH, UUID_LENGTH, new UUIDTransform());
         register(types, PropertyType.WEAKREFERENCE, Types.VARCHAR, "STRING", UUID.class, UUID_LENGTH, UUID_LENGTH, new UUIDTransform());
         register(types, PropertyType.URI, Types.VARCHAR, "STRING", String.class, 50, Integer.MAX_VALUE, new StringTransform()); // assumed
