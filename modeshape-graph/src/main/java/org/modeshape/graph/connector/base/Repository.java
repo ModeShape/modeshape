@@ -36,8 +36,12 @@ import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.connector.RepositoryContext;
+import org.modeshape.graph.connector.base.lock.LockManagingRepositorySource;
+import org.modeshape.graph.connector.base.lock.LockProvider;
+import org.modeshape.graph.connector.base.lock.LockStrategy;
 import org.modeshape.graph.observe.Observer;
 import org.modeshape.graph.request.InvalidWorkspaceException;
+import org.modeshape.graph.request.Request;
 import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
 import org.modeshape.graph.request.processor.RequestProcessor;
 
@@ -49,7 +53,7 @@ import org.modeshape.graph.request.processor.RequestProcessor;
  * <p>
  * Note that this class is thread-safe, since a {@link BaseRepositorySource} will contain a single instance of a concrete subclass
  * of this class. Often, the Workspace objects are used to hold onto the workspace-related content, but access to the content is
- * always done through a {@link #startTransaction(ExecutionContext, boolean) transaction}.
+ * always done through a {@link #startTransaction(ExecutionContext, Request) transaction}.
  * </p>
  * 
  * @param <NodeType> the node type
@@ -65,6 +69,10 @@ public abstract class Repository<NodeType extends Node, WorkspaceType extends Wo
     private final String defaultWorkspaceName;
     private final Map<String, WorkspaceType> workspaces = new HashMap<String, WorkspaceType>();
     private final ReadWriteLock workspacesLock = new ReentrantReadWriteLock();
+    private final LockProvider lockProvider;
+    private final LockStrategy lockStrategy;
+
+    // private final LockStrategy lockStrategy = new RepositoryLockStrategy();
 
     /**
      * Creates a {@code MapRepository} with the given repository source name, root node UUID, and a default workspace with the
@@ -86,6 +94,15 @@ public abstract class Repository<NodeType extends Node, WorkspaceType extends Wo
         this.rootNodeUuid = source.getRootNodeUuidObject();
         this.sourceName = source.getName();
         this.defaultWorkspaceName = source.getDefaultWorkspaceName() != null ? source.getDefaultWorkspaceName() : "";
+
+        if (source instanceof LockManagingRepositorySource) {
+            LockManagingRepositorySource lmrs = (LockManagingRepositorySource)source;
+            lockProvider = lmrs.getLockProvider();
+            lockStrategy = lmrs.getLockStrategy();
+        } else {
+            lockProvider = null;
+            lockStrategy = null;
+        }
     }
 
     /**
@@ -96,7 +113,7 @@ public abstract class Repository<NodeType extends Node, WorkspaceType extends Wo
      * .</b>
      */
     protected void initialize() {
-        Transaction<NodeType, WorkspaceType> txn = startTransaction(context, false);
+        Transaction<NodeType, WorkspaceType> txn = startTransaction(context, null);
         try {
             // Create the default workspace ...
             workspaces.put(this.defaultWorkspaceName, createWorkspace(txn,
@@ -274,11 +291,29 @@ public abstract class Repository<NodeType extends Node, WorkspaceType extends Wo
      * transaction must be either {@link Transaction#commit() committed} or {@link Transaction#rollback() rolled back}.
      * 
      * @param context the context in which the transaction is to be performed; may not be null
-     * @param readonly true if the transaction will not modify any content, or false if changes are to be made
+     * @param request
      * @return the transaction; never null
      * @see Transaction#commit()
      * @see Transaction#rollback()
      */
     public abstract Transaction<NodeType, WorkspaceType> startTransaction( ExecutionContext context,
-                                                                           boolean readonly );
+                                                                           Request request );
+
+    /**
+     * Returns the current lock strategy for this repository
+     * 
+     * @return the current lock strategy for this repository; never null
+     */
+    public LockStrategy getLockStrategy() {
+        return this.lockStrategy;
+    }
+
+    /**
+     * Returns the current lock provider for this repository
+     * 
+     * @return the current lock provider for this repository; never null
+     */
+    public LockProvider getLockProvider() {
+        return this.lockProvider;
+    }
 }

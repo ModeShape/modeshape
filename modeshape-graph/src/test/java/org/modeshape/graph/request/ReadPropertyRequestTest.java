@@ -27,10 +27,10 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.Property;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.graph.property.Name;
+import org.modeshape.graph.property.Property;
 
 /**
  * @author Randall Hauch
@@ -73,7 +73,7 @@ public class ReadPropertyRequestTest extends AbstractRequestTest {
     public void shouldCreateValidRequestWithValidLocation() {
         request = new ReadPropertyRequest(validPathLocation1, workspace1, validPropertyName);
         assertThat(request.on(), is(sameInstance(validPathLocation1)));
-        assertThat(request.inWorkspace(), is(sameInstance(workspace1)));
+        assertThat(request.readWorkspace(), is(sameInstance(workspace1)));
         assertThat(request.hasError(), is(false));
         assertThat(request.getError(), is(nullValue()));
     }

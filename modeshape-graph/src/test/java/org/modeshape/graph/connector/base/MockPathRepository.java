@@ -7,6 +7,7 @@ import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.request.InvalidWorkspaceException;
+import org.modeshape.graph.request.Request;
 
 public class MockPathRepository extends Repository<MockPathNode, MockPathWorkspace> {
 
@@ -19,8 +20,8 @@ public class MockPathRepository extends Repository<MockPathNode, MockPathWorkspa
 
     @Override
     public PathTransaction<MockPathNode, MockPathWorkspace> startTransaction( ExecutionContext context,
-                                                                              boolean readonly ) {
-        return new MockPathTransaction(this);
+                                                                              Request request ) {
+        return new MockPathTransaction(this, request);
     }
 
     public class MockPathTransaction extends PathTransaction<MockPathNode, MockPathWorkspace> {
@@ -32,8 +33,8 @@ public class MockPathRepository extends Repository<MockPathNode, MockPathWorkspa
             return new MockPathNode(null, parentPath, name, properties, null);
         }
 
-        public MockPathTransaction( Repository<MockPathNode, MockPathWorkspace> repository ) {
-            super(repository, repository.getRootNodeUuid());
+        public MockPathTransaction( Repository<MockPathNode, MockPathWorkspace> repository, Request request ) {
+            super(repository, repository.getRootNodeUuid(), request);
         }
 
         public boolean destroyWorkspace( MockPathWorkspace workspace ) throws InvalidWorkspaceException {

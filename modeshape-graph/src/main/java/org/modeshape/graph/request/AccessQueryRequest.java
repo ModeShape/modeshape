@@ -41,7 +41,7 @@ import org.modeshape.graph.query.validate.Schemata;
  * A {@link Request} to issue an access query a graph, where an access query is a low-level atomic query that is part of a large,
  * planned query.
  */
-public class AccessQueryRequest extends SearchRequest {
+public class AccessQueryRequest extends SearchRequest implements ReadRequest {
 
     private static final Map<String, Object> EMPTY_VARIABLES = Collections.emptyMap();
 
@@ -91,8 +91,19 @@ public class AccessQueryRequest extends SearchRequest {
      * Get the name of the workspace in which the node exists.
      * 
      * @return the name of the workspace; never null
+     * @deprecated Use readWorkspaceName() instead
      */
+    @Deprecated
     public String workspace() {
+        return workspaceName;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see ReadRequest#readWorkspace()
+     */
+    public String readWorkspace() {
         return workspaceName;
     }
 

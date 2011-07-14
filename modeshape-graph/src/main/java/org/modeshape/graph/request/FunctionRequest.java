@@ -45,7 +45,7 @@ import org.modeshape.graph.request.function.Function;
 /**
  * 
  */
-public final class FunctionRequest extends Request implements Cloneable {
+public final class FunctionRequest extends Request implements ReadRequest, Cloneable {
 
     private static final long serialVersionUID = 1L;
 
@@ -103,8 +103,19 @@ public final class FunctionRequest extends Request implements Cloneable {
      * Get the name of the workspace in which the function is being applied.
      * 
      * @return the name of the workspace; never null
+     * @deprecated Use readWorkspaceName() instead
      */
+    @Deprecated
     public String inWorkspace() {
+        return workspaceName;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see ReadRequest#readWorkspace()
+     */
+    public String readWorkspace() {
         return workspaceName;
     }
 

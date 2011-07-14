@@ -84,4 +84,5 @@ public interface BaseRepositorySource extends org.modeshape.graph.connector.Repo
      * @return the name of the default workspace; may be null if there is no such default
      */
     String getDefaultWorkspaceName();
+
 }

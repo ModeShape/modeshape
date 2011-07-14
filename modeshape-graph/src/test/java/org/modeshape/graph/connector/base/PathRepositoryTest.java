@@ -54,7 +54,7 @@ public class PathRepositoryTest {
     }
 
     private MockPathTransaction beginTransaction() {
-        return (MockPathTransaction)repository.startTransaction(context, false);
+        return (MockPathTransaction)repository.startTransaction(context, null);
     }
 
     private MockPathWorkspace defaultWorkspaceFor( MockPathTransaction txn ) {
@@ -80,7 +80,7 @@ public class PathRepositoryTest {
 
     @Test
     public void shouldBeAbleToStartTransaction() {
-        assertThat(repository.startTransaction(context, false), is(notNullValue()));
+        assertThat(repository.startTransaction(context, null), is(notNullValue()));
     }
 
     @Test

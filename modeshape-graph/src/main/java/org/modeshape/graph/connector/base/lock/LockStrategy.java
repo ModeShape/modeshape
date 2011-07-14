@@ -4,13 +4,13 @@
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
  * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors.
+ * individual contributors. 
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- * 
+ *
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -21,32 +21,20 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.graph.connector.inmemory;
+package org.modeshape.graph.connector.base.lock;
 
-import org.modeshape.common.annotation.ThreadSafe;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.connector.base.Repository;
 import org.modeshape.graph.request.Request;
 
 /**
- * The representation of an in-memory repository and its content.
+ * Represents a strategy for acquiring locks to ensure transaction isolation for a particular request.
  */
-@ThreadSafe
-public class InMemoryRepository extends Repository<InMemoryNode, InMemoryWorkspace> {
-
-    public InMemoryRepository( InMemoryRepositorySource source ) {
-        super(source);
-        initialize();
-    }
+public interface LockStrategy {
 
     /**
-     * {@inheritDoc}
+     * Acquires all locks for the given {@link Request request}, blocking until the locks are able to be acquired.
      * 
-     * @see org.modeshape.graph.connector.base.Repository#startTransaction(org.modeshape.graph.ExecutionContext, Request)
+     * @param request the request for which the locks should be acquired; may not be null.
+     * @return a container holding all acquired locks; never null
      */
-    @Override
-    public InMemoryTransaction startTransaction( ExecutionContext context,
-                                                 Request request ) {
-        return new InMemoryTransaction(context, this, getRootNodeUuid(), request);
-    }
+    HeldLocks lock( Request request );
 }

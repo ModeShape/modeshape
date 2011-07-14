@@ -38,6 +38,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.connector.MockRepositoryConnection;
@@ -51,10 +55,6 @@ import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.request.InvalidWorkspaceException;
 import org.modeshape.graph.request.ReadNodeRequest;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Mock;
 
 /**
  * 
@@ -203,14 +203,14 @@ public class ForkRequestProcessorTest {
     @Test
     public void shouldFindFederatedWorkspaceByName() {
         ReadNodeRequest request = new ReadNodeRequest(location("/some"), this.workspace.getName());
-        FederatedWorkspace workspace = processor.getWorkspace(request, request.inWorkspace());
+        FederatedWorkspace workspace = processor.getWorkspace(request, request.readWorkspace());
         assertThat(workspace, is(sameInstance(this.workspace)));
     }
 
     @Test
     public void shouldRecordErrorOnRequestIfFederatedWorkspaceCouldNotBeFoundByName() {
         ReadNodeRequest request = new ReadNodeRequest(location("/some"), nonExistantWorkspaceName);
-        FederatedWorkspace workspace = processor.getWorkspace(request, request.inWorkspace());
+        FederatedWorkspace workspace = processor.getWorkspace(request, request.readWorkspace());
         assertThat(workspace, is(nullValue()));
         assertThat(request.hasError(), is(true));
         assertThat(request.getError(), is(instanceOf(InvalidWorkspaceException.class)));

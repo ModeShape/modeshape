@@ -64,6 +64,10 @@ import org.modeshape.graph.connector.RepositorySourceCapabilities;
 import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.connector.base.BaseRepositorySource;
 import org.modeshape.graph.connector.base.Connection;
+import org.modeshape.graph.connector.base.lock.LockManagingRepositorySource;
+import org.modeshape.graph.connector.base.lock.LockProvider;
+import org.modeshape.graph.connector.base.lock.LockStrategy;
+import org.modeshape.graph.connector.base.lock.RepositorySourceLockManager;
 import org.modeshape.graph.observe.Observer;
 import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
 
@@ -72,7 +76,7 @@ import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior
  * repository, and the lifetime of the source dictates the lifetime of the repository and its content.
  */
 @ThreadSafe
-public class InMemoryRepositorySource implements BaseRepositorySource, ObjectFactory {
+public class InMemoryRepositorySource implements BaseRepositorySource, ObjectFactory, LockManagingRepositorySource {
 
     /**
      * The initial version is 1
@@ -136,6 +140,7 @@ public class InMemoryRepositorySource implements BaseRepositorySource, ObjectFac
     private transient InMemoryRepository repository;
     private transient ExecutionContext defaultContext = new ExecutionContext(ExecutionContext.DEFAULT_CONTEXT);
     private transient RepositoryContext repositoryContext = new DefaultRepositoryContext();
+    private final RepositorySourceLockManager lockManager = new RepositorySourceLockManager();
 
     protected class DefaultRepositoryContext implements RepositoryContext {
         /**
@@ -356,7 +361,7 @@ public class InMemoryRepositorySource implements BaseRepositorySource, ObjectFac
             repository = new InMemoryRepository(this);
 
             ExecutionContext context = repositoryContext != null ? repositoryContext.getExecutionContext() : defaultContext;
-            InMemoryTransaction txn = repository.startTransaction(context, false);
+            InMemoryTransaction txn = repository.startTransaction(context, null);
             try {
                 // Create the set of initial workspaces ...
                 for (String initialName : getPredefinedWorkspaceNames()) {
@@ -417,6 +422,9 @@ public class InMemoryRepositorySource implements BaseRepositorySource, ObjectFac
             }
         }
         ref.add(new StringRefAddr(RETRY_LIMIT_ATTR, Integer.toString(getRetryLimit())));
+
+        lockManager.setReferenceFromProperties(ref);
+
         return ref;
     }
 
@@ -474,6 +482,9 @@ public class InMemoryRepositorySource implements BaseRepositorySource, ObjectFac
             }
             if (workspaceNames != null && workspaceNames.length != 0) source.setPredefinedWorkspaceNames(workspaceNames);
             if (retryLimit != null) source.setRetryLimit(Integer.parseInt(retryLimit));
+            
+            lockManager.setPropertiesFromValues(source, values);
+            
             return source;
         }
         return null;
@@ -540,6 +551,66 @@ public class InMemoryRepositorySource implements BaseRepositorySource, ObjectFac
             throw new RepositorySourceException(GraphI18n.inMemoryConnectorMustAllowUpdates.text(this.name));
         }
 
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see LockManagingRepositorySource#getLockProvider()
+     */
+    public LockProvider getLockProvider() {
+        return lockManager.getLockProvider(getName());
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see LockManagingRepositorySource#getLockProviderClassName()
+     */
+    @Description( i18n = GraphI18n.class, value = "lockProviderClassNamePropertyDescription" )
+    @Label( i18n = GraphI18n.class, value = "lockProviderClassNamePropertyLabel" )
+    @Category( i18n = GraphI18n.class, value = "lockProviderClassNamePropertyCategory" )
+    public String getLockProviderClassName() {
+        return lockManager.getLockProviderClassName();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see LockManagingRepositorySource#getLockStrategy()
+     */
+    public LockStrategy getLockStrategy() {
+        return lockManager.getLockStrategy(getName());
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see LockManagingRepositorySource#getLockStrategyClassName()
+     */
+    @Description( i18n = GraphI18n.class, value = "lockStrategyClassNamePropertyDescription" )
+    @Label( i18n = GraphI18n.class, value = "lockStrategyClassNamePropertyLabel" )
+    @Category( i18n = GraphI18n.class, value = "lockStrategyClassNamePropertyCategory" )
+    public String getLockStrategyClassName() {
+        return lockManager.getLockStrategyClassName();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see LockManagingRepositorySource#setLockProviderClassName(String)
+     */
+    public void setLockProviderClassName( String lockProviderClassName ) {
+        lockManager.setLockProviderClassName(lockProviderClassName);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see LockManagingRepositorySource#setLockStrategyClassName(String)
+     */
+    public void setLockStrategyClassName( String lockStrategyClassName ) {
+        lockManager.setLockStrategyClassName(lockStrategyClassName);
     }
 
     /**

@@ -32,6 +32,7 @@ import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.connector.LockFailedException;
+import org.modeshape.graph.connector.base.lock.HeldLocks;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NameFactory;
 import org.modeshape.graph.property.Path;
@@ -39,6 +40,7 @@ import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.PathNotFoundException;
 import org.modeshape.graph.property.PropertyFactory;
 import org.modeshape.graph.property.ValueFactories;
+import org.modeshape.graph.request.Request;
 import org.modeshape.graph.request.LockBranchRequest.LockScope;
 
 /**
@@ -60,9 +62,12 @@ public abstract class BaseTransaction<NodeType extends Node, WorkspaceType exten
     /** The repository against which this transaction is operating */
     private final Repository<NodeType, WorkspaceType> repository;
 
+    private final HeldLocks heldLocks;
+
     protected BaseTransaction( ExecutionContext context,
                                Repository<NodeType, WorkspaceType> repository,
-                               UUID rootNodeUuid ) {
+                               UUID rootNodeUuid,
+                               Request request ) {
         this.rootNodeUuid = rootNodeUuid;
         this.context = context;
         this.propertyFactory = context.getPropertyFactory();
@@ -71,6 +76,8 @@ public abstract class BaseTransaction<NodeType extends Node, WorkspaceType exten
         this.nameFactory = valueFactories.getNameFactory();
         this.repository = repository;
         this.rootLocation = Location.create(pathFactory.createRootPath(), rootNodeUuid);
+
+        this.heldLocks = repository.getLockStrategy() != null ? repository.getLockStrategy().lock(request) : null;
     }
 
     public Location getRootLocation() {
@@ -212,6 +219,7 @@ public abstract class BaseTransaction<NodeType extends Node, WorkspaceType exten
      * @see org.modeshape.graph.connector.base.Transaction#commit()
      */
     public void commit() {
+        if (heldLocks != null) heldLocks.release();
     }
 
     /**
@@ -220,5 +228,6 @@ public abstract class BaseTransaction<NodeType extends Node, WorkspaceType exten
      * @see org.modeshape.graph.connector.base.Transaction#rollback()
      */
     public void rollback() {
+        if (heldLocks != null) heldLocks.release();
     }
 }

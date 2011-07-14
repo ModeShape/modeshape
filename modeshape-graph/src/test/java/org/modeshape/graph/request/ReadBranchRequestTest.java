@@ -28,9 +28,9 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import java.util.Iterator;
-import org.modeshape.graph.Location;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.graph.Location;
 
 /**
  * @author Randall Hauch
@@ -64,7 +64,7 @@ public class ReadBranchRequestTest extends AbstractRequestTest {
     public void shouldCreateValidRequestWithValidLocation() {
         request = new ReadBranchRequest(validPathLocation1, workspace1);
         assertThat(request.at(), is(sameInstance(validPathLocation1)));
-        assertThat(request.inWorkspace(), is(sameInstance(workspace1)));
+        assertThat(request.readWorkspace(), is(sameInstance(workspace1)));
         assertThat(request.hasError(), is(false));
         assertThat(request.getError(), is(nullValue()));
         assertThat(request.maximumDepth(), is(ReadBranchRequest.DEFAULT_MAXIMUM_DEPTH));

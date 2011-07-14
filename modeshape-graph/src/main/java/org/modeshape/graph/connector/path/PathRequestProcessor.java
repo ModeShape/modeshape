@@ -74,7 +74,7 @@ public class PathRequestProcessor extends RequestProcessor {
 
     @Override
     public void process( VerifyWorkspaceRequest request ) {
-        PathWorkspace original = getWorkspace(request, request.workspaceName());
+        PathWorkspace original = getWorkspace(request, request.readWorkspace());
         if (original != null) {
             Path path = getExecutionContext().getValueFactories().getPathFactory().createRootPath();
             request.setActualRootLocation(Location.create(path, repository.getRootNodeUuid()));
@@ -398,7 +398,7 @@ public class PathRequestProcessor extends RequestProcessor {
 
     @Override
     public void process( ReadNodeRequest request ) {
-        PathWorkspace workspace = getWorkspace(request, request.inWorkspace());
+        PathWorkspace workspace = getWorkspace(request, request.readWorkspace());
         if (workspace == null) return;
 
         PathNode node = getTargetNode(workspace, request, request.at());
@@ -421,7 +421,7 @@ public class PathRequestProcessor extends RequestProcessor {
 
     @Override
     public void process( ReadAllChildrenRequest request ) {
-        PathWorkspace workspace = getWorkspace(request, request.inWorkspace());
+        PathWorkspace workspace = getWorkspace(request, request.readWorkspace());
         if (workspace == null) return;
 
         PathNode node = getTargetNode(workspace, request, request.of());
@@ -440,7 +440,7 @@ public class PathRequestProcessor extends RequestProcessor {
 
     @Override
     public void process( ReadAllPropertiesRequest request ) {
-        PathWorkspace workspace = getWorkspace(request, request.inWorkspace());
+        PathWorkspace workspace = getWorkspace(request, request.readWorkspace());
         if (workspace == null) return;
 
         PathNode node = getTargetNode(workspace, request, request.at());
@@ -457,7 +457,7 @@ public class PathRequestProcessor extends RequestProcessor {
 
     @Override
     public void process( AccessQueryRequest request ) {
-        PathWorkspace workspace = getWorkspace(request, request.workspace());
+        PathWorkspace workspace = getWorkspace(request, request.readWorkspace());
         if (workspace == null) return;
         final ExecutionContext context = getExecutionContext();
         QueryResults results = workspace.query(context, request);
@@ -470,7 +470,7 @@ public class PathRequestProcessor extends RequestProcessor {
 
     @Override
     public void process( FullTextSearchRequest request ) {
-        PathWorkspace workspace = getWorkspace(request, request.workspace());
+        PathWorkspace workspace = getWorkspace(request, request.readWorkspace());
         if (workspace == null) return;
         final ExecutionContext context = getExecutionContext();
         QueryResults results = workspace.search(context, request.expression());

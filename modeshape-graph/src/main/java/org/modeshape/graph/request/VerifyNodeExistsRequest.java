@@ -29,9 +29,9 @@ import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.Location;
 
 /**
- * Instruction to verify the existance of a node at the specified location. This request also returns the actual location.
+ * Instruction to verify the existence of a node at the specified location. This request also returns the actual location.
  */
-public class VerifyNodeExistsRequest extends CacheableRequest {
+public class VerifyNodeExistsRequest extends CacheableRequest implements ReadRequest {
 
     private static final long serialVersionUID = 1L;
 
@@ -77,8 +77,19 @@ public class VerifyNodeExistsRequest extends CacheableRequest {
      * Get the name of the workspace in which the node exists.
      * 
      * @return the name of the workspace; never null
+     * @deprecated Use readWorkspaceName()
      */
+    @Deprecated
     public String inWorkspace() {
+        return workspaceName;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see ReadRequest#readWorkspace()
+     */
+    public String readWorkspace() {
         return workspaceName;
     }
 

@@ -310,7 +310,7 @@ class ForkRequestProcessor extends RequestProcessor {
     @Override
     public void process( VerifyNodeExistsRequest request ) {
         // Figure out where this request is projected ...
-        ProjectedNode projectedNode = project(request.at(), request.inWorkspace(), request, false);
+        ProjectedNode projectedNode = project(request.at(), request.readWorkspace(), request, false);
 
         // Create the federated request ...
         FederatedRequest federatedRequest = new FederatedRequest(request);
@@ -318,7 +318,7 @@ class ForkRequestProcessor extends RequestProcessor {
             if (projectedNode.isPlaceholder()) {
                 PlaceholderNode placeholder = projectedNode.asPlaceholder();
                 // Create a request and set the results ...
-                VerifyNodeExistsRequest placeholderRequest = new VerifyNodeExistsRequest(request.at(), request.inWorkspace());
+                VerifyNodeExistsRequest placeholderRequest = new VerifyNodeExistsRequest(request.at(), request.readWorkspace());
                 placeholderRequest.setActualLocationOfNode(placeholder.location());
                 federatedRequest.add(placeholderRequest, true, true, null);
             } else if (projectedNode.isProxy()) {
@@ -341,7 +341,7 @@ class ForkRequestProcessor extends RequestProcessor {
     @Override
     public void process( ReadNodeRequest request ) {
         // Figure out where this request is projected ...
-        ProjectedNode projectedNode = project(request.at(), request.inWorkspace(), request, false);
+        ProjectedNode projectedNode = project(request.at(), request.readWorkspace(), request, false);
 
         // Create the federated request ...
         FederatedRequest federatedRequest = new FederatedRequest(request);
@@ -361,7 +361,7 @@ class ForkRequestProcessor extends RequestProcessor {
                         if (!children.isEmpty()) {
                             // Take any children so far and simply record a ReadNodeRequest with results ...
                             ReadNodeRequest placeholderRequest = new ReadNodeRequest(placeholder.location(),
-                                                                                     request.inWorkspace());
+                                                                                     request.readWorkspace());
                             placeholderRequest.addChildren(children);
                             if (firstRequest) {
                                 firstRequest = false;
@@ -382,7 +382,7 @@ class ForkRequestProcessor extends RequestProcessor {
                 }
                 if (!children.isEmpty() || firstRequest) {
                     // Submit the children so far ...
-                    ReadNodeRequest placeholderRequest = new ReadNodeRequest(placeholder.location(), request.inWorkspace());
+                    ReadNodeRequest placeholderRequest = new ReadNodeRequest(placeholder.location(), request.readWorkspace());
                     placeholderRequest.addChildren(children);
                     if (firstRequest) {
                         firstRequest = false;
@@ -411,7 +411,7 @@ class ForkRequestProcessor extends RequestProcessor {
     @Override
     public void process( ReadAllChildrenRequest request ) {
         // Figure out where this request is projected ...
-        ProjectedNode projectedNode = project(request.of(), request.inWorkspace(), request, false);
+        ProjectedNode projectedNode = project(request.of(), request.readWorkspace(), request, false);
 
         // Create the federated request ...
         FederatedRequest federatedRequest = new FederatedRequest(request);
@@ -431,7 +431,7 @@ class ForkRequestProcessor extends RequestProcessor {
                         if (!children.isEmpty()) {
                             // Take any children so far and simply record a ReadNodeRequest with results ...
                             ReadAllChildrenRequest placeholderRequest = new ReadAllChildrenRequest(placeholder.location(),
-                                                                                                   request.inWorkspace());
+                                                                                                   request.readWorkspace());
                             placeholderRequest.addChildren(children);
                             if (firstRequest) {
                                 firstRequest = false;
@@ -452,7 +452,7 @@ class ForkRequestProcessor extends RequestProcessor {
                 if (!children.isEmpty() || firstRequest) {
                     // Submit the children so far ...
                     ReadAllChildrenRequest placeholderRequest = new ReadAllChildrenRequest(placeholder.location(),
-                                                                                           request.inWorkspace());
+                                                                                           request.readWorkspace());
                     placeholderRequest.addChildren(children);
                     if (firstRequest) {
                         firstRequest = false;
@@ -500,7 +500,7 @@ class ForkRequestProcessor extends RequestProcessor {
     @Override
     public void process( ReadAllPropertiesRequest request ) {
         // Figure out where this request is projected ...
-        ProjectedNode projectedNode = project(request.at(), request.inWorkspace(), request, false);
+        ProjectedNode projectedNode = project(request.at(), request.readWorkspace(), request, false);
 
         // Create the federated request ...
         FederatedRequest federatedRequest = new FederatedRequest(request);
@@ -509,7 +509,7 @@ class ForkRequestProcessor extends RequestProcessor {
                 PlaceholderNode placeholder = projectedNode.asPlaceholder();
                 // Create a request and set the results ...
                 ReadAllPropertiesRequest placeholderRequest = new ReadAllPropertiesRequest(placeholder.location(),
-                                                                                           request.inWorkspace());
+                                                                                           request.readWorkspace());
                 placeholderRequest.addProperties(placeholder.properties().values());
                 placeholderRequest.setActualLocationOfNode(placeholder.location());
                 federatedRequest.add(placeholderRequest, true, true, null);
@@ -533,7 +533,7 @@ class ForkRequestProcessor extends RequestProcessor {
     @Override
     public void process( ReadPropertyRequest request ) {
         // Figure out where this request is projected ...
-        ProjectedNode projectedNode = project(request.on(), request.inWorkspace(), request, false);
+        ProjectedNode projectedNode = project(request.on(), request.readWorkspace(), request, false);
 
         // Create the federated request ...
         FederatedRequest federatedRequest = new FederatedRequest(request);
@@ -541,7 +541,7 @@ class ForkRequestProcessor extends RequestProcessor {
             if (projectedNode.isPlaceholder()) {
                 PlaceholderNode placeholder = projectedNode.asPlaceholder();
                 // Create a request and set the results ...
-                ReadPropertyRequest placeholderRequest = new ReadPropertyRequest(placeholder.location(), request.inWorkspace(),
+                ReadPropertyRequest placeholderRequest = new ReadPropertyRequest(placeholder.location(), request.readWorkspace(),
                                                                                  request.named());
                 Property property = placeholder.properties().get(request.named());
                 placeholderRequest.setProperty(property);
@@ -572,13 +572,13 @@ class ForkRequestProcessor extends RequestProcessor {
     @Override
     public void process( ReadBranchRequest request ) {
         // Figure out where this request is projected ...
-        ProjectedNode projectedNode = project(request.at(), request.inWorkspace(), request, false);
+        ProjectedNode projectedNode = project(request.at(), request.readWorkspace(), request, false);
 
         // Create the federated request ...
         FederatedRequest federatedRequest = new FederatedRequest(request);
 
         if (projectedNode != null) {
-            FederatedWorkspace workspace = getWorkspace(request, request.inWorkspace());
+            FederatedWorkspace workspace = getWorkspace(request, request.readWorkspace());
 
             // And process the branch, creating ReadNodeRequests for each placeholder, and ReadBranchRequests for each proxy
             // node...
@@ -1325,7 +1325,7 @@ class ForkRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( VerifyWorkspaceRequest request ) {
-        FederatedWorkspace workspace = getWorkspace(request, request.workspaceName());
+        FederatedWorkspace workspace = getWorkspace(request, request.readWorkspace());
         if (workspace != null) {
             request.setActualWorkspaceName(workspace.getName());
 
