@@ -36,6 +36,7 @@
         <mode:repository jcr:name="My Repository" mode:source="Stuff">
             <mode:options>
                 <mode:option jcr:name="jaasLoginConfigName" mode:value="modeshape-jcr"/>
+                <mode:option jcr:name="useAnonymousAccessOnFailedLogin" mode:value="true"/>
             </mode:options>
             <mode:authenticationProviders>
                 <mode:authenticationProvider jcr:name="CustomProviderA" mode:classname="org.modeshape.jcr.JcrConfigurationTest$TestSecurityContextProvider">
