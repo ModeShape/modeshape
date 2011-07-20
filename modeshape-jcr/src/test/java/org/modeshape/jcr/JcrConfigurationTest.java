@@ -59,8 +59,8 @@ import org.modeshape.jcr.JcrRepository.DefaultOption;
 import org.modeshape.jcr.JcrRepository.Option;
 import org.modeshape.jcr.security.AuthenticationProvider;
 import org.modeshape.repository.ModeShapeConfiguration;
-import org.modeshape.repository.ModeShapeLexicon;
 import org.modeshape.repository.ModeShapeConfiguration.ConfigurationDefinition;
+import org.modeshape.repository.ModeShapeLexicon;
 
 public class JcrConfigurationTest {
 
@@ -388,6 +388,7 @@ public class JcrConfigurationTest {
         Session session = null;
         try {
             session = repository.login(new SimpleCredentials("superuser", "superuser".toCharArray()));
+            assertThat(session.getUserID(), is("superuser"));
         } finally {
             if (session != null) session.logout();
         }
@@ -520,6 +521,16 @@ public class JcrConfigurationTest {
         Session session = null;
         try {
             session = repository.login(new SimpleCredentials("superuser", "superuser".toCharArray()));
+            assertThat(session.getUserID(), is("superuser"));
+        } finally {
+            if (session != null) session.logout();
+        }
+
+        // Create a session, authenticating using one of the usernames defined by our JAAS policy file(s) ...
+        session = null;
+        try {
+            session = repository.login(new SimpleCredentials("superuser", "wrongpassword".toCharArray()));
+            assertThat(session.getUserID(), is(JcrRepository.ANONYMOUS_USER_NAME)); // "<anonymous>"
         } finally {
             if (session != null) session.logout();
         }
@@ -581,8 +592,8 @@ public class JcrConfigurationTest {
         }
 
         /**
-         * Adapts the modeshape-jcr-api {@link org.modeshape.jcr.api.SecurityContext} to the modeshape-graph {@link SecurityContext}
-         * needed for repository login.
+         * Adapts the modeshape-jcr-api {@link org.modeshape.jcr.api.SecurityContext} to the modeshape-graph
+         * {@link SecurityContext} needed for repository login.
          * 
          * @param credentials the credentials containing the modeshape-jcr-api {@code SecurityContext}
          * @return an equivalent modeshape-graph {@code SecurityContext}
