@@ -160,7 +160,6 @@ public class HibernateAdapter implements JpaAdapter {
     public EntityManagerFactory getEntityManagerFactory( JpaSource source ) {
         return new Ejb3Configuration()
             .addAnnotatedClass(StoreOptionEntity.class)
-            .addAnnotatedClass(ChangeLogEntity.class)
             .addAnnotatedClass(NamespaceEntity.class)
             .addAnnotatedClass(WorkspaceEntity.class)
             .addAnnotatedClass(LargeValueEntity.class)
