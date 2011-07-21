@@ -39,10 +39,13 @@ import org.modeshape.graph.property.basic.JodaDateTime;
 /**
  * Represents a record of the changes that have been made to the repository. The actual change events are serialized and stored in
  * a binary (and compressed) format.
+ * 
+ * @deprecated
  */
+@Deprecated
 @Entity
 @Table( name = "DNA_CHANGELOG" )
-@org.hibernate.annotations.Table( appliesTo = "DNA_CHANGELOG", indexes = @Index( name = "NS_CHANGE_TS_INX", columnNames = {"UTC_TIMESTAMP"} ) )
+@org.hibernate.annotations.Table( appliesTo = "DNA_CHANGELOG", indexes = @Index( name = "NS_CHANGE_TS_INX", columnNames = {"TIMESTAMP_IN_UTC"} ) )
 @NamedQueries( {
     @NamedQuery( name = "ChangeLogEntity.findBetween", query = "select entry from ChangeLogEntity as entry where entry.timestampInUtc >= :start and entry.timestampInUtc <= :end" ),
     @NamedQuery( name = "ChangeLogEntity.deleteBefore", query = "delete ChangeLogEntity entry where entry.timestampInUtc < :timestamp" )} )
@@ -56,7 +59,7 @@ public class ChangeLogEntity {
     @Column( name = "USERNAME", updatable = false, nullable = false, length = 64, unique = false )
     private String username;
 
-    @Column( name = "UTC_TIMESTAMP", updatable = false, nullable = false, unique = false )
+    @Column( name = "TIMESTAMP_IN_UTC", updatable = false, nullable = false, unique = false )
     private long timestampInUtc;
 
     @Column( name = "CHANGE_COUNT", updatable = false, nullable = false, unique = false )
