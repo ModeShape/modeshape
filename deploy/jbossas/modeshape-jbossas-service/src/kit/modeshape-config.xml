@@ -81,7 +81,7 @@
     <mode:sources jcr:primaryType="nt:unstructured">
         <!-- 
         If you wanted to use the driver directly instead of using the JNDI reference, you would replace
-			mode:dataSourceJndiName="java:/DefaultDS" 
+			mode:dataSourceJndiName="java:DefaultDS" 
 			
 		with these:
         	mode:driverClassName="org.hsqldb.jdbcDriver"
