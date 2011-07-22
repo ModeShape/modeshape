@@ -34,11 +34,11 @@ import java.util.logging.Logger;
 import javax.jcr.Repository;
 import javax.naming.Context;
 import javax.naming.NamingException;
+import org.modeshape.common.collection.Collections;
 import org.modeshape.jdbc.delegate.ConnectionInfo;
 import org.modeshape.jdbc.delegate.LocalRepositoryDelegate;
 import org.modeshape.jdbc.delegate.RepositoryDelegate;
 import org.modeshape.jdbc.delegate.RepositoryDelegateFactory;
-import org.modeshape.jdbc.util.Collections;
 
 /**
  * A JDBC driver implementation that is able to access a JCR repository to query its contents using JCR-SQL2. <h3>Connection URLs</h3>
