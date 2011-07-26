@@ -69,20 +69,20 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
+import org.modeshape.graph.Graph.Batch;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.Results;
-import org.modeshape.graph.Graph.Batch;
 import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.DateTimeFactory;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NameFactory;
 import org.modeshape.graph.property.Path;
+import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.PropertyFactory;
 import org.modeshape.graph.property.Reference;
 import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.ValueFactory;
-import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.request.FunctionRequest;
 import org.modeshape.graph.request.Request;
 import org.modeshape.graph.session.GraphSession.Node;
@@ -425,7 +425,22 @@ final class JcrVersionManager implements VersionManager {
                 // We can achieve this by making the onParentVersionAction always COPY for the
                 // recursive call ...
                 forceCopy = true;
-                batch.create(childPath).and(versionedPropertiesFor(node, forceCopy)).and();
+
+                // But the copy needs to be a 'nt:frozenNode', so that it doesn't compete with the actual node
+                // (outside of version history) ...
+                Name primaryTypeName = node.getPrimaryTypeName();
+                List<Name> mixinTypeNames = node.getMixinTypeNames();
+                UUID uuid = UUID.randomUUID();
+                if (node.isReferenceable()) uuid = node.uuid();
+
+                batch.create(childPath)
+                     .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FROZEN_NODE)
+                     .and(JcrLexicon.FROZEN_PRIMARY_TYPE, primaryTypeName)
+                     .and(JcrLexicon.FROZEN_MIXIN_TYPES, mixinTypeNames)
+                     .and(JcrLexicon.FROZEN_UUID, uuid)
+                     .and(versionedPropertiesFor(node, forceCopy))
+                     .and();
+                // batch.create(childPath).and(versionedPropertiesFor(node, forceCopy)).and();
                 break;
             case OnParentVersionAction.INITIALIZE:
             case OnParentVersionAction.COMPUTE:
@@ -460,6 +475,12 @@ final class JcrVersionManager implements VersionManager {
 
         for (PropertyIterator iter = node.getProperties(); iter.hasNext();) {
             AbstractJcrProperty property = (AbstractJcrProperty)iter.nextProperty();
+
+            // We want to skip the actual primary type, mixin types, and uuid since those are handled above ...
+            Name name = property.name();
+            if (JcrLexicon.PRIMARY_TYPE.equals(name)) continue;
+            if (JcrLexicon.MIXIN_TYPES.equals(name)) continue;
+            if (JcrLexicon.UUID.equals(name)) continue;
 
             org.modeshape.graph.property.Property prop = property.property();
             if (forceCopy) {
@@ -1068,28 +1089,27 @@ final class JcrVersionManager implements VersionManager {
                     // Pull the resolved node
                     resolvedChild = inSourceOnly.get(sourceChild);
                     sourceChildNode = cache().findJcrNode(resolvedChild.getNodeId(), resolvedChild.getPath());
+                    shouldRestoreMixinsAndUuid = true;
 
                     if (JcrNtLexicon.FROZEN_NODE.equals(resolvedChild.getProperty(JcrLexicon.PRIMARY_TYPE))) {
-                        Name primaryTypeName = name(resolvedChild.getProperty(JcrLexicon.FROZEN_PRIMARY_TYPE).getProperty().getFirstValue());
+                        Name primaryTypeName = name(resolvedChild.getProperty(JcrLexicon.FROZEN_PRIMARY_TYPE)
+                                                                 .getProperty()
+                                                                 .getFirstValue());
                         PropertyInfo<JcrPropertyPayload> uuidProp = resolvedChild.getProperty(JcrLexicon.FROZEN_UUID);
                         UUID desiredUuid = uuid(uuidProp.getProperty().getFirstValue());
 
                         targetChildNode = targetEditor.createChild(sourceChild.getName(), desiredUuid, primaryTypeName);
-
-                        shouldRestoreMixinsAndUuid = true;
-
                     } else {
-                        Name primaryTypeName = name(resolvedChild.getProperty(JcrLexicon.PRIMARY_TYPE).getProperty().getFirstValue());
+                        Name primaryTypeName = name(resolvedChild.getProperty(JcrLexicon.PRIMARY_TYPE)
+                                                                 .getProperty()
+                                                                 .getFirstValue());
                         PropertyInfo<JcrPropertyPayload> uuidProp = resolvedChild.getProperty(JcrLexicon.UUID);
                         UUID desiredUuid = uuidProp == null ? null : uuid(uuidProp.getProperty().getFirstValue());
 
                         targetChildNode = targetEditor.createChild(sourceChild.getName(), desiredUuid, primaryTypeName);
-
                     }
-
                     assert shouldRestore == true;
                 }
-
                 if (shouldRestore) {
                     // Have to do this first, as the properties below only exist for mix:versionable nodes
                     if (shouldRestoreMixinsAndUuid) {
@@ -1151,8 +1171,15 @@ final class JcrVersionManager implements VersionManager {
          */
         private void restoreNodeMixins( AbstractJcrNode sourceNode,
                                         AbstractJcrNode targetNode ) throws RepositoryException {
-            AbstractJcrProperty mixinTypesProp = sourceNode.getProperty(JcrLexicon.FROZEN_MIXIN_TYPES);
             NodeEditor childEditor = targetNode.editor();
+            AbstractJcrProperty mixinTypesProp = sourceNode.getProperty(JcrLexicon.FROZEN_MIXIN_TYPES);
+            AbstractJcrProperty uuidProp = null;
+            if (mixinTypesProp == null) {
+                mixinTypesProp = sourceNode.getProperty(JcrLexicon.MIXIN_TYPES);
+                uuidProp = sourceNode.getProperty(JcrLexicon.UUID);
+                if (uuidProp != null) restoreProperty(uuidProp, childEditor);
+            }
+
             Object[] mixinTypeNames = mixinTypesProp == null ? EMPTY_OBJECT_ARRAY : mixinTypesProp.property().getValuesAsArray();
 
             Collection<Name> currentMixinTypes = new HashSet<Name>(targetNode.getMixinTypeNames());
