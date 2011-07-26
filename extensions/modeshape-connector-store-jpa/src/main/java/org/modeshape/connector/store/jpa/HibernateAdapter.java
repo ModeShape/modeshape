@@ -10,7 +10,6 @@ import org.hibernate.ejb.Ejb3Configuration;
 import org.hibernate.engine.SessionFactoryImplementor;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.Logger;
-import org.modeshape.connector.store.jpa.model.common.ChangeLogEntity;
 import org.modeshape.connector.store.jpa.model.common.NamespaceEntity;
 import org.modeshape.connector.store.jpa.model.common.WorkspaceEntity;
 import org.modeshape.connector.store.jpa.model.simple.LargeValueEntity;
