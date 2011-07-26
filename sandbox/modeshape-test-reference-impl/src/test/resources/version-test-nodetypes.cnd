@@ -1,0 +1,17 @@
+<nt  = "http://www.jcp.org/jcr/nt/1.0">
+<mix = "http://www.jcp.org/jcr/mix/1.0">
+<modetest = "http://www.modeshape.org/test/1.0">
+
+[modetest:versionableUnstructured] > nt:unstructured, mix:versionable
+
+[modetest:versionTest]
+- abortProp (STRING) abort
+- computeProp (STRING) compute
+- copyProp (STRING) copy
+- ignoreProp (STRING) ignore
+- initializeProp (STRING) = 'Default' initialize
+- versionProp (STRING) version
++ abortNode (nt:base) = nt:unstructured abort
++ copyNode (nt:base) = nt:unstructured copy
++ ignoreNode (nt:base) = nt:unstructured ignore
++ versionNode (nt:base) = nt:unstructured version

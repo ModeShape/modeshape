@@ -23,7 +23,14 @@
  */
 package org.modeshape.test.ri;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertThat;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -39,9 +46,12 @@ import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeType;
+import javax.jcr.version.Version;
 import javax.jcr.version.VersionHistory;
 import javax.jcr.version.VersionManager;
 import org.apache.jackrabbit.api.JackrabbitRepository;
+import org.apache.jackrabbit.commons.cnd.CndImporter;
+import org.apache.jackrabbit.commons.cnd.ParseException;
 import org.apache.jackrabbit.core.TransientRepository;
 import org.junit.After;
 import org.junit.Before;
@@ -185,12 +195,12 @@ public abstract class AbstractTest {
         return session().getRootNode();
     }
 
-    protected void checkin( Node node ) throws RepositoryException {
-        checkin(node.getPath());
+    protected Version checkin( Node node ) throws RepositoryException {
+        return checkin(node.getPath());
     }
 
-    protected void checkin( String path ) throws RepositoryException {
-        versionManager().checkin(path);
+    protected Version checkin( String path ) throws RepositoryException {
+        return versionManager().checkin(path);
     }
 
     protected void checkout( Node node ) throws RepositoryException {
@@ -199,6 +209,12 @@ public abstract class AbstractTest {
 
     protected void checkout( String path ) throws RepositoryException {
         versionManager().checkout(path);
+    }
+
+    protected void restore( Node node,
+                            Version version,
+                            boolean removeExisting ) throws RepositoryException {
+        versionManager().restore(version, removeExisting);
     }
 
     protected VersionManager versionManager() throws RepositoryException {
@@ -342,4 +358,21 @@ public abstract class AbstractTest {
         }
     }
 
+    protected void loadNodeTypes( Reader reader ) throws IOException, RepositoryException, ParseException {
+        assertThat(reader, is(notNullValue()));
+        CndImporter.registerNodeTypes(reader, session());
+    }
+
+    protected void loadNodeTypes( String cndResourcePath ) throws IOException, RepositoryException, ParseException {
+        InputStream stream = getClass().getClassLoader().getResourceAsStream(cndResourcePath);
+        assertThat("The resource \"" + cndResourcePath + "\" could not be found on the classpath", stream, is(notNullValue()));
+        Reader reader = new InputStreamReader(stream);
+        loadNodeTypes(reader);
+    }
+
+    protected NodeType verifyNodeTypeExists( String nodeTypeName ) throws RepositoryException {
+        NodeType nodeType = session().getWorkspace().getNodeTypeManager().getNodeType(nodeTypeName);
+        assertThat(nodeType, is(notNullValue()));
+        return nodeType;
+    }
 }
