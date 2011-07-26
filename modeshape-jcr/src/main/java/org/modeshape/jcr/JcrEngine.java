@@ -430,7 +430,8 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
                     log.warn(JcrI18n.invalidOptionProvided, segment.getName().getLocalName());
                     continue;
                 }
-                options.put(option, valueProperty.getFirstValue().toString());
+                String value = valueProperty.getFirstValue() != null ? valueProperty.getFirstValue().toString() : "";
+                options.put(option, value);
             }
         }
 
