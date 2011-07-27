@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -1599,8 +1600,8 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
     }
 
     /**
-     * Registers a new node type or updates an existing node type using the specified definition and returns the resulting {@code
-     * NodeType} object.
+     * Registers a new node type or updates an existing node type using the specified definition and returns the resulting
+     * {@code NodeType} object.
      * <p>
      * For details, see {@link #registerNodeTypes(Iterable)}.
      * </p>
@@ -1619,8 +1620,8 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
     }
 
     /**
-     * Registers a new node type or updates an existing node type using the specified definition and returns the resulting {@code
-     * NodeType} object.
+     * Registers a new node type or updates an existing node type using the specified definition and returns the resulting
+     * {@code NodeType} object.
      * <p>
      * For details, see {@link #registerNodeTypes(Iterable)}.
      * </p>
@@ -2610,30 +2611,57 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
             // Remove all the cached node types ...
             this.nodeTypes.clear();
 
-            // And register all the node types read in ...
-            Map<Name, JcrNodeType> newNodeTypeMap = new HashMap<Name, JcrNodeType>();
+            // Create a list for the node types that need to be read in. We'll actually iterate over this list
+            // multiple times in case the node types are not in the right order, and this is easier than ordering
+            // them ahead of time ...
+            List<NodeTypeDefinition> newNodeTypeDefinitions = new LinkedList<NodeTypeDefinition>();
+            for (NodeTypeDefinition nodeTypeDefn : reader.getNodeTypeDefinitions()) {
+                newNodeTypeDefinitions.add(nodeTypeDefn);
+            }
+
+            // And register all the node types read in. Note that we'll iteratively add them in case they're not in
+            // the right order, and because we don't even have the built-in types read in, we can't use the
+            // same approach used in #registerNodeTypes(...)
+            Collection<JcrNodeType> pending = Collections.emptyList();
             try {
-                for (NodeTypeDefinition nodeTypeDefn : reader.getNodeTypeDefinitions()) {
-                    List<JcrNodeType> supertypes = supertypesFor(nodeTypeDefn, newNodeTypeMap.values());
-                    JcrNodeType nodeType = nodeTypeFrom(nodeTypeDefn, supertypes);
+                int numberSuccessfullyRead;
+                do {
+                    numberSuccessfullyRead = 0;
+                    Iterator<NodeTypeDefinition> iter = newNodeTypeDefinitions.iterator();
+                    while (iter.hasNext()) {
+                        NodeTypeDefinition nodeTypeDefn = iter.next();
+                        List<JcrNodeType> supertypes = null;
+                        JcrNodeType nodeType = null;
+                        try {
+                            supertypes = supertypesFor(nodeTypeDefn, pending);
+                            nodeType = nodeTypeFrom(nodeTypeDefn, supertypes);
+                            assert nodeType != null;
+                        } catch (RepositoryException e) {
+                            // Must not have had all of the supertypes or property/child-node definitions,
+                            continue;
+                        }
 
-                    // Register the node type ...
-                    Name name = nodeType.getInternalName();
-                    nodeTypes.put(name, nodeType);
+                        // We've found all of the types used by this new node type (e.g., supertypes, child node defns),
+                        // so remove it from the list ...
+                        iter.remove();
+                        ++numberSuccessfullyRead;
 
-                    // And it's property and child node definitions ...
-                    for (JcrNodeDefinition childDefinition : nodeType.childNodeDefinitions()) {
-                        childNodeDefinitions.put(childDefinition.getId(), childDefinition);
+                        // Register the node type ...
+                        Name name = nodeType.getInternalName();
+                        nodeTypes.put(name, nodeType);
+
+                        // And it's property and child node definitions ...
+                        for (JcrNodeDefinition childDefinition : nodeType.childNodeDefinitions()) {
+                            childNodeDefinitions.put(childDefinition.getId(), childDefinition);
+                        }
+                        for (JcrPropertyDefinition propertyDefinition : nodeType.propertyDefinitions()) {
+                            propertyDefinitions.put(propertyDefinition.getId(), propertyDefinition);
+                        }
                     }
-                    for (JcrPropertyDefinition propertyDefinition : nodeType.propertyDefinitions()) {
-                        propertyDefinitions.put(propertyDefinition.getId(), propertyDefinition);
-                    }
-                }
+                } while (numberSuccessfullyRead > 0);
             } catch (Throwable re) {
                 LOGGER.error(JcrI18n.errorRefreshingNodeTypes, re);
             }
-
-            this.nodeTypes.putAll(newNodeTypeMap);
         } finally {
             this.schemata = null;
             this.nodeTypeManagerLock.writeLock().unlock();
