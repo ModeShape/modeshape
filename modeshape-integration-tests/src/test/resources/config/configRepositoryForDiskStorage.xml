@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+  ~ ModeShape (http://www.modeshape.org)
+  ~
+  ~ See the COPYRIGHT.txt file distributed with this work for information
+  ~ regarding copyright ownership.  Some portions may be licensed
+  ~ to Red Hat, Inc. under one or more contributor license agreements.
+  ~ See the AUTHORS.txt file in the distribution for a full listing of 
+  ~ individual contributors.
+  ~
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+  ~ is licensed to you under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ ModeShape is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+  ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
+  ~ for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public License
+  ~ along with this distribution; if not, write to:
+  ~ Free Software Foundation, Inc.
+  ~ 51 Franklin Street, Fifth Floor
+  ~ Boston, MA  02110-1301  USA
+  -->
+<configuration xmlns:mode="http://www.modeshape.org/1.0"
+               xmlns:jcr="http://www.jcp.org/jcr/1.0"
+               xmlns:nt="http://www.jcp.org/jcr/nt/1.0">
+    <!-- Define the sources from which content is made available.  -->
+    <mode:sources jcr:primaryType="nt:unstructured">
+        <mode:source jcr:name="Store" 
+            mode:classname="org.modeshape.connector.disk.DiskSource"
+            mode:description="The repository for our content"
+            mode:repositoryRootPath="target/database/ConfigurationTest/files"
+            mode:defaultWorkspaceName="default"
+            mode:creatingWorkspacesAllowed="false"
+            mode:predefinedWorkspaceNames="default, otherWorkspace, system"
+            mode:updatesAllowed="true" >
+            <mode:cachePolicy jcr:name="nodeCachePolicy" 
+                mode:classname="org.modeshape.graph.connector.base.cache.InMemoryNodeCache$MapCachePolicy"
+                mode:timeToLive="300" />
+        </mode:source>
+    </mode:sources>
+    <!-- JCR Repositories.  This is required, with a separate repository for each JCR repository instance. -->
+    <mode:repositories>
+        <mode:repository jcr:name="Repo" mode:source="Store">
+            <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names-->
+            <mode:options jcr:primaryType="options" >
+                <!-- Explicitly specify the "system" workspace in the "SystemStore" source. -->
+                <mode:option jcr:name="systemSourceName" mode:value="system@Store"/>
+                <!-- Explicitly specify the directory where the index files should be stored. -->
+                <mode:option jcr:name="queryIndexDirectory" mode:value="target/database/ConfigurationTest/indexes"/>
+                <!--  Should  indexes should be rebuilt synchronously when the repository restarts, default true  -->                           
+                <mode:option jcr:name="queryIndexesRebuiltSynchronously" mode:value="true"/>
+                <!--  specifies the strategy (always or ifMissing) used to determine which query indexes need to be rebuilt when the repository restarts -->
+                <mode:option jcr:name="rebuildQueryIndexOnStartup" mode:value="ifMissing"/>
+            </mode:options>
+        </mode:repository>
+    </mode:repositories>
+</configuration>

@@ -240,7 +240,7 @@ public class ConfigurationTest {
 
     @FixFor( "MODE-1216" )
     @Test
-    public void shouldReadNodeTypesUponRestart() throws Exception {
+    public void shouldReadNodeTypesUponRestartUsingJpaConnector() throws Exception {
         // Delete the data files ...
         FileUtil.delete("target/database/ConfigurationTest");
 
@@ -249,12 +249,39 @@ public class ConfigurationTest {
         assertThat(file.canRead(), is(true));
         assertThat(file.isFile(), is(true));
 
-        JcrConfiguration configuration = new JcrConfiguration();
-        JcrEngine engine = configuration.build();
-        configuration.loadFrom(file);
+        JcrConfiguration config1 = new JcrConfiguration();
+        config1.loadFrom(file);
 
+        JcrConfiguration config2 = new JcrConfiguration();
+        config2.loadFrom(file);
+
+        startEngineThenShutdownThenRestartAndTestForNodeTypes(config1, config2);
+    }
+
+    @FixFor( "MODE-1190" )
+    @Test
+    public void shouldReadNodeTypesUponRestartUsingDiskConnector() throws Exception {
+        // Delete the data files ...
+        FileUtil.delete("target/database/ConfigurationTest");
+
+        File file = new File("src/test/resources/config/configRepositoryForDiskStorage.xml");
+        assertThat(file.exists(), is(true));
+        assertThat(file.canRead(), is(true));
+        assertThat(file.isFile(), is(true));
+
+        JcrConfiguration config1 = new JcrConfiguration();
+        config1.loadFrom(file);
+
+        JcrConfiguration config2 = new JcrConfiguration();
+        config2.loadFrom(file);
+
+        startEngineThenShutdownThenRestartAndTestForNodeTypes(config1, config2);
+    }
+
+    public void startEngineThenShutdownThenRestartAndTestForNodeTypes( JcrConfiguration config1,
+                                                                       JcrConfiguration config2 ) throws Exception {
         // Create and start the engine ...
-        engine = configuration.build();
+        JcrEngine engine = config1.build();
         engine.start();
         Repository repository = engine.getRepository("Repo");
         assertThat(repository, is(notNullValue()));
@@ -286,9 +313,7 @@ public class ConfigurationTest {
         java.util.Collections.sort(nodeTypeNames);
 
         // Restart ...
-        configuration = new JcrConfiguration();
-        configuration.loadFrom(file);
-        engine = configuration.build();
+        engine = config2.build();
         engine.start();
 
         Repository repository2 = engine.getRepository("Repo");
