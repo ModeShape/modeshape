@@ -25,8 +25,10 @@ package org.modeshape.common.collection;
 
 import java.util.Iterator;
 import org.modeshape.common.annotation.Immutable;
+import org.modeshape.common.collection.Problem.Status;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.Logger;
 
 /**
  * An immutable wrapper for a mutable {@link Problems}.
@@ -459,5 +461,28 @@ public class ImmutableProblems implements Problems {
     @Override
     public String toString() {
         return delegate.toString();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.common.collection.Problems#writeTo(org.modeshape.common.util.Logger)
+     */
+    @Override
+    public void writeTo( Logger logger ) {
+        delegate.writeTo(logger);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.common.collection.Problems#writeTo(org.modeshape.common.util.Logger,
+     *      org.modeshape.common.collection.Problem.Status, org.modeshape.common.collection.Problem.Status[])
+     */
+    @Override
+    public void writeTo( Logger logger,
+                         Status firstStatus,
+                         Status... additionalStatuses ) {
+        delegate.writeTo(logger, firstStatus, additionalStatuses);
     }
 }
