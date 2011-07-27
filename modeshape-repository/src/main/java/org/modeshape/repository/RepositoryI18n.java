@@ -72,6 +72,7 @@ public final class RepositoryI18n {
     public static I18n unableToChangeExecutionContextWhileRunning;
     public static I18n unableToStartSequencingServiceWithoutExecutionContext;
     public static I18n errorWhileSequencingNode;
+    public static I18n problemsWhileSequencingNode;
     public static I18n errorInRepositoryWhileSequencingNode;
     public static I18n errorFindingSequencersToRunAgainstNode;
     public static I18n errorInRepositoryWhileFindingSequencersToRunAgainstNode;

@@ -25,7 +25,9 @@ package org.modeshape.common.collection;
 
 import java.io.Serializable;
 import java.util.Iterator;
+import org.modeshape.common.collection.Problem.Status;
 import org.modeshape.common.i18n.I18n;
+import org.modeshape.common.util.Logger;
 
 /**
  * An interface for a collection of {@link Problem} objects, with multiple overloaded methods for adding errors, warnings, and
@@ -422,4 +424,22 @@ public interface Problems extends Iterable<Problem>, Serializable {
      */
     @Override
     Iterator<Problem> iterator();
+
+    /**
+     * Write the problems to the supplied logger.
+     * 
+     * @param logger the logger
+     */
+    void writeTo( Logger logger );
+
+    /**
+     * Write the problems to the supplied logger.
+     * 
+     * @param logger the logger
+     * @param firstStatus the first status to be logged
+     * @param additionalStatuses the additional statuses to be logged
+     */
+    void writeTo( Logger logger,
+                  Status firstStatus,
+                  Status... additionalStatuses );
 }

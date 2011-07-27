@@ -500,6 +500,11 @@ public class SequencingService implements AdministeredService {
                                 } catch (SequencerException e) {
                                     logger.error(e, RepositoryI18n.errorWhileSequencingNode, sequencerName, change);
                                 }
+                                if (problems.hasProblems()) {
+                                    // This is running in a background thread, so at this time we can only log the problems ...
+                                    logger.error(RepositoryI18n.problemsWhileSequencingNode, sequencerName, change);
+                                    problems.writeTo(logger);
+                                }
                             }
                         }
                         this.statistics.recordNodeSequenced();

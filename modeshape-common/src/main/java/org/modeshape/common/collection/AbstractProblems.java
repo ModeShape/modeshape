@@ -24,9 +24,13 @@
 package org.modeshape.common.collection;
 
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
+import org.modeshape.common.collection.Problem.Status;
 import org.modeshape.common.i18n.I18n;
+import org.modeshape.common.util.Logger;
+import org.modeshape.common.util.Logger.Level;
 
 /**
  * A list of problems for some execution context. The problems will be {@link #iterator() returned} in the order in which they
@@ -281,6 +285,55 @@ public abstract class AbstractProblems implements Problems {
     protected abstract void addProblem( Problem problem );
 
     protected abstract List<Problem> getProblems();
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.common.collection.Problems#writeTo(org.modeshape.common.util.Logger)
+     */
+    @Override
+    public void writeTo( Logger logger ) {
+        if (hasProblems()) {
+            for (Problem problem : this) {
+                Level level = logLevelFor(problem.getStatus());
+                logger.log(level, problem.getMessage(), problem.getParameters());
+            }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.common.collection.Problems#writeTo(org.modeshape.common.util.Logger,
+     *      org.modeshape.common.collection.Problem.Status,org.modeshape.common.collection.Problem.Status[])
+     */
+    @Override
+    public void writeTo( Logger logger,
+                         Status firstStatus,
+                         Status... additionalStatuses ) {
+        EnumSet<Status> stats = EnumSet.of(firstStatus, additionalStatuses);
+        if (hasProblems()) {
+            for (Problem problem : this) {
+                Status status = problem.getStatus();
+                if (!stats.contains(status)) continue;
+                Level level = logLevelFor(status);
+                logger.log(level, problem.getMessage(), problem.getParameters());
+            }
+        }
+    }
+
+    protected final Level logLevelFor( Status status ) {
+        switch (status) {
+            case ERROR:
+                return Level.ERROR;
+            case WARNING:
+                return Level.WARNING;
+            case INFO:
+                return Level.INFO;
+        }
+        assert false : "Should not happen";
+        return Level.INFO;
+    }
 
     /**
      * {@inheritDoc}
