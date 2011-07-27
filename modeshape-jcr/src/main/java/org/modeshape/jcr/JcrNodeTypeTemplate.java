@@ -310,4 +310,9 @@ public class JcrNodeTypeTemplate implements NodeTypeDefinition, NodeTypeTemplate
     public void setQueryable( boolean queryable ) {
         this.queryable = queryable;
     }
+
+    @Override
+    public String toString() {
+        return getName();
+    }
 }

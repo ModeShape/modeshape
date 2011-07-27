@@ -32,8 +32,8 @@ import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
-import org.modeshape.graph.property.ValueFormatException;
 import org.modeshape.graph.property.Path.Segment;
+import org.modeshape.graph.property.ValueFormatException;
 
 /**
  * ModeShape convenience implementation to support the JCR 2 NodeDefinitionTemplate and PropertyDefinitionTemplate classes.
@@ -181,5 +181,10 @@ abstract class JcrItemDefinitionTemplate implements ItemDefinition {
                || onParentVersion == OnParentVersionAction.COPY || onParentVersion == OnParentVersionAction.IGNORE
                || onParentVersion == OnParentVersionAction.INITIALIZE || onParentVersion == OnParentVersionAction.VERSION;
         this.onParentVersion = onParentVersion;
+    }
+
+    @Override
+    public String toString() {
+        return getName();
     }
 }
