@@ -59,160 +59,197 @@
 	<para>
 		The &JdbcMetadataSource; class provides a number of JavaBean properties that control its behavior:
 	</para>
-	<table frame='all'>
-		<title>&JdbcMetadataSource; properties</title>
-		<tgroup cols='2' align='left' colsep='1' rowsep='1'>
-      <colspec colname='c1' colwidth="1*"/>
-      <colspec colname='c2' colwidth="1*"/>
-			<thead>
-				<row>
-		  		<entry>Property</entry>
-		  		<entry>Description</entry>
-				</row>
-			</thead>
-			<tbody>
-				<row>
-					<entry>cachePolicy</entry>
-					<entry>Optional property that, if used, defines the cache policy to use for this repository source.  When not used, this source will not define a specific
-						duration for caching information.
-					</entry>
-				</row>
-				<row>
-					<entry>dataSourceJndiName</entry>
-					<entry>
-						The JNDI name of the JDBC DataSource instance that should be used.  If not specified, the other driver properties must be set.
-					</entry>
-				</row>
-				<row>
-					<entry>defaultCatalogName</entry>
-					<entry>
-						The name to use for the catalog name if the database does not support catalogs or the database has a catalog with the empty string
-						as a name.  The default value is "default".
-					</entry>
-				</row>
-				<row>
-					<entry>defaultSchemaName</entry>
-					<entry>
-						The name to use for the schema name if the database does not support schemas or the database has a schema with the empty string
-						as a name.  The default value is "default".
-					</entry>
-				</row>
-				<row>
-					<entry>driverClassloaderName</entry>
-					<entry>
-						The name of the <!-- link linkend="class_loader_factory" -->class loader or classpath<!--  /link --> that should be used to load the JDBC driver class.
-						This is not required if the DataSource is found in JNDI.
-					</entry>
-				</row>
-				<row>
-					<entry>driverClassName</entry>
-					<entry>
-						The name of the JDBC driver class.
-						This is not required if the DataSource is found in JNDI, but is required otherwise.
-					</entry>
-				</row>
-				<row>
-					<entry>idleTimeInSecondsBeforeTestingConnections</entry>
-					<entry>
-						The number of seconds after a connection remains in the pool that the connection should be tested to ensure it is still valid.
-						The default is 180 seconds (or 3 minutes).
-					</entry>
-				</row>
-				<row>
-					<entry>maximumConnectionsInPool</entry>
-					<entry>
-						The maximum number of connections that may be in the connection pool.
-						The default is "5".
-					</entry>
-				</row>
-				<row>
-					<entry>maximumConnectionIdleTimeInSeconds</entry>
-					<entry>
-						The maximum number of seconds that a connection should remain in the pool before being closed.
-						The default is "600" seconds (or 10 minutes).
-					</entry>
-				</row>
-				<row>
-					<entry>maximumSizeOfStatementCache</entry>
-					<entry>
-						The maximum number of statements that should be cached.  
-						Statement caching can be disabled by setting to "0".  
-						The default is "100".
-					</entry>
-				</row>
-				<row>
-					<entry>metadataCollectorClassName</entry>
-					<entry>
-						The name of a custom class to use for metadata collection.  The class must implement the &MetadataCollector; interface.  If a null
-						value is specified for this property, a default &MetadataCollector; implementation will be used that relies on the &DatabaseMetaData;
-						provided by the JDBC driver for the connection.  This property is provided as a means for connecting to databases with a JDBC driver
-						that provides a non-standard &DatabaseMetaData; implementation or no &DatabaseMetaData; implementation at all. 
-					</entry>
-				</row>
-				<row>
-					<entry>minimumConnectionsInPool</entry>
-					<entry>
-						The minimum number of connections that will be kept in the connection pool.
-						The default is "0".
-					</entry>
-				</row>
-				<row>
-					<entry>name</entry>
-					<entry>The name of the repository source, which is used by the &RepositoryService; when obtaining a &RepositoryConnection; by name.</entry>
-				</row>
-				<row>
-					<entry>nameOfDefaultWorkspace</entry>
-					<entry>Optional property that is initialized to an empty string and which defines the name for the workspace that will be used by default
-						if none is specified.</entry>
-				</row>
-				<row>
-					<entry>nodeCachePolicy</entry>
-					<entry>Optional property that, if used, defines the cache policy to use for caching nodes within the connector.  
-					</entry>
-				</row>
-				<row>
-					<entry>numberOfConnectionsToAcquireAsNeeded</entry>
-					<entry>
-						The number of connections that should be added to the pool when there are not enough to be used.
-						The default is "1".
-					</entry>
-				</row>
-				<row>
-					<entry>retryLimit</entry>
-					<entry>Optional property that, if used, defines the number of times that any single operation on a &RepositoryConnection; to this source should be retried
-						following a communication failure. 
-						The default value is '0'.
-					</entry>
-				</row>
-				<row>
-					<entry>password</entry>
-					<entry>
-						The password that should be used when creating JDBC connections using the JDBC driver class.  
-						This is not required if the DataSource is found in JNDI.
-					</entry>
-				</row>
-				<row>
-					<entry>rootNodeUuid</entry>
-					<entry>Optional property that, if used, defines the UUID of the root node in the repository.  If not used,
-						then a new UUID is generated.</entry>
-				</row>
-				<row>
-					<entry>url</entry>
-					<entry>
-						The URL that should be used when creating JDBC connections using the JDBC driver class.
-						This is not required if the DataSource is found in JNDI.
-					</entry>
-				</row>
-				<row>
-					<entry>username</entry>
-					<entry>
-						The username that should be used when creating JDBC connections using the JDBC driver class.
-						This is not required if the DataSource is found in JNDI.
-					</entry>
-				</row>
-			</tbody>
-		</tgroup>
-	</table>
+  <variablelist>
+    <varlistentry>
+      <term>cachePolicy</term>
+      <listitem>
+        <para>
+          Optional property that, if used, defines the cache policy to use for this repository source.  When not used, this source will not define a specific
+					duration for caching information.
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>dataSourceJndiName</term>
+      <listitem>
+        <para>
+          The JNDI name of the JDBC DataSource instance that should be used.  If not specified, the other driver properties must be set.
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>defaultCatalogName</term>
+      <listitem>
+        <para>
+          Optional property that defines the name to use for the catalog name if the database does not support catalogs or the database has a catalog with the empty string
+					as a name.  The default value is "default".
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>defaultSchemaName</term>
+      <listitem>
+        <para>
+          Optional property that defines the name to use for the schema name if the database does not support schemas or the database has a schema with the empty string
+					as a name.  The default value is "default".
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>driverClassloaderName</term>
+      <listitem>
+        <para>
+          Optional property that defines the name of the ModeShape class loader or classpath that should be used to load the JDBC driver class.
+					This is not required if the DataSource is found in JNDI, or if the driver is on the application's classpath.
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>driverClassName</term>
+      <listitem>
+        <para>
+					The name of the JDBC driver class. This is not required if the DataSource is found in JNDI, but is required otherwise.
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>idleTimeInSecondsBeforeTestingConnections</term>
+      <listitem>
+        <para>
+          Optional property that defines the number of seconds after a connection remains in the pool that the connection should be tested to ensure it is still valid.
+					The default is 180 seconds (or 3 minutes).
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>maximumConnectionsInPool</term>
+      <listitem>
+        <para>
+          Optional property that defines the maximum number of connections that may be in the connection pool. The default is "5".
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>maximumConnectionIdleTimeInSeconds</term>
+      <listitem>
+        <para>
+          Optional property that defines the maximum number of seconds that a connection should remain in the pool before being closed.
+					The default is "600" seconds (or 10 minutes).
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>maximumSizeOfStatementCache</term>
+      <listitem>
+        <para>
+          Optional property that defines the maximum number of statements that should be cached.  The default value is "100", but 
+					statement caching can be disabled by setting to "0".
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>metadataCollectorClassName</term>
+      <listitem>
+        <para>
+					Advanced optional property that defines the name of a custom class to use for metadata collection, which is typically needed
+					for JDBC drivers that don't properly support the standard &DatabaseMetaData; methods. 
+					The specified class must implement the &MetadataCollector; interface and must have a public no-argument constructor.
+					If an empty string (or null) value is specified for this property, a default &MetadataCollector; implementation will be used 
+					that relies on the driver's &DatabaseMetaData;.
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>minimumConnectionsInPool</term>
+      <listitem>
+        <para>
+					Optional property that defines the minimum number of connections that will be kept in the connection pool.
+					The default is "0".
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>name</term>
+      <listitem>
+        <para>
+          Required property that specifies the name of the repository source, which is used by the &RepositoryService; 
+          when obtaining a &RepositoryConnection; by name.
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>nameOfDefaultWorkspace</term>
+      <listitem>
+        <para>
+          Optional property that is initialized to an empty string and which defines the name for the workspace that will be used by default
+					if none is specified.
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>nodeCachePolicy</term>
+      <listitem>
+        <para>
+          Optional property that, if used, defines the cache policy to use for caching nodes within the connector. 
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>numberOfConnectionsToAcquireAsNeeded</term>
+      <listitem>
+        <para>
+          The number of connections that should be added to the pool when there are not enough to be used.
+					The default is "1".
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>password</term>
+      <listitem>
+        <para>
+          The password that should be used when creating JDBC connections using the JDBC driver class.  
+					This is not required if the DataSource is found in JNDI.
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>retryLimit</term>
+      <listitem>
+        <para>
+          Optional property that, if used, defines the number of times that any single operation on a &RepositoryConnection; to this source should be retried
+					following a communication failure. The default value is '0'.
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>rootNodeUuid</term>
+      <listitem>
+        <para>
+          Optional property that, if used, specifies the UUID that should be used for the root node of each workspace.  If no value is
+					specified, a new UUID is generated.
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>url</term>
+      <listitem>
+        <para>
+          The URL that should be used when creating JDBC connections using the JDBC driver class.
+					This is not required if the DataSource is found in JNDI.
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>username</term>
+      <listitem>
+        <para>
+					The username that should be used when creating JDBC connections using the JDBC driver class.
+					This is not required if the DataSource is found in JNDI.
+				</para>
+      </listitem>
+    </varlistentry>
+  </variablelist>
+
  	<para>
 		One way to configure the JDBC metadata connector is to create &JcrConfiguration; instance with a repository source that uses the &JdbcMetadataSource; class.
 		For example:

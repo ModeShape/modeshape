@@ -445,32 +445,28 @@
 			<title>Repository Source properties</title>
 			<para>
 				While the majority of the configuration is defined using the configuration source (as discussed above), the &FederatedRepositorySource; 
-				class have have a few JavaBean properties:
+				class does have a few JavaBean properties:
 			</para>
-			<table frame='all'>
-				<title>&FederatedRepositorySource; properties</title>
-				<tgroup cols='2' align='left' colsep='1' rowsep='1'>
-		      <colspec colname='c1' colwidth="1*"/>
-		      <colspec colname='c2' colwidth="1*"/>
-					<thead>
-						<row>
-				  		<entry>Property</entry>
-				  		<entry>Description</entry>
-						</row>
-					</thead>
-					<tbody>
-						<row>
-							<entry>name</entry>
-							<entry>The name of the repository source, which is used by the &RepositoryService; when obtaining a &RepositoryConnection; by name.</entry>
-						</row>
-						<row>
-							<entry>retryLimit</entry>
-							<entry>Optional property that, if used, defines the number of times that any single operation on a &RepositoryConnection; to this source should be retried
-								following a communication failure. The default value is '0'.</entry>
-						</row>
-					</tbody>
-				</tgroup>
-			</table>
+      <variablelist>
+        <varlistentry>
+          <term>name</term>
+          <listitem>
+            <para>
+              Required property that specifies the name of the repository source, which is used by the &RepositoryService; 
+              when obtaining a &RepositoryConnection; by name.
+    				</para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>retryLimit</term>
+          <listitem>
+            <para>
+              Optional property that, if used, defines the number of times that any single operation on a &RepositoryConnection; to this source should be retried
+							following a communication failure. The default value is '0'.
+    				</para>
+          </listitem>
+        </varlistentry>
+      </variablelist>
 		</sect1>
 </chapter>
 
