@@ -66,161 +66,197 @@
 	<para>
 		The &FileSystemSource; class provides a number of JavaBean properties that control its behavior:
 	</para>
-	<table frame='all'>
-		<title>&FileSystemSource; properties</title>
-		<tgroup cols='2' align='left' colsep='1' rowsep='1'>
-      <colspec colname='c1' colwidth="1*"/>
-      <colspec colname='c2' colwidth="1*"/>
-			<thead>
-				<row>
-		  		<entry>Property</entry>
-		  		<entry>Description</entry>
-				</row>
-			</thead>
-			<tbody>
-				<row>
-					<entry>cachePolicy</entry>
-					<entry>Optional property that, if used, defines the cache policy for this repository source.  When not used, this source will not define a specific
-						duration for caching information.</entry>
-				</row>
-				<row>
-					<entry>creatingWorkspaceAllowed</entry>
-					<entry>Optional property that defines whether clients can create additional workspaces.  The default value is "true".
-					</entry>
-				</row>
-				<row>
-					<entry>customPropertiesFactory</entry>
-					<entry>
-						Specifies the &CustomPropertiesFactory; implementation that should be used to augment the default properties 
-						available on each node.  This property can be set either from an object that implements the &CustomPropertiesFactory;
-						interface or from the name of a class with a public, no-argument constructor that implements the &CustomPropertiesFactory;
-						interface.  In the latter case, a the named class will be instantiated and used as the custom properties factory implementation.
-						See also the "extraPropertiesBehavior" setting.
-					</entry>
-				</row>
-				<row>
-					<entry>extraPropertiesBehavior</entry>
-					<entry>
-						Optional setting that specifies how to handle the extra properties on "nt:file", "nt:folder", and "nt:resource" nodes that
-						cannot be represented on the native files themselves. Set this to "log" if warnings are to be sent to the log 
-						(the default), or "error" if setting such properties should cause an error, or "store" if they should be stored in ancillary 
-						files next to the files and folders, or "ignore" if they should be silently ignored. The "log" value will be used by default 
-						or an invalid value is specified. This setting will be ignored if a "customPropertiesFactory" class name is specified.
-					</entry>
-				</row>
-				<row>
-					<entry>defaultWorkspaceName</entry>
-					<entry>Optional property that is initialized to <code>"default"</code> and which defines the name for the workspace that will be used by default
-						if none is specified.</entry>
-				</row>
-				<row>
-					<entry>exclusionPattern</entry>
-					<entry>
-						<para>
-						Specifies a regular expression that is used to determine which files and folders in the underlying file system should be exposed through
-						this connector.  Files and folders with a name that matches the provided regular expression will <emphasis>not</emphasis> be exposed by this source. 
-						Setting this property to <code>null</code> has the effect of removing the exclusion pattern.
-						</para>
-					</entry>
-				</row>
-				<row>
-					<entry>inclusionPattern</entry>
-					<entry>
-						<para>
-						Specifies a regular expression that is used to determine which files and folders in the underlying file system should be exposed through
-						this connector.  Files and folders with a name that matches the provided regular expression will be exposed by this source. 
-						Setting this property to <code>null</code> has the effect of removing the inclusion pattern.
-						</para>
-					</entry>
-				</row>
-				<row>
-					<entry>filenameFilter</entry>
-					<entry>
-						<para>
-						Specifies the &FilenameFilter; that is used to determine which files and folders in the underlying file system should be exposed through
-						this connector.  Only files and folders that the filter accepts will be accessible through this source.
-						</para>
-						<para>
-						This property can be set either from an object that implements the &FilenameFilter;
-						interface or from the name of a class with a public, no-argument constructor that implements the &FilenameFilter;
-						interface.  In the latter case, a the named class will be instantiated and used as the filename filter implementation.
-						Setting this property to null has the effect of clearing the filter.
-						</para>
-					</entry>
-				</row>
-				<row>
-					<entry></entry>
-					<entry>
-						<para>
-						Note: the filenameFilter, exclusionPattern, and inclusionPattern properties are somewhat mutually exclusive.  If a filenameFilter is specified, 
-						then exclusionPattern and inclusionPattern are both ignored.  
-						</para>
-					</entry>
-				</row>
-				<row>
-					<entry>name</entry>
-					<entry>The name of the repository source, which is used by the &RepositoryService; when obtaining a &RepositoryConnection; by name.</entry>
-				</row>
-				<row>
-					<entry>nodeCachePolicy</entry>
-					<entry>Optional property that, if used, defines the cache policy to use for caching nodes within the connector.  
-					</entry>
-				</row>
-				<row>
-					<entry>predefinedWorkspaceNames</entry>
-					<entry>Optional property that, if used, defines names of the workspaces that are predefined and need not be created before being used.
-						This can be coupled with a "false" value for the "creatingWorkspaceAllowed" property to allow only the use of only predefined workspaces.
-					</entry>
-				</row>
-				<row>
-					<entry>rootNodeUuid</entry>
-					<entry>Optional property that, if used, specifies the UUID that should be used for the root node of each workspace.  If no value is
-					specified, a default UUID is used.</entry>
-				</row>	
-				<row>
-					<entry>retryLimit</entry>
-					<entry>Optional property that, if used, defines the number of times that any single operation on a &RepositoryConnection; to this source should be retried
-						following a communication failure. The default value is '0'.</entry>
-				</row>
-				<row>
-					<entry>temporaryStoragePath</entry>
-					<entry><para>Optional property that allows administrators to specify a specific location for the file system connector's temporary
-				     storage. When writing file content, this connector first writes the content to a file in the temporary storage area. After
-     				 that write succeeds in full, the temporary file is moved to its final location in the workspace. This extra step is taken
-     				 so that an error or failure while writing the file does not cause corruption in the target file.
-     				 </para>
-     				 <para>
-	     				However, if the temporary storage area is located on a different file system than the file that will ultimately be written
-						to, the rename operation cannot be used and a separate file copy must occur. Therefore,
-						administrators should set the value of this path to some path in the same file system as the
-						workspace root path as specified by the <code>workspaceRootPath</code> property.
-     				 </para>
-     				 </entry>
-				</row>
-				<row>
-					<entry>updatesAllowed</entry>
-					<entry>Determines whether the content in the file system can be updated ("true"), or if the content may only be read ("false").
-						The default value is "false" to avoid unintentional security vulnerabilities.</entry>
-				</row>
-				<row>
-					<entry>workspaceRootPath</entry>
-					<entry>
-					<para>Optional property that, if used, specifies a path on the local file system to the root of all workspaces.  The source will will 
+  <variablelist>
+    <varlistentry>
+      <term>cachePolicy</term>
+      <listitem>
+        <para>
+          Optional property that, if used, defines the cache policy for this repository source.  When not used, this source will not define a specific
+					duration for caching information.
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>creatingWorkspaceAllowed</term>
+      <listitem>
+        <para>
+          Optional property that defines whether clients can create additional workspaces.  The default value is "true".
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>customPropertiesFactory</term>
+      <listitem>
+        <para>
+          Optional property that specifies the &CustomPropertiesFactory; implementation that should be used to augment the default properties 
+					available on each node.  This property can be set either from an object that implements the &CustomPropertiesFactory;
+					interface or from the name of a class with a public, no-argument constructor that implements the &CustomPropertiesFactory;
+					interface.  In the latter case, a the named class will be instantiated and used as the custom properties factory implementation.
+				</para>
+				<para>
+					This is really intended for cases where the "extraPropertiesBehavior" is not sufficient. Most often, however, the
+					"extraPropertiesBehavior" setting will be sufficient and should be used instead of "customPropertiesFactory".
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>defaultWorkspaceName</term>
+      <listitem>
+        <para>
+          Optional property that defines the name for the workspace that will be used in cases when clients do not explicitly specify
+          the workspace name. If not specified, "<code>default</code>" will be used.
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>extraPropertiesBehavior</term>
+      <listitem>
+        <para>
+          Optional setting that specifies how to handle the extra properties on "nt:file", "nt:folder", and "nt:resource" nodes that
+					cannot be represented on the native files themselves. Set this to "log" if warnings are to be sent to the log 
+					(the default), or "error" if setting such properties should cause an error, or "store" if they should be stored in ancillary 
+					files next to the files and folders, or "ignore" if they should be silently ignored. The "log" value will be used by default 
+					or an invalid value is specified.
+				</para>
+				<para>
+					This setting will be ignored if a "customPropertiesFactory" class name is specified.
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>exclusionPattern</term>
+      <listitem>
+        <para>
+          Optional property that specifies a regular expression that is used to determine which files and folders in the underlying file system are exposed through
+					this connector. Files and folders with a name that matches the provided regular expression will <emphasis>not</emphasis> be exposed 
+					by this source. Setting this property to <code>null</code> has the effect of removing the exclusion pattern.
+				</para>
+        <para>
+          This may be combined with an "inclusionPattern", in which a file or folder will be exposed by this connector only when it
+          satisfies the "inclusionPattern" and does not satisfy the "exclusionPattern". Also, the "inclusionPattern" and "exclusionPattern"
+          cannot be used with "filenameFilter", since the latter will always override the patterns.
+        </para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>inclusionPattern</term>
+      <listitem>
+        <para>
+          Optional property that specifies a regular expression that is used to determine which files and folders in the underlying file system are exposed through
+					this connector. Files and folders with a name that matches the provided regular expression will be exposed by this source. 
+					Setting this property to <code>null</code> has the effect of removing the inclusion pattern.
+				</para>
+        <para>
+          This may be combined with an "exclusionPattern", in which a file or folder will be exposed by this connector only when it
+          satisfies the "inclusionPattern" and does not satisfy the "exclusionPattern". Also, the "inclusionPattern" and "exclusionPattern"
+          cannot be used with "filenameFilter", since the latter will always override the patterns.
+        </para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>filenameFilter</term>
+      <listitem>
+				<para>
+					Optional property that specifies the name of the &FilenameFilter; implementation class that used to determine which files and folders in the underlying 
+					file system are exposed through this connector. Only files and folders that the filter accepts will be accessible through this source.
+					The &FilenameFilter; implementation class must have a public, no-argument constructor.
+					Use this when the "inclusionPattern" and "exclusionPattern" values would be too complicated or are not able to represent the logic.
+				</para>
+				<para>
+					Note that the "filenameFilter", "exclusionPattern", and "inclusionPattern" properties are somewhat mutually exclusive.  
+					If a "filenameFilter" is specified, then "exclusionPattern" and "inclusionPattern" are both ignored.
+					Setting this property to an empty value (or null) has the effect of clearing the filter.
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>name</term>
+      <listitem>
+        <para>
+          Required property that specifies the name of the repository source, which is used by the &RepositoryService; 
+          when obtaining a &RepositoryConnection; by name.
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>nodeCachePolicy</term>
+      <listitem>
+        <para>
+          Optional property that, if used, defines the cache policy to use for caching nodes within the connector.  
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>predefinedWorkspaceNames</term>
+      <listitem>
+        <para>
+          Optional property that, if used, defines names of the workspaces that are predefined and need not be created before being used.
+					This can be coupled with a "false" value for the "creatingWorkspaceAllowed" property to allow only the use of only predefined workspaces.
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>rootNodeUuid</term>
+      <listitem>
+        <para>
+          Optional property that, if used, specifies the UUID that should be used for the root node of each workspace.  If no value is
+					specified, a default UUID is used.
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>retryLimit</term>
+      <listitem>
+        <para>
+          Optional property that, if used, defines the number of times that any single operation on a &RepositoryConnection; to this source should be retried
+					following a communication failure. The default value is '0'.
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>temporaryStoragePath</term>
+      <listitem>
+        <para>
+          Optional property that specifies a location for the file system connector's temporary storage.
+				  When writing file content, this connector first writes the content to a file in the temporary storage area. After
+     			that write succeeds in full, the temporary file is moved to its final location in the workspace. This extra step is taken
+     			so that an error or failure while writing the file does not cause corruption in the existing target file.
+     		</para>
+     		<para>
+     		  This path must be set to a path on the same file system specified by the <code>workspaceRootPath</code> property.
+     		  Otherwise, the temporary storage area will be located on a different file system than where the file will ultimately be written,
+					so the rename operation cannot be used and a separate file copy must occur, increasing the risk of data loss if a network
+					failure or hardware problem occurs.
+     		</para>
+     	</listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>updatesAllowed</term>
+      <listitem>
+        <para>
+          Determines whether the content in the file system can be updated ("true"), or if the content may only be read ("false").
+					The default value is "false" to avoid unintentional security vulnerabilities.
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>workspaceRootPath</term>
+      <listitem>
+				<para>
+				  Optional property that, if used, specifies a path on the local file system to the root of all workspaces.  The source will will 
 					use the name of the workspace as a relative path from the <code>workspaceRootPath</code> to determine the path for a particular workspace.  
 					If no value (or a <code>null</code> value) is specified, the source will use the name of the workspace as a relative path from the current working 
 					directory of this virtual machine (as defined by <code>new File(".")</code>.
-					</para>
-					<para>As an example for a workspace named <code>"default/foo"</code>,
-					the source will use <code>new File(workspaceRootPath, "default/foo")</code> as the source directory for the connector if <code>workspaceRootPath</code> is set
-					to a non-null value, or <code>new File(".", "default/foo")</code> as the source directory for the connector if <code>workspaceRootPath</code> is
-					set to <code>null</code>.
-					</para>
-					</entry>
-				</row>	
-				
-			</tbody>
-		</tgroup>
-	</table>
+				</para>
+				<para>
+				  As an example, if <code>workspaceRootPath</code> is set	to a non-null value, then for a workspace named <code>"default/foo"</code>
+				  the source will use <code>new File(workspaceRootPath, "default/foo")</code> as the source directory for the workspace content.
+				  If <code>workspaceRootPath</code> is not set (or set to an empty string or null value), then the source will use
+				  <code>new File(".", "default/foo")</code> as the source directory for the workspace content.
+				</para>
+      </listitem>
+    </varlistentry>
+  </variablelist>
 	<para>
 		One way to configure the file system connector is to create &JcrConfiguration; instance with a repository source that uses the &FileSystemSource; class.
 		For example:

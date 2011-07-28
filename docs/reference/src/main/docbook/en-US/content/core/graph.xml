@@ -994,55 +994,54 @@ for ( &Location; child : results.getNode(path2) ) {
 			together into "units of work".  The submitted requests are then processed by the underlying system (e.g., connector)
 			and returned back to the &Graph; object, which then extracts and returns the results.
 		</para>
+
+	  <sect2 id="graph-basic-requests">
+		<title>Basic Requests</title>
 		<para>
 			There are actually quite a few different types of &Request; classes:
 		</para>
-		<table frame='all'>
-			<title>Types of Read Requests</title>
-			<tgroup cols='2' align='left' colsep='1' rowsep='1'>
-	      <colspec colname='c1' colwidth="1*"/>
-	      <colspec colname='c2' colwidth="1*"/>
-				<thead>
-					<row>
-			  		<entry>Name</entry>
-			  		<entry>Description</entry>
-					</row>
-				</thead>
-				<tbody>
-					<row>
-						<entry>ReadNodeRequest</entry>
-						<entry>
+		<variablelist>
+      <varlistentry>
+        <term>ReadNodeRequest</term>
+        <listitem>
+          <para>
 							A request to read a node's properties and children from the named workspace in the source.
 							The node may be specified by path and/or by identification properties.
 							The connector returns all properties and the locations for all children,
 							or sets a &PathNotFoundException; error on the request if the node did not exist in the workspace.
 							If the node is found, the connector sets on the request the actual location of the node (including the path and identification properties).
 							The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
-						</entry>
-					</row>
-					<row>
-						<entry>VerifyNodeExistsRequest</entry>
-						<entry>
+  				</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>VerifyNodeExistsRequest</term>
+        <listitem>
+          <para>
 							A request to verify the existence of a node at the specified location in the named workspace of the source.
 							The connector returns all the actual location for the node if it exists, or
 							sets a &PathNotFoundException; error on the request if the node does not exist in the workspace.
 							The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
-						</entry>
-					</row>
-					<row>
-						<entry>ReadAllPropertiesRequest</entry>
-						<entry>
+  				</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>ReadAllPropertiesRequest</term>
+        <listitem>
+          <para>
 							A request to read all of the properties of a node from the named workspace in the source.
 							The node may be specified by path and/or by identification properties.
 							The connector returns all properties that were found on the node,
 							or sets a &PathNotFoundException; error on the request if the node did not exist in the workspace.
 							If the node is found, the connector sets on the request the actual location of the node (including the path and identification properties).
 							The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
-						</entry>
-					</row>
-					<row>
-						<entry>ReadPropertyRequest</entry>
-						<entry>
+  				</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>ReadPropertyRequest</term>
+        <listitem>
+          <para>
 							A request to read  a single property of a node from the named workspace in the source.
 							The node may be specified by path and/or by identification properties,
 							and the property is specified by name.
@@ -1050,11 +1049,13 @@ for ( &Location; child : results.getNode(path2) ) {
 							or sets a &PathNotFoundException; error on the request if the node or property did not exist in the workspace.
 							If the node is found, the connector sets on the request the actual location of the node (including the path and identification properties).
 							The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
-						</entry>
-					</row>
-					<row>
-						<entry>ReadAllChildrenRequest</entry>
-						<entry>
+  				</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>ReadAllChildrenRequest</term>
+        <listitem>
+          <para>
 							A request to read all of the children of a node from the named workspace in the source.
 							The node may be specified by path and/or by identification properties.
 							The connector returns an ordered list of locations for each child found on the node,
@@ -1062,11 +1063,13 @@ for ( &Location; child : results.getNode(path2) ) {
 							or sets a &PathNotFoundException; error on the request if the node did not exist in the workspace.
 							If the node is found, the connector sets on the request the actual location of the parent node (including the path and identification properties).
 							The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
-						</entry>
-					</row>
-					<row>
-						<entry>ReadBlockOfChildrenRequest</entry>
-						<entry>
+  				</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>ReadBlockOfChildrenRequest</term>
+        <listitem>
+          <para>
 							A request to read a block of children of a node, starting with the n<superscript>th</superscript> child from the named workspace in the source.
 							This is designed to allow paging through the children, which is much more efficient for large numbers of children.
 							The node may be specified by path and/or by identification properties, and the block
@@ -1076,11 +1079,13 @@ for ( &Location; child : results.getNode(path2) ) {
 							The connector also sets on the request the actual location of the parent node (including the path and identification properties)
 							or sets a &PathNotFoundException; error on the request if the parent node did not exist in the workspace.
 							The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
-						</entry>
-					</row>
-					<row>
-						<entry>ReadNextBlockOfChildrenRequest</entry>
-						<entry>
+  				</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>ReadNextBlockOfChildrenRequest</term>
+        <listitem>
+          <para>
 							A request to read a block of children of a node, starting with the children that immediately follow
 							a previously-returned child from the named workspace in the source.
 							This is designed to allow paging through the children, which is much more efficient for large numbers of children.
@@ -1091,11 +1096,13 @@ for ( &Location; child : results.getNode(path2) ) {
 							The connector also sets on the request the actual location of the parent node (including the path and identification properties)
 							or sets a &PathNotFoundException; error on the request if the parent node did not exist in the workspace.
 							The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
-						</entry>
-					</row>
-					<row>
-						<entry>ReadBranchRequest</entry>
-						<entry>
+  				</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>ReadBranchRequest</term>
+        <listitem>
+          <para>
 							A request to read a portion of a subgraph that has as its root a particular node, up to a maximum depth.
 							This request is an efficient mechanism when a branch (or part of a branch) is to be navigated and processed,
 							and replaces some non-trivial code to read the branch iteratively using multiple <code>ReadNodeRequest</code>s.
@@ -1105,31 +1112,38 @@ for ( &Location; child : results.getNode(path2) ) {
 							The connector sets a &PathNotFoundException; error on the request if the node at 
 							the top of the branch does not exist in the workspace.
 							The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
-						</entry>
-					</row>
-				</tbody>
-			</tgroup>
-		</table>
+  				</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>CompositeRequest</term>
+        <listitem>
+          <para>
+							A request that actually comprises multiple requests (none of which will be a composite).
+							The connector simply processes all of the requests in the composite request, but should set on the composite
+							request any error (usually the first error) that occurs during processing of the contained requests.
+  				</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+    
+    </sect2>
+	  <sect2 id="graph-change-requests">
+		<title>Change Requests</title>
 		<para>
 		  &ChangeRequest; is a subclass of &Request; that provides a base class for all the requests that request a change
 		  be made to the content.  As we'll see later, these &ChangeRequest; objects also get reused by the
 		  <link linkend="graph-observation">observation</link> system.
 		</para>
-		<table frame='all'>
-			<title>Types of Change Requests</title>
-			<tgroup cols='2' align='left' colsep='1' rowsep='1'>
-	      <colspec colname='c1' colwidth="1*"/>
-	      <colspec colname='c2' colwidth="1*"/>
-				<thead>
-					<row>
-			  		<entry>Name</entry>
-			  		<entry>Description</entry>
-					</row>
-				</thead>
-				<tbody>
-					<row>
-						<entry>CreateNodeRequest</entry>
-						<entry>
+		<para>
+			There specific subclasses of &ChangeRequest; are:
+    </para>
+		
+    <variablelist>
+      <varlistentry>
+        <term>CreateNodeRequest</term>
+        <listitem>
+          <para>
 							A request to create a node at the specified location and setting on the new node the properties included in the request.
 							The connector creates the node at the desired location, adjusting any same-name-sibling indexes as required.
 							(If an SNS index is provided in the new node's location, existing children with the same name after that SNS index
@@ -1138,41 +1152,49 @@ for ( &Location; child : results.getNode(path2) ) {
 							The connector also sets on the request the actual location of the new node (including the path and identification properties)..
 							The connector sets a &PathNotFoundException; error on the request if the parent node does not exist in the workspace.
 							The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
-						</entry>
-					</row>
-					<row>
-						<entry>RemovePropertiesRequest</entry>
-						<entry>
+  				</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>RemovePropertiesRequest</term>
+        <listitem>
+          <para>
 							A request to remove a set of properties on an existing node.  The request contains the location of the node as well as the
 							names of the properties to be removed.  The connector performs these changes and sets on the request the
 							actual location (including the path and identification properties) of the node.
 							The connector sets a &PathNotFoundException; error on the request if the node does not exist in the workspace.
 							The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
-						</entry>
-					</row>
-					<row>
-						<entry>UpdatePropertiesRequest</entry>
-						<entry>
+  				</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>UpdatePropertiesRequest</term>
+        <listitem>
+          <para>
 							A request to set or update properties on an existing node.  The request contains the location of the node as well as the
 							properties to be set and those to be deleted.  The connector performs these changes and sets on the request the
 							actual location (including the path and identification properties) of the node.
 							The connector sets a &PathNotFoundException; error on the request if the node does not exist in the workspace.
 							The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
-						</entry>
-					</row>
-					<row>
-						<entry>RenameNodeRequest</entry>
-						<entry>
+  				</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>RenameNodeRequest</term>
+        <listitem>
+          <para>
 							A request to change the name of a node.  The connector changes the node's name, adjusts all SNS indexes
 							accordingly, and returns the actual locations (including the path and identification properties) of both the original
 							location and the new location.
 							The connector sets a &PathNotFoundException; error on the request if the node does not exist in the workspace.
 							The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
-						</entry>
-					</row>
-					<row>
-						<entry>CopyBranchRequest</entry>
-						<entry>
+  				</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>CopyBranchRequest</term>
+        <listitem>
+          <para>
 							A request to copy a portion of a subgraph that has as its root a particular node, up to a maximum depth.
 							The request includes the name of the workspace where the original node is located as well as the name of the
 							workspace where the copy is to be placed (these may be the same, but may be different).
@@ -1183,11 +1205,13 @@ for ( &Location; child : results.getNode(path2) ) {
 							The connector sets a &PathNotFoundException; error on the request if the node at 
 							the top of the branch does not exist in the workspace.
 							The connector sets a &InvalidWorkspaceException; error on the request if one of the named workspaces does not exist.
-						</entry>
-					</row>
-					<row>
-						<entry>MoveBranchRequest</entry>
-						<entry>
+  				</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>MoveBranchRequest</term>
+        <listitem>
+          <para>
 							A request to move a subgraph that has a particular node as its root.
 							The connector moves the branch from the original location and places it as child of the specified new location.
 							The connector also sets on the request the actual location (including the path and identification properties)
@@ -1195,104 +1219,134 @@ for ( &Location; child : results.getNode(path2) ) {
 							The connector sets a &PathNotFoundException; error on the request if the node that is to be moved or the
 							new location do not exist in the workspace.
 							The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
-						</entry>
-					</row>
-					<row>
-						<entry>DeleteBranchRequest</entry>
-						<entry>
+  				</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>DeleteBranchRequest</term>
+        <listitem>
+          <para>
 							A request to delete an entire branch specified by a single node's location.
 							The connector deletes the specified node and all nodes below it, and sets the actual location,
 							including the path and identification properties, of the node that was deleted.
 							The connector sets a &PathNotFoundException; error on the request if the node being deleted does not exist in the workspace.
 							The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
-						</entry>
-					</row>
-					<row>
-						<entry>CompositeRequest</entry>
-						<entry>
-							A request that actually comprises multiple requests (none of which will be a composite).
-							The connector simply processes all of the requests in the composite request, but should set on the composite
-							request any error (usually the first error) that occurs during processing of the contained requests.
-						</entry>
-					</row>
-				</tbody>
-			</tgroup>
-		</table>
-		<para>There are also requests that deal with workspaces:</para>
-		<table frame='all'>
-			<title>Types of Workspace Read Requests</title>
-			<tgroup cols='2' align='left' colsep='1' rowsep='1'>
-	      <colspec colname='c1' colwidth="1*"/>
-	      <colspec colname='c2' colwidth="1*"/>
-				<thead>
-					<row>
-			  		<entry>Name</entry>
-			  		<entry>Description</entry>
-					</row>
-				</thead>
-				<tbody>
-					<row>
-						<entry>GetWorkspacesRequest</entry>
-						<entry>
+  				</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+		
+    </sect2>
+	  <sect2 id="graph-workspace-read-requests">
+		<title>Workspace Read Requests</title>
+		<para>There are also requests that read information about workspaces:</para>
+
+    <variablelist>
+      <varlistentry>
+        <term><emphasis role="strong">GetWorkspacesRequest</emphasis></term>
+        <listitem>
+          <para>
 							A request to obtain the names of the existing workspaces that are accessible to the caller.
-						</entry>
-					</row>
-					<row>
-						<entry>VerifyWorkspaceRequest</entry>
-						<entry>
+  				</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><emphasis role="strong">VerifyWorkspaceRequest</emphasis></term>
+        <listitem>
+          <para>
 							A request to verify that a workspace with a particular name exists.
 							The connector returns the actual location for the root node if the workspace exists, as well as the actual name of the workspace
 							(e.g., the default workspace name if a null name is supplied).
-						</entry>
-					</row>
-				</tbody>
-			</tgroup>
-		</table>
+  				</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+
+    </sect2>
+	  <sect2 id="graph-workspace-change-requests">
+		<title>Workspace Change Requests</title>
 		<para>And there are also requests that deal with changing workspaces (and thus extend &ChangeRequest;):</para>
-		<table frame='all'>
-			<title>Types of Workspace Change Requests</title>
-			<tgroup cols='2' align='left' colsep='1' rowsep='1'>
-	      <colspec colname='c1' colwidth="1*"/>
-	      <colspec colname='c2' colwidth="1*"/>
-				<thead>
-					<row>
-			  		<entry>Name</entry>
-			  		<entry>Description</entry>
-					</row>
-				</thead>
-				<tbody>
-					<row>
-						<entry>CreateWorkspaceRequest</entry>
-						<entry>
+		
+		<variablelist>
+      <varlistentry>
+        <term>CreateWorkspaceRequest</term>
+        <listitem>
+          <para>
 							A request to create a workspace with a particular name.
 							The connector returns the actual location for the root node if the workspace exists, as well as the actual name of the workspace
 							(e.g., the default workspace name if a null name is supplied).
 							The connector sets a &InvalidWorkspaceException; error on the request if the named workspace already exists.
-						</entry>
-					</row>
-					<row>
-						<entry>DestroyWorkspaceRequest</entry>
-						<entry>
+  				</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>DestroyWorkspaceRequest</term>
+        <listitem>
+          <para>
 							A request to destroy a workspace with a particular name.
 							The connector sets a &InvalidWorkspaceException; error on the request if the named workspace does not exist.
-						</entry>
-					</row>
-					<row>
-						<entry>CloneWorkspaceRequest</entry>
-						<entry>
+  				</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>CloneWorkspaceRequest</term>
+        <listitem>
+          <para>
 							A request to clone one named workspace as another new named workspace.
 							The connector sets a &InvalidWorkspaceException; error on the request if the original workspace does not exist, 
 							or if the new workspace already exists.
-						</entry>
-					</row>
-				</tbody>
-			</tgroup>
-		</table>
-    <para>
-			Although there are over a dozen different kinds of requests, we do anticipate adding more in future releases.
-			For example, ModeShape has recently added support for searching repository content in sources through an additional subclass of &Request;.
-			Getting the version history for a node will likely be another kind of request added in an upcoming release.
-		</para>
+  				</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+    
+    </sect2>
+	  <sect2 id="graph-search-requests">
+		<title>Search Requests</title>
+		<para>Several requests are designed to push searches and queries down to the connector, if connectors support such operations:</para>
+		
+		<variablelist>
+      <varlistentry>
+        <term><emphasis role="strong">SearchRequest</emphasis></term>
+        <listitem>
+          <para>
+							A request to query a named workspace using a supplied query.
+							The connector returns tuples containing the columns and resulting values, plus statistics about the execution of the query.
+  				</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><emphasis role="strong">FullTextSearchRequest</emphasis></term>
+        <listitem>
+          <para>
+							A request to search a named workspace using a supplied full-text search string and optional offset and limit values.
+							The connector returns tuples containing the columns and resulting values, plus statistics about the execution of the query.
+  				</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+    
+    </sect2>
+	  <sect2 id="graph-function-requests">
+		<title>Function Requests</title>
+		<para>One type of request allows a function to be passed to the connector:</para>
+		
+		<variablelist>
+      <varlistentry>
+        <term><emphasis role="strong">FunctionRequest</emphasis></term>
+        <listitem>
+          <para>
+							A request that executes a supplied function at a particular location within a named workspace. The inputs to the function
+							can be set on the request (as a series of name-value pairs), and when executed the function will set the outputs as
+							name-value pairs on the request. This request is extremely useful for (complex) operations that must first read information from
+							the workspace and then perform other actions.
+  				</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+    
+    </sect2>
+
 		<para>
 			This section covered the different kinds of &Request; classes.  The next section provides a easy way to encapsulate how
 			a component should responds to these requests, and after that we'll see how these &Request; objects are also used

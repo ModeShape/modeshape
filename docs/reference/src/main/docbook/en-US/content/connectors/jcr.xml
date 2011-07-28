@@ -66,58 +66,70 @@
 	<para>
 		The &JcrRepositorySource; class provides a number of JavaBean properties that control its behavior:
 	</para>
-	<table frame='all'>
-		<title>&JcrRepositorySource; properties</title>
-		<tgroup cols='2' align='left' colsep='1' rowsep='1'>
-      <colspec colname='c1' colwidth="1*"/>
-      <colspec colname='c2' colwidth="1*"/>
-			<thead>
-				<row>
-		  		<entry>Property</entry>
-		  		<entry>Description</entry>
-				</row>
-			</thead>
-			<tbody>
-				<row>
-					<entry>defaultCachePolicy</entry>
-					<entry>Optional property that, if used, defines the default cache policy for this repository source.  When not used, this source will not define a specific
-						duration for caching information.</entry>
-				</row>
-				<row>
-					<entry>repositoryJndiName</entry>
-					<entry>Property that defines where in JNDI the connector can find the <code>javax.jcr.Repository</code> instance.
-					</entry>
-				</row>
-				<row>
-					<entry>username</entry>
-					<entry>Optional property that defines the username that should be used when logging into the Repository to obtain a &Session;.
-						When used, the connector creates a &SimpleCredentials; instance. Should not be used if the "credentials" properties is to be used.
-					</entry>
-				</row>
-				<row>
-					<entry>password</entry>
-					<entry>Optional property that defines the password that should be used when logging into the Repository to obtain a &Session;.
-						When used, the connector creates a &SimpleCredentials; instance. Should not be used if the "credentials" properties is to be used.
-					</entry>
-				</row>
-				<row>
-					<entry>name</entry>
-					<entry>The name of the repository source, which is used by the &RepositoryService; when obtaining a &RepositoryConnection; by name.</entry>
-				</row>
-				<row>
-					<entry>credentials</entry>
-					<entry>Optional property that, if used, defines &Credentials; instance that should be used when logging into the Repository to
-						obtain a &Session;. Should be used only if the "username" and "password" properties are not set.
-					</entry>
-				</row>
-				<row>
-					<entry>retryLimit</entry>
-					<entry>Optional property that, if used, defines the number of times that any single operation on a &RepositoryConnection; to this source should be retried
-						following a communication failure. The default value is '0'.</entry>
-				</row>
-			</tbody>
-		</tgroup>
-	</table>
+  <variablelist>
+    <varlistentry>
+      <term>defaultCachePolicy</term>
+      <listitem>
+        <para>
+          Optional property that, if used, defines the default cache policy for this repository source.  When not used, this source will not define a specific
+					duration for caching information.
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>repositoryJndiName</term>
+      <listitem>
+        <para>
+          Property that defines where in JNDI the connector can find the <code>javax.jcr.Repository</code> instance.
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>username</term>
+      <listitem>
+        <para>
+          Optional property that defines the username that should be used when logging into the Repository to obtain a &Session;.
+					When used, the connector creates a &SimpleCredentials; instance. Should not be used if the "credentials" properties is to be used.
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>password</term>
+      <listitem>
+        <para>
+          Optional property that defines the password that should be used when logging into the Repository to obtain a &Session;.
+					When used, the connector creates a &SimpleCredentials; instance. Should not be used if the "credentials" properties is to be used.
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>credentials</term>
+      <listitem>
+        <para>
+          Optional property that, if used, defines &Credentials; instance that should be used when logging into the Repository to
+					obtain a &Session;. Should be used only if the "username" and "password" properties are not set.
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>name</term>
+      <listitem>
+        <para>
+          Required property that specifies the name of the repository source, which is used by the &RepositoryService; 
+          when obtaining a &RepositoryConnection; by name.
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>retryLimit</term>
+      <listitem>
+        <para>
+          Optional property that, if used, defines the number of times that any single operation on a &RepositoryConnection; to this source should be retried
+					following a communication failure. The default value is '0'.
+				</para>
+      </listitem>
+    </varlistentry>
+  </variablelist>
 	<para>
 		One way to configure the JCR connector is to create &JcrConfiguration; instance with a repository source that uses the &JcrRepositorySource; class.
 		For example:

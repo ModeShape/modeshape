@@ -274,8 +274,8 @@ public class FileSystemSource extends AbstractNodeCachingRepositorySource<Path, 
     /**
      * Sets the regular expression that, if matched by a file or folder, indicates that the file or folder should be ignored
      * <p>
-     * Only one of FilenameFilter or Inclusion/Exclusion Pattern are used at a given time. If Inclusion/exclusion are set, then
-     * FilenameFilter is ignored.
+     * Only one of FilenameFilter or Inclusion/Exclusion Pattern are used at a given time. If FilenameFilter is used, then the
+     * inclusion and exclusion patterns are ignored.
      * </p>
      * 
      * @param exclusionPattern the regular expression that, if matched by a file or folder, indicates that the file or folder
@@ -301,8 +301,8 @@ public class FileSystemSource extends AbstractNodeCachingRepositorySource<Path, 
     /**
      * Sets the regular expression that, if matched by a file or folder, indicates that the file or folder should be included
      * <p>
-     * Only one of FilenameFilter or Inclusion/Exclusion Pattern are used at a given time. If Inclusion/exclusion are set, then
-     * FilenameFilter is ignored.
+     * Only one of FilenameFilter or Inclusion/Exclusion Pattern are used at a given time. If FilenameFilter is used, then the
+     * inclusion and exclusion patterns are ignored.
      * </p>
      * 
      * @param inclusionPattern the regular expression that, if matched by a file or folder, indicates that the file or folder
@@ -323,8 +323,8 @@ public class FileSystemSource extends AbstractNodeCachingRepositorySource<Path, 
     /**
      * Sets the filename filter that is used to restrict which content can be accessed by this connector
      * <p>
-     * Only one of FilenameFilter or Inclusion/Exclusion Pattern are used at a given time. If Inclusion/exclusion are set, then
-     * FilenameFilter is ignored.
+     * Only one of FilenameFilter or Inclusion/Exclusion Pattern are used at a given time. If FilenameFilter is used, then the
+     * inclusion and exclusion patterns are ignored.
      * </p>
      * 
      * @param filenameFilter the filename filter that is used to restrict which content can be accessed by this connector. If this
