@@ -2,6 +2,8 @@ package org.modeshape.test.integration.manual;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
+import javax.jcr.NamespaceException;
+import javax.jcr.NamespaceRegistry;
 import javax.jcr.PropertyType;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
@@ -47,6 +49,7 @@ public class ReadNodeTypesUponRestart {
             try {
                 Session session = getSession();
                 Workspace workspace = session.getWorkspace();
+                getOrCreateNamespace(workspace, "jboss", "http://www.jboss.org");
                 getOrCreateNodeType(workspace);
                 // getNodeType(workspace);
                 // session.save();
@@ -58,6 +61,7 @@ public class ReadNodeTypesUponRestart {
             try {
                 Session session = getSession();
                 Workspace workspace = session.getWorkspace();
+                getNamespace(workspace, "jboss", "http://www.jboss.org");
                 getNodeType(workspace);
                 // session.save();
             } catch (RepositoryException e) {
@@ -75,6 +79,7 @@ public class ReadNodeTypesUponRestart {
             try {
                 Session session = getSession();
                 Workspace workspace = session.getWorkspace();
+                getNamespace(workspace, "jboss", "http://www.jboss.org");
                 getNodeType(workspace);
                 // session.save();
             } catch (RepositoryException e) {
@@ -137,11 +142,6 @@ public class ReadNodeTypesUponRestart {
         return session;
     }
 
-    /**
-     * Example to add nodetype
-     * 
-     * @param workspace
-     */
     private static void getNodeType( Workspace workspace ) {
         NodeTypeManager mgr;
         try {
@@ -163,10 +163,8 @@ public class ReadNodeTypesUponRestart {
      */
     @SuppressWarnings( "unchecked" )
     private static void getOrCreateNodeType( Workspace workspace ) {
-        // Obtain the ModeShape-specific node type manager ...
-        NodeTypeManager nodeTypeManager;
         try {
-            nodeTypeManager = workspace.getNodeTypeManager();
+            NodeTypeManager nodeTypeManager = workspace.getNodeTypeManager();
 
             // Check if it's already there ...
             try {
@@ -222,6 +220,64 @@ public class ReadNodeTypesUponRestart {
             e.printStackTrace();
         }
 
+    }
+
+    private static void getNamespace( Workspace workspace,
+                                      String prefix,
+                                      String uri ) {
+        try {
+            NamespaceRegistry registry = workspace.getNamespaceRegistry();
+            String actualUri = registry.getURI(prefix);
+            if (actualUri.equals(uri)) {
+                System.out.println("Found existing namespace " + namespace(prefix, actualUri));
+            } else {
+                System.out.println("Found existing namespace " + namespace(prefix, actualUri)
+                                   + " that didn't match expected URI: " + uri);
+            }
+        } catch (RepositoryException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @SuppressWarnings( "unused" )
+    private static void getOrCreateNamespace( Workspace workspace,
+                                              String prefix,
+                                              String uri ) {
+        try {
+            NamespaceRegistry registry = workspace.getNamespaceRegistry();
+
+            // Check if it's already there ...
+            try {
+                String actualUri = registry.getURI(prefix);
+                if (FIRST_TIME) {
+                    System.out.println("Should not have found existing namespace " + namespace(prefix, uri)
+                                       + " - check instructions in JavaDoc and try again.");
+                } else {
+                    if (actualUri.equals(uri)) {
+                        System.out.println("Found existing namespace " + namespace(prefix, actualUri));
+                    } else {
+                        System.out.println("Found existing namespace " + namespace(prefix, actualUri)
+                                           + " that didn't match expected URI: " + uri);
+                    }
+                }
+            } catch (NamespaceException e) {
+                if (!FIRST_TIME) {
+                    throw new AssertionFailedException("Should have found existing namespace " + namespace(prefix, uri) + " : "
+                                                       + e.getMessage());
+                }
+
+                registry.registerNamespace(prefix, uri);
+                System.out.println("Registered namespace " + namespace(prefix, uri));
+            }
+
+        } catch (RepositoryException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static String namespace( String prefix,
+                                     String uri ) {
+        return prefix + ":" + uri;
     }
 
 }
