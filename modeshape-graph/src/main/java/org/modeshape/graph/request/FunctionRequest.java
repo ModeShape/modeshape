@@ -58,7 +58,7 @@ public final class FunctionRequest extends Request implements Cloneable {
     private Location actualLocation;
 
     /**
-     * Create a request to execute the function the properties and number of children of a node at the supplied location.
+     * Create a request to execute the function at the supplied location.
      * 
      * @param function the function to be performed
      * @param at the location of the node to be read

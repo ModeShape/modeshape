@@ -40,6 +40,7 @@
 <!ENTITY SLF4JManual          "http://www.slf4j.org/manual.html">
 <!ENTITY JGroups							"http://jgroups.org">
 <!ENTITY JGroupsManual				"&JGroups;/ug.html">
+<!ENTITY HibernateDocs		    "http://docs.jboss.org/hibernate/core/3.5/reference/en-US/html_single">
 
 <!ENTITY Java									"http://java.sun.com/javase/6/docs/api/">
 <!ENTITY JavaEE               "http://java.sun.com/javaee/6/docs/api/">

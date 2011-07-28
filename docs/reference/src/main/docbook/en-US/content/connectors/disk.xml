@@ -40,96 +40,130 @@
 	<para>
 		The &DiskSource; class provides a number of JavaBean properties that control its behavior:
 	</para>
-	<table frame='all'>
-		<title>&DiskSource; properties</title>
-		<tgroup cols='2' align='left' colsep='1' rowsep='1'>
-      <colspec colname='c1' colwidth="1*"/>
-      <colspec colname='c2' colwidth="1*"/>
-			<thead>
-				<row>
-		  		<entry>Property</entry>
-		  		<entry>Description</entry>
-				</row>
-			</thead>
-			<tbody>
-				<row>
-					<entry>cachePolicy</entry>
-					<entry>Optional property that, if used, defines the cache policy for this repository source.  When not used, this source will not define a specific
-						duration for caching information.</entry>
-				</row>
-				<row>
-					<entry>creatingWorkspaceAllowed</entry>
-					<entry>Optional property that defines whether clients can create additional workspaces.  The default value is "true".
-					</entry>
-				</row>
-				<row>
-					<entry>defaultWorkspaceName</entry>
-					<entry>Optional property that is initialized to <code>"default"</code> and which defines the name for the workspace that will be used by default
-						if none is specified.</entry>
-				</row>
-			   <row>
-					<entry>largeValuePath</entry>
-					<entry>Optional, advanced property that, if specified, specifies the path to the large value area.  <emphasis>This path is relative to the value of the <code>repositoryRootPath</code> property.</emphasis>
-						The default value for this property is <code>"largeValues"</code> and it only needs to be changed if there will be a workspace named <code>"largeValues"</code>. 
-					</entry>
-				</row>
-				<row>
-					<entry>largeValueSizeInBytes</entry>
-					<entry>Optional property that, if specified, sets the threshold for large values.  Binary property values that exceed this size will be copied into the large
-					value area for this repository, where they can be shared between nodes and lazily loaded to improve node retrieval time.  The default value is "8192".
-					</entry>
-				</row>
-				<row>
-					<entry>lockFileUsed</entry>
-					<entry>An advanced property that, if set to "true", indicates that repository read and write locks should be synchronized with file lock options 
-					on a file in the on-disk storage.  This causes a performance penalty, but allows disk sources in different JVMS (e.g., clustered disk sources) to
-					coordinate their locks <emphasis>as long as all cluster members share the same disk</emphasis>.  This approach uses Java NIO file locking and is 
-					subject to the limitations of the Java NIO file locking for the current
-					JVM implementation.  The default value is "false", but this should always be set to "true" when used in a clustered environment.</entry>
-			   </row>
-				<row>
-					<entry>name</entry>
-					<entry>The name of the repository source, which is used by the &RepositoryService; when obtaining a &RepositoryConnection; by name.</entry>
-				</row>
-				<row>
-					<entry>nodeCachePolicy</entry>
-					<entry>Optional property that, if used, defines the cache policy to use for caching nodes within the connector.  
-					</entry>
-				</row>
-				<row>
-					<entry>predefinedWorkspaceNames</entry>
-					<entry>Optional property that, if used, defines names of the workspaces that are predefined and need not be created before being used.
-						This can be coupled with a "false" value for the "creatingWorkspaceAllowed" property to allow only the use of only predefined workspaces.
-					</entry>
-				</row>
-				<row>
-					<entry>rootNodeUuid</entry>
-					<entry>Optional property that, if used, specifies the UUID that should be used for the root node of each workspace.  If no value is
-					specified, a default UUID is used.</entry>
-				</row>	
-				<row>
-					<entry>retryLimit</entry>
-					<entry>Optional property that, if used, defines the number of times that any single operation on a &RepositoryConnection; to this source should be retried
-						following a communication failure. The default value is '0'.</entry>
-				</row>
-				<row>
-					<entry>updatesAllowed</entry>
-					<entry>Determines whether the content in the file system can be updated ("true"), or if the content may only be read ("false").
-						The default value is "true".</entry>
-				</row>
-				<row>
-					<entry>repositoryRootPath</entry>
-					<entry>
-					<para>Optional property that specifies a path on the local file system to the root of all workspaces.  The connector will use this as the root
+  <variablelist>
+    <varlistentry>
+      <term>cachePolicy</term>
+      <listitem>
+        <para>
+          Optional property that, if used, defines the cache policy for this repository source.  When not used, this source will not define a specific
+			    duration for caching information.
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>creatingWorkspaceAllowed</term>
+      <listitem>
+        <para>
+          Optional property that defines whether clients can create additional workspaces.  The default value is "true".
+        </para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>defaultWorkspaceName</term>
+      <listitem>
+        <para>
+          Optional property that is initialized to <code>"default"</code> and which defines the name for the workspace that will be used by default
+					if none is specified.
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>largeValuePath</term>
+      <listitem>
+        <para>
+          Optional, advanced property that, if specified, specifies the path to the large value area.  <emphasis>This path is relative to the value of the <code>repositoryRootPath</code> property.</emphasis>
+					The default value for this property is <code>"largeValues"</code> and it only needs to be changed if there will be a workspace named <code>"largeValues"</code>. 
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>largeValueSizeInBytes</term>
+      <listitem>
+        <para>
+          Optional property that, if specified, sets the threshold for large values.  Binary property values that exceed this size will be copied into the large
+				  value area for this repository, where they can be shared between nodes and lazily loaded to improve node retrieval time.  The default value is "8192".
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>lockFileUsed</term>
+      <listitem>
+        <para>
+          An advanced property that, if set to "true", indicates that repository read and write locks should be synchronized with file lock options 
+				  on a file in the on-disk storage.  This causes a performance penalty, but allows disk sources in different JVMS (e.g., clustered disk sources) to
+				  coordinate their locks <emphasis>as long as all cluster members share the same disk</emphasis>.  This approach uses Java NIO file locking and is 
+				  subject to the limitations of the Java NIO file locking for the current
+				  JVM implementation.
+				</para>
+				<para>
+				  The default value is "false", but this should always be set to "true" when used in a clustered environment.
+		    </para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>name</term>
+      <listitem>
+        <para>
+          Required property that specifies the name of the repository source, which is used by the &RepositoryService; 
+          when obtaining a &RepositoryConnection; by name.
+        </para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>nodeCachePolicy</term>
+      <listitem>
+        <para>
+          Optional property that, if used, defines the cache policy to use for caching nodes within the connector.
+        </para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>predefinedWorkspaceNames</term>
+      <listitem>
+        <para>
+          Optional property that, if used, defines names of the workspaces that are predefined and need not be created before being used.
+					This can be coupled with a "false" value for the "creatingWorkspaceAllowed" property to allow only the use of only predefined workspaces.
+        </para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>repositoryRootPath</term>
+      <listitem>
+        <para>
+          Optional property that specifies a path on the local file system to the root of all workspaces.  The connector will use this as the root
 					for a file and folder structure for storing content.  The default value is "/tmp", so setting this property to a more logical value is strongly 
 					recommended.
-					</para>
-					</entry>
-				</row>	
-				
-			</tbody>
-		</tgroup>
-	</table>
+        </para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>retryLimit</term>
+      <listitem>
+        <para>
+          Optional property that, if used, defines the number of times that any single operation on a &RepositoryConnection; to this source should be retried
+					following a communication failure. The default value is '0'.
+        </para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>rootNodeUuid</term>
+      <listitem>
+        <para>
+          Optional property that, if used, specifies the UUID that should be used for the root node of each workspace.  If no value is
+					specified, a default UUID is used.
+        </para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>updatesAllowed</term>
+      <listitem>
+        <para>
+          Optional property that determines whether the content in the file system can be updated ("true"), or if the content may only be read ("false").
+					The default value is "true".
+        </para>
+      </listitem>
+    </varlistentry>
+  </variablelist>
 	<para>
 		One way to configure the file system connector is to create &JcrConfiguration; instance with a repository source that uses the &DiskSource; class.
 		For example:

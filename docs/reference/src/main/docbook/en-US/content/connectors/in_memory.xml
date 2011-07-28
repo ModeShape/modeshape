@@ -39,51 +39,63 @@
 	<para>
 		The &InMemoryRepositorySource; class provides a number of JavaBean properties that control its behavior:
 	</para>
-	<table frame='all'>
-		<title>&InMemoryRepositorySource; properties</title>
-		<tgroup cols='2' align='left' colsep='1' rowsep='1'>
-      <colspec colname='c1' colwidth="1*"/>
-      <colspec colname='c2' colwidth="1*"/>
-			<thead>
-				<row>
-		  		<entry>Property</entry>
-		  		<entry>Description</entry>
-				</row>
-			</thead>
-			<tbody>
-				<row>
-					<entry>defaultCachePolicy</entry>
-					<entry>Optional property that, if used, defines the default for how long this information provided by this source may to be 
-						cached by other, higher-level components.  The default value of null implies that this source does not define a specific
-						duration for caching information provided by this repository source.</entry>
-				</row>
-				<row>
-					<entry>defaultWorkspaceName</entry>
-					<entry>Optional property that is initialized to an empty string and which defines the name for the workspace that will be used by default
-						if none is specified.</entry>
-				</row>
-				<row>
-					<entry>jndiName</entry>
-					<entry>Optional property that, if used, specifies the name in JNDI where an &InMemoryRepository; instance can be found.
-						This is an advanced property that is infrequently used.</entry>
-				</row>
-				<row>
-					<entry>name</entry>
-					<entry>The name of the repository source, which is used by the &RepositoryService; when obtaining a &RepositoryConnection; by name.</entry>
-				</row>
-				<row>
-					<entry>rootNodeUuid</entry>
-					<entry>Optional property that, if used, defines the UUID of the root node in the in-memory repository.  If not used,
-						then a new UUID is generated.</entry>
-				</row>
-				<row>
-					<entry>retryLimit</entry>
-					<entry>Optional property that, if used, defines the number of times that any single operation on a &RepositoryConnection; to this source should be retried
-						following a communication failure. The default value is '0'.</entry>
-				</row>
-			</tbody>
-		</tgroup>
-	</table>
+  <variablelist>
+    <varlistentry>
+      <term>defaultCachePolicy</term>
+      <listitem>
+        <para>
+          Optional property that, if used, defines the default for how long this information provided by this source may to be 
+					cached by other, higher-level components.  The default value is an empty string (or null) and implies that this source 
+					does not define a specific duration for caching information provided by this repository source.
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>defaultWorkspaceName</term>
+      <listitem>
+        <para>
+          Optional property that defines the name for the workspace that will be used in cases when clients do not explicitly specify
+          the workspace name. If not specified, "<code>default</code>" will be used.
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>jndiName</term>
+      <listitem>
+        <para>
+          Optional property that, if used, specifies the name in JNDI where an &InMemoryRepository; instance can be found.
+					This is an advanced property that is infrequently used.
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>name</term>
+      <listitem>
+        <para>
+          Required property that specifies the name of the repository source, which is used by the &RepositoryService; 
+          when obtaining a &RepositoryConnection; by name.
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>rootNodeUuid</term>
+      <listitem>
+        <para>
+          Optional property that, if used, specifies the UUID that should be used for the root node of each workspace.  If no value is
+					specified, a new UUID is generated.
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>retryLimit</term>
+      <listitem>
+        <para>
+          Optional property that, if used, defines the number of times that any single operation on a &RepositoryConnection; to this source should be retried
+					following a communication failure. The default value is '0'.
+				</para>
+      </listitem>
+    </varlistentry>
+  </variablelist>
 	<para>
 		One way to configure the in-memory connector is to create &JcrConfiguration; instance with a repository source that uses the &InMemoryRepositorySource; class.
 		For example:
