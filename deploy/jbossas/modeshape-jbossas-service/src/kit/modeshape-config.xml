@@ -38,6 +38,9 @@
 	            <!-- The name of the JAAS application policy, used when clients get a session with credentials.
 	                   (This policy is defined in the 'jboss-modeshape-beans.xml' file). -->
                 <mode:option jcr:name="jaasLoginConfigName" mode:value="modeshape"/>
+
+				<!-- Explicitly specify the "system" workspace in the "SystemStore" source. -->
+				<mode:option jcr:name="systemSourceName" mode:value="system@store"/>
 				
 				<!-- Explicitly specify the directory where the index files should be stored. -->
 				<mode:option jcr:name="queryIndexDirectory" mode:value="${jboss.server.data.dir}/modeshape/repositories/store/indexes"/>				
@@ -76,7 +79,32 @@
 
     <!-- Define the sources used by the repository (or repositories) to store and access the content -->
     <mode:sources jcr:primaryType="nt:unstructured">
-        <mode:source jcr:name="store" mode:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource" mode:retryLimit="3" mode:defaultWorkspaceName="default"/>
+        <!-- 
+        If you wanted to use the driver directly instead of using the JNDI reference, you would replace
+			mode:dataSourceJndiName="java:DefaultDS" 
+			
+		with these:
+        	mode:driverClassName="org.hsqldb.jdbcDriver"
+        	mode:username="sa"
+        	mode:password=""
+        	mode:url="jdbc:hsqldb:mem:target"
+			mode:maximumConnectionsInPool="5"
+
+
+        -->
+        <mode:source jcr:name="store" mode:classname="org.modeshape.connector.store.jpa.JpaSource"
+			mode:dataSourceJndiName="java:DefaultDS"
+			mode:model="Simple"
+        	mode:dialect="org.hibernate.dialect.HSQLDialect"
+        	mode:referentialIntegrityEnforced="true"
+        	mode:largeValueSizeInBytes="10000"
+        	mode:retryLimit="3"
+        	mode:compressData="false"
+        	mode:predefinedWorkspaceNames="default,system"
+        	mode:showSql="false"
+            mode:autoGenerateSchema="update"
+            mode:creatingWorkspacesAllowed="true"
+        	mode:defaultWorkspaceName="default" />    
     </mode:sources>
     
     <mode:sequencers>
