@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ ModeShape (http://www.modeshape.org)
+  ~
+  ~ See the COPYRIGHT.txt file distributed with this work for information
+  ~ regarding copyright ownership.  Some portions may be licensed
+  ~ to Red Hat, Inc. under one or more contributor license agreements.
+  ~ See the AUTHORS.txt file in the distribution for a full listing of 
+  ~ individual contributors.
+  ~
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+  ~ is licensed to you under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ ModeShape is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+  ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
+  ~ for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public License
+  ~ along with this distribution; if not, write to:
+  ~ Free Software Foundation, Inc.
+  ~ 51 Franklin Street, Fifth Floor
+  ~ Boston, MA  02110-1301  USA
+  -->
+<!DOCTYPE preface PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"	[
+<!ENTITY % CustomDTD SYSTEM "../../custom.dtd">
+%CustomDTD;
+]>
+<chapter id="admin-console">
+  <title>ModeShape Administration Console</title>
+     <para>
+     	The ModeShape Administration Console is a web based administrative and monitoring tool for ModeShape. ModeShape's Administration Console 
+     	is built using the RHQ library and adds an additional plugin into the Embedded JOPR application already available in the JBoss AS.
+     </para>
+		<figure id="modeshape-admin-console-image">
+			<title>Administration Console</title>
+			<graphic align="center" scale="100" fileref="modeshape-admin-console.png"/>
+		</figure>
+		<sect1>
+			<title>What can be managed and/or monitored?</title>
+			<itemizedlist>
+				<listitem><para>The ModeShape Engine</para></listitem>
+				<listitem><para>Repositories</para></listitem>
+				<listitem><para>The Sequencing Service</para></listitem>
+				<listitem><para>Sequencers</para></listitem>
+				<listitem><para>Connectors</para></listitem>
+			</itemizedlist>
+     
+		</sect1>
+		<sect1>
+			<title>Configuration</title>
+			<para>
+     			While you cannot directly configure ModeShape through the Administration Console, the configuration
+     			properties are displayed for several ModeShape components including:
+     		</para>
+		    <itemizedlist>
+				<listitem><para>Repositories</para></listitem>
+				<listitem><para>Sequencers</para></listitem>
+				<listitem><para>Connectors</para></listitem>
+			</itemizedlist>
+		</sect1>
+		<sect1>
+			<title>Metrics</title>
+		    <table frame='all'>
+				<title>Repository</title>
+				<tgroup cols='2' align='left' colsep='1' rowsep='1'>
+		      <colspec colname='c1' colwidth="1*"/>
+		      <colspec colname='c2' colwidth="1*"/>
+		      		<tbody>
+						<row>
+						    <entry># of Active Sessions</entry>
+							<entry>The number of JCR sessions that are currently active.</entry>
+						</row>
+					</tbody>
+				</tgroup>
+			</table>
+			 <table frame='all'>
+				<title>Sequencing Service</title>
+				<tgroup cols='2' align='left' colsep='1' rowsep='1'>
+		      <colspec colname='c1' colwidth="1*"/>
+		      <colspec colname='c2' colwidth="1*"/>
+		      		<tbody>
+						<row>
+						    <entry>Number Of Nodes Sequenced</entry>
+							<entry>The number of nodes sequenced.</entry>
+						</row>
+						<row>
+							<entry>Number Of Nodes Skipped</entry>
+							<entry>The number of nodes that were skipped because no sequencers applied.</entry>
+						</row>
+					</tbody>
+				</tgroup>
+			</table>
+			<table frame='all'>
+				<title>Connectors</title>
+				<tgroup cols='2' align='left' colsep='1' rowsep='1'>
+		      <colspec colname='c1' colwidth="1*"/>
+		      <colspec colname='c2' colwidth="1*"/>
+		      		<tbody>
+						<row>
+						    <entry>Total Connections in Use</entry>
+							<entry>The number of connections in use.</entry>
+						</row>
+						</tbody>
+				</tgroup>
+			</table>
+		</sect1>
+		<sect1>
+			<title>Control (Operations)</title>
+		    <table frame='all'>
+				<title>ModeShape Engine</title>
+				<tgroup cols='2' align='left' colsep='1' rowsep='1'>
+		      <colspec colname='c1' colwidth="1*"/>
+		      <colspec colname='c2' colwidth="1*"/>
+		      		<tbody>
+						<row>
+						    <entry>Start/Restart</entry>
+							<entry>Start the engine or restart if it's already running.</entry>
+						</row>
+						<row>
+						    <entry>Shutdown</entry>
+							<entry>Stop the engine.</entry>
+						</row>
+					</tbody>
+				</tgroup>
+			</table>
+			 <table frame='all'>
+				<title>Sequencing Service</title>
+				<tgroup cols='2' align='left' colsep='1' rowsep='1'>
+		      <colspec colname='c1' colwidth="1*"/>
+		      <colspec colname='c2' colwidth="1*"/>
+		      		<tbody>
+						<row>
+						    <entry>Number Of Nodes Sequenced</entry>
+							<entry>The number of nodes sequenced.</entry>
+						</row>
+						<row>
+							<entry>Number Of Nodes Skipped</entry>
+							<entry>The number of nodes that were skipped because no sequencers applied.</entry>
+						</row>
+					</tbody>
+				</tgroup>
+			</table>
+			<table frame='all'>
+				<title>Connectors</title>
+				<tgroup cols='2' align='left' colsep='1' rowsep='1'>
+		      <colspec colname='c1' colwidth="1*"/>
+		      <colspec colname='c2' colwidth="1*"/>
+		      		<tbody>
+						<row>
+						    <entry>Ping</entry>
+							<entry>Ping the connector to test availability.</entry>
+						</row>
+						</tbody>
+				</tgroup>
+			</table>
+		</sect1>
+</chapter>
+
