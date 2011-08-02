@@ -153,5 +153,15 @@
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/text_extractors/tika_extractor.xml"/>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/text_extractors/custom_extractors.xml"/>
 	</part>
+	<part id="administration-part">
+		<title>Administration and Monitoring</title>
+		<partintro>
+			<para>
+			  The ModeShape project provides an RHQ plugin for use in the Administrative Console available in JBossAS. 
+			  The console is accessible at http://{host}:{port}/admin-console.
+			</para>
+		</partintro>
+  	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/administration/admin_console.xml"/>
+	</part>
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/future.xml"/>
 </book>
