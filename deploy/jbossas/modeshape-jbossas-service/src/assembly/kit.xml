@@ -72,7 +72,9 @@
             <include>org.modeshape:modeshape-connector-jdbc-metadata</include>
             <include>org.modeshape:modeshape-connector-store-jpa</include>
             <include>org.modeshape:modeshape-connector-svn</include>    
-   
+            <include>org.modeshape:modeshape-connector-disk</include>   
+			
+			    
             <include>org.modeshape:modeshape-sequencer-msoffice</include>
             <include>org.apache.poi:poi</include>
             <include>org.apache.poi:poi-scratchpad</include>
