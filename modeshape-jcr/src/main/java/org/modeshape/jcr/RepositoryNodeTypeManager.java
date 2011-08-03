@@ -2589,8 +2589,8 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
 
     }
 
-    protected void refreshFromSystem() {
-        if (nodeTypesPath == null) return;
+    protected boolean refreshFromSystem() {
+        if (nodeTypesPath == null) return false;
         this.nodeTypeManagerLock.writeLock().lock();
         try {
             GraphNodeTypeReader reader = new GraphNodeTypeReader(this.context);
@@ -2602,10 +2602,13 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
             if (readerProblems.hasProblems()) {
                 if (readerProblems.hasErrors()) {
                     LOGGER.error(JcrI18n.errorRefreshingNodeTypesFromSystem, reader.getProblems());
-                    return;
+                    return false;
                 }
 
                 LOGGER.warn(JcrI18n.problemRefreshingNodeTypesFromSystem, reader.getProblems());
+            }
+            if (reader.getNodeTypeDefinitions().length == 0) {
+                return false;
             }
 
             // Remove all the cached node types ...
@@ -2666,5 +2669,6 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
             this.schemata = null;
             this.nodeTypeManagerLock.writeLock().unlock();
         }
+        return true;
     }
 }
