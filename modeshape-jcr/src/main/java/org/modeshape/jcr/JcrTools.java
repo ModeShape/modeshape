@@ -29,11 +29,20 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import javax.jcr.Binary;
+import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
@@ -45,15 +54,32 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeType;
+import javax.jcr.observation.Event;
+import javax.jcr.observation.EventIterator;
+import javax.jcr.observation.EventListener;
+import javax.jcr.query.Query;
+import javax.jcr.query.QueryResult;
+import org.modeshape.common.SystemFailureException;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.mimetype.MimeTypeDetector;
+import org.modeshape.graph.property.Path;
 
 /**
  * Utility methods for working with JCR nodes.
  */
 public class JcrTools {
+
+    private boolean debug = false;
+
+    public JcrTools() {
+    }
+
+    public JcrTools( boolean debug ) {
+        this.debug = debug;
+    }
 
     /**
      * Remove all children from the specified node
@@ -73,6 +99,17 @@ public class JcrTools {
             ++childrenRemoved;
         }
         return childrenRemoved;
+    }
+
+    public int removeAllChildren( Session session,
+                                  String absPath ) throws RepositoryException {
+        try {
+            Node node = session.getNode(absPath);
+            return removeAllChildren(node);
+        } catch (PathNotFoundException e) {
+            // ignore
+        }
+        return 0;
     }
 
     /**
@@ -320,6 +357,83 @@ public class JcrTools {
         return uploadFile(session, path, stream);
     }
 
+    public void uploadFileAndBlock( Session session,
+                                    String resourceFilePath,
+                                    String parentPath ) throws RepositoryException, IOException {
+        uploadFileAndBlock(session, resourceUrl(resourceFilePath), parentPath);
+    }
+
+    public void uploadFileAndBlock( Session session,
+                                    String folder,
+                                    String fileName,
+                                    String parentPath ) throws RepositoryException, IOException {
+        uploadFileAndBlock(session, resourceUrl(folder + fileName), parentPath);
+    }
+
+    public void uploadFileAndBlock( Session session,
+                                    URL url,
+                                    String parentPath ) throws RepositoryException, IOException {
+        // Grab the last segment of the URL path, using it as the filename
+        String filename = url.getPath().replaceAll("([^/]*/)*", "");
+        if (!parentPath.startsWith("/")) parentPath = "/" + parentPath;
+        if (!parentPath.endsWith("/")) parentPath = parentPath + "/";
+        final String nodePath = parentPath + filename;
+
+        // Wait a bit before uploading, to make sure everything is ready ...
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            throw new SystemFailureException(e.getMessage());
+        }
+
+        if (debug) {
+            System.out.println("---> Uploading '" + filename + "' into '" + nodePath + "'");
+        }
+
+        // Now use the JCR API to upload the file ...
+        final CountDownLatch latch = new CountDownLatch(1);
+        EventListener listener = new EventListener() {
+            /**
+             * {@inheritDoc}
+             * 
+             * @see javax.jcr.observation.EventListener#onEvent(javax.jcr.observation.EventIterator)
+             */
+            public void onEvent( EventIterator events ) {
+                while (events.hasNext()) {
+                    try {
+                        if (events.nextEvent().getPath().equals(nodePath)) {
+                            latch.countDown();
+                        }
+                    } catch (Throwable e) {
+                        latch.countDown();
+                        throw new SystemFailureException(e.getMessage());
+                    }
+                }
+            }
+        };
+        session.getWorkspace()
+               .getObservationManager()
+               .addEventListener(listener, Event.NODE_ADDED, parentPath, true, null, null, false);
+        uploadFile(session, nodePath, url);
+
+        // Save the session ...
+        session.save();
+
+        // Now await for the event describing the newly-added file ...
+        try {
+            latch.await(2, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            throw new SystemFailureException(e.getMessage());
+        }
+    }
+
+    public void uploadFilesAndBlock( String destinationPath,
+                                     String... resourcePaths ) throws Exception {
+        for (String resourcePath : resourcePaths) {
+            uploadFilesAndBlock(resourcePath, destinationPath);
+        }
+    }
+
     /**
      * Get or create a node at the specified path.
      * 
@@ -451,6 +565,16 @@ public class JcrTools {
         return findOrCreateNode(parent, name, nodeType, nodeType);
     }
 
+    public boolean isDebug() {
+        return debug;
+    }
+
+    public void print( Object msg ) {
+        if (debug && msg != null) {
+            System.out.println(msg.toString());
+        }
+    }
+
     /**
      * Load the subgraph below this node, and print it to System.out if printing is enabled.
      * 
@@ -574,6 +698,128 @@ public class JcrTools {
         }
     }
 
+    /**
+     * Execute the supplied JCR-SQL2 query and, if printing is enabled, print out the results.
+     * 
+     * @param session the session
+     * @param jcrSql2 the JCR-SQL2 query
+     * @return the results
+     * @throws RepositoryException
+     */
+    public QueryResult printQuery( Session session,
+                                   String jcrSql2 ) throws RepositoryException {
+        return printQuery(session, jcrSql2, Query.JCR_SQL2, -1, null);
+    }
+
+    /**
+     * Execute the supplied JCR-SQL2 query and, if printing is enabled, print out the results.
+     * 
+     * @param session the session
+     * @param jcrSql2 the JCR-SQL2 query
+     * @param expectedNumberOfResults the expected number of rows in the results, or -1 if this is not to be checked
+     * @param variables the variables for the query
+     * @return the results
+     * @throws RepositoryException
+     */
+    public QueryResult printQuery( Session session,
+                                   String jcrSql2,
+                                   long expectedNumberOfResults,
+                                   Variable... variables ) throws RepositoryException {
+        Map<String, String> keyValuePairs = new HashMap<String, String>();
+        for (Variable var : variables) {
+            keyValuePairs.put(var.key, var.value);
+        }
+        return printQuery(session, jcrSql2, Query.JCR_SQL2, expectedNumberOfResults, keyValuePairs);
+    }
+
+    /**
+     * Execute the supplied JCR-SQL2 query and, if printing is enabled, print out the results.
+     * 
+     * @param session the session
+     * @param jcrSql2 the JCR-SQL2 query
+     * @param expectedNumberOfResults the expected number of rows in the results, or -1 if this is not to be checked
+     * @param variables the array of variable maps for the query; all maps will be combined into a single map
+     * @return the results
+     * @throws RepositoryException
+     */
+    public QueryResult printQuery( Session session,
+                                   String jcrSql2,
+                                   long expectedNumberOfResults,
+                                   Map<String, String> variables ) throws RepositoryException {
+        return printQuery(session, jcrSql2, Query.JCR_SQL2, expectedNumberOfResults, variables);
+    }
+
+    public QueryResult printQuery( Session session,
+                                   String queryExpression,
+                                   String queryLanguage,
+                                   long expectedNumberOfResults,
+                                   Map<String, String> variables ) throws RepositoryException {
+        QueryResult results = null;
+        for (int i = 0; i != 10; ++i) {
+            Query query = session.getWorkspace().getQueryManager().createQuery(queryExpression, queryLanguage);
+            if (variables != null && !variables.isEmpty()) {
+                for (Map.Entry<String, String> entry : variables.entrySet()) {
+                    String key = entry.getKey();
+                    Value value = session.getValueFactory().createValue(entry.getValue());
+                    query.bindValue(key, value);
+                }
+            }
+            results = query.execute();
+            if (results.getRows().getSize() == expectedNumberOfResults) {
+                break;
+            }
+            // We got a different number of results. It could be that we caught the indexer before it was done indexing
+            // the changes, so sleep for a bit and try again ...
+            try {
+                if (debug) {
+                    print("---> Waiting for query: " + queryExpression + (variables != null ? " using " + variables : ""));
+                }
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                throw new SystemFailureException(e.getMessage());
+            }
+        }
+        assert results != null;
+        if (expectedNumberOfResults >= 0L && expectedNumberOfResults != results.getRows().getSize()) {
+            throw new AssertionError("Expected different number of rows from '" + queryExpression + "': got "
+                                     + results.getRows().getSize() + " but expected " + expectedNumberOfResults);
+        }
+        if (debug) {
+            print(queryExpression);
+            print(results);
+            print("");
+        }
+        return results;
+    }
+
+    public Variable var( String key,
+                         String value ) {
+        return new Variable(key, value);
+    }
+
+    public Map<String, String> vars( String... keyValuePairs ) {
+        assert keyValuePairs.length % 2 == 0 : "Must provide an even number of keys and values";
+        Map<String, String> map = new HashMap<String, String>();
+        for (int i = 0; i != keyValuePairs.length; ++i) {
+            String key = keyValuePairs[i];
+            String value = keyValuePairs[++i];
+            map.put(key, value);
+        }
+        return map;
+    }
+
+    @Immutable
+    public static class Variable {
+        protected final String key;
+        protected final String value;
+
+        public Variable( String key,
+                         String value ) {
+            this.key = key;
+            this.value = value;
+        }
+    }
+
     protected String getStringValue( Value value,
                                      int type ) throws RepositoryException {
         String result = value.getString();
@@ -581,6 +827,223 @@ public class JcrTools {
             result = "\"" + result + "\"";
         }
         return result;
+    }
+
+    public void registerNodeTypes( Session session,
+                                   String pathToCndResourceFile ) {
+        InputStream stream = getClass().getClassLoader().getResourceAsStream(pathToCndResourceFile);
+        if (stream == null) {
+            String msg = "\"" + pathToCndResourceFile + "\" does not reference an existing file";
+            System.err.println(msg);
+            throw new IllegalArgumentException(msg);
+        }
+        assert stream != null;
+        try {
+            CndNodeTypeReader cndReader = new CndNodeTypeReader(session);
+            cndReader.read(stream, pathToCndResourceFile);
+            session.getWorkspace().getNodeTypeManager().registerNodeTypes(cndReader.getNodeTypeDefinitions(), true);
+        } catch (RepositoryException re) {
+            throw new IllegalStateException("Could not load node type definition files", re);
+        } catch (IOException ioe) {
+            throw new IllegalStateException("Could not access node type definition files", ioe);
+        } finally {
+            try {
+                stream.close();
+            } catch (IOException closer) {
+            }
+        }
+    }
+
+    public void importContent( Session session,
+                               String pathToResourceFile ) throws Exception {
+        importContent(session, getClass(), pathToResourceFile);
+    }
+
+    public void importContent( Session session,
+                               String pathToResourceFile,
+                               int importBehavior ) throws Exception {
+        importContent(session, getClass(), pathToResourceFile, null, importBehavior);
+    }
+
+    public void importContent( Session session,
+                               String pathToResourceFile,
+                               String jcrPathToImportUnder ) throws Exception {
+        importContent(session, getClass(), pathToResourceFile, jcrPathToImportUnder);
+    }
+
+    public void importContent( Session session,
+                               String pathToResourceFile,
+                               String jcrPathToImportUnder,
+                               int importBehavior ) throws Exception {
+        importContent(session, getClass(), pathToResourceFile, jcrPathToImportUnder, importBehavior);
+    }
+
+    public static void importContent( Session session,
+                                      Class<?> testClass,
+                                      String pathToResourceFile ) throws Exception {
+        importContent(session, testClass, pathToResourceFile, null);
+    }
+
+    public static void importContent( Session session,
+                                      Class<?> testClass,
+                                      String pathToResourceFile,
+                                      String jcrPathToImportUnder ) throws Exception {
+        int behavior = ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW;
+        importContent(session, testClass, pathToResourceFile, null, behavior);
+    }
+
+    public static void importContent( Session session,
+                                      Class<?> testClass,
+                                      String pathToResourceFile,
+                                      String jcrPathToImportUnder,
+                                      int importBehavior ) throws Exception {
+
+        // Use a session to load the contents ...
+        try {
+            InputStream stream = testClass.getClassLoader().getResourceAsStream(pathToResourceFile);
+            if (stream == null) {
+                String msg = "\"" + pathToResourceFile + "\" does not reference an existing file";
+                System.err.println(msg);
+                throw new IllegalArgumentException(msg);
+            }
+            assert stream != null;
+            if (jcrPathToImportUnder == null || jcrPathToImportUnder.trim().length() == 0) jcrPathToImportUnder = "/";
+
+            try {
+                session.getWorkspace().importXML(jcrPathToImportUnder, stream, importBehavior);
+            } finally {
+                try {
+                    session.save();
+                } finally {
+                    stream.close();
+                    session.logout();
+                }
+            }
+            session.save();
+        } catch (RuntimeException t) {
+            t.printStackTrace();
+            throw t;
+        } catch (Exception t) {
+            t.printStackTrace();
+            throw t;
+        }
+    }
+
+    protected URL resourceUrl( String name ) {
+        return getClass().getClassLoader().getResource(name);
+    }
+
+    public void repeatedlyWithSession( Repository repository,
+                                       int times,
+                                       Operation operation ) throws Exception {
+        for (int i = 0; i != times; ++i) {
+            double time = withSession(repository, operation);
+            print("Time to execute \"" + operation.getClass().getSimpleName() + "\": " + time + " ms");
+        }
+    }
+
+    public void browseTo( Repository repository,
+                          String path ) throws Exception {
+        double time = 0.0d;
+        ExecutionContext context = null;
+        if (repository instanceof JcrRepository) {
+            JcrRepository jcrRepo = (JcrRepository)repository;
+            context = jcrRepo.getExecutionContext();
+        } else {
+            context = new ExecutionContext();
+        }
+        Path pathObj = context.getValueFactories().getPathFactory().create(path);
+        for (Iterator<Path> iterator = pathObj.pathsFromRoot(); iterator.hasNext();) {
+            Path p = iterator.next();
+            String pathStr = context.getValueFactories().getStringFactory().create(p);
+            time += withSession(repository, new BrowseContent(this, pathStr));
+        }
+        print("Time to browse down to \"" + path + "\": " + time + " ms");
+    }
+
+    public double withSession( Repository repository,
+                               Operation operation ) throws Exception {
+        long startTime = System.nanoTime();
+        Session session = repository.login();
+        try {
+            operation.run(session);
+        } finally {
+            session.logout();
+        }
+        return TimeUnit.MILLISECONDS.convert(System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
+    }
+
+    public static interface Operation {
+        public void run( Session session ) throws Exception;
+    }
+
+    public static abstract class BasicOperation implements Operation {
+        protected JcrTools tools;
+
+        protected BasicOperation( JcrTools tools ) {
+            this.tools = tools;
+        }
+
+        protected Node assertNode( Session session,
+                                   String path,
+                                   String primaryType,
+                                   String... mixinTypes ) throws RepositoryException {
+            Node node = session.getNode(path);
+            assert node.getPrimaryNodeType().getName().equals(primaryType);
+            Set<String> expectedMixinTypes = new HashSet<String>(Arrays.asList(mixinTypes));
+            Set<String> actualMixinTypes = new HashSet<String>();
+            for (NodeType mixin : node.getMixinNodeTypes()) {
+                actualMixinTypes.add(mixin.getName());
+            }
+            assert actualMixinTypes.equals(expectedMixinTypes) : "Mixin types do not match";
+            return node;
+        }
+    }
+
+    public static class BrowseContent extends BasicOperation {
+        private String path;
+
+        public BrowseContent( JcrTools tools,
+                              String path ) {
+            super(tools);
+            this.path = path;
+        }
+
+        public void run( Session s ) throws RepositoryException {
+            // Verify the file was imported ...
+            Node node = s.getNode(path);
+            assert node != null : "Node at " + path + " is null";
+        }
+
+    }
+
+    public static class CountNodes extends BasicOperation {
+        public long numNonSystemNodes = 0L;
+
+        public CountNodes( JcrTools tools ) {
+            super(tools);
+        }
+
+        public void run( Session s ) throws RepositoryException {
+            // Count the nodes below the root, excluding the '/jcr:system' branch ...
+            String queryStr = "SELECT [jcr:primaryType] FROM [nt:base]";
+            Query query = s.getWorkspace().getQueryManager().createQuery(queryStr, Query.JCR_SQL2);
+            numNonSystemNodes += query.execute().getRows().getSize();
+            if (tools != null) tools.print("  # nodes NOT in '/jcr:system' branch: " + numNonSystemNodes);
+        }
+    }
+
+    public static class PrintNodes extends BasicOperation {
+        public PrintNodes( JcrTools tools ) {
+            super(tools);
+        }
+
+        public void run( Session s ) throws RepositoryException {
+            // Count the nodes below the root, excluding the '/jcr:system' branch ...
+            String queryStr = "SELECT [jcr:path] FROM [nt:base] ORDER BY [jcr:path]";
+            Query query = s.getWorkspace().getQueryManager().createQuery(queryStr, Query.JCR_SQL2);
+            if (tools != null) tools.print(query.execute());
+        }
     }
 
 }

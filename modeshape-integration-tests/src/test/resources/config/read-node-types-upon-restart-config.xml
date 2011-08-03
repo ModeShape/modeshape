@@ -33,6 +33,8 @@
             <mode:options jcr:primaryType="options" >
                 <!-- Explicitly specify the "system" workspace in the "SystemStore" source. -->
                 <mode:option jcr:name="systemSourceName" mode:value="system@Store"/>
+                <mode:option jcr:name="queryIndexDirectory" mode:value="target/jcr-test-db/indexes"/>
+                <mode:option jcr:name="rebuildQueryIndexOnStartup" mode:value="ifMissing"/>
             </mode:options>
         </mode:repository>
     </mode:repositories>
