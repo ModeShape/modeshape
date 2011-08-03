@@ -354,8 +354,6 @@ final class JcrVersionManager implements VersionManager {
 
         // Get the highest node that was changed ...
         Path highestChanged = (Path)createVersionFunction.output(CreateVersionNodeFunction.PATH_OF_HIGHEST_MODIFIED_NODE);
-        // We have to refresh the parent of the highest node that was changed ...
-        cache().refresh(highestChanged.getParent(), false);
 
         // Find the version history UUID (which may have been created) ...
         UUID versionHistoryUuid = (UUID)createVersionFunction.output(CreateVersionNodeFunction.VERSION_HISTORY_UUID);
@@ -364,6 +362,15 @@ final class JcrVersionManager implements VersionManager {
         UUID versionUuid = (UUID)createVersionFunction.output(CreateVersionNodeFunction.VERSION_UUID);
         versionPath = (Path)createVersionFunction.output(CreateVersionNodeFunction.VERSION_PATH);
         Location versionLocation = Location.create(versionPath, versionUuid);
+
+        // We have to refresh the parent of the highest node that was changed ...
+        Path refreshPath = highestChanged.getParent();
+        cache().refresh(refreshPath, false);
+
+        // But make sure we refresh the version history for this node if we didn't change it ...
+        if (!refreshPath.isAtOrAbove(historyPath)) {
+            cache().refresh(historyPath, false);
+        }
         AbstractJcrNode newVersion = cache().findJcrNode(versionLocation);
 
         // Update the node's 'mix:versionable' properties ...
