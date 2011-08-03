@@ -47,7 +47,7 @@ public class JcrRepositoryPerformanceTest extends ModeShapeSingleUseTest {
         startEngineUsing("config/configRepositoryForDroolsInMemoryPerformance.xml");
         sessionTo("Repo");
         assertNode("/", "mode:root");
-        guvnor = new GuvnorEmulator(repository(), NUMBER_OF_COPIES, true);
+        guvnor = new GuvnorEmulator(repository(), NUMBER_OF_COPIES, false);
         // import the file ...
         importContent(getClass(), "io/drools/mortgage-sample-repository.xml");
         session().refresh(false);
@@ -61,11 +61,10 @@ public class JcrRepositoryPerformanceTest extends ModeShapeSingleUseTest {
     @Ignore( "Removed from automatic builds due to time of test. Can be run manually." )
     @Test
     public void shouldSimulateGuvnorUsageAgainstRepositoryWithJpaStore() throws Exception {
-        print = true;
         startEngineUsing("config/configRepositoryForDroolsJpaCreate.xml");
         sessionTo("Repo");
         assertNode("/", "mode:root");
-        guvnor = new GuvnorEmulator(repository(), NUMBER_OF_COPIES, true);
+        guvnor = new GuvnorEmulator(repository(), NUMBER_OF_COPIES, false);
         // import the file ...
         importContent(getClass(), "io/drools/mortgage-sample-repository.xml");
         session().refresh(false);
@@ -80,11 +79,10 @@ public class JcrRepositoryPerformanceTest extends ModeShapeSingleUseTest {
     @FixFor( "MODE-1113" )
     @Test
     public void shouldHaveImportContentAvailableAfterRestart() throws Exception {
-        // print = true;
         startEngineUsing("config/configRepositoryForDroolsJpaCreate.xml");
         sessionTo("Repo");
         assertNode("/", "mode:root");
-        guvnor = new GuvnorEmulator(repository(), NUMBER_OF_COPIES, true);
+        guvnor = new GuvnorEmulator(repository(), NUMBER_OF_COPIES, false);
         // import the file ...
         importContent(getClass(), "io/drools/mortgage-sample-repository.xml");
         session().refresh(false);
@@ -109,12 +107,10 @@ public class JcrRepositoryPerformanceTest extends ModeShapeSingleUseTest {
     @FixFor( "MODE-1114" )
     @Test
     public void shouldImportMultipleTimesAsNewContent() throws Exception {
-        // print = true;
-        // printDetail = false;
         startEngineUsing("config/configRepositoryForDroolsInMemoryPerformance.xml");
         sessionTo("Repo");
         assertNode("/", "mode:root");
-        guvnor = new GuvnorEmulator(repository(), NUMBER_OF_COPIES, true);
+        guvnor = new GuvnorEmulator(repository(), NUMBER_OF_COPIES, false);
 
         // import the file multiple times ...
         int importBehavior = ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW;
@@ -134,12 +130,10 @@ public class JcrRepositoryPerformanceTest extends ModeShapeSingleUseTest {
     @FixFor( "MODE-1114" )
     @Test
     public void shouldImportMultipleTimesAsNewContentUsingJpa() throws Exception {
-        // print = true;
-        // printDetail = false;
         startEngineUsing("config/configRepositoryForDroolsJpaCreate.xml");
         sessionTo("Repo");
         assertNode("/", "mode:root");
-        guvnor = new GuvnorEmulator(repository(), NUMBER_OF_COPIES, true);
+        guvnor = new GuvnorEmulator(repository(), NUMBER_OF_COPIES, false);
 
         // import the file multiple times ...
         int importBehavior = ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW;
@@ -158,11 +152,10 @@ public class JcrRepositoryPerformanceTest extends ModeShapeSingleUseTest {
     @FixFor( "MODE-1114" )
     @Test
     public void shouldImportMultipleTimesAsReplacedContent() throws Exception {
-        print = true;
         startEngineUsing("config/configRepositoryForDroolsInMemoryPerformance.xml");
         sessionTo("Repo");
         assertNode("/", "mode:root");
-        guvnor = new GuvnorEmulator(repository(), NUMBER_OF_COPIES, true);
+        guvnor = new GuvnorEmulator(repository(), NUMBER_OF_COPIES, false);
 
         // import the file multiple times ...
         int importBehavior = ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING;
@@ -182,11 +175,10 @@ public class JcrRepositoryPerformanceTest extends ModeShapeSingleUseTest {
     @FixFor( "MODE-1114" )
     @Test
     public void shouldImportMultipleTimesAsReplacedContentUsingJpa() throws Exception {
-        print = true;
         startEngineUsing("config/configRepositoryForDroolsJpaCreate.xml");
         sessionTo("Repo");
         assertNode("/", "mode:root");
-        guvnor = new GuvnorEmulator(repository(), NUMBER_OF_COPIES, true);
+        guvnor = new GuvnorEmulator(repository(), NUMBER_OF_COPIES, false);
 
         // import the file multiple times ...
         int importBehavior = ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING;
@@ -205,12 +197,10 @@ public class JcrRepositoryPerformanceTest extends ModeShapeSingleUseTest {
     @FixFor( "MODE-1114" )
     @Test
     public void shouldImportOnceAndSimulateGuvnorUsage() throws Exception {
-        // print = true;
-        // printDetail = false;
         startEngineUsing("config/configRepositoryForDroolsInMemoryPerformance.xml");
         sessionTo("Repo");
         assertNode("/", "mode:root");
-        guvnor = new GuvnorEmulator(repository(), NUMBER_OF_COPIES, true);
+        guvnor = new GuvnorEmulator(repository(), NUMBER_OF_COPIES, false);
 
         // import the file multiple times ...
         int importBehavior = ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING;
@@ -227,12 +217,10 @@ public class JcrRepositoryPerformanceTest extends ModeShapeSingleUseTest {
     @FixFor( "MODE-1114" )
     @Test
     public void shouldImportOnceAndSimulateGuvnorUsageUsingJpa() throws Exception {
-        // print = true;
-        // printDetail = false;
         startEngineUsing("config/configRepositoryForDroolsJpaCreate.xml");
         sessionTo("Repo");
         assertNode("/", "mode:root");
-        guvnor = new GuvnorEmulator(repository(), NUMBER_OF_COPIES, true);
+        guvnor = new GuvnorEmulator(repository(), NUMBER_OF_COPIES, false);
 
         // import the file multiple times ...
         int importBehavior = ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING;
@@ -249,12 +237,10 @@ public class JcrRepositoryPerformanceTest extends ModeShapeSingleUseTest {
     @FixFor( "MODE-1114" )
     @Test
     public void shouldImportAndSimulateGuvnorUsageTwice() throws Exception {
-        // print = true;
-        // printDetail = false;
         startEngineUsing("config/configRepositoryForDroolsInMemoryPerformance.xml");
         sessionTo("Repo");
         assertNode("/", "mode:root");
-        guvnor = new GuvnorEmulator(repository(), NUMBER_OF_COPIES, true);
+        guvnor = new GuvnorEmulator(repository(), NUMBER_OF_COPIES, false);
 
         // import the file multiple times ...
         int importBehavior = ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING;
@@ -287,12 +273,10 @@ public class JcrRepositoryPerformanceTest extends ModeShapeSingleUseTest {
     @FixFor( "MODE-1114" )
     @Test
     public void shouldImportAndSimulateGuvnorUsageTwiceUsingJpa() throws Exception {
-        // print = true;
-        // printDetail = false;
         startEngineUsing("config/configRepositoryForDroolsJpaCreate.xml");
         sessionTo("Repo");
         assertNode("/", "mode:root");
-        guvnor = new GuvnorEmulator(repository(), NUMBER_OF_COPIES, true);
+        guvnor = new GuvnorEmulator(repository(), NUMBER_OF_COPIES, false);
 
         // import the file multiple times ...
         int importBehavior = ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING;
