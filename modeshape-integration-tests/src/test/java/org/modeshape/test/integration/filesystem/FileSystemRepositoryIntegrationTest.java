@@ -127,7 +127,7 @@ public class FileSystemRepositoryIntegrationTest extends ModeShapeSingleUseTest 
 
         // Get another session and verify the reference exists and can be resolved ...
         session = session();
-        print = true;
+        // print = true;
         printQuery("SELECT * FROM [nt:base]", 5L, Collections.<String, String>emptyMap());
     }
 
