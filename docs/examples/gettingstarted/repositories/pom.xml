@@ -3,14 +3,14 @@
   <parent>
     <groupId>org.modeshape.examples</groupId>
     <artifactId>getting_started</artifactId>
-    <version>2.6-SNAPSHOT</version>
+    <version>2.6.0.Beta2</version>
     <relativePath>..</relativePath>
   </parent>
 
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.modeshape.examples</groupId>
   <artifactId>modeshape-example-repositories</artifactId>
-  <version>2.6-SNAPSHOT</version>
+  <version>2.6.0.Beta2</version>
   <packaging>jar</packaging>
   <name>ModeShape Repositories Examples</name>
   <description>Examples that showcase how to use ModeShape repositories.</description>
