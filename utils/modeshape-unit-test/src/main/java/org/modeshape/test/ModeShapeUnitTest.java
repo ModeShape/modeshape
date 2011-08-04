@@ -447,18 +447,18 @@ public abstract class ModeShapeUnitTest {
         return getClass().getClassLoader().getResource(name);
     }
 
-    protected void uploadFile( String resourceFilePath,
+    protected Node uploadFile( String resourceFilePath,
                                String parentPath ) throws RepositoryException, IOException {
-        uploadFile(resourceUrl(resourceFilePath), parentPath);
+        return uploadFile(resourceUrl(resourceFilePath), parentPath);
     }
 
-    protected void uploadFile( String folder,
+    protected Node uploadFile( String folder,
                                String fileName,
                                String parentPath ) throws RepositoryException, IOException {
-        uploadFile(resourceUrl(folder + fileName), parentPath);
+        return uploadFile(resourceUrl(folder + fileName), parentPath);
     }
 
-    protected void uploadFile( URL url,
+    protected Node uploadFile( URL url,
                                String parentPath ) throws RepositoryException, IOException {
         // Grab the last segment of the URL path, using it as the filename
         String filename = url.getPath().replaceAll("([^/]*/)*", "");
@@ -503,7 +503,7 @@ public abstract class ModeShapeUnitTest {
         session.getWorkspace()
                .getObservationManager()
                .addEventListener(listener, Event.NODE_ADDED, parentPath, true, null, null, false);
-        tools.uploadFile(session, nodePath, url);
+        Node newFileNode = tools.uploadFile(session, nodePath, url);
 
         // Save the session ...
         session.save();
@@ -514,6 +514,7 @@ public abstract class ModeShapeUnitTest {
         } catch (InterruptedException e) {
             fail(e.getMessage());
         }
+        return newFileNode;
     }
 
     protected void uploadFiles( String destinationPath,
