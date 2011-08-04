@@ -26,6 +26,7 @@ package org.modeshape.test.integration.filesystem;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import java.io.File;
+import java.util.Collections;
 import javax.jcr.NamespaceException;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
@@ -37,10 +38,11 @@ import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.nodetype.PropertyDefinitionTemplate;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.test.ModeShapeSingleUseTest;
 
-public class FileSystemRepositoryReferenceTest extends ModeShapeSingleUseTest {
+public class FileSystemRepositoryIntegrationTest extends ModeShapeSingleUseTest {
 
     protected static final String README_RESOURCE_PATH = "svn/local_repos/dummy_svn_repos/README.txt";
     protected static final String MODETEST_URL = "http://modeshape.org/test";
@@ -100,6 +102,33 @@ public class FileSystemRepositoryReferenceTest extends ModeShapeSingleUseTest {
         referenced = meta.getProperty("contentPointer").getNode();
         assertThat(referenced.getPath(), is(content.getPath()));
         assertThat(referenced, is(content));
+    }
+
+    @FixFor( "MODE-1221" )
+    @Test
+    public void shouldFindAllNodesWhenQueryingContent() throws Exception {
+        startEngineUsing("config/configRepositoryForFileSystemWithExtraProperties.xml");
+
+        // Create the nodes ...
+        Session session = session();
+        Node root = session.getRootNode();
+        root.addNode("A", "nt:folder");
+        root.addNode("meta", "nt:folder");
+        Node readme = uploadFile(README_RESOURCE_PATH, "/A");
+
+        // Now create a reference on '/meta' to the '/A/README.txt/jcr:content' node.
+        Node content = readme.getNode("jcr:content");
+        content.addMixin("mix:referenceable");
+
+        // Now save ...
+        session.save();
+
+        logout();
+
+        // Get another session and verify the reference exists and can be resolved ...
+        session = session();
+        print = true;
+        printQuery("SELECT * FROM [nt:base]", 5L, Collections.<String, String>emptyMap());
     }
 
     protected void registryNamespaceIfMissing( String prefix,
