@@ -2589,6 +2589,11 @@ public class GraphSession<Payload, PropertyPayload> {
             return location;
         }
 
+        public final void setUuid( UUID uuid ) {
+            assert this.location.getUuid() == null || this.location.getUuid().equals(uuid);
+            this.location = this.location.with(uuid);
+        }
+
         /**
          * Get the original location for this node prior to making any transient changes.
          * 
