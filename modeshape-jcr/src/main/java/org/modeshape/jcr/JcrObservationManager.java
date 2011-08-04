@@ -1010,7 +1010,8 @@ final class JcrObservationManager implements ObservationManager {
                 // process event making sure we have the right event type
                 Path path = change.getPath();
                 PathFactory pathFactory = getValueFactories().getPathFactory();
-                String id = change.getLocation().getUuid().toString();
+                UUID uuid = change.getLocation().getUuid();
+                String id = uuid != null ? uuid.toString() : null;
 
                 if (change.includes(ChangeType.NODE_MOVED)) {
                     Location original = change.getOriginalLocation();

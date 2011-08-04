@@ -41,12 +41,13 @@ import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NameFactory;
 import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
+import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.PathNotFoundException;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.PropertyFactory;
+import org.modeshape.graph.property.UuidFactory;
 import org.modeshape.graph.property.ValueFactory;
-import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.property.basic.FileSystemBinary;
 import org.modeshape.graph.request.Request;
 
@@ -450,6 +451,7 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> implements NodeCaching
             PathFactory pathFactory = context.getValueFactories().getPathFactory();
             DateTimeFactory dateFactory = context.getValueFactories().getDateFactory();
             MimeTypeDetector mimeTypeDetector = context.getMimeTypeDetector();
+            UuidFactory uuidFactory = context.getValueFactories().getUuidFactory();
             CustomPropertiesFactory customPropertiesFactory = source.customPropertiesFactory();
             NamespaceRegistry registry = context.getNamespaceRegistry();
             Location location = Location.create(path);
@@ -504,8 +506,8 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> implements NodeCaching
                 } else {
                     nodeType = nameValueFor(primaryType);
                 }
-                properties.put(JcrLexicon.LAST_MODIFIED, factory.create(JcrLexicon.LAST_MODIFIED,
-                                                                        dateFactory.create(file.lastModified())));
+                properties.put(JcrLexicon.LAST_MODIFIED,
+                               factory.create(JcrLexicon.LAST_MODIFIED, dateFactory.create(file.lastModified())));
 
                 // Now put the file's content into the "jcr:data" property ...
                 Binary binary = binaryForContent(file);
@@ -514,8 +516,11 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> implements NodeCaching
                 // Don't really know the encoding, either ...
                 // properties.put(JcrLexicon.ENCODED, factory.create(JcrLexicon.ENCODED, "UTF-8"));
 
+                Property uuidProperty = properties.get(JcrLexicon.UUID);
+                UUID uuid = uuidProperty != null ? uuidFactory.create(uuidProperty.getFirstValue()) : null;
+
                 // return new PathNode(path, null, properties, Collections.<Segment>emptyList());
-                return new PathNode(null, path.getParent(), path.getLastSegment(), properties, Collections.<Segment>emptyList());
+                return new PathNode(uuid, path.getParent(), path.getLastSegment(), properties, Collections.<Segment>emptyList());
             }
 
             File file = fileFor(path);
@@ -550,8 +555,12 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> implements NodeCaching
                 } else {
                     nodeType = nameValueFor(primaryType);
                 }
+
+                Property uuidProperty = properties.get(JcrLexicon.UUID);
+                UUID uuid = uuidProperty != null ? uuidFactory.create(uuidProperty.getFirstValue()) : null;
+
                 // return new DefaultPathNode(path, source.getRootNodeUuidObject(), properties, childSegments);
-                return new PathNode(null, path.getParent(), path.getLastSegment(), properties, childSegments);
+                return new PathNode(uuid, path.getParent(), path.getLastSegment(), properties, childSegments);
 
             }
 
@@ -571,10 +580,13 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> implements NodeCaching
                 properties.put(JcrLexicon.CREATED, factory.create(JcrLexicon.CREATED, dateFactory.create(file.lastModified())));
             }
 
+            Property uuidProperty = properties.get(JcrLexicon.UUID);
+            UUID uuid = uuidProperty != null ? uuidFactory.create(uuidProperty.getFirstValue()) : null;
+
             // node = new DefaultPathNode(path, null, properties,
             // Collections.singletonList(pathFactory.createSegment(JcrLexicon.CONTENT)));
 
-            return new PathNode(null, path.getParent(), path.getLastSegment(), properties,
+            return new PathNode(uuid, path.getParent(), path.getLastSegment(), properties,
                                 Collections.singletonList(pathFactory.createSegment(JcrLexicon.CONTENT)));
         } finally {
             if (nodeType != null && logger.isTraceEnabled()) {
