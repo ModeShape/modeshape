@@ -81,6 +81,13 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
      */
     public static final IndexRules DEFAULT_RULES;
 
+    protected static final IndexRules.Factory DEFAULT_RULES_FACTORY = new IndexRules.Factory() {
+        @Override
+        public IndexRules getRules() {
+            return DEFAULT_RULES;
+        }
+    };
+
     static {
         // We know that the earliest creation/modified dates cannot be before November 1 2009,
         // which is before this feature was implemented
@@ -113,7 +120,7 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
     };
 
     private final LuceneConfiguration configuration;
-    private final IndexRules rules;
+    private final IndexRules.Factory rulesFactory;
     private final Analyzer analyzer;
     private final int maxDepthPerIndexRead;
     private final ReadWriteLock processingLock = new ReentrantReadWriteLock();
@@ -128,7 +135,7 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
      *        in a way such that all workspaces are known to exist
      * @param maxDepthPerIndexRead the maximum depth that any single request is to read when indexing
      * @param configuration the configuration of the Lucene indexes
-     * @param rules the index rule, or null if the default index rules should be used
+     * @param rulesFactory the factory for getting the index rules, or null if the default index rules should be used
      * @param analyzer the analyzer, or null if the default analyzer should be used
      * @throws IllegalArgumentException if any of the source name, connection factory, or configuration are null
      */
@@ -137,13 +144,13 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
                                boolean verifyWorkspaceInSource,
                                int maxDepthPerIndexRead,
                                LuceneConfiguration configuration,
-                               IndexRules rules,
+                               IndexRules.Factory rulesFactory,
                                Analyzer analyzer ) {
         super(sourceName, connectionFactory, verifyWorkspaceInSource);
         CheckArg.isNotNull(configuration, "configuration");
         this.configuration = configuration;
         this.analyzer = analyzer != null ? analyzer : new StandardAnalyzer(configuration.getVersion());
-        this.rules = rules != null ? rules : DEFAULT_RULES;
+        this.rulesFactory = rulesFactory != null ? rulesFactory : DEFAULT_RULES_FACTORY;
         this.maxDepthPerIndexRead = maxDepthPerIndexRead;
     }
 
@@ -240,7 +247,7 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
     @Override
     protected LuceneSearchWorkspace createWorkspace( ExecutionContext context,
                                                      String workspaceName ) throws SearchEngineException {
-        return new LuceneSearchWorkspace(workspaceName, configuration, rules, analyzer);
+        return new LuceneSearchWorkspace(workspaceName, configuration, rulesFactory, analyzer);
     }
 
     /**

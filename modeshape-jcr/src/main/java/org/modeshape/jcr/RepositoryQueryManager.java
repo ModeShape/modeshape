@@ -236,7 +236,7 @@ abstract class RepositoryQueryManager {
                        String nameOfSourceToBeSearchable,
                        RepositoryConnectionFactory connectionFactory,
                        Observable observable,
-                       RepositoryNodeTypeManager nodeTypeManager,
+                       final RepositoryNodeTypeManager nodeTypeManager,
                        String indexDirectory,
                        boolean updateIndexesSynchronously,
                        boolean forceIndexRebuild,
@@ -288,13 +288,17 @@ abstract class RepositoryQueryManager {
             assert configuration != null;
 
             // Set up the indexing rules ...
-            IndexRules indexRules = nodeTypeManager.getRepositorySchemata().getIndexRules();
+            IndexRules.Factory indexRulesFactory = new IndexRules.Factory() {
+                public IndexRules getRules() {
+                    return nodeTypeManager.getRepositorySchemata().getIndexRules();
+                }
+            };
 
             // Set up the search engine ...
             org.apache.lucene.analysis.Analyzer analyzer = new EnglishAnalyzer(Version.LUCENE_30);
             boolean verifyWorkspaces = false;
             searchEngine = new LuceneSearchEngine(nameOfSourceToBeSearchable, connectionFactory, verifyWorkspaces,
-                                                  maxDepthPerRead, configuration, indexRules, analyzer);
+                                                  maxDepthPerRead, configuration, indexRulesFactory, analyzer);
 
             // Set up an original source observer to keep the index up to date ...
             if (updateIndexesSynchronously) {
