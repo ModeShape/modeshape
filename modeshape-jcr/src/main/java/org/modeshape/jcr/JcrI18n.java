@@ -40,6 +40,8 @@ public final class JcrI18n {
     public static I18n repositoryReferencesNonExistantSource;
     public static I18n indexRebuildingStarted;
     public static I18n indexRebuildingComplete;
+    public static I18n indexRebuildingOfWorkspaceStarted;
+    public static I18n indexRebuildingOfWorkspaceComplete;
 
     public static I18n cannotConvertValue;
     public static I18n loginFailed;

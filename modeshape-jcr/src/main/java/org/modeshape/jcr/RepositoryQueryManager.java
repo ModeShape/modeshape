@@ -87,9 +87,12 @@ import org.modeshape.search.lucene.LuceneSearchEngine;
 abstract class RepositoryQueryManager {
 
     protected final String sourceName;
+    protected final String repositoryName;
 
-    RepositoryQueryManager( String sourceName ) {
+    RepositoryQueryManager( String repositoryName,
+                            String sourceName ) {
         this.sourceName = sourceName;
+        this.repositoryName = repositoryName;
     }
 
     public abstract QueryResults query( String workspaceName,
@@ -143,10 +146,11 @@ abstract class RepositoryQueryManager {
         private final ExecutionContext context;
         private final RepositoryConnectionFactory connectionFactory;
 
-        PushDown( String sourceName,
+        PushDown( String repositoryName,
+                  String sourceName,
                   ExecutionContext context,
                   RepositoryConnectionFactory connectionFactory ) {
-            super(sourceName);
+            super(repositoryName, sourceName);
             this.context = context;
             this.connectionFactory = connectionFactory;
         }
@@ -185,8 +189,9 @@ abstract class RepositoryQueryManager {
 
     static class Disabled extends RepositoryQueryManager {
 
-        Disabled( String sourceName ) {
-            super(sourceName);
+        Disabled( String repositoryName,
+                  String sourceName ) {
+            super(repositoryName, sourceName);
         }
 
         /**
@@ -232,7 +237,8 @@ abstract class RepositoryQueryManager {
         private final int maxDepthPerRead;
         private final boolean forceIndexRebuild;
 
-        SelfContained( ExecutionContext context,
+        SelfContained( String repositoryName,
+                       ExecutionContext context,
                        String nameOfSourceToBeSearchable,
                        RepositoryConnectionFactory connectionFactory,
                        Observable observable,
@@ -242,7 +248,7 @@ abstract class RepositoryQueryManager {
                        boolean forceIndexRebuild,
                        boolean rebuildIndexSynchronously,
                        int maxDepthPerRead ) throws RepositoryException {
-            super(nameOfSourceToBeSearchable);
+            super(repositoryName, nameOfSourceToBeSearchable);
 
             this.context = context;
             this.sourceName = nameOfSourceToBeSearchable;
@@ -441,9 +447,7 @@ abstract class RepositoryQueryManager {
          */
         @Override
         public void reindexContent() {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(JcrI18n.indexRebuildingStarted.text());
-            }
+            LOGGER.info(JcrI18n.indexRebuildingStarted, repositoryName);
 
             // Get the workspace names ...
             Set<String> workspaces = Graph.create(sourceName, connectionFactory, context).getWorkspaces();
@@ -454,11 +458,12 @@ abstract class RepositoryQueryManager {
                 for (String workspace : workspaces) {
                     indexer.reindex(workspace, forceIndexRebuild);
                 }
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug(JcrI18n.indexRebuildingComplete.text());
-                }
             } finally {
-                indexer.close();
+                try {
+                    indexer.close();
+                } finally {
+                    LOGGER.info(JcrI18n.indexRebuildingComplete, repositoryName);
+                }
             }
 
         }
@@ -470,9 +475,7 @@ abstract class RepositoryQueryManager {
          */
         @Override
         public void reindexContent( JcrWorkspace workspace ) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(JcrI18n.indexRebuildingStarted.text());
-            }
+            LOGGER.info(JcrI18n.indexRebuildingOfWorkspaceStarted, repositoryName, workspace.getName());
 
             SearchEngineIndexer indexer = new SearchEngineIndexer(context, searchEngine, connectionFactory, maxDepthPerRead);
             try {
@@ -481,11 +484,12 @@ abstract class RepositoryQueryManager {
                  * we always reindex the entire workspace in response to this explicit request.
                  */
                 indexer.index(workspace.getName());
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug(JcrI18n.indexRebuildingComplete.text());
-                }
             } finally {
-                indexer.close();
+                try {
+                    indexer.close();
+                } finally {
+                    LOGGER.info(JcrI18n.indexRebuildingOfWorkspaceComplete, repositoryName, workspace.getName());
+                }
             }
         }
 
