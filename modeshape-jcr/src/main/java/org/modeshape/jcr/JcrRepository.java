@@ -868,7 +868,7 @@ public class JcrRepository implements Repository {
             // We can query the federated source if it supports queries and searches
             // AND the original source supports queries and searches ...
             if (canQuerySource && canQueryFederated) {
-                this.queryManager = new PushDown(this.sourceName, this.executionContext, connectionFactory);
+                this.queryManager = new PushDown(repositoryName(), this.sourceName, this.executionContext, connectionFactory);
             } else {
                 // Otherwise create a repository query manager that maintains its own search engine ...
                 String indexDirectory = this.options.get(Option.QUERY_INDEX_DIRECTORY);
@@ -877,14 +877,15 @@ public class JcrRepository implements Repository {
                 boolean rebuildIndexesSynchronously = Boolean.TRUE.equals(Boolean.valueOf(this.options.get(Option.QUERY_INDEXES_REBUILT_SYNCHRONOUSLY)));
 
                 int maxDepthToRead = Integer.valueOf(this.options.get(Option.INDEX_READ_DEPTH));
-                this.queryManager = new RepositoryQueryManager.SelfContained(this.executionContext, this.sourceName,
-                                                                             connectionFactory, repositoryObservable,
-                                                                             repositoryTypeManager, indexDirectory,
-                                                                             updateIndexesSynchronously, forceIndexRebuild,
-                                                                             rebuildIndexesSynchronously, maxDepthToRead);
+                this.queryManager = new RepositoryQueryManager.SelfContained(repositoryName(), this.executionContext,
+                                                                             this.sourceName, connectionFactory,
+                                                                             repositoryObservable, repositoryTypeManager,
+                                                                             indexDirectory, updateIndexesSynchronously,
+                                                                             forceIndexRebuild, rebuildIndexesSynchronously,
+                                                                             maxDepthToRead);
             }
         } else {
-            this.queryManager = new RepositoryQueryManager.Disabled(this.sourceName);
+            this.queryManager = new RepositoryQueryManager.Disabled(repositoryName(), this.sourceName);
         }
 
         // Initialize the observer, which receives events from all repository sources
