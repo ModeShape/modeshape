@@ -203,7 +203,7 @@
       <term>largeValueSizeInBytes</term>
       <listitem>
         <para>
-          An advanced optional boolean property that controls the size of property values at which they are considered to be "large values".  
+          An advanced optional property that controls the size of property values at which they are considered to be "large values".  
 					Depending upon the model, large property values may be stored in a centralized area and keyed by a secure hash
 					of the value.  This is a space and performance optimization that stores each unique large value only once.
 					The default value is "1024" bytes, or 1 kilobyte.
