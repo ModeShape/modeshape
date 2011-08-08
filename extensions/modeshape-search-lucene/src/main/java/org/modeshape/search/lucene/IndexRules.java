@@ -27,11 +27,11 @@ import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import org.modeshape.common.annotation.Immutable;
-import org.modeshape.common.annotation.NotThreadSafe;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.document.Field.Store;
+import org.modeshape.common.annotation.Immutable;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.property.Name;
 
@@ -53,6 +53,31 @@ public class IndexRules {
         REFERENCE,
         WEAK_REFERENCE,
         DECIMAL;
+    }
+
+    public static interface Factory {
+        IndexRules getRules();
+    }
+
+    /**
+     * A simple {@link Factory} that always returns the same {@link IndexRules}.
+     */
+    public static class FixedFactory implements Factory {
+        private final IndexRules rules;
+
+        public FixedFactory( IndexRules rules ) {
+            this.rules = rules;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.search.lucene.IndexRules.Factory#getRules()
+         */
+        @Override
+        public IndexRules getRules() {
+            return rules;
+        }
     }
 
     /**

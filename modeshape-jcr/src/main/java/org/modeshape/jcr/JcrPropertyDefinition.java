@@ -655,7 +655,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
                  * @see org.modeshape.jcr.JcrPropertyDefinition.Range#getMaximum()
                  */
                 public Comparable<T> getMaximum() {
-                    return lower;
+                    return upper;
                 }
 
                 /**
@@ -664,7 +664,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
                  * @see org.modeshape.jcr.JcrPropertyDefinition.Range#getMinimum()
                  */
                 public Comparable<T> getMinimum() {
-                    return upper;
+                    return lower;
                 }
             };
         }
