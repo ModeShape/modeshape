@@ -143,6 +143,10 @@ public class JcrQueryManagerTest {
             // Use a session to load the contents ...
             Session session = repository.login();
             try {
+                registerNodeTypes(session, "fincayra.cnd");
+                registerNodeTypes(session, "magnolia.cnd");
+                registerNodeTypes(session, "notionalTypes.cnd");
+
                 InputStream stream = resourceStream("io/cars-system-view.xml");
                 try {
                     session.getWorkspace().importXML("/", stream, ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW);
@@ -152,14 +156,14 @@ public class JcrQueryManagerTest {
                     stream.close();
                 }
 
-                registerNodeTypes(session, "fincayra.cnd");
-                registerNodeTypes(session, "magnolia.cnd");
-
                 // Create a branch that contains some same-name-siblings ...
                 Node other = session.getRootNode().addNode("Other", "nt:unstructured");
                 other.addNode("NodeA", "nt:unstructured").setProperty("something", "value3 quick brown fox");
                 other.addNode("NodeA", "nt:unstructured").setProperty("something", "value2 quick brown cat");
                 other.addNode("NodeA", "nt:unstructured").setProperty("something", "value1 quick black dog");
+                Node c = other.addNode("NodeC", "notion:typed");
+                c.setProperty("notion:booleanProperty", true);
+                c.setProperty("notion:booleanProperty2", false);
                 session.getRootNode().addNode("NodeB", "nt:unstructured").setProperty("myUrl", "http://www.acme.com/foo/bar");
                 session.save();
 
@@ -347,7 +351,7 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 24);
+        assertResults(query, result, 25);
         assertResultsHaveColumns(result, minimumColumnNames());
     }
 
@@ -408,7 +412,7 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 24);
+        assertResults(query, result, 25);
         assertResultsHaveColumns(result, "bogus", "laughable", "argle", "car:year");
     }
 
@@ -464,6 +468,49 @@ public class JcrQueryManagerTest {
         assertResultsHaveColumns(result, "car:maker", "car:model", "car:year", "car:userRating");
     }
 
+    @FixFor( "MODE-1234" )
+    @Test
+    public void shouldAllowEqualityCriteriaOnPropertyDefinedWithBooleanPropertyDefinition() throws RepositoryException {
+        assertQueryWithBooleanValue(1, "WHERE [notion:booleanProperty] = true");
+        assertQueryWithBooleanValue(0, "WHERE [notion:booleanProperty] = false");
+
+        assertQueryWithBooleanValue(1, "WHERE [notion:booleanProperty] > false");
+        assertQueryWithBooleanValue(1, "WHERE [notion:booleanProperty] >= false");
+        assertQueryWithBooleanValue(0, "WHERE [notion:booleanProperty] > true");
+        assertQueryWithBooleanValue(1, "WHERE [notion:booleanProperty] >= true");
+
+        assertQueryWithBooleanValue(0, "WHERE [notion:booleanProperty] < false");
+        assertQueryWithBooleanValue(0, "WHERE [notion:booleanProperty] <= false");
+        assertQueryWithBooleanValue(0, "WHERE [notion:booleanProperty] < true");
+        assertQueryWithBooleanValue(1, "WHERE [notion:booleanProperty] <= true");
+
+        assertQueryWithBooleanValue(0, "WHERE [notion:booleanProperty2] = true");
+        assertQueryWithBooleanValue(1, "WHERE [notion:booleanProperty2] = false");
+
+        assertQueryWithBooleanValue(0, "WHERE [notion:booleanProperty2] > false");
+        assertQueryWithBooleanValue(1, "WHERE [notion:booleanProperty2] >= false");
+        assertQueryWithBooleanValue(0, "WHERE [notion:booleanProperty2] > true");
+        assertQueryWithBooleanValue(0, "WHERE [notion:booleanProperty2] >= true");
+
+        assertQueryWithBooleanValue(0, "WHERE [notion:booleanProperty2] < false");
+        assertQueryWithBooleanValue(1, "WHERE [notion:booleanProperty2] <= false");
+        assertQueryWithBooleanValue(1, "WHERE [notion:booleanProperty2] < true");
+        assertQueryWithBooleanValue(1, "WHERE [notion:booleanProperty2] <= true");
+
+    }
+
+    protected void assertQueryWithBooleanValue( int results,
+                                                String criteria ) throws RepositoryException {
+        String[] columnNames = {"notion:booleanProperty", "notion:booleanProperty2"};
+        String queryStr = "SELECT [notion:booleanProperty], [notion:booleanProperty2] FROM [notion:typed] AS node " + criteria;
+        Query query = session.getWorkspace().getQueryManager().createQuery(queryStr, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, results);
+        assertResultsHaveColumns(result, columnNames);
+    }
+
     @FixFor( "MODE-1057" )
     @Test
     public void shouldAllowLikeCriteriaOnPropertyDefinedWithNumericPropertyDefinition() throws RepositoryException {
@@ -514,7 +561,7 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 23);
+        assertResults(query, result, 24);
         assertResultsHaveColumns(result, minimumColumnNames());
     }
 
@@ -709,7 +756,7 @@ public class JcrQueryManagerTest {
         // print = true;
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 24);
+        assertResults(query, result, 25);
         assertResultsHaveColumns(result, new String[] {"jcr:primaryType"});
         RowIterator iter = result.getRows();
         String primaryType = "";
@@ -731,7 +778,7 @@ public class JcrQueryManagerTest {
         // print = true;
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 24);
+        assertResults(query, result, 25);
         assertResultsHaveColumns(result, new String[] {"jcr:primaryType", "jcr:path"});
         RowIterator iter = result.getRows();
         while (iter.hasNext()) {
@@ -831,7 +878,7 @@ public class JcrQueryManagerTest {
         // print = true;
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 24);
+        assertResults(query, result, 25);
         assertResultsHaveColumns(result, minimumColumnNames());
         RowIterator iter = result.getRows();
         while (iter.hasNext()) {
@@ -878,7 +925,7 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 24L);
+        assertResults(query, result, 25L);
 
         // Find all nodes that are NOT children of '/Cars' ... there should be 4 ...
         sql = "SELECT [jcr:path] FROM [nt:base] WHERE NOT(ISCHILDNODE([nt:base],'/Cars')) ORDER BY [jcr:path]";
@@ -887,7 +934,7 @@ public class JcrQueryManagerTest {
         // print = true;
         result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 20L);
+        assertResults(query, result, 21L);
         assertResultsHaveColumns(result, new String[] {"jcr:path"});
         assertResultsHaveRows(result,
                               "jcr:path",
@@ -910,7 +957,8 @@ public class JcrQueryManagerTest {
                               "/Other",
                               "/Other/NodeA",
                               "/Other/NodeA[2]",
-                              "/Other/NodeA[3]");
+                              "/Other/NodeA[3]",
+                              "/Other/NodeC");
     }
 
     @FixFor( "MODE-1110" )
@@ -926,7 +974,7 @@ public class JcrQueryManagerTest {
         // print = true;
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 46L); // currently no records
+        assertResults(query, result, 47L); // currently no records
         assertResultsHaveColumns(result, new String[] {"myfirstnodetypes.jcr:path", "mythirdnodetypes.mode:depth",
             "mysecondnodetypes.mode:depth", "mythirdnodetypes.jcr:path", "mysecondnodetypes.jcr:path",
             "mythirdnodetypes.jcr:score", "myfirstnodetypes.jcr:score", "mythirdnodetypes.jcr:name",
@@ -1085,7 +1133,7 @@ public class JcrQueryManagerTest {
         // print = true;
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 24);
+        assertResults(query, result, 25);
         assertResultsHaveColumns(result, new String[] {"jcr:primaryType", "jcr:path", "jcr:score"});
         RowIterator iter = result.getRows();
         while (iter.hasNext()) {
@@ -1188,7 +1236,7 @@ public class JcrQueryManagerTest {
         // print = true;
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 24);
+        assertResults(query, result, 25);
         assertResultsHaveColumns(result, minimumColumnNames());
         RowIterator iter = result.getRows();
         while (iter.hasNext()) {
@@ -1210,7 +1258,7 @@ public class JcrQueryManagerTest {
 
         query = session.getWorkspace().getQueryManager().createQuery("//element(*,nt:unstructured)", Query.XPATH);
         assertThat(query, is(notNullValue()));
-        assertResults(query, query.execute(), 23);
+        assertResults(query, query.execute(), 24);
     }
 
     @SuppressWarnings( "deprecation" )
@@ -1219,7 +1267,7 @@ public class JcrQueryManagerTest {
         Query query = session.getWorkspace().getQueryManager().createQuery("//element(*,nt:base)", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertResults(query, result, 24);
+        assertResults(query, result, 25);
         assertResultsHaveColumns(result, minimumColumnNames());
     }
 
@@ -1231,7 +1279,7 @@ public class JcrQueryManagerTest {
                              .createQuery("//element(*,nt:base) order by @jcr:path", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertResults(query, result, 24);
+        assertResults(query, result, 25);
         assertResultsHaveColumns(result, minimumColumnNames());
     }
 
@@ -1254,7 +1302,7 @@ public class JcrQueryManagerTest {
         Query query = session.getWorkspace().getQueryManager().createQuery("//element(*,nt:unstructured)", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertResults(query, result, 23);
+        assertResults(query, result, 24);
         assertThat(result, is(notNullValue()));
         assertResultsHaveColumns(result, minimumColumnNames());
     }
@@ -1266,7 +1314,7 @@ public class JcrQueryManagerTest {
         Query query = manager.createQuery("//element(*,nt:unstructured) order by @jcr:primaryType", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertResults(query, result, 23);
+        assertResults(query, result, 24);
         assertThat(result, is(notNullValue()));
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
 
@@ -1369,7 +1417,7 @@ public class JcrQueryManagerTest {
                              .createQuery("//element(*,nt:unstructured) order by jcr:score()", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertResults(query, result, 23);
+        assertResults(query, result, 24);
         assertThat(result, is(notNullValue()));
         assertResultsHaveColumns(result, minimumColumnNames());
     }
@@ -1720,7 +1768,7 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 24);
+        assertResults(query, result, 25);
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 

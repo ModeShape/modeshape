@@ -73,7 +73,7 @@ public class LuceneSearchWorkspace implements SearchEngineWorkspace {
 
     private final String workspaceName;
     private final String workspaceDirectoryName;
-    protected final IndexRules rules;
+    protected final IndexRules.Factory rulesFactory;
     private final LuceneConfiguration configuration;
     protected final Directory contentDirectory;
     protected final Analyzer analyzer;
@@ -82,14 +82,14 @@ public class LuceneSearchWorkspace implements SearchEngineWorkspace {
 
     protected LuceneSearchWorkspace( String workspaceName,
                                      LuceneConfiguration configuration,
-                                     IndexRules rules,
+                                     IndexRules.Factory rulesFactory,
                                      Analyzer analyzer ) {
         assert workspaceName != null;
         assert configuration != null;
         this.workspaceName = workspaceName;
         this.workspaceDirectoryName = workspaceName.trim().length() != 0 ? workspaceName : UUID.randomUUID().toString();
         this.analyzer = analyzer != null ? analyzer : new StandardAnalyzer(configuration.getVersion());
-        this.rules = rules != null ? rules : LuceneSearchEngine.DEFAULT_RULES;
+        this.rulesFactory = rulesFactory != null ? rulesFactory : LuceneSearchEngine.DEFAULT_RULES_FACTORY;
         this.configuration = configuration;
         this.contentDirectory = this.configuration.getDirectory(workspaceDirectoryName, INDEX_NAME);
     }
@@ -118,7 +118,7 @@ public class LuceneSearchWorkspace implements SearchEngineWorkspace {
      * @return rules
      */
     public IndexRules getRules() {
-        return rules;
+        return rulesFactory.getRules();
     }
 
     /**

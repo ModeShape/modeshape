@@ -147,11 +147,12 @@ public class LuceneSearchEngineObservationTest {
         rulesBuilder.integerField(name("mpgCity"), Field.Store.YES, Field.Index.NOT_ANALYZED, 0, 50);
         rulesBuilder.integerField(name("mpgHighway"), Field.Store.YES, Field.Index.NOT_ANALYZED, 0, 50);
         // rulesBuilder.analyzeAndStoreAndFullText(name("maker"));
-        IndexRules rules = rulesBuilder.build();
         LuceneConfiguration luceneConfig = LuceneConfigurations.inMemory();
         // LuceneConfiguration luceneConfig = LuceneConfigurations.using(new File("target/testIndexes"));
         Analyzer analyzer = null;
-        searchEngine = new LuceneSearchEngine(sourceName, connectionFactory, false, depthToRead, luceneConfig, rules, analyzer);
+        IndexRules.Factory rulesFactory = new IndexRules.FixedFactory(rulesBuilder.build());
+        searchEngine = new LuceneSearchEngine(sourceName, connectionFactory, false, depthToRead, luceneConfig, rulesFactory,
+                                              analyzer);
 
         // Initialize the source so that the search engine observes the events ...
         @SuppressWarnings( "synthetic-access" )

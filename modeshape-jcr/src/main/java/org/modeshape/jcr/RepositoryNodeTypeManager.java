@@ -242,6 +242,13 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
     }
 
     NodeTypeSchemata getRepositorySchemata() {
+        // Try reading first, since this will work most of the time ...
+        try {
+            nodeTypeManagerLock.readLock().lock();
+            if (schemata != null) return schemata;
+        } finally {
+            nodeTypeManagerLock.readLock().unlock();
+        }
         try {
             nodeTypeManagerLock.writeLock().lock();
             if (schemata == null) {

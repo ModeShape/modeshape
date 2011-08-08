@@ -153,6 +153,7 @@ public class LuceneSearchSession implements WorkspaceSession {
     private final LuceneSearchWorkspace workspace;
     protected final LuceneSearchProcessor processor;
     private final Directory contentIndexDirectory;
+    private final IndexRules indexRules;
     private IndexReader contentReader;
     private IndexWriter contentWriter;
     private IndexSearcher contentSearcher;
@@ -166,6 +167,7 @@ public class LuceneSearchSession implements WorkspaceSession {
         this.workspace = workspace;
         this.contentIndexDirectory = workspace.contentDirectory;
         this.processor = processor;
+        this.indexRules = workspace.getRules();
     }
 
     /**
@@ -466,7 +468,7 @@ public class LuceneSearchSession implements WorkspaceSession {
         String stringValue = null;
         for (Property property : properties) {
             Name name = property.getName();
-            Rule rule = workspace.rules.getRule(name);
+            Rule rule = this.indexRules.getRule(name);
             if (rule.isSkipped()) continue;
             String nameString = processor.stringFactory.create(name);
             FieldType type = rule.getType();
@@ -862,9 +864,18 @@ public class LuceneSearchSession implements WorkspaceSession {
         String field = stringFactory.create(propertyValue.propertyName());
         Name fieldName = processor.nameFactory.create(field);
         ValueFactories factories = processor.valueFactories;
-        IndexRules.Rule rule = workspace.rules.getRule(fieldName);
+        IndexRules.Rule rule = this.indexRules.getRule(fieldName);
         if (rule == null || rule.isSkipped()) return new MatchNoneQuery();
         FieldType type = rule.getType();
+        if (operator == Operator.LIKE) {
+            String stringValue = stringFactory.create(value);
+            if (stringValue.indexOf('%') != -1 || stringValue.indexOf('_') != -1 || stringValue.indexOf('\\') != -1) {
+                // This value is not a literal value ...
+                type = FieldType.STRING;
+            } else {
+                operator = Operator.EQUAL_TO;
+            }
+        }
         switch (type) {
             case REFERENCE:
             case WEAK_REFERENCE:
@@ -971,28 +982,30 @@ public class LuceneSearchSession implements WorkspaceSession {
                 break;
             case BOOLEAN:
                 boolean booleanValue = factories.getBooleanFactory().create(value);
-                stringValue = stringFactory.create(value);
+                int intValue = booleanValue ? 1 : 0;
                 switch (operator) {
                     case EQUAL_TO:
-                        return new TermQuery(new Term(field, stringValue));
+                        return NumericRangeQuery.newIntRange(field, intValue, intValue, true, true);
                     case NOT_EQUAL_TO:
-                        return new TermQuery(new Term(field, stringFactory.create(!booleanValue)));
+                        return NumericRangeQuery.newIntRange(field, intValue, intValue, true, true);
+                    case GREATER_THAN_OR_EQUAL_TO:
+                        return NumericRangeQuery.newIntRange(field, intValue, 1, true, true);
+                    case LESS_THAN_OR_EQUAL_TO:
+                        return NumericRangeQuery.newIntRange(field, 0, intValue, true, true);
                     case GREATER_THAN:
                         if (!booleanValue) {
-                            return new TermQuery(new Term(field, stringFactory.create(true)));
+                            // 'true' is greater than 'false' ...
+                            return NumericRangeQuery.newIntRange(field, 1, 1, true, true);
                         }
                         // Can't be greater than 'true', per JCR spec
                         return new MatchNoneQuery();
-                    case GREATER_THAN_OR_EQUAL_TO:
-                        return new TermQuery(new Term(field, stringFactory.create(true)));
                     case LESS_THAN:
                         if (booleanValue) {
-                            return new TermQuery(new Term(field, stringFactory.create(false)));
+                            // 'false' is less than 'true' ...
+                            return NumericRangeQuery.newIntRange(field, 0, 0, true, true);
                         }
                         // Can't be less than 'false', per JCR spec
                         return new MatchNoneQuery();
-                    case LESS_THAN_OR_EQUAL_TO:
-                        return new TermQuery(new Term(field, stringFactory.create(false)));
                     case LIKE:
                         // This is not allowed ...
                         assert false;
@@ -1001,7 +1014,7 @@ public class LuceneSearchSession implements WorkspaceSession {
                 break;
             case INT:
                 NumericRule<Integer> intRule = (NumericRule<Integer>)rule;
-                int intValue = factories.getLongFactory().create(value).intValue();
+                intValue = factories.getLongFactory().create(value).intValue();
                 switch (operator) {
                     case EQUAL_TO:
                         if (intValue < intRule.getMinimum() || intValue > intRule.getMaximum()) return new MatchNoneQuery();
@@ -1158,7 +1171,7 @@ public class LuceneSearchSession implements WorkspaceSession {
                                                boolean includesLower,
                                                boolean includesUpper ) {
         Name fieldName = processor.nameFactory.create(field);
-        IndexRules.Rule rule = workspace.rules.getRule(fieldName);
+        IndexRules.Rule rule = this.indexRules.getRule(fieldName);
         if (rule == null || rule.isSkipped()) return new MatchNoneQuery();
         FieldType type = rule.getType();
         ValueFactories factories = processor.valueFactories;

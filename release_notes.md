@@ -14,6 +14,12 @@ ModeShape &version; includes several new features, improvements, and bug fixes s
 - faster startup of the ModeShape engine
 - over two dozen bug fixes
 
+> ***NOTE***: This release makes changes to the way the indexes store property values,
+> so it is strongly recommended that all users force re-indexing their content
+> after upgrading to &version;. To do this, simply remove the directory containing
+> the repository's indexes, as defined by the "queryIndexDirectory" repository 
+> configuration option.
+
 ## JCR Supported Features
 
 **ModeShape implements all of the required JCR 2.0 features** (repository acquisition, 
