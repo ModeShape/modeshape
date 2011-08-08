@@ -112,16 +112,18 @@ public class DependentQueryComponent extends ProcessingComponent {
 
     protected void saveResultsToVariable( List<Object[]> results,
                                           String variableName ) {
-        if (results == null || results.isEmpty()) return;
+        if (results == null) return;
         if (variableName == null) return;
 
         // Grab the first value in each of the tuples, and set on the query context ...
         List<Object> singleColumnResults = new ArrayList<Object>(results.size());
-        // Make sure there is at least one column (in the first record; remaining tuples should be the same) ...
-        Object[] firstTuple = results.get(0);
-        if (firstTuple.length != 0) {
-            for (Object[] tuple : results) {
-                singleColumnResults.add(tuple[0]);
+        if (!results.isEmpty()) {
+            // Make sure there is at least one column (in the first record; remaining tuples should be the same) ...
+            Object[] firstTuple = results.get(0);
+            if (firstTuple.length != 0) {
+                for (Object[] tuple : results) {
+                    singleColumnResults.add(tuple[0]);
+                }
             }
         }
         // Place the single column results into the variable ...

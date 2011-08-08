@@ -221,6 +221,7 @@ public final class GraphI18n {
     public static I18n leftAndRightQueriesInSetQueryMustHaveUnionableColumns;
     public static I18n operatorIsNotValidAgainstColumnInTable;
     public static I18n columnInTableIsNotOrderable;
+    public static I18n missingVariableValue;
 
     /* Search */
     public static I18n interruptedWhileClosingChannel;
