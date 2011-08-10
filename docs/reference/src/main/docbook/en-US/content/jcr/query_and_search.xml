@@ -1384,7 +1384,7 @@ offset ::= /* Non-negative integer value */
 				<code>jcr:mixinTypes</code> multi-valued property.) 
       </para>
       <para>
-				Since our query used "<code>SELECT *<code>", ModeShape also includes the non-standard pseudo-columns mentioned above: 
+				Since our query used "<code>SELECT *</code>", ModeShape also includes the non-standard pseudo-columns mentioned above: 
 				"<code>jcr:path</code>", "<code>jcr:score</code>", "<code>jcr:name</code>", "<code>mode:localName</code>", and "<code>mode:depth</code>".
 				These columns are very convenient to have in the results, but also make certain criteria much easier than with the corresponding
 				standard or ModeShape-specific functions.
