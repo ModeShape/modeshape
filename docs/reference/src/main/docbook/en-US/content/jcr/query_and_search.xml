@@ -1378,18 +1378,25 @@ offset ::= /* Non-negative integer value */
       </para>
 			<programlisting><![CDATA[ SELECT * FROM [nt:base] ]]></programlisting>
       <para>
-				This query will return a result set containing a single "<code>jcr:primaryType</code>" column, since the <code>nt:base</code> defines only
-				one single-valued property called "<code>jcr:primaryType</code>". (The <code>jcr:mixinTypes</code> property is multi-valued, and as
-				such the JCR 2.0 specification does not require returning these in query results.)
+				This query will return a result set containing the "<code>jcr:primaryType</code>" column, since the <code>nt:base</code> defines only
+				one single-valued property called "<code>jcr:primaryType</code>". (As allowed by the JCR 2.0 Specification, ModeShape does not 
+				currently support returning multi-valued columns in result sets, and thus the above query does not include a column for the
+				<code>jcr:mixinTypes</code> multi-valued property.) 
       </para>
       <para>
-				Queries can explicitly specify the columns that are to be returned in the results. The following query is
-				semantically equivalent to the previous query, and produces identical results:
+				Since our query used "<code>SELECT *<code>", ModeShape also includes the non-standard pseudo-columns mentioned above: 
+				"<code>jcr:path</code>", "<code>jcr:score</code>", "<code>jcr:name</code>", "<code>mode:localName</code>", and "<code>mode:depth</code>".
+				These columns are very convenient to have in the results, but also make certain criteria much easier than with the corresponding
+				standard or ModeShape-specific functions.
+      </para>
+      <para>
+				Queries can explicitly specify the columns that are to be returned in the results. The following query is very similar to the
+				previous query and will return the same rows, but the result set will have only a single column:
       </para>
 			<programlisting><![CDATA[ SELECT [jcr:primaryType] FROM [nt:base] ]]></programlisting>
       <para>
-			  The following query will return the same rows as in the previous queries, but the SELECT clause includes two pseudo-columns
-			  containing the values computed from the nodes' locations:
+			  The following query will return the same rows as in the previous two queries, but the SELECT clause explicitly includes only
+			  two of the pseudo-columns for the path and depth (which are computed from the nodes' locations):
       </para>
 			<programlisting><![CDATA[ SELECT [jcr:primaryType], [jcr:path], [mode:depth] FROM [nt:base] ]]></programlisting>
       <para>
@@ -1411,7 +1418,11 @@ offset ::= /* Non-negative integer value */
 				Therefore, the table representing the <code>nt:file</code> node type will have two three columns: the <code>jcr:created</code>
 				and <code>jcr:createdBy</code> columns inherited from the <code>mix:created</code> mixin node type (via the <code>nt:hierarchyNode</code> node type),
 				and the <code>jcr:primaryType</code> column inherited from the <code>nt:base</code> node type, which is the implicit supertype
-				of the <code>nt:hierarchyNode</code>. Thus, this query:
+				of the <code>nt:hierarchyNode</code>. 
+			</para>
+			<para>
+			  ModeShape adheres to this behavior with the exception that a "<code>SELECT *</code>" will result in the additional pseudo-columns.
+				Thus, this next query:
 			</para>
 			<programlisting><![CDATA[ SELECT * FROM [nt:file] ]]></programlisting>
 			<para>
@@ -1430,8 +1441,8 @@ SELECT [jcr:primaryType], [jcr:created], [jcr:createdBy], [jcr:path] FROM [nt:fi
 WHERE LOCALNAME() LIKE '%.txt'
 ]]></programlisting>
 		  <para>
-				Of course, we could instead using <code>mode:localName</code> pseudo-column instead of the <code>LOCALNAME()</code> function.
-				Such a query is equivalent to the previous query and will produce the exact same results:
+				This query is JCR-SQL2, but ModeShape supports placing criteria against the <code>mode:localName</code> pseudo-column instead of 
+				using the <code>LOCALNAME()</code> function. Such a query is equivalent to the previous query and will produce the exact same results:
 			</para>
 			<programlisting><![CDATA[
 SELECT [jcr:primaryType], [jcr:created], [jcr:createdBy], [jcr:path] FROM [nt:file] 
@@ -1453,13 +1464,14 @@ WHERE "mode:localName" LIKE '%.txt'
 				corresponding to each node type for which <code>Node.isNodeType(...)</code> returns true.
 			</para>
 			<para>
-				For example, consider a node that has a primary	type of <code>nt:file</code> but has a mixin of <code>mix:referenceable</code>. 
-				This node will appear as a result in the <code>nt:file</code>, <code>mix:referenceable</code>, <code>nt:hierarchy</code>, 
-				<code>mix:created</code>, and <code>nt:base</code>. The table for <code>nt:file</code> contains all of the columns
-				in the <code>nt:hierarchyNode</code>, <code>mix:referenceable</code>, and <code>nt:base</code>. However, the
-				<code>nt:file</code> table does <emphasis>not</emphasis> contain the <code>jcr:uuid</code> column, since the
-				<code>nt:file</code> node type does <emphasis>not</emphasis> extend <code>mix:referenceable</code>.
-				Thus, to obtain the UUID for our node, we need to perform an <emphasis>identity</emphasis> join. The next
+				For example, consider a node that has a primary	type of <code>nt:file</code> but has an explicit mixin of <code>mix:referenceable</code>. 
+				This node will appear as a row in the all of these tables: <code>nt:file</code>, <code>mix:referenceable</code>, <code>nt:hierarchyNode</code>, 
+				<code>mix:created</code>, and <code>nt:base</code>. However, the columns in each of these tables will differ.
+				The <code>nt:file</code> node type has the <code>nt:hierarchyNode</code>, <code>mix:created</code>, and <code>nt:base</code> for supertypes,
+				and therefore the table for <code>nt:file</code> contains columns for the property definitions on all of these types.
+				But because <code>mix:referenceable</code> is <emphasis>not</emphasis> a supertype of <code>nt:file</code>, the
+				table for <code>nt:file</code> will not contain a <code>jcr:uuid</code> column. To obtain a single result set that contains
+				columns for all the properties of our node, we need to perform an <emphasis>identity</emphasis> join. The next
 				query shows how this is done to return all properties for <code>nt:file</code> nodes that are
 				also <code>mix:referenceable</code>:
 			</para>
@@ -1468,20 +1480,56 @@ SELECT file.*, ref.* FROM [nt:file] AS file JOIN [mix:referenceable] AS ref
 JOIN ON ISSAMENODE(file,ref)
 ]]></programlisting>
 			<para>
-				The select clause would be expanded to the following query:
+				ModeShape expands the SELECT clause to include the columns for all (explicit and inherited) property definitions of each type
+				plus pseudo-columns for each type:
 			</para>
 			<programlisting><![CDATA[
-SELECT file.[jcr:primaryType], file.[jcr:created], file.[jcr:createdBy], ref.[jcr:uuid] 
-       file.[jcr:path], file.[jcr:name], file.[jcr:score], file.[mode:localName], file.[mode:depth] 
+SELECT file.[jcr:primaryType], file.[jcr:created], file.[jcr:createdBy], ref.[jcr:uuid],
+       file.[jcr:path], file.[jcr:name], file.[jcr:score], file.[mode:localName], file.[mode:depth],
+       ref.[jcr:path], ref.[jcr:name], ref.[jcr:score], ref.[mode:localName], ref.[mode:depth] 
 FROM [nt:file] AS file JOIN [mix:referenceable] AS ref
 JOIN ON ISSAMENODE(file,ref)
 ]]></programlisting>
 			<para>
-				Of course, would could return even more information and make the query look very SQL-like by using pseudo-columns:
+			  Note because we are using an identity join, the "<code>file.[jcr:path]</code>" column will contain the same value as the
+			  "<code>ref.[jcr:path]</code>". Therefore, as is typical with standard SQL and relational databases, with JCR-SQL2
+			  you will probably want to fully expand the SELECT clause to be exactly what you want. Here is a query that does this
+			  by eliminating columns with duplicate values and using aliases that are simpler than the namespace-qualified names:
 			</para>
 			<programlisting><![CDATA[
-SELECT file."jcr:primaryType", file."jcr:created", file."jcr:createdBy", ref."jcr:uuid",
-       file."jcr:path", file."jcr:name", file."mode:localName", file."mode:depth", file."jcr:score" 
+SELECT file.[jcr:primaryType] AS primaryType, 
+       file.[jcr:created] AS created, 
+       file.[jcr:createdBy] AS createdBy, 
+       ref.[jcr:uuid] AS uuid,
+       file.[jcr:path] AS path,
+       file.[jcr:name] AS name,
+       file.[jcr:score] AS score,
+       file.[mode:localName] AS localName, 
+       file.[mode:depth] AS depth
+FROM [nt:file] AS file JOIN [mix:referenceable] AS ref
+JOIN ON ISSAMENODE(file,ref)
+]]></programlisting>
+			<para>
+			  Although this query looks much more like SQL, JCR-SQL2's use of the '[' and ']' characters to quote the identifiers is not typical
+			  of a SQL dialect. ModeShape actually supports the using double-quote characters and square braces interchangeably around identifiers 
+			  (although they must match around any single identifier). This makes it easier for existing SQL-oriented tools and applications to
+			  work more readily with ModeShape, including applications that use ModeShape's JDBC driver to query a ModeShape JCR repository.
+			</para>
+			<para>
+			  Again, this next query, which looks remarkably like any SQL-92 or -99 dialect, is functionally identical to the previous query, except
+			  that it uses double quotes and a pseudo-column identity constraint on "<code>jcr:path</code>"
+			  (which is identical in semantics and performance as the "<code>ISSAMENODE(...)</code>" constraint):
+			</para>
+			<programlisting><![CDATA[
+SELECT file."jcr:primaryType" AS primaryType, 
+       file."jcr:created" AS created, 
+       file."jcr:createdBy" AS createdBy, 
+       ref."jcr:uuid" AS uuid,
+       file."jcr:path" AS path,
+       file."jcr:name" AS name,
+       file."jcr:score" AS score,
+       file."mode:localName" AS localName, 
+       file."mode:depth" AS depth
 FROM "nt:file" AS file JOIN "mix:referenceable" AS ref
 JOIN ON file."jcr:path" = ref."jcr:path"
 ]]></programlisting>
@@ -1491,8 +1539,9 @@ JOIN ON file."jcr:path" = ref."jcr:path"
 				<code>LEFT OUTER JOIN</code>, <code>RIGHT OUTER JOIN</code>, <code>FULL OUTER JOIN</code>, and <code>CROSS JOIN</code>.
 			</para>
 			<para>
-				ModeShape supports several other query features beyond JCR-SQL2. One of these is support for <code>UNION</code>,
-				<code>INTERSECT</code> and <code>EXCEPT</code>. Here is an example of a union:
+				ModeShape also supports several other query features beyond JCR-SQL2. One of these is support for <code>UNION</code>,
+				<code>INTERSECT</code>, <code>EXCEPT</code>, <code>UNION ALL</code>,
+				<code>INTERSECT ALL</code> and <code>EXCEPT ALL</code>. Here is an example of a union:
 			</para>
 			<programlisting><![CDATA[
 SELECT [jcr:primaryType], [jcr:created], [jcr:createdBy], [jcr:path] FROM [nt:file]
@@ -1502,8 +1551,9 @@ SELECT [jcr:primaryType], [jcr:created], [jcr:createdBy], [jcr:path] FROM [nt:fo
 			<para>
 				ModeShape also supports using (non-correlated) subqueries within the <code>WHERE</code> clause, wherever a
 				<link linkend="jcr-sql2-static-operand">static operand</link> can be used. Subqueries can even be used within 
-				another subquery. All subqueries, though, must return a single column, and each row's single value will be 
-				treated as a literal value. If the subquery is used in a clause that expects a single value (e.g., in a comparison), 
+				another subquery. All subqueries, though, should return a single column (all other columns will be ignored), 
+				and each row's single value will be treated as a literal value. 
+				If the subquery is used in a clause that expects a single value (e.g., in a comparison), 
 				only the subquery's first row will be used.
 			</para>
 			<para>
@@ -1513,8 +1563,8 @@ SELECT [jcr:primaryType], [jcr:created], [jcr:createdBy], [jcr:path] FROM [nt:fo
 			</para>
 			<para>
 				Here's an example of a query that finds all <code>nt:file</code> nodes in the repository whose paths are referenced
-				in the <code>vdb:originalFile</code> property of the <code>vdb:virtualDatabase</code> nodes. (This query
-				also uses bind variables in the subquery.)
+				in the value of the <code>vdb:originalFile</code> property of the <code>vdb:virtualDatabase</code> nodes. (This query
+				also uses the "<code>$maxVersion</code>" bind variables in the subquery.)
 			</para>
 			<programlisting><![CDATA[
 SELECT [jcr:primaryType], [jcr:created], [jcr:createdBy], [jcr:path] FROM [nt:file] 
@@ -1526,7 +1576,8 @@ WHERE PATH() IN (
 				Without subqueries, this query would need to be broken into two separate queries: the first would find all of the
 				paths referenced by the <code>vdb:virtualDatabase</code> nodes matching the version and description criteria,
 				followed by one (or more) subsequent queries to find the <code>nt:file</code> nodes with the paths expressed
-				as literal values (or bind variables).
+				as literal values (or bind variables). Using a subquery is not only easier to implement and understand, it is actually
+				more efficient.
 			</para>
 			<para>
 				The examples shown in this section hopefully begin to show the power and flexibility of JCR-SQL2 and the ModeShape extensions.
