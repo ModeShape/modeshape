@@ -278,10 +278,13 @@ class JoinRequestProcessor extends RequestProcessor {
                 // We needed to verify the existance of a child node ...
                 VerifyNodeExistsRequest verify = (VerifyNodeExistsRequest)sourceRequest;
                 Location childInSource = verify.getActualLocationOfNode();
-                Location childInRepos = getChildLocationWithCorrectSnsIndex(childInSource,
-                                                                            federatedPath,
-                                                                            childSnsIndexes,
-                                                                            projection);
+                Location childInRepos = determineActualLocation(childInSource, projection);
+                childInRepos = getChildLocationWithCorrectSnsIndex(childInRepos, federatedPath, childSnsIndexes, projection);
+
+                // Location childInRepos = getChildLocationWithCorrectSnsIndex(childInSource,
+                // federatedPath,
+                // childSnsIndexes,
+                // projection);
                 request.addChild(childInRepos);
                 if (federatedPath == null) federatedPath = childInRepos.getPath().getParent();
             } else {

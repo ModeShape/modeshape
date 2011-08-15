@@ -299,7 +299,7 @@ public class SearchEngineIndexer {
         }
 
         Iterator<Location> locationIter = readSubgraph.iterator();
-        assert locationIter.hasNext();
+        if (!locationIter.hasNext()) return;
 
         // Destroy the nodes at the supplied location ...
         if (startingLocation.getPath().isRoot()) {
