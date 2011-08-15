@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration xmlns:mode="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+  <!-- Define the sources from which content is made available -->
+  <mode:sources>
+    <mode:source jcr:name="test-inmemory" 
+        mode:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource"
+        mode:predefinedWorkspaceNames="custom-federated"
+        mode:defaultWorkspaceName="default">
+    </mode:source>
+    <mode:source jcr:name="repository" 
+        mode:classname="org.modeshape.connector.store.jpa.JpaSource" 
+        mode:dialect="org.hibernate.dialect.HSQLDialect"
+        mode:driverClassName="org.hsqldb.jdbcDriver"
+        mode:username="sa"
+        mode:password=""
+        mode:url="jdbc:hsqldb:mem:target"
+        mode:maximumConnectionsInPool="1"
+        mode:autoGenerateSchema="create"
+        mode:creatingWorkspacesAllowed="true"
+        mode:predefinedWorkspaceNames="workspace2"
+        mode:defaultWorkspaceName="default" />
+    <mode:source jcr:name="test-federated" mode:classname="org.modeshape.graph.connector.federation.FederatedRepositorySource"
+      mode:defaultWorkspaceName="default">
+      <mode:workspaces>
+        <mode:workspace jcr:name="default">
+          <mode:projections>
+            <mode:projection jcr:name="JPA projection" mode:source="test-inmemory" mode:workspaceName="default">
+              <mode:projectionRules>/source1 => /a</mode:projectionRules>
+            </mode:projection>
+          </mode:projections>
+        </mode:workspace>
+      </mode:workspaces>
+    </mode:source>
+  </mode:sources>
+  <!-- Define the JCR repositories -->
+  <mode:repositories>
+    <mode:repository jcr:name="test-inmemory" mode:source="test-inmemory"/>
+    <mode:repository jcr:name="test-federated" mode:source="test-federated">
+        <mode:options>
+            <!-- projectNodeTypes jcr:primaryType="mode:option" value="false"/-->
+        </mode:options>
+    </mode:repository>
+  </mode:repositories>
+</configuration>
