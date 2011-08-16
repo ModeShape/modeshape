@@ -39,7 +39,9 @@
       <fileMode>0744</fileMode>
     </file>
     <file>
-      <source>logback.xml</source>
+      <source>src/test/resources/logback.xml</source>
+      <destName>logback.xml</destName>
+      <outputDirectory>/</outputDirectory>
       <fileMode>0644</fileMode>
     </file>
   </files>
