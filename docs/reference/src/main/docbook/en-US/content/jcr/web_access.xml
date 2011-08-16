@@ -457,8 +457,8 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 	|	+ modeshape-web-jcr-&versionNumber;.jar
 	|	+ modeshape-web-jcr-webdav-&versionNumber;.jar
 	|	+ rdf2go.api-4.6.2.jar
-	|	+ slf4j-api-1.5.11.jar
-	|	+ slf4j-log4j12-1.5.8.jar
+	|	+ slf4j-api-1.6.1.jar
+	|	+ slf4j-log4j12-1.6.1.jar
 	|	+ stax-api-1.0-2.jar
 	|	+ webdav-servlet-2.0.jar
 	+ web.xml
@@ -1144,8 +1144,8 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 	|	+ resteasy-jettison-provider-1.2.1.GA.jar
 	|	+ scannotation-1.0.2.jar
 	|	+ sjsxp-1.0.1.jar
-	|	+ slf4j-api-1.5.11.jar
-	|	+ slf4j-log4j12-1.5.8.jar
+	|	+ slf4j-api-1.6.1.jar
+	|	+ slf4j-log4j12-1.6.1.jar
 	|	+ slf4j-simple-1.5.8.jar
 	|	+ stax-api-1.0-2.jar
 	+ web.xml
