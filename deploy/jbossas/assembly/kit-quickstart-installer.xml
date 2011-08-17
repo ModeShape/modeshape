@@ -1,0 +1,43 @@
+<!--This script builds a JAR for the Embedded Server Installation -->
+<assembly>
+  
+  <id>installer-dist</id>
+  
+  <formats>
+    <format>zip</format>
+  </formats>
+  
+  <includeBaseDirectory>false</includeBaseDirectory>
+  <baseDirectory>modeshape-installer</baseDirectory>
+
+  <fileSets>
+          
+    <fileSet>
+        <directory>modeshape-jbossas-quickstart-installer</directory>
+        <outputDirectory>modeshape-installer</outputDirectory>      
+        <includes>
+          <include>**/*.sh</include>
+        </includes>   
+        <fileMode>755</fileMode>  
+        <directoryMode>0755</directoryMode>    
+    </fileSet>
+    <fileSet>
+        <directory>modeshape-jbossas-quickstart-installer</directory>
+        <outputDirectory>modeshape-installer</outputDirectory>      
+        <excludes>
+          <exclude>**/*.sh</exclude>
+        </excludes>   
+		<fileMode>0644</fileMode> 
+    </fileSet> 
+
+  </fileSets>
+ 	
+  <files>
+    <file>
+      <source>modeshape-jbossas-quickstart-installer/build.properties</source>
+      <outputDirectory>modeshape-installer</outputDirectory>
+      <filtered>true</filtered>
+    </file>
+  </files>	
+  	 	          
+</assembly>
