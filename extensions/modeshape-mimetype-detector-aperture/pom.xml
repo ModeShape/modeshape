@@ -121,6 +121,10 @@
           <artifactId>jcl104-over-slf4j</artifactId>
         </exclusion>
         <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>jcl-over-slf4j</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>net.wimpi</groupId>
           <artifactId>pim</artifactId>
         </exclusion>

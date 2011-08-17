@@ -58,8 +58,8 @@ import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.Logger;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
-import org.modeshape.graph.Location;
 import org.modeshape.graph.Graph.Batch;
+import org.modeshape.graph.Location;
 import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.property.Binary;
 import org.modeshape.graph.property.BinaryFactory;
@@ -77,12 +77,12 @@ import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.ValueFormatException;
 import org.modeshape.graph.request.InvalidWorkspaceException;
 import org.modeshape.graph.session.GraphSession;
-import org.modeshape.graph.session.InvalidStateException;
-import org.modeshape.graph.session.ValidationException;
 import org.modeshape.graph.session.GraphSession.Node;
 import org.modeshape.graph.session.GraphSession.NodeId;
 import org.modeshape.graph.session.GraphSession.PropertyInfo;
 import org.modeshape.graph.session.GraphSession.Status;
+import org.modeshape.graph.session.InvalidStateException;
+import org.modeshape.graph.session.ValidationException;
 import org.modeshape.jcr.JcrRepository.Option;
 
 /**
@@ -204,9 +204,13 @@ class SessionCache {
         protected Batch operations() {
             return super.operations();
         }
+
+        protected void assignedUuid( Node<JcrNodePayload, JcrPropertyPayload> node ) {
+            super.put(node);
+        }
     }
 
-    final GraphSession<JcrNodePayload, JcrPropertyPayload> graphSession() {
+    final CustomGraphSession graphSession() {
         return graphSession;
     }
 
@@ -1621,11 +1625,21 @@ class SessionCache {
 
                 if (mixinCandidateType.isNodeType(JcrMixLexicon.REFERENCEABLE)) {
                     // This node is now referenceable, so make sure there is a UUID property ...
-                    UUID uuid = node.getLocation().getUuid();
-                    if (uuid == null) uuid = (UUID)node.getLocation().getIdProperty(JcrLexicon.UUID).getFirstValue();
-                    if (uuid == null) uuid = UUID.randomUUID();
-                    JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING, uuid);
-                    setProperty(JcrLexicon.UUID, value, false, false);
+                    UUID uuid = node.getLocation().getUuid(); // "mode:uuid"
+                    Property uuidProp = node.getLocation().getIdProperty(JcrLexicon.UUID);
+                    if (uuid == null) {
+                        if (uuidProp != null) uuid = uuidFactory().create(uuidProp.getFirstValue());
+                        if (uuid == null) uuid = UUID.randomUUID();
+                    }
+                    if (uuidProp == null) {
+                        // We did not have a 'jcr:uuid' property value ...
+                        JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING, uuid);
+                        setProperty(JcrLexicon.UUID, value, false, false);
+                        // Now update the node and the cache ...
+                        node.setUuid(uuid);
+                        node.getPayload().getJcrNode().setLocation(node.getLocation().with(uuid));
+                        graphSession().assignedUuid(node);
+                    }
                 }
             } catch (RepositorySourceException e) {
                 throw new RepositoryException(e.getMessage(), e);

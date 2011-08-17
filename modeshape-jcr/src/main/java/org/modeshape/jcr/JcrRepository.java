@@ -71,11 +71,11 @@ import org.modeshape.common.util.ClassUtil;
 import org.modeshape.common.util.Logger;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
+import org.modeshape.graph.Graph.Batch;
 import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.Subgraph;
 import org.modeshape.graph.Workspace;
-import org.modeshape.graph.Graph.Batch;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryConnectionFactory;
 import org.modeshape.graph.connector.RepositoryContext;
@@ -102,8 +102,8 @@ import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.basic.GraphNamespaceRegistry;
 import org.modeshape.graph.query.QueryBuilder;
-import org.modeshape.graph.query.QueryResults;
 import org.modeshape.graph.query.QueryBuilder.ConstraintBuilder;
+import org.modeshape.graph.query.QueryResults;
 import org.modeshape.graph.query.model.QueryCommand;
 import org.modeshape.graph.query.model.Visitors;
 import org.modeshape.graph.query.parse.QueryParsers;
@@ -799,16 +799,16 @@ public class JcrRepository implements Repository {
             boolean includeInheritedProperties = Boolean.valueOf(this.options.get(Option.TABLES_INCLUDE_COLUMNS_FOR_INHERITED_PROPERTIES));
             boolean includePseudoColumnInSelectStar = true;
 
-            // Read in the built-in node types ...
-            CndNodeTypeReader nodeTypeReader = new CndNodeTypeReader(this.executionContext);
-            nodeTypeReader.readBuiltInTypes();
-
             // Create the manager for this repository's node types, initializing it from the system graph and registering the
             // standard types ...
             this.repositoryTypeManager = new RepositoryNodeTypeManager(this, parentOfTypeNodes, includeInheritedProperties,
                                                                        includePseudoColumnInSelectStar);
-            this.repositoryTypeManager.refreshFromSystem();
-            this.repositoryTypeManager.registerNodeTypes(nodeTypeReader, false);
+            if (!this.repositoryTypeManager.refreshFromSystem()) {
+                // Read in the built-in node types ...
+                CndNodeTypeReader nodeTypeReader = new CndNodeTypeReader(this.executionContext);
+                nodeTypeReader.readBuiltInTypes();
+                this.repositoryTypeManager.registerNodeTypes(nodeTypeReader, false);
+            }
         } catch (RepositoryException re) {
             throw new IllegalStateException("Could not load node type definition files", re);
         } catch (IOException ioe) {
@@ -868,7 +868,7 @@ public class JcrRepository implements Repository {
             // We can query the federated source if it supports queries and searches
             // AND the original source supports queries and searches ...
             if (canQuerySource && canQueryFederated) {
-                this.queryManager = new PushDown(this.sourceName, this.executionContext, connectionFactory);
+                this.queryManager = new PushDown(repositoryName(), this.sourceName, this.executionContext, connectionFactory);
             } else {
                 // Otherwise create a repository query manager that maintains its own search engine ...
                 String indexDirectory = this.options.get(Option.QUERY_INDEX_DIRECTORY);
@@ -877,14 +877,15 @@ public class JcrRepository implements Repository {
                 boolean rebuildIndexesSynchronously = Boolean.TRUE.equals(Boolean.valueOf(this.options.get(Option.QUERY_INDEXES_REBUILT_SYNCHRONOUSLY)));
 
                 int maxDepthToRead = Integer.valueOf(this.options.get(Option.INDEX_READ_DEPTH));
-                this.queryManager = new RepositoryQueryManager.SelfContained(this.executionContext, this.sourceName,
-                                                                             connectionFactory, repositoryObservable,
-                                                                             repositoryTypeManager, indexDirectory,
-                                                                             updateIndexesSynchronously, forceIndexRebuild,
-                                                                             rebuildIndexesSynchronously, maxDepthToRead);
+                this.queryManager = new RepositoryQueryManager.SelfContained(repositoryName(), this.executionContext,
+                                                                             this.sourceName, connectionFactory,
+                                                                             repositoryObservable, repositoryTypeManager,
+                                                                             indexDirectory, updateIndexesSynchronously,
+                                                                             forceIndexRebuild, rebuildIndexesSynchronously,
+                                                                             maxDepthToRead);
             }
         } else {
-            this.queryManager = new RepositoryQueryManager.Disabled(this.sourceName);
+            this.queryManager = new RepositoryQueryManager.Disabled(repositoryName(), this.sourceName);
         }
 
         // Initialize the observer, which receives events from all repository sources

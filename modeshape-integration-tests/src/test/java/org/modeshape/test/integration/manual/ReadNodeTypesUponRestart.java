@@ -2,6 +2,7 @@ package org.modeshape.test.integration.manual;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
+import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.NamespaceException;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.PropertyType;
@@ -19,6 +20,9 @@ import org.modeshape.common.collection.Problem;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
+import org.modeshape.jcr.JcrTools;
+import org.modeshape.test.ModeShapeUnitTest;
+import org.modeshape.test.integration.performance.GuvnorEmulator;
 import org.xml.sax.SAXException;
 
 /**
@@ -30,7 +34,7 @@ import org.xml.sax.SAXException;
  * <li>Change the value of the "FIRST_TIME" constant to "false" and recompile.</li>
  * <li>Run this application any number of times.</li>
  */
-public class ReadNodeTypesUponRestart {
+public class ReadNodeTypesUponRestart extends ModeShapeUnitTest {
 
     private static final boolean FIRST_TIME = false;
     private static final String CONFIG_FILE_PATH = "src/test/resources/config/read-node-types-upon-restart-config.xml";
@@ -53,7 +57,21 @@ public class ReadNodeTypesUponRestart {
                 getOrCreateNodeType(workspace);
                 // getNodeType(workspace);
                 // session.save();
-            } catch (RepositoryException e) {
+
+                GuvnorEmulator guvnor = new GuvnorEmulator(getSession().getRepository(), 150, true);
+                guvnor.importGuvnorNodeTypes(!FIRST_TIME);
+
+                if (FIRST_TIME) {
+                    System.out.print("Importing Guvnor content ... ");
+                    JcrTools tools = new JcrTools();
+                    int importBehavior = ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING;
+                    tools.importContent(session, "io/drools/mortgage-sample-repository.xml", importBehavior);
+                } else {
+                    System.out.print("Verifying Guvnor content ... ");
+                    guvnor.verifyContent();
+                }
+                System.out.println("completed");
+            } catch (Exception e) {
                 // TODO Auto-generated catch block
                 System.out.print("exception" + e);
             }
@@ -82,7 +100,10 @@ public class ReadNodeTypesUponRestart {
                 getNamespace(workspace, "jboss", "http://www.jboss.org");
                 getNodeType(workspace);
                 // session.save();
-            } catch (RepositoryException e) {
+
+                GuvnorEmulator guvnor = new GuvnorEmulator(getSession().getRepository(), 150, true);
+                guvnor.importGuvnorNodeTypes(true);
+            } catch (Exception e) {
                 // TODO Auto-generated catch block
                 System.out.print("exception" + e);
             }
@@ -97,8 +118,11 @@ public class ReadNodeTypesUponRestart {
 
         // Shutdown the engine ...
         try {
+            System.out.print("Shutting down ModeShape engine ... ");
+            long nanos = System.nanoTime();
             engine.shutdownAndAwaitTermination(5, TimeUnit.SECONDS);
-            System.out.println("Successfully shut down ModeShape engine");
+            nanos = System.nanoTime() - nanos;
+            System.out.println("completed in " + TimeUnit.MILLISECONDS.convert(nanos, TimeUnit.NANOSECONDS) + " millis");
         } catch (InterruptedException e) {
             e.printStackTrace();
         } finally {
@@ -110,6 +134,12 @@ public class ReadNodeTypesUponRestart {
     private static void startEngine( boolean firstTime ) {
         if (engine != null) return; // already started
 
+        if (firstTime) {
+            System.out.print("Starting ModeShape engine ... ");
+        } else {
+            System.out.println("");
+            System.out.print("Restarting ModeShape engine ... ");
+        }
         try {
             JcrConfiguration config = new JcrConfiguration().loadFrom(CONFIG_FILE_PATH);
 
@@ -120,19 +150,37 @@ public class ReadNodeTypesUponRestart {
             }
 
             engine = config.build();
-            engine.start();
+            long nanos = System.nanoTime();
+            engine.start(true);
+            nanos = System.nanoTime() - nanos;
 
             if (engine.getProblems().hasProblems()) {
+                System.out.println("resulted in problems:");
                 for (Problem problem : engine.getProblems()) {
                     System.err.println(problem.getMessageString());
                 }
                 throw new RuntimeException("Could not start due to problems");
             }
+            System.out.println("completed in " + TimeUnit.MILLISECONDS.convert(nanos, TimeUnit.NANOSECONDS) + " millis");
         } catch (IOException e) {
             System.out.print("exception" + e);
         } catch (SAXException e) {
             // TODO Auto-generated catch block
             System.out.print("exception" + e);
+        }
+
+        // Get a session to make sure everything is initialized ...
+        Session session = null;
+        try {
+            System.out.print("Getting initial session ... ");
+            long nanos = System.nanoTime();
+            session = getSession();
+            nanos = System.nanoTime() - nanos;
+            System.out.println("completed in " + TimeUnit.MILLISECONDS.convert(nanos, TimeUnit.NANOSECONDS) + " millis");
+        } catch (RepositoryException e) {
+            System.out.print("exception" + e);
+        } finally {
+            if (session != null) session.logout();
         }
     }
 

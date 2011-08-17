@@ -1228,66 +1228,58 @@ public class JpaSource implements RepositorySource, ObjectFactory {
                     Context context = new InitialContext();
                     dataSource = (DataSource)context.lookup(this.dataSourceJndiName);
                 } catch (Throwable t) {
-                    Logger.getLogger(getClass()).error(t, JpaConnectorI18n.errorFindingDataSourceInJndi, name, dataSourceJndiName);
+                    Logger.getLogger(getClass())
+                          .error(t, JpaConnectorI18n.errorFindingDataSourceInJndi, name, dataSourceJndiName);
                 }
             }
-
-            JpaAdapter jpaAdapter = new HibernateAdapter();
-            EntityManagerFactory bootstrapFactory = jpaAdapter.getEntityManagerFactory(this);
-
-            try {
-                // Establish a connection and obtain the store options...
-                EntityManager entityManager = bootstrapFactory.createEntityManager();
-                try {
-
-                    // Find and update/set the root node's UUID ...
-                    StoreOptions options = new StoreOptions(entityManager);
-                    UUID actualUuid = options.getRootNodeUuid();
-                    if (actualUuid != null) {
-                        this.setRootNodeUuid(actualUuid.toString());
-                    } else {
-                        options.setRootNodeUuid(this.rootUuid);
-                    }
-
-                    // Find or set the type of model that will be used.
-                    String actualModelName = options.getModelName();
-                    if (actualModelName == null) {
-                        // This is a new store, so set to the specified model ...
-                        if (model == null) setModel(Models.DEFAULT.getName());
-                        assert model != null;
-                        options.setModelName(model);
-                    } else {
-                        // Set the model to the what's listed in the database ...
-                        try {
-                            setModel(actualModelName);
-                        } catch (Throwable e) {
-                            // The actual model name doesn't match what's available in the software ...
-                            String msg = JpaConnectorI18n.existingStoreSpecifiesUnknownModel.text(name, actualModelName);
-                            throw new RepositorySourceException(msg);
-                        }
-                    }
-
-                    // Determine the dialect, if it was to be automatically discovered ...
-                    if (this.dialect == null || this.dialect.trim().length() == 0) {
-                        this.dialect = jpaAdapter.determineDialect(entityManager);
-                    }
-                    if (this.dialect == null || this.dialect.trim().length() == 0) {
-                        // The dialect could not be determined ...
-                        String msg = JpaConnectorI18n.dialectCouldNotBeDeterminedAndMustBeSpecified.text(name);
-                        throw new RepositorySourceException(msg);
-                    }
-
-                } finally {
-                    entityManager.close();
-                }
-            } finally {
-                bootstrapFactory.close();
-            }
-
-            EntityManagerFactory entityManagerFactory = jpaAdapter.getEntityManagerFactory(this);
 
             // Now, create another entity manager with the classes from the correct model and without changing the schema...
+            JpaAdapter jpaAdapter = new HibernateAdapter();
+            EntityManagerFactory entityManagerFactory = jpaAdapter.getEntityManagerFactory(this);
             entityManagers = new EntityManagers(entityManagerFactory);
+
+            // Establish a connection and obtain the store options...
+            EntityManager entityManager = entityManagers.checkout();
+            try {
+                // Determine the dialect, if it was to be automatically discovered ...
+                if (this.dialect == null || this.dialect.trim().length() == 0) {
+                    this.dialect = jpaAdapter.determineDialect(entityManager);
+                }
+                if (this.dialect == null || this.dialect.trim().length() == 0) {
+                    // The dialect could not be determined ...
+                    String msg = JpaConnectorI18n.dialectCouldNotBeDeterminedAndMustBeSpecified.text(name);
+                    throw new RepositorySourceException(msg);
+                }
+
+                // Find and update/set the root node's UUID ...
+                StoreOptions options = new StoreOptions(entityManager);
+                UUID actualUuid = options.getRootNodeUuid();
+                if (actualUuid != null) {
+                    this.setRootNodeUuid(actualUuid.toString());
+                } else {
+                    options.setRootNodeUuid(this.rootUuid);
+                }
+
+                // Find or set the type of model that will be used.
+                String actualModelName = options.getModelName();
+                if (actualModelName == null) {
+                    // This is a new store, so set to the specified model ...
+                    if (model == null) setModel(Models.DEFAULT.getName());
+                    assert model != null;
+                    options.setModelName(model);
+                } else {
+                    // Set the model to the what's listed in the database ...
+                    try {
+                        setModel(actualModelName);
+                    } catch (Throwable e) {
+                        // The actual model name doesn't match what's available in the software ...
+                        String msg = JpaConnectorI18n.existingStoreSpecifiesUnknownModel.text(name, actualModelName);
+                        throw new RepositorySourceException(msg);
+                    }
+                }
+            } finally {
+                if (entityManager != null) entityManagers.checkin(entityManager);
+            }
         }
 
         return model.createConnection(this);

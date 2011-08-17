@@ -14,4 +14,6 @@
   <!-- Set up the default logging to be INFO level, then override specific units -->
   <logger name="org.modeshape" level="INFO" />
   <logger name="org.modeshape.example" level="INFO" />
+  <logger name="org.hibernate" level="WARN" />
+  <logger name="com.mchange.v2.c3p0.impl" level="WARN" />
 </configuration>

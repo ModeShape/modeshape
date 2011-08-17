@@ -7,6 +7,8 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.Binary;
 import javax.jcr.Credentials;
@@ -30,6 +32,11 @@ import javax.jcr.nodetype.NodeDefinitionTemplate;
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.nodetype.PropertyDefinitionTemplate;
+import javax.jcr.observation.Event;
+import javax.jcr.observation.EventIterator;
+import javax.jcr.observation.EventListener;
+import javax.jcr.query.Query;
+import javax.jcr.query.QueryResult;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
@@ -2209,6 +2216,152 @@ public class ModeShapeTckTest extends AbstractJCRTest {
             return true;
         } catch (UnsupportedRepositoryOperationException e) {
             return false;
+        }
+    }
+
+    protected void checkinRecursively( Node node,
+                                       VersionManager vm ) throws RepositoryException {
+        String path = node.getPath();
+        if (node.isNodeType("mix:versionable") && vm.isCheckedOut(path)) {
+            try {
+                vm.checkin(path);
+            } catch (VersionException e) {
+                // Something on this node can't be checked in, so remove it ..
+                node.remove();
+                return;
+            }
+        }
+        NodeIterator iter = node.getNodes();
+        while (iter.hasNext()) {
+            checkinRecursively(iter.nextNode(), vm);
+        }
+    }
+
+    @FixFor( "MODE-1234" )
+    public void testShouldFindCheckedOutNodesByQuerying() throws Exception {
+        Session session1 = getHelper().getSuperuserSession();
+        VersionManager vm = session1.getWorkspace().getVersionManager();
+
+        // Check in all nodes that are still checked out ...
+        Node root = session1.getRootNode();
+        checkinRecursively(root, vm);
+
+        // Create node structure
+        Node area = root.addNode("tmp2", "nt:unstructured");
+
+        Node outer = area.addNode("outerFolder");
+        Node inner = outer.addNode("innerFolder");
+        Node file = inner.addNode("testFile.dat");
+        file.setProperty("jcr:mimeType", "text/plain");
+        file.setProperty("jcr:data", "Original content");
+        session1.save();
+
+        file.addMixin("mix:versionable");
+        // session.save();
+
+        isVersionable(vm, file); // here's the problem
+        session1.save();
+
+        Version v1 = vm.checkin(file.getPath());
+        assertThat(v1, is(notNullValue()));
+
+        // Register a listener so that we only have to wait until the change is made ...
+        CountDownListener listener = registerCountDownListener(session1, file.getPath(), 1);
+
+        // Query for versionables ...
+        queryForCheckedOutVersionables(session1, 0, false);
+
+        // Now check out a node ...
+        vm.checkout(file.getPath());
+
+        // and wait a bit ...
+        listener.await(2, TimeUnit.SECONDS);
+        listener.unregister();
+
+        // And re-query ...
+        queryForCheckedOutVersionables(session1, 1, false);
+
+        // Register a listener so that we only have to wait until the change is made ...
+        listener = registerCountDownListener(session1, file.getPath(), 1);
+
+        // Check it back in ...
+        vm.checkin(file.getPath());
+
+        // and wait a bit ...
+        listener.await(2, TimeUnit.SECONDS);
+        listener.unregister();
+
+        // And re-query ...
+        queryForCheckedOutVersionables(session1, 0, false);
+    }
+
+    protected int queryForCheckedOutVersionables( Session session,
+                                                  int expected,
+                                                  boolean print ) throws RepositoryException {
+        String queryStr = "SELECT * FROM [nt:unstructured] AS node JOIN [mix:versionable] AS versionable "
+                          + "ON ISSAMENODE(node,versionable) WHERE versionable.[jcr:isCheckedOut] = true";
+        QueryResult result = query(session, queryStr);
+        int actual = (int)result.getRows().getSize();
+        if (print) System.out.println("Result = \n" + result);
+        if (actual != expected) {
+            queryStr = "SELECT * FROM [nt:unstructured] AS node JOIN [mix:versionable] AS versionable "
+                       + "ON ISSAMENODE(node,versionable)";
+            result = query(session, queryStr);
+            System.out.println(result);
+        }
+        assertThat(actual, is(expected));
+        return actual;
+    }
+
+    protected QueryResult query( Session session,
+                                 String queryStr ) throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery(queryStr, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        return result;
+    }
+
+    protected CountDownListener registerCountDownListener( Session session,
+                                                           String path,
+                                                           int counts ) throws RepositoryException {
+        CountDownListener listener = new CountDownListener(session, counts);
+        session.getWorkspace()
+               .getObservationManager()
+               .addEventListener(listener, Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED, path, true, null, null, false);
+        return listener;
+    }
+
+    protected static class CountDownListener implements EventListener {
+        final CountDownLatch latch;
+        final Session session;
+
+        public CountDownListener( Session session,
+                                  int counts ) {
+            this.session = session;
+            this.latch = new CountDownLatch(counts);
+        }
+
+        public void onEvent( EventIterator events ) {
+            while (events.hasNext()) {
+                try {
+                    latch.countDown();
+                } catch (Throwable e) {
+                    latch.countDown();
+                    fail(e.getMessage());
+                }
+            }
+        }
+
+        public void await( int time,
+                           TimeUnit unit ) {
+            try {
+                latch.await(time, unit);
+            } catch (InterruptedException e) {
+                fail(e.getMessage());
+            }
+        }
+
+        public void unregister() throws RepositoryException {
+            this.session.getWorkspace().getObservationManager().removeEventListener(this);
         }
     }
 

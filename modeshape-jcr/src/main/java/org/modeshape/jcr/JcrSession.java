@@ -861,6 +861,11 @@ class JcrSession implements Session {
         // Attempt to create a UUID from the identifier ...
         try {
             return cache.findJcrNode(Location.create(UUID.fromString(id)));
+        } catch (ItemNotFoundException e) {
+            // Some connectors don't support finding by UUID, so try searching for the node by UUID using a query ...
+            Path path = searchForNodePath(id);
+            if (path != null) return getNode(path);
+            throw e;
         } catch (IllegalArgumentException e) {
             try {
                 // See if it's a path ...
@@ -1094,6 +1099,28 @@ class JcrSession implements Session {
         } catch (LockException le) {
             // For backwards compatibility (and API compatibility), the LockExceptions from the LockManager need to get swallowed
         }
+    }
+
+    Path searchForNodePath( String identifier ) throws RepositoryException {
+        TypeSystem typeSystem = executionContext.getValueFactories().getTypeSystem();
+        QueryBuilder builder = new QueryBuilder(typeSystem);
+        QueryCommand query = builder.select("jcr:path")
+                                    .from("mix:referenceable AS referenceable")
+                                    .where()
+                                    .propertyValue("referenceable", "jcr:uuid")
+                                    .isEqualTo(identifier)
+                                    .end()
+                                    .query();
+        JcrQueryManager queryManager = workspace().queryManager();
+        Query jcrQuery = queryManager.createQuery(query);
+        QueryResult result = jcrQuery.execute();
+        RowIterator rows = result.getRows();
+        while (rows.hasNext()) {
+            Row row = rows.nextRow();
+            String path = row.getValue("jcr:path").getString();
+            if (path != null) return executionContext.getValueFactories().getPathFactory().create(path);
+        }
+        return null;
     }
 
     void recordRemoval( Location location ) throws RepositoryException {

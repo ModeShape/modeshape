@@ -126,11 +126,11 @@ public class LuceneSearchEngineTest {
         rulesBuilder.integerField(name("mpgCity"), Field.Store.YES, Field.Index.NOT_ANALYZED, 0, 50);
         rulesBuilder.integerField(name("mpgHighway"), Field.Store.YES, Field.Index.NOT_ANALYZED, 0, 50);
         // rulesBuilder.analyzeAndStoreAndFullText(name("maker"));
-        IndexRules rules = rulesBuilder.build();
+        IndexRules.Factory rulesFactory = new IndexRules.FixedFactory(rulesBuilder.build());
         LuceneConfiguration luceneConfig = LuceneConfigurations.inMemory();
         // LuceneConfiguration luceneConfig = LuceneConfigurations.using(new File("target/testIndexes"));
         Analyzer analyzer = null;
-        engine = new LuceneSearchEngine(sourceName, connectionFactory, true, depthToRead, luceneConfig, rules, analyzer);
+        engine = new LuceneSearchEngine(sourceName, connectionFactory, true, depthToRead, luceneConfig, rulesFactory, analyzer);
         loadContent();
 
         // Load the workspaces into the engine ...

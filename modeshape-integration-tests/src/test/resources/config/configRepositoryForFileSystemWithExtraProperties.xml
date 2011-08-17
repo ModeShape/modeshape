@@ -27,35 +27,30 @@
 <configuration xmlns:mode="http://www.modeshape.org/1.0"
                xmlns:jcr="http://www.jcp.org/jcr/1.0"
                xmlns:nt="http://www.jcp.org/jcr/nt/1.0">
+    <!-- Define the sources from which content is made available.  -->
+    <mode:sources jcr:primaryType="nt:unstructured">
+        <!-- 
+        The 'JCR' repository is a file system source with two predefined workspaces.
+        In a production release, the mode:rootNodeUuid would be specified here as well to ensure stability over restarts.  
+        Since we don't specify a rootNodeUuid, a random UUID will be generated each time that the corresponding test is run.
+        -->
+        <mode:source jcr:name="Store" mode:classname="org.modeshape.connector.filesystem.FileSystemSource"
+            mode:workspaceRootPath="./target/fsRepoWithProps/root"
+            mode:defaultWorkspaceName="defaultWorkspace"
+            mode:predefinedWorkspaceNames="otherWorkspace"
+            mode:creatingWorkspacesAllowed="false"
+            mode:extraPropertiesBehavior="store"
+            mode:updatesAllowed="true"
+            />    
+    </mode:sources>
     <!-- JCR Repositories.  This is required, with a separate repository for each JCR repository instance. -->
     <mode:repositories>
         <mode:repository jcr:name="Repo" mode:source="Store">
-            <mode:options jcr:primaryType="options" >
-                <!-- Explicitly specify the "system" workspace in the "SystemStore" source. -->
-                <mode:option jcr:name="systemSourceName" mode:value="system@Store"/>
-                <mode:option jcr:name="queryIndexDirectory" mode:value="target/jcr-test-db/indexes"/>
-                <mode:option jcr:name="rebuildQueryIndexOnStartup" mode:value="ifMissing"/>
+            <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names -->
+            <mode:options jcr:primaryType="mode:options">
+               <mode:option jcr:name="rebuildQueryIndexOnStartup" mode:value="ifMissing"/>
+               <mode:option jcr:name="queryIndexDirectory" mode:value="./target/fsRepoWithProps/indexes" />
             </mode:options>
         </mode:repository>
     </mode:repositories>
-    <!-- Define the sources from which content is made available.  -->
-    <mode:sources jcr:primaryType="nt:unstructured">
-        <mode:source jcr:name="Store" mode:classname="org.modeshape.connector.store.jpa.JpaSource"
-            mode:model="Simple"
-            mode:dialect="org.hibernate.dialect.HSQLDialect"
-            mode:driverClassName="org.hsqldb.jdbcDriver"
-            mode:username="sa"
-            mode:password=""
-            mode:url="jdbc:hsqldb:target/jcr-test-db/db"
-            mode:maximumConnectionsInPool="2"
-            mode:referentialIntegrityEnforced="true"
-            mode:largeValueSizeInBytes="150"
-            mode:retryLimit="3"
-            mode:compressData="true"
-            mode:predefinedWorkspaceNames="default, otherWorkspace, system"
-            mode:showSql="false"
-            mode:autoGenerateSchema="disable"
-            mode:creatingWorkspacesAllowed="true"
-            mode:defaultWorkspaceName="default"/>    
-    </mode:sources>
 </configuration>

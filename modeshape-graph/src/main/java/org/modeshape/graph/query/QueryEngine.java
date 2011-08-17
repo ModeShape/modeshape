@@ -26,19 +26,22 @@ package org.modeshape.graph.query;
 import java.util.List;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.query.QueryResults.Statistics;
+import org.modeshape.graph.query.model.BindVariableName;
 import org.modeshape.graph.query.model.Column;
 import org.modeshape.graph.query.model.Constraint;
 import org.modeshape.graph.query.model.QueryCommand;
+import org.modeshape.graph.query.model.Visitors;
 import org.modeshape.graph.query.optimize.Optimizer;
 import org.modeshape.graph.query.optimize.RuleBasedOptimizer;
 import org.modeshape.graph.query.plan.CanonicalPlanner;
 import org.modeshape.graph.query.plan.PlanHints;
 import org.modeshape.graph.query.plan.PlanNode;
-import org.modeshape.graph.query.plan.Planner;
 import org.modeshape.graph.query.plan.PlanNode.Property;
 import org.modeshape.graph.query.plan.PlanNode.Traversal;
 import org.modeshape.graph.query.plan.PlanNode.Type;
+import org.modeshape.graph.query.plan.Planner;
 import org.modeshape.graph.query.process.Processor;
 import org.modeshape.graph.query.process.QueryResultColumns;
 import org.modeshape.graph.query.validate.Schemata;
@@ -79,10 +82,20 @@ public class QueryEngine implements Queryable {
      * @see org.modeshape.graph.query.Queryable#execute(org.modeshape.graph.query.QueryContext,
      *      org.modeshape.graph.query.model.QueryCommand)
      */
-    public QueryResults execute( QueryContext context,
+    public QueryResults execute( final QueryContext context,
                                  QueryCommand query ) {
         CheckArg.isNotNull(context, "context");
         CheckArg.isNotNull(query, "query");
+
+        // Validate that all of the referenced variables have been provided ...
+        Visitors.visitAll(query, new Visitors.AbstractVisitor() {
+            @Override
+            public void visit( BindVariableName obj ) {
+                if (!context.getVariables().keySet().contains(obj.variableName())) {
+                    context.getProblems().addError(GraphI18n.missingVariableValue, obj.variableName());
+                }
+            }
+        });
 
         // Create the canonical plan ...
         long start = System.nanoTime();
