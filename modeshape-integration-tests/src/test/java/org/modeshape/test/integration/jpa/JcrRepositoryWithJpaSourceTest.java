@@ -27,9 +27,12 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.GregorianCalendar;
 import javax.jcr.Credentials;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
@@ -246,6 +249,29 @@ public class JcrRepositoryWithJpaSourceTest {
             // Delete the content ...
             session.getNode("/workArea/Cars").remove();
         }
+        session.save();
+    }
+
+    @FixFor( "MODE-1241" )
+    @Test
+    public void shouldBeAbleToCreateBinaryProperty() throws Exception {
+        String fileMime = "application/octet-stream";
+        GregorianCalendar lastModified = new GregorianCalendar(2010, 12, 2, 8, 30);
+
+        Node root = session.getRootNode();
+        Node file = root.addNode("createfile.mode", "nt:file");
+        Node content = file.addNode("jcr:content", "nt:resource");
+
+        File f = new File("./src/test/resources/test.txt");
+
+        if (!f.exists()) throw new Exception("File " + f.getAbsolutePath() + " is not found");
+        System.out.println("FILE: " + f.getAbsolutePath());
+        InputStream is = new FileInputStream(f);
+        content.setProperty("jcr:data", session.getValueFactory().createBinary(is));
+        content.setProperty("jcr:mimeType", fileMime);
+        content.setProperty("jcr:encoding", "");
+        content.setProperty("jcr:lastModified", lastModified);
+
         session.save();
     }
 

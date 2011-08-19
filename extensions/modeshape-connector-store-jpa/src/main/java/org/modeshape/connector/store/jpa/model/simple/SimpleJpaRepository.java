@@ -55,8 +55,8 @@ import org.modeshape.connector.store.jpa.JpaConnectorI18n;
 import org.modeshape.connector.store.jpa.model.common.WorkspaceEntity;
 import org.modeshape.connector.store.jpa.util.Namespaces;
 import org.modeshape.connector.store.jpa.util.Serializer;
-import org.modeshape.connector.store.jpa.util.Workspaces;
 import org.modeshape.connector.store.jpa.util.Serializer.LargeValues;
+import org.modeshape.connector.store.jpa.util.Workspaces;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.ModeShapeLexicon;
@@ -70,6 +70,7 @@ import org.modeshape.graph.property.Binary;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NameFactory;
 import org.modeshape.graph.property.Path;
+import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.PropertyFactory;
@@ -78,7 +79,6 @@ import org.modeshape.graph.property.Reference;
 import org.modeshape.graph.property.UuidFactory;
 import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.ValueFactory;
-import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.request.CompositeRequest;
 import org.modeshape.graph.request.LockBranchRequest.LockScope;
 
@@ -787,9 +787,18 @@ public class SimpleJpaRepository extends MapRepository {
         }
 
         @Override
-        public MapNode setProperties( Iterable<Property> properties ) {
+        public MapNode setProperties( Iterable<Property> properties,
+                                      Iterable<Name> removedProperties ) {
             ensurePropertiesLoaded();
 
+            if (removedProperties != null) {
+                // First remove the properties ...
+                for (Name removed : removedProperties) {
+                    if (removed != null) this.properties.remove(removed);
+                }
+            }
+
+            // Then set the updated properties ...
             for (Property property : properties) {
                 this.properties.put(property.getName(), property);
             }

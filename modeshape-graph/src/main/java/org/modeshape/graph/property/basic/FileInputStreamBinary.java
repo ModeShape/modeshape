@@ -78,7 +78,7 @@ public class FileInputStreamBinary extends AbstractBinary {
      */
     public long getSize() {
         try {
-            return channel.size();
+            return channel.position(0).size();
         } catch (IOException ioe) {
             throw new IllegalStateException(ioe);
         }

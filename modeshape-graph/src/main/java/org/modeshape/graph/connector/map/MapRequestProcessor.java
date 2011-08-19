@@ -33,19 +33,19 @@ import java.util.Set;
 import java.util.UUID;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.Location;
+import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.observe.Observer;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
+import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.PathNotFoundException;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.PropertyFactory;
-import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.query.QueryResults;
 import org.modeshape.graph.request.AccessQueryRequest;
 import org.modeshape.graph.request.CloneBranchRequest;
@@ -382,21 +382,26 @@ public class MapRequestProcessor extends RequestProcessor {
         MapNode node = getTargetNode(workspace, request, request.on());
         if (node == null) return;
         // Now set (or remove) the properties to the supplied node ...
+        List<Property> changedProps = new LinkedList<Property>();
+        List<Name> removedNames = new LinkedList<Name>();
         for (Map.Entry<Name, Property> propertyEntry : request.properties().entrySet()) {
             Property property = propertyEntry.getValue();
             if (property == null) {
-                node.removeProperty(propertyEntry.getKey());
+                removedNames.add(propertyEntry.getKey());
                 continue;
             }
             Name propName = property.getName();
-            if (!propName.equals(ModeShapeLexicon.UUID)) {
-                if (node.getProperties().get(propName) == null) {
-                    // It is a new property ...
-                    request.setNewProperty(propName);
-                }
-                node.setProperty(property);
+            if (propName.equals(ModeShapeLexicon.UUID)) continue;
+            if (node.getProperties().get(propName) == null) {
+                // It is a new property ...
+                request.setNewProperty(propName);
             }
+            changedProps.add(property);
         }
+
+        // update the node ...
+        node.setProperties(changedProps, removedNames);
+        // and set the actual location ...
         Location actualLocation = getActualLocation(request.on(), node);
         request.setActualLocationOfNode(actualLocation);
         recordChange(request);
