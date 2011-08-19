@@ -40,6 +40,7 @@ import org.modeshape.graph.connector.UuidAlreadyExistsException;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
+import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.PropertyFactory;
@@ -47,7 +48,6 @@ import org.modeshape.graph.property.PropertyType;
 import org.modeshape.graph.property.Reference;
 import org.modeshape.graph.property.UuidFactory;
 import org.modeshape.graph.property.ValueFactory;
-import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.property.basic.RootPath;
 import org.modeshape.graph.query.QueryResults;
 import org.modeshape.graph.request.AccessQueryRequest;
@@ -343,7 +343,7 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
 
         Path.Segment newName = context.getValueFactories().getPathFactory().createSegment(name, nextIndex);
         node.setName(newName);
-        node.setProperties(properties);
+        node.setProperties(properties, null);
         node.setParent(parentNode);
 
         parentNode.addChild(node);
@@ -605,7 +605,7 @@ public abstract class AbstractMapWorkspace implements MapWorkspace {
             assert newRoot != null;
 
             newRoot.getProperties().clear();
-            newRoot.setProperties(original.getProperties().values());
+            newRoot.setProperties(original.getProperties().values(), null);
 
             newRoot.clearChildren();
 

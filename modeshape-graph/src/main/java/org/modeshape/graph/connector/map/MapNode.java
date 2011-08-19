@@ -121,10 +121,12 @@ public interface MapNode {
      * should be used when multiple properties are being set in order to allow underlying implementations to optimize their access
      * to their respective persistent storage mechanism.
      * 
-     * @param properties the properties to set
+     * @param properties the properties to set or update
+     * @param removedProperties the names of the properties that are to be removed; may be null if there are none
      * @return this map node
      */
-    public MapNode setProperties( Iterable<Property> properties );
+    public MapNode setProperties( Iterable<Property> properties,
+                                  Iterable<Name> removedProperties );
 
     /**
      * Sets the property with the given name, overwriting any previous property for the given name
