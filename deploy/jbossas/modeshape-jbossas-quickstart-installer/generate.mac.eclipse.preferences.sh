@@ -1,0 +1,1 @@
+echo org.modeshape.designer/modeshape.Runtimes=modeshape runtime#`pwd`/runtime#true# > mac.eclipse.preferences.ini
