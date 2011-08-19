@@ -126,7 +126,13 @@ public class DefaultMapNode implements MapNode {
         return this;
     }
 
-    public MapNode setProperties( Iterable<Property> properties ) {
+    public MapNode setProperties( Iterable<Property> properties,
+                                  Iterable<Name> removedPropertyNames ) {
+        if (removedPropertyNames != null) {
+            for (Name removed : removedPropertyNames) {
+                if (removed != null) this.properties.remove(removed);
+            }
+        }
         for (Property property : properties) {
             this.properties.put(property.getName(), property);
         }
