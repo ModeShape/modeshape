@@ -45,6 +45,11 @@ import org.xml.sax.SAXException;
  * repository named &quot;Test Repository Source&quot;. The name of the repository is important as a single configuration file may
  * contain configuration information for many JCR repositories.
  * </p>
+ * <p>
+ * Note that if the "repositoryName" property is not specified or is empty, the factory will register the ModeShape engine at the
+ * supplied location in JNDI. This approach is compatible with the traditional JNDI URLs used with the
+ * {@link JcrRepositoryFactory JCR 2.0-style RepositoryFactory}.
+ * </p>
  */
 public class JndiRepositoryFactory implements ObjectFactory {
 
@@ -55,8 +60,8 @@ public class JndiRepositoryFactory implements ObjectFactory {
     protected static final Logger log = Logger.getLogger(JndiRepositoryFactory.class);
 
     /**
-     * {@link JcrConfiguration#loadFrom(java.io.InputStream) Initializes} and {@link JcrEngine#start() starts} the {@code
-     * JcrEngine} managed by this factory.
+     * {@link JcrConfiguration#loadFrom(java.io.InputStream) Initializes} and {@link JcrEngine#start() starts} the
+     * {@code JcrEngine} managed by this factory.
      * 
      * @param configFileName the name of the file containing the configuration information for the {@code JcrEngine}; may not be
      *        null. This method will first attempt to load this file as a resource from the classpath. If no resource with the
@@ -110,7 +115,7 @@ public class JndiRepositoryFactory implements ObjectFactory {
     }
 
     /**
-     * Creates an {@code JcrRepository} using the reference information specified.
+     * Creates an {@code JcrRepository} or ModeShape engine using the reference information specified.
      * <p>
      * This method first attempts to convert the {@code obj} parameter into a {@link Reference reference to JNDI configuration
      * information}. If that is successful, a {@link JcrEngine} will be created (if not previously created by a call to this
@@ -120,20 +125,21 @@ public class JndiRepositoryFactory implements ObjectFactory {
      * </p>
      * 
      * @param obj the reference to the JNDI configuration information; must be a non-null instance of {@link Reference}
-     * @param name ignored
-     * @param nameCtx ignored
+     * @param name the name of the object
+     * @param nameCtx used to register the ModeShape engine when no repository name is provided in the Reference obj
      * @param environment ignored
-     * @return the repository; never null
+     * @return the object registered in JDNI, which will be the named repository name or (if no repository name is given) the
+     *         ModeShape engine; never null
      * @throws IOException if there is an error or problem reading the configuration resource at the supplied path
      * @throws SAXException if the contents of the configuration resource are not valid XML
      * @throws NamingException if there is an error registering the namespace listener
      * @throws RepositoryException if the {@link JcrEngine#start() JcrEngine could not be started}, the named repository does not
      *         exist in the given configuration resource, or the named repository could not be created
      */
-    public JcrRepository getObjectInstance( Object obj,
-                                            Name name,
-                                            Context nameCtx,
-                                            Hashtable<?, ?> environment )
+    public Object getObjectInstance( Object obj,
+                                     Name name,
+                                     Context nameCtx,
+                                     Hashtable<?, ?> environment )
         throws IOException, SAXException, RepositoryException, NamingException {
         if (!(obj instanceof Reference)) return null;
 
@@ -186,9 +192,16 @@ public class JndiRepositoryFactory implements ObjectFactory {
         assert engine != null;
 
         RefAddr repositoryName = ref.get(REPOSITORY_NAME);
-        assert repositoryName != null;
+        String repoName = null;
+        if (repositoryName != null) {
+            repoName = repositoryName.getContent().toString();
+        }
 
-        return engine.getRepository(repositoryName.getContent().toString());
+        if (repoName != null && repoName.trim().length() != 0) {
+            // Return the Repository instance to be registered in JNDI ...
+            return engine.getRepository(repoName);
+        }
+        // Otherwise, no repository name was provided, so return the engine to be registered in JNDI
+        return engine;
     }
-
 }
