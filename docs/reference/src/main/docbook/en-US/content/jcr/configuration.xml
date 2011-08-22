@@ -1674,7 +1674,7 @@ deploy/admin-console.war/plugins/modeshape-jbossas-console-&versionNumber;.jar
 			</para>
 <programlisting language="XML" role="XML"><![CDATA[<Resource name="jcr/local" 
           auth="Container"
-          type="javax.jcr.Repository"
+          type="org.modeshape.jcr.api.Repository"
           factory="org.modeshape.jcr.JndiRepositoryFactory"
           configFile="/resource/path/to/configuration.xml" />]]></programlisting>
 			<para>
