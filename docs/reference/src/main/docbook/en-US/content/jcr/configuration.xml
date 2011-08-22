@@ -1655,27 +1655,64 @@ deploy/admin-console.war/plugins/modeshape-jbossas-console-&versionNumber;.jar
 				<itemizedlist>
 					<listitem>
 						<para>
-							<emphasis role="strong"><code>configFile</code></emphasis> is the path to the 
+							<emphasis role="strong"><code>configFile</code></emphasis> is required and specifies the path to the 
 							<link linkend="loading_from_file">configuration file</link> resource, which must be available on the classpath
 						</para>
 					</listitem>
 					<listitem>
 						<para>
-							<emphasis role="strong"><code>repositoryName</code></emphasis> is the name of a JCR repository that exists
-							in the JCR configuration and that will be made available by this JNDI entry
+							<emphasis role="strong"><code>repositoryName</code></emphasis> is optional and specifies the name of a JCR repository that exists
+							in the JCR configuration that should be registered in JNDI; if not provided, then the
+							ModeShape engine will be registered in JDNI at the specified location.
 						</para>
 					</listitem>
 				</itemizedlist>
 			</para>
 			<para>
-				Here's an example of a fragment of the <code>conf/context.xml</code> for Tomcat:
+				Here's an example of a fragment of the <code>conf/context.xml</code> for Tomcat that registers the ModeShape engine 
+				in JNDI at "jcr/local":
 			</para>
 <programlisting language="XML" role="XML"><![CDATA[<Resource name="jcr/local" 
           auth="Container"
           type="javax.jcr.Repository"
           factory="org.modeshape.jcr.JndiRepositoryFactory"
+          configFile="/resource/path/to/configuration.xml" />]]></programlisting>
+			<para>
+				The web application can then use the newer pattern specified by the JCR 2.0 specification to use the &ServiceLoader; and
+				&RepositoryFactory;:
+			</para>	
+<programlisting language="JAVA" role="JAVA"><![CDATA[String configUrl = "jndi:jcr/local?repositoryName=Cars";
+Map<String, String> parameters = Collections.singletonMap("org.modeshape.jcr.URL", configUrl);
+for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
+    repository = factory.getRepository(parameters);
+    if (repository != null) break;
+}]]></programlisting>
+			<para>
+				Alternatively, it's possible to use this JndiRepositoryFactory class to start up ModeShape and register an individual
+				JCR &Repository; instance. Here's an example of a fragment of the <code>conf/context.xml</code> for Tomcat that registers the "Cars" repository
+				in JNDI at "jcr/local/Cars":
+			</para>
+<programlisting language="XML" role="XML"><![CDATA[<Resource name="jcr/local/Cars" 
+          auth="Container"
+          type="javax.jcr.Repository"
+          factory="org.modeshape.jcr.JndiRepositoryFactory"
           configFile="/resource/path/to/configuration.xml"
-          repositoryName="Test Repository Source" />]]></programlisting>
+          repositoryName="Cars" />]]></programlisting>
+			<para>
+				The web application can then directly lookup the &Repository; instance in JNDI, as recommended in the older JCR 1.0 specification:
+			</para>
+<programlisting language="JAVA" role="JAVA"><![CDATA[InitialContext initCtx = new InitialContext();
+Context envCtx = (Context) initCtx.lookup("java:comp/env");
+Repository repository = (Repository) envCtx.lookup("jcr/local/Cars");]]></programlisting>
+			<para>
+				or via the newer pattern using the JCR 2.0 &RepositoryFactory;-style lookup approach:
+			</para>	
+<programlisting language="JAVA" role="JAVA"><![CDATA[String configUrl = "jndi:jcr/local/Cars";
+Map<String, String> parameters = Collections.singletonMap("org.modeshape.jcr.URL", configUrl);
+for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
+    repository = factory.getRepository(parameters);
+    if (repository != null) break;
+}]]></programlisting>
 			<para>
 				Note that it is possible to have multiple <code>Resource</code> entries. The &JndiRepositoryFactory; ensures
 				that only one &JcrEngine; is instantiated, but that a &Repository; instance is registered for each entry.
@@ -1685,24 +1722,25 @@ deploy/admin-console.war/plugins/modeshape-jbossas-console-&versionNumber;.jar
 				JAAS also needs to be configured, and this can be done using the application server's configuration or in your
 				web application if you're using a simple servlet container. For more details, see the &ReferenceGuide;.
 			</para>
-			<note>
-				<para>
-					The ModeShape community has solicited input on how we can make it easier to consume and use ModeShape in applications
-					that do not use Maven. Check out the <ulink url="http://community.jboss.org/thread/146589">discussion thread</ulink>,
-					and please add any suggestions or opinions!
-				</para>
-			</note>
 			<para>
 				Then, your web application needs to reference the <code>Resource</code> and state its requirements in its 
 				<code>web.xml</code>:
 			</para>
 <programlisting language="XML" role="XML"><![CDATA[<resource-env-ref>
    <description>Repository</description>
-   <resource-env-ref-name>jcr/local</resource-env-ref-name>
+   <resource-env-ref-name>jcr/local/Cars</resource-env-ref-name>
    <resource-env-ref-type>javax.jcr.Repository</resource-env-ref-type>
 </resource-env-ref>]]></programlisting>
+      <para>
+        or
+      </para>
+<programlisting language="XML" role="XML"><![CDATA[<resource-env-ref>
+   <description>ModeShape Engine</description>
+   <resource-env-ref-name>jcr/local</resource-env-ref-name>
+   <resource-env-ref-type>org.modeshape.jcr.api.Repositories</resource-env-ref-type>
+</resource-env-ref>]]></programlisting>
 			<para>
-				Note that the value of <code>resource-env-ref-name</code> matches the value of the name attribute on the 
+				Note that the value of <code>resource-env-ref-name</code> fields must matche the value of the name attribute on the 
 				<code>&lt;Resource></code> tag in the <code>context.xml</code> described above.  This is a must.
 			</para>
 			<para>
@@ -1729,7 +1767,7 @@ Session sess = null;
 try {
 	InitialContext initCtx = new InitialContext();
 	Context envCtx = (Context) initCtx.lookup("java:comp/env");
-	Repository repo = (Repository) envCtx.lookup("jcr/local");
+	Repository repo = (Repository) envCtx.lookup("jcr/local/Cars");
 	sess = repo.login(new SimpleCredentials("readwrite", "readwrite".toCharArray()));
 
 	// Do something interesting with the Session ...

@@ -22,24 +22,24 @@ public class JndiRepositoryFactoryTest {
     public void beforeEach() {
         reference.add(repositoryName);
     }
-    
+
     @Test
     public void shouldFindConfigFileOnClasspath() throws Exception {
         configFile = new StringRefAddr("configFile", "/tck/default/configRepository.xml");
         reference.add(configFile);
 
-        JcrRepository repo = factory.getObjectInstance(reference, null, null, null);
+        JcrRepository repo = (JcrRepository)factory.getObjectInstance(reference, null, null, null);
 
         assertThat(repo, is(notNullValue()));
         assertThat(repo.getRepositorySourceName(), is(REPOSITORY_SOURCE_NAME));
     }
-    
+
     @Test
     public void shouldFindConfigFileInFileSystem() throws Exception {
         configFile = new StringRefAddr("configFile", "./src/test/resources/tck/default/configRepository.xml");
         reference.add(configFile);
 
-        JcrRepository repo = factory.getObjectInstance(reference, null, null, null);
+        JcrRepository repo = (JcrRepository)factory.getObjectInstance(reference, null, null, null);
 
         assertThat(repo, is(notNullValue()));
         assertThat(repo.getRepositorySourceName(), is(REPOSITORY_SOURCE_NAME));
@@ -50,8 +50,8 @@ public class JndiRepositoryFactoryTest {
         configFile = new StringRefAddr("configFile", "/tck/default/configRepository.xml");
         reference.add(configFile);
 
-        JcrRepository repo1 = factory.getObjectInstance(reference, null, null, null);
-        JcrRepository repo2 = factory.getObjectInstance(reference, null, null, null);
+        JcrRepository repo1 = (JcrRepository)factory.getObjectInstance(reference, null, null, null);
+        JcrRepository repo2 = (JcrRepository)factory.getObjectInstance(reference, null, null, null);
         assertThat(repo1 == repo2, is(true));
     }
 }
