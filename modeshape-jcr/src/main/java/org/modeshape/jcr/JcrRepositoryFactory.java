@@ -142,6 +142,14 @@ public class JcrRepositoryFactory implements RepositoryFactory {
 
         if (url == null) return null;
 
+        // See if the URL refers to a Repository instance in JNDI, which is probably what would be required
+        // when registering particular repository instances rather than the engine (e.g., via JndiRepositoryFactory).
+        // This enables JCR-2.0-style lookups while using JCR-1.0-style of registering individual Repository instances in JNDI.
+        if ("jndi".equals(url.getProtocol())) {
+            Repository repository = getRepositoryFromJndi(url.getPath(), parameters);
+            if (repository != null) return repository;
+        }
+
         Repositories repositories = repositoriesFor(url, parameters);
         if (repositories == null) return null;
 
@@ -278,6 +286,31 @@ public class JcrRepositoryFactory implements RepositoryFactory {
             Object ob = ic.lookup(engineJndiName);
             if (ob instanceof Repositories) {
                 return (Repositories)ob;
+            }
+            return null;
+        } catch (NamingException ne) {
+            return null;
+        }
+    }
+
+    /**
+     * Attempts to look up a {@link Repository} at the given JNDI name. All parameters in the parameters map are passed to the
+     * {@link InitialContext} constructor in a {@link Hashtable}.
+     * 
+     * @param jndiName the JNDI name of the JCR repository; may not be null
+     * @param parameters any additional parameters that should be passed to the {@code InitialContext}'s constructor; may be empty
+     *        or null
+     * @return the Repository object from JNDI, if one exists at the given name
+     */
+    private Repository getRepositoryFromJndi( String jndiName,
+                                              Map<String, String> parameters ) {
+        try {
+            if (parameters == null) parameters = Collections.emptyMap();
+            InitialContext ic = new InitialContext(hashtable(parameters));
+
+            Object ob = ic.lookup(jndiName);
+            if (ob instanceof Repository) {
+                return (Repository)ob;
             }
             return null;
         } catch (NamingException ne) {
