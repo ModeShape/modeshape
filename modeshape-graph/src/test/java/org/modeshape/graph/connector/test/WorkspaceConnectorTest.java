@@ -70,7 +70,7 @@ public abstract class WorkspaceConnectorTest extends AbstractConnectorTest {
 
     protected String generateNonExistantWorkspaceName() {
         String workspaceName = "something bogus" + context.getValueFactories().getDateFactory().create().getString();
-		workspaceName = workspaceName.replaceAll(":",""); // get rid of colons, so the name is valid on Windows
+        workspaceName = workspaceName.replaceAll(":",""); // get rid of colons, so the name is valid on Windows
         Set<String> workspaces = graph.getWorkspaces();
         while (workspaces.contains(workspaceName)) {
             workspaceName = workspaceName + "1"; // keep appending '1' to the name, until it doesn't match
