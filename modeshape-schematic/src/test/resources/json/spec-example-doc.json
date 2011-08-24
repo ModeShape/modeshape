@@ -1,0 +1,6 @@
+{
+    "name" : "Acme Bottle Opener",
+    "id" : 123,
+    "price" : 2.99,
+    "tags" : [ "easy", "under-10-dollars" ]
+}

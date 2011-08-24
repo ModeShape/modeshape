@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.modeshape</groupId>
 	<artifactId>modeshape-parent</artifactId>
-	<version>2.7-SNAPSHOT</version>
+	<version>3.0-SNAPSHOT</version>
 	<name>ModeShape Common Parent</name>
 	
 	<url>http://www.modeshape.org</url>
@@ -205,6 +205,7 @@
 		<byteman.version>1.5.1</byteman.version>
 		<hibernate.version>3.5.2-Final</hibernate.version>
 		<hibernate.tools.version>3.2.4.GA</hibernate.tools.version>
+		<infinispan.version>5.1.0.BETA3</infinispan.version>
 		<sun.xml.bind.jaxbimpl.version>2.1.12</sun.xml.bind.jaxbimpl.version>
 		<jdbc.mysql.version>5.0.7</jdbc.mysql.version>
 		<jdbc.derby.version>10.8.1.2</jdbc.derby.version>
@@ -898,6 +899,16 @@
 			<dependency>
 				<groupId>org.modeshape</groupId>
 				<artifactId>modeshape-jcr</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.modeshape</groupId>
+				<artifactId>modeshape-jcr-redux</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.modeshape</groupId>
+				<artifactId>modeshape-schematic</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>

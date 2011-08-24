@@ -1,5 +1,20 @@
 # The ModeShape project
 
+**NOTE** **Pardon our mess while we improve ModeShape.
+This branch is currently in the midst of a major refactoring to use Infinispan in a much more central fashion.
+For details, see [MODE-1289](https://issues.jboss.org/browse/MODE-1289)**
+
+To build the newer code, simply use the standard Maven command:
+
+    mvn clean install
+    
+However, this branch still contains (some of) the older 2.x-style code as well, and to build that use the "legacy" profile:
+
+    mvn clean install -Plegacy
+
+
+## Summary
+
 This is the official Git repository for the ModeShape project.
 
 ModeShape is an open source implementation of the JCR 2.0 ([JSR-283](http://www.jcp.org/en/jsr/detail?id=283])) specification and standard API.

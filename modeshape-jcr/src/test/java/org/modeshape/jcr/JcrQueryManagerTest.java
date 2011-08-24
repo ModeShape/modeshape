@@ -160,7 +160,7 @@ public class JcrQueryManagerTest {
                 Node other = session.getRootNode().addNode("Other", "nt:unstructured");
                 other.addNode("NodeA", "nt:unstructured").setProperty("something", "value3 quick brown fox");
                 other.addNode("NodeA", "nt:unstructured").setProperty("something", "value2 quick brown cat");
-                other.addNode("NodeA", "nt:unstructured").setProperty("something", "value1 quick black dog");
+                other.addNode("NodeA", "nt:unstructured").setProperty("something", new String[] {"black dog", "white dog"});
                 Node c = other.addNode("NodeC", "notion:typed");
                 c.setProperty("notion:booleanProperty", true);
                 c.setProperty("notion:booleanProperty2", false);
@@ -562,6 +562,32 @@ public class JcrQueryManagerTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 24);
+        assertResultsHaveColumns(result, minimumColumnNames());
+    }
+
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllUnstructuredNodesWithCriteriaOnMultiValuedProperty()
+        throws RepositoryException {
+        String sql = "SELECT * FROM [nt:unstructured] WHERE something = 'white dog' and something = 'black dog'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        print = true;
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1);
+        assertResultsHaveColumns(result, minimumColumnNames());
+    }
+
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllUnstructuredNodesWithLikeCriteriaOnMultiValuedProperty()
+        throws RepositoryException {
+        String sql = "SELECT * FROM [nt:unstructured] WHERE something LIKE 'white%' and something LIKE 'black%'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        print = true;
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1);
         assertResultsHaveColumns(result, minimumColumnNames());
     }
 

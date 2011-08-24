@@ -27,7 +27,9 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.File;
+import java.util.concurrent.TimeUnit;
 import javax.jcr.Node;
+import javax.jcr.Session;
 import org.jboss.byteman.contrib.bmunit.BMScript;
 import org.jboss.byteman.contrib.bmunit.BMUnitRunner;
 import org.junit.Ignore;
@@ -47,7 +49,6 @@ public class JcrEnginePerformanceTest extends ModeShapeSingleUseTest {
         startEngineUsing("config/configRepositoryForJdbc.xml");
     }
 
-    @Ignore
     @BMScript( value = "jcr-performance", dir = "src/test/byteman" )
     @Test
     public void shouldStartEngineAndRecordPerformanceTrace() throws Exception {
@@ -138,5 +139,57 @@ public class JcrEnginePerformanceTest extends ModeShapeSingleUseTest {
         System.out.println("Subsequent Startup (no schema validation): " + sw);
     }
 
+    @Ignore
+    @Test
+    public void shouldAllowCreatingManyUnstructuredNodesWithNoSameNameSiblings() throws Exception {
+        File root = new File("./target/database");
+        if (root.exists()) FileUtil.delete(root);
+        root.mkdir();
+
+        File indexDir = new File("./target/index");
+        FileUtil.delete(indexDir);
+        assertThat(indexDir.exists(), is(false));
+
+        startEngineUsing("config/configRepositoryForDiskStorage.xml");
+        // startEngineUsing("config/configRepositoryForJdbc.xml");
+        Node rootNode = assertNode("/");
+        Session session = rootNode.getSession();
+
+        Stopwatch sw = new Stopwatch();
+        for (int i = 0; i != 15; ++i) {
+            // Each iteration adds another node under the root and creates the many nodes under that node ...
+            Node node = rootNode.addNode("testNode");
+            session.save();
+
+            int count = 1000;
+            long start1 = System.nanoTime();
+            if (i > 2) sw.start();
+            for (int j = 0; j != count; ++j) {
+                node.addNode("childNode" + j);
+            }
+            long millis = TimeUnit.MILLISECONDS.convert(System.nanoTime() - start1, TimeUnit.NANOSECONDS);
+            // System.out.println("Time to create " + count + " nodes under root: " + millis + " ms");
+
+            long start2 = System.nanoTime();
+            session.save();
+            millis = TimeUnit.MILLISECONDS.convert(System.nanoTime() - start2, TimeUnit.NANOSECONDS);
+            if (i > 2) sw.stop();
+            // System.out.println("Time to save " + count + " new nodes: " + millis + " ms");
+            millis = TimeUnit.MILLISECONDS.convert(System.nanoTime() - start1, TimeUnit.NANOSECONDS);
+            System.out.println("Total time to create " + count + " new nodes and save: " + millis + " ms");
+
+            // Now add another node ...
+            start1 = System.nanoTime();
+            node.addNode("oneMore");
+            session.save();
+            millis = TimeUnit.MILLISECONDS.convert(System.nanoTime() - start1, TimeUnit.NANOSECONDS);
+            // System.out.println("Time to create " + Inflector.getInstance().ordinalize(count + 1) + " node and save: " + millis
+            // + " ms");
+
+            session.getRootNode().getNode("testNode").remove();
+            session.save();
+        }
+        System.out.println(sw.getDetailedStatistics());
+    }
 
 }

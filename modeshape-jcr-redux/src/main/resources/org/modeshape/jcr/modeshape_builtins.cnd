@@ -1,0 +1,94 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ * See the COPYRIGHT.txt file distributed with this work for information
+ * regarding copyright ownership.  Some portions may be licensed
+ * to Red Hat, Inc. under one or more contributor license agreements.
+ * See the AUTHORS.txt file in the distribution for a full listing of 
+ * individual contributors. 
+ *
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * ModeShape is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+ 
+//------------------------------------------------------------------------------
+// N A M E S P A C E S
+//------------------------------------------------------------------------------
+<jcr = "http://www.jcp.org/jcr/1.0">
+<nt  = "http://www.jcp.org/jcr/nt/1.0">
+<mix = "http://www.jcp.org/jcr/mix/1.0">
+<mode = "http://www.modeshape.org/1.0">
+
+//------------------------------------------------------------------------------
+// N O D E T Y P E S
+//------------------------------------------------------------------------------
+
+[mode:namespace] > nt:base
+- mode:uri (string) primary protected version
+- mode:generated (boolean) protected version
+
+[mode:namespaces] > nt:base
++ * (mode:namespace) = mode:namespace protected version
+
+[mode:nodeTypes] > nt:base
++ * (nt:nodeType) = nt:nodeType protected version
+
+[mode:lock] > nt:base
+- mode:lockedKey (string) protected ignore
+- jcr:lockOwner (string) protected ignore
+- mode:lockingSession (string) protected ignore
+- mode:expirationDate (date) protected ignore
+- mode:sessionScope (boolean) protected ignore
+- jcr:isDeep (boolean) protected ignore
+- mode:isHeldBySession (boolean) protected ignore
+- mode:workspace (string) protected ignore
+
+[mode:locks] > nt:base
++ * (mode:lock) = mode:lock protected ignore
+
+[mode:versionHistoryFolder] > nt:base
++ * (nt:versionHistory) = nt:versionHistory protected ignore
++ * (mode:versionHistoryFolder) protected ignore
+
+[mode:versionStorage] > mode:versionHistoryFolder
+
+[mode:system] > nt:base
++ mode:namespaces (mode:namespaces) = mode:namespaces autocreated mandatory protected abort
++ mode:locks (mode:locks) = mode:locks autocreated mandatory protected abort
++ jcr:nodeTypes (mode:nodeTypes) = mode:nodeTypes autocreated mandatory protected abort
++ jcr:versionStorage (mode:versionStorage) = mode:versionStorage autocreated mandatory protected abort
+
+[mode:root] > nt:base, mix:referenceable orderable
+- * (undefined) multiple version
+- * (undefined) version
++ jcr:system (mode:system) = mode:system autocreated mandatory protected ignore
++ * (nt:base) = nt:unstructured sns version
+
+// This is the same as 'nt:resource' (which should generally be used instead)...
+[mode:resource] > nt:base, mix:mimeType, mix:lastModified 
+- jcr:data (binary) primary mandatory
+
+[mode:share] > mix:referenceable    // Used for non-original shared nodes, but never really exposed to JCR clients
+- mode:sharedUuid (reference) mandatory protected initialize 
+
+[mode:hashed] mixin
+- mode:sha1 (string)
+
+// A marker node type that can be used to denote areas into which files can be published.
+// Published areas have optional titles and descriptions.
+[mode:publishArea] > mix:title mixin
+
+[mode:derived] mixin
+- mode:derivedFrom (path) // the location of the original information from which this was derived
+- mode:derivedAt (date)  // the timestamp of the last change to the original information from which this was derived

@@ -166,7 +166,7 @@ public class JcrResourcesTest {
             assertThat(metadata.get(Repository.REP_NAME_DESC), is((Object)"ModeShape JCR Repository"));
             // assertThat(metadata.get(Repository.REP_VENDOR_DESC),is((Object)"JBoss, a division of Red Hat"));
             assertThat(metadata.get(Repository.REP_VENDOR_URL_DESC), is((Object)"http://www.modeshape.org"));
-            assertThat(metadata.get(Repository.REP_VERSION_DESC).toString().startsWith("2."), is(true));
+            assertThat(metadata.get(Repository.REP_VERSION_DESC).toString().startsWith("3."), is(true));
             assertThat(metadata.get(Repository.OPTION_VERSIONING_SUPPORTED), is((Object)"true"));
         }
         connection.disconnect();

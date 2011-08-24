@@ -1544,7 +1544,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
 
         /*
          * Return without throwing an exception to match JR behavior.  This is also in conformance with the spec.
-         * This is a fix for MODE-976.
+         * This is a fix for MODE-956.
          */
         return null;
     }

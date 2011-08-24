@@ -1,0 +1,63 @@
+{
+    "name" : "My Repository",
+    "jndiName" : "jcr/local/MyRepository",
+    "rootNodeId" : "cafebabe-cafe-babe-cafe-babecafebabe",
+    "largeValueSizeInBytes" : 10240,
+    "storage" : {
+        "cacheName" : "some-cache",
+        "cacheConfiguration" : "infinispan.xml"
+    },
+    "workspaces" : {
+        "system" : "system",
+        "predefined" : ["ws1","ws2"],
+        "default" : "default",
+        "allowCreation" : true
+    },
+    "security" : {
+        "jaas" : {
+            "policyName" : "modeshape-jcr"
+        },
+        "anonymous" : {
+            "roles" : ["readonly","readwrite","admin"],
+            "useOnFailedLogin" : false
+        },
+        "providers" : [
+            {
+                "name" : "My Custom Security Provider",
+                "classname" : "com.example.MyAuthenticationProvider",
+                "description" : "A custom security provider used for authentication and authorization."
+            }
+        ]
+    },
+    "query" : {
+        "enabled" : true,
+        "indexDirectory" : "/some/path",
+        "rebuildUponStartup" : "ifMissing",
+        "tablesIncludeInheritedColumns" : true,
+        "extractors" : [
+            {
+                "name" : "General Extractor",
+                "extractor" : "Tika"
+            }
+        ]
+    },
+    "sequencing" : {
+        "removeDerivedContentWithOriginal" : true,
+        "sequencers" : [
+            {
+                "name" : "ZIP Files",
+                "sequencer" : "ZipSequencer",
+                "pathExpression" : "default:/files(//)(*.zip[*])/jcr:content[@jcr:data] => default:/sequenced/zip/$1",
+                "description" : "Sequences ZIP files loaded under '/files' and extracting into '/sequenced/zip/$1'",
+            },
+            {
+                "name" : "Delimited Text File Sequencer",
+                "classname" : "org.modeshape.sequencer.text.DelimitedTextSequencer",
+                "pathExpressions" : [ 
+                    "default:/files//(*.csv[*])/jcr:content[@jcr:data] => default:/sequenced/text/delimited/$1"
+                ],
+                "splitPattern" : ","
+            }
+        ]
+    }
+}
