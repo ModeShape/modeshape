@@ -39,6 +39,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.common.util.Base64;
 import org.modeshape.web.jcr.rest.client.IJcrConstants;
 import org.modeshape.web.jcr.rest.client.IRestClient;
 import org.modeshape.web.jcr.rest.client.Status;
@@ -229,6 +230,10 @@ public final class JsonRestClientTest {
         // compare file contents to the contents that have been published
         String expected = new FileNode(WORKSPACE1, WORKSPACE_PATH, file).readFile();
         String actual = ((JsonRestClient)this.restClient).getFileContents(WORKSPACE1, WORKSPACE_PATH, file);
+        if (!expected.equals(actual)) {
+            System.err.println("expected: \n" + Base64.decode(expected));
+            System.err.println("\nactual: \n" + Base64.decode(actual));
+        }
         assertThat(actual, is(expected));
     }
 
