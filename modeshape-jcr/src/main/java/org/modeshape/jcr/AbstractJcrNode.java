@@ -225,7 +225,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     final JcrValue valueFrom( Binary value ) {
         ValueFactories factories = cache.factories();
         org.modeshape.graph.property.Binary binary = ((JcrBinary)value).binary();
-        return new JcrValue(factories, cache, PropertyType.DATE, binary);
+        return new JcrValue(factories, cache, PropertyType.BINARY, binary);
     }
 
     final JcrValue valueFrom( javax.jcr.Node value ) throws UnsupportedRepositoryOperationException, RepositoryException {
