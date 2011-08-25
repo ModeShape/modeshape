@@ -21,39 +21,41 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.sequencer.msoffice;
 
-import java.util.Locale;
-import java.util.Set;
-import org.modeshape.common.i18n.I18n;
+package org.modeshape.sequencer.msoffice.powerpoint;
+
+import java.util.List;
+import org.apache.poi.hpsf.SummaryInformation;
+import org.modeshape.sequencer.msoffice.MSOfficeMetadata;
 
 /**
- * The internationalized string constants for the <code>org.modeshape.sequencer.msoffice*</code> packages.
+ * Metadata for Microsoft Powerpoint decks.
  */
-public final class MSOfficeMetadataI18n {
+public class SlideDeckMetadata {
 
-    public static I18n sequencerTaskName;
-    public static I18n errorExtractingWordMetadata;
-    public static I18n errorExtractingExcelMetadata;
-    public static I18n errorExtractingPowerpointMetadata;
+    private List<SlideMetadata> slides;
+    private MSOfficeMetadata metadata;
 
-    static {
-        try {
-            I18n.initialize(MSOfficeMetadataI18n.class);
-        } catch (final Exception err) {
-            System.err.println(err);
+    public MSOfficeMetadata getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata( MSOfficeMetadata metadata ) {
+        this.metadata = metadata;
+    }
+
+    public void setMetadata( SummaryInformation info ) {
+        if (info != null) {
+            metadata = new MSOfficeMetadata();
+            metadata.setSummaryInformation(info);
         }
     }
 
-    public static Set<Locale> getLocalizationProblemLocales() {
-        return I18n.getLocalizationProblemLocales(MSOfficeMetadataI18n.class);
+    public List<SlideMetadata> getHeadings() {
+        return slides;
     }
 
-    public static Set<String> getLocalizationProblems() {
-        return I18n.getLocalizationProblems(MSOfficeMetadataI18n.class);
-    }
-
-    public static Set<String> getLocalizationProblems( Locale locale ) {
-        return I18n.getLocalizationProblems(MSOfficeMetadataI18n.class, locale);
+    public void setHeadings( List<SlideMetadata> slides ) {
+        this.slides = slides;
     }
 }

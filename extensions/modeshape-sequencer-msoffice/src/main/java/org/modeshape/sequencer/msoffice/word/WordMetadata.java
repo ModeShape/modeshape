@@ -25,6 +25,8 @@
 package org.modeshape.sequencer.msoffice.word;
 
 import java.util.List;
+import org.apache.poi.hpsf.SummaryInformation;
+import org.modeshape.sequencer.msoffice.MSOfficeMetadata;
 
 /**
  * Metadata for Microsoft Word documents.
@@ -32,6 +34,22 @@ import java.util.List;
 public class WordMetadata {
 
     private List<WordMetadata.WordHeading> headings;
+    private MSOfficeMetadata metadata;
+
+    public MSOfficeMetadata getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata( MSOfficeMetadata metadata ) {
+        this.metadata = metadata;
+    }
+
+    public void setMetadata( SummaryInformation info ) {
+        if (info != null) {
+            metadata = new MSOfficeMetadata();
+            metadata.setSummaryInformation(info);
+        }
+    }
 
     public List<WordMetadata.WordHeading> getHeadings() {
         return headings;

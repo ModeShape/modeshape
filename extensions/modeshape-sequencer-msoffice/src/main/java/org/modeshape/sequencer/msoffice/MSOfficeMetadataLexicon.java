@@ -22,7 +22,7 @@ public class MSOfficeMetadataLexicon {
     public static final Name KEYWORDS = new BasicName(Namespace.URI, "keywords");
     public static final Name COMMENT = new BasicName(Namespace.URI, "comment");
     public static final Name TEMPLATE = new BasicName(Namespace.URI, "template");
-    public static final Name LAST_SAVED_BY = new BasicName(Namespace.URI, "last_saved_by");
+    public static final Name LAST_SAVED = new BasicName(Namespace.URI, "last_saved");
     public static final Name REVISION = new BasicName(Namespace.URI, "revision");
     public static final Name TOTAL_EDITING_TIME = new BasicName(Namespace.URI, "total_editing_time");
     public static final Name LAST_PRINTED = new BasicName(Namespace.URI, "last_printed");
