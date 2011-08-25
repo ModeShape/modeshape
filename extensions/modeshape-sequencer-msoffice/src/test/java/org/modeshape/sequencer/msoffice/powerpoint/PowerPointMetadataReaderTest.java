@@ -24,20 +24,19 @@
 package org.modeshape.sequencer.msoffice.powerpoint;
 
 import static org.hamcrest.core.Is.is;
-import org.junit.After;
 import static org.junit.Assert.assertThat;
-import org.junit.Test;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.util.List;
+import org.junit.After;
+import org.junit.Test;
 
 /**
  * @author Michael Trezzi
  */
 public class PowerPointMetadataReaderTest {
 
-    private List<SlideMetadata> pptReader;
+    private SlideDeckMetadata pptReader;
     private InputStream imageStream;
 
     @After
@@ -58,7 +57,7 @@ public class PowerPointMetadataReaderTest {
     @Test
     public void shouldBeAbleToCreateMetadataForPowerPoint() throws Exception {
         pptReader = PowerPointMetadataReader.instance(this.getTestDocument("powerpoint.ppt"));
-        SlideMetadata slide = pptReader.get(0);
+        SlideMetadata slide = pptReader.getHeadings().get(0);
         assertThat(slide.getTitle(), is("Test Slide"));
         assertThat(slide.getText(), is("This is some text"));
         assertThat(slide.getNotes(), is("My notes"));

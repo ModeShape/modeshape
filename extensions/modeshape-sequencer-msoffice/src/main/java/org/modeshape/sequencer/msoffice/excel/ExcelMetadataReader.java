@@ -48,15 +48,17 @@ public class ExcelMetadataReader {
         ExcelMetadata metadata = new ExcelMetadata();
         HSSFWorkbook wb = new HSSFWorkbook(new POIFSFileSystem(stream));
 
-        StringBuffer buff = new StringBuffer();
-        List<String> sheets = new ArrayList<String>();
+        List<ExcelSheetMetadata> sheets = new ArrayList<ExcelSheetMetadata>();
 
         for (int sheetInd = 0; sheetInd < wb.getNumberOfSheets(); sheetInd++) {
-            sheets.add(wb.getSheetName(sheetInd));
+            ExcelSheetMetadata meta = new ExcelSheetMetadata();
+            meta.setName(wb.getSheetName(sheetInd));
+            sheets.add(meta);
 
             HSSFSheet worksheet = wb.getSheetAt(sheetInd);
             int lastRowNum = worksheet.getLastRowNum();
 
+            StringBuffer buff = new StringBuffer();
             for (int rowNum = worksheet.getFirstRowNum(); rowNum <= lastRowNum; rowNum++) {
                 HSSFRow row = worksheet.getRow(rowNum);
 
@@ -107,10 +109,11 @@ public class ExcelMetadataReader {
                     }
                 }
             }
+            meta.setText(buff.toString());
         }
 
-        metadata.setText(buff.toString());
         metadata.setSheets(sheets);
+        metadata.setMetadata(wb.getSummaryInformation());
         return metadata;
     }
 }

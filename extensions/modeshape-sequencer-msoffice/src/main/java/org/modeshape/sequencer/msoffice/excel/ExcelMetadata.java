@@ -24,11 +24,32 @@
 package org.modeshape.sequencer.msoffice.excel;
 
 import java.util.List;
+import org.apache.poi.hpsf.SummaryInformation;
+import org.modeshape.sequencer.msoffice.MSOfficeMetadata;
 
 /**
  * Metadata for Excel (Full text contents and list of sheet names)
  */
 public class ExcelMetadata {
+
+    private String text;
+    private List<ExcelSheetMetadata> sheets;
+    private MSOfficeMetadata metadata;
+
+    public MSOfficeMetadata getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata( MSOfficeMetadata metadata ) {
+        this.metadata = metadata;
+    }
+
+    public void setMetadata( SummaryInformation info ) {
+        if (info != null) {
+            metadata = new MSOfficeMetadata();
+            metadata.setSummaryInformation(info);
+        }
+    }
 
     public String getText() {
         return text;
@@ -38,14 +59,18 @@ public class ExcelMetadata {
         this.text = text;
     }
 
-    public List<String> getSheets() {
+    public List<ExcelSheetMetadata> getSheets() {
         return sheets;
     }
 
-    public void setSheets( List<String> sheets ) {
+    public void setSheets( List<ExcelSheetMetadata> sheets ) {
         this.sheets = sheets;
     }
 
-    private String text;
-    private List<String> sheets;
+    public ExcelSheetMetadata getSheet( String name ) {
+        for (ExcelSheetMetadata sheet : sheets) {
+            if (sheet.getName().equals(name)) return sheet;
+        }
+        return null;
+    }
 }

@@ -21,39 +21,28 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.sequencer.msoffice;
-
-import java.util.Locale;
-import java.util.Set;
-import org.modeshape.common.i18n.I18n;
+package org.modeshape.sequencer.msoffice.excel;
 
 /**
- * The internationalized string constants for the <code>org.modeshape.sequencer.msoffice*</code> packages.
+ * Metadata for a sheet within a Microsoft Office Excel spreadsheet.
  */
-public final class MSOfficeMetadataI18n {
+public class ExcelSheetMetadata {
+    private String name;
+    private String text;
 
-    public static I18n sequencerTaskName;
-    public static I18n errorExtractingWordMetadata;
-    public static I18n errorExtractingExcelMetadata;
-    public static I18n errorExtractingPowerpointMetadata;
-
-    static {
-        try {
-            I18n.initialize(MSOfficeMetadataI18n.class);
-        } catch (final Exception err) {
-            System.err.println(err);
-        }
+    public String getName() {
+        return name;
     }
 
-    public static Set<Locale> getLocalizationProblemLocales() {
-        return I18n.getLocalizationProblemLocales(MSOfficeMetadataI18n.class);
+    public void setName( String name ) {
+        this.name = name;
     }
 
-    public static Set<String> getLocalizationProblems() {
-        return I18n.getLocalizationProblems(MSOfficeMetadataI18n.class);
+    public String getText() {
+        return text;
     }
 
-    public static Set<String> getLocalizationProblems( Locale locale ) {
-        return I18n.getLocalizationProblems(MSOfficeMetadataI18n.class, locale);
+    public void setText( String text ) {
+        this.text = text;
     }
 }

@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.poi.hslf.HSLFSlideShow;
 import org.apache.poi.hslf.model.Slide;
 import org.apache.poi.hslf.model.TextRun;
 import org.apache.poi.hslf.usermodel.SlideShow;
@@ -42,8 +43,9 @@ import org.apache.poi.hslf.usermodel.SlideShow;
  */
 public class PowerPointMetadataReader {
 
-    public static List<SlideMetadata> instance( InputStream stream ) throws IOException {
-        SlideShow slideshow = new SlideShow(stream);
+    public static SlideDeckMetadata instance( InputStream stream ) throws IOException {
+        HSLFSlideShow rawSlideShow = new HSLFSlideShow(stream);
+        SlideShow slideshow = new SlideShow(rawSlideShow);
         Slide[] slides = slideshow.getSlides();
 
         List<SlideMetadata> slidesMetadata = new ArrayList<SlideMetadata>();
@@ -90,7 +92,10 @@ public class PowerPointMetadataReader {
 
         }
 
-        return slidesMetadata;
+        SlideDeckMetadata deck = new SlideDeckMetadata();
+        deck.setHeadings(slidesMetadata);
+        deck.setMetadata(rawSlideShow.getSummaryInformation());
+        return deck;
     }
 
 }
