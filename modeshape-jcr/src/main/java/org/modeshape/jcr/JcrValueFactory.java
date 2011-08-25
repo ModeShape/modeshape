@@ -23,7 +23,6 @@
  */
 package org.modeshape.jcr;
 
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.Calendar;
@@ -39,7 +38,6 @@ import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Reference;
 import org.modeshape.graph.property.ReferenceFactory;
 import org.modeshape.graph.property.ValueFactories;
-import org.modeshape.graph.property.basic.FileInputStreamBinary;
 
 /**
  * The {@link ValueFactory} implementation for ModeShape.
@@ -110,12 +108,7 @@ class JcrValueFactory implements ValueFactory {
     }
 
     public JcrBinary createBinary( InputStream value ) {
-        Binary binary;
-        if (value instanceof FileInputStream) {
-            binary = new FileInputStreamBinary((FileInputStream)value);
-        } else {
-            binary = valueFactories.getBinaryFactory().create(value);
-        }
+        Binary binary = valueFactories.getBinaryFactory().create(value);
         return new JcrBinary(binary);
     }
 
