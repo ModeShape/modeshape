@@ -582,10 +582,10 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
                     Name propertyName = authProp.getName();
                     if (skipNamespaces.contains(propertyName.getNamespaceUri())) continue;
                     if (skipProperties.contains(propertyName)) continue;
-                    if (property.isSingle()) {
-                        properties.put(propertyName.getLocalName(), property.getFirstValue());
+                    if (authProp.isSingle()) {
+                        properties.put(propertyName.getLocalName(), authProp.getFirstValue());
                     } else {
-                        properties.put(propertyName.getLocalName(), property.getValuesAsArray());
+                        properties.put(propertyName.getLocalName(), authProp.getValuesAsArray());
                     }
                 }
                 try {
