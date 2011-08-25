@@ -28,6 +28,9 @@ import java.io.InputStream;
 import java.util.Iterator;
 import java.util.List;
 import org.modeshape.graph.JcrLexicon;
+import org.modeshape.graph.property.BinaryFactory;
+import org.modeshape.graph.property.DateTimeFactory;
+import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.sequencer.SequencerOutput;
@@ -35,7 +38,9 @@ import org.modeshape.graph.sequencer.StreamSequencer;
 import org.modeshape.graph.sequencer.StreamSequencerContext;
 import org.modeshape.sequencer.msoffice.excel.ExcelMetadata;
 import org.modeshape.sequencer.msoffice.excel.ExcelMetadataReader;
+import org.modeshape.sequencer.msoffice.excel.ExcelSheetMetadata;
 import org.modeshape.sequencer.msoffice.powerpoint.PowerPointMetadataReader;
+import org.modeshape.sequencer.msoffice.powerpoint.SlideDeckMetadata;
 import org.modeshape.sequencer.msoffice.powerpoint.SlideMetadata;
 import org.modeshape.sequencer.msoffice.word.WordMetadata;
 import org.modeshape.sequencer.msoffice.word.WordMetadataReader;
@@ -90,43 +95,34 @@ public class MSOfficeMetadataSequencer implements StreamSequencer {
                           SequencerOutput output,
                           StreamSequencerContext context ) {
 
-        MSOfficeMetadata metadata = MSOfficeMetadataReader.instance(stream);
-
         String mimeType = context.getMimeType();
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
-        Path metadataNode = pathFactory.create(MSOfficeMetadataLexicon.METADATA_NODE);
 
-        if (metadata != null) {
-            output.setProperty(metadataNode, JcrLexicon.PRIMARY_TYPE, MSOfficeMetadataLexicon.METADATA_NODE);
-            output.setProperty(metadataNode, MSOfficeMetadataLexicon.TITLE, metadata.getTitle());
-            output.setProperty(metadataNode, MSOfficeMetadataLexicon.SUBJECT, metadata.getSubject());
-            output.setProperty(metadataNode, MSOfficeMetadataLexicon.AUTHOR, metadata.getAuthor());
-            output.setProperty(metadataNode, MSOfficeMetadataLexicon.KEYWORDS, metadata.getKeywords());
-            output.setProperty(metadataNode, MSOfficeMetadataLexicon.COMMENT, metadata.getComment());
-            output.setProperty(metadataNode, MSOfficeMetadataLexicon.TEMPLATE, metadata.getTemplate());
-            output.setProperty(metadataNode, MSOfficeMetadataLexicon.LAST_SAVED_BY, metadata.getLastSavedBy());
-            output.setProperty(metadataNode, MSOfficeMetadataLexicon.REVISION, metadata.getRevision());
-            output.setProperty(metadataNode, MSOfficeMetadataLexicon.TOTAL_EDITING_TIME, metadata.getTotalEditingTime());
-            output.setProperty(metadataNode, MSOfficeMetadataLexicon.LAST_PRINTED, metadata.getLastPrinted());
-            output.setProperty(metadataNode, MSOfficeMetadataLexicon.CREATED, metadata.getCreated());
-            output.setProperty(metadataNode, MSOfficeMetadataLexicon.SAVED, metadata.getSaved());
-            output.setProperty(metadataNode, MSOfficeMetadataLexicon.PAGES, metadata.getPages());
-            output.setProperty(metadataNode, MSOfficeMetadataLexicon.WORDS, metadata.getWords());
-            output.setProperty(metadataNode, MSOfficeMetadataLexicon.CHARACTERS, metadata.getCharacters());
-            output.setProperty(metadataNode, MSOfficeMetadataLexicon.CREATING_APPLICATION, metadata.getCreatingApplication());
-            output.setProperty(metadataNode, MSOfficeMetadataLexicon.THUMBNAIL, metadata.getThumbnail());
-
-        } else {
-            return;
+        Path inputPath = context.getInputPath();
+        Name docName = inputPath.getLastSegment().getName();
+        if (!inputPath.isRoot()) {
+            // Remove the 'jcr:content' node (of type 'nt:resource'), if it is there ...
+            if (docName.equals(JcrLexicon.CONTENT)) {
+                inputPath = inputPath.getParent();
+                if (!inputPath.isRoot()) {
+                    docName = inputPath.getLastSegment().getName();
+                }
+            }
         }
 
+        Path docNode = pathFactory.createRelativePath(docName);
+        Path metadataNode = pathFactory.create(docNode, MSOfficeMetadataLexicon.METADATA_NODE);
+
         // process PowerPoint specific metadata
-        if (mimeType.equals("application/vnd.ms-powerpoint")) { // replace true with check if it's ppt file being sequenced
+        if (mimeType.equals("application/vnd.ms-powerpoint") || mimeType.equals("application/mspowerpoint")) {
             try {
-                List<SlideMetadata> ppt_metadata = PowerPointMetadataReader.instance(stream);
+                SlideDeckMetadata deck = PowerPointMetadataReader.instance(stream);
+                List<SlideMetadata> ppt_metadata = deck.getHeadings();
+                recordMetadata(output, context, metadataNode, deck.getMetadata());
                 if (ppt_metadata != null) {
-                    Path pptPath = pathFactory.create(metadataNode, MSOfficeMetadataLexicon.SLIDE);
+                    int index = 0;
                     for (SlideMetadata sm : ppt_metadata) {
+                        Path pptPath = pathFactory.create(docNode, MSOfficeMetadataLexicon.SLIDE, ++index);
                         output.setProperty(pptPath, MSOfficeMetadataLexicon.TITLE, sm.getTitle());
                         output.setProperty(pptPath, MSOfficeMetadataLexicon.TEXT, sm.getText());
                         output.setProperty(pptPath, MSOfficeMetadataLexicon.NOTES, sm.getNotes());
@@ -135,44 +131,74 @@ public class MSOfficeMetadataSequencer implements StreamSequencer {
                 }
             } catch (IOException e) {
                 // There was an error reading, so log and continue ...
-                context.getLogger(this.getClass()).debug(e, "Error while extracting the PowerPoint metadata");
+                context.getProblems().addError(e, MSOfficeMetadataI18n.errorExtractingPowerpointMetadata, e.getMessage());
             }
         }
 
-        if (mimeType.equals("application/vnd.ms-word")) {
+        if (mimeType.equals("application/vnd.ms-word") || mimeType.equals("application/msword")) {
             // Sometime in the future this will sequence WORD Table of contents.
             try {
                 WordMetadata wordMetadata = WordMetadataReader.instance(stream);
-                Path wordPath = pathFactory.create(metadataNode, MSOfficeMetadataLexicon.HEADING_NODE);
+                recordMetadata(output, context, metadataNode, wordMetadata.getMetadata());
 
+                int index = 0;
                 for (Iterator<WordMetadata.WordHeading> iter = wordMetadata.getHeadings().iterator(); iter.hasNext();) {
                     WordMetadata.WordHeading heading = iter.next();
-
+                    Path wordPath = pathFactory.create(docNode, MSOfficeMetadataLexicon.HEADING_NODE, ++index);
                     output.setProperty(wordPath, MSOfficeMetadataLexicon.HEADING_NAME, heading.getText());
                     output.setProperty(wordPath, MSOfficeMetadataLexicon.HEADING_LEVEL, heading.getHeaderLevel());
-
                 }
 
             } catch (IOException e) {
                 // There was an error reading, so log and continue ...
-                context.getLogger(this.getClass()).debug(e, "Error while extracting the Word document metadata");
+                context.getProblems().addError(e, MSOfficeMetadataI18n.errorExtractingWordMetadata, e.getMessage());
             }
 
         }
 
-        if (mimeType.equals("application/vnd.ms-excel")) {
+        if (mimeType.equals("application/vnd.ms-excel") || mimeType.equals("application/msexcel")) {
             try {
                 ExcelMetadata excel_metadata = ExcelMetadataReader.instance(stream);
                 if (excel_metadata != null) {
+                    recordMetadata(output, context, metadataNode, excel_metadata.getMetadata());
                     output.setProperty(metadataNode, MSOfficeMetadataLexicon.FULL_CONTENT, excel_metadata.getText());
-                    for (String sheet : excel_metadata.getSheets()) {
-                        output.setProperty(metadataNode, MSOfficeMetadataLexicon.SHEET_NAME, sheet);
+                    for (ExcelSheetMetadata sheet : excel_metadata.getSheets()) {
+                        Path sheetPath = pathFactory.create(docNode, sheet.getName());
+                        output.setProperty(sheetPath, MSOfficeMetadataLexicon.SHEET_NAME, sheet.getName());
+                        output.setProperty(sheetPath, MSOfficeMetadataLexicon.TEXT, sheet.getText());
                     }
                 }
             } catch (IOException e) {
                 // There was an error reading, so log and continue ...
-                context.getLogger(this.getClass()).debug(e, "Error while extracting the Excel metadata");
+                context.getProblems().addError(e, MSOfficeMetadataI18n.errorExtractingExcelMetadata, e.getMessage());
             }
+        }
+    }
+
+    protected void recordMetadata( SequencerOutput output,
+                                   StreamSequencerContext context,
+                                   Path metadataNode,
+                                   MSOfficeMetadata metadata ) {
+        if (metadata != null) {
+            DateTimeFactory dates = context.getValueFactories().getDateFactory();
+            BinaryFactory binary = context.getValueFactories().getBinaryFactory();
+            output.setProperty(metadataNode, JcrLexicon.PRIMARY_TYPE, MSOfficeMetadataLexicon.METADATA_NODE);
+            output.setProperty(metadataNode, MSOfficeMetadataLexicon.TITLE, metadata.getTitle());
+            output.setProperty(metadataNode, MSOfficeMetadataLexicon.SUBJECT, metadata.getSubject());
+            output.setProperty(metadataNode, MSOfficeMetadataLexicon.AUTHOR, metadata.getAuthor());
+            output.setProperty(metadataNode, MSOfficeMetadataLexicon.KEYWORDS, metadata.getKeywords());
+            output.setProperty(metadataNode, MSOfficeMetadataLexicon.COMMENT, metadata.getComment());
+            output.setProperty(metadataNode, MSOfficeMetadataLexicon.TEMPLATE, metadata.getTemplate());
+            output.setProperty(metadataNode, MSOfficeMetadataLexicon.SAVED, dates.create(metadata.getLastSaved()));
+            output.setProperty(metadataNode, MSOfficeMetadataLexicon.REVISION, metadata.getRevision());
+            output.setProperty(metadataNode, MSOfficeMetadataLexicon.TOTAL_EDITING_TIME, metadata.getTotalEditingTime());
+            output.setProperty(metadataNode, MSOfficeMetadataLexicon.LAST_PRINTED, dates.create(metadata.getLastPrinted()));
+            output.setProperty(metadataNode, MSOfficeMetadataLexicon.CREATED, dates.create(metadata.getCreated()));
+            output.setProperty(metadataNode, MSOfficeMetadataLexicon.PAGES, metadata.getPages());
+            output.setProperty(metadataNode, MSOfficeMetadataLexicon.WORDS, metadata.getWords());
+            output.setProperty(metadataNode, MSOfficeMetadataLexicon.CHARACTERS, metadata.getCharacters());
+            output.setProperty(metadataNode, MSOfficeMetadataLexicon.CREATING_APPLICATION, metadata.getCreatingApplication());
+            output.setProperty(metadataNode, MSOfficeMetadataLexicon.THUMBNAIL, binary.create(metadata.getThumbnail()));
         }
     }
 }

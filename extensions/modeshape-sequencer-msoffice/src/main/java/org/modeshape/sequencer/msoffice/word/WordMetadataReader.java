@@ -80,6 +80,7 @@ public class WordMetadataReader {
         }
 
         metadata.setHeadings(headings);
+        metadata.setMetadata(document.getSummaryInformation());
         return metadata;
     }
 }
