@@ -130,6 +130,35 @@ public class FileSystemRepositoryIntegrationTest extends ModeShapeSingleUseTest 
         // print = true;
         printQuery("SELECT * FROM [nt:base]", 5L, Collections.<String, String>emptyMap());
     }
+    
+    /*
+     * The test verifies that maxPathLength is being overridden in the configuration
+     * by setting to something small and should result in a <code>RepositoryException</code> 
+     * being thrown to confirm it was overriding the 255 default.
+     */
+    @FixFor( "MODE-1249" )
+    @Test( expected = javax.jcr.RepositoryException.class )
+    public void shouldThrowExceptionIfPathExceedsMaxLength() throws Exception {
+        startEngineUsing("config/configRepositoryForFileSystemPropValidation.xml");
+
+        // Create the nodes ...
+        Session session = session();
+        Node root = session.getRootNode();
+        root.addNode("A", "nt:folder");
+        root.addNode("meta", "nt:folder");
+        Node readme = uploadFile(README_RESOURCE_PATH, "/A");
+
+        // Now create a reference on '/meta' to the '/A/README.txt/jcr:content' node.
+        Node content = readme.getNode("jcr:content");
+        content.addMixin("mix:referenceable");
+
+        // Now save ...
+        session.save();
+
+        logout();
+        
+    }
+    
 
     protected void registryNamespaceIfMissing( String prefix,
                                                String url ) throws RepositoryException {
