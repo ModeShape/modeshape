@@ -751,7 +751,7 @@ public class FileSystemSource extends AbstractNodeCachingRepositorySource<Path, 
             String exclusionPattern = (String)values.get(EXCLUSION_PATTERN);
             String inclusionPattern = (String)values.get(INCLUSION_PATTERN);
             String filenameFilterClassName = (String)values.get(FILENAME_FILTER);
-            String maxPathLength = (String)values.get(DEFAULT_MAX_PATH_LENGTH);
+            String maxPathLength = (String)values.get(MAX_PATH_LENGTH);
             String customPropertiesFactoryClassName = (String)values.get(CUSTOM_PROPERTY_FACTORY);
             String extraPropertiesBehavior = (String)values.get(EXTRA_PROPERTIES);
             String eagerFileLoading = (String)values.get(EAGER_FILE_LOADING);
