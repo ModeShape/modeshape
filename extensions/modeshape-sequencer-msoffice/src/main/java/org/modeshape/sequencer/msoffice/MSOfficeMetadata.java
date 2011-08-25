@@ -23,13 +23,12 @@
  */
 package org.modeshape.sequencer.msoffice;
 
+import java.util.Date;
 import org.apache.poi.hpsf.PropertySetFactory;
 import org.apache.poi.hpsf.SummaryInformation;
 import org.apache.poi.poifs.eventfilesystem.POIFSReaderEvent;
 import org.apache.poi.poifs.eventfilesystem.POIFSReaderListener;
 import org.modeshape.common.util.Logger;
-
-import java.util.Date;
 
 /**
  * Metadata about an Microsoft Office file.
@@ -42,12 +41,11 @@ public class MSOfficeMetadata implements POIFSReaderListener {
     private String keywords;
     private String comment;
     private String template;
-    private Date lastSavedBy;
+    private Date lastSaved;
     private String revision;
     private Long totalEditingTime;
     private Date lastPrinted;
     private Date created;
-    private Date saved;
     private int pages;
     private int words;
     private int characters;
@@ -55,31 +53,33 @@ public class MSOfficeMetadata implements POIFSReaderListener {
     private byte[] thumbnail;
     private static final Logger LOGGER = Logger.getLogger(MSOfficeMetadata.class);
 
+    public void setSummaryInformation( SummaryInformation si ) {
+        title = si.getTitle();
+        subject = si.getSubject();
+        author = si.getAuthor();
+        keywords = si.getKeywords();
+        comment = si.getComments();
+        template = si.getTemplate();
+        lastSaved = si.getLastSaveDateTime();
+        revision = si.getRevNumber();
+        totalEditingTime = si.getEditTime();
+        lastPrinted = si.getLastPrinted();
+        created = si.getCreateDateTime();
+        pages = si.getPageCount();
+        words = si.getWordCount();
+        characters = si.getCharCount();
+        creatingApplication = si.getApplicationName();
+        thumbnail = si.getThumbnail();
+    }
+
     @Override
     public void processPOIFSReaderEvent( POIFSReaderEvent event ) {
         try {
             SummaryInformation si = (SummaryInformation)PropertySetFactory.create(event.getStream());
-            title = si.getTitle();
-            subject = si.getSubject();
-            author = si.getAuthor();
-            keywords = si.getKeywords();
-            comment = si.getComments();
-            template = si.getTemplate();
-            lastSavedBy = si.getLastSaveDateTime();
-            revision = si.getRevNumber();
-            totalEditingTime = si.getEditTime();
-            lastPrinted = si.getLastPrinted();
-            created = si.getCreateDateTime();
-            saved = si.getLastSaveDateTime();
-            pages = si.getPageCount();
-            words = si.getWordCount();
-            characters = si.getCharCount();
-            creatingApplication = si.getApplicationName();
-            thumbnail = si.getThumbnail();
+            setSummaryInformation(si);
         } catch (Exception ex) {
             LOGGER.debug(ex, "Error processing the metadata for the MS Office document");
         }
-
     }
 
     public String getTitle() {
@@ -106,8 +106,8 @@ public class MSOfficeMetadata implements POIFSReaderListener {
         return template;
     }
 
-    public Date getLastSavedBy() {
-        return lastSavedBy;
+    public Date getLastSaved() {
+        return lastSaved;
     }
 
     public String getRevision() {
@@ -124,10 +124,6 @@ public class MSOfficeMetadata implements POIFSReaderListener {
 
     public Date getCreated() {
         return created;
-    }
-
-    public Date getSaved() {
-        return saved;
     }
 
     public int getPages() {

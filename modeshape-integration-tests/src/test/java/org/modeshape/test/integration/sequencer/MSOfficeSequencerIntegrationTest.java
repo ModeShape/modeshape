@@ -4,13 +4,13 @@
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
  * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors. 
+ * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- *
+ * 
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -21,45 +21,58 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-
-package org.modeshape.sequencer.msoffice.excel;
+package org.modeshape.test.integration.sequencer;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
-import java.io.InputStream;
+import javax.jcr.Node;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
-/**
- * @author Michael Trezzi
- */
-public class ExcelMetadataReaderTest {
-
-    private ExcelMetadata excelReader;
-    private InputStream imageStream;
-
-    @After
-    public void afterEach() throws Exception {
-        if (imageStream != null) {
-            try {
-                imageStream.close();
-            } finally {
-                imageStream = null;
-            }
-        }
+public class MSOfficeSequencerIntegrationTest extends AbstractSequencerTest {
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.test.ModeShapeUnitTest#getPathToDefaultConfiguration()
+     */
+    @Override
+    protected String getPathToDefaultConfiguration() {
+        return "config/configRepositoryForTextExtraction.xml";
     }
 
-    protected InputStream getTestDocument( String resourcePath ) {
-        return this.getClass().getResourceAsStream("/" + resourcePath);
+    @Before
+    @Override
+    public void beforeEach() throws Exception {
+        super.beforeEach();
+    }
+
+    @After
+    @Override
+    public void afterEach() throws Exception {
+        super.afterEach();
     }
 
     @Test
-    public void shouldBeAbleToCreateMetadataForExcel() throws Exception {
-        excelReader = ExcelMetadataReader.instance(this.getTestDocument("excel.xls"));
-        ExcelSheetMetadata sheet2 = excelReader.getSheet("MySheet2");
-        assertThat(sheet2, is(notNullValue()));
-        assertThat(excelReader.getSheet("Sheet1").getText().startsWith("This is a text"), is(true));
+    public void shouldStartEngineWithRegisteredMSOfficeNodeTypes() throws Exception {
+        assertNodeType("msoffice:metadata", false, false, true, false, null, 1, 19, "nt:unstructured", "mix:mimeType");
+    }
 
+    @Test
+    public void shouldSequenceWordDocument() throws Exception {
+        // print = true;
+        uploadFile("sequencers/msoffice/Small.doc", "/files/");
+
+        // Thread.sleep(10 * 1000);
+        waitUntilSequencingFinishes();
+
+        Node sequenced = session().getNode("/sequenced");
+        assertThat(sequenced, is(notNullValue()));
+        printSubgraph(sequenced);
+
+        // Find the sequenced node ...
+        Node doc = waitUntilSequencedNodeIsAvailable("/sequenced/msoffice/Small.doc", "nt:unstructured");
+        printSubgraph(doc);
     }
 }

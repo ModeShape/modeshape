@@ -29,14 +29,21 @@
       <artifactId>modeshape-graph</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.modeshape</groupId>
+      <artifactId>modeshape-graph</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>    
+    <dependency>
         <groupId>org.apache.poi</groupId>
         <artifactId>poi</artifactId>
-        <version>3.6</version>
+        <version>3.7</version>
     </dependency>
     <dependency>
         <groupId>org.apache.poi</groupId>
         <artifactId>poi-scratchpad</artifactId>
-        <version>3.6</version>
+        <version>3.7</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
