@@ -203,7 +203,7 @@
 		<jackrabbit.jcr.tck.version>2.1.0</jackrabbit.jcr.tck.version>
 		<picketbox.version>3.0.0.Final</picketbox.version>
 		<byteman.version>1.5.1</byteman.version>
-		<hibernate.version>3.5.2-Final</hibernate.version>
+		<hibernate.version>3.3.2.GA</hibernate.version>
 		<hibernate.tools.version>3.2.4.GA</hibernate.tools.version>
 		<sun.xml.bind.jaxbimpl.version>2.1.12</sun.xml.bind.jaxbimpl.version>
 		<jdbc.mysql.version>5.0.7</jdbc.mysql.version>

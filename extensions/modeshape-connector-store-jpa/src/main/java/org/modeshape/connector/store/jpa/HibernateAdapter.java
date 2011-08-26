@@ -4,9 +4,9 @@ import java.util.Map;
 import java.util.Properties;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
-import org.hibernate.Session;
 import org.hibernate.cfg.Environment;
 import org.hibernate.ejb.Ejb3Configuration;
+import org.hibernate.ejb.HibernateEntityManager;
 import org.hibernate.engine.SessionFactoryImplementor;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.Logger;
@@ -151,22 +151,22 @@ public class HibernateAdapter implements JpaAdapter {
     @Override
     public String determineDialect( EntityManager entityManager ) {
         // We need the connection in order to determine the dialect ...
-        SessionFactoryImplementor sessionFactory = (SessionFactoryImplementor)entityManager.unwrap(Session.class).getSessionFactory();
+        HibernateEntityManager em = (HibernateEntityManager)entityManager;
+        SessionFactoryImplementor sessionFactory = (SessionFactoryImplementor)em.getSession().getSessionFactory();
         return sessionFactory.getDialect().toString();
     }
 
     @Override
     public EntityManagerFactory getEntityManagerFactory( JpaSource source ) {
-        return new Ejb3Configuration()
-            .addAnnotatedClass(StoreOptionEntity.class)
-            .addAnnotatedClass(NamespaceEntity.class)
-            .addAnnotatedClass(WorkspaceEntity.class)
-            .addAnnotatedClass(LargeValueEntity.class)
-            .addAnnotatedClass(NodeEntity.class)
-            .addAnnotatedClass(SubgraphNodeEntity.class)
-            .addAnnotatedClass(SubgraphQueryEntity.class)
-            .addProperties(getProperties(source))
-            .buildEntityManagerFactory();
+        return new Ejb3Configuration().addAnnotatedClass(StoreOptionEntity.class)
+                                      .addAnnotatedClass(NamespaceEntity.class)
+                                      .addAnnotatedClass(WorkspaceEntity.class)
+                                      .addAnnotatedClass(LargeValueEntity.class)
+                                      .addAnnotatedClass(NodeEntity.class)
+                                      .addAnnotatedClass(SubgraphNodeEntity.class)
+                                      .addAnnotatedClass(SubgraphQueryEntity.class)
+                                      .addProperties(getProperties(source))
+                                      .buildEntityManagerFactory();
 
         // return Persistence.createEntityManagerFactory(persistenceUnitName, getProperties(source));
     }
