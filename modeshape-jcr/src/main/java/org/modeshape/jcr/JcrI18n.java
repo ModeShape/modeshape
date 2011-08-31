@@ -160,6 +160,12 @@ public final class JcrI18n {
     public static I18n searchIndexDirectoryOptionSpecifiesDirectoryThatCannotBeCreated;
     public static I18n errorUpdatingQueryIndexes;
 
+    public static I18n typeMissingWhenRegisteringEngineInJndi;
+    public static I18n repositoryNameProvidedWhenRegisteringEngineInJndi;
+    public static I18n repositoryNameNotProvidedWhenRegisteringRepositoryInJndi;
+    public static I18n invalidRepositoryNameWhenRegisteringRepositoryInJndi;
+    public static I18n emptyRepositoryNameProvidedWhenRegisteringRepositoryInJndi;
+
     // Used in AbstractJcrNode#getAncestor
     public static I18n noNegativeDepth;
     public static I18n tooDeep;

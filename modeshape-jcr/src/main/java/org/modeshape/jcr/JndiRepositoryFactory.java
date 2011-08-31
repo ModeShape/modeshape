@@ -20,6 +20,8 @@ import javax.naming.spi.ObjectFactory;
 import org.modeshape.common.collection.Problem;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.util.Logger;
+import org.modeshape.jcr.api.Repositories;
+import org.modeshape.repository.ModeShapeEngine;
 import org.xml.sax.SAXException;
 
 /**
@@ -55,6 +57,7 @@ public class JndiRepositoryFactory implements ObjectFactory {
 
     private static final String CONFIG_FILE = "configFile";
     private static final String REPOSITORY_NAME = "repositoryName";
+    private static final String TYPE = "type";
 
     private static JcrEngine engine;
     protected static final Logger log = Logger.getLogger(JndiRepositoryFactory.class);
@@ -191,17 +194,69 @@ public class JndiRepositoryFactory implements ObjectFactory {
 
         assert engine != null;
 
+        // Determine the repository name that we're supposed to use/register ...
         RefAddr repositoryName = ref.get(REPOSITORY_NAME);
         String repoName = null;
         if (repositoryName != null) {
             repoName = repositoryName.getContent().toString();
+            if (repoName != null && repoName.trim().length() == 0) repoName = null;
         }
 
-        if (repoName != null && repoName.trim().length() != 0) {
-            // Return the Repository instance to be registered in JNDI ...
-            return engine.getRepository(repoName);
+        // Determine the type that we're supposed to create/register ...
+        RefAddr type = ref.get(TYPE);
+        if (type != null) {
+            String typeName = type.getContent().toString();
+            if (typeName != null && typeName.trim().length() == 0) typeName = null;
+
+            // See if the type value matches a classname we know how to deal with ...
+            if (Repositories.class.getName().equals(typeName) || JcrEngine.class.getName().equals(typeName)
+                || ModeShapeEngine.class.getName().equals(typeName)) {
+                if (repositoryName != null) {
+                    // Log a warning ...
+                    log.warn(JcrI18n.repositoryNameProvidedWhenRegisteringEngineInJndi, name, repoName, typeName);
+                }
+                // We're supposed to register the engine ...
+                return engine;
+            }
+            if (!Repository.class.getName().equals(typeName) && !JcrRepository.class.getName().equals(typeName)
+                && !org.modeshape.jcr.api.Repository.class.getName().equals(typeName)) {
+                // We only know how to reigster the repository (other than engine), so return null ...
+                return null;
+            }
+        } else {
+            // There's no type ...
+            log.warn(JcrI18n.typeMissingWhenRegisteringEngineInJndi, name, Repositories.class.getName());
+            // and base what we register purely upon whether there's a name ...
+            if (repoName == null) {
+                // This factory registers an engine or a repository, and they didn't specify a repository ...
+                return engine;
+            }
+
+            // Otherwise there is a repository name, so continue ...
         }
-        // Otherwise, no repository name was provided, so return the engine to be registered in JNDI
-        return engine;
+
+        // We know we're supposed to register the Repository instance, so look for the name ...
+        if (repoName == null) {
+            if (repositoryName == null) {
+                log.error(JcrI18n.repositoryNameNotProvidedWhenRegisteringRepositoryInJndi, name);
+            } else {
+                log.error(JcrI18n.emptyRepositoryNameProvidedWhenRegisteringRepositoryInJndi, name);
+            }
+        }
+
+        Repository repository = engine.getRepository(repoName);
+        if (repository == null) {
+            // Build up a single string with the names of the available repositories ...
+            StringBuilder repoNames = new StringBuilder();
+            boolean first = true;
+            for (String existingName : engine.getRepositoryNames()) {
+                if (first) first = false;
+                else repoNames.append(", ");
+                repoNames.append('"').append(existingName).append('"');
+            }
+            log.error(JcrI18n.invalidRepositoryNameWhenRegisteringRepositoryInJndi, name, repoName, repoNames);
+            return null;
+        }
+        return repository;
     }
 }
