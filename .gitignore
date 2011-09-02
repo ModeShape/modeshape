@@ -18,6 +18,9 @@ target
 .idea
 atlassian-ide-plugin.xml
 
+# log files
+.log
+
 # Compiled python files
 *.pyc
 
