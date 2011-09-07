@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration xmlns:mode="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+  <!-- Define the sources from which content is made available -->
+  <mode:sources>
+    <mode:source jcr:name="test-inmemory" 
+        mode:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource"
+        mode:predefinedWorkspaceNames="custom-federated"
+        mode:defaultWorkspaceName="default">
+    </mode:source>
+    <mode:source jcr:name="test-infinispan" 
+        mode:classname="org.modeshape.connector.infinispan.InfinispanSource" 
+        mode:retryLimit="3" 
+        mode:defaultWorkspaceName="default">
+    </mode:source>    
+    <mode:source jcr:name="test-federated" mode:classname="org.modeshape.graph.connector.federation.FederatedRepositorySource"
+      mode:defaultWorkspaceName="default">
+      <mode:workspaces>
+        <mode:workspace jcr:name="default">
+          <mode:projections>
+            <mode:projection jcr:name="Memory projection" mode:source="test-inmemory" mode:workspaceName="default">
+              <mode:projectionRules>/inmemory => /a</mode:projectionRules>
+            </mode:projection>
+            <mode:projection jcr:name="Infinispan projection" mode:source="test-infinispan" mode:workspaceName="default">
+              <mode:projectionRules>/infinispan => /x</mode:projectionRules>
+            </mode:projection>
+          </mode:projections>
+        </mode:workspace>
+      </mode:workspaces>
+    </mode:source>
+  </mode:sources>
+  <!-- Define the JCR repositories -->
+  <mode:repositories>
+    <mode:repository jcr:name="test-inmemory" mode:source="test-inmemory"/>
+    <mode:repository jcr:name="test-infinispan" mode:source="test-infinispan"/>
+    <mode:repository jcr:name="test-federated" mode:source="test-federated">
+        <mode:options>
+            <!-- projectNodeTypes jcr:primaryType="mode:option" value="false"/-->
+        </mode:options>
+    </mode:repository>
+  </mode:repositories>
+</configuration>

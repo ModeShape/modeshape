@@ -142,7 +142,13 @@ class JoinRequestProcessor extends RequestProcessor {
                 // Block until this forked request has completed
                 forked.await();
                 // Now process ...
-                process(forked);
+                try {
+                    process(forked);
+                } catch (RuntimeException e) {
+                    // There was a problem in the join processing ...
+                    Request original = forked.original();
+                    if (!original.hasError()) original.setError(e);
+                }
             }
         } catch (InterruptedException e) {
             // This happens when the federated connector has been told to shutdown now, and it shuts down
@@ -1104,7 +1110,7 @@ class JoinRequestProcessor extends RequestProcessor {
         MoveBranchRequest source = (MoveBranchRequest)projected.getRequest();
         if (checkErrorOrCancel(request, source)) return;
         Location locationBefore = source.getActualLocationBefore();
-        Location locationAfter = source.getActualLocationBefore();
+        Location locationAfter = source.getActualLocationAfter();
         locationBefore = projectToFederated(request.from(), projected.getProjection(), locationBefore, request);
         Projection afterProjection = projected.getSecondProjection();
         if (afterProjection == null) projected.getProjection();
