@@ -142,6 +142,9 @@ public abstract class AbstractJcrTest {
 
         when(jcrSession.lockManager()).thenReturn(jcrLockManager);
 
+        JcrValueFactory valueFactory = new JcrValueFactory(jcrSession);
+        when(jcrSession.getValueFactory()).thenReturn(valueFactory);
+
         // Create the node type manager for the session ...
         // no need to stub the 'JcrSession.checkPermission' methods, since we're never calling 'register' on the
         // JcrNodeTypeManager

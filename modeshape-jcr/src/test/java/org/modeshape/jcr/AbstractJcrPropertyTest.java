@@ -28,6 +28,8 @@ import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import java.io.ByteArrayInputStream;
+import javax.jcr.Binary;
 import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.ItemVisitor;
@@ -38,6 +40,7 @@ import javax.jcr.Workspace;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.modeshape.common.FixFor;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 
@@ -274,6 +277,18 @@ public class AbstractJcrPropertyTest extends AbstractJcrTest {
         javax.jcr.Property year2 = prius2.getProperty("vehix:year");
         assertThat(model.isSame(model2), is(true));
         assertThat(model.isSame(year2), is(false));
+    }
+
+    @FixFor( "MODE-1254" )
+    @Test
+    public void shouldNotIncludeBinaryContentsInToString() throws Exception {
+        altima = cache.findJcrNode(null, path("/Cars/Hybrid/Nissan Altima"));
+        Node node = rootNode.addNode("nodeWithBinaryProperty", "nt:unstructured");
+        String value = "This is the string value";
+        Binary binaryValue = cache.session().getValueFactory().createBinary(new ByteArrayInputStream(value.getBytes()));
+        node.setProperty("binProp", binaryValue);
+        String toString = node.toString();
+        assertThat(toString.indexOf("**binary-value") > 0, is(true));
     }
 
 }

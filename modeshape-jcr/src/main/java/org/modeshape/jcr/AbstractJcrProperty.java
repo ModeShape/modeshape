@@ -38,6 +38,7 @@ import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.version.VersionException;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.graph.property.Binary;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.ValueFactory;
@@ -314,12 +315,22 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
                 sb.append('[');
                 Iterator<?> iter = property.iterator();
                 if (iter.hasNext()) {
-                    sb.append(stringFactory.create(iter.next()));
+                    Object value = iter.next();
+                    if (value instanceof Binary) {
+                        sb.append("**binary-value-not-shown**");
+                    } else {
+                        sb.append(stringFactory.create(value));
+                    }
                     if (iter.hasNext()) sb.append(',');
                 }
                 sb.append(']');
             } else {
-                sb.append(stringFactory.create(property.getFirstValue()));
+                Object value = property.getFirstValue();
+                if (value instanceof Binary) {
+                    sb.append("**binary-value-not-shown**");
+                } else {
+                    sb.append(stringFactory.create(value));
+                }
             }
             return sb.toString();
         } catch (RepositoryException e) {
