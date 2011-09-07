@@ -80,9 +80,11 @@ public class SequencerDiscoveryComponent implements
 								PluginConstants.ComponentType.SequencingService.MODESHAPE_SUB_TYPE),
 						PluginConstants.ComponentType.SequencingService.NAME);
 
-		if (mc == null) {
+		if (mc==null){
+			log.debug("No ModeShape Sequencers discovered");
 			return discoveredResources;
 		}
+
 		
 		String operation = "getSequencers";
 

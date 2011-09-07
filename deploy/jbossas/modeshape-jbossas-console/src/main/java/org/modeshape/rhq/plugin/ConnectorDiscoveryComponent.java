@@ -74,6 +74,11 @@ public class ConnectorDiscoveryComponent implements
 				.getManagedEngine(
 						((EngineComponent) discoveryContext
 								.getParentResourceComponent()).getConnection());
+		
+		if (mc==null){
+			log.debug("No ModeShape Connectors discovered");
+			return discoveredResources;
+		}
 
 		String operation = "getConnectors";
 
