@@ -29,6 +29,7 @@ import java.util.Set;
 
 import javax.naming.NamingException;
 
+import org.jboss.managed.api.ManagedComponent;
 import org.jboss.metatype.api.values.MetaValue;
 import org.jboss.metatype.api.values.SimpleValueSupport;
 import org.mc4j.ems.connection.EmsConnection;
@@ -70,10 +71,14 @@ public class ConnectorComponent extends Facet {
 		try {
 			String connectorName = this.resourceContext.getResourceKey();
 			MetaValue[] args = new MetaValue[] { SimpleValueSupport.wrap(connectorName) };
-			value = ModeShapeManagementView.executeManagedOperation(
-					ProfileServiceUtil.getManagedEngine(getConnection()),
-					"pingConnector", args);
-			pingResultSuccess = ProfileServiceUtil.booleanValue(value);
+			ManagedComponent mc = ProfileServiceUtil.getManagedEngine(getConnection());
+			if (mc!=null){
+				value = ModeShapeManagementView.executeManagedOperation(mc,
+						"pingConnector", args);
+				pingResultSuccess = ProfileServiceUtil.booleanValue(value);
+			}else{
+				pingResultSuccess = Boolean.FALSE;
+			}
 		} catch (NamingException e) {
 			LOG.error("Naming exception getting: "
 					+ PluginConstants.ComponentType.Engine.MODESHAPE_ENGINE);

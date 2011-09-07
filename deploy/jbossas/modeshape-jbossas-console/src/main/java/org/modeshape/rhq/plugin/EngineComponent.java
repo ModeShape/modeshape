@@ -44,7 +44,7 @@ import org.rhq.plugins.jbossas5.ApplicationServerComponent;
 import org.rhq.plugins.jbossas5.connection.ProfileServiceConnection;
 
 public class EngineComponent extends Facet {
-	
+
 	/**
 	 * {@inheritDoc}
 	 * 
@@ -67,11 +67,16 @@ public class EngineComponent extends Facet {
 		try {
 			ManagedComponent mc = ProfileServiceUtil.getManagedEngine(this
 					.getConnection());
-			MetaValue running = ModeShapeManagementView
-					.executeManagedOperation(mc, "isRunning",
-							new MetaValue[] { null });
-			if (ProfileServiceUtil.booleanValue(running).equals(Boolean.TRUE)) {
-				isRunning = AvailabilityType.UP;
+			if (mc == null) {
+				isRunning = AvailabilityType.DOWN;
+			} else {
+				MetaValue running = ModeShapeManagementView
+						.executeManagedOperation(mc, "isRunning",
+								new MetaValue[] { null });
+				if (ProfileServiceUtil.booleanValue(running).equals(
+						Boolean.TRUE)) {
+					isRunning = AvailabilityType.UP;
+				}
 			}
 		} catch (NamingException e) {
 			LOG.error("NamingException in getAvailability", e);
@@ -81,26 +86,23 @@ public class EngineComponent extends Facet {
 
 		return isRunning;
 	}
-	
-	
+
 	/**
 	 * {@inheritDoc}
-	 *
-	 * @see org.modeshape.rhq.plugin.Facet#setOperationArguments(java.lang.String, org.rhq.core.domain.configuration.Configuration, java.util.Map)
+	 * 
+	 * @see org.modeshape.rhq.plugin.Facet#setOperationArguments(java.lang.String,
+	 *      org.rhq.core.domain.configuration.Configuration, java.util.Map)
 	 */
 	@Override
 	protected void setOperationArguments(String name,
 			Configuration configuration, Map<String, Object> valueMap) {
 		// Parameter logic for engine Operations
 		if (name.equals(Engine.Operations.SHUTDOWN)) {
-			//no parms
+			// no parms
 		} else if (name.equals(Engine.Operations.RESTART)) {
-			//no parms
-		} 
+			// no parms
+		}
 	}
-
-	
-
 
 	/**
 	 * {@inheritDoc}
@@ -125,7 +127,7 @@ public class EngineComponent extends Facet {
 
 	/**
 	 * {@inheritDoc}
-	 *
+	 * 
 	 * @see org.rhq.plugins.jbossas5.ProfileServiceComponent#getConnection()
 	 */
 	@Override
@@ -136,7 +138,7 @@ public class EngineComponent extends Facet {
 
 	/**
 	 * {@inheritDoc}
-	 *
+	 * 
 	 * @see org.rhq.plugins.jmx.JMXComponent#getEmsConnection()
 	 */
 	@Override

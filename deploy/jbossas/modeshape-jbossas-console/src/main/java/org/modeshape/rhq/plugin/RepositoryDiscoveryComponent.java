@@ -77,6 +77,11 @@ public class RepositoryDiscoveryComponent implements
 								PluginConstants.ComponentType.Engine.MODESHAPE_SUB_TYPE),
 						PluginConstants.ComponentType.Engine.MODESHAPE_ENGINE);
 
+		if (mc==null){
+			log.debug("No ModeShape Repositories discovered");
+			return discoveredResources;
+		}
+		
 		String operation = "getRepositories";
 
 		MetaValue repositories = ModeShapeManagementView
