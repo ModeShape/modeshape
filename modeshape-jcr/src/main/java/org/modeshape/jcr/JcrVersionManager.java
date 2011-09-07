@@ -382,27 +382,27 @@ final class JcrVersionManager implements VersionManager {
         editor.setProperty(JcrLexicon.BASE_VERSION, node.valueFrom(versionUuid), false, false);
         editor.setProperty(JcrLexicon.IS_CHECKED_OUT, node.valueFrom(PropertyType.BOOLEAN, false), false, false);
         node.save();
-		
-        //fix for MODE-1245
-        //  because of the performance of the jpa source (i.e., mysql, oracle, etc.), it could cause a timing
-        //  issue with loading the cache and finding the node.  Therefore, by moving the find
-        //  to the end of the method and, on the rare case the find isn't found on the first lookup,
-        //  a loop of maximum 5 tries will be peformed in order to allow the cache time to fill.  
+
+        // fix for MODE-1245
+        // because of the performance of the jpa source (i.e., mysql, oracle, etc.), it could cause a timing
+        // issue with loading the cache and finding the node. Therefore, by moving the find
+        // to the end of the method and, on the rare case the find isn't found on the first lookup,
+        // a loop of maximum 5 tries will be peformed in order to allow the cache time to fill.
         AbstractJcrNode newVersion = null;
         javax.jcr.ItemNotFoundException notFoundException = null;
 
-        for (int i=0; newVersion == null && i < 5; i++) {
+        for (int i = 0; newVersion == null && i < 5; i++) {
             try {
-                newVersion = cache().findJcrNode(versionLocation);              
+                newVersion = cache().findJcrNode(versionLocation);
             } catch (javax.jcr.ItemNotFoundException infe) {
                 LOGGER.debug("VersionLocation {0} not found, retry findJcrNode", versionLocation);
 
                 // capture 1st occurrence of the exception
                 if (notFoundException == null) notFoundException = infe;
-            }                       
+            }
         }
         if (notFoundException != null) throw notFoundException;
-    
+
         return (JcrVersionNode)newVersion;
     }
 
@@ -1117,7 +1117,10 @@ final class JcrVersionManager implements VersionManager {
                     sourceChildNode = cache().findJcrNode(resolvedChild.getNodeId(), resolvedChild.getPath());
                     shouldRestoreMixinsAndUuid = true;
 
-                    if (JcrNtLexicon.FROZEN_NODE.equals(resolvedChild.getProperty(JcrLexicon.PRIMARY_TYPE))) {
+                    Name resolvedPrimaryTypeName = name(resolvedChild.getProperty(JcrLexicon.PRIMARY_TYPE)
+                                                                     .getProperty()
+                                                                     .getFirstValue());
+                    if (JcrNtLexicon.FROZEN_NODE.equals(resolvedPrimaryTypeName)) {
                         Name primaryTypeName = name(resolvedChild.getProperty(JcrLexicon.FROZEN_PRIMARY_TYPE)
                                                                  .getProperty()
                                                                  .getFirstValue());
@@ -1199,12 +1202,6 @@ final class JcrVersionManager implements VersionManager {
                                         AbstractJcrNode targetNode ) throws RepositoryException {
             NodeEditor childEditor = targetNode.editor();
             AbstractJcrProperty mixinTypesProp = sourceNode.getProperty(JcrLexicon.FROZEN_MIXIN_TYPES);
-            AbstractJcrProperty uuidProp = null;
-            if (mixinTypesProp == null) {
-                mixinTypesProp = sourceNode.getProperty(JcrLexicon.MIXIN_TYPES);
-                uuidProp = sourceNode.getProperty(JcrLexicon.UUID);
-                if (uuidProp != null) restoreProperty(uuidProp, childEditor);
-            }
 
             Object[] mixinTypeNames = mixinTypesProp == null ? EMPTY_OBJECT_ARRAY : mixinTypesProp.property().getValuesAsArray();
 
