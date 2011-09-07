@@ -924,7 +924,7 @@ class JoinRequestProcessor extends RequestProcessor {
         // Check the projection first ...
         if (checkErrorOrCancel(request, federatedRequest)) return;
 
-        SetPropertyRequest source = (SetPropertyRequest)projected.getRequest();
+        RemovePropertyRequest source = (RemovePropertyRequest)projected.getRequest();
         if (checkErrorOrCancel(request, source)) return;
         Location sourceLocation = source.getActualLocationOfNode();
         request.setActualLocationOfNode(projectToFederated(request.from(), projected.getProjection(), sourceLocation, request));
