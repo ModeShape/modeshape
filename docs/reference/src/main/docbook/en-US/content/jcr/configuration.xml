@@ -1623,7 +1623,7 @@ deploy/modeshape-webdav.war/WEB-INF/lib/modeshape-jcr-&versionNumber;.jar
 deploy/modeshape-webdav.war/WEB-INF/lib/modeshape-mimetype-detector-aperture-&versionNumber;.jar  
 deploy/modeshape-webdav.war/WEB-INF/lib/modeshape-web-jcr-&versionNumber;.jar  
 deploy/modeshape-webdav.war/WEB-INF/lib/modeshape-web-jcr-webdav-&versionNumber;.jar  
-deploy/modeshape-webdav.war/WEB-INF/lib/webdav-servlet-2.0.jar  
+deploy/modeshape-webdav.war/WEB-INF/lib/webdav-servlet-2.0.1.jar  
 deploy/modeshape-webdav.war/WEB-INF/web.xml  
 deploy/admin-console.war/
 deploy/admin-console.war/plugins/

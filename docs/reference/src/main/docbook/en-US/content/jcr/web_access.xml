@@ -460,7 +460,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 	|	+ slf4j-api-1.6.1.jar
 	|	+ slf4j-log4j12-1.6.1.jar
 	|	+ stax-api-1.0-2.jar
-	|	+ webdav-servlet-2.0.jar
+	|	+ webdav-servlet-2.0.1.jar
 	+ web.xml
 			
 </programlisting>	  	
