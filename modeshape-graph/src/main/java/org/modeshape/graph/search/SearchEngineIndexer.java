@@ -332,6 +332,16 @@ public class SearchEngineIndexer {
         // Create a queue that we'll use to walk the content ...
         LinkedList<Location> locationsToRead = new LinkedList<Location>();
 
+        // If there are no more locations to read, we've only read one node per subgraph (because of the connector's
+        // max depth limitation), so we need to add any children of the top-level node to the list of
+        // locations to read...
+        if (!locationIter.hasNext()) {
+            for (Location child : readSubgraph.getChildren(topNode)) {
+                // The subgraph did not contain the child, so record the location as needing to be read ...
+                locationsToRead.add(child);
+            }
+        }
+
         // Now walk the remaining nodes in the subgraph ...
         while (true) {
             while (locationIter.hasNext()) {
