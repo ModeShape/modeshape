@@ -39,7 +39,6 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
-import org.modeshape.common.util.Base64;
 import org.modeshape.web.jcr.rest.client.IJcrConstants;
 import org.modeshape.web.jcr.rest.client.IRestClient;
 import org.modeshape.web.jcr.rest.client.Status;
@@ -87,6 +86,8 @@ public final class JsonRestClientTest {
 
     private IRestClient restClient;
 
+    private File textfile = null;
+    
     // ===========================================================================================================================
     // Methods
     // ===========================================================================================================================
@@ -180,16 +181,23 @@ public final class JsonRestClientTest {
         String expected = new FileNode(WORKSPACE1, WORKSPACE_PATH, file).readFile();
         String actual = ((JsonRestClient)this.restClient).getFileContents(WORKSPACE1, WORKSPACE_PATH, file);
         assertThat(actual, is(expected));
+        
+        
+        shouldUnpublishFile(file);
     }
 
-    @Test
-    public void shouldPublishTextResource() throws Exception {
+    /**
+     * this is not made a test because its called by other tests to publish the text resource for thier test,
+     * therefore this test on its own is not needed.
+     * @throws Exception
+     */
+    private void shouldPublishTextResource() throws Exception {
         URL textFile = getClass().getResource(FILE_PATH);
         assertThat(textFile, is(notNullValue()));
 
         // publish
-        File file = new File(textFile.toURI());
-        Status status = this.restClient.publish(WORKSPACE1, WORKSPACE_PATH, file);
+        textfile = new File(textFile.toURI());
+        Status status = this.restClient.publish(WORKSPACE1, WORKSPACE_PATH, textfile);
 
         if (status.isError()) {
             System.err.println(status.getMessage());
@@ -199,12 +207,17 @@ public final class JsonRestClientTest {
         assertThat(status.getMessage(), status.isOk(), is(true));
 
         // confirm it exists in repository
-        assertThat(((JsonRestClient)this.restClient).pathExists(WORKSPACE1, WORKSPACE_PATH, file), is(true));
+        assertThat(((JsonRestClient)this.restClient).pathExists(WORKSPACE1, WORKSPACE_PATH, textfile), is(true));
 
         // compare file contents to the contents that have been published
-        String expected = new FileNode(WORKSPACE1, WORKSPACE_PATH, file).readFile();
-        String actual = ((JsonRestClient)this.restClient).getFileContents(WORKSPACE1, WORKSPACE_PATH, file);
+        String expected = new FileNode(WORKSPACE1, WORKSPACE_PATH, textfile).readFile();
+        String actual = ((JsonRestClient)this.restClient).getFileContents(WORKSPACE1, WORKSPACE_PATH, textfile);
+        if (!expected.equals(actual)) {
+            System.err.println("\nvan2expected: \n" + expected);
+            System.err.println("\nvan2actual: \n" + actual);
+        }
         assertThat(actual, is(expected));
+
     }
 
     @FixFor( "MODE-919" )
@@ -231,10 +244,12 @@ public final class JsonRestClientTest {
         String expected = new FileNode(WORKSPACE1, WORKSPACE_PATH, file).readFile();
         String actual = ((JsonRestClient)this.restClient).getFileContents(WORKSPACE1, WORKSPACE_PATH, file);
         if (!expected.equals(actual)) {
-            System.err.println("expected: \n" + Base64.decode(expected));
-            System.err.println("\nactual: \n" + Base64.decode(actual));
+            System.err.println("van1expected: \n" + expected);
+            System.err.println("\nvan1actual: \n" + actual);
         }
         assertThat(actual, is(expected));
+        
+        shouldUnpublishFile(file);
     }
 
     @Test
@@ -255,6 +270,9 @@ public final class JsonRestClientTest {
 
         // confirm it exists in repository
         assertThat(((JsonRestClient)this.restClient).pathExists(WORKSPACE1, WORKSPACE_UNUSUALPATH, file), is(true));
+           
+        shouldUnpublishFile(file);
+
     }
 
     @Test
@@ -262,9 +280,7 @@ public final class JsonRestClientTest {
         // first publish
         shouldPublishTextResource();
 
-        URL textFile = getClass().getResource(FILE_PATH);
-        File file = new File(textFile.toURI());
-        Status status = this.restClient.unpublish(WORKSPACE1, WORKSPACE_PATH, file);
+        Status status = this.restClient.unpublish(WORKSPACE1, WORKSPACE_PATH, textfile);
 
         if (status.isError()) {
             System.err.println(status.getMessage());
@@ -274,8 +290,22 @@ public final class JsonRestClientTest {
         assertThat(status.isOk(), is(true));
 
         // confirm it does not exist in repository
-        assertThat(((JsonRestClient)this.restClient).pathExists(WORKSPACE1, WORKSPACE_PATH, file), is(false));
+        assertThat(((JsonRestClient)this.restClient).pathExists(WORKSPACE1, WORKSPACE_PATH, textfile), is(false));
     }
+
+    
+    protected void shouldUnpublishFile(File file) throws Exception {
+        Status status = this.restClient.unpublish(WORKSPACE1, WORKSPACE_PATH, file);
+
+        if (status.isError()) {
+            System.err.println(status.getMessage());
+            status.getException().printStackTrace(System.err);
+        }
+
+        // confirm it does not exist in repository
+        assertThat(((JsonRestClient)this.restClient).pathExists(WORKSPACE1, WORKSPACE_PATH, file), is(false));
+
+   }
 
     @Test
     public void shouldQuery() throws Exception {
@@ -298,6 +328,9 @@ public final class JsonRestClientTest {
 
         assertThat((String)row.getValue("jcr:path"), is("/myproject/myfolder/document.txt"));
         assertThat((String)row.getValue("jcr:primaryType"), is("nt:file"));
+       
+        shouldUnpublishFile(textfile);
+
     }
 
     @FixFor( "MODE-1130" )
@@ -326,6 +359,8 @@ public final class JsonRestClientTest {
 
         // make sure no error when publishing the second time
         assertThat(status.getMessage(), status.isOk(), is(true));
+        
+        shouldUnpublishFile(file);
     }
 
     @FixFor( "MODE-1130" )
@@ -362,7 +397,8 @@ public final class JsonRestClientTest {
             status.getException().printStackTrace();
         }
         assertThat(status.getMessage(), status.isOk(), is(true));
-
+        
+        shouldUnpublishFile(file);
         // TODO still need to verify that the 2 versions exist in repository
     }
 
@@ -395,5 +431,8 @@ public final class JsonRestClientTest {
         assertThat((String)row.getValue("jcr:path"), is("/files"));
         assertThat((String)row.getValue("jcr:primaryType"), is("nt:folder"));
         assertThat(row.getValue("jcr:title"), is(nullValue()));
+        
+        
+        shouldUnpublishFile(textfile);
     }
 }
