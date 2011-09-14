@@ -59,6 +59,8 @@ public class FileSystemRepositoryIntegrationTest extends ModeShapeSingleUseTest 
 
         // Now make the root directory ...
         new File("target/fsRepoWithProps/root").mkdirs();
+        new File("target/fsRepoWithProps/root/defaultWorkspace/folder1").mkdirs();
+        new File("target/fsRepoWithProps/root/defaultWorkspace/folder2").mkdirs();
 
         super.beforeEach();
     }
@@ -128,9 +130,9 @@ public class FileSystemRepositoryIntegrationTest extends ModeShapeSingleUseTest 
         // Get another session and verify the reference exists and can be resolved ...
         session = session();
         // print = true;
-        printQuery("SELECT * FROM [nt:base]", 5L, Collections.<String, String>emptyMap());
+        printQuery("SELECT * FROM [nt:base]", 7L, Collections.<String, String>emptyMap());
     }
-    
+
     /*
      * The test verifies that maxPathLength is being overridden in the configuration
      * by setting to something small and should result in a <code>RepositoryException</code> 
@@ -156,9 +158,25 @@ public class FileSystemRepositoryIntegrationTest extends ModeShapeSingleUseTest 
         session.save();
 
         logout();
-        
+
     }
-    
+
+    @FixFor( "MODE-1263" )
+    @Test
+    public void shouldIncludeExistingContent() throws Exception {
+        startEngineUsing("config/configRepositoryForFileSystemWithExtraProperties.xml");
+        Session session = session();
+
+        // Create a new Node (after session is started)
+        session.getRootNode().addNode("NewFolder", "nt:folder");
+        session.save();
+
+        // Query all nodes
+        // print = true;
+        printQuery("SELECT * FROM [nt:base]", 4L, Collections.<String, String>emptyMap());
+
+        logout();
+    }
 
     protected void registryNamespaceIfMissing( String prefix,
                                                String url ) throws RepositoryException {
