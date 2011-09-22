@@ -121,6 +121,7 @@ import org.modeshape.jcr.security.AnonymousProvider;
 import org.modeshape.jcr.security.AuthenticationProvider;
 import org.modeshape.jcr.security.AuthenticationProviders;
 import org.modeshape.jcr.security.JaasProvider;
+import org.modeshape.jcr.security.JaccSubjectResolver;
 import org.modeshape.jcr.security.SecurityContextProvider;
 import org.modeshape.jcr.security.ServletProvider;
 import org.modeshape.jcr.xpath.XPathQueryParser;
@@ -921,8 +922,21 @@ public class JcrRepository implements Repository {
         // Set up the JAAS providers ...
         String policyName = this.options.get(Option.JAAS_LOGIN_CONFIG_NAME);
         if (policyName != null && policyName.trim().length() != 0) {
+
+            // Per MODE-1270, see if the JACC API is available (if so, we're running in an J2EE container
+            // and need to provide a way to properly resolve the JAAS Subject)...
+            JaasProvider.SubjectResolver subjectResolver = null;
             try {
-                JaasProvider jaasProvider = new JaasProvider(policyName);
+                // Try to find the JACC PolicyContext class, which is entirely optional and provided only in J2EE containers ...
+                ClassUtil.loadClassStrict("javax.security.jacc.PolicyContext");
+                subjectResolver = new JaccSubjectResolver();
+                LOGGER.debug("Enabling optional JACC approach for resolving the JAAS Subject (typically in J2EE containers)");
+            } catch (ClassNotFoundException cnfe) {
+                // Must not be able to load the class ...
+                LOGGER.debug("Failed to find 'javax.security.jacc.PolicyContext', so assuming not in a J2EE container.");
+            }
+            try {
+                JaasProvider jaasProvider = new JaasProvider(policyName, subjectResolver);
                 authenticators = authenticators.with(jaasProvider);
             } catch (java.lang.SecurityException e) {
                 LOGGER.warn(JcrI18n.loginConfigNotFound, policyName, Option.JAAS_LOGIN_CONFIG_NAME, repositoryName());
@@ -932,12 +946,13 @@ public class JcrRepository implements Repository {
         }
 
         try {
-            // Try to set up the HTTP servlet request class ...
+            // Try to set up the HTTP servlet request class, which is available only in servlet containers ...
             ClassUtil.loadClassStrict("javax.servlet.http.HttpServletRequest");
             ServletProvider servletProvider = new ServletProvider();
             authenticators = authenticators.with(servletProvider);
+            LOGGER.debug("Enabling optional servlet authentication.");
         } catch (ClassNotFoundException cnfe) {
-            // Must not be able to load the class because of dependencies
+            // Must not be able to load the class ...
             LOGGER.debug("Failed to find 'javax.servlet.http.HttpServletRequest', so not loading 'o.m.j.security.ServletProvider'");
         }
 
