@@ -52,7 +52,6 @@ import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Value;
-import javax.jcr.Workspace;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.query.Query;
@@ -77,7 +76,6 @@ import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.query.QueryBuilder;
 import org.modeshape.graph.query.model.QueryCommand;
 import org.modeshape.graph.query.model.TypeSystem;
-import org.modeshape.graph.request.InvalidWorkspaceException;
 import org.modeshape.graph.session.GraphSession;
 import org.modeshape.jcr.JcrContentHandler.EnclosingSAXException;
 import org.modeshape.jcr.JcrContentHandler.SaveMode;
@@ -283,7 +281,7 @@ class JcrSession implements Session {
      * 
      * @see javax.jcr.Session#getWorkspace()
      */
-    public Workspace getWorkspace() {
+    public org.modeshape.jcr.api.Workspace getWorkspace() {
         return this.workspace;
     }
 
@@ -1307,29 +1305,6 @@ class JcrSession implements Session {
         checkReferentialIntegrityOfChanges(null);
         removedNodes = null;
         cache.save();
-    }
-
-    /**
-     * Crawl and index the content in this workspace.
-     * 
-     * @throws IllegalArgumentException if the workspace is null
-     * @throws InvalidWorkspaceException if there is no workspace with the supplied name
-     */
-    public void reindexContent() {
-        repository().queryManager().reindexContent(workspace());
-    }
-
-    /**
-     * Crawl and index the content starting at the supplied path in this workspace, to the designated depth.
-     * 
-     * @param path the path of the content to be indexed
-     * @param depth the depth of the content to be indexed
-     * @throws IllegalArgumentException if the workspace or path are null, or if the depth is less than 1
-     * @throws InvalidWorkspaceException if there is no workspace with the supplied name
-     */
-    public void reindexContent( String path,
-                                int depth ) {
-        repository().queryManager().reindexContent(workspace(), path, depth);
     }
 
     /**

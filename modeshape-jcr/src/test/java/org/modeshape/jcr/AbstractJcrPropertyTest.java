@@ -36,13 +36,13 @@ import javax.jcr.ItemVisitor;
 import javax.jcr.Node;
 import javax.jcr.Repository;
 import javax.jcr.Session;
-import javax.jcr.Workspace;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.modeshape.common.FixFor;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
+import org.modeshape.jcr.api.Workspace;
 
 /**
  * 

@@ -29,7 +29,6 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.util.UUID;
 import javax.jcr.RepositoryException;
-import javax.jcr.Workspace;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.mockito.invocation.InvocationOnMock;
@@ -43,6 +42,7 @@ import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
+import org.modeshape.jcr.api.Workspace;
 
 /**
  * Abstract test that sets up a SessionCache environment with a real {@link RepositoryNodeTypeManager}, albeit with a mocked
