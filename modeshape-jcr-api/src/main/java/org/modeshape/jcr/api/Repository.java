@@ -6,7 +6,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Replicates JCR 2.0's Repository interface.
+ * An extension of JCR 2.0's Repository interface, with a few ModeShape-specific enhancements.
  */
 public interface Repository extends javax.jcr.Repository {
 
