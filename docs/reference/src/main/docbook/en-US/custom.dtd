@@ -255,6 +255,7 @@
 <!ENTITY JaasProvider			            "<ulink url='&API;jcr/security/JaasProvider.html'><classname>JaasProvider</classname></ulink>">
 <!ENTITY ServletProvider			        "<ulink url='&API;jcr/security/ServletProvider.html'><classname>ServletProvider</classname></ulink>">
 <!ENTITY AnonymousProvider			      "<ulink url='&API;jcr/security/AnonymousProvider.html'><classname>AnonymousProvider</classname></ulink>">
+<!ENTITY SeamSecurityProvider			    "<ulink url='&API;jcr/security/SeamSecurityProvider.html'><classname>SeamSecurityProvider</classname></ulink>">
 <!ENTITY SecurityContextProvider			"<ulink url='&API;jcr/security/SecurityContextProvider.html'><classname>SecurityContextProvider</classname></ulink>">
 <!ENTITY AuthorizationProvider        "<ulink url='&API;jcr/security/AuthorizationProvider.html'><classname>AuthorizationProvider</classname></ulink>">
 <!ENTITY ModeShapePermissions					"<ulink url='&API;jcr/ModeShapePermissions.html'><classname>ModeShapePermissions</classname></ulink>">
