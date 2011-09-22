@@ -122,6 +122,7 @@ import org.modeshape.jcr.security.AuthenticationProvider;
 import org.modeshape.jcr.security.AuthenticationProviders;
 import org.modeshape.jcr.security.JaasProvider;
 import org.modeshape.jcr.security.JaccSubjectResolver;
+import org.modeshape.jcr.security.SeamSecurityProvider;
 import org.modeshape.jcr.security.SecurityContextProvider;
 import org.modeshape.jcr.security.ServletProvider;
 import org.modeshape.jcr.xpath.XPathQueryParser;
@@ -938,6 +939,7 @@ public class JcrRepository implements Repository {
             try {
                 JaasProvider jaasProvider = new JaasProvider(policyName, subjectResolver);
                 authenticators = authenticators.with(jaasProvider);
+                LOGGER.debug("Enabling JAAS authentication and authorization.");
             } catch (java.lang.SecurityException e) {
                 LOGGER.warn(JcrI18n.loginConfigNotFound, policyName, Option.JAAS_LOGIN_CONFIG_NAME, repositoryName());
             } catch (javax.security.auth.login.LoginException e) {
@@ -946,14 +948,25 @@ public class JcrRepository implements Repository {
         }
 
         try {
+            // Try to set up the Seam Security provider ...
+            ClassUtil.loadClassStrict("org.jboss.seam.security.Identity");
+            SeamSecurityProvider seamSecurityProvider = new SeamSecurityProvider();
+            authenticators = authenticators.with(seamSecurityProvider);
+            LOGGER.debug("Enabling Seam Security authentication and authorization.");
+        } catch (ClassNotFoundException cnfe) {
+            // Must not be able to load the class ...
+            LOGGER.debug("Failed to find 'org.jboss.seam.security.Identity' class, so not loading ModeShape's optional SeamSecurityProvider");
+        }
+
+        try {
             // Try to set up the HTTP servlet request class, which is available only in servlet containers ...
             ClassUtil.loadClassStrict("javax.servlet.http.HttpServletRequest");
             ServletProvider servletProvider = new ServletProvider();
             authenticators = authenticators.with(servletProvider);
-            LOGGER.debug("Enabling optional servlet authentication.");
+            LOGGER.debug("Enabling servlet authentication and authorization.");
         } catch (ClassNotFoundException cnfe) {
             // Must not be able to load the class ...
-            LOGGER.debug("Failed to find 'javax.servlet.http.HttpServletRequest', so not loading 'o.m.j.security.ServletProvider'");
+            LOGGER.debug("Failed to find 'javax.servlet.http.HttpServletRequest' class, so not loading ModeShape's optional ServletProvider");
         }
 
         // Set up the anonymous provider (if appropriate) ...
@@ -966,6 +979,7 @@ public class JcrRepository implements Repository {
             if (roles.size() > 0) {
                 AnonymousProvider anonProvider = new AnonymousProvider(ANONYMOUS_USER_NAME, roles);
                 authenticators = authenticators.with(anonProvider);
+                LOGGER.debug("Enabling anonymous authentication and authorization.");
             }
         }
 
