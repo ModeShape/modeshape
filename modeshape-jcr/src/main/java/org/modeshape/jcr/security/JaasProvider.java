@@ -48,6 +48,7 @@ import org.modeshape.jcr.api.JaasCredentials;
 public class JaasProvider implements AuthenticationProvider {
 
     private final String policyName;
+    private final SubjectResolver subjectResolver;
 
     /**
      * Create a JAAS provider for authentication and authorization, using the supplied name for the login configuration.
@@ -60,8 +61,26 @@ public class JaasProvider implements AuthenticationProvider {
      *            <p>
      */
     public JaasProvider( String policyName ) throws LoginException {
+        this(policyName, null);
+    }
+
+    /**
+     * Create a JAAS provider for authentication and authorization, using the supplied name for the login configuration.
+     * 
+     * @param policyName
+     * @param subjectResolver the component that can resolve the JAAS subject if not accessible via the AccessControl context; may
+     *        be null
+     * @exception LoginException if the caller-specified <code>name</code> does not appear in the <code>Configuration</code> and
+     *            there is no <code>Configuration</code> entry for "<i>other</i>", or if the
+     *            <i>auth.login.defaultCallbackHandler</i> security property was set, but the implementation class could not be
+     *            loaded.
+     *            <p>
+     */
+    public JaasProvider( String policyName,
+                         SubjectResolver subjectResolver ) throws LoginException {
         CheckArg.isNotNull(policyName, "policyName");
         this.policyName = policyName;
+        this.subjectResolver = subjectResolver;
 
         // verify that the logic context is valid ...
         try {
@@ -90,7 +109,14 @@ public class JaasProvider implements AuthenticationProvider {
                     // There is, so use this subject ...
                     return repositoryContext.with(new JaasSecurityContext(subject));
                 }
-                // There is no authentication JAAS Subject and no credentials, so we can do nothing ...
+                if (subjectResolver != null) {
+                    // The Subject is still null (see MODE-1270), so try to resolve it ...
+                    subject = subjectResolver.resolveSubject();
+                    if (subject != null) {
+                        return repositoryContext.with(new JaasSecurityContext(subject));
+                    }
+                }
+                // There is no authenticated JAAS Subject and no credentials, so we can do nothing ...
                 return null;
             }
             if (credentials instanceof SimpleCredentials) {
@@ -133,6 +159,24 @@ public class JaasProvider implements AuthenticationProvider {
                 }
             }
             if (loginContext != null) {
+                Subject subject = loginContext.getSubject();
+                if (subject == null) {
+                    // Try authenticate first ...
+                    loginContext.login();
+                    // Authentication succeeded ...
+                    subject = loginContext.getSubject();
+                    if (subject == null && this.subjectResolver != null) {
+                        // The Subject is still null (see MODE-1270), so try to resolve it ...
+                        subject = this.subjectResolver.resolveSubject();
+                        if (subject != null) {
+                            return repositoryContext.with(new JaasSecurityContext(subject));
+                        }
+                    }
+                    if (subject == null) {
+                        // Still null; we don't know what to do about this, so fail ...
+                        return null;
+                    }
+                }
                 return repositoryContext.with(new JaasSecurityContext(loginContext));
             }
         } catch (javax.security.auth.login.LoginException error) {
@@ -141,5 +185,21 @@ public class JaasProvider implements AuthenticationProvider {
         }
 
         return null;
+    }
+
+    /**
+     * An extension point for the JaasProvider class that allows for custom logic for finding the current JAAS Subject, if not
+     * already available via the {@code Subject.getSubject(AccessController.getContext())} method. That method returns null in
+     * J2EE applications.
+     * 
+     * @see JaccSubjectResolver
+     */
+    public static interface SubjectResolver {
+        /**
+         * Get the current JAAS Subject.
+         * 
+         * @return the subject, or null if the Subject could not be resolved
+         */
+        Subject resolveSubject();
     }
 }
