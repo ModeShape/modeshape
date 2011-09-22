@@ -281,6 +281,9 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
 
         if (value instanceof JcrValue) {
             jcrValue = (JcrValue)value;
+            if (jcrValue.value() == null) {
+                throw new ValueFormatException(JcrI18n.valueMayNotContainNull.text(getName()));
+            }
 
             // Force a conversion as per SetValueValueFormatExceptionTest in JR TCK
             jcrValue.asType(this.getType());
@@ -337,6 +340,9 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
 
         checkSession();
         checkForLock();
+        if (jcrValue.value() == null) {
+            throw new ValueFormatException(JcrI18n.valueMayNotContainNull.text(getName()));
+        }
 
         editor().setProperty(name(), jcrValue);
     }
