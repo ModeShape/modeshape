@@ -28,6 +28,11 @@
       <groupId>javax.jcr</groupId>
       <artifactId>jcr</artifactId>
     </dependency>
+
+    <!--
+    These following are defined as 'provided' in the parent POM, since ModeShape
+    has code that is optional if these APIs are available.
+    -->
     <dependency>
       <groupId>javax.servlet</groupId>
       <artifactId>servlet-api</artifactId>

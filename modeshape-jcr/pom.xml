@@ -58,6 +58,20 @@
       <groupId>org.modeshape</groupId>
       <artifactId>modeshape-search-lucene</artifactId>
     </dependency>
+
+    <!--
+    These following are defined as 'provided' in the parent POM, since ModeShape
+    has code that is optional if these APIs are available.
+    -->
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>servlet-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.spec.javax.security.jacc</groupId>
+      <artifactId>jboss-jacc-api_1.4_spec</artifactId>
+    </dependency>
+
     <!-- 
     Testing (note the scope)
     -->
