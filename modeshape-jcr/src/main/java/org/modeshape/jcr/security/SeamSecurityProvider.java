@@ -50,7 +50,13 @@ public class SeamSecurityProvider implements AuthenticationProvider {
                                           Map<String, Object> sessionAttributes ) {
         if (credentials == null) {
             // We don't care about credentials, as we'll always use the Seam Identity class ...
-            Identity identity = Identity.instance();
+            Identity identity = null;
+            try {
+                identity = Identity.instance();
+            } catch (Throwable e) {
+                // There was no Identity instance
+                return null;
+            }
             if (identity != null && identity.isLoggedIn()) {
                 SeamSecurityContext context = new SeamSecurityContext(identity);
                 return repositoryContext.with(context);
