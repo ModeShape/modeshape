@@ -222,6 +222,7 @@
 		<java.version.jcr.graph>1.5</java.version.jcr.graph>
 		<javax.servlet.version>2.5</javax.servlet.version>
 		<javax.jacc.version>1.0.0.Final</javax.jacc.version>
+		<jboss.seam.version>2.2.2.Final</jboss.seam.version>
 		<!--
 		Maven plugin versions
 		-->
@@ -1082,6 +1083,13 @@
         <version>${javax.jacc.version}</version>
         <scope>provided</scope>
       </dependency>
+      <dependency>
+        <groupId>org.jboss.seam</groupId>
+        <artifactId>jboss-seam</artifactId>
+        <version>${jboss.seam.version}</version>
+        <scope>provided</scope>
+      </dependency>
+
 			<!-- 
 		    Time and Date
 		    -->

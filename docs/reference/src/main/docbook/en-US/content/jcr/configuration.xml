@@ -989,13 +989,23 @@ config.repository("repository A")
 						 in the JAAS policy, or a &JaasCredentials; constructed with a specific and already-authenticated JAAS &LoginContext;.
 						 This provider can be disabled by setting the <link linkend="jcr_repository_options">jaasLoginConfigName configuration option</link>
 						 to an empty (i.e., zero-length) value; otherwise, the option defines the name of the JAAS login configuration and
-						 will default to "modeshape-jcr" if not explicitly set.</para>
+						 will default to "modeshape-jcr" if not explicitly set. (This provider also works in some J2EE containers, in which 
+						 the JAAS Subject is not available via the standard JAAS API and instead requires use of the JACC API, which many
+						 J2EE containers support).</para>
+					</listitem>
+					<listitem>
+						<para>&SeamSecurityProvider; delegates all authentication and role-based authorization to the Seam Security framework.
+						 This provider authenticates clients that login to the &Repository; with no need to pass a &Credentials; object. 
+						 Note this does require obtaining a session for each servlet request, which is actually how
+						 the JCR API was intended to be used within web applications. This provider is automatically enabled when the
+						 Seam Security Identity class is found on the classpath.</para>
 					</listitem>
 					<listitem>
 						<para>&ServletProvider; delegates all authentication and role-based authorization to the servlet framework.
 						 This provider authenticates clients that login to the &Repository; with a &ServletCredentials; object, which can be constructed with the
 						 &HttpServletRequest;. Note this does require obtaining a session for each servlet request, which is actually how
-						 the JCR API was intended to be used within web applications.</para>
+						 the JCR API was intended to be used within web applications. This provider is automatically enabled when the
+						 HttpServletSession class is found on the classpath.</para>
 					</listitem>
 					<listitem>
 						<para>&AnonymousProvider; will allow clients without &Credentials; to operate upon the repository, and will
@@ -1010,8 +1020,8 @@ config.repository("repository A")
 				    The &SecurityContextProvider; is also configured only when the
 				    <link linkend="jcr_repository_options">useSecurityContextCredentials configuration option</link> is set to 'true'.
 				    This provider authenticates clients that pass a &SecurityContextCredentials; object, and delegates all authentication to
-				    the embedded SecurityContext. This deprecated approach not enabled by default, and will be removed in the next major release of ModeShape.
-				    It remains in place to enable applications that use this approach to upgrade to ModeShape 2.6 (or later) without breaking their
+				    the embedded SecurityContext. This deprecated approach is not enabled by default, and will be removed in the next major release of ModeShape.
+				    It remains in place to enable applications that use this older and less attractive approach to upgrade to ModeShape 2.6 (or later) without breaking their
 				    authentication mechanism.
 				  </para>
 				</note>
