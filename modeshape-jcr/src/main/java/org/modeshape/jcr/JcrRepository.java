@@ -655,6 +655,8 @@ public class JcrRepository implements Repository {
     // package-scoped to facilitate testing
     final WeakHashMap<JcrSession, Object> activeSessions = new WeakHashMap<JcrSession, Object>();
 
+    private final ExecutorService backgroundService = Executors.newSingleThreadExecutor();
+
     /**
      * Creates a JCR repository that uses the supplied {@link RepositoryConnectionFactory repository connection factory} to
      * establish {@link Session sessions} to the underlying repository source upon {@link #login() login}.
@@ -1021,6 +1023,10 @@ public class JcrRepository implements Repository {
 
         // Make sure the workspace names are in the descriptor ...
         updateWorkspaceNames();
+    }
+
+    protected ExecutorService backgroundService() {
+        return backgroundService;
     }
 
     protected String repositoryName() {
