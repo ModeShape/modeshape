@@ -1557,6 +1557,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public final Property setProperty( String name,
                                        boolean value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        CheckArg.isNotNull(name, "name");
         checkSession();
         return editor().setProperty(nameFrom(name), valueFrom(PropertyType.BOOLEAN, value));
     }
@@ -1569,6 +1570,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public Property setProperty( String name,
                                  Binary value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        CheckArg.isNotNull(name, "name");
         return editor().setProperty(nameFrom(name), valueFrom(PropertyType.BINARY, value));
     }
 
@@ -1580,6 +1582,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public Property setProperty( String name,
                                  BigDecimal value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        CheckArg.isNotNull(name, "name");
         return editor().setProperty(nameFrom(name), valueFrom(PropertyType.DECIMAL, value));
     }
 
@@ -1591,6 +1594,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public final Property setProperty( String name,
                                        Calendar value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        CheckArg.isNotNull(name, "name");
         checkSession();
 
         if (value == null) {
@@ -1608,6 +1612,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public final Property setProperty( String name,
                                        double value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        CheckArg.isNotNull(name, "name");
         checkSession();
         return editor().setProperty(nameFrom(name), valueFrom(PropertyType.DOUBLE, value));
     }
@@ -1620,6 +1625,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public final Property setProperty( String name,
                                        InputStream value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        CheckArg.isNotNull(name, "name");
         checkSession();
         if (value == null) {
             return removeExistingValuedProperty(name);
@@ -1636,6 +1642,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public final Property setProperty( String name,
                                        long value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        CheckArg.isNotNull(name, "name");
         checkSession();
         return editor().setProperty(nameFrom(name), valueFrom(PropertyType.LONG, value));
     }
@@ -1648,6 +1655,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public final Property setProperty( String name,
                                        javax.jcr.Node value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        CheckArg.isNotNull(name, "name");
         checkSession();
         if (value == null) {
             return removeExistingValuedProperty(name);
@@ -1664,6 +1672,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public final Property setProperty( String name,
                                        String value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        CheckArg.isNotNull(name, "name");
         checkSession();
         if (value == null) {
             return removeExistingValuedProperty(name);
@@ -1681,6 +1690,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
                                        String value,
                                        int type )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        CheckArg.isNotNull(name, "name");
         checkSession();
         if (value == null) {
             return removeExistingValuedProperty(name);
@@ -1697,6 +1707,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public final Property setProperty( String name,
                                        String[] values )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        CheckArg.isNotNull(name, "name");
         checkSession();
         if (values == null) {
             return removeExistingValuedProperty(name);
@@ -1714,6 +1725,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
                                        String[] values,
                                        int type )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        CheckArg.isNotNull(name, "name");
         checkSession();
         if (values == null) {
             return removeExistingValuedProperty(name);
@@ -1730,12 +1742,17 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public final Property setProperty( String name,
                                        Value value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        CheckArg.isNotNull(name, "name");
         checkSession();
         if (value == null) {
             return removeExistingValuedProperty(name);
         }
 
-        return editor().setProperty(nameFrom(name), (JcrValue)value);
+        JcrValue jcrValue = (JcrValue)value;
+        if (jcrValue.value() == null) {
+            throw new ValueFormatException(JcrI18n.valueMayNotContainNull.text(name));
+        }
+        return editor().setProperty(nameFrom(name), jcrValue);
     }
 
     /**
@@ -1747,12 +1764,17 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
                                        Value value,
                                        int type )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        CheckArg.isNotNull(name, "name");
         checkSession();
         if (value == null) {
             return removeExistingValuedProperty(name);
         }
 
-        return editor().setProperty(nameFrom(name), ((JcrValue)value).asType(type));
+        JcrValue jcrValue = (JcrValue)value;
+        if (jcrValue.value() == null) {
+            throw new ValueFormatException(JcrI18n.valueMayNotContainNull.text(name));
+        }
+        return editor().setProperty(nameFrom(name), jcrValue.asType(type));
     }
 
     /**
@@ -1763,6 +1785,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public final Property setProperty( String name,
                                        Value[] values )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        CheckArg.isNotNull(name, "name");
         checkSession();
         if (values == null) {
             // If there is an existing property, then remove it ...
@@ -1781,10 +1804,19 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
                                        Value[] values,
                                        int type )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        CheckArg.isNotNull(name, "name");
         checkSession();
         if (values == null) {
             // If there is an existing property, then remove it ...
             return removeExistingValuedProperty(name);
+        }
+
+        // Check for a non-null Value that contains a null reference ...
+        for (Value value : values) {
+            JcrValue jcrValue = (JcrValue)value;
+            if (jcrValue != null && jcrValue.value() == null) {
+                throw new ValueFormatException(JcrI18n.valueMayNotContainNull.text(name));
+            }
         }
 
         // Set the value, perhaps to an empty array ...

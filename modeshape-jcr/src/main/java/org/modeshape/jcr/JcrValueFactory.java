@@ -32,6 +32,7 @@ import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.ValueFactory;
 import javax.jcr.ValueFormatException;
+import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.property.Binary;
 import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.NamespaceRegistry;
@@ -58,6 +59,7 @@ class JcrValueFactory implements ValueFactory {
 
     public JcrValue[] createValues( List<?> values,
                                     int propertyType ) throws ValueFormatException {
+        CheckArg.isNotNull(values, "values");
         final int size = values.size();
         if (size == 0) return EMPTY_ARRAY;
         JcrValue[] jcrValues = new JcrValue[size];
@@ -76,6 +78,7 @@ class JcrValueFactory implements ValueFactory {
 
     public JcrValue createValue( String value,
                                  int propertyType ) throws ValueFormatException {
+        CheckArg.isNotNull(value, "value");
         return new JcrValue(valueFactories, sessionCache, propertyType, convertValueToType(value, propertyType));
     }
 

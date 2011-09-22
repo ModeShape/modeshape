@@ -201,7 +201,13 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
 
         for (int i = 0; i < values.length; i++) {
             // Force a conversion as per SetValueValueFormatExceptionTest in JR TCK
-            if (values[i] != null) ((JcrValue)values[i]).asType(this.getType());
+            JcrValue val = (JcrValue)values[i];
+            if (val != null) {
+                if (val.value() == null) {
+                    throw new ValueFormatException(JcrI18n.valueMayNotContainNull.text(getName()));
+                }
+                val.asType(this.getType());
+            }
         }
 
         editor().setProperty(name(), values, PropertyType.UNDEFINED);

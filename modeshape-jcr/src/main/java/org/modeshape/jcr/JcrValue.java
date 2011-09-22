@@ -143,6 +143,7 @@ final class JcrValue implements org.modeshape.jcr.api.Value {
      * @see javax.jcr.Value#getDate()
      */
     public Calendar getDate() throws ValueFormatException {
+        if (value == null) return null;
         try {
             Calendar convertedValue = valueFactories.getDateFactory().create(value).toCalendar();
             return convertedValue;
@@ -180,6 +181,7 @@ final class JcrValue implements org.modeshape.jcr.api.Value {
     }
 
     long getLength() throws RepositoryException {
+        if (value == null) return 0L;
         if (type == PropertyType.BINARY) {
             return valueFactories.getBinaryFactory().create(value).getSize();
         }
@@ -209,6 +211,7 @@ final class JcrValue implements org.modeshape.jcr.api.Value {
         try {
             if (asStream == null) {
                 Binary binary = valueFactories.getBinaryFactory().create(value);
+                if (binary == null) return null;
                 asStream = new SelfClosingInputStream(binary);
             }
             return asStream;
@@ -225,7 +228,7 @@ final class JcrValue implements org.modeshape.jcr.api.Value {
     public javax.jcr.Binary getBinary() throws RepositoryException {
         try {
             Binary binary = valueFactories.getBinaryFactory().create(value);
-            return new JcrBinary(binary);
+            return binary != null ? new JcrBinary(binary) : null;
         } catch (RuntimeException error) {
             throw createValueFormatException(InputStream.class);
         }
