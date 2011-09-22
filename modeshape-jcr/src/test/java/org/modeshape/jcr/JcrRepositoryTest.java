@@ -37,6 +37,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Credentials;
 import javax.jcr.Repository;
@@ -54,10 +55,11 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.modeshape.common.FixFor;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
-import org.modeshape.graph.Node;
 import org.modeshape.graph.JaasSecurityContext.UserPasswordCallbackHandler;
+import org.modeshape.graph.Node;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryConnectionFactory;
 import org.modeshape.graph.connector.RepositorySource;
@@ -799,6 +801,38 @@ public class JcrRepositoryTest {
             }
             assertThat("Did not find '" + expect + "' in the actuals: " + actuals, found, is(true));
         }
+    }
+
+    @Test
+    @FixFor( "MODE-1269" )
+    public void shouldAllowReindexingEntireWorkspace() throws Exception {
+        session = createSession();
+        session.getWorkspace().reindex();
+    }
+
+    @Test
+    @FixFor( "MODE-1269" )
+    public void shouldAllowReindexingSubsetOfWorkspace() throws Exception {
+        session = createSession();
+        session.getWorkspace().reindex("/", 2);
+    }
+
+    @Test
+    @FixFor( "MODE-1269" )
+    public void shouldAllowAsynchronousReindexingEntireWorkspace() throws Exception {
+        session = createSession();
+        Future<Boolean> future = session.getWorkspace().reindexAsync();
+        assertThat(future, is(notNullValue()));
+        assertThat(future.get(), is(true)); // get() blocks until done
+    }
+
+    @Test
+    @FixFor( "MODE-1269" )
+    public void shouldAllowAsynchronousReindexingSubsetOfWorkspace() throws Exception {
+        session = createSession();
+        Future<Boolean> future = session.getWorkspace().reindexAsync("/", 2);
+        assertThat(future, is(notNullValue()));
+        assertThat(future.get(), is(true)); // get() blocks until done
     }
 
 }

@@ -34,6 +34,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.InvalidSerializedDataException;
 import javax.jcr.ItemExistsException;
@@ -99,7 +101,7 @@ import org.xml.sax.helpers.XMLReaderFactory;
  * ModeShape implementation of a {@link Workspace JCR Workspace}.
  */
 @NotThreadSafe
-class JcrWorkspace implements Workspace {
+class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
 
     /**
      * The name of this workspace. This name is used as the name of the source when
@@ -974,6 +976,74 @@ class JcrWorkspace implements Workspace {
      */
     public VersionManager getVersionManager() {
         return versionManager;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.jcr.api.Workspace#reindex()
+     */
+    public void reindex() throws RepositoryException {
+        session.checkLive();
+        session.repository().queryManager().reindexContent(session.workspace());
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.jcr.api.Workspace#reindex(java.lang.String, int)
+     */
+    public void reindex( String path,
+                         int depth ) throws RepositoryException {
+        session.checkLive();
+        session.repository().queryManager().reindexContent(session.workspace(), path, depth);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.jcr.api.Workspace#reindexAsync()
+     */
+    public Future<Boolean> reindexAsync() throws RepositoryException {
+        session.checkLive();
+        final JcrRepository repository = session.repository();
+        final JcrWorkspace workspace = session.workspace();
+        Future<Boolean> future = repository.backgroundService().submit(new Callable<Boolean>() {
+            public Boolean call() throws Exception {
+                try {
+                    repository.queryManager().reindexContent(workspace);
+                } catch (Throwable t) {
+                    return Boolean.FALSE;
+                }
+                return Boolean.TRUE;
+            }
+        });
+        return future;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.jcr.api.Workspace#reindexAsync(java.lang.String, int)
+     */
+    public Future<Boolean> reindexAsync( final String path,
+                                         final int depth ) throws RepositoryException {
+        session.checkLive();
+        CheckArg.isNotNull(path, "path");
+        CheckArg.isPositive(depth, "depth");
+        final JcrRepository repository = session.repository();
+        final JcrWorkspace workspace = session.workspace();
+        Future<Boolean> future = repository.backgroundService().submit(new Callable<Boolean>() {
+            public Boolean call() throws Exception {
+                try {
+                    repository.queryManager().reindexContent(workspace, path, depth);
+                } catch (Throwable t) {
+                    return Boolean.FALSE;
+                }
+                return Boolean.TRUE;
+            }
+        });
+        return future;
     }
 
 }
