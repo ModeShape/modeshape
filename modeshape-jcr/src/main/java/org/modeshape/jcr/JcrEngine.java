@@ -635,8 +635,11 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
                             throw new RepositoryException(msg);
                         }
                         try {
+                            logger().debug("Loading CND file at '{0}'", resource);
                             importer.importFrom(is, cndProblems, resource);
+                            logger().debug("Finished loading CND file at '{0}'", resource);
                             batch.execute();
+                            logger().debug("Finished executing changes for node types found in CND file at '{0}'", resource);
                             needToRefreshSubgraph = true;
                         } catch (IOException ioe) {
                             String msg = JcrI18n.errorLoadingNodeTypeDefintions.text(resource, ioe.getMessage());
@@ -662,9 +665,12 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
                 }
             }
 
+            Set<NamespaceRegistry.Namespace> namespaces = configuration.getContext().getNamespaceRegistry().getNamespaces();
+            logger().trace("Registring {0} namespaces found in CND files", namespaces.size());
             // Load any namespaces from the configuration into the repository's context ...
             NamespaceRegistry repoRegistry = repository.getExecutionContext().getNamespaceRegistry();
-            repoRegistry.register(configuration.getContext().getNamespaceRegistry().getNamespaces());
+            repoRegistry.register(namespaces);
+            logger().trace("Completed registring {0} namespaces found in CND files", namespaces.size());
 
             // Re-read the subgraph, in case any new nodes were added
             Subgraph nodeTypesSubgraph = subgraph;
@@ -672,7 +678,9 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
                 nodeTypesSubgraph = configuration.getSubgraphOfDepth(4).at(nodeTypesNode.getLocation().getPath());
             }
 
-            repository.getRepositoryTypeManager().registerNodeTypes(nodeTypesSubgraph, nodeTypesNode.getLocation(), false);
+            logger().info(JcrI18n.registeringNodeTypesDefinedInConfiguration, repositoryName);
+            repository.getRepositoryTypeManager().registerNodeTypes(nodeTypesSubgraph, nodeTypesNode.getLocation(), false, true);
+            logger().info(JcrI18n.completedRegisteringNodeTypesDefinedInConfiguration, repositoryName);
         }
 
         return repository;

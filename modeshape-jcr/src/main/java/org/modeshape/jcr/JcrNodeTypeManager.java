@@ -525,7 +525,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
             throw new AccessDeniedException(ace);
         }
         try {
-            return new JcrNodeTypeIterator(repositoryTypeManager.registerNodeTypes(templates, !allowUpdates));
+            return new JcrNodeTypeIterator(repositoryTypeManager.registerNodeTypes(templates, !allowUpdates, false));
         } finally {
             schemata = null;
         }
@@ -597,7 +597,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         }
 
         try {
-            return new JcrNodeTypeIterator(this.repositoryTypeManager.registerNodeTypes(Arrays.asList(ntds), !allowUpdate));
+            return new JcrNodeTypeIterator(this.repositoryTypeManager.registerNodeTypes(Arrays.asList(ntds), !allowUpdate, false));
         } finally {
             schemata = null;
         }
