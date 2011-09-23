@@ -245,6 +245,27 @@ public class ConfigurationTest {
 
     @FixFor( "MODE-1224" )
     @Test
+    public void shouldStartWithEdsConfiguration() throws Exception {
+        Logger.getLogger(getClass()).debug("Here we go...");
+        File file = new File("src/test/resources/config/configRepositoryEds.xml");
+        assertThat(file.exists(), is(true));
+        assertThat(file.canRead(), is(true));
+        assertThat(file.isFile(), is(true));
+
+        configuration.loadFrom(file);
+
+        // Create and start the engine ...
+        engine = configuration.build();
+        engine.start();
+        Repository repository = engine.getRepository("eds");
+        assertThat(repository, is(notNullValue()));
+
+        // Shutdown ...
+        engine.shutdownAndAwaitTermination(3, TimeUnit.SECONDS);
+    }
+
+    @FixFor( "MODE-1224" )
+    @Test
     public void shouldStartWithEdsConfigurationAndRestart() throws Exception {
         Logger.getLogger(getClass()).debug("Here we go...");
         File file = new File("src/test/resources/config/configRepositoryEds.xml");
@@ -274,6 +295,27 @@ public class ConfigurationTest {
         repository = engine.getRepository("eds");
         assertThat(repository, is(notNullValue()));
         Thread.sleep(500L);
+    }
+
+    @FixFor( "MODE-1224" )
+    @Test
+    public void shouldStartWithEdsConfigurationUsingJpaStore() throws Exception {
+        Logger.getLogger(getClass()).debug("Here we go...");
+        File file = new File("target/test-classes/config/configRepositoryEdsWithJpaStore.xml");
+        assertThat(file.exists(), is(true));
+        assertThat(file.canRead(), is(true));
+        assertThat(file.isFile(), is(true));
+
+        configuration.loadFrom(file);
+
+        // Create and start the engine ...
+        engine = configuration.build();
+        engine.start();
+        Repository repository = engine.getRepository("eds");
+        assertThat(repository, is(notNullValue()));
+
+        // Shutdown ...
+        engine.shutdownAndAwaitTermination(3, TimeUnit.SECONDS);
     }
 
     @Test

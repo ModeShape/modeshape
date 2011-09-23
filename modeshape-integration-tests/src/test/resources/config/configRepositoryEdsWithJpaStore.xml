@@ -41,21 +41,25 @@
 
         -->
         <mode:source jcr:name="eds-store" mode:classname="org.modeshape.connector.store.jpa.JpaSource" 
-            mode:autoGenerateSchema="update"
+            mode:autoGenerateSchema="create"
             mode:model="Simple"
-            mode:dialect="org.hibernate.dialect.HSQLDialect"
-            mode:driverClassName="org.hsqldb.jdbcDriver"
-            mode:username="sa"
-            mode:password=""
-            mode:url="jdbc:hsqldb:target/database/ConfigurationTest/db"
-            mode:maximumConnectionsInPool="2"
-            mode:showSql="false"
+            mode:dialect="${jpaSource.dialect}"
+            mode:driverClassName="${jpaSource.driverClassName}"
+            mode:username="${jpaSource.username}"
+            mode:password="${jpaSource.password}"
+            mode:url="${jpaSource.url}"
+            mode:maximumConnectionsInPool="${jpaSource.maximumConnectionsInPool}"
+            mode:referentialIntegrityEnforced="${jpaSource.referentialIntegrityEnforced}"
+            mode:largeValueSizeInBytes="${jpaSource.largeValueSizeInBytes}"
+            mode:retryLimit="${jpaSource.retryLimit}"
+            mode:compressData="${jpaSource.compressData}"
+            mode:showSql="${jpaSource.showSql}"
             mode:creatingWorkspacesAllowed="true">
             <defaultWorkspaceName>default</defaultWorkspaceName>
             <predefinedWorkspaceNames>system</predefinedWorkspaceNames>
             <predefinedWorkspaceNames>default</predefinedWorkspaceNames>
         </mode:source>
-
+        
     </mode:sources>
     
     <mode:sequencers>
@@ -203,8 +207,9 @@
                 
             </jcr:nodeTypes>
             <!-- Define what the initial content looks like for each workspace -->
+            <!--
             <mode:initialContent mode:workspaces="default" mode:applyToNewWorkspaces="true" mode:content="modeshape-initial-content.xml"/>
-
+            -->
         </mode:repository>
     </mode:repositories>
     
