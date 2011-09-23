@@ -259,7 +259,7 @@ public class ConfigurationTest {
         engine.start();
         Repository repository = engine.getRepository("eds");
         assertThat(repository, is(notNullValue()));
-        Thread.sleep(3000L);
+        Thread.sleep(500L);
 
         // Shutdown ...
         engine.shutdownAndAwaitTermination(3, TimeUnit.SECONDS);
@@ -273,7 +273,7 @@ public class ConfigurationTest {
         engine.start();
         repository = engine.getRepository("eds");
         assertThat(repository, is(notNullValue()));
-        Thread.sleep(3000L);
+        Thread.sleep(500L);
     }
 
     @Test
