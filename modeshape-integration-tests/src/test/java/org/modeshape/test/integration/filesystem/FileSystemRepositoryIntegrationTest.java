@@ -27,6 +27,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import java.io.File;
 import java.util.Collections;
+import java.util.concurrent.Future;
 import javax.jcr.NamespaceException;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
@@ -174,6 +175,149 @@ public class FileSystemRepositoryIntegrationTest extends ModeShapeSingleUseTest 
         // Query all nodes
         // print = true;
         printQuery("SELECT * FROM [nt:base]", 4L, Collections.<String, String>emptyMap());
+
+        logout();
+    }
+
+    @FixFor( "MODE-1269" )
+    @Test
+    public void shouldAllowReindexingAllContent() throws Exception {
+        startEngineUsing("config/configRepositoryForFileSystemWithExtraProperties.xml");
+        Session session = session();
+
+        // Reindex all content synchronously ...
+        org.modeshape.jcr.api.Workspace workspace = (org.modeshape.jcr.api.Workspace)session.getWorkspace();
+        workspace.reindex();
+
+        printQuery("SELECT * FROM [nt:base]", 3L, Collections.<String, String>emptyMap());
+
+        // Add a folder to the file system ...
+        new File("target/fsRepoWithProps/root/defaultWorkspace/folder1/subfolder1").mkdirs();
+        new File("target/fsRepoWithProps/root/defaultWorkspace/folder1/subfolder1/file.txt").createNewFile();
+
+        // Query should show old results (because file system connector does not monitor file system) ...
+        printQuery("SELECT * FROM [nt:base]", 3L, Collections.<String, String>emptyMap());
+
+        // Reindex all content synchronously ...
+        workspace.reindex();
+
+        printQuery("SELECT * FROM [nt:base]", 6L, Collections.<String, String>emptyMap());
+
+        logout();
+    }
+
+    @FixFor( "MODE-1269" )
+    @Test
+    public void shouldAllowReindexingAllContentAsynchronously() throws Exception {
+        startEngineUsing("config/configRepositoryForFileSystemWithExtraProperties.xml");
+        Session session = session();
+
+        // Reindex all content synchronously ...
+        org.modeshape.jcr.api.Workspace workspace = (org.modeshape.jcr.api.Workspace)session.getWorkspace();
+        Future<Boolean> future = workspace.reindexAsync();
+        assertThat(future.get(), is(true)); // blocks
+
+        printQuery("SELECT * FROM [nt:base]", 3L, Collections.<String, String>emptyMap());
+
+        // Add a folder to the file system ...
+        new File("target/fsRepoWithProps/root/defaultWorkspace/folder1/subfolder1").mkdirs();
+        new File("target/fsRepoWithProps/root/defaultWorkspace/folder1/subfolder1/file.txt").createNewFile();
+
+        // Query should show old results (because file system connector does not monitor file system) ...
+        printQuery("SELECT * FROM [nt:base]", 3L, Collections.<String, String>emptyMap());
+
+        // Reindex all content synchronously ...
+        future = workspace.reindexAsync();
+        assertThat(future.get(), is(true)); // blocks
+
+        printQuery("SELECT * FROM [nt:base]", 6L, Collections.<String, String>emptyMap());
+
+        logout();
+    }
+
+    @FixFor( "MODE-1269" )
+    @Test
+    public void shouldAllowReindexingSubgraph() throws Exception {
+        new File("target/fsRepoWithProps/root/defaultWorkspace/folder1/file.txt").createNewFile();
+        new File("target/fsRepoWithProps/root/defaultWorkspace/folder1/subfolder1").mkdirs();
+        new File("target/fsRepoWithProps/root/defaultWorkspace/folder1/subfolder2").mkdirs();
+        new File("target/fsRepoWithProps/root/defaultWorkspace/folder1/subfolder1/file.txt").createNewFile();
+
+        startEngineUsing("config/configRepositoryForFileSystemWithExtraProperties.xml");
+        Session session = session();
+
+        // Reindex some of the content synchronously ...
+        org.modeshape.jcr.api.Workspace workspace = (org.modeshape.jcr.api.Workspace)session.getWorkspace();
+        workspace.reindex("/folder1", 3);
+
+        printQuery("SELECT * FROM [nt:base]", 9L, Collections.<String, String>emptyMap());
+
+        // Add a folder to the file system ...
+        new File("target/fsRepoWithProps/root/defaultWorkspace/folder1/subfolder3").mkdirs();
+        new File("target/fsRepoWithProps/root/defaultWorkspace/folder1/subfolder3/file3.txt").createNewFile();
+
+        // Query should show old results (because file system connector does not monitor file system) ...
+        printQuery("SELECT * FROM [nt:base]", 9L, Collections.<String, String>emptyMap());
+
+        // Reindex some content synchronously (but not deep enough to get everything) ...
+        workspace.reindex("/folder1", 1);
+        printQuery("SELECT * FROM [nt:base]", 9L, Collections.<String, String>emptyMap());
+
+        // Reindex some content synchronously (only deep enough to see 'subfolder3', but not what's in it) ...
+        workspace.reindex("/folder1", 2);
+        printQuery("SELECT * FROM [nt:base]", 10L, Collections.<String, String>emptyMap());
+
+        // Reindex some content synchronously (now deep enough to get everything) ...
+        workspace.reindex("/folder1", 10);
+        printQuery("SELECT * FROM [nt:base]", 12L, Collections.<String, String>emptyMap());
+
+        logout();
+    }
+
+    @FixFor( "MODE-1269" )
+    @Test
+    public void shouldAllowReindexingSubgraphAsynchronously() throws Exception {
+        new File("target/fsRepoWithProps/root/defaultWorkspace/folder1/file.txt").createNewFile();
+        new File("target/fsRepoWithProps/root/defaultWorkspace/folder1/subfolder1").mkdirs();
+        new File("target/fsRepoWithProps/root/defaultWorkspace/folder1/subfolder2").mkdirs();
+        new File("target/fsRepoWithProps/root/defaultWorkspace/folder1/subfolder1/file.txt").createNewFile();
+
+        startEngineUsing("config/configRepositoryForFileSystemWithExtraProperties.xml");
+        Session session = session();
+
+        // Reindex some of the content synchronously ...
+        org.modeshape.jcr.api.Workspace workspace = (org.modeshape.jcr.api.Workspace)session.getWorkspace();
+        Future<Boolean> future = workspace.reindexAsync("/folder1", 3);
+        assertThat(future.get(), is(true)); // blocks
+
+        printQuery("SELECT * FROM [nt:base]", 9L, Collections.<String, String>emptyMap());
+
+        // Add a folder to the file system ...
+        new File("target/fsRepoWithProps/root/defaultWorkspace/folder1/subfolder3").mkdirs();
+        new File("target/fsRepoWithProps/root/defaultWorkspace/folder1/subfolder3/file3.txt").createNewFile();
+
+        // Query should show old results (because file system connector does not monitor file system) ...
+        printQuery("SELECT * FROM [nt:base]", 9L, Collections.<String, String>emptyMap());
+
+        // Reindex some content synchronously (but not deep enough to get everything) ...
+        future = workspace.reindexAsync("/folder1", 1);
+        assertThat(future.get(), is(true)); // blocks
+        printQuery("SELECT * FROM [nt:base]", 9L, Collections.<String, String>emptyMap());
+
+        // Reindex some content synchronously (only deep enough to see 'subfolder3', but not what's in it) ...
+        future = workspace.reindexAsync("/folder1", 2);
+        assertThat(future.get(), is(true)); // blocks
+        printQuery("SELECT * FROM [nt:base]", 10L, Collections.<String, String>emptyMap());
+
+        // Reindex some content synchronously (only deep enough to see 'subfolder3/file3.txt', but not what's in it) ...
+        future = workspace.reindexAsync("/folder1", 3);
+        assertThat(future.get(), is(true)); // blocks
+        printQuery("SELECT * FROM [nt:base]", 11L, Collections.<String, String>emptyMap());
+
+        // Reindex some content synchronously (now deep enough to get everything) ...
+        future = workspace.reindexAsync("/folder1", 10);
+        assertThat(future.get(), is(true)); // blocks
+        printQuery("SELECT * FROM [nt:base]", 12L, Collections.<String, String>emptyMap());
 
         logout();
     }
