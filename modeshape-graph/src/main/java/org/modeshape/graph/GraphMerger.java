@@ -30,6 +30,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.Graph.Batch;
@@ -152,6 +153,8 @@ class GraphMerger {
             Path path = childLocation.getPath();
             SubgraphNode desiredChild = desiredNode.getNode(path.getLastSegment());
             try {
+                // Remove the UUID, in case the existing node has a different UUID ...
+                childLocation = childLocation.with((UUID)null);
                 Node actualChild = actualGraph.getNodeAt(childLocation);
                 // The child exists, so match up the node properties and children ...
                 matchNode(batch, actualGraph, actualChild, desiredChild, true, true);

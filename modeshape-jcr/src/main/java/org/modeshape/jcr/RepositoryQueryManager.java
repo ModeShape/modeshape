@@ -235,7 +235,6 @@ abstract class RepositoryQueryManager {
         private final QueryEngine queryEngine;
         private final RepositoryConnectionFactory connectionFactory;
         private final int maxDepthPerRead;
-        private final boolean forceIndexRebuild;
 
         SelfContained( String repositoryName,
                        ExecutionContext context,
@@ -245,16 +244,16 @@ abstract class RepositoryQueryManager {
                        final RepositoryNodeTypeManager nodeTypeManager,
                        String indexDirectory,
                        boolean updateIndexesSynchronously,
-                       boolean forceIndexRebuild,
+                       final boolean forceIndexRebuild,
                        boolean rebuildIndexSynchronously,
-                       int maxDepthPerRead ) throws RepositoryException {
+                       int maxDepthPerRead,
+                       ExecutorService backgrounder ) throws RepositoryException {
             super(repositoryName, nameOfSourceToBeSearchable);
 
             this.context = context;
             this.sourceName = nameOfSourceToBeSearchable;
             this.connectionFactory = connectionFactory;
             this.maxDepthPerRead = maxDepthPerRead;
-            this.forceIndexRebuild = forceIndexRebuild;
 
             // Define the configuration ...
             TextEncoder encoder = new UrlEncoder();
@@ -391,15 +390,26 @@ abstract class RepositoryQueryManager {
 
             // Index any existing content ...
             if (rebuildIndexSynchronously) {
-                reindexContent();
+                if (forceIndexRebuild) {
+                    LOGGER.debug("Reindexing synchronously");
+                } else {
+                    LOGGER.debug("Reindexing synchronously (if missing)");
+                }
+                doReindexContent(forceIndexRebuild);
             } else {
-                new Thread(new Runnable() {
+                if (forceIndexRebuild) {
+                    LOGGER.debug("Beginning to asynchronously reindex content");
+                } else {
+                    LOGGER.debug("Beginning to asynchronously reindex content (if missing)");
+                }
+                backgrounder.submit(new Runnable() {
 
                     public void run() {
-                        reindexContent();
+                        doReindexContent(forceIndexRebuild);
                     }
 
-                }).start();
+                });
+                LOGGER.trace("Returning after beginning to asynchrnously reindex content");
             }
         }
 
@@ -407,7 +417,7 @@ abstract class RepositoryQueryManager {
             try {
                 searchEngine.index(context, changes.getChangeRequests());
             } catch (RuntimeException e) {
-                Logger.getLogger(getClass()).error(e, JcrI18n.errorUpdatingQueryIndexes, e.getLocalizedMessage());
+                LOGGER.error(e, JcrI18n.errorUpdatingQueryIndexes, e.getLocalizedMessage());
             }
         }
 
@@ -447,6 +457,10 @@ abstract class RepositoryQueryManager {
          */
         @Override
         public void reindexContent() {
+            doReindexContent(true);
+        }
+
+        protected void doReindexContent( boolean force ) {
             LOGGER.info(JcrI18n.indexRebuildingStarted, repositoryName);
 
             // Get the workspace names ...
@@ -456,7 +470,7 @@ abstract class RepositoryQueryManager {
             SearchEngineIndexer indexer = new SearchEngineIndexer(context, searchEngine, connectionFactory, maxDepthPerRead);
             try {
                 for (String workspace : workspaces) {
-                    indexer.reindex(workspace, forceIndexRebuild);
+                    indexer.reindex(workspace, force);
                 }
             } finally {
                 try {
