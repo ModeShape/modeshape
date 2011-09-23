@@ -469,7 +469,7 @@
 			</dependencies>
 			<properties>
 				<jpaSource.dialect>org.hibernate.dialect.PostgreSQLDialect</jpaSource.dialect>
-				<jpaSource.driver>org.postgresql.Driver</jpaSource.driver>
+				<jpaSource.driverClassName>org.postgresql.Driver</jpaSource.driverClassName>
 				<jpaSource.url>jdbc:postgresql://localhost/unit_test</jpaSource.url>
 				<jpaSource.username>postgres</jpaSource.username>
 				<jpaSource.password>data</jpaSource.password>

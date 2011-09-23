@@ -115,6 +115,7 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
     private final ReadWriteLock nodeTypeManagerLock = new ReentrantReadWriteLock();
     private final boolean includeColumnsForInheritedProperties;
     private final boolean includePseudoColumnsInSelectStar;
+    private boolean replaceOrAppend = true;
 
     /**
      * List of ways to filter the returned property definitions
@@ -1344,7 +1345,11 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
         propsList.add(propertyFactory.create(JcrLexicon.HAS_ORDERABLE_CHILD_NODES, nodeType.hasOrderableChildNodes()));
         propsList.add(propertyFactory.create(JcrLexicon.SUPERTYPES, supertypeNames));
 
-        batch.create(nodeTypePath).with(propsList).orReplace().and();
+        if (this.replaceOrAppend) {
+            batch.create(nodeTypePath).with(propsList).orReplace().and();
+        } else {
+            batch.create(nodeTypePath).with(propsList).and();
+        }
 
         PropertyDefinition[] propertyDefs = nodeType.getDeclaredPropertyDefinitions();
         for (int i = 0; i < propertyDefs.length; i++) {
@@ -1742,6 +1747,7 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
 
         try {
             nodeTypeManagerLock.writeLock().lock();
+            this.replaceOrAppend = skipIfNodeTypeDefinitionExists || failIfNodeTypeDefinitionsExist ? false : true;
             for (NodeTypeDefinition nodeTypeDefn : nodeTypeDefns) {
                 if (nodeTypeDefn instanceof JcrNodeTypeTemplate) {
                     // Switch to use this context, so names are properly prefixed ...
@@ -1814,10 +1820,14 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                 this.schemata = null;
                 if (nodeTypesPath != null) {
                     assert batch != null;
+                    LOGGER.trace("*** BEGINNING BATCH ***");
+                    // LOGGER.debug(batch.toString());
                     batch.execute();
+                    LOGGER.trace("*** ENDING BATCH ***");
                 }
             }
         } finally {
+            this.replaceOrAppend = true;
             nodeTypeManagerLock.writeLock().unlock();
         }
 
