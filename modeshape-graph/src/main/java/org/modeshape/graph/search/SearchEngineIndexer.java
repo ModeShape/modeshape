@@ -315,10 +315,13 @@ public class SearchEngineIndexer {
         assert topNode.equals(startingLocation);
         Map<Name, Property> properties = readSubgraph.getPropertiesFor(topNode);
         if (properties == null) return;
+        int startingDepth = 0;
         if (startingLocation.getPath().isRoot()) {
             // The properties of the root node generally don't include the primary type, but we need to add it here ...
             Property rootPrimaryType = context.getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.ROOT);
             properties.put(JcrLexicon.PRIMARY_TYPE, rootPrimaryType);
+        } else {
+            startingDepth = startingLocation.getPath().size();
         }
         UpdatePropertiesRequest request = new UpdatePropertiesRequest(topNode, workspaceName, properties, true);
         request.setActualLocationOfNode(topNode);
@@ -380,7 +383,7 @@ public class SearchEngineIndexer {
             assert location != null;
 
             // Recompute the depth per read ...
-            depthPerRead = Math.min(maxDepthPerRead, depth - location.getPath().size());
+            depthPerRead = Math.min(maxDepthPerRead, depth - (location.getPath().size() - startingDepth));
             if (depthPerRead < 1) continue;
             readSubgraph = new ReadBranchRequest(location, workspaceName, depthPerRead);
             try {
