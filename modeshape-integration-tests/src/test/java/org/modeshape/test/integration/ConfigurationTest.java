@@ -47,10 +47,12 @@ import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.collection.Collections;
 import org.modeshape.common.util.FileUtil;
+import org.modeshape.common.util.Logger;
 import org.modeshape.jcr.CndNodeTypeReader;
 import org.modeshape.jcr.JaasTestUtil;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
+import org.modeshape.jcr.JcrRepository.Option;
 
 public class ConfigurationTest {
 
@@ -71,6 +73,8 @@ public class ConfigurationTest {
     @Before
     public void beforeEach() {
         configuration = new JcrConfiguration();
+        FileUtil.delete("target/database/ConfigurationTest");
+        FileUtil.delete("target/testConfig/modeshape/repositories/");
     }
 
     @After
@@ -204,6 +208,72 @@ public class ConfigurationTest {
                 if (session != null) session.logout();
             }
         }
+    }
+
+    @Test
+    public void shouldEnableRebuildingIndexesUponStartupInBackgroundConfiguredProgrammatically() throws Exception {
+        File file = new File("src/test/resources/config/configRepository.xml");
+        assertThat(file.exists(), is(true));
+        assertThat(file.canRead(), is(true));
+        assertThat(file.isFile(), is(true));
+
+        configuration.loadFrom(file);
+        configuration.repository("My repository").setOption(Option.QUERY_INDEXES_REBUILT_SYNCHRONOUSLY, false);
+
+        // Create and start the engine ...
+        engine = configuration.build();
+        engine.start();
+        Repository repository = engine.getRepository("My repository");
+        assertThat(repository, is(notNullValue()));
+    }
+
+    @Test
+    public void shouldEnableRebuildingIndexesUponStartupInBackground() throws Exception {
+        File file = new File("src/test/resources/config/configRepositoryWithAsynchronousIndex.xml");
+        assertThat(file.exists(), is(true));
+        assertThat(file.canRead(), is(true));
+        assertThat(file.isFile(), is(true));
+
+        configuration.loadFrom(file);
+
+        // Create and start the engine ...
+        engine = configuration.build();
+        engine.start();
+        Repository repository = engine.getRepository("My repository");
+        assertThat(repository, is(notNullValue()));
+    }
+
+    @FixFor( "MODE-1224" )
+    @Test
+    public void shouldStartWithEdsConfigurationAndRestart() throws Exception {
+        Logger.getLogger(getClass()).debug("Here we go...");
+        File file = new File("src/test/resources/config/configRepositoryEds.xml");
+        assertThat(file.exists(), is(true));
+        assertThat(file.canRead(), is(true));
+        assertThat(file.isFile(), is(true));
+
+        configuration.loadFrom(file);
+
+        // Create and start the engine ...
+        engine = configuration.build();
+        engine.start();
+        Repository repository = engine.getRepository("eds");
+        assertThat(repository, is(notNullValue()));
+        Thread.sleep(3000L);
+
+        // Shutdown ...
+        engine.shutdownAndAwaitTermination(3, TimeUnit.SECONDS);
+
+        Logger.getLogger(getClass()).debug("*** Restarting the engine ***");
+        // Restart ...
+        JcrConfiguration configuration2 = new JcrConfiguration();
+        configuration2.loadFrom(file);
+
+        engine = configuration2.build();
+        engine.start();
+        repository = engine.getRepository("eds");
+        assertThat(repository, is(notNullValue()));
+        Thread.sleep(3000L);
     }
 
     @Test

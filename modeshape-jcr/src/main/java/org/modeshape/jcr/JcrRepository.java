@@ -657,7 +657,7 @@ public class JcrRepository implements Repository {
     // package-scoped to facilitate testing
     final WeakHashMap<JcrSession, Object> activeSessions = new WeakHashMap<JcrSession, Object>();
 
-    private final ExecutorService backgroundService = Executors.newSingleThreadExecutor();
+    private final ExecutorService backgroundService = Executors.newCachedThreadPool();
 
     /**
      * Creates a JCR repository that uses the supplied {@link RepositoryConnectionFactory repository connection factory} to
@@ -811,7 +811,7 @@ public class JcrRepository implements Repository {
                 // Read in the built-in node types ...
                 CndNodeTypeReader nodeTypeReader = new CndNodeTypeReader(this.executionContext);
                 nodeTypeReader.readBuiltInTypes();
-                this.repositoryTypeManager.registerNodeTypes(nodeTypeReader, false);
+                this.repositoryTypeManager.registerNodeTypes(nodeTypeReader, false, true);
             }
         } catch (RepositoryException re) {
             throw new IllegalStateException("Could not load node type definition files", re);
@@ -886,11 +886,13 @@ public class JcrRepository implements Repository {
                                                                              repositoryObservable, repositoryTypeManager,
                                                                              indexDirectory, updateIndexesSynchronously,
                                                                              forceIndexRebuild, rebuildIndexesSynchronously,
-                                                                             maxDepthToRead);
+                                                                             maxDepthToRead, this.backgroundService);
             }
         } else {
             this.queryManager = new RepositoryQueryManager.Disabled(repositoryName(), this.sourceName);
         }
+
+        LOGGER.trace("Finished creating the RepositoryQueryManager");
 
         // Initialize the observer, which receives events from all repository sources
         this.repositoryObservationManager = new RepositoryObservationManager(repositoryObservable);
@@ -1001,6 +1003,7 @@ public class JcrRepository implements Repository {
         // Set up the authenticator and authorizer ...
         this.anonymousCredentialsIfSuppliedCredentialsFail = Boolean.valueOf(this.options.get(Option.USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN)) ? new AnonymousCredentials() : null;
         this.authenticator = authenticators;
+        LOGGER.debug("Finished initializing the authentication providers for the '{0}' repository.", repositoryName());
 
         repositoryLockManager = new RepositoryLockManager(this);
 
@@ -1027,10 +1030,14 @@ public class JcrRepository implements Repository {
             }
         };
 
+        LOGGER.trace("Registering some observers for the '{0}' repository's system content.", repositoryName());
+
         // Define the set of "/jcr:system" observers ...
         // This observer picks up notification of changes to the system graph in a cluster. It's a NOP if there is no cluster.
         repositoryObservationManager.register(new SystemChangeObserver(Arrays.asList(new JcrSystemObserver[] {
             repositoryLockManager, namespaceObserver, repositoryTypeManager})));
+
+        LOGGER.trace("Finished registering some observers for the '{0}' repository's system content.", repositoryName());
 
         if (Boolean.valueOf(this.options.get(Option.REMOVE_DERIVED_CONTENT_WITH_ORIGINAL))) {
             // Add an observer that moves/removes derived content when the original is moved/removed ...
@@ -1041,6 +1048,7 @@ public class JcrRepository implements Repository {
         String jndiLocation = this.options.get(Option.REPOSITORY_JNDI_LOCATION);
         if (!jndiLocation.equals("")) {
             try {
+                LOGGER.debug("Binding the '{0}' repository into JNDI at '{1}'", repositoryName(), jndiLocation);
                 InitialContext ic = new InitialContext();
                 ic.rebind(jndiLocation, this);
             } catch (NamingException e) {
@@ -1052,6 +1060,7 @@ public class JcrRepository implements Repository {
 
         // Make sure the workspace names are in the descriptor ...
         updateWorkspaceNames();
+        LOGGER.debug("Completed initializing the '{0}' repository.", repositoryName());
     }
 
     protected ExecutorService backgroundService() {

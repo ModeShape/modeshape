@@ -1647,7 +1647,7 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                                   boolean failIfNodeTypeExists )
         throws InvalidNodeTypeDefinitionException, NodeTypeExistsException, RepositoryException {
         assert ntd != null;
-        List<JcrNodeType> result = registerNodeTypes(Collections.singletonList(ntd), failIfNodeTypeExists);
+        List<JcrNodeType> result = registerNodeTypes(Collections.singletonList(ntd), failIfNodeTypeExists, false);
         return result.isEmpty() ? null : result.get(0);
     }
 
@@ -1726,11 +1726,12 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
      */
     List<JcrNodeType> registerNodeTypes( Iterable<NodeTypeDefinition> nodeTypeDefns )
         throws InvalidNodeTypeDefinitionException, NodeTypeExistsException, RepositoryException {
-        return registerNodeTypes(nodeTypeDefns, true);
+        return registerNodeTypes(nodeTypeDefns, true, false);
     }
 
     List<JcrNodeType> registerNodeTypes( Iterable<NodeTypeDefinition> nodeTypeDefns,
-                                         boolean failIfNodeTypeDefinitionsExist )
+                                         boolean failIfNodeTypeDefinitionsExist,
+                                         boolean skipIfNodeTypeDefinitionExists )
         throws InvalidNodeTypeDefinitionException, NodeTypeExistsException, RepositoryException {
 
         if (nodeTypeDefns == null) {
@@ -1751,10 +1752,12 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                     throw new InvalidNodeTypeDefinitionException(JcrI18n.invalidNodeTypeName.text());
                 }
 
-                if (nodeTypes.containsKey(internalName) && failIfNodeTypeDefinitionsExist) {
+                boolean found = nodeTypes.containsKey(internalName);
+                if (found && failIfNodeTypeDefinitionsExist) {
                     String name = nodeTypeDefn.getName();
                     throw new NodeTypeExistsException(internalName, JcrI18n.nodeTypeAlreadyExists.text(name));
                 }
+                if (found && skipIfNodeTypeDefinitionExists) continue;
 
                 List<JcrNodeType> supertypes = supertypesFor(nodeTypeDefn, typesPendingRegistration);
                 JcrNodeType nodeType = nodeTypeFrom(nodeTypeDefn, supertypes);
@@ -1767,49 +1770,52 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                 validate(nodeType, supertypes, typesPendingRegistration);
             }
 
-            // Make sure the nodes have primary types that are either already registered, or pending registration ...
-            for (JcrNodeType nodeType : typesPendingRegistration) {
-                for (JcrNodeDefinition nodeDef : nodeType.getDeclaredChildNodeDefinitions()) {
-                    JcrNodeType[] requiredPrimaryTypes = new JcrNodeType[nodeDef.requiredPrimaryTypeNames().length];
-                    int i = 0;
-                    for (Name primaryTypeName : nodeDef.requiredPrimaryTypeNames()) {
-                        requiredPrimaryTypes[i] = findTypeInMapOrList(primaryTypeName, typesPendingRegistration);
+            if (!typesPendingRegistration.isEmpty()) {
 
-                        if (requiredPrimaryTypes[i] == null) {
-                            throw new RepositoryException(
-                                                          JcrI18n.invalidPrimaryTypeName.text(primaryTypeName, nodeType.getName()));
+                // Make sure the nodes have primary types that are either already registered, or pending registration ...
+                for (JcrNodeType nodeType : typesPendingRegistration) {
+                    for (JcrNodeDefinition nodeDef : nodeType.getDeclaredChildNodeDefinitions()) {
+                        JcrNodeType[] requiredPrimaryTypes = new JcrNodeType[nodeDef.requiredPrimaryTypeNames().length];
+                        int i = 0;
+                        for (Name primaryTypeName : nodeDef.requiredPrimaryTypeNames()) {
+                            requiredPrimaryTypes[i] = findTypeInMapOrList(primaryTypeName, typesPendingRegistration);
+
+                            if (requiredPrimaryTypes[i] == null) {
+                                throw new RepositoryException(JcrI18n.invalidPrimaryTypeName.text(primaryTypeName,
+                                                                                                  nodeType.getName()));
+                            }
+                            i++;
                         }
-                        i++;
                     }
                 }
-            }
 
-            Graph.Batch batch = null;
-            if (nodeTypesPath != null) batch = repository.createSystemGraph(context).batch();
+                Graph.Batch batch = null;
+                if (nodeTypesPath != null) batch = repository.createSystemGraph(context).batch();
 
-            for (JcrNodeType nodeType : typesPendingRegistration) {
-                /*
-                 * See comment in constructor.  Using a ConcurrentHashMap seems to be to weak of a
-                 * solution (even it were also used for childNodeDefinitions and propertyDefinitions).
-                 * Probably need to block all read access to these maps during this phase of registration.
-                 */
-                Name name = nodeType.getInternalName();
-                nodeTypes.put(name, nodeType);
-                for (JcrNodeDefinition childDefinition : nodeType.childNodeDefinitions()) {
-                    childNodeDefinitions.put(childDefinition.getId(), childDefinition);
+                for (JcrNodeType nodeType : typesPendingRegistration) {
+                    /*
+                     * See comment in constructor.  Using a ConcurrentHashMap seems to be to weak of a
+                     * solution (even it were also used for childNodeDefinitions and propertyDefinitions).
+                     * Probably need to block all read access to these maps during this phase of registration.
+                     */
+                    Name name = nodeType.getInternalName();
+                    nodeTypes.put(name, nodeType);
+                    for (JcrNodeDefinition childDefinition : nodeType.childNodeDefinitions()) {
+                        childNodeDefinitions.put(childDefinition.getId(), childDefinition);
+                    }
+                    for (JcrPropertyDefinition propertyDefinition : nodeType.propertyDefinitions()) {
+                        propertyDefinitions.put(propertyDefinition.getId(), propertyDefinition);
+                    }
+
+                    if (nodeTypesPath != null) projectNodeTypeOnto(nodeType, nodeTypesPath, batch);
                 }
-                for (JcrPropertyDefinition propertyDefinition : nodeType.propertyDefinitions()) {
-                    propertyDefinitions.put(propertyDefinition.getId(), propertyDefinition);
+
+                // Throw away the schemata, since the node types have changed ...
+                this.schemata = null;
+                if (nodeTypesPath != null) {
+                    assert batch != null;
+                    batch.execute();
                 }
-
-                if (nodeTypesPath != null) projectNodeTypeOnto(nodeType, nodeTypesPath, batch);
-            }
-
-            // Throw away the schemata, since the node types have changed ...
-            this.schemata = null;
-            if (nodeTypesPath != null) {
-                assert batch != null;
-                batch.execute();
             }
         } finally {
             nodeTypeManagerLock.writeLock().unlock();
@@ -1890,18 +1896,19 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
     List<JcrNodeType> registerNodeTypes( Subgraph nodeTypeSubgraph,
                                          Location locationOfParentOfNodeTypes )
         throws InvalidNodeTypeDefinitionException, NodeTypeExistsException, RepositoryException {
-        return registerNodeTypes(nodeTypeSubgraph, locationOfParentOfNodeTypes, true);
+        return registerNodeTypes(nodeTypeSubgraph, locationOfParentOfNodeTypes, true, false);
     }
 
     List<JcrNodeType> registerNodeTypes( Subgraph nodeTypeSubgraph,
                                          Location locationOfParentOfNodeTypes,
-                                         boolean failIfNodeTypesExist )
+                                         boolean failIfNodeTypesExist,
+                                         boolean skipIfNodeTypeExists )
         throws InvalidNodeTypeDefinitionException, NodeTypeExistsException, RepositoryException {
         assert nodeTypeSubgraph != null;
         assert locationOfParentOfNodeTypes != null;
         CndNodeTypeReader factory = new CndNodeTypeReader(this.context);
         factory.read(nodeTypeSubgraph, locationOfParentOfNodeTypes, nodeTypeSubgraph.getGraph().getSourceName());
-        return registerNodeTypes(factory, failIfNodeTypesExist);
+        return registerNodeTypes(factory, failIfNodeTypesExist, skipIfNodeTypeExists);
     }
 
     private JcrNodeType nodeTypeFrom( NodeTypeDefinition nodeType,
