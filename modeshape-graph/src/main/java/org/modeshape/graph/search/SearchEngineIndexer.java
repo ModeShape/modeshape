@@ -305,9 +305,13 @@ public class SearchEngineIndexer {
         if (startingLocation.getPath().isRoot()) {
             // Just delete the whole content ...
             process(new DeleteBranchRequest(startingLocation, workspaceName));
-        } else {
+        } else if (depth > 1) {
             // We can't delete the node, since later same-name-siblings might be changed. So delete the children ...
-            process(new DeleteChildrenRequest(startingLocation, workspaceName));
+            if (depth < Integer.MAX_VALUE) {
+                process(new DeleteChildrenToDepthRequest(startingLocation, workspaceName, depth - 1));
+            } else {
+                process(new DeleteChildrenRequest(startingLocation, workspaceName));
+            }
         }
 
         // Now update all of the properties, removing any that are no longer needed ...
@@ -478,5 +482,35 @@ public class SearchEngineIndexer {
                 processor.close();
             }
         }
+    }
+
+    /**
+     * A specialization of {@link DeleteChildrenRequest} to delete from the search engine indexes only those nodes that are
+     * children of the specified nodes or descendants down to a maximum depth.
+     */
+    public static class DeleteChildrenToDepthRequest extends DeleteChildrenRequest {
+
+        private static final long serialVersionUID = 1L;
+
+        private final int maxDepth;
+
+        public DeleteChildrenToDepthRequest( Location at,
+                                             String workspaceName,
+                                             int maxDepth ) {
+            super(at, workspaceName);
+            CheckArg.isPositive(maxDepth, "maxDepth");
+            this.maxDepth = maxDepth;
+        }
+
+        /**
+         * Get the maximum depth of descendant nodes below the parent node, where the children of the parent node have a depth of
+         * 1.
+         * 
+         * @return maxDepth the maximum depth; always positive
+         */
+        public int getMaximumDepth() {
+            return maxDepth;
+        }
+
     }
 }

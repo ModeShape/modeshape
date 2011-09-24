@@ -248,28 +248,29 @@ public class FileSystemRepositoryIntegrationTest extends ModeShapeSingleUseTest 
 
         // Reindex some of the content synchronously ...
         org.modeshape.jcr.api.Workspace workspace = (org.modeshape.jcr.api.Workspace)session.getWorkspace();
-        workspace.reindex("/folder1", 3);
+        workspace.reindex("/folder1");
 
-        printQuery("SELECT * FROM [nt:base]", 9L, Collections.<String, String>emptyMap());
+        printQuery("SELECT * FROM [nt:base] ORDER BY [jcr:path]", 9L, Collections.<String, String>emptyMap());
 
         // Add a folder to the file system ...
         new File("target/fsRepoWithProps/root/defaultWorkspace/folder1/subfolder3").mkdirs();
         new File("target/fsRepoWithProps/root/defaultWorkspace/folder1/subfolder3/file3.txt").createNewFile();
 
         // Query should show old results (because file system connector does not monitor file system) ...
-        printQuery("SELECT * FROM [nt:base]", 9L, Collections.<String, String>emptyMap());
+        printQuery("SELECT * FROM [nt:base] ORDER BY [jcr:path]", 9L, Collections.<String, String>emptyMap());
 
-        // Reindex some content synchronously (but not deep enough to get everything) ...
-        workspace.reindex("/folder1", 1);
-        printQuery("SELECT * FROM [nt:base]", 9L, Collections.<String, String>emptyMap());
+        // Reindex some content synchronously ...
+        workspace.reindex("/folder1");
+        printQuery("SELECT * FROM [nt:base] ORDER BY [jcr:path]", 12L, Collections.<String, String>emptyMap());
 
-        // Reindex some content synchronously (only deep enough to see 'subfolder3', but not what's in it) ...
-        workspace.reindex("/folder1", 2);
-        printQuery("SELECT * FROM [nt:base]", 10L, Collections.<String, String>emptyMap());
+        File newName = new File("target/fsRepoWithProps/root/defaultWorkspace/folder1/subfolder4");
+        new File("target/fsRepoWithProps/root/defaultWorkspace/folder1/subfolder3").renameTo(newName);
+
+        printQuery("SELECT * FROM [nt:base] ORDER BY [jcr:path]", 12L, Collections.<String, String>emptyMap());
 
         // Reindex some content synchronously (now deep enough to get everything) ...
-        workspace.reindex("/folder1", 10);
-        printQuery("SELECT * FROM [nt:base]", 12L, Collections.<String, String>emptyMap());
+        workspace.reindex("/folder1");
+        printQuery("SELECT * FROM [nt:base] ORDER BY [jcr:path]", 12L, Collections.<String, String>emptyMap());
 
         logout();
     }
@@ -287,7 +288,7 @@ public class FileSystemRepositoryIntegrationTest extends ModeShapeSingleUseTest 
 
         // Reindex some of the content synchronously ...
         org.modeshape.jcr.api.Workspace workspace = (org.modeshape.jcr.api.Workspace)session.getWorkspace();
-        Future<Boolean> future = workspace.reindexAsync("/folder1", 3);
+        Future<Boolean> future = workspace.reindexAsync("/folder1");
         assertThat(future.get(), is(true)); // blocks
 
         printQuery("SELECT * FROM [nt:base]", 9L, Collections.<String, String>emptyMap());
@@ -299,23 +300,8 @@ public class FileSystemRepositoryIntegrationTest extends ModeShapeSingleUseTest 
         // Query should show old results (because file system connector does not monitor file system) ...
         printQuery("SELECT * FROM [nt:base]", 9L, Collections.<String, String>emptyMap());
 
-        // Reindex some content synchronously (but not deep enough to get everything) ...
-        future = workspace.reindexAsync("/folder1", 1);
-        assertThat(future.get(), is(true)); // blocks
-        printQuery("SELECT * FROM [nt:base]", 9L, Collections.<String, String>emptyMap());
-
-        // Reindex some content synchronously (only deep enough to see 'subfolder3', but not what's in it) ...
-        future = workspace.reindexAsync("/folder1", 2);
-        assertThat(future.get(), is(true)); // blocks
-        printQuery("SELECT * FROM [nt:base]", 10L, Collections.<String, String>emptyMap());
-
-        // Reindex some content synchronously (only deep enough to see 'subfolder3/file3.txt', but not what's in it) ...
-        future = workspace.reindexAsync("/folder1", 3);
-        assertThat(future.get(), is(true)); // blocks
-        printQuery("SELECT * FROM [nt:base]", 11L, Collections.<String, String>emptyMap());
-
         // Reindex some content synchronously (now deep enough to get everything) ...
-        future = workspace.reindexAsync("/folder1", 10);
+        future = workspace.reindexAsync("/folder1");
         assertThat(future.get(), is(true)); // blocks
         printQuery("SELECT * FROM [nt:base]", 12L, Collections.<String, String>emptyMap());
 
