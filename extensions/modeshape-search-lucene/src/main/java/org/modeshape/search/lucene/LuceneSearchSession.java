@@ -761,6 +761,28 @@ public class LuceneSearchSession implements WorkspaceSession {
         return new PrefixQuery(new Term(ContentIndex.PATH, stringifiedPath));
     }
 
+    public Query findAllNodesBelow( Path parentPath,
+                                    int maximumDepth ) {
+        // Find the path of the parent ...
+        String stringifiedPath = processor.pathAsString(parentPath);
+        // Append a '/' to the parent path, and we'll only get decendants ...
+        stringifiedPath = stringifiedPath + '/';
+
+        // Create a prefix query ...
+        Query pathQuery = new PrefixQuery(new Term(ContentIndex.PATH, stringifiedPath));
+        if (maximumDepth == Integer.MAX_VALUE) {
+            return pathQuery;
+        }
+        // Otherwise, we need to also constrain the depth ...
+        int minDepth = parentPath.size() + 1;
+        Query depthQuery = NumericRangeQuery.newIntRange(ContentIndex.DEPTH, minDepth, maximumDepth, true, true);
+        // And combine ...
+        BooleanQuery combinedQuery = new BooleanQuery();
+        combinedQuery.add(pathQuery, Occur.MUST);
+        combinedQuery.add(depthQuery, Occur.MUST);
+        return combinedQuery;
+    }
+
     @Override
     public Query findAllNodesAtOrBelow( Path parentPath ) {
         if (parentPath.isRoot()) {

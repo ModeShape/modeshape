@@ -991,7 +991,24 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.jcr.api.Workspace#reindex(java.lang.String, int)
+     * @see org.modeshape.jcr.api.Workspace#reindex(java.lang.String)
+     */
+    public void reindex( String path ) throws RepositoryException {
+        reindex(path, Integer.MAX_VALUE);
+    }
+
+    /**
+     * This is not included in the public API because users can easily mess up the indexes if the depth is incorrect. For example,
+     * if a node with children is renamed, but the depth is only sufficient to re-index the node, then the children will appear
+     * under the old path. Because of this complexity, we can hide this full re-indexing capability until it is actually needed to
+     * be exposed.
+     * <p>
+     * However, this method is still useful when used properly, so we are keeping it (just not exposing it).
+     * </p>
+     * 
+     * @param path
+     * @param depth
+     * @throws RepositoryException
      */
     public void reindex( String path,
                          int depth ) throws RepositoryException {
@@ -1024,7 +1041,25 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.jcr.api.Workspace#reindexAsync(java.lang.String, int)
+     * @see org.modeshape.jcr.api.Workspace#reindexAsync(java.lang.String)
+     */
+    public Future<Boolean> reindexAsync( String path ) throws RepositoryException {
+        return reindexAsync(path, Integer.MAX_VALUE);
+    }
+
+    /**
+     * This is not included in the public API because users can easily mess up the indexes if the depth is incorrect. For example,
+     * if a node with children is renamed, but the depth is only sufficient to re-index the node, then the children will appear
+     * under the old path. Because of this complexity, we can hide this full re-indexing capability until it is actually needed to
+     * be exposed.
+     * <p>
+     * However, this method is still useful when used properly, so we are keeping it (just not exposing it).
+     * </p>
+     * 
+     * @param path
+     * @param depth
+     * @return the future
+     * @throws RepositoryException
      */
     public Future<Boolean> reindexAsync( final String path,
                                          final int depth ) throws RepositoryException {

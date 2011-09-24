@@ -36,8 +36,8 @@ public interface Workspace extends javax.jcr.Workspace {
      * 
      * @throws RepositoryException if there is a problem with this session or workspace
      * @see #reindexAsync()
-     * @see #reindexAsync(String, int)
-     * @see #reindex(String, int)
+     * @see #reindexAsync(String)
+     * @see #reindex(String)
      */
     void reindex() throws RepositoryException;
 
@@ -45,15 +45,13 @@ public interface Workspace extends javax.jcr.Workspace {
      * Crawl and index the content starting at the supplied path in this workspace, to the designated depth.
      * 
      * @param path the path of the content to be indexed
-     * @param depth the depth of the content to be indexed
      * @throws IllegalArgumentException if the workspace or path are null, or if the depth is less than 1
      * @throws RepositoryException if there is a problem with this session or workspace
      * @see #reindex()
      * @see #reindexAsync()
-     * @see #reindexAsync(String, int)
+     * @see #reindexAsync(String)
      */
-    void reindex( String path,
-                  int depth ) throws RepositoryException;
+    void reindex( String path ) throws RepositoryException;
 
     /**
      * Asynchronously crawl and re-index the content in this workspace.
@@ -61,8 +59,8 @@ public interface Workspace extends javax.jcr.Workspace {
      * @return a future representing the asynchronous operation; never null
      * @throws RepositoryException if there is a problem with this session or workspace
      * @see #reindex()
-     * @see #reindex(String, int)
-     * @see #reindexAsync(String, int)
+     * @see #reindex(String)
+     * @see #reindexAsync(String)
      */
     Future<Boolean> reindexAsync() throws RepositoryException;
 
@@ -70,15 +68,13 @@ public interface Workspace extends javax.jcr.Workspace {
      * Asynchronously crawl and index the content starting at the supplied path in this workspace, to the designated depth.
      * 
      * @param path the path of the content to be indexed
-     * @param depth the depth of the content to be indexed
      * @return a future representing the asynchronous operation; never null
      * @throws IllegalArgumentException if the workspace or path are null, or if the depth is less than 1
      * @throws RepositoryException if there is a problem with this session or workspace
      * @see #reindex()
-     * @see #reindex(String, int)
+     * @see #reindex(String)
      * @see #reindexAsync()
      */
-    Future<Boolean> reindexAsync( String path,
-                                  int depth ) throws RepositoryException;
+    Future<Boolean> reindexAsync( String path ) throws RepositoryException;
 
 }

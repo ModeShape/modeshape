@@ -30,9 +30,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
-import org.modeshape.common.annotation.NotThreadSafe;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.search.Query;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.Logger;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Location;
@@ -48,6 +48,7 @@ import org.modeshape.graph.request.CopyBranchRequest;
 import org.modeshape.graph.request.CreateNodeRequest;
 import org.modeshape.graph.request.CreateWorkspaceRequest;
 import org.modeshape.graph.request.DeleteBranchRequest;
+import org.modeshape.graph.request.DeleteChildrenRequest;
 import org.modeshape.graph.request.DestroyWorkspaceRequest;
 import org.modeshape.graph.request.FullTextSearchRequest;
 import org.modeshape.graph.request.GetWorkspacesRequest;
@@ -59,6 +60,7 @@ import org.modeshape.graph.request.UnlockBranchRequest;
 import org.modeshape.graph.request.UpdatePropertiesRequest;
 import org.modeshape.graph.request.VerifyWorkspaceRequest;
 import org.modeshape.graph.search.AbstractSearchEngine.Workspaces;
+import org.modeshape.graph.search.SearchEngineIndexer.DeleteChildrenToDepthRequest;
 import org.modeshape.graph.search.SearchEngineProcessor;
 import org.modeshape.search.lucene.AbstractLuceneSearchEngine.AbstractLuceneProcessor;
 
@@ -236,6 +238,40 @@ public class LuceneSearchProcessor extends AbstractLuceneProcessor<LuceneSearchW
                 logger.trace("index for \"{0}\" workspace: DEL '{1}' branch", request.inWorkspace(), stringFactory.create(path));
             }
             Query query = session.findAllNodesAtOrBelow(path);
+            // Now delete the documents from each index using this query, which we can reuse ...
+            session.getContentWriter().deleteDocuments(query);
+            session.recordChanges(100);
+        } catch (FileNotFoundException e) {
+            // There are no index files yet, so nothing to delete ...
+        } catch (IOException e) {
+            request.setError(e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.request.processor.RequestProcessor#process(org.modeshape.graph.request.DeleteChildrenRequest)
+     */
+    @Override
+    public void process( DeleteChildrenRequest request ) {
+        LuceneSearchSession session = getSessionFor(request, request.inWorkspace());
+        if (session == null) return;
+
+        Path path = request.at().getPath();
+        int maxDepth = Integer.MAX_VALUE;
+        int relativeDepth = -1;
+        if (request instanceof DeleteChildrenToDepthRequest) {
+            relativeDepth = ((DeleteChildrenToDepthRequest)request).getMaximumDepth();
+            maxDepth = path.size() + relativeDepth;
+        }
+        assert !readOnly;
+        try {
+            // Create a query to find all the nodes at or below the specified path (this efficiently handles the root path) ...
+            if (logger.isTraceEnabled()) {
+                logger.trace("index for \"{0}\" workspace: DEL '{1}' children", request.inWorkspace(), stringFactory.create(path));
+            }
+            Query query = session.findAllNodesBelow(path, maxDepth);
             // Now delete the documents from each index using this query, which we can reuse ...
             session.getContentWriter().deleteDocuments(query);
             session.recordChanges(100);

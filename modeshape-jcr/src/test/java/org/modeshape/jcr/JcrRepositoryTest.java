@@ -814,7 +814,7 @@ public class JcrRepositoryTest {
     @FixFor( "MODE-1269" )
     public void shouldAllowReindexingSubsetOfWorkspace() throws Exception {
         session = createSession();
-        session.getWorkspace().reindex("/", 2);
+        session.getWorkspace().reindex("/");
     }
 
     @Test
@@ -830,7 +830,7 @@ public class JcrRepositoryTest {
     @FixFor( "MODE-1269" )
     public void shouldAllowAsynchronousReindexingSubsetOfWorkspace() throws Exception {
         session = createSession();
-        Future<Boolean> future = session.getWorkspace().reindexAsync("/", 2);
+        Future<Boolean> future = session.getWorkspace().reindexAsync("/");
         assertThat(future, is(notNullValue()));
         assertThat(future.get(), is(true)); // get() blocks until done
     }
