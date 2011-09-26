@@ -122,7 +122,6 @@ import org.modeshape.jcr.security.AuthenticationProvider;
 import org.modeshape.jcr.security.AuthenticationProviders;
 import org.modeshape.jcr.security.JaasProvider;
 import org.modeshape.jcr.security.JaccSubjectResolver;
-import org.modeshape.jcr.security.SeamSecurityProvider;
 import org.modeshape.jcr.security.SecurityContextProvider;
 import org.modeshape.jcr.security.ServletProvider;
 import org.modeshape.jcr.xpath.XPathQueryParser;
@@ -947,17 +946,6 @@ public class JcrRepository implements Repository {
             } catch (javax.security.auth.login.LoginException e) {
                 LOGGER.warn(JcrI18n.loginConfigNotFound, policyName, Option.JAAS_LOGIN_CONFIG_NAME, repositoryName());
             }
-        }
-
-        try {
-            // Try to set up the Seam Security provider ...
-            ClassUtil.loadClassStrict("org.jboss.seam.security.Identity");
-            SeamSecurityProvider seamSecurityProvider = new SeamSecurityProvider();
-            authenticators = authenticators.with(seamSecurityProvider);
-            LOGGER.debug("Enabling Seam Security authentication and authorization.");
-        } catch (ClassNotFoundException cnfe) {
-            // Must not be able to load the class ...
-            LOGGER.debug("Failed to find 'org.jboss.seam.security.Identity' class, so not loading ModeShape's optional SeamSecurityProvider");
         }
 
         try {
