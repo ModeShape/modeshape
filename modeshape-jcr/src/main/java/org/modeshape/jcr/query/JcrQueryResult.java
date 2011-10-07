@@ -631,11 +631,11 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
          * @see org.modeshape.jcr.api.query.Row#getNode(java.lang.String)
          */
         public Node getNode( String selectorName ) throws RepositoryException {
-            int locationIndex = iterator.columns.getLocationIndex(selectorName);
-            if (locationIndex == -1) {
+            int nodeIndex = iterator.columns.getSelectorNames().indexOf(selectorName);
+            if (nodeIndex == -1) {
                 throw new RepositoryException(JcrI18n.selectorNotUsedInQuery.text(selectorName, iterator.query));
             }
-            return nodes[locationIndex];
+            return nodes[nodeIndex];
         }
 
         /**
@@ -644,13 +644,15 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
          * @see javax.jcr.query.Row#getValue(java.lang.String)
          */
         public Value getValue( String columnName ) throws ItemNotFoundException, RepositoryException {
-            int locationIndex = iterator.columns.getLocationIndexForColumn(columnName);
-            if (locationIndex == -1) {
+            String selectorName = iterator.columns.getSelectorNameForColumnName(columnName);
+            int nodeIndex = iterator.columns.getSelectorNames().indexOf(selectorName);
+            if (nodeIndex == -1) {
                 throw new RepositoryException(JcrI18n.queryResultsDoNotIncludeColumn.text(columnName, iterator.query));
             }
-            Node node = nodes[locationIndex];
+            Node node = nodes[nodeIndex];
             if (node == null) return null;
             if (PSEUDO_COLUMNS.contains(columnName)) {
+                int locationIndex = iterator.columns.getLocationIndexForColumn(columnName);
                 if (JCR_PATH_COLUMN_NAME.equals(columnName)) {
                     Location location = (Location)tuple[locationIndex];
                     return iterator.jcrPath(location.getPath());

@@ -768,6 +768,30 @@ public class JcrQueryManagerTest {
         }
     }
 
+    @FixFor( "MODE-1277" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullOuterJoin() throws RepositoryException {
+        String sql = "SELECT car.[jcr:name], category.[jcr:primaryType] from [car:Car] as car FULL OUTER JOIN [nt:unstructured] as category ON ISCHILDNODE(car,category) WHERE NAME(car) LIKE 'Toyota*'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        // print = true;
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 3);
+        assertResultsHaveColumns(result, new String[] {"jcr:name", "jcr:primaryType"});
+        RowIterator iter = result.getRows();
+        String primaryType = "";
+        while (iter.hasNext()) {
+            Row row = iter.nextRow();
+            String nextCarName = row.getValues()[0].getString();
+            String nextCarName2 = row.getValue("jcr:name").getString();
+            assertThat(nextCarName, is(nextCarName2));
+            String nextCategoryPrimaryType = row.getValues()[1].getString();
+            assertThat(nextCategoryPrimaryType.compareTo(primaryType) >= 0, is(true));
+            primaryType = nextCategoryPrimaryType;
+        }
+    }
+
     @FixFor( "MODE-934" )
     @Test
     public void shouldParseQueryWithUnqualifiedPathInSelectOfJcrSql2Query() throws RepositoryException {
