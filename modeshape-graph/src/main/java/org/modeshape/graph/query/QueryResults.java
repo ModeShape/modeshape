@@ -291,6 +291,15 @@ public interface QueryResults extends Serializable {
         public int getColumnIndexForName( String columnName );
 
         /**
+         * Get the name of the selector that produced the column with the given name.
+         * 
+         * @param columnName the column name
+         * @return the selector name
+         * @throws NoSuchElementException if the column name is invalid or doesn't match an existing column
+         */
+        public String getSelectorNameForColumnName( String columnName );
+
+        /**
          * Get the index of the column given the name of the selector and the property name from where the column should be
          * obtained.
          * 

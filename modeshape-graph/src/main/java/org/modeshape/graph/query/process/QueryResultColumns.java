@@ -75,6 +75,7 @@ public class QueryResultColumns implements Columns {
     private final List<String> columnTypes;
     private final List<String> selectorNames;
     private List<String> tupleValueNames;
+    private final Map<String, String> selectorNameByColumnName;
     private final Map<String, Integer> columnIndexByColumnName;
     private final Map<String, Integer> locationIndexBySelectorName;
     private final Map<String, Integer> locationIndexByColumnName;
@@ -118,6 +119,7 @@ public class QueryResultColumns implements Columns {
         this.locationIndexBySelectorName = new HashMap<String, Integer>();
         this.locationIndexByColumnIndex = new HashMap<Integer, Integer>();
         this.locationIndexByColumnName = new HashMap<String, Integer>();
+        this.selectorNameByColumnName = new HashMap<String, String>();
         this.columnIndexByPropertyNameBySelectorName = new HashMap<String, Map<String, Integer>>();
         List<String> selectorNames = new ArrayList<String>(columnCount);
         List<String> names = new ArrayList<String>(columnCount);
@@ -133,6 +135,7 @@ public class QueryResultColumns implements Columns {
             }
             String columnName = columnNameFor(column, names, sameNameColumns);
             assert columnName != null;
+            selectorNameByColumnName.put(columnName, selectorName);
             columnIndexByColumnName.put(columnName, new Integer(i));
             locationIndexByColumnIndex.put(new Integer(i), selectorIndex);
             locationIndexByColumnName.put(columnName, selectorIndex);
@@ -173,6 +176,7 @@ public class QueryResultColumns implements Columns {
         this.locationIndexByColumnIndex = new HashMap<Integer, Integer>();
         this.locationIndexByColumnName = new HashMap<String, Integer>();
         this.columnIndexByPropertyNameBySelectorName = new HashMap<String, Map<String, Integer>>();
+        this.selectorNameByColumnName = new HashMap<String, String>();
         this.selectorNames = new ArrayList<String>(columns.size());
         List<String> types = new ArrayList<String>(columns.size());
         List<String> names = new ArrayList<String>(columns.size());
@@ -184,6 +188,7 @@ public class QueryResultColumns implements Columns {
             if (!selectorNames.contains(selectorName)) selectorNames.add(selectorName);
             String columnName = columnNameFor(column, names, sameNameColumns);
             assert columnName != null;
+            selectorNameByColumnName.put(columnName, selectorName);
             Integer columnIndex = wrappedAround.columnIndexForName(columnName);
             if (columnIndex == null) {
                 String columnNameWithoutSelector = column.columnName() != null ? column.columnName() : column.propertyName();
@@ -458,6 +463,15 @@ public class QueryResultColumns implements Columns {
 
     protected Integer columnIndexForName( String columnName ) {
         return columnIndexByColumnName.get(columnName);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.query.QueryResults.Columns#getSelectorNameForColumnName(java.lang.String)
+     */
+    public String getSelectorNameForColumnName( String columnName ) {
+        return selectorNameByColumnName.get(columnName);
     }
 
     /**
