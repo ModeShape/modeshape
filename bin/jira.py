@@ -316,7 +316,7 @@ def main():
   project_key = 'MODE'
   project_name = 'ModeShape'
   project_id = '12310930'
-  version = '2.5.0.Beta1'
+  version = '2.5.2.GA1'
   jira = Jira(jira_url,project_key,project_id,project_name,version)
   jira.fetch_release_info()
   print jira.get_release_notes_in_markdown()

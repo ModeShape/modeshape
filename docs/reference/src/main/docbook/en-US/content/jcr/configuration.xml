@@ -569,7 +569,7 @@ config.repository("repository A")
 						</para>	
 						<para>	
 							The "always" strategy is used by default and in cases where the option's value does not case-independently match the one of these two values.  This was the only
-							strategy available prior to ModeShape 2.5.0.Beta3.
+							strategy available prior to ModeShape 2.5.2.GA3.
 						</para>
 						<para>
 							The enumeration literal is <ulink url='&API;jcr/JcrRepository.Option.html#QUERY_INDEXES_REBUILT_SYNCHRONOUSLY'>Option.QUERY_INDEXES_REBUILT_SYNCHRONOUSLY</ulink>,

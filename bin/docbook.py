@@ -60,7 +60,7 @@ class DocBook(object):
 def main():
   
   print "Working DocBook ..."
-  version = '2.5.0.Beta1'
+  version = '2.5.2.GA1'
   docbook = DocBook(version)
   for modified_file in docbook.patch_docbooks_under('docs'):
     print "Modified: %s" % (modified_file)
