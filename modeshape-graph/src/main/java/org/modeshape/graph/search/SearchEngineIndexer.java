@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -73,7 +74,7 @@ public class SearchEngineIndexer {
     private final int maxDepthPerRead;
     private final ExecutorService service;
     private final CompositeRequestChannel channel;
-    private final SearchEngineProcessor processor;
+    private final Queue<Request> indexRequests = new LinkedList<Request>();
     private boolean closed = false;
 
     /**
@@ -104,11 +105,10 @@ public class SearchEngineIndexer {
         this.searchEngine = searchEngine;
         this.sourceName = searchEngine.getSourceName();
         this.connectionFactory = connectionFactory;
-        this.channel = new CompositeRequestChannel(this.sourceName);
+        this.channel = new CompositeRequestChannel(this.sourceName, true);
         this.service = Executors.newSingleThreadExecutor(new NamedThreadFactory("search-" + sourceName));
         // Start the channel and search engine processor right away (this is why this object must be closed)
         this.channel.start(service, this.context, this.connectionFactory);
-        this.processor = this.searchEngine.createProcessor(this.context, null, false);
         this.maxDepthPerRead = maxDepthPerRead;
     }
 
@@ -227,6 +227,7 @@ public class SearchEngineIndexer {
         CheckArg.isNotNull(workspaceName, "workspaceName");
         CheckArg.isNotNull(path, "path");
         CheckArg.isPositive(depth, "depth");
+
         if (depth == 1) {
             indexProperties(workspaceName, Location.create(path));
         } else {
@@ -271,6 +272,7 @@ public class SearchEngineIndexer {
         CheckArg.isNotNull(workspaceName, "workspaceName");
         CheckArg.isNotNull(location, "location");
         CheckArg.isPositive(depth, "depth");
+
         if (depth == 1) {
             indexProperties(workspaceName, location);
         } else {
@@ -283,6 +285,7 @@ public class SearchEngineIndexer {
                                   Location startingLocation,
                                   int depth ) {
         int depthPerRead = Math.min(maxDepthPerRead, depth);
+
         // Read the first subgraph ...
         ReadBranchRequest readSubgraph = new ReadBranchRequest(startingLocation, workspaceName, depthPerRead);
         try {
@@ -294,7 +297,7 @@ public class SearchEngineIndexer {
             return;
         } catch (InvalidPathException e) {
             // The node must no longer exist, so delete it from the indexes ...
-            process(new DeleteBranchRequest(startingLocation, workspaceName));
+            indexRequests.add(new DeleteBranchRequest(startingLocation, workspaceName));
             return;
         }
 
@@ -304,13 +307,13 @@ public class SearchEngineIndexer {
         // Destroy the nodes at the supplied location ...
         if (startingLocation.getPath().isRoot()) {
             // Just delete the whole content ...
-            process(new DeleteBranchRequest(startingLocation, workspaceName));
+            indexRequests.add(new DeleteBranchRequest(startingLocation, workspaceName));
         } else if (depth > 1) {
             // We can't delete the node, since later same-name-siblings might be changed. So delete the children ...
             if (depth < Integer.MAX_VALUE) {
-                process(new DeleteChildrenToDepthRequest(startingLocation, workspaceName, depth - 1));
+                indexRequests.add(new DeleteChildrenToDepthRequest(startingLocation, workspaceName, depth - 1));
             } else {
-                process(new DeleteChildrenRequest(startingLocation, workspaceName));
+                indexRequests.add(new DeleteChildrenRequest(startingLocation, workspaceName));
             }
         }
 
@@ -329,7 +332,7 @@ public class SearchEngineIndexer {
         }
         UpdatePropertiesRequest request = new UpdatePropertiesRequest(topNode, workspaceName, properties, true);
         request.setActualLocationOfNode(topNode);
-        process(request);
+        indexRequests.add(request);
         checkRequestForErrors(request);
 
         // Create a map to record the actual locations of the parent nodes of each read request ...
@@ -365,7 +368,7 @@ public class SearchEngineIndexer {
                 Collection<Property> nodePoperties = readSubgraph.getPropertiesFor(location).values();
                 CreateNodeRequest create = new CreateNodeRequest(parent, workspaceName, childName, nodePoperties);
                 create.setActualLocationOfNode(location); // set this so we don't have to figure it out
-                process(create);
+                indexRequests.add(create);
                 if (create.isCancelled() || create.hasError()) return;
 
                 // Process the children ...
@@ -418,17 +421,8 @@ public class SearchEngineIndexer {
         Map<Name, Property> properties = readProps.getPropertiesByName();
         UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, workspaceName, properties, true);
         request.setActualLocationOfNode(location);
-        process(request);
+        indexRequests.add(request);
         checkRequestForErrors(readProps);
-    }
-
-    /**
-     * Send the supplied change request directly to the search engine's processor.
-     * 
-     * @param searchEngineRequest
-     */
-    public final void process( ChangeRequest searchEngineRequest ) {
-        processor.process(searchEngineRequest);
     }
 
     protected final void checkRequestForErrors( Request request ) throws RepositorySourceException, RuntimeException {
@@ -443,6 +437,15 @@ public class SearchEngineIndexer {
         if (closed) {
             throw new IllegalStateException(GraphI18n.searchEngineIndexerForSourceHasAlreadyBeenClosed.text(sourceName));
         }
+    }
+
+    /**
+     * Send the supplied change request directly to the search engine's processor.
+     * 
+     * @param searchEngineRequest
+     */
+    public final void process( ChangeRequest searchEngineRequest ) {
+        indexRequests.add(searchEngineRequest);
     }
 
     /**
@@ -478,8 +481,20 @@ public class SearchEngineIndexer {
                 // Clear the interrupted status of the thread ...
                 Thread.interrupted();
             } finally {
-                // Close the search engine processor ...
-                processor.close();
+                if (!this.indexRequests.isEmpty()) {
+                    // Submit the changes to the indexes ...
+                    SearchEngineProcessor processor = this.searchEngine.createProcessor(this.context, null, false);
+                    try {
+                        Request request = null;
+                        while ((request = indexRequests.poll()) != null) {
+                            processor.process(request);
+                        }
+                    } finally {
+                        // Close the search engine processor ...
+                        processor.close();
+                        indexRequests.clear();
+                    }
+                }
             }
         }
     }

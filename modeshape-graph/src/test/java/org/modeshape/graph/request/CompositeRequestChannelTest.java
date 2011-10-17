@@ -64,7 +64,7 @@ public class CompositeRequestChannelTest {
         MockitoAnnotations.initMocks(this);
         context = new ExecutionContext();
         sourceName = "SourceA";
-        channel = new CompositeRequestChannel(sourceName);
+        channel = new CompositeRequestChannel(sourceName, false);
         requests = new ArrayList<Request>();
         requests.add(new MockRequest());
         requests.add(new MockRequest());
@@ -94,8 +94,7 @@ public class CompositeRequestChannelTest {
         public RequestType getType() {
             return RequestType.INVALID;
         }
-        
-        
+
     }
 
     @Test

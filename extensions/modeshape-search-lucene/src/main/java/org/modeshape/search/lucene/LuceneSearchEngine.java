@@ -31,9 +31,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Field;
@@ -65,10 +62,7 @@ import org.modeshape.graph.search.SearchEngineException;
 import org.modeshape.graph.search.SearchEngineIndexer;
 
 /**
- * A {@link SearchEngine} implementation that relies upon two separate indexes to manage the node properties and the node
- * structure (path and children). Using two indexes is more efficient when the node content and structure are updated
- * independently. For example, the structure of the nodes changes whenever same-name-sibling indexes are changed, when sibling
- * nodes are deleted, or when nodes are moved around; in all of these cases, the properties of the nodes do not change.
+ * A {@link SearchEngine} implementation that uses Lucene for the backing indexes.
  */
 public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchWorkspace, LuceneSearchProcessor> {
 
@@ -123,7 +117,6 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
     private final IndexRules.Factory rulesFactory;
     private final Analyzer analyzer;
     private final int maxDepthPerIndexRead;
-    private final ReadWriteLock processingLock = new ReentrantReadWriteLock();
 
     /**
      * Create a new instance of a {@link SearchEngine} that uses Lucene and a two-index design, and that stores the indexes using
@@ -233,9 +226,7 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
                                                      Workspaces<LuceneSearchWorkspace> workspaces,
                                                      Observer observer,
                                                      boolean readOnly ) {
-        final Lock lock = readOnly ? processingLock.readLock() : processingLock.writeLock();
-        lock.lock();
-        return new LuceneSearchProcessor(getSourceName(), context, workspaces, observer, null, readOnly, lock);
+        return new LuceneSearchProcessor(getSourceName(), context, workspaces, observer, null, readOnly);
     }
 
     /**

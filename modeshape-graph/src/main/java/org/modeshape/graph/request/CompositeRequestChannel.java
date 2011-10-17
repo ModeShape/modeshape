@@ -88,11 +88,13 @@ public class CompositeRequestChannel {
      * 
      * @param sourceName the name of the repository source used to execute this channel's {@link #allRequests() requests}; may not
      *        be null or empty
+     * @param readonly true if the requests are known to be read only, or false otherwise
      */
-    public CompositeRequestChannel( final String sourceName ) {
+    public CompositeRequestChannel( final String sourceName,
+                                    boolean readonly ) {
         assert sourceName != null;
         this.sourceName = sourceName;
-        this.composite = new ChannelCompositeRequest();
+        this.composite = new ChannelCompositeRequest(readonly);
     }
 
     /**
@@ -374,8 +376,8 @@ public class CompositeRequestChannel {
         private static final long serialVersionUID = 1L;
         private final LinkedList<Request> allRequests = CompositeRequestChannel.this.allRequests;
 
-        protected ChannelCompositeRequest() {
-            super(false);
+        protected ChannelCompositeRequest( boolean readonly ) {
+            super(readonly);
         }
 
         /**

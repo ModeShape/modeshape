@@ -108,6 +108,7 @@ class ForkRequestProcessor extends RequestProcessor {
     private final RepositoryConnectionFactory connectionFactory;
     private final Map<String, CompositeRequestChannel> channelBySourceName = new HashMap<String, CompositeRequestChannel>();
     private final Queue<FederatedRequest> federatedRequestQueue;
+    private final boolean readonly;
 
     /**
      * Create a new fork processor
@@ -115,15 +116,18 @@ class ForkRequestProcessor extends RequestProcessor {
      * @param repository the federated repository configuration; never null
      * @param context the execution context in which this processor is executing; may not be null
      * @param now the timestamp representing the current time in UTC; may not be null
+     * @param readonly true if the requests are known to be read only, or false otherwise
      * @param federatedRequestQueue the queue into which should be placed the {@link FederatedRequest} objects created by this
      *        processor that still must be post-processed
      */
     public ForkRequestProcessor( FederatedRepository repository,
                                  ExecutionContext context,
                                  DateTime now,
+                                 boolean readonly,
                                  Queue<FederatedRequest> federatedRequestQueue ) {
         super(repository.getSourceName(), context, null, now);
         this.repository = repository;
+        this.readonly = readonly;
         this.executor = this.repository.getExecutor();
         this.connectionFactory = this.repository.getConnectionFactory();
         this.federatedRequestQueue = federatedRequestQueue;
@@ -146,7 +150,7 @@ class ForkRequestProcessor extends RequestProcessor {
         assert request != null;
         CompositeRequestChannel channel = channelBySourceName.get(sourceName);
         if (channel == null) {
-            channel = new CompositeRequestChannel(sourceName);
+            channel = new CompositeRequestChannel(sourceName, readonly);
             channelBySourceName.put(sourceName, channel);
             channel.start(executor, getExecutionContext(), connectionFactory);
         }
@@ -170,7 +174,7 @@ class ForkRequestProcessor extends RequestProcessor {
         assert request != null;
         CompositeRequestChannel channel = channelBySourceName.get(sourceName);
         if (channel == null) {
-            channel = new CompositeRequestChannel(sourceName);
+            channel = new CompositeRequestChannel(sourceName, readonly);
             channelBySourceName.put(sourceName, channel);
             channel.start(executor, getExecutionContext(), connectionFactory);
         }
@@ -199,7 +203,7 @@ class ForkRequestProcessor extends RequestProcessor {
         assert request != null;
         CompositeRequestChannel channel = channelBySourceName.get(sourceName);
         if (channel == null) {
-            channel = new CompositeRequestChannel(sourceName);
+            channel = new CompositeRequestChannel(sourceName, readonly);
             channelBySourceName.put(sourceName, channel);
             channel.start(executor, getExecutionContext(), connectionFactory);
         }
