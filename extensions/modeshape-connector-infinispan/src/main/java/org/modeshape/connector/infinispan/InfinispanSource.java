@@ -35,17 +35,19 @@ import java.util.List;
 import java.util.Map;
 import javax.naming.BinaryRefAddr;
 import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import javax.naming.RefAddr;
 import javax.naming.Reference;
 import javax.naming.Referenceable;
 import javax.naming.StringRefAddr;
-import org.modeshape.common.annotation.ThreadSafe;
 import org.infinispan.Cache;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.manager.DefaultCacheManager;
 import org.modeshape.common.annotation.Category;
 import org.modeshape.common.annotation.Description;
 import org.modeshape.common.annotation.Label;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.HashCode;
 import org.modeshape.common.util.StringUtil;
@@ -190,7 +192,15 @@ public class InfinispanSource extends BaseInfinispanSource {
         if (jndiName != null && jndiName.trim().length() != 0) {
             Object object = null;
             try {
-                object = super.getContext().lookup(jndiName);
+                Context context = super.getContext();
+                if (context == null) {
+                    try {
+                        context = new InitialContext();
+                    } catch (NamingException err) {
+                        throw new RepositorySourceException(getName(), err);
+                    }
+                }
+                object = context.lookup(jndiName);
                 if (object != null) cacheContainer = (CacheContainer)object;
             } catch (ClassCastException err) {
                 I18n msg = InfinispanConnectorI18n.objectFoundInJndiWasNotCacheContainer;
