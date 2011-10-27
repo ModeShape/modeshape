@@ -39,6 +39,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.Lob;
+import org.hibernate.annotations.Type;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
@@ -123,6 +124,7 @@ public class NodeEntity implements Serializable {
      * [MODE-1015](https://issues.jboss.org/browse/MODE-1015).
      */
     @Lob
+    @Type(type="org.hibernate.type.PrimitiveByteArrayBlobType")
     @Column( name = "DATA", nullable = true, unique = false, length = 1048576 )
     private byte[] data;
 
