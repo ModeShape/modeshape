@@ -31,6 +31,7 @@ import java.util.concurrent.Future;
 import javax.jcr.NamespaceException;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
+import javax.jcr.Property;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -105,6 +106,31 @@ public class FileSystemRepositoryIntegrationTest extends ModeShapeSingleUseTest 
         referenced = meta.getProperty("contentPointer").getNode();
         assertThat(referenced.getPath(), is(content.getPath()));
         assertThat(referenced, is(content));
+    }
+
+    @FixFor( "MODE-1281" )
+    @Test
+    public void shouldAllowCreatingVersionableNodes() throws Exception {
+        startEngineUsing("config/configRepositoryForFileSystemWithExtraProperties.xml");
+
+        // Create the nodes ...
+        Session session = session();
+        Node root = session.getRootNode();
+        root.addNode("A", "nt:folder");
+        Node meta = root.addNode("meta", "nt:folder");
+        meta.addMixin("mix:versionable");
+        session.save();
+        session.getWorkspace().getVersionManager().checkin(meta.getPath());
+
+        logout();
+
+        // Get another session and verify the reference exists and can be resolved ...
+        session = session();
+        root = session.getRootNode();
+        meta = root.getNode("meta");
+        Property predecessors = meta.getProperty("jcr:predecessors");
+        assertThat(predecessors.isMultiple(), is(true));
+        assertThat(predecessors.getValues().length, is(0));
     }
 
     @FixFor( "MODE-1221" )
