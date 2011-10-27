@@ -23,6 +23,7 @@
  */
 package org.modeshape.connector.store.jpa.model.common;
 
+import java.io.Serializable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EntityManager;
@@ -46,7 +47,9 @@ import org.modeshape.common.util.CheckArg;
 @org.hibernate.annotations.Table( appliesTo = "DNA_NAMESPACES", indexes = @Index( name = "NS_URI_INX", columnNames = {"URI"} ) )
 @NamedQueries( {@NamedQuery( name = "NamespaceEntity.findAll", query = "select ns from NamespaceEntity as ns" ),
     @NamedQuery( name = "NamespaceEntity.findByUri", query = "select ns from NamespaceEntity as ns where ns.uri = ?1" )} )
-public class NamespaceEntity {
+public class NamespaceEntity implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue( strategy = GenerationType.AUTO )

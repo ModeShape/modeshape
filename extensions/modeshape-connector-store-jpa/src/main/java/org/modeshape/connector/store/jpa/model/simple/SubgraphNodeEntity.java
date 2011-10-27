@@ -23,6 +23,7 @@
  */
 package org.modeshape.connector.store.jpa.model.simple;
 
+import java.io.Serializable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -62,7 +63,9 @@ import org.hibernate.annotations.Index;
     // "delete ReferenceEntity as ref where ref.id.workspaceId = :workspaceId and ref.id.fromUuidString in ( select node.nodeUuid from SubgraphNodeEntity node where node.queryId = :queryId )"
     // ),
     @NamedQuery( name = "SubgraphNodeEntity.deleteByQueryId", query = "delete SubgraphNodeEntity where queryId = :queryId" )} )
-public class SubgraphNodeEntity {
+public class SubgraphNodeEntity implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @Id
     @Column( name = "ID" )
