@@ -33,6 +33,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -50,11 +51,14 @@ import org.modeshape.graph.Location;
 import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.property.Binary;
 import org.modeshape.graph.property.Name;
+import org.modeshape.graph.property.NameFactory;
+import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.PropertyFactory;
 import org.modeshape.graph.property.PropertyType;
 import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.ValueFactory;
+import org.modeshape.graph.property.ValueFormatException;
 
 /**
  * A {@link CustomPropertiesFactory} implementation that stores "extra" or "custom" properties for 'nt:file', 'nt:folder', and
@@ -251,11 +255,12 @@ public class StoreProperties extends BasePropertiesFactory {
         try {
             String content = IoUtil.read(propertiesFile);
             ValueFactories factories = context.getValueFactories();
+            NamespaceRegistry namespaces = context.getNamespaceRegistry();
             PropertyFactory propFactory = context.getPropertyFactory();
             Map<Name, Property> result = new HashMap<Name, Property>();
             for (String line : StringUtil.splitLines(content)) {
                 // Parse each line ...
-                Property property = parse(line, factories, propFactory);
+                Property property = parse(line, factories, propFactory, namespaces, result);
                 if (property != null) {
                     result.put(property.getName(), property);
                 }
@@ -319,7 +324,11 @@ public class StoreProperties extends BasePropertiesFactory {
                           ValueFactory<String> strings ) throws IOException {
         String name = strings.create(property.getName());
         stream.append(encoder.encode(name));
-        if (property.isEmpty()) return;
+        if (property.isEmpty()) {
+            stream.append('\n');
+            stream.flush();
+            return;
+        }
         stream.append(" (");
         PropertyType type = PropertyType.discoverType(property.getFirstValue());
         stream.append(type.getName().toLowerCase());
@@ -355,15 +364,18 @@ public class StoreProperties extends BasePropertiesFactory {
 
     protected Property parse( String line,
                               ValueFactories factories,
-                              PropertyFactory propFactory ) {
+                              PropertyFactory propFactory,
+                              NamespaceRegistry namespaces,
+                              Map<Name, Property> result ) {
         if (line.length() == 0) return null; // blank line
         char firstChar = line.charAt(0);
         if (firstChar == '#') return null; // comment line
         if (firstChar == ' ') return null; // ignore line
         Matcher matcher = PROPERTY_PATTERN.matcher(line);
+        NameFactory nameFactory = factories.getNameFactory();
         if (!matcher.matches()) {
             // It should be an empty multi-valued property, and the line consists only of the name ...
-            Name name = factories.getNameFactory().create(decoder.decode(line));
+            Name name = nameFactory.create(decoder.decode(line));
             return propFactory.create(name);
         }
 
@@ -371,7 +383,33 @@ public class StoreProperties extends BasePropertiesFactory {
         String typeString = matcher.group(2);
         String valuesString = matcher.group(4);
 
-        Name name = factories.getNameFactory().create(nameString);
+        Name name = null;
+        try {
+            name = factories.getNameFactory().create(nameString);
+        } catch (ValueFormatException e) {
+            // See MODE-1281. Earlier versions would write out an empty property without the trailing line feed,
+            // so we need to consider this case now. About the only thing we can do is look for two namespace-prefixed names ...
+            if (nameString.indexOf(':') < nameString.lastIndexOf(':')) {
+                // This is likely two names smashed together. Use the namespace prefixes to look for where we can break this ...
+                Set<String> prefixes = new LinkedHashSet<String>();
+                prefixes.add(JcrLexicon.Namespace.PREFIX);
+                for (NamespaceRegistry.Namespace namespace : namespaces.getNamespaces()) {
+                    prefixes.add(namespace.getPrefix());
+                }
+                for (String prefix : prefixes) {
+                    int index = nameString.lastIndexOf(prefix + ":");
+                    if (index <= 0) continue;
+                    // Otherwise, we found a match. Parse the first property name, and create an empty property ...
+                    name = nameFactory.create(nameString.substring(0, index));
+                    result.put(name, propFactory.create(name));
+                    // Now parse the name of the next property and continue ...
+                    name = nameFactory.create(nameString.substring(index));
+                    break;
+                }
+            } else {
+                throw e;
+            }
+        }
         PropertyType type = PropertyType.valueFor(typeString);
 
         Pattern pattern = VALUE_PATTERN;
