@@ -57,6 +57,7 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.common.util.Logger;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path.Segment;
@@ -529,7 +530,7 @@ public class JcrQueryManagerTest {
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllCarsUnderHybrid() throws RepositoryException {
         Query query = session.getWorkspace()
                              .getQueryManager()
-                             .createQuery("SELECT car.[car:maker], car.[car:model], car.[car:year], car.[car:msrp] FROM [car:Car] AS car WHERE PATH(car) LIKE '%/Hybrid/%'",
+                             .createQuery("SELECT car.[car:maker], car.[car:model], car.[car:year], car.[car:msrp] FROM [car:Car] AS car WHERE PATH(car) LIKE '%/Hybrid/%' ORDER BY car.[car:model]",
                                           Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
@@ -537,8 +538,8 @@ public class JcrQueryManagerTest {
         assertResults(query, result, 3L);
         assertResultsHaveColumns(result, "car:maker", "car:model", "car:year", "car:msrp");
         assertRow(result, 1).has("car:model", "Altima").and("car:msrp", "$18,260").and("car:year", 2008);
-        assertRow(result, 2).has("car:model", "Prius").and("car:msrp", "$21,500").and("car:year", 2008);
-        assertRow(result, 3).has("car:model", "Highlander").and("car:msrp", "$34,200").and("car:year", 2008);
+        assertRow(result, 2).has("car:model", "Highlander").and("car:msrp", "$34,200").and("car:year", 2008);
+        assertRow(result, 3).has("car:model", "Prius").and("car:msrp", "$21,500").and("car:year", 2008);
     }
 
     @Ignore
@@ -1038,6 +1039,46 @@ public class JcrQueryManagerTest {
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 1);
         assertResultsHaveColumns(result, searchColumnNames());
+    }
+
+    @Test
+    public void shouldBeAbleToCreateAndExecuteFullTextSearchQueryMultipleTimes() throws RepositoryException {
+        for (int i = 0; i != 1; ++i) {
+            Query query = session.getWorkspace().getQueryManager().createQuery("quick", JcrRepository.QueryLanguage.SEARCH);
+            assertThat(query, is(notNullValue()));
+            Logger.getLogger(getClass()).debug("*** Issuing query");
+            QueryResult result = query.execute();
+            assertThat(result, is(notNullValue()));
+            assertResults(query, result, 3);
+            assertResultsHaveColumns(result, searchColumnNames());
+        }
+
+        // Delete the 'Other' branch ...
+        session.getRootNode().getNode("Other").remove();
+        session.save();
+        Logger.getLogger(getClass()).debug("*** Saved session");
+
+        // Re-create the branch that contains some same-name-siblings ...
+        Node root = session.getRootNode();
+        Node other = root.addNode("Other", "nt:unstructured");
+        other.addNode("NodeA", "nt:unstructured").setProperty("something", "value3 quick brown fox");
+        other.addNode("NodeA", "nt:unstructured").setProperty("something", "value2 quick brown cat");
+        other.addNode("NodeA", "nt:unstructured").setProperty("something", "value1 quick black dog");
+        Node c = other.addNode("NodeC", "notion:typed");
+        c.setProperty("notion:booleanProperty", true);
+        c.setProperty("notion:booleanProperty2", false);
+        session.save();
+        Logger.getLogger(getClass()).debug("*** Saved session");
+
+        for (int i = 0; i != 1; ++i) {
+            Query query = session.getWorkspace().getQueryManager().createQuery("quick", JcrRepository.QueryLanguage.SEARCH);
+            assertThat(query, is(notNullValue()));
+            Logger.getLogger(getClass()).debug("*** Issuing query");
+            QueryResult result = query.execute();
+            assertThat(result, is(notNullValue()));
+            assertResults(query, result, 3);
+            assertResultsHaveColumns(result, searchColumnNames());
+        }
     }
 
     // ----------------------------------------------------------------------------------------------------------------

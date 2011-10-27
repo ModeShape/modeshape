@@ -38,6 +38,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.connector.MockRepositoryConnection;
@@ -46,15 +50,11 @@ import org.modeshape.graph.connector.federation.Projection.Rule;
 import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
+import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.property.PathNotFoundException;
 import org.modeshape.graph.property.Property;
-import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.request.InvalidWorkspaceException;
 import org.modeshape.graph.request.ReadNodeRequest;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Mock;
 
 /**
  * 
@@ -134,7 +134,7 @@ public class ForkRequestProcessorTest {
         // projectionC = new Projection(sourceNameC, workspaceNameC, rules("/c => /"));
 
         // Now set up the processor ...
-        processor = new ForkRequestProcessor(repository, context, now, federatedRequests);
+        processor = new ForkRequestProcessor(repository, context, now, false, federatedRequests);
     }
 
     protected Rule[] rules( String... rule ) {

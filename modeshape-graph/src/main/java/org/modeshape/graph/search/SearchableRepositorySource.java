@@ -481,7 +481,7 @@ public class SearchableRepositorySource implements RepositorySource {
                                                 return delegateConnection();
                                             }
                                         };
-                                        channel = new CompositeRequestChannel(delegate().getName());
+                                        channel = new CompositeRequestChannel(delegate().getName(), true);
                                         channel.start(executorService, context, connectionFactory);
                                     }
                                     channel.add(request);

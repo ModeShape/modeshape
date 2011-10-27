@@ -104,7 +104,7 @@ public final class VerifyWorkspaceRequest extends Request implements Cloneable {
      */
     @Override
     public boolean isReadOnly() {
-        return false;
+        return true;
     }
 
     /**
