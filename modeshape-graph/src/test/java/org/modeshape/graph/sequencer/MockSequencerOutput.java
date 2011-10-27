@@ -30,8 +30,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.SystemFailureException;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.property.Name;
@@ -46,7 +46,8 @@ import org.modeshape.graph.property.Property;
 @NotThreadSafe
 public class MockSequencerOutput implements SequencerOutput, Iterable<Path> {
 
-    private final Map<Path, Map<Name, Property>> propertiesByPath;
+    private final Map<Path, Map<Name, Property>> overwrittenPropertiesByPath;
+    private final Map<Path, Map<Name, Property>> addedPropertiesByPath;
     private final StreamSequencerContext context;
     private final LinkedList<Path> nodePathsInCreationOrder;
 
@@ -57,7 +58,8 @@ public class MockSequencerOutput implements SequencerOutput, Iterable<Path> {
     public MockSequencerOutput( StreamSequencerContext context,
                                 boolean recordOrderOfNodeCreation ) {
         this.context = context;
-        this.propertiesByPath = new HashMap<Path, Map<Name, Property>>();
+        this.overwrittenPropertiesByPath = new HashMap<Path, Map<Name, Property>>();
+        this.addedPropertiesByPath = new HashMap<Path, Map<Name, Property>>();
         this.nodePathsInCreationOrder = recordOrderOfNodeCreation ? new LinkedList<Path>() : null;
     }
 
@@ -67,20 +69,20 @@ public class MockSequencerOutput implements SequencerOutput, Iterable<Path> {
     public void setProperty( Path nodePath,
                              Name propertyName,
                              Object... values ) {
-        Map<Name, Property> properties = propertiesByPath.get(nodePath);
+        Map<Name, Property> properties = overwrittenPropertiesByPath.get(nodePath);
         if (values == null || values.length == 0 || (values.length == 1 && values[0] == null)) {
             // remove the property ...
             if (properties != null) {
                 properties.remove(propertyName);
                 if (properties.isEmpty()) {
-                    propertiesByPath.remove(nodePath);
+                    overwrittenPropertiesByPath.remove(nodePath);
                     if (nodePathsInCreationOrder != null) nodePathsInCreationOrder.remove(nodePath);
                 }
             }
         } else {
             if (properties == null) {
                 properties = new HashMap<Name, Property>();
-                propertiesByPath.put(nodePath, properties);
+                overwrittenPropertiesByPath.put(nodePath, properties);
                 if (nodePathsInCreationOrder != null) nodePathsInCreationOrder.add(nodePath);
             }
             for (Object value : values) {
@@ -102,6 +104,42 @@ public class MockSequencerOutput implements SequencerOutput, Iterable<Path> {
             Property property = context.getPropertyFactory().create(propertyName, values);
             properties.put(propertyName, property);
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void addValues( Path nodePath,
+                           Name propertyName,
+                           Object... values ) {
+        Map<Name, Property> properties = addedPropertiesByPath.get(nodePath);
+        if (values == null || values.length == 0 || (values.length == 1 && values[0] == null)) {
+            return;
+        }
+
+        if (properties == null) {
+            properties = new HashMap<Name, Property>();
+            addedPropertiesByPath.put(nodePath, properties);
+            if (nodePathsInCreationOrder != null) nodePathsInCreationOrder.add(nodePath);
+        }
+        for (Object value : values) {
+            if (value instanceof Property || value instanceof Iterator<?>) {
+                RuntimeException t = new SystemFailureException("Value of property is another property object");
+                t.printStackTrace();
+                throw t;
+            }
+            if (value instanceof Object[]) {
+                for (Object nestedValue : (Object[])value) {
+                    if (nestedValue instanceof Property || value instanceof Iterator<?>) {
+                        RuntimeException t = new SystemFailureException("Value of property is another property object");
+                        t.printStackTrace();
+                        throw t;
+                    }
+                }
+            }
+        }
+        Property property = context.getPropertyFactory().create(propertyName, values);
+        properties.put(propertyName, property);
     }
 
     /**
@@ -140,7 +178,7 @@ public class MockSequencerOutput implements SequencerOutput, Iterable<Path> {
     }
 
     public boolean exists( Path nodePath ) {
-        return this.propertiesByPath.containsKey(nodePath);
+        return this.overwrittenPropertiesByPath.containsKey(nodePath);
     }
 
     /**
@@ -152,13 +190,13 @@ public class MockSequencerOutput implements SequencerOutput, Iterable<Path> {
         if (nodePathsInCreationOrder != null) {
             return nodePathsInCreationOrder.iterator();
         }
-        LinkedList<Path> paths = new LinkedList<Path>(propertiesByPath.keySet());
+        LinkedList<Path> paths = new LinkedList<Path>(overwrittenPropertiesByPath.keySet());
         Collections.sort(paths);
         return paths.iterator();
     }
 
     public Map<Name, Property> getProperties( Path nodePath ) {
-        Map<Name, Property> properties = this.propertiesByPath.get(nodePath);
+        Map<Name, Property> properties = this.overwrittenPropertiesByPath.get(nodePath);
         if (properties == null) return null;
         return Collections.unmodifiableMap(properties);
     }
@@ -172,7 +210,7 @@ public class MockSequencerOutput implements SequencerOutput, Iterable<Path> {
 
     public Property getProperty( Path nodePath,
                                  Name propertyName ) {
-        Map<Name, Property> properties = this.propertiesByPath.get(nodePath);
+        Map<Name, Property> properties = this.overwrittenPropertiesByPath.get(nodePath);
         if (properties == null) return null;
         return properties.get(propertyName);
     }
@@ -199,7 +237,7 @@ public class MockSequencerOutput implements SequencerOutput, Iterable<Path> {
     }
 
     public boolean hasProperties() {
-        return this.propertiesByPath.size() > 0;
+        return this.overwrittenPropertiesByPath.size() > 0;
     }
 
     /**

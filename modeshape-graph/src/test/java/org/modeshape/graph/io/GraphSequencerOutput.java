@@ -28,6 +28,8 @@ import java.util.Iterator;
 import java.util.Set;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
+import org.modeshape.graph.Graph.AddValue;
+import org.modeshape.graph.Graph.Batch;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
@@ -104,6 +106,33 @@ public class GraphSequencerOutput implements SequencerOutput {
             batch.create(nodePath).and();
         }
         batch.set(propertyName).on(nodePath).to(values);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.sequencer.SequencerOutput#addValues(org.modeshape.graph.property.Path,
+     *      org.modeshape.graph.property.Name, java.lang.Object[])
+     */
+    public void addValues( Path nodePath,
+                           Name propertyName,
+                           Object... values ) {
+        assert valuesAreNotIterators(values);
+
+        if (values == null || values.length == 0) return;
+
+        nodePath = absolute(nodePath);
+        if (paths.add(nodePath)) {
+            batch.create(nodePath).and();
+        }
+
+        AddValue<Batch> addValue = batch.addValue(values[0]);
+
+        for (int i = 1; i < values.length; i++) {
+            addValue = addValue.andValue(values[i]);
+        }
+
+        addValue.to(propertyName).on(nodePath);
     }
 
     private final Path absolute( Path path ) {

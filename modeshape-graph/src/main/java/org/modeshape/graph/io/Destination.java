@@ -26,6 +26,7 @@ package org.modeshape.graph.io;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.NodeConflictBehavior;
+import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.Property;
 
@@ -94,6 +95,17 @@ public interface Destination {
      */
     public void setProperties( Path path,
                                Iterable<Property> properties );
+
+    /**
+     * Sets the given properties on the node at the supplied path. The path will be absolute.
+     * 
+     * @param path the absolute path of the node
+     * @param propertyName the name of the property to modify; may not be null
+     * @param values the values to add to the property; null or empty values indicate that no modification will be performed
+     */
+    public void addPropertyValues( Path path,
+                                   Name propertyName,
+                                   Object... values );
 
     /**
      * Signal to this destination that any enqueued create requests should be submitted. Usually this happens at the end of the

@@ -26,9 +26,11 @@ package org.modeshape.graph.io;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
+import org.modeshape.graph.NodeConflictBehavior;
+import org.modeshape.graph.Graph.AddValue;
 import org.modeshape.graph.Graph.Batch;
 import org.modeshape.graph.Graph.Create;
-import org.modeshape.graph.NodeConflictBehavior;
+import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.Property;
 
@@ -185,6 +187,30 @@ public class GraphBatchDestination implements Destination {
                                Iterable<Property> properties ) {
         if (properties == null) return;
         batch.set(properties).on(path);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.io.Destination#addPropertyValues(Path, Name, Object...)
+     */
+    public void addPropertyValues( Path path,
+                                   Name propertyName,
+                                   Object... values ) {
+        if (values == null || values.length == 0) return;
+
+        if (values.length == 1 && values[0] instanceof Object[]) {
+            values = (Object[])values[0];
+        }
+
+        AddValue<Batch> addValue = batch.addValue(values[0]);
+
+        for (int i = 1; i < values.length; i++) {
+            addValue = addValue.andValue(values[i]);
+        }
+
+        addValue.to(propertyName).on(path);
+
     }
 
     /**

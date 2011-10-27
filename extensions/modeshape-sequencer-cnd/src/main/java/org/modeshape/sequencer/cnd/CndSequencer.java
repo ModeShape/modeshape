@@ -33,6 +33,7 @@ import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.NodeConflictBehavior;
 import org.modeshape.graph.io.Destination;
+import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.Property;
@@ -185,6 +186,20 @@ public class CndSequencer implements StreamSequencer {
             for (Property property : properties) {
                 output.setProperty(path, property.getName(), property.getValuesAsArray());
             }
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.io.Destination#addPropertyValues(Path, Name, Object...)
+         */
+        @Override
+        public void addPropertyValues( Path path,
+                                       Name propertyName,
+                                       Object... values ) {
+            if (values == null || values.length == 0) return;
+
+            output.addValues(path, propertyName, values);
         }
 
         /**

@@ -25,6 +25,7 @@ package org.modeshape.graph.sequencer;
 
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
+import org.modeshape.graph.property.PathNotFoundException;
 
 /**
  * Interface for sequencers to use to generate their output.
@@ -92,4 +93,30 @@ public interface SequencerOutput {
     void setProperty( Path nodePath,
                       Name propertyName,
                       Object... values );
+
+    /**
+     * Adds values to the supplied property on the supplied node.
+     * <p>
+     * This method adds values to the property without modifying the existing values. No JCR type checking is performed by this
+     * method, so it is the responsibility of the caller to ensure that adding these values does not violate JCR type constraints.
+     * </p>
+     * <p>
+     * The {@link StreamSequencerContext#getValueFactories() value factories} should be used to create paths, names, and values.
+     * These factories can be used to create new values or convert values from one property type to another. (Note that each of
+     * the factories have methods that create values from all of the property types.)
+     * </p>
+     * <p>
+     * <b>NOTE: Calling addValues against an existing node with a nonexistent property name will result in that property being
+     * created with the given values, but calling addValues against a nonexistent node will result in a
+     * {@link PathNotFoundException} when the sequenced content is applied to the underlying repository.</b>
+     * </p>
+     * 
+     * @param nodePath the path to the node containing the property; may not be null
+     * @param propertyName the name of the property to be modified
+     * @param values the value(s) for the property; if these values are empty, no values will be added
+     */
+    void addValues( Path nodePath,
+                    Name propertyName,
+                    Object... values );
+
 }

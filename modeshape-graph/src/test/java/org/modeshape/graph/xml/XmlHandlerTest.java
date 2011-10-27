@@ -608,6 +608,12 @@ public class XmlHandlerTest {
             create(path, firstProp, additionalProperties);
         }
 
+        public void addPropertyValues( Path path,
+                                       Name propertyName,
+                                       Object... values ) {
+            throw new UnsupportedOperationException();
+        }
+
         @SuppressWarnings( "synthetic-access" )
         public ExecutionContext getExecutionContext() {
             return XmlHandlerTest.this.context;
