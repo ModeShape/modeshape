@@ -23,6 +23,7 @@
  */
 package org.modeshape.connector.store.jpa.util;
 
+import java.io.Serializable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -42,7 +43,9 @@ import org.modeshape.connector.store.jpa.Model;
  */
 @Entity( name = "MODE_OPTIONS" )
 @NamedQueries( {@NamedQuery( name = "StoreOptionEntity.findAll", query = "SELECT option FROM MODE_OPTIONS AS option" )} )
-public class StoreOptionEntity {
+public class StoreOptionEntity implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @Id
     @Column( name = "NAME", nullable = false, length = 128 )

@@ -23,6 +23,7 @@
  */
 package org.modeshape.connector.store.jpa.model.simple;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -70,7 +71,9 @@ import org.modeshape.connector.store.jpa.util.Serializer;
     @NamedQuery( name = "NodeEntity.findByNodeUuid", query = "from NodeEntity as node where node.workspaceId = :workspaceId and node.nodeUuidString = :nodeUuidString" ),
     @NamedQuery( name = "NodeEntity.deleteAllInWorkspace", query = "delete from NodeEntity where workspaceId = :workspaceId" ),
     @NamedQuery( name = "NodeEntity.withLargeValues", query = "from NodeEntity as node where node.workspaceId = :workspaceId and size(node.largeValues) > 0" )} )
-public class NodeEntity {
+public class NodeEntity implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue( strategy = GenerationType.AUTO )

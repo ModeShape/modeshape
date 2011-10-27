@@ -23,6 +23,7 @@
  */
 package org.modeshape.connector.store.jpa.model.simple;
 
+import java.io.Serializable;
 import java.security.NoSuchAlgorithmException;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -47,7 +48,9 @@ import org.modeshape.graph.property.PropertyType;
 @Entity
 @Table( name = "MODE_SIMPLE_LARGE_VALUES" )
 @NamedQuery( name = "LargeValueEntity.deleteAllUnused", query = "delete LargeValueEntity lve where lve.hash not in (select values.hash from NodeEntity node join node.largeValues values)" )
-public class LargeValueEntity {
+public class LargeValueEntity implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     /**
      * The MySQL delete statement to remove all unused LargeValueEntity records.

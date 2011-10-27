@@ -40,7 +40,7 @@ import org.modeshape.graph.property.basic.JodaDateTime;
  * Represents a record of the changes that have been made to the repository. The actual change events are serialized and stored in
  * a binary (and compressed) format.
  * 
- * @deprecated
+ * @deprecated This is no longer used.
  */
 @Deprecated
 @Entity

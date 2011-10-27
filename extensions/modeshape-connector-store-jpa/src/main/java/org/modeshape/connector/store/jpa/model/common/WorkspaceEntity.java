@@ -23,6 +23,7 @@
  */
 package org.modeshape.connector.store.jpa.model.common;
 
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -50,7 +51,9 @@ import org.modeshape.common.util.CheckArg;
 @NamedQueries( {@NamedQuery( name = "WorkspaceEntity.findAll", query = "select ws from WorkspaceEntity as ws" ),
     @NamedQuery( name = "WorkspaceEntity.findByName", query = "select ws from WorkspaceEntity as ws where ws.name = :name" ),
     @NamedQuery( name = "WorkspaceEntity.findAllNames", query = "select ws.name from WorkspaceEntity as ws" )} )
-public class WorkspaceEntity {
+public class WorkspaceEntity implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue( strategy = GenerationType.AUTO )
