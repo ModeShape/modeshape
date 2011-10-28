@@ -182,7 +182,7 @@ public class ConnectorBenchmarkTest {
             // data.addColumn('number', 'In-Memory Store');
             // data.addColumn('number', 'File Store');
             // data.addRows(1);
-            // data.setValue(0, 0, '2.6-SNAPSHOT');
+            // data.setValue(0, 0, '2.7-SNAPSHOT');
             // data.setValue(0, 1, 1); // In-Memory Store Value
             // data.setValue(0, 2, 30); // File Store Value
 
