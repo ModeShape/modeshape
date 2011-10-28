@@ -1,7 +1,6 @@
 # Release Notes for ModeShape &version;
 
-ModeShape &version; includes several new features, improvements, and bug fixes since 2.5.0.Final. Beta1 included
-the following changes:
+ModeShape &version; includes several new features, improvements, and bug fixes since 2.5.0.Final:
 
 - improved overall performance
 - new disk-based storage connector
@@ -13,9 +12,7 @@ the following changes:
 - automatically use the JDK logger if SLF4J binding is not available
 - upgraded to Infinispan 4.2.1.Final
 - faster startup of the ModeShape engine
-- over two dozen bug fixes
-
-while Beta2 included an additional dozen bug fixes and minor improvements.
+- over five dozen bug fixes
 
 > ***NOTE***: This release makes changes to the way the indexes store property values,
 > so it is strongly recommended that all users force re-indexing their content
