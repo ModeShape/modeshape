@@ -281,22 +281,20 @@
                             <unzip src="target/tempjars/slf4j-api-1.6.1.jar" dest="target/temploc" />                                    
                             <!--unzip src="target/tempjars/slf4j-log4j12-1.6.1.jar" dest="target/temploc" /-->                                                                           
                             
-                            <unzip src="target/tempjars/commons-codec-1.3.jar" dest="target/temploc" />                                   
+                            <unzip src="target/tempjars/commons-codec-1.4.jar" dest="target/temploc" />
                             <move file="target/temploc/META-INF/LICENSE.txt" tofile="target/temploc/META-INF/LICENSE_commons-codec.txt" />
                             
                             <unzip src="target/tempjars/commons-logging-1.1.1.jar" dest="target/temploc" />                                   
                             <move file="target/temploc/META-INF/LICENSE" tofile="target/temploc/META-INF/LICENSE_commons-logging.txt" />
                             <move file="target/temploc/META-INF/NOTICE" tofile="target/temploc/META-INF/NOTICE_commons-logging.txt" />                                       
 
-                            <unzip src="target/tempjars/httpclient-4.0.jar" dest="target/temploc" />                                   
-                            <move file="target/temploc/META-INF/LICENSE" tofile="target/temploc/META-INF/LICENSE_httpclient.txt" />
-                            <move file="target/temploc/META-INF/NOTICE" tofile="target/temploc/META-INF/NOTICE_httpclient.txt" />
-                            <move file="target/temploc/META-INF/DEPENDENCIES" tofile="target/temploc/META-INF/DEPENDENCIES_httpclient.txt" />
+                            <unzip src="target/tempjars/httpclient-4.1.2.jar" dest="target/temploc" />                                   
+                            <move file="target/temploc/META-INF/LICENSE.txt" tofile="target/temploc/META-INF/LICENSE_httpclient.txt" />
+                            <move file="target/temploc/META-INF/NOTICE.txt" tofile="target/temploc/META-INF/NOTICE_httpclient.txt" />
                             
-                            <unzip src="target/tempjars/httpcore-4.0.1.jar" dest="target/temploc" />                                   
-                            <move file="target/temploc/META-INF/LICENSE" tofile="target/temploc/META-INF/LICENSE_httpcore.txt" />
-                            <move file="target/temploc/META-INF/NOTICE" tofile="target/temploc/META-INF/NOTICE_httpcore.txt" />
-                            <move file="target/temploc/META-INF/DEPENDENCIES" tofile="target/temploc/META-INF/DEPENDENCIES_httpcore.txt" />                                        
+                            <unzip src="target/tempjars/httpcore-4.1.2.jar" dest="target/temploc" />                                   
+                            <move file="target/temploc/META-INF/LICENSE.txt" tofile="target/temploc/META-INF/LICENSE_httpcore.txt" />
+                            <move file="target/temploc/META-INF/NOTICE.txt" tofile="target/temploc/META-INF/NOTICE_httpcore.txt" />
 
                             <unzip src="target/tempjars/jettison-1.1.jar" dest="target/temploc" />                                   
                             <move file="target/temploc/META-INF/LICENSE" tofile="target/temploc/META-INF/LICENSE_jettison.txt" />                                       
