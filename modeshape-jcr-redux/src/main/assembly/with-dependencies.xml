@@ -1,0 +1,25 @@
+<assembly>
+  <id>jar-with-dependencies</id>
+  <includeBaseDirectory>false</includeBaseDirectory>
+  <formats>
+    <format>jar</format>
+  </formats>
+  <dependencySets>
+    <dependencySet>
+      <unpack>true</unpack>
+      <scope>runtime</scope>
+			<excludes>
+				<!-- Cannot ship the JCR 1.0 jar -->
+				<exclude>javax.jcr:jcr</exclude>
+			</excludes>
+    </dependencySet>
+  </dependencySets>
+  <fileSets>
+    <fileSet>
+      <directory>${project.build.outputDirectory}</directory>
+      <includes>
+				<include>${project.artifactId}-${project.version}.jar</include>
+      </includes>
+    </fileSet>
+  </fileSets>
+</assembly>

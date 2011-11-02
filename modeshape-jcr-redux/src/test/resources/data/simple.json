@@ -1,0 +1,244 @@
+{
+    "data" : [
+        {
+            "metadata" : {
+                "id" : "source1works1-cafebabe-cafe-babe-cafe-babecafebabe",
+                "path" : "/  -- Note this 'metadata/path' value is simply used to allow a human reader to know the path of each node, and is not actually used by the ModeShape or the test cases."
+            },
+            "content" : {
+                "properties" : {
+                    "http://www.jcp.org/jcr/1.0" : {
+                        "primaryType" : { "$name" : "{http://www.modeshape.org/1.0}root" },
+                        "uuid" : "cafebabe-cafe-babe-cafe-babecafebabe"
+                    }
+                },
+                "children" : [
+                    {
+                        "key" : "source1system-jcrsystem",
+                        "name" : "{http://www.jcp.org/jcr/1.0}system"
+                    }
+                    {
+                        "key" : "source1works1-childA",
+                        "name" : "childA"
+                    },
+                    {
+                        "key" : "source1works1-childB",
+                        "name" : "childB"
+                    }
+                ]
+            }
+        },
+        {
+            "metadata" : {
+                "id" : "source1system-jcrsystem",
+                "path" : "/jcr:system"
+            },
+            "content" : {
+                "parent" : [
+                    "source1works1-cafebabe-cafe-babe-cafe-babecafebabe",
+                    "source1works2-cafebabe-cafe-babe-cafe-babecafebabe"
+                ],
+                "properties" : {
+                    "http://www.jcp.org/jcr/1.0" : {
+                        "primaryType" : { "$name" : "{http://www.modeshape.org/1.0}system" },
+                        "uuid" : "56b3feae-3def-44f7-a433-586413f312e4"
+                    }
+                },
+                "children" : [
+                    {
+                        "key" : "source1system-jcrnamespaces",
+                        "name" : "{http://www.modeshape.org/1.0}namespaces"
+                    }
+                ]
+            }
+        },
+        {
+            "metadata" : {
+                "id" : "source1system-jcrnamespaces",
+                "path" : "/jcr:system/mode:namespaces"
+            },
+            "content" : {
+                "parent" : "source1system-jcrsystem",
+                "properties" : {
+                    "http://www.jcp.org/jcr/1.0" : {
+                        "primaryType" : { "$name" : "{http://www.modeshape.org/1.0}namespaces" }
+                    }
+                }
+            }
+        },
+        {
+            "metadata" : {
+                "id" : "source1works1-childA",
+                "path" : "/childA"
+            },
+            "content" : {
+                "parent" : "source1works1-cafebabe-cafe-babe-cafe-babecafebabe",
+                "properties" : {
+                    "http://www.jcp.org/jcr/1.0" : {
+                        "primaryType" : { "$name" : "http://www.jcp.org/jcr/nt/1.0}unstructured" },
+                        "mixinTypes" : [
+                            { "$name" : "http://www.jcp.org/jcr/mix/1.0}referenceable" }
+                        ],
+                        "uuid" : "563e9d8b-dd3d-4479-9c53-363d092a336b"
+                    },
+                    "http://www.modeshape.org/1.0/test" : {
+                        "description" : "This is the description of the 'childA' node.",
+                        "intValue" : 10,
+                        "booleanValue" : true
+                    }
+                },
+                "children" : [
+                    
+                ]
+            }
+        },
+        {
+            "metadata" : {
+                "id" : "source1works1-childB",
+                "path" : "/childB"
+            },
+            "content" : {
+                "parent" : "source1works1-cafebabe-cafe-babe-cafe-babecafebabe",
+                "properties" : {
+                    "http://www.jcp.org/jcr/1.0" : {
+                        "primaryType" : { "$name" : "http://www.jcp.org/jcr/nt/1.0}unstructured" },
+                        "mixinTypes" : [
+                            { "$name" : "http://www.jcp.org/jcr/mix/1.0}referenceable" }
+                        ],
+                        "uuid" : "2ef58009-28ab-4348-8445-b92b629e97e1"
+                    },
+                    "http://www.modeshape.org/1.0/test" : {
+                        "description" : "This is the description of the 'childB' node.",
+                        "intValue" : 20,
+                        "booleanValue" : false,
+                        "doubleValue" : 2.3533
+                    }
+                },
+                "childrenInfo" : {
+                    "count" : 2,
+                    "nextBlock" : "ba986b40-6dcc-4580-b0b6-dacbc298ada2",
+                    "lastBlock" : "ba986b40-6dcc-4580-b0b6-dacbc298ada2"
+                },
+                "children" : [
+                    {
+                        "key" : "source1works1-childC",
+                        "name" : "childC"
+                    }
+                ]
+            }
+        },
+        {
+            "metadata" : {
+                "id" : "ba986b40-6dcc-4580-b0b6-dacbc298ada2",
+                "description" : "second block of children for /childB"
+            },
+            "content" : {
+                "children" : [
+                    {
+                        "key" : "source1works1-childD",
+                        "name" : "childD"
+                    }
+                ]
+            }
+        },
+        {
+            "metadata" : {
+                "id" : "source1works1-childC",
+                "path" : "/childB/childC"
+            },
+            "content" : {
+                "parent" : "source1works1-childB",
+                "properties" : {
+                    "http://www.jcp.org/jcr/1.0" : {
+                        "primaryType" : { "$name" : "http://www.jcp.org/jcr/nt/1.0}unstructured" },
+                        "mixinTypes" : [
+                            { "$name" : "http://www.jcp.org/jcr/mix/1.0}referenceable" }
+                        ],
+                        "uuid" : "d1369fe3-19b7-454a-814e-0f89e91fadef"
+                    },
+                    "http://www.modeshape.org/1.0/test" : {
+                        "description" : "This is the description of the 'childC' node.",
+                        "intValue" : 30,
+                        "booleanValue" : true,
+                        "doubleValue" : 3.14159
+                    }
+                }
+            }
+        },
+        {
+            "metadata" : {
+                "id" : "source1works1-childD",
+                "path" : "/childB/childD"
+            },
+            "content" : {
+                "parent" : "source1works1-childB",
+                "properties" : {
+                    "http://www.jcp.org/jcr/1.0" : {
+                        "primaryType" : { "$name" : "http://www.jcp.org/jcr/nt/1.0}unstructured" },
+                        "mixinTypes" : [
+                            { "$name" : "http://www.jcp.org/jcr/mix/1.0}referenceable" }
+                        ],
+                        "uuid" : "c77ee4e7-66a3-4bc2-a889-0e8bb78706eb"
+                    },
+                    "http://www.modeshape.org/1.0/test" : {
+                        "description" : "This is the description of the 'childD' node.",
+                        "intValue" : 50,
+                        "booleanValue" : false,
+                        "doubleValue" : 31.4159
+                    }
+                }
+            }
+        },
+        
+        {
+            "metadata" : {
+                "id" : "source1works2-cafebabe-cafe-babe-cafe-babecafebabe",
+                "path" : "/",
+                "description" : "The root node of workspace 2"
+            },
+            "content" : {
+                "properties" : {
+                    "http://www.jcp.org/jcr/1.0" : {
+                        "primaryType" : { "$name" : "{http://www.modeshape.org/1.0}root" },
+                        "uuid" : "cafebabe-cafe-babe-cafe-babecafebabe"
+                    }
+                },
+                "children" : [
+                    {
+                        "key" : "source1system-jcrsystem",
+                        "name" : "{http://www.jcp.org/jcr/1.0}system"
+                    }
+                    {
+                        "key" : "source1works2-childX",
+                        "name" : "childX"
+                    }
+                ]
+            }
+        },
+        {
+            "metadata" : {
+                "id" : "source1works2-childX",
+                "path" : "/childX"
+            },
+            "content" : {
+                "parent" : "source1works2-cafebabe-cafe-babe-cafe-babecafebabe",
+                "properties" : {
+                    "http://www.jcp.org/jcr/1.0" : {
+                        "primaryType" : { "$name" : "http://www.jcp.org/jcr/nt/1.0}unstructured" },
+                        "mixinTypes" : [
+                            { "$name" : "http://www.jcp.org/jcr/mix/1.0}referenceable" }
+                        ],
+                        "uuid" : "78beace9-7a88-40eb-a878-aaba8e1fc8fe"
+                    },
+                    "http://www.modeshape.org/1.0/test" : {
+                        "description" : "This is the description of the 'childX' node.",
+                        "intValue" : 40,
+                        "booleanValue" : true,
+                        "doubleValue" : 1.6512
+                    }
+                }
+            }
+        },
+
+    ]
+}

@@ -1,0 +1,33 @@
+{
+	"$schema" : "http://json-schema.org/draft-03/schema#",
+	"id" : "http://infinispan.org/schematic/databaseDocument#",
+	"type" : "object",
+	
+	"properties" : {
+	    "description" : {
+	        "type" : "string"
+	    },
+	    
+	    "schemaCacheName" : {
+	        "type" : "string"
+	    },
+	    
+		"defaultSchemaUri" : {
+			"type" : "string",
+			"format" : "uri"
+			"default" : "http://json-schema.org/draft-03/schema#"
+		},
+		
+		"defaultContentTypeForDocuments" : {
+			"type" : "string",
+			"default" : "application/json"
+		},
+		
+		"defaultContentTypeForBinary" : {
+			"type" : "string",
+			"default" : "application/octet-stream"
+		}
+	},
+	
+	"default" : {}
+}

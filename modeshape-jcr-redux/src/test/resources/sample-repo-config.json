@@ -1,0 +1,64 @@
+{
+    "name" : "My Repository",
+    "jndiName" : "java:jcr/local/MyRepository",
+    "largeValueSizeInBytes" : 10240,
+    "monitoring" : {
+        "enabled" : true
+    },
+    "storage" : {
+        "cacheName" : "some-cache",
+        "cacheConfiguration" : "infinispan.xml"
+    },
+    "workspaces" : {
+        "predefined" : ["ws1","ws2"],
+        "default" : "default",
+        "allowCreation" : true
+    },
+    "security" : {
+        "anonymous" : {
+            "roles" : ["readonly","readwrite","admin"],
+            "useOnFailedLogin" : false
+        },
+        "providers" : [
+            {
+                "name" : "My Custom Security Provider",
+                "classname" : "com.example.MyAuthenticationProvider",
+                "description" : "A custom security provider used for authentication and authorization."
+            },
+            {
+                "type" : "JAAS",
+                "policyName" : "modeshape-jcr"
+            }
+        ]
+    },
+    "query" : {
+        "enabled" : true,
+        "indexLocation" : "/some/path",
+        "rebuildUponStartup" : "ifMissing",
+        "extractors" : [
+            {
+                "name" : "General Extractor",
+                "type" : "Tika"
+            }
+        ]
+    },
+    "sequencing" : {
+        "removeDerivedContentWithOriginal" : true,
+        "sequencers" : [
+            {
+                "name" : "ZIP Files",
+                "type" : "ZipSequencer",
+                "pathExpression" : "default:/files(//)(*.zip[*])/jcr:content[@jcr:data] => default:/sequenced/zip/$1",
+                "description" : "Sequences ZIP files loaded under '/files' and extracting into '/sequenced/zip/$1'",
+            },
+            {
+                "name" : "Delimited Text File Sequencer",
+                "classname" : "org.modeshape.sequencer.text.DelimitedTextSequencer",
+                "pathExpressions" : [ 
+                    "default:/files//(*.csv[*])/jcr:content[@jcr:data] => default:/sequenced/text/delimited/$1"
+                ],
+                "splitPattern" : ","
+            }
+        ]
+    }
+}

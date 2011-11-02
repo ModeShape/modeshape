@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.modeshape</groupId>
     <artifactId>modeshape-parent</artifactId>
-	  <version>2.7-SNAPSHOT</version>
+	  <version>3.0-SNAPSHOT</version>
     <relativePath>modeshape-parent/pom.xml</relativePath>
   </parent>
 
@@ -18,50 +18,13 @@
 	<modules>
 		<!-- This must be first -->
 		<module>modeshape-parent</module>
-		<!-- Order is important -->
 		<module>modeshape-assembly-descriptors</module>
-		<module>modeshape-common</module>
-		<module>modeshape-graph</module>
-		<module>modeshape-repository</module>
-		<module>modeshape-cnd</module>
-		<module>extensions/modeshape-search-lucene</module>
-		<module>extensions/modeshape-clustering</module>
+		<!-- Order is important -->
 		<module>modeshape-jcr-api</module>
-		<module>modeshape-jcr</module>
-		<!-- Order of extensions is not important -->
-		<module>extensions/modeshape-classloader-maven</module>
-		<module>extensions/modeshape-sequencer-images</module>
-		<module>extensions/modeshape-sequencer-mp3</module>
-		<module>extensions/modeshape-sequencer-jbpm-jpdl</module>
-		<module>extensions/modeshape-sequencer-cnd</module>
-		<module>extensions/modeshape-sequencer-java</module>
-		<module>extensions/modeshape-sequencer-classfile</module>
-		<module>extensions/modeshape-sequencer-msoffice</module>
-		<module>extensions/modeshape-sequencer-sramp</module>
-		<module>extensions/modeshape-sequencer-teiid</module>
-		<module>extensions/modeshape-sequencer-text</module>
-		<module>extensions/modeshape-sequencer-xml</module>
-		<module>extensions/modeshape-sequencer-xsd</module>
-		<module>extensions/modeshape-sequencer-wsdl</module>
-		<module>extensions/modeshape-sequencer-zip</module>
-		<module>extensions/modeshape-sequencer-ddl</module>
-		<module>extensions/modeshape-connector-disk</module>
-		<module>extensions/modeshape-connector-filesystem</module>
-		<module>extensions/modeshape-connector-infinispan</module>
-		<module>extensions/modeshape-connector-jbosscache</module>
-		<module>extensions/modeshape-connector-svn</module>
-		<module>extensions/modeshape-connector-jcr</module>
-		<module>extensions/modeshape-connector-store-jpa</module>
-		<module>extensions/modeshape-connector-jdbc-metadata</module>
-		<module>extensions/modeshape-mimetype-detector-aperture</module>
-		<module>extensions/modeshape-extractor-tika</module>
-		<!-- Order is important (web before JDBC before jbossas) -->
-		<module>web</module>
-		<module>utils/modeshape-jpa-ddl-gen</module>
-		<module>utils/modeshape-jdbc-local</module>
-		<module>utils/modeshape-jdbc</module>
-		<module>utils/modeshape-unit-test</module>
-		<module>deploy/jbossas</module>
+		<module>modeshape-common</module>
+		<module>modeshape-schematic</module>
+		<module>modeshape-jcr-redux</module>
+
 	</modules>
 	<properties>
 		<rootDir>${project.basedir}</rootDir>
@@ -70,32 +33,57 @@
 	<profiles>
 		<profile>
 			<!-- 
-			  This profile is used during a release, and includes all modules 
-				and must be activated manually, as in "mvn ... -Prelease ..."
+			  This profile is TEMPORARY and is used to build the modules
+			  that have not yet been moved over to use the new JCR module.
+				It must be activated manually, as in "mvn ... -Plegacy ..."
 			-->
-			<id>release</id>
+			<id>legacy</id>
 			<activation>
 				<activeByDefault>false</activeByDefault>
 			</activation>
 			<modules>
-				<module>modeshape-integration-tests</module>
-				<module>docs</module>
-				<module>docs/examples/gettingstarted</module>
-				<module>modeshape-distribution</module>
-			</modules>
-		</profile>
-		<profile>
-			<!-- 
-			  This profile is used to run an integration build
-				and must be activated manually, as in "mvn ... -Pintegration ..."
-			-->
-			<id>integration</id>
-			<activation>
-				<activeByDefault>false</activeByDefault>
-			</activation>
-			<modules>
-				<module>modeshape-integration-tests</module>
-				<module>docs/examples/gettingstarted</module>
+    		<!-- The remaining modules are from the legacy project -->
+    		<module>modeshape-graph</module>
+    		<module>modeshape-repository</module>
+    		<module>modeshape-cnd</module>
+    		<module>extensions/modeshape-search-lucene</module>
+    		<module>extensions/modeshape-clustering</module>
+    		<module>modeshape-jcr</module>
+    		<!-- Order of extensions is not important -->
+    		<module>extensions/modeshape-classloader-maven</module>
+    		<module>extensions/modeshape-sequencer-images</module>
+    		<module>extensions/modeshape-sequencer-mp3</module>
+    		<module>extensions/modeshape-sequencer-jbpm-jpdl</module>
+    		<module>extensions/modeshape-sequencer-cnd</module>
+    		<module>extensions/modeshape-sequencer-java</module>
+    		<module>extensions/modeshape-sequencer-classfile</module>
+    		<module>extensions/modeshape-sequencer-msoffice</module>
+    		<module>extensions/modeshape-sequencer-sramp</module>
+    		<module>extensions/modeshape-sequencer-teiid</module>
+    		<module>extensions/modeshape-sequencer-text</module>
+    		<module>extensions/modeshape-sequencer-xml</module>
+    		<module>extensions/modeshape-sequencer-xsd</module>
+    		<module>extensions/modeshape-sequencer-wsdl</module>
+    		<module>extensions/modeshape-sequencer-zip</module>
+    		<module>extensions/modeshape-sequencer-ddl</module>
+    		<module>extensions/modeshape-connector-disk</module>
+    		<module>extensions/modeshape-connector-filesystem</module>
+    		<module>extensions/modeshape-connector-infinispan</module>
+    		<module>extensions/modeshape-connector-jbosscache</module>
+    		<module>extensions/modeshape-connector-svn</module>
+    		<module>extensions/modeshape-connector-jcr</module>
+    		<module>extensions/modeshape-connector-store-jpa</module>
+    		<module>extensions/modeshape-connector-jdbc-metadata</module>
+    		<module>extensions/modeshape-mimetype-detector-aperture</module>
+    		<module>extensions/modeshape-extractor-tika</module>
+    		<!-- Order is important (web before JDBC before jbossas) -->
+    		<module>web</module>
+    		<module>utils/modeshape-jpa-ddl-gen</module>
+    		<module>utils/modeshape-jdbc-local</module>
+    		<module>utils/modeshape-jdbc</module>
+    		<module>utils/modeshape-unit-test</module>
+    		<module>deploy/jbossas</module>
+    		<module>modeshape-integration-tests</module>
 			</modules>
 		</profile>
 		<profile>
@@ -122,36 +110,8 @@
 			</activation>
 			<modules>
 				<module>modeshape-integration-tests</module>
-				<module>docs</module>
-				<module>docs/examples/gettingstarted</module>
 				<module>modeshape-distribution</module>
 			</modules>
 		</profile>
-		<profile>
-			<!--
-			  This profile includes the DocBook guides/manuals,
-				and is activated manually, as in "mvn ... -Pdocs ..."
-			-->
-			<id>docs</id>
-			<activation>
-				<activeByDefault>false</activeByDefault>
-			</activation>
-			<modules>
-				<!-- Add in the documentation modules (excluding JavaDoc) -->
-				<module>docs</module>
-				<module>docs/examples/gettingstarted</module>
-			</modules>
-		</profile>
-		<profile>
-			<!-- Generally not used, though this profile will add in any projects in the sandbox -->
-			<id>sandbox</id>
-			<activation>
-				<activeByDefault>false</activeByDefault>
-			</activation>
-			<modules>
-        <!--module>sandbox/modeshape-sequencer-esb-message</module-->
-        <module>sandbox/modeshape-test-reference-impl</module>
-      </modules>
-    </profile>
 	</profiles>
 </project>

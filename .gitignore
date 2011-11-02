@@ -21,6 +21,9 @@ atlassian-ide-plugin.xml
 # log files
 *.log
 
+# Object files
+ObjectStore
+
 # Compiled python files
 *.pyc
 

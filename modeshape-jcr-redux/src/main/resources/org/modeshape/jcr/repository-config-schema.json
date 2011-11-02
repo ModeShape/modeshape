@@ -1,0 +1,237 @@
+{
+    "$schema" : "http://modeshape.org/3.0/repository-config#",
+    "id" : "http://modeshape.org/3.0/repository-config#",
+    "type" : "object",
+    
+    "additionalProperties" : false,
+    "properties" : {
+        "name" : {
+            "type" : "string",
+            "required" : true,
+            "description" : "The name of the repository. If not provided, the name of the configuration file is used (minus the filename extension)."
+        },
+        "jndiName" : {
+            "type" : "string",
+            "description" : "The name in JNDI where this repository is to be registered. If not specified, the location is assumed to be 'jcr:local:<name>', where '<name>' is the repository name. Setting this field to an empty string signals that the repository should not be registered in JNDI."
+        },
+        "largeValueSizeInBytes" : {
+            "type" : "integer",
+            "description" : "The size threshold that dictates how property values are stored. String and binary values smaller than this value are stored with the node, whereas string and binary values with a size equal to or greater than this limit may be stored separately from the node and keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is '10240' bytes, or 10 kilobytes."
+        },
+        "monitoring" : {
+            "type" : "object",
+            "description" : "The specification for the monitoring system for the repositories.",
+            "additionalProperties" : false,
+            "properties" : {
+                "enabled" : {
+                    "type" : "boolean",
+                    "default" : true,
+                    "description" : "The flag specifying whether the repositories should record monitoring statistics. This is enabled by default."
+                }
+            }
+        },
+        "storage" : {
+            "type" : "object",
+            "description" : "The specification of how to obtain the Infinispan cache used for storage.",
+            "additionalProperties" : false,
+            "properties" : {
+                "cacheName" : {
+                    "type" : "string",
+                    "description" : "The name of the Infinispan cache that this repository should use. If not specified, the repository's name is used."
+                },
+                "cacheConfiguration" : {
+                    "type" : "string",
+                    "description" : "The name of the Infinispan configuration file. If a file could not be found (on the thread context classloader, on the application's classpath, or on the system classpath), then the name is used to look in JNDI for an Infinispan CacheContainer instance. If no such container is found, then a default Infinispan configuration (a basic, local mode, non-clustered cache) will be used."
+                }
+            }
+        },
+        "workspaces" : {
+            "type" : "object",
+            "additionalProperties" : false,
+            "properties" : {
+                "predefined" : {
+                    "type" : "array",
+                    "uniqueItems" : true,
+                    "description" : "The names of the workspaces that are defined to exist."
+                },
+                "default" : {
+                    "type" : "string",
+                    "description" : "The name of the workspace that should be used when not specified by calls to login to a Session."
+                },
+                "allowCreation" : {
+                    "type" : "boolean",
+                    "default" : true,
+                    "description" : "Specifies whether users can create additional workspaces beyond the predefined, system, and default workspaces. The default value is 'true'."
+                }
+            }
+        },
+        "security" : {
+            "type" : "object",
+            "additionalProperties" : false,
+            "properties" : {
+                "jaas" : {
+                    "type" : "object",
+                    "description" : "The configuration of the authentication/authorization provider that uses JAAS.",
+                    "properties" : {
+                        "policyName" : {
+                            "type" : "string",
+                            "default" : "modeshape-jcr",
+                            "description" : "The name of the JAAS policy that should be to validate credentials. If not specified, JAAS authentication is not used."
+                        }
+                    }
+                },
+                "anonymous" : {
+                    "type" : "object",
+                    "description" : "The configuration of the authentication/authorization provider that uses JAAS.",
+                    "properties" : {
+                        "roles" : {
+                            "type" : "array",
+                            "default" : [ "readonly","readwrite", "admin"],
+                            "items" : {
+                                "type" : "string",
+                            },
+                            "uniqueItems" : true, 
+                            "description" : "An array of roles provided for anonymous access. Anonymous logins will be disabled if no value or an empty value is provided."
+                        },
+                        "username" : {
+                            "type" : "string",
+                            "default" : "<anonymous>",
+                            "description" : "The username that should be used for anonymous users."
+                        },
+                        "useOnFailedLogin" : {
+                            "type" : "boolean",
+                            "default" : false,
+                            "description" : "Indicates whether a failed attempt to {@link #login} should automatically attempt to use anonymous access instead. If anonymous access is not enabled, then failed login attempts will still cause a LoginException to be thrown. The default value is 'false'."
+                        },
+                    }
+                },
+                "providers" : {
+                    "type" : "array",
+                    "description" : "The named set of security provider configurations",
+                    "items" : {
+                        "type" : "object",
+                        "description" : "Specification of a security provider configuration.",
+                        "additionalProperties" : true,
+                        "properties" : {
+                            "name" : {
+                                "type" : "string",
+                                "description" : "The optional user-defined name of the security provider configuration."
+                            },
+                            "description" : {
+                                "type" : "string",
+                                "description" : "The optional description of the security provider configuration."
+                            },
+                            "type" : {
+                                "type" : "string",
+                                "description" : "A shortcut for 'classname' of built-in providers, where the package name is not required. Values are matched against the names of built-in provider implementation classes.",
+                                "enum" : [ "jaas", "servlet"]
+                            },
+                            "classname" : {
+                                "type" : "string",
+                                "description" : "The fully-qualified name of the org.modeshape.graph.text.TextExtractor implementation class."
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "query" : {
+            "type" : "object",
+            "additionalProperties" : false,
+            "properties" : {
+                "enabled" : {
+                    "type" : "boolean",
+                    "default" : true,
+                    "description" : "A boolean flag that specifies whether this repository is expected to execute searches and queries. If client applications will never perform searches or queries, then maintaining the query indexes is an unnecessary overhead, and can be disabled. Note that this is merely a hint, and that searches and queries might still work when this is set to 'false'."
+                },
+                "indexLocation" : {
+                    "type" : "string",
+                    "description" : "The location where the system is to store the indexes used in searching and querying the content. These size of these indexes depend upon the size of the content being stored, and thus may consume a significant amount of space. This option defines a location on the file system where this repository may (if needed) store indexes so they don't consume large amounts of memory. If specified, the value must be a valid absolute or relative path to a writable directory on the file system. If the path specifies a non-existant location, the repository may attempt to create the missing directories. The path may be absolute or relative to the location where this VM was started. If the specified location is not a readable and writable directory (or cannot be created as such), then this will generate an exception when the repository is created. The default value is null, meaning the search indexes may not be stored on the local file system and, if needed, will be stored within memory."
+                },
+                "rebuildUponStartup" : {
+                    "type" : "string",
+                    "enum" : ["ifMissing","always"],
+                    "default" : "ifMissing",
+                    "description" : ""
+                },
+                "extractors" : {
+                    "type" : "array",
+                    "description" : "An array of extractor configurations.",
+                    "items" : {
+                        "type" : "object",
+                        "description" : "Specification of a text extractor configuration.",
+                        "additionalProperties" : true,
+                        "properties" : {
+                            "name" : {
+                                "type" : "string",
+                                "description" : "The optional user-defined name of the extractor configuration."
+                            },
+                            "description" : {
+                                "type" : "string",
+                                "description" : "The optional description of the extractor configuration."
+                            },
+                            "type" : {
+                                "type" : "string",
+                                "description" : "A shortcut for 'classname' of built-in extractors, where the package name is not required. Values are matched against the names of built-in TextExtractor implementation classes."
+                            },
+                            "classname" : {
+                                "type" : "string",
+                                "description" : "The fully-qualified name of the org.modeshape.graph.text.TextExtractor implementation class."
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "sequencing" : {
+            "type" : "object",
+            "description" : "The options for sequencing.",
+            "additionalProperties" : false,
+            "properties" : {
+                "removeDerivedContentWithOriginal" : {
+                    "type" : "boolean",
+                    "default" : true,
+                    "description" : "Boolean option that controls whether the repository should also remove the content automatically derived by sequencers from the original content when that original content is removed. The default is 'true', since often times the derived content should not be kept if the original is being deleted."
+                },
+                "sequencers" : {
+                    "type" : "array",
+                    "description" : "The named set of sequencer configurations",
+                    "items" : {
+                        "type" : "object",
+                        "additionalProperties" : true,
+                        "description" : "Specification of a sequencer configuration.",
+                        "properties" : {
+                            "name" : {
+                                "type" : "string",
+                                "description" : "The optional user-defined name of the sequencer configuration."
+                            },
+                            "description" : {
+                                "type" : "string",
+                                "description" : "The optional description of the sequencer configuration."
+                            },
+                            "type" : {
+                                "type" : "string",
+                                "description" : "A shortcut for 'classname' of built-in sequencers, where the package name is not required. Values are matched against the names of built-in sequencer implementation classes."
+                            },
+                            "classname" : {
+                                "type" : "string",
+                                "description" : "The fully-qualified name of the org.modeshape.graph.text.TextExtractor implementation class."
+                            },
+                            "pathExpression" : {
+                                "type" : "string",
+                                "description" : "The expression that describes the paths upon which this sequencer operates and the paths where the sequencer output is written."
+                            },
+                            "pathExpressions" : {
+                                "type" : "array",
+                                "items" : {
+                                    "type" : "string"
+                                },
+                                "description" : "The expressions that describes the paths upon which this sequencer operates and the paths where the sequencer output is written."
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
