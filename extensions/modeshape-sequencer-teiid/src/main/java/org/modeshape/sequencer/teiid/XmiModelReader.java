@@ -755,7 +755,7 @@ public class XmiModelReader extends XmiGraphReader {
                 UUID mmuuid = reader.resolver.resolveInternalReference(hrefToTransformedObject);
                 PropertySet props = reader.propertiesFor(mmuuid, true);
 
-                props.add(JcrLexicon.MIXIN_TYPES, TransformLexicon.TRANSFORMED);
+                props.add(JcrLexicon.MIXIN_TYPES, TransformLexicon.WITH_SQL);
 
                 // Get the transformation details ...
                 Path helperNestedNodePath = reader.path(transformation.getLocation().getPath(), "helper/nested");
