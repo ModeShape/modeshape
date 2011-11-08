@@ -166,19 +166,13 @@ public class SvnRepositoryUtil {
      * 
      * @param repos
      * @param path
+     * @throws  SVNException in case the path cannot be validated
      * @return true if repository path is a directory and false otherwise.
      */
     public static boolean isDirectory( SVNRepository repos,
-                                       String path ) {
-        try {
-            SVNNodeKind kind = repos.checkPath(path, -1);
-            if (kind == SVNNodeKind.DIR) {
-                return true;
-            }
-        } catch (SVNException e) {
-            return false;
-        }
-        return false;
+                                       String path ) throws SVNException {
+        SVNNodeKind kind = repos.checkPath(path, -1);
+        return kind == SVNNodeKind.DIR;
     }
 
     /**

@@ -62,7 +62,7 @@ public class SvnRepositoryConnectorWritableTest extends AbstractConnectorTest {
      */
     @Override
     protected RepositorySource setUpSource() throws Exception {
-        url = SvnConnectorTestUtil.createURL("src/test/resources/dummy_svn_repos", "target/copy_of dummy_svn_repos");
+        url = SvnConnectorTestUtil.createTestRepoURL();
         String[] predefinedWorkspaceNames = new String[] {"trunk", "tags"};
         SvnRepositorySource source = new SvnRepositorySource();
         source.setName("Test Repository");
