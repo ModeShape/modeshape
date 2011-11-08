@@ -1,5 +1,5 @@
-<!ENTITY versionNumber "2.5.0.Beta3">
-<!ENTITY copyrightYears "2008-2010">
+<!ENTITY versionNumber "2.7-SNAPSHOT">
+<!ENTITY copyrightYears "2008-2011">
 <!ENTITY copyrightHolder "Red Hat, Inc.">
 
 <!-- Frequently used URLs -->
