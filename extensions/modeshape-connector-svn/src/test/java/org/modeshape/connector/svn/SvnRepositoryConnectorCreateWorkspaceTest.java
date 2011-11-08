@@ -11,8 +11,7 @@ public class SvnRepositoryConnectorCreateWorkspaceTest extends WorkspaceConnecto
 
     @BeforeClass
     public static void beforeAny() throws Exception {
-        url = SvnConnectorTestUtil.createURL("src/test/resources/dummy_svn_repos", "target/copy_of_dummy_svn_repos");
-
+        url = SvnConnectorTestUtil.createTestRepoURL();
     }
 
     /**

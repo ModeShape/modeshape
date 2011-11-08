@@ -15,6 +15,7 @@ import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.request.InvalidRequestException;
 import org.modeshape.graph.request.InvalidWorkspaceException;
 import org.modeshape.graph.request.MoveBranchRequest;
+import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.internal.io.dav.DAVRepositoryFactory;
 import org.tmatesoft.svn.core.internal.io.fs.FSRepositoryFactory;
 import org.tmatesoft.svn.core.internal.io.svn.SVNRepositoryFactoryImpl;
@@ -76,10 +77,15 @@ public class SvnRepository extends Repository<PathNode, SvnWorkspace> {
                                           SvnWorkspace originalToClone ) throws InvalidWorkspaceException {
             SvnRepository repository = SvnRepository.this;
 
-            if (originalToClone != null) {
-                return new SvnWorkspace(name, originalToClone, repository.getWorkspaceDirectory(name));
+            try {
+                if (originalToClone != null) {
+                    return new SvnWorkspace(name, originalToClone, repository.getWorkspaceDirectory(name));
+                }
+                return new SvnWorkspace(repository, getWorkspaceDirectory(name), name, source.getRootNodeUuidObject());
             }
-            return new SvnWorkspace(repository, getWorkspaceDirectory(name), name, source.getRootNodeUuidObject());
+            catch (SVNException e) {
+                throw new InvalidWorkspaceException(e);
+            }
         }
 
         @Override
@@ -89,7 +95,7 @@ public class SvnRepository extends Repository<PathNode, SvnWorkspace> {
         }
     }
 
-    protected SVNRepository getWorkspaceDirectory( String workspaceName ) {
+    protected SVNRepository getWorkspaceDirectory( String workspaceName ) throws SVNException {
         if (workspaceName == null) workspaceName = source().getDefaultWorkspaceName();
 
         if (source().getRepositoryRootUrl().endsWith("/")) {
