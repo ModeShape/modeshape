@@ -26,7 +26,7 @@ import org.modeshape.sequencer.ddl.node.AstNode;
 
 public class OracleDdlParserTest extends DdlParserTestHelper {
 
-    public static final String DDL_FILE_PATH = "src/test/resources/ddl/dialect/oracle/";
+    public static final String DDL_FILE_PATH = "ddl/dialect/oracle/";
 
     @Before
     public void beforeEach() {

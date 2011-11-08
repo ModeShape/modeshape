@@ -26,34 +26,26 @@ package org.modeshape.sequencer.ddl;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_TABLE_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_SCHEMA_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_SCHEMA_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_PROBLEM;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_UNKNOWN_STATEMENT;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.graph.ExecutionContext;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.*;
 import org.modeshape.sequencer.ddl.node.AstNode;
 import org.modeshape.sequencer.ddl.node.AstNodeFactory;
+import java.util.List;
 
 /**
  *
  */
-public class DdlParsersTest {
+public class DdlParsersTest extends DdlParserTestHelper {
     private DdlParsers parsers;
-    public static final String DDL_TEST_FILE_PATH = "src/test/resources/ddl/";
+    public static final String DDL_TEST_FILE_PATH = "ddl/";
 
     private ExecutionContext context;
 
     private AstNodeFactory nodeFactory;
 
     private AstNode rootNode;
-
-    private boolean printTest = false;
 
     @Before
     public void beforeEach() {
@@ -62,60 +54,6 @@ public class DdlParsersTest {
         context = new ExecutionContext();
         rootNode = new AstNode(context.getValueFactories().getNameFactory().create("root_node"));
         nodeFactory = new AstNodeFactory(context);
-    }
-
-    public void printNodeChildren( AstNode node ) {
-        int count = 1;
-        for (AstNode childNode : node.getChildren()) {
-            if (printTest) {
-                System.out.println("NODE(" + (count++) + ")  NAME = " + childNode.getName().getString());
-            }
-        }
-    }
-
-    @SuppressWarnings( "null" )
-    protected String getFileContent( String filePath ) {
-        StringBuilder sb = new StringBuilder(1000);
-
-        if (printTest) {
-            System.out.println("   Getting Content for File = " + filePath);
-        }
-
-        if (filePath != null && filePath.length() > 0) {
-            FileReader fr = null;
-            BufferedReader in = null;
-
-            try {
-                fr = new FileReader(filePath);
-                in = new BufferedReader(fr);
-
-                int ch = in.read();
-
-                while (ch > -1) {
-                    sb.append((char)ch);
-                    ch = in.read();
-                }
-            } catch (Exception e) {
-                System.out.print(e);
-            } finally {
-                try {
-                    fr.close();
-                } catch (java.io.IOException e) {
-                }
-                try {
-                    in.close();
-                } catch (java.io.IOException e) {
-                }
-
-            }
-        }
-        return sb.toString();
-    }
-
-    private void printTest( String value ) {
-        if (printTest) {
-            System.out.println("TEST:  " + value);
-        }
     }
 
     @Test
@@ -203,7 +141,7 @@ public class DdlParsersTest {
         assertEquals("ORACLE", rootNode.getProperty(StandardDdlLexicon.PARSER_ID).getFirstValue());
 
         // printNodeChildren(rootNode);
-        printTest = true;
+        setPrintToConsole(true);
         List<AstNode> problems = nodeFactory.getChildrenForType(rootNode, TYPE_PROBLEM);
         for (AstNode problem : problems) {
             printTest(problem.toString());

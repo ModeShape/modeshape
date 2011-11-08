@@ -25,6 +25,7 @@ package org.modeshape.sequencer.ddl;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
@@ -99,7 +100,7 @@ public class DdlSequencerTest {
 
     /**
      * Utility to create a {@link Path.Segment} from a string, where there will be no index
-     * 
+     *
      * @param name the string form of the path segment, which may include a 1-based same-name-sibling index
      * @return the path object
      * @throws ValueFormatException if a path could not be created from the supplied string
@@ -110,7 +111,7 @@ public class DdlSequencerTest {
 
     /**
      * Utility to create a {@link Name} from a string.
-     * 
+     *
      * @param name the string form of the name
      * @return the name object
      * @throws ValueFormatException if a name could not be created from the supplied string
@@ -121,7 +122,7 @@ public class DdlSequencerTest {
 
     /**
      * Utility to create a {@link Path} from a string.
-     * 
+     *
      * @param path the string form of the path
      * @return the path object
      * @throws ValueFormatException if a path could not be created from the supplied string
@@ -132,7 +133,7 @@ public class DdlSequencerTest {
 
     /**
      * Utility to create a string value from an {@link Object}
-     * 
+     *
      * @param value the value object
      * @return the string value of the object
      * @throws ValueFormatException if a path could not be created from the supplied string
@@ -141,21 +142,17 @@ public class DdlSequencerTest {
         return context.getValueFactories().getStringFactory().create(value);
     }
 
-    private boolean verifyProperty( SubgraphNode node,
-                                    String propNameStr,
-                                    String expectedValue ) {
+    private void verifyProperty( SubgraphNode node,
+                                 String propNameStr,
+                                 String expectedValue ) {
         Name propName = name(propNameStr);
         for (Property prop : node.getProperties()) {
             if (prop.getName().equals(propName)) {
-                for (Object nextVal : prop.getValuesAsArray()) {
-                    String valueStr = value(nextVal);
-                    if (valueStr.equals(expectedValue)) {
-                        return true;
-                    }
-                }
+                String valueStr = value(prop.getFirstValue());
+                assertEquals(expectedValue, valueStr);
+
             }
         }
-        return false;
     }
 
     private boolean verifyHasProperty( SubgraphNode node,
@@ -169,19 +166,19 @@ public class DdlSequencerTest {
         return false;
     }
 
-    private boolean verifyPrimaryType( SubgraphNode node,
-                                       String expectedValue ) {
-        return verifyProperty(node, "jcr:primaryType", expectedValue);
+    private void verifyPrimaryType( SubgraphNode node,
+                                    String expectedValue ) {
+        verifyProperty(node, "jcr:primaryType", expectedValue);
     }
 
-    private boolean verifyMixinType( SubgraphNode node,
-                                     String expectedValue ) {
-        return verifyProperty(node, "jcr:mixinTypes", expectedValue);
+    private void verifyMixinType( SubgraphNode node,
+                                  String expectedValue ) {
+        verifyProperty(node, "jcr:mixinTypes", expectedValue);
     }
 
-    private boolean verifyExpression( SubgraphNode node,
-                                      String expectedValue ) {
-        return verifyProperty(node, "ddl:expression", expectedValue);
+    private void verifyExpression( SubgraphNode node,
+                                   String expectedValue ) {
+        verifyProperty(node, "ddl:expression", expectedValue);
     }
 
     private void verifyBaseProperties( SubgraphNode node,
@@ -190,10 +187,10 @@ public class DdlSequencerTest {
                                        String colNum,
                                        String charIndex,
                                        int numChildren ) {
-        assertThat(verifyPrimaryType(node, primaryType), is(true));
-        assertThat(verifyProperty(node, "ddl:startLineNumber", lineNum), is(true));
-        assertThat(verifyProperty(node, "ddl:startColumnNumber", colNum), is(true));
-        assertThat(verifyProperty(node, "ddl:startCharIndex", charIndex), is(true));
+        verifyPrimaryType(node, primaryType);
+        verifyProperty(node, "ddl:startLineNumber", lineNum);
+        verifyProperty(node, "ddl:startColumnNumber", colNum);
+        verifyProperty(node, "ddl:startCharIndex", charIndex);
         assertThat(node.getChildren().size(), is(numChildren));
     }
 
@@ -249,44 +246,42 @@ public class DdlSequencerTest {
         assertNotNull(statementsNode);
         assertThat(statementsNode.getChildren().size(), is(1));
 
-        assertThat(verifyPrimaryType(statementsNode, "nt:unstructured"), is(true));
-        assertThat(verifyProperty(statementsNode, "ddl:parserId", "POSTGRES"), is(true));
+        verifyPrimaryType(statementsNode, "nt:unstructured");
+        verifyProperty(statementsNode, "ddl:parserId", "POSTGRES");
 
         SubgraphNode schemaNode = statementsNode.getNode(path("hollywood"));
         assertNotNull(schemaNode);
         verifyBaseProperties(schemaNode, "nt:unstructured", "1", "1", "0", 2);
-        assertThat(verifyMixinType(schemaNode, "ddl:createSchemaStatement"), is(true));
-        assertThat(verifyExpression(schemaNode, "CREATE SCHEMA hollywood"), is(true));
+        verifyMixinType(schemaNode, "ddl:createSchemaStatement");
+        verifyExpression(schemaNode, "CREATE SCHEMA hollywood");
 
         SubgraphNode filmsNode = schemaNode.getNode(path("films"));
         assertNotNull(filmsNode);
         verifyBaseProperties(filmsNode, "nt:unstructured", "2", "5", "28", 3);
-        assertThat(verifyMixinType(filmsNode, "ddl:createTableStatement"), is(true));
-        assertThat(verifyExpression(filmsNode, "CREATE TABLE films (title varchar(255), release date, producerName varchar(255))"),
-                   is(true));
+        verifyMixinType(filmsNode, "ddl:createTableStatement");
+        verifyExpression(filmsNode, "CREATE TABLE films (title varchar(255), release date, producerName varchar(255))");
 
         SubgraphNode winnersNode = schemaNode.getNode(path("winners"));
         assertNotNull(winnersNode);
         verifyBaseProperties(winnersNode, "nt:unstructured", "3", "5", "113", 0);
-        assertThat(verifyMixinType(winnersNode, "ddl:createViewStatement"), is(true));
-        assertThat(verifyExpression(winnersNode,
-                                    "CREATE VIEW winners AS SELECT title, release FROM films WHERE producerName IS NOT NULL;"),
-                   is(true));
+        verifyMixinType(winnersNode, "ddl:createViewStatement");
+        verifyExpression(winnersNode,
+                "CREATE VIEW winners AS SELECT title, release FROM films WHERE producerName IS NOT NULL;");
 
         // Check Column Properties
         SubgraphNode titleNode = filmsNode.getNode(path("title"));
         assertNotNull(titleNode);
-        assertThat(verifyPrimaryType(titleNode, "nt:unstructured"), is(true));
-        assertThat(verifyProperty(titleNode, "ddl:datatypeName", "VARCHAR"), is(true));
-        assertThat(verifyProperty(titleNode, "ddl:datatypeLength", "255"), is(true));
-        assertThat(verifyMixinType(titleNode, "ddl:columnDefinition"), is(true));
+        verifyPrimaryType(titleNode, "nt:unstructured");
+        verifyProperty(titleNode, "ddl:datatypeName", "VARCHAR");
+        verifyProperty(titleNode, "ddl:datatypeLength", "255");
+        verifyMixinType(titleNode, "ddl:columnDefinition");
 
         SubgraphNode releaseNode = filmsNode.getNode(path("release"));
         assertNotNull(releaseNode);
-        assertThat(verifyPrimaryType(releaseNode, "nt:unstructured"), is(true));
-        assertThat(verifyProperty(releaseNode, "ddl:datatypeName", "DATE"), is(true));
-        assertThat(verifyHasProperty(releaseNode, "ddl:datatypeLength"), is(false));
-        assertThat(verifyMixinType(titleNode, "ddl:columnDefinition"), is(true));
+        verifyPrimaryType(releaseNode, "nt:unstructured");
+        verifyProperty(releaseNode, "ddl:datatypeName", "DATE");
+        verifyHasProperty(releaseNode, "ddl:datatypeLength");
+        verifyMixinType(titleNode, "ddl:columnDefinition");
 
         // Map<Property> props = output.getProperties(nodePath)
     }
@@ -339,44 +334,44 @@ public class DdlSequencerTest {
         SubgraphNode statementsNode = rootNode.getNode(path("ddl:statements"));
         assertNotNull(statementsNode);
         assertThat(statementsNode.getChildren().size(), is(1));
-        assertThat(verifyPrimaryType(statementsNode, "nt:unstructured"), is(true));
-        assertThat(verifyProperty(statementsNode, "ddl:parserId", "SQL92"), is(true));
+        verifyPrimaryType(statementsNode, "nt:unstructured");
+        verifyProperty(statementsNode, "ddl:parserId", "SQL92");
 
         SubgraphNode tableNode = statementsNode.getNode(path("IDTABLE"));
         assertNotNull(tableNode);
         verifyBaseProperties(tableNode, "nt:unstructured", "1", "1", "0", 3);
-        assertThat(verifyMixinType(tableNode, "ddl:createTableStatement"), is(true));
-        assertThat(verifyExpression(tableNode, targetExpression), is(true));
+        verifyMixinType(tableNode, "ddl:createTableStatement");
+        verifyExpression(tableNode, targetExpression);
 
         // Check Column Properties
         SubgraphNode idcontextNode = tableNode.getNode(path("IDCONTEXT"));
         assertNotNull(idcontextNode);
-        assertThat(verifyPrimaryType(idcontextNode, "nt:unstructured"), is(true));
-        assertThat(verifyProperty(idcontextNode, "ddl:datatypeName", "VARCHAR"), is(true));
-        assertThat(verifyProperty(idcontextNode, "ddl:datatypeLength", "20"), is(true));
-        assertThat(verifyMixinType(idcontextNode, "ddl:columnDefinition"), is(true));
+        verifyPrimaryType(idcontextNode, "nt:unstructured");
+        verifyProperty(idcontextNode, "ddl:datatypeName", "VARCHAR");
+        verifyProperty(idcontextNode, "ddl:datatypeLength", "20");
+        verifyMixinType(idcontextNode, "ddl:columnDefinition");
 
         SubgraphNode nextidNode = tableNode.getNode(path("NEXTID"));
         assertNotNull(nextidNode);
-        assertThat(verifyPrimaryType(nextidNode, "nt:unstructured"), is(true));
-        assertThat(verifyProperty(nextidNode, "ddl:datatypeName", "NUMERIC"), is(true));
-        assertThat(verifyProperty(nextidNode, "ddl:datatypePrecision", "0"), is(true));
-        assertThat(verifyProperty(nextidNode, "ddl:datatypeScale", "0"), is(true));
-        assertThat(verifyHasProperty(nextidNode, "ddl:datatypeLength"), is(false));
-        assertThat(verifyMixinType(nextidNode, "ddl:columnDefinition"), is(true));
+        verifyPrimaryType(nextidNode, "nt:unstructured");
+        verifyProperty(nextidNode, "ddl:datatypeName", "NUMERIC");
+        verifyProperty(nextidNode, "ddl:datatypePrecision", "0");
+        verifyProperty(nextidNode, "ddl:datatypeScale", "0");
+        verifyHasProperty(nextidNode, "ddl:datatypeLength");
+        verifyMixinType(nextidNode, "ddl:columnDefinition");
 
         SubgraphNode pk_1_Node = tableNode.getNode(path("PK_1"));
         assertNotNull(pk_1_Node);
-        assertThat(verifyPrimaryType(pk_1_Node, "nt:unstructured"), is(true));
-        assertThat(verifyProperty(pk_1_Node, "ddl:constraintType", "PRIMARY KEY"), is(true));
-        assertThat(verifyMixinType(pk_1_Node, "ddl:tableConstraint"), is(true));
+        verifyPrimaryType(pk_1_Node, "nt:unstructured");
+        verifyProperty(pk_1_Node, "ddl:constraintType", "PRIMARY KEY");
+        verifyMixinType(pk_1_Node, "ddl:tableConstraint");
 
         // One column reference
         assertThat(pk_1_Node.getChildren().size(), is(1));
         SubgraphNode idcontectRefNode = pk_1_Node.getNode(path("IDCONTEXT"));
         assertNotNull(idcontectRefNode);
-        assertThat(verifyPrimaryType(idcontectRefNode, "nt:unstructured"), is(true));
-        assertThat(verifyMixinType(idcontectRefNode, "ddl:columnReference"), is(true));
+        verifyPrimaryType(idcontectRefNode, "nt:unstructured");
+        verifyMixinType(idcontectRefNode, "ddl:columnReference");
     }
 
     @Test
@@ -429,23 +424,23 @@ public class DdlSequencerTest {
         SubgraphNode statementsNode = rootNode.getNode(path("ddl:statements"));
         assertNotNull(statementsNode);
         assertThat(statementsNode.getChildren().size(), is(3));
-        assertThat(verifyPrimaryType(statementsNode, "nt:unstructured"), is(true));
-        assertThat(verifyProperty(statementsNode, "ddl:parserId", "POSTGRES"), is(true));
+        verifyPrimaryType(statementsNode, "nt:unstructured");
+        verifyProperty(statementsNode, "ddl:parserId", "POSTGRES");
 
         SubgraphNode firstNode = statementsNode.getNode(path("unknownStatement"));
         assertNotNull(firstNode);
         verifyBaseProperties(firstNode, "nt:unstructured", "1", "1", "0", 0);
-        assertThat(verifyMixinType(firstNode, "ddl:unknownStatement"), is(true));
+        verifyMixinType(firstNode, "ddl:unknownStatement");
 
         SubgraphNode serverNode = statementsNode.getNode(path("CREATE SERVER"));
         assertNotNull(serverNode);
         verifyBaseProperties(serverNode, "nt:unstructured", "5", "1", "93", 0);
-        assertThat(verifyMixinType(serverNode, "postgresddl:createServerStatement"), is(true));
+        verifyMixinType(serverNode, "postgresddl:createServerStatement");
 
         SubgraphNode ruleNode = statementsNode.getNode(path("_RETURN"));
         assertNotNull(ruleNode);
         verifyBaseProperties(ruleNode, "nt:unstructured", "7", "1", "144", 0);
-        assertThat(verifyMixinType(ruleNode, "postgresddl:createRuleStatement"), is(true));
+        verifyMixinType(ruleNode, "postgresddl:createRuleStatement");
 
     }
 
@@ -470,8 +465,8 @@ public class DdlSequencerTest {
         SubgraphNode statementsNode = rootNode.getNode(path("ddl:statements"));
         assertNotNull(statementsNode);
         assertThat(statementsNode.getChildren().size(), is(20));
-        assertThat(verifyPrimaryType(statementsNode, "nt:unstructured"), is(true));
-        assertThat(verifyProperty(statementsNode, "ddl:parserId", "SQL92"), is(true));
+        verifyPrimaryType(statementsNode, "nt:unstructured");
+        verifyProperty(statementsNode, "ddl:parserId", "SQL92");
 
         // Check one table
         // CREATE TABLE RT_MDLS
@@ -516,24 +511,24 @@ public class DdlSequencerTest {
         SubgraphNode tableNode = statementsNode.getNode(path("RT_MDLS"));
         assertNotNull(tableNode);
         verifyBaseProperties(tableNode, "nt:unstructured", "80", "1", "2258", 10);
-        assertThat(verifyMixinType(tableNode, "ddl:createTableStatement"), is(true));
+        verifyMixinType(tableNode, "ddl:createTableStatement");
 
         // Check Column Properties
         SubgraphNode node_1 = tableNode.getNode(path("MDL_UUID"));
         assertNotNull(node_1);
-        assertThat(verifyPrimaryType(node_1, "nt:unstructured"), is(true));
-        assertThat(verifyProperty(node_1, "ddl:datatypeName", "VARCHAR"), is(true));
-        assertThat(verifyProperty(node_1, "ddl:datatypeLength", "64"), is(true));
-        assertThat(verifyMixinType(node_1, "ddl:columnDefinition"), is(true));
+        verifyPrimaryType(node_1, "nt:unstructured");
+        verifyProperty(node_1, "ddl:datatypeName", "VARCHAR");
+        verifyProperty(node_1, "ddl:datatypeLength", "64");
+        verifyMixinType(node_1, "ddl:columnDefinition");
 
         SubgraphNode node_2 = tableNode.getNode(path("MDL_TYPE"));
         assertNotNull(node_2);
-        assertThat(verifyPrimaryType(node_2, "nt:unstructured"), is(true));
-        assertThat(verifyProperty(node_2, "ddl:datatypeName", "NUMERIC"), is(true));
-        assertThat(verifyProperty(node_2, "ddl:datatypePrecision", "3"), is(true));
-        assertThat(verifyProperty(node_2, "ddl:datatypeScale", "0"), is(true));
-        assertThat(verifyHasProperty(node_2, "ddl:datatypeLength"), is(false));
-        assertThat(verifyMixinType(node_2, "ddl:columnDefinition"), is(true));
+        verifyPrimaryType(node_2, "nt:unstructured");
+        verifyProperty(node_2, "ddl:datatypeName", "NUMERIC");
+        verifyProperty(node_2, "ddl:datatypePrecision", "3");
+        verifyProperty(node_2, "ddl:datatypeScale", "0");
+        verifyHasProperty(node_2, "ddl:datatypeLength");
+        verifyMixinType(node_2, "ddl:columnDefinition");
     }
 
     @Ignore
@@ -558,8 +553,8 @@ public class DdlSequencerTest {
         SubgraphNode statementsNode = rootNode.getNode(path("ddl:statements"));
         assertNotNull(statementsNode);
         assertThat(statementsNode.getChildren().size(), is(64));
-        assertThat(verifyPrimaryType(statementsNode, "nt:unstructured"), is(true));
-        assertThat(verifyProperty(statementsNode, "ddl:parserId", "DERBY"), is(true));
+        verifyPrimaryType(statementsNode, "nt:unstructured");
+        verifyProperty(statementsNode, "ddl:parserId", "DERBY");
 
         // CREATE INDEX IXSALE ON SAMP.SALES (SALES);
         // <name = "IXSALE" startLineNumber = "87" primaryType = "nt:unstructured" uuid = "85740506-ac6e-46f3-8118-be0c9eb1bc57"
@@ -569,7 +564,7 @@ public class DdlSequencerTest {
         SubgraphNode indexNode = statementsNode.getNode(path("IXSALE"));
         assertNotNull(indexNode);
         verifyBaseProperties(indexNode, "nt:unstructured", "87", "1", "2886", 0);
-        assertThat(verifyMixinType(indexNode, "derbyddl:createIndexStatement"), is(true));
+        verifyMixinType(indexNode, "derbyddl:createIndexStatement");
 
         // CREATE SCHEMA FLIGHTS AUTHORIZATION anita;
         // <name = "FLIGHTS" startLineNumber = "98" primaryType = "nt:unstructured" uuid = "e1c8227d-c663-4d4b-8506-b1e41aa1f7f6"
@@ -578,8 +573,8 @@ public class DdlSequencerTest {
         SubgraphNode schemaNode = statementsNode.getNode(path("FLIGHTS"));
         assertNotNull(schemaNode);
         verifyBaseProperties(schemaNode, "nt:unstructured", "98", "1", "3218", 0);
-        assertThat(verifyMixinType(schemaNode, "ddl:createSchemaStatement"), is(true));
-        assertThat(verifyExpression(schemaNode, "CREATE SCHEMA FLIGHTS AUTHORIZATION anita;"), is(true));
+        verifyMixinType(schemaNode, "ddl:createSchemaStatement");
+        verifyExpression(schemaNode, "CREATE SCHEMA FLIGHTS AUTHORIZATION anita;");
 
         // DROP PROCEDURE some_procedure_name;
         // <name = "unknownStatement[3]" startLineNumber = "172" primaryType = "nt:unstructured" uuid =
@@ -588,8 +583,8 @@ public class DdlSequencerTest {
         SubgraphNode unknownNode_1 = statementsNode.getNode(path("some_procedure_name"));
         assertNotNull(unknownNode_1);
         verifyBaseProperties(unknownNode_1, "nt:unstructured", "172", "1", "5438", 0);
-        assertThat(verifyMixinType(unknownNode_1, "derbyddl:dropProcedureStatement"), is(true));
-        assertThat(verifyExpression(unknownNode_1, "DROP PROCEDURE some_procedure_name;"), is(true));
+        verifyMixinType(unknownNode_1, "derbyddl:dropProcedureStatement");
+        verifyExpression(unknownNode_1, "DROP PROCEDURE some_procedure_name;");
 
         // ALTER TABLE SAMP.DEPARTMENT
         // ADD CONSTRAINT NEW_UNIQUE UNIQUE (DEPTNO);
@@ -611,20 +606,20 @@ public class DdlSequencerTest {
         SubgraphNode alterTableNode = statementsNode.getNode(path("SAMP.DEPARTMENT"));
         assertNotNull(alterTableNode);
         verifyBaseProperties(alterTableNode, "nt:unstructured", "16", "1", "478", 1);
-        assertThat(verifyMixinType(alterTableNode, "ddl:alterTableStatement"), is(true));
+        verifyMixinType(alterTableNode, "ddl:alterTableStatement");
 
         SubgraphNode uniqueNode = alterTableNode.getNode(path("NEW_UNIQUE"));
         assertNotNull(uniqueNode);
-        assertThat(verifyPrimaryType(uniqueNode, "nt:unstructured"), is(true));
-        assertThat(verifyProperty(uniqueNode, "ddl:constraintType", "0"), is(true));
-        assertThat(verifyMixinType(uniqueNode, "ddl:addTableConstraintDefinition"), is(true));
+        verifyPrimaryType(uniqueNode, "nt:unstructured");
+        verifyProperty(uniqueNode, "ddl:constraintType", "0");
+        verifyMixinType(uniqueNode, "ddl:addTableConstraintDefinition");
 
         // One column reference
         assertThat(uniqueNode.getChildren().size(), is(1));
         SubgraphNode colRefNode = uniqueNode.getNode(path("DEPTNO"));
         assertNotNull(colRefNode);
-        assertThat(verifyPrimaryType(colRefNode, "nt:unstructured"), is(true));
-        assertThat(verifyMixinType(colRefNode, "ddl:columnReference"), is(true));
+        verifyPrimaryType(colRefNode, "nt:unstructured");
+        verifyMixinType(colRefNode, "ddl:columnReference");
     }
 
     @Test
@@ -648,8 +643,8 @@ public class DdlSequencerTest {
         SubgraphNode statementsNode = rootNode.getNode(path("ddl:statements"));
         assertNotNull(statementsNode);
         assertThat(statementsNode.getChildren().size(), is(50));
-        assertThat(verifyPrimaryType(statementsNode, "nt:unstructured"), is(true));
-        assertThat(verifyProperty(statementsNode, "ddl:parserId", "ORACLE"), is(true));
+        verifyPrimaryType(statementsNode, "nt:unstructured");
+        verifyProperty(statementsNode, "ddl:parserId", "ORACLE");
 
         // <name = "CREATE OR REPLACE DIRECTORY" startLineNumber = "164" primaryType = "nt:unstructured" uuid =
         // "c45eb2bb-1b85-469d-9dfc-0012fdfd8ac4" startColumnNumber = "1" mixinTypes = "oracleddl:createDirectoryStatement"
@@ -657,7 +652,7 @@ public class DdlSequencerTest {
         SubgraphNode createOrReplDirNode = statementsNode.getNode(path("CREATE OR REPLACE DIRECTORY"));
         assertNotNull(createOrReplDirNode);
         verifyBaseProperties(createOrReplDirNode, "nt:unstructured", "164", "1", "3886", 0);
-        assertThat(verifyMixinType(createOrReplDirNode, "oracleddl:createDirectoryStatement"), is(true));
+        verifyMixinType(createOrReplDirNode, "oracleddl:createDirectoryStatement");
 
         // <name = "countries" startLineNumber = "9" primaryType = "nt:unstructured" uuid = "70f45acc-57b0-41c9-b166-bcba4f8c75b8"
         // startColumnNumber = "1" mixinTypes = "ddl:alterTableStatement" expression = "ALTER TABLE countries
@@ -672,30 +667,30 @@ public class DdlSequencerTest {
         SubgraphNode countriesNode = statementsNode.getNode(path("countries"));
         assertNotNull(countriesNode);
         verifyBaseProperties(countriesNode, "nt:unstructured", "9", "1", "89", 3);
-        assertThat(verifyMixinType(countriesNode, "ddl:alterTableStatement"), is(true));
+        verifyMixinType(countriesNode, "ddl:alterTableStatement");
 
         SubgraphNode duty_pct_node = countriesNode.getNode(path("duty_pct"));
         assertNotNull(duty_pct_node);
-        assertThat(verifyPrimaryType(duty_pct_node, "nt:unstructured"), is(true));
-        assertThat(verifyProperty(duty_pct_node, "ddl:datatypeName", "NUMBER"), is(true));
-        assertThat(verifyProperty(duty_pct_node, "ddl:datatypePrecision", "2"), is(true));
-        assertThat(verifyProperty(duty_pct_node, "ddl:datatypeScale", "2"), is(true));
+        verifyPrimaryType(duty_pct_node, "nt:unstructured");
+        verifyProperty(duty_pct_node, "ddl:datatypeName", "NUMBER");
+        verifyProperty(duty_pct_node, "ddl:datatypePrecision", "2");
+        verifyProperty(duty_pct_node, "ddl:datatypeScale", "2");
         assertThat(verifyHasProperty(duty_pct_node, "ddl:datatypeLength"), is(false));
-        assertThat(verifyMixinType(duty_pct_node, "ddl:columnDefinition"), is(true));
+        verifyMixinType(duty_pct_node, "ddl:columnDefinition");
 
         SubgraphNode check_1_node = countriesNode.getNode(path("CHECK_1"));
         assertNotNull(check_1_node);
-        assertThat(verifyPrimaryType(check_1_node, "nt:unstructured"), is(true));
-        assertThat(verifyProperty(check_1_node, "ddl:constraintType", "CHECK"), is(true));
-        assertThat(verifyMixinType(check_1_node, "ddl:addTableConstraintDefinition"), is(true));
-        assertThat(verifyProperty(check_1_node, "ddl:searchCondition", "( duty_pct < 10 . 5 )"), is(true));
+        verifyPrimaryType(check_1_node, "nt:unstructured");
+        verifyProperty(check_1_node, "ddl:constraintType", "CHECK");
+        verifyMixinType(check_1_node, "ddl:addTableConstraintDefinition");
+        verifyProperty(check_1_node, "ddl:searchCondition", "( duty_pct < 10 . 5 )");
 
         SubgraphNode visa_needed_node = countriesNode.getNode(path("visa_needed"));
         assertNotNull(visa_needed_node);
-        assertThat(verifyPrimaryType(visa_needed_node, "nt:unstructured"), is(true));
-        assertThat(verifyProperty(visa_needed_node, "ddl:datatypeName", "VARCHAR2"), is(true));
-        assertThat(verifyProperty(visa_needed_node, "ddl:datatypeLength", "3"), is(true));
-        assertThat(verifyMixinType(visa_needed_node, "ddl:columnDefinition"), is(true));
+        verifyPrimaryType(visa_needed_node, "nt:unstructured");
+        verifyProperty(visa_needed_node, "ddl:datatypeName", "VARCHAR2");
+        verifyProperty(visa_needed_node, "ddl:datatypeLength", "3");
+        verifyMixinType(visa_needed_node, "ddl:columnDefinition");
 
         // <name = "app_user1" startLineNumber = "33" primaryType = "nt:unstructured" uuid =
         // "8c660ae8-2078-4263-a0e7-8f517cefd3a0" startColumnNumber = "1" mixinTypes = "oracleddl:alterUserStatement" expression =
@@ -706,7 +701,7 @@ public class DdlSequencerTest {
         SubgraphNode app_user1Node = statementsNode.getNode(path("app_user1"));
         assertNotNull(app_user1Node);
         verifyBaseProperties(app_user1Node, "nt:unstructured", "33", "1", "624", 0);
-        assertThat(verifyMixinType(app_user1Node, "oracleddl:alterUserStatement"), is(true));
+        verifyMixinType(app_user1Node, "oracleddl:alterUserStatement");
     }
 
     protected String[] builtInGrammars() {
@@ -776,7 +771,7 @@ public class DdlSequencerTest {
     @Test
     public void shouldCreateDdlParserInstancesForAllValidBuiltInGrammarsAndInstantiableParser() {
         String[] grammars = new String[] {new OracleDdlParser().getId(), new StandardDdlParser().getId(),
-            ArgleDdlParser.class.getName()};
+                ArgleDdlParser.class.getName()};
         sequencer.setGrammars(grammars);
         assertThat(sequencer.getGrammars(), is(grammars));
         List<DdlParser> parsers = sequencer.getParserList(context);
