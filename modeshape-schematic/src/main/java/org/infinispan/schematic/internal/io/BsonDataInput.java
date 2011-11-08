@@ -50,7 +50,7 @@ public class BsonDataInput implements DataInput {
 
     private static BufferCache getBufferCache() {
         SoftReference<BufferCache> ref = BUFFER_CACHE.get();
-        if (ref == null) {
+        if (ref == null || ref.get() == null) {
             ref = new SoftReference<BufferCache>(new BufferCache());
             BUFFER_CACHE.set(ref);
         }

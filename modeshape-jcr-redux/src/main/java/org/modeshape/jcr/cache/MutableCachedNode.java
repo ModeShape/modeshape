@@ -39,6 +39,30 @@ public interface MutableCachedNode extends CachedNode {
     boolean isNew();
 
     /**
+     * Return whether the property with the supplied name was created since the session was last saved. This method will always
+     * return {@code true} if {@link #isNew()} returns {@code true}.
+     * 
+     * @param cache the cache to which this node belongs; may not be null
+     * @param propertyName the name of the property; may not be null
+     * @return true if this node contains a property that was created since the session was last saved, or false otherwise
+     * @see #isPropertyModified
+     * @see #isNew
+     */
+    boolean isPropertyNew( SessionCache cache,
+                           Name propertyName );
+
+    /**
+     * Return whether the property with the supplied name was modified since the session was last saved.
+     * 
+     * @param cache the cache to which this node belongs; may not be null
+     * @param propertyName the name of the property; may not be null
+     * @return true if this node contains a property that was created since the session was last saved, or false otherwise
+     * @see #isPropertyNew
+     */
+    boolean isPropertyModified( SessionCache cache,
+                                Name propertyName );
+
+    /**
      * Return whether this node has changes.
      * 
      * @return true if this node has changes, or false otherwise
@@ -112,7 +136,8 @@ public interface MutableCachedNode extends CachedNode {
      * @param key the key for the new node; may not be null
      * @param name the name for the new node; may not be null
      * @param firstProperty the first property; may not be null
-     * @param additionalProperties the properties that should be set on the node; may be null or empty
+     * @param additionalProperties the properties that should be set on the node; may be null or empty, and any null property
+     *        references will be ignored
      * @return the new child node
      */
     MutableCachedNode createChild( SessionCache cache,
@@ -127,7 +152,8 @@ public interface MutableCachedNode extends CachedNode {
      * @param cache the cache to which this node belongs; may not be null
      * @param key the key for the new node; may not be null
      * @param name the name for the new node; may not be null
-     * @param properties the properties that should be set on the node; may be null or empty
+     * @param properties the properties that should be set on the node; may be null or empty, and any null property references
+     *        will be ignored
      * @return the new child node
      */
     MutableCachedNode createChild( SessionCache cache,

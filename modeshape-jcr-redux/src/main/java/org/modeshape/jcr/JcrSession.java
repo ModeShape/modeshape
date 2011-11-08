@@ -60,6 +60,7 @@ import javax.jcr.version.VersionException;
 import org.infinispan.schematic.SchematicEntry;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.AbstractJcrNode.Type;
+import org.modeshape.jcr.JcrContentHandler.EnclosingSAXException;
 import org.modeshape.jcr.JcrNamespaceRegistry.Behavior;
 import org.modeshape.jcr.JcrRepository.RunningState;
 import org.modeshape.jcr.RepositoryStatistics.DurationMetric;
@@ -86,7 +87,11 @@ import org.modeshape.jcr.value.PropertyFactory;
 import org.modeshape.jcr.value.UuidFactory;
 import org.modeshape.jcr.value.basic.LocalNamespaceRegistry;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.XMLReaderFactory;
 
 /**
  * 
@@ -140,6 +145,29 @@ public class JcrSession implements Session {
         // Pre-cache all of the namespaces to be a snapshot of what's in the global registry at this time.
         // This behavior is specified in Section 3.5.2 of the JCR 2.0 specification.
         localRegistry.getNamespaces();
+
+        // Increment the statistics ...
+        this.nanosCreated = System.nanoTime();
+        repository.statistics().increment(ValueMetric.SESSION_COUNT);
+    }
+
+    protected JcrSession( JcrSession original,
+                          boolean readOnly ) {
+        // Most of the components can be reused from the original session ...
+        this.repository = original.repository;
+        this.workspaceName = original.workspaceName;
+        this.globalNamespaceRegistry = original.globalNamespaceRegistry;
+        this.context = original.context;
+        this.sessionRegistry = original.sessionRegistry;
+        this.valueFactory = original.valueFactory;
+        this.sessionAttributes = original.sessionAttributes;
+        this.workspace = original.workspace;
+        this.systemWorkspaceKey = original.systemWorkspaceKey;
+
+        // Create a new session cache and root node ...
+        this.cache = repository.repositoryCache().createSession(context, workspaceName, readOnly);
+        this.rootNode = new JcrRootNode(this, this.cache.getRootKey());
+        this.jcrNodes.put(this.rootNode.key(), this.rootNode);
 
         // Increment the statistics ...
         this.nanosCreated = System.nanoTime();
@@ -202,7 +230,7 @@ public class JcrSession implements Session {
     }
 
     NamespaceRegistry namespaces() {
-        return null;
+        return context.getNamespaceRegistry();
     }
 
     final org.modeshape.jcr.value.ValueFactory<String> stringFactory() {
@@ -263,6 +291,11 @@ public class JcrSession implements Session {
     }
 
     final JcrSession spawnSession( boolean readOnly ) {
+        return new JcrSession(this, readOnly);
+    }
+
+    final JcrSession spawnSession( String workspaceName,
+                                   boolean readOnly ) {
         return new JcrSession(repository(), workspaceName, context(), sessionAttributes, readOnly);
     }
 
@@ -281,7 +314,14 @@ public class JcrSession implements Session {
     AbstractJcrNode node( NodeKey nodeKey,
                           AbstractJcrNode.Type expectedType ) throws ItemNotFoundException {
         AbstractJcrNode node = jcrNodes.get(nodeKey);
-        if (node == null) {
+        if (node != null) {
+            // Make sure the node is still valid ...
+            CachedNode cachedNode = cache.getNode(nodeKey);
+            if (cachedNode == null) {
+                // The node must have been deleted ...
+                throw new ItemNotFoundException(nodeKey.toString());
+            }
+        } else {
             CachedNode cachedNode = cache.getNode(nodeKey);
             if (cachedNode != null) {
                 node = node(cachedNode, expectedType);
@@ -369,7 +409,10 @@ public class JcrSession implements Session {
                 if (ref == null) {
                     throw new PathNotFoundException(JcrI18n.nodeNotFound.text(stringFactory().create(path), workspaceName()));
                 }
-                node = cache.getNode(ref);
+                CachedNode child = cache.getNode(ref);
+                assert child != null : "Found a child reference in " + node.getPath(cache) + " to a non-existant child "
+                                       + segment;
+                node = child;
             }
         }
         checkPermission(path, actions);
@@ -385,7 +428,8 @@ public class JcrSession implements Session {
 
     final AbstractJcrNode node( CachedNode node,
                                 Path path ) throws PathNotFoundException, AccessDeniedException, RepositoryException {
-        return node(cachedNode(cache, node, path).getKey(), null);
+        CachedNode child = cachedNode(cache, node, path, "read");
+        return node(child, (Type)null);
     }
 
     final AbstractJcrNode node( Path absolutePath ) throws PathNotFoundException, AccessDeniedException, RepositoryException {
@@ -710,6 +754,19 @@ public class JcrSession implements Session {
         repository().statistics().increment(ValueMetric.SESSION_SAVES);
     }
 
+    /**
+     * Save a subset of the changes made within this session.
+     * 
+     * @param node the node at or below which the changes are to be saved; may not be null
+     * @throws RepositoryException if there is a problem saving the changes
+     * @see AbstractJcrNode#save()
+     */
+    void save( AbstractJcrNode node ) throws RepositoryException {
+        cache().save(node.node());
+        // Record the save operation ...
+        repository().statistics().increment(ValueMetric.SESSION_SAVES);
+    }
+
     @Override
     public void refresh( boolean keepChanges ) throws RepositoryException {
         checkLive();
@@ -896,8 +953,16 @@ public class JcrSession implements Session {
                                                    int uuidBehavior )
         throws PathNotFoundException, ConstraintViolationException, VersionException, LockException, RepositoryException {
         checkLive();
-        // TODO: Import/export
-        return null;
+
+        // Find the parent path ...
+        AbstractJcrNode parent = getNode(parentAbsPath);
+        if (!parent.isCheckedOut()) {
+            throw new VersionException(JcrI18n.nodeIsCheckedIn.text(parent.getPath()));
+        }
+
+        boolean retainLifecycleInfo = getRepository().getDescriptorValue(Repository.OPTION_LIFECYCLE_SUPPORTED).getBoolean();
+        boolean retainRetentionInfo = getRepository().getDescriptorValue(Repository.OPTION_RETENTION_SUPPORTED).getBoolean();
+        return new JcrContentHandler(this, parent, uuidBehavior, false, retainRetentionInfo, retainLifecycleInfo);
     }
 
     @Override
@@ -906,9 +971,36 @@ public class JcrSession implements Session {
                            int uuidBehavior )
         throws IOException, PathNotFoundException, ItemExistsException, ConstraintViolationException, VersionException,
         InvalidSerializedDataException, LockException, RepositoryException {
+        CheckArg.isNotNull(parentAbsPath, "parentAbsPath");
+        CheckArg.isNotNull(in, "in");
         checkLive();
-        // TODO: Import/export
-        throw new IOException();
+
+        boolean error = false;
+        try {
+            XMLReader parser = XMLReaderFactory.createXMLReader();
+            parser.setContentHandler(getImportContentHandler(parentAbsPath, uuidBehavior));
+            parser.parse(new InputSource(in));
+        } catch (EnclosingSAXException ese) {
+            Exception cause = ese.getException();
+            if (cause instanceof RepositoryException) {
+                throw (RepositoryException)cause;
+            }
+            throw new RepositoryException(cause);
+        } catch (SAXParseException se) {
+            error = true;
+            throw new InvalidSerializedDataException(se);
+        } catch (SAXException se) {
+            error = true;
+            throw new RepositoryException(se);
+        } finally {
+            try {
+                in.close();
+            } catch (IOException t) {
+                if (!error) throw t; // throw only if no error in outer try
+            } catch (RuntimeException re) {
+                if (!error) throw re; // throw only if no error in outer try
+            }
+        }
     }
 
     @Override
@@ -916,9 +1008,11 @@ public class JcrSession implements Session {
                                   ContentHandler contentHandler,
                                   boolean skipBinary,
                                   boolean noRecurse ) throws PathNotFoundException, SAXException, RepositoryException {
-        checkLive();
-        // TODO: Import/export
-        throw new SAXException();
+        CheckArg.isNotNull(absPath, "absPath");
+        CheckArg.isNotNull(contentHandler, "contentHandler");
+        Node exportRootNode = getNode(absPath);
+        AbstractJcrExporter exporter = new JcrSystemViewExporter(this);
+        exporter.exportView(exportRootNode, contentHandler, skipBinary, noRecurse);
     }
 
     @Override
@@ -926,9 +1020,11 @@ public class JcrSession implements Session {
                                   OutputStream out,
                                   boolean skipBinary,
                                   boolean noRecurse ) throws IOException, PathNotFoundException, RepositoryException {
-        checkLive();
-        // TODO: Import/export
-        throw new IOException();
+        CheckArg.isNotNull(absPath, "absPath");
+        CheckArg.isNotNull(out, "out");
+        Node exportRootNode = getNode(absPath);
+        AbstractJcrExporter exporter = new JcrSystemViewExporter(this);
+        exporter.exportView(exportRootNode, out, skipBinary, noRecurse);
     }
 
     @Override
@@ -936,9 +1032,12 @@ public class JcrSession implements Session {
                                     ContentHandler contentHandler,
                                     boolean skipBinary,
                                     boolean noRecurse ) throws PathNotFoundException, SAXException, RepositoryException {
+        CheckArg.isNotNull(absPath, "absPath");
+        CheckArg.isNotNull(contentHandler, "contentHandler");
         checkLive();
-        // TODO: Import/export
-        throw new SAXException();
+        Node exportRootNode = getNode(absPath);
+        AbstractJcrExporter exporter = new JcrDocumentViewExporter(this);
+        exporter.exportView(exportRootNode, contentHandler, skipBinary, noRecurse);
     }
 
     @Override
@@ -946,9 +1045,11 @@ public class JcrSession implements Session {
                                     OutputStream out,
                                     boolean skipBinary,
                                     boolean noRecurse ) throws IOException, PathNotFoundException, RepositoryException {
-        checkLive();
-        // TODO: Import/export
-        throw new IOException();
+        CheckArg.isNotNull(absPath, "absPath");
+        CheckArg.isNotNull(out, "out");
+        Node exportRootNode = getNode(absPath);
+        AbstractJcrExporter exporter = new JcrDocumentViewExporter(this);
+        exporter.exportView(exportRootNode, out, skipBinary, noRecurse);
     }
 
     @Override
@@ -1096,5 +1197,10 @@ public class JcrSession implements Session {
         } catch (WorkspaceNotFoundException e) {
             throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(repository().repositoryName(), workspaceName));
         }
+    }
+
+    @Override
+    public String toString() {
+        return cache.toString();
     }
 }

@@ -170,12 +170,24 @@ public class ArrayEditor implements EditableArray {
 
     @Override
     public EditableArray getArray( String name ) {
-        return editable(array.getArray(name));
+        return editable(array.getArray(name), indexFrom(name));
+    }
+
+    @Override
+    public EditableArray getOrCreateArray( String name ) {
+        List<?> existing = array.getArray(name);
+        return existing != null ? editable(existing, indexFrom(name)) : setArray(name);
     }
 
     @Override
     public EditableDocument getDocument( String name ) {
-        return editable(array.getDocument(name));
+        return editable(array.getDocument(name), indexFrom(name));
+    }
+
+    @Override
+    public EditableDocument getOrCreateDocument( String name ) {
+        Document existing = array.getDocument(name);
+        return existing != null ? editable(existing, indexFrom(name)) : setDocument(name);
     }
 
     @Override
@@ -325,7 +337,7 @@ public class ArrayEditor implements EditableArray {
     public EditableDocument setDocument( String name ) {
         BasicDocument doc = new BasicDocument();
         setValue(name, doc);
-        return editable(doc);
+        return editable(doc, indexFrom(name));
     }
 
     @Override
@@ -333,21 +345,21 @@ public class ArrayEditor implements EditableArray {
                                          Document document ) {
         if (document instanceof DocumentEditor) document = ((DocumentEditor)document).unwrap();
         setValue(name, document);
-        return editable(document);
+        return editable(document, indexFrom(name));
     }
 
     @Override
     public EditableArray setArray( String name ) {
         List<?> array = new BasicArray();
         setValue(name, array);
-        return editable(array);
+        return editable(array, indexFrom(name));
     }
 
     @Override
     public EditableArray setArray( String name,
                                    Array array ) {
         setValue(name, array);
-        return editable((List<?>)array);
+        return editable((List<?>)array, indexFrom(name));
     }
 
     @Override
@@ -428,7 +440,7 @@ public class ArrayEditor implements EditableArray {
         if (includeScope) {
             BasicDocument scope = new BasicDocument();
             setValue(name, factory.createCode(code, scope));
-            return editable(scope);
+            return editable(scope, indexFrom(name));
         }
         return setValue(name, factory.createCode(code));
     }
@@ -439,7 +451,7 @@ public class ArrayEditor implements EditableArray {
                                      Document scope ) {
         if (scope != null) {
             setValue(name, factory.createCode(code, scope));
-            return editable(scope);
+            return editable(scope, indexFrom(name));
         }
         return setValue(name, factory.createCode(code));
     }
@@ -476,9 +488,13 @@ public class ArrayEditor implements EditableArray {
         return this;
     }
 
+    protected final int indexFrom( String name ) {
+        return Integer.parseInt(name);
+    }
+
     protected Object doSetValue( String name,
                                  Object value ) {
-        int index = Integer.parseInt(name);
+        int index = indexFrom(name);
         return doSetValue(index, value);
     }
 
@@ -534,25 +550,44 @@ public class ArrayEditor implements EditableArray {
         array.removeAll();
     }
 
-    protected EditableDocument editable( Document doc ) {
+    protected EditableDocument editable( Document doc,
+                                         int index ) {
         if (doc == null) return null;
-        if (doc instanceof EditableDocument) return (EditableDocument)doc;
-        return createEditableDocument((MutableDocument)doc, factory);
+        assert !(doc instanceof DocumentEditor) : "The document value should not be a DocumentEditor instance";
+        if (doc instanceof MutableArray) {
+            return createEditableArray((MutableArray)doc, index, factory);
+        }
+        assert doc instanceof MutableDocument;
+        return createEditableDocument((MutableDocument)doc, index, factory);
     }
 
-    protected EditableArray editable( List<?> array ) {
+    protected EditableArray editable( List<?> array,
+                                      int index ) {
         if (array == null) return null;
-        if (array instanceof EditableArray) return (EditableArray)array;
-        return createEditableArray((BasicArray)array, factory);
+        assert !(array instanceof ArrayEditor) : "The array value should not be an ArrayEditor instance";
+        return createEditableArray((BasicArray)array, index, factory);
+    }
+
+    private EditableArray editableSublist( List<?> sublist ) {
+        assert sublist != null;
+        if (sublist instanceof EditableArray) return (EditableArray)array;
+        return createEditableSublist((BasicArray)sublist, factory);
     }
 
     protected EditableDocument createEditableDocument( MutableDocument document,
+                                                       int index,
                                                        DocumentValueFactory factory ) {
         return new DocumentEditor(document, factory);
     }
 
-    protected EditableArray createEditableArray( BasicArray array,
+    protected EditableArray createEditableArray( MutableArray array,
+                                                 int index,
                                                  DocumentValueFactory factory ) {
+        return new ArrayEditor(array, factory);
+    }
+
+    protected EditableArray createEditableSublist( MutableArray array,
+                                                   DocumentValueFactory factory ) {
         return new ArrayEditor(array, factory);
     }
 
@@ -693,7 +728,7 @@ public class ArrayEditor implements EditableArray {
     @Override
     public List<Object> subList( int fromIndex,
                                  int toIndex ) {
-        return editable(array.subList(fromIndex, toIndex));
+        return editableSublist(array.subList(fromIndex, toIndex));
     }
 
     @Override
@@ -748,7 +783,7 @@ public class ArrayEditor implements EditableArray {
     public EditableDocument setDocument( int index ) {
         BasicDocument doc = new BasicDocument();
         setValue(index, doc);
-        return editable(doc);
+        return editable(doc, index);
     }
 
     @Override
@@ -756,21 +791,21 @@ public class ArrayEditor implements EditableArray {
                                          Document document ) {
         if (document instanceof DocumentEditor) document = ((DocumentEditor)document).unwrap();
         setValue(index, document);
-        return editable(document);
+        return editable(document, index);
     }
 
     @Override
     public EditableArray setArray( int index ) {
         List<?> array = new BasicArray();
         setValue(index, array);
-        return editable(array);
+        return editable(array, index);
     }
 
     @Override
     public EditableArray setArray( int index,
                                    Array array ) {
         setValue(index, array);
-        return editable((List<?>)array);
+        return editable((List<?>)array, index);
     }
 
     @Override
@@ -853,7 +888,7 @@ public class ArrayEditor implements EditableArray {
         if (includeScope) {
             BasicDocument scope = new BasicDocument();
             setValue(index, factory.createCode(code, scope));
-            return editable(scope);
+            return editable(scope, index);
         }
         return setValue(index, factory.createCode(code));
     }
@@ -864,7 +899,7 @@ public class ArrayEditor implements EditableArray {
                                      Document scope ) {
         if (scope != null) {
             setValue(index, factory.createCode(code, scope));
-            return editable(scope);
+            return editable(scope, index);
         }
         return setValue(index, factory.createCode(code));
     }
@@ -915,7 +950,7 @@ public class ArrayEditor implements EditableArray {
     public EditableDocument addDocument( int index ) {
         BasicDocument doc = new BasicDocument();
         addValue(index, doc);
-        return editable(doc);
+        return editable(doc, index);
     }
 
     @Override
@@ -923,21 +958,21 @@ public class ArrayEditor implements EditableArray {
                                          Document document ) {
         if (document instanceof DocumentEditor) document = ((DocumentEditor)document).unwrap();
         addValue(index, document);
-        return editable(document);
+        return editable(document, index);
     }
 
     @Override
     public EditableArray addArray( int index ) {
         List<?> array = new BasicArray();
         addValue(index, array);
-        return editable(array);
+        return editable(array, index);
     }
 
     @Override
     public EditableArray addArray( int index,
                                    Array array ) {
         addValue(index, array);
-        return editable((List<?>)array);
+        return editable((List<?>)array, index);
     }
 
     @Override
@@ -1020,7 +1055,7 @@ public class ArrayEditor implements EditableArray {
         if (includeScope) {
             BasicDocument scope = new BasicDocument();
             addValue(index, factory.createCode(code, scope));
-            return editable(scope);
+            return editable(scope, index);
         }
         return addValue(index, factory.createCode(code));
     }
@@ -1031,7 +1066,7 @@ public class ArrayEditor implements EditableArray {
                                      Document scope ) {
         if (scope != null) {
             addValue(index, factory.createCode(code, scope));
-            return editable(scope);
+            return editable(scope, index);
         }
         return addValue(index, factory.createCode(code));
     }
@@ -1075,27 +1110,27 @@ public class ArrayEditor implements EditableArray {
     public EditableDocument addDocument() {
         BasicDocument doc = new BasicDocument();
         addValue(doc);
-        return editable(doc);
+        return editable(doc, size());
     }
 
     @Override
     public EditableDocument addDocument( Document document ) {
         if (document instanceof DocumentEditor) document = ((DocumentEditor)document).unwrap();
         addValue(document);
-        return editable(document);
+        return editable(document, size());
     }
 
     @Override
     public EditableArray addArray() {
         List<?> array = new BasicArray();
         addValue(array);
-        return editable(array);
+        return editable(array, size());
     }
 
     @Override
     public EditableArray addArray( Array array ) {
         addValue(array);
-        return editable((List<?>)array);
+        return editable((List<?>)array, size());
     }
 
     @Override
@@ -1165,7 +1200,7 @@ public class ArrayEditor implements EditableArray {
         if (includeScope) {
             BasicDocument scope = new BasicDocument();
             addValue(factory.createCode(code, scope));
-            return editable(scope);
+            return editable(scope, size());
         }
         return addValue(factory.createCode(code));
     }
@@ -1175,7 +1210,7 @@ public class ArrayEditor implements EditableArray {
                                      Document scope ) {
         if (scope != null) {
             addValue(factory.createCode(code, scope));
-            return editable(scope);
+            return editable(scope, size());
         }
         return addValue(factory.createCode(code));
     }
@@ -1218,12 +1253,12 @@ public class ArrayEditor implements EditableArray {
     @Override
     public EditableDocument addDocumentIfAbsent( Document document ) {
         if (document instanceof DocumentEditor) document = ((DocumentEditor)document).unwrap();
-        return doAddValueIfAbsent(document) ? editable(document) : null;
+        return doAddValueIfAbsent(document) ? editable(document, size()) : null;
     }
 
     @Override
     public EditableArray addArrayIfAbsent( Array array ) {
-        return doAddValueIfAbsent(array) ? editable((List<?>)array) : null;
+        return doAddValueIfAbsent(array) ? editable((List<?>)array, size()) : null;
     }
 
     @Override
@@ -1291,7 +1326,7 @@ public class ArrayEditor implements EditableArray {
     public EditableDocument addCodeIfAbsent( String code,
                                              Document scope ) {
         if (scope != null) {
-            return doAddValueIfAbsent(factory.createCode(code, scope)) ? editable(scope) : null;
+            return doAddValueIfAbsent(factory.createCode(code, scope)) ? editable(scope, size()) : null;
         }
         return addValueIfAbsent(factory.createCode(code));
     }

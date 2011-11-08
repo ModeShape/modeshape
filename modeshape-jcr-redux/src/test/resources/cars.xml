@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+  ~ ModeShape (http://www.modeshape.org)
+  ~
+  ~ See the COPYRIGHT.txt file distributed with this work for information
+  ~ regarding copyright ownership.  Some portions may be licensed
+  ~ to Red Hat, Inc. under one or more contributor license agreements.
+  ~ See the AUTHORS.txt file in the distribution for a full listing of 
+  ~ individual contributors.
+  ~
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+  ~ is licensed to you under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ ModeShape is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+  ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
+  ~ for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public License
+  ~ along with this distribution; if not, write to:
+  ~ Free Software Foundation, Inc.
+  ~ 51 Franklin Street, Fifth Floor
+  ~ Boston, MA  02110-1301  USA
+  -->
+<Cars xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:vehix="http://example.com/vehicles">
+    <Hybrid>
+        <car jcr:primaryType="vehix:car" jcr:name="Toyota Prius" vehix:maker="Toyota" vehix:model="Prius" vehix:year="2008" vehix:msrp="$21,500" vehix:userRating="4.2" vehix:valueRating="5" vehix:mpgCity="48" vehix:mpgHighway="45" jcr:uuid="3b9e4a2f-040e-4d65-9778-abe70ae48324"/>
+        <car jcr:primaryType="vehix:car" jcr:name="Toyota Highlander" vehix:maker="Toyota" vehix:model="Highlander" year="2008" vehix:msrp="$34,200" vehix:userRating="4" vehix:valueRating="5" vehix:mpgCity="27" vehix:mpgHighway="25"/>
+        <car jcr:primaryType="vehix:car" jcr:name="Nissan Altima" vehix:maker="Nissan" vehix:model="Altima" vehix:year="2008" vehix:msrp="$18,260" vehix:mpgCity="23" vehix:mpgHighway="32"/>
+    </Hybrid>
+    <Sports>
+        <car jcr:primaryType="vehix:car" jcr:name="Aston Martin DB9" vehix:maker="Aston Martin" vehix:model="DB9" vehix:year="2008" vehix:msrp="$171,600" vehix:userRating="5" vehix:mpgCity="12" vehix:mpgHighway="19" vehix:lengthInInches="185.5" vehix:wheelbaseInInches="108.0" vehix:engine="5,935 cc 5.9 liters V 12"/>
+        <car jcr:primaryType="vehix:car" jcr:name="Infiniti G37" vehix:maker="Infiniti" vehix:model="G37" vehix:year="2008" vehix:msrp="$34,900" vehix:userRating="3.5" vehix:valueRating="4" vehix:mpgCity="18" vehix:mpgHighway="24" />
+    </Sports>
+    <Luxury>
+        <car jcr:primaryType="vehix:car" jcr:name="Cadillac DTS" vehix:maker="Cadillac" vehix:model="DTS" vehix:year="2008" vehix:engine="3.6-liter V6" vehix:userRating="0"/>
+        <car jcr:primaryType="vehix:car" jcr:name="Bentley Continental" vehix:maker="Bentley" vehix:model="Continental" vehix:year="2008" vehix:msrp="$170,990" vehix:mpgCity="10" vehix:mpgHighway="17" />
+        <car jcr:primaryType="vehix:car" jcr:name="Lexus IS350" vehix:maker="Lexus" vehix:model="IS350" vehix:year="2008" vehix:msrp="$36,305" vehix:mpgCity="18" vehix:mpgHighway="25" vehix:userRating="4" vehix:valueRating="5" />
+    </Luxury>
+    <Utility>
+        <car jcr:primaryType="vehix:car" jcr:name="Land Rover LR2" vehix:maker="Land Rover" vehix:model="LR2" vehix:year="2008" vehix:msrp="$33,985" vehix:userRating="4.5" vehix:valueRating="5" vehix:mpgCity="16" vehix:mpgHighway="23" />
+        <car jcr:primaryType="vehix:car" jcr:name="Land Rover LR3" vehix:maker="Land Rover" vehix:model="LR3" vehix:year="2008" vehix:msrp="$48,525" vehix:userRating="5" vehix:valueRating="2" vehix:mpgCity="12" vehix:mpgHighway="17" />
+        <car jcr:primaryType="vehix:car" jcr:name="Hummer H3" vehix:maker="Hummer" vehix:model="H3" vehix:year="2008" vehix:msrp="$30,595" vehix:userRating="3.5" vehix:valueRating="4" vehix:mpgCity="13" vehix:mpgHighway="16" />
+        <car jcr:primaryType="vehix:car" jcr:name="Ford F-150" vehix:maker="Ford" vehix:model="F-150" vehix:year="2008" vehix:msrp="$23,910" vehix:userRating="4" vehix:valueRating="1" vehix:mpgCity="14" vehix:mpgHighway="20" />
+    </Utility>
+</Cars>

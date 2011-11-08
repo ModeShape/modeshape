@@ -216,7 +216,7 @@ final class JcrVersionHistoryNode extends JcrSystemNode implements VersionHistor
 
             // Set the property ...
             JcrValue[] newSuccessors = newNodeSuccessors.toArray(new JcrValue[newNodeSuccessors.size()]);
-            predecessor.setProperty(JcrLexicon.SUCCESSORS, newSuccessors, PropertyType.REFERENCE);
+            predecessor.setProperty(JcrLexicon.SUCCESSORS, newSuccessors, PropertyType.REFERENCE, false);
             addedValues.clear();
         }
 
@@ -235,7 +235,7 @@ final class JcrVersionHistoryNode extends JcrSystemNode implements VersionHistor
 
             // Set the property ...
             JcrValue[] newPredecessors = newNodePredecessors.toArray(new JcrValue[newNodePredecessors.size()]);
-            successor.setProperty(JcrLexicon.PREDECESSORS, newPredecessors, PropertyType.REFERENCE);
+            successor.setProperty(JcrLexicon.PREDECESSORS, newPredecessors, PropertyType.REFERENCE, false);
         }
 
         // Use a separate system session to destroy the version ...

@@ -24,13 +24,8 @@
 package org.modeshape.jcr.store;
 
 import java.io.File;
-import javax.jcr.Node;
 import org.infinispan.loaders.CacheLoaderConfig;
 import org.infinispan.loaders.bdbje.BdbjeCacheStoreConfig;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.modeshape.common.annotation.Performance;
-import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.common.util.FileUtil;
 
 public class BerkleyDbCacheStorePerformanceTest extends InMemoryPerformanceTest {
@@ -48,48 +43,4 @@ public class BerkleyDbCacheStorePerformanceTest extends InMemoryPerformanceTest 
         config.setLocation(dbDir.getAbsolutePath());
         return config;
     }
-
-    @Override
-    @Test
-    public void shouldAllowCreatingManyUnstructuredNodesWithNoSameNameSiblings() throws Exception {
-        super.shouldAllowCreatingManyUnstructuredNodesWithNoSameNameSiblings();
-    }
-
-    @Performance
-    @Test
-    public void shouldAllowCreatingMillionNodeSubgraphUsingMultipleSaves() throws Exception {
-        repeatedlyCreateSubgraph(1, 2, 100, 0, false, true);
-    }
-
-    @Performance
-    @Ignore
-    @Test
-    public void shouldAllowCreatingManyManyUnstructuredNodesWithNoSameNameSiblings() throws Exception {
-        System.out.print("Iterating ");
-        // Each iteration adds another node under the root and creates the many nodes under that node ...
-        Node node = session.getRootNode().addNode("testNode");
-        session.save();
-
-        Stopwatch sw = new Stopwatch();
-        Stopwatch total = new Stopwatch();
-        try {
-            total.start();
-            for (int i = 0; i != 1000; ++i) {
-                System.out.print(".");
-                int count = 100;
-                sw.start();
-                for (int j = 0; j != count; ++j) {
-                    node.addNode("childNode" + j);
-                }
-                session.save();
-                sw.stop();
-            }
-            total.stop();
-        } finally {
-            System.out.println();
-            System.out.println(total.getDetailedStatistics());
-            System.out.println(sw.getDetailedStatistics());
-        }
-    }
-
 }

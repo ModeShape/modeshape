@@ -180,12 +180,24 @@ public class DocumentEditor implements EditableDocument {
 
     @Override
     public EditableArray getArray( String name ) {
-        return editable(document.getArray(name));
+        return editable(document.getArray(name), name);
+    }
+
+    @Override
+    public EditableArray getOrCreateArray( String name ) {
+        List<?> existing = document.getArray(name);
+        return existing != null ? editable(existing, name) : setArray(name);
     }
 
     @Override
     public EditableDocument getDocument( String name ) {
-        return editable(document.getDocument(name));
+        return editable(document.getDocument(name), name);
+    }
+
+    @Override
+    public EditableDocument getOrCreateDocument( String name ) {
+        Document existing = document.getDocument(name);
+        return existing != null ? editable(existing, name) : setDocument(name);
     }
 
     @Override
@@ -354,7 +366,7 @@ public class DocumentEditor implements EditableDocument {
     public EditableDocument setDocument( String name ) {
         BasicDocument doc = new BasicDocument();
         doSetValue(name, doc);
-        return editable(doc);
+        return editable(doc, name);
     }
 
     @Override
@@ -362,14 +374,14 @@ public class DocumentEditor implements EditableDocument {
                                          Document document ) {
         if (document instanceof DocumentEditor) document = ((DocumentEditor)document).asMutableDocument();
         doSetValue(name, document);
-        return editable(document);
+        return editable(document, name);
     }
 
     @Override
     public EditableArray setArray( String name ) {
         List<?> array = new BasicArray();
         doSetValue(name, array);
-        return editable(array);
+        return editable(array, name);
     }
 
     @Override
@@ -377,7 +389,7 @@ public class DocumentEditor implements EditableDocument {
                                    Array array ) {
         if (array instanceof ArrayEditor) array = ((ArrayEditor)array).unwrap();
         doSetValue(name, array);
-        return editable((List<?>)array);
+        return editable((List<?>)array, name);
     }
 
     @Override
@@ -469,7 +481,7 @@ public class DocumentEditor implements EditableDocument {
         if (includeScope) {
             BasicDocument scope = new BasicDocument();
             doSetValue(name, factory.createCode(code, scope));
-            return editable(scope);
+            return editable(scope, name);
         }
         doSetValue(name, factory.createCode(code));
         return this;
@@ -481,7 +493,7 @@ public class DocumentEditor implements EditableDocument {
                                      Document scope ) {
         if (scope != null) {
             doSetValue(name, factory.createCode(code, scope));
-            return editable(scope);
+            return editable(scope, name);
         }
         doSetValue(name, factory.createCode(code));
         return this;
@@ -505,24 +517,32 @@ public class DocumentEditor implements EditableDocument {
         return document.put(name, value);
     }
 
-    protected EditableDocument editable( Document doc ) {
+    protected EditableDocument editable( Document doc,
+                                         String fieldName ) {
         if (doc == null) return null;
-        if (doc instanceof EditableDocument) return (EditableDocument)doc;
-        return createEditableDocument((MutableDocument)doc, factory);
+        assert !(doc instanceof DocumentEditor) : "The document value should not be a DocumentEditor instance";
+        if (doc instanceof MutableArray) {
+            return createEditableArray((MutableArray)doc, fieldName, factory);
+        }
+        assert doc instanceof MutableDocument;
+        return createEditableDocument((MutableDocument)doc, fieldName, factory);
     }
 
-    protected EditableArray editable( List<?> array ) {
+    protected EditableArray editable( List<?> array,
+                                      String fieldName ) {
         if (array == null) return null;
-        if (array instanceof EditableArray) return (EditableArray)array;
-        return createEditableArray((BasicArray)array, factory);
+        assert !(array instanceof ArrayEditor) : "The array value should not be an ArrayEditor instance";
+        return createEditableArray((BasicArray)array, fieldName, factory);
     }
 
     protected EditableDocument createEditableDocument( MutableDocument document,
+                                                       String fieldName,
                                                        DocumentValueFactory factory ) {
         return new DocumentEditor(document, factory);
     }
 
-    protected EditableArray createEditableArray( BasicArray array,
+    protected EditableArray createEditableArray( MutableArray array,
+                                                 String fieldName,
                                                  DocumentValueFactory factory ) {
         return new ArrayEditor(array, factory);
     }

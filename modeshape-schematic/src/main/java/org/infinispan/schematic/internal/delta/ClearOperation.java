@@ -33,6 +33,7 @@ import org.infinispan.marshall.AbstractExternalizer;
 import org.infinispan.schematic.document.Immutable;
 import org.infinispan.schematic.document.Path;
 import org.infinispan.schematic.internal.document.MutableArray;
+import org.infinispan.schematic.internal.document.MutableDocument;
 import org.infinispan.schematic.internal.marshall.Ids;
 import org.infinispan.util.Util;
 
@@ -52,22 +53,29 @@ public class ClearOperation extends ArrayOperation {
     }
 
     @Override
-    public void replay( MutableArray delegate ) {
-        if (!delegate.isEmpty()) {
-            removedValues = new ArrayList<Object>(delegate);
-            delegate.clear();
+    public void replay( MutableDocument delegate ) {
+        MutableArray array = mutableParent(delegate);
+        if (!array.isEmpty()) {
+            removedValues = new ArrayList<Object>(array);
+            array.clear();
         } else {
             removedValues = Collections.emptyList();
         }
     }
 
     @Override
-    public void rollback( MutableArray delegate ) {
+    public void rollback( MutableDocument delegate ) {
         if (removedValues != null) {
-            delegate.clear();
-            delegate.addAll(removedValues);
+            MutableArray array = mutableParent(delegate);
+            array.clear();
+            array.addAll(removedValues);
             removedValues = null;
         }
+    }
+
+    @Override
+    public String toString() {
+        return "Clear at '" + parentPath + "' the existing values";
     }
 
     public static class Externalizer extends AbstractExternalizer<ClearOperation> {
@@ -77,7 +85,7 @@ public class ClearOperation extends ArrayOperation {
         @Override
         public void writeObject( ObjectOutput output,
                                  ClearOperation remove ) throws IOException {
-            output.writeObject(remove.path);
+            output.writeObject(remove.parentPath);
         }
 
         @Override

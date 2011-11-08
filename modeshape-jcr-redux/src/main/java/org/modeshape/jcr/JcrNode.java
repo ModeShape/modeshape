@@ -72,9 +72,6 @@ class JcrNode extends AbstractJcrNode {
     public AbstractJcrNode getParent() throws ItemNotFoundException, RepositoryException {
         checkSession();
         NodeKey parentKey = node().getParentKey(sessionCache());
-        if (parentKey == null) {
-            int x = 0;
-        }
         return session().node(parentKey, null);
     }
 

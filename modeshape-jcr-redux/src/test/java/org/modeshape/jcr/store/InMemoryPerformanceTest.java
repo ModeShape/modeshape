@@ -41,6 +41,7 @@ import org.infinispan.test.TestingUtil;
 import org.infinispan.test.fwk.TestCacheManagerFactory;
 import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.statistic.Stopwatch;
@@ -54,6 +55,10 @@ public class InMemoryPerformanceTest {
 
     private final String REPO_NAME = "testRepo";
 
+    private static final Stopwatch STARTUP = new Stopwatch();
+    private static final Stopwatch INFINISPAN_STARTUP = new Stopwatch();
+    private static final Stopwatch MODESHAPE_STARTUP = new Stopwatch();
+
     private CacheContainer cm;
     private TransactionManager txnMgr;
     private RepositoryConfiguration config;
@@ -65,6 +70,8 @@ public class InMemoryPerformanceTest {
     public void beforeEach() throws Exception {
         cleanUpFileSystem();
 
+        STARTUP.start();
+        INFINISPAN_STARTUP.start();
         GlobalConfiguration global = new GlobalConfiguration();
         global = global.fluent().serialization().addAdvancedExternalizer(Schematic.externalizers()).build();
 
@@ -76,12 +83,16 @@ public class InMemoryPerformanceTest {
         c = c.fluent().transaction().transactionManagerLookup(new DummyTransactionManagerLookup()).build();
         cm = TestCacheManagerFactory.createCacheManager(global, c);
         txnMgr = TestingUtil.getTransactionManager(cm.getCache(REPO_NAME));
+        INFINISPAN_STARTUP.stop();
+        MODESHAPE_STARTUP.start();
         config = new RepositoryConfiguration(REPO_NAME, cm);
         engine = new JcrEngine();
         engine.start();
         engine.deploy(config);
         repository = engine.startRepository(config.getName()).get();
         session = repository.login();
+        MODESHAPE_STARTUP.stop();
+        STARTUP.stop();
     }
 
     @After
@@ -105,6 +116,13 @@ public class InMemoryPerformanceTest {
         }
     }
 
+    @AfterClass
+    public static void afterAll() throws Exception {
+        System.out.println("Infinispan (CacheManager) startup time: " + INFINISPAN_STARTUP.getSimpleStatistics());
+        System.out.println("ModeShape startup time:                 " + MODESHAPE_STARTUP.getSimpleStatistics());
+        System.out.println("Total startup time:                     " + STARTUP.getSimpleStatistics());
+    }
+
     protected void cleanUpFileSystem() throws Exception {
         // do nothing by default
     }
@@ -114,15 +132,10 @@ public class InMemoryPerformanceTest {
     }
 
     @Test
-    public void shouldHaveRootNode() throws Exception {
+    public void shouldHaveJcrSystemNodeUnderRoot() throws Exception {
         Node node = session.getRootNode();
         assertThat(node, is(notNullValue()));
         assertThat(node.getPath(), is("/"));
-    }
-
-    @Test
-    public void shouldHaveJcrSystemNodeUnderRoot() throws Exception {
-        Node node = session.getRootNode();
         Node system = node.getNode("jcr:system");
         assertThat(system, is(notNullValue()));
         assertThat(system.getPath(), is("/jcr:system"));
@@ -132,13 +145,13 @@ public class InMemoryPerformanceTest {
     public void shouldAllowCreatingManyUnstructuredNodesWithSameNameSiblings() throws Exception {
         Stopwatch sw = new Stopwatch();
         System.out.print("Iterating ");
-        for (int i = 0; i != 15; ++i) {
+        for (int i = 0; i != 4; ++i) {
             System.out.print(".");
             // Each iteration adds another node under the root and creates the many nodes under that node ...
             Node node = session.getRootNode().addNode("testNode");
             session.save();
 
-            int count = 1000;
+            int count = 10;
             if (i > 2) sw.start();
             for (int j = 0; j != count; ++j) {
                 node.addNode("childNode");
@@ -169,13 +182,13 @@ public class InMemoryPerformanceTest {
     public void shouldAllowCreatingManyUnstructuredNodesWithNoSameNameSiblings() throws Exception {
         Stopwatch sw = new Stopwatch();
         System.out.print("Iterating ");
-        for (int i = 0; i != 15; ++i) {
+        for (int i = 0; i != 4; ++i) {
             System.out.print(".");
             // Each iteration adds another node under the root and creates the many nodes under that node ...
             Node node = session.getRootNode().addNode("testNode");
             session.save();
 
-            int count = 100;
+            int count = 10;
             if (i > 2) sw.start();
             for (int j = 0; j != count; ++j) {
                 node.addNode("childNode" + j);
@@ -196,8 +209,8 @@ public class InMemoryPerformanceTest {
     }
 
     @Test
-    public void shouldAllowSmallSubgraph() throws Exception {
-        repeatedlyCreateSubgraph(5, 2, 4, 0, false, true);
+    public void shouldAllowSmallerSubgraph() throws Exception {
+        repeatedlyCreateSubgraph(5, 2, 3, 0, false, true);
     }
 
     protected void repeatedlyCreateSubgraph( int samples,

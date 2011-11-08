@@ -37,14 +37,30 @@ final class JcrRootNode extends AbstractJcrNode {
     private final String NAME_STR = "";
     private final String PATH = "/";
 
+    private NodeDefinitionId rootNodeDefnId;
+
     protected JcrRootNode( JcrSession session,
                            NodeKey rootNodeKey ) {
         super(session, rootNodeKey);
     }
 
     @Override
+    NodeDefinitionId nodeDefinitionId() throws RepositoryException {
+        if (rootNodeDefnId == null) {
+            // Idempotent so we can do this without a lock ...
+            rootNodeDefnId = session.workspace().nodeTypeManager().getRootNodeDefinition().getId();
+        }
+        return rootNodeDefnId;
+    }
+
+    @Override
     final boolean isRoot() {
         return true;
+    }
+
+    @Override
+    public boolean isNew() {
+        return false; // the root node is never false
     }
 
     @Override

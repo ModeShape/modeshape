@@ -28,6 +28,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.test.ModeShapeSingleUseTest;
 
 public class JcrRepositoryPerformanceTest extends ModeShapeSingleUseTest {
@@ -39,6 +40,28 @@ public class JcrRepositoryPerformanceTest extends ModeShapeSingleUseTest {
     @Override
     public void beforeEach() throws Exception {
         super.beforeEach();
+    }
+
+    @Test
+    public void shouldMeasureStartupTime() throws Exception {
+        Stopwatch startup = new Stopwatch();
+        startup.start();
+        startEngineUsing("config/configRepositoryForDroolsJpaCreate.xml");
+        sessionTo("Repo");
+        startup.stop();
+        System.out.println("Startup time (1st time): " + startup.getSimpleStatistics());
+        System.out.flush();
+    }
+
+    @Test
+    public void shouldMeasureStartupTimeASecondTime() throws Exception {
+        Stopwatch startup = new Stopwatch();
+        startup.start();
+        startEngineUsing("config/configRepositoryForDroolsJpaCreate.xml");
+        sessionTo("Repo");
+        startup.stop();
+        System.out.println("Startup time (2nd time): " + startup.getSimpleStatistics());
+        System.out.flush();
     }
 
     @Ignore( "Removed from automatic builds due to time of test. Can be run manually." )

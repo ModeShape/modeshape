@@ -96,20 +96,24 @@ public interface Editor extends EditableDocument {
         void clear( Path path );
 
         /**
-         * Set to the given value the document field at the supplied path.
+         * Set to the given value the field in the document at the supplied path.
          * 
-         * @param path the path to the field
+         * @param parentPath the path to the parent document in which the field should be updated
+         * @param field the name of the field to be updated
          * @param newValue the new value
          */
-        void put( Path path,
+        void put( Path parentPath,
+                  String field,
                   Object newValue );
 
         /**
-         * Remove the document field at the supplied path.
+         * Remove the field from the document at the supplied path.
          * 
-         * @param path the path to the field
+         * @param parentPath the path to the parent document in which the field should be removed
+         * @param field the name of the field to be removed
          */
-        void remove( Path path );
+        void remove( Path parentPath,
+                     String field );
 
     }
 

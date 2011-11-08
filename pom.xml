@@ -113,5 +113,18 @@
 				<module>modeshape-distribution</module>
 			</modules>
 		</profile>
+		<profile>
+			<!-- 
+			  This profile is used to run longer-running performance tests,
+			  and must be activated manually, as in "mvn ... -Pperformance ..."
+			-->
+			<id>performance</id>
+			<activation>
+				<activeByDefault>false</activeByDefault>
+			</activation>
+			<modules>
+				<module>modeshape-performance-tests</module>
+			</modules>
+		</profile>
 	</profiles>
 </project>

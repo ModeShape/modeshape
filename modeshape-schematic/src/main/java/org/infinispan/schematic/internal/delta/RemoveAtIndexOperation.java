@@ -26,10 +26,10 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Set;
-
 import org.infinispan.marshall.AbstractExternalizer;
 import org.infinispan.schematic.document.Path;
 import org.infinispan.schematic.internal.document.MutableArray;
+import org.infinispan.schematic.internal.document.MutableDocument;
 import org.infinispan.schematic.internal.marshall.Ids;
 import org.infinispan.util.Util;
 
@@ -41,60 +41,69 @@ import org.infinispan.util.Util;
  */
 public class RemoveAtIndexOperation extends ArrayOperation {
 
-   protected final int index;
-   protected transient Object actualValue = null;
+    protected final int index;
+    protected transient Object actualValue = null;
 
-   public RemoveAtIndexOperation(Path path, int index) {
-      super(path);
-      this.index = index;
-   }
+    public RemoveAtIndexOperation( Path path,
+                                   int index ) {
+        super(path);
+        this.index = index;
+    }
 
-   public int getIndex() {
-      return index;
-   }
+    public int getIndex() {
+        return index;
+    }
 
-   public Object getRemovedValue() {
-      return actualValue;
-   }
+    public Object getRemovedValue() {
+        return actualValue;
+    }
 
-   @Override
-   public void rollback(MutableArray delegate) {
-      if (actualValue != null) {
-         delegate.add(index, actualValue);
-      }
-   }
+    @Override
+    public void rollback( MutableDocument delegate ) {
+        if (actualValue != null) {
+            MutableArray array = mutableParent(delegate);
+            array.add(index, actualValue);
+        }
+    }
 
-   @Override
-   public void replay(MutableArray delegate) {
-      actualValue = delegate.remove(index);
-   }
+    @Override
+    public void replay( MutableDocument delegate ) {
+        MutableArray array = mutableParent(delegate);
+        actualValue = array.remove(index);
+    }
 
-   public static class Externalizer extends AbstractExternalizer<RemoveAtIndexOperation> {
-      /** The serialVersionUID */
-      private static final long serialVersionUID = 1L;
+    @Override
+    public String toString() {
+        return "Remove at '" + parentPath + "' the value at index " + index;
+    }
 
-      @Override
-      public void writeObject(ObjectOutput output, RemoveAtIndexOperation put) throws IOException {
-         output.writeObject(put.path);
-         output.writeObject(put.index);
-      }
+    public static class Externalizer extends AbstractExternalizer<RemoveAtIndexOperation> {
+        /** The serialVersionUID */
+        private static final long serialVersionUID = 1L;
 
-      @Override
-      public RemoveAtIndexOperation readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-         Path path = (Path) input.readObject();
-         int index = input.readInt();
-         return new RemoveAtIndexOperation(path, index);
-      }
+        @Override
+        public void writeObject( ObjectOutput output,
+                                 RemoveAtIndexOperation put ) throws IOException {
+            output.writeObject(put.parentPath);
+            output.writeObject(put.index);
+        }
 
-      @Override
-      public Integer getId() {
-         return Ids.SCHEMATIC_VALUE_REMOVE_AT_INDEX_OPERATION;
-      }
+        @Override
+        public RemoveAtIndexOperation readObject( ObjectInput input ) throws IOException, ClassNotFoundException {
+            Path path = (Path)input.readObject();
+            int index = input.readInt();
+            return new RemoveAtIndexOperation(path, index);
+        }
 
-      @SuppressWarnings("unchecked")
-      @Override
-      public Set<Class<? extends RemoveAtIndexOperation>> getTypeClasses() {
-         return Util.<Class<? extends RemoveAtIndexOperation>> asSet(RemoveAtIndexOperation.class);
-      }
-   }
+        @Override
+        public Integer getId() {
+            return Ids.SCHEMATIC_VALUE_REMOVE_AT_INDEX_OPERATION;
+        }
+
+        @SuppressWarnings( "unchecked" )
+        @Override
+        public Set<Class<? extends RemoveAtIndexOperation>> getTypeClasses() {
+            return Util.<Class<? extends RemoveAtIndexOperation>>asSet(RemoveAtIndexOperation.class);
+        }
+    }
 }

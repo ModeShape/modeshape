@@ -292,6 +292,21 @@ public class LazyCachedNode implements CachedNode {
     }
 
     @Override
+    public int hashCode() {
+        return key.hashCode();
+    }
+
+    @Override
+    public boolean equals( Object obj ) {
+        if (obj == this) return true;
+        if (obj instanceof CachedNode) {
+            CachedNode that = (CachedNode)obj;
+            return this.getKey().equals(that.getKey());
+        }
+        return false;
+    }
+
+    @Override
     public String toString() {
         return getString(null);
     }

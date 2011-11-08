@@ -29,53 +29,10 @@ import static org.junit.Assert.assertThat;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
-import org.infinispan.config.Configuration;
-import org.infinispan.manager.CacheContainer;
-import org.infinispan.test.TestingUtil;
-import org.infinispan.test.fwk.TestCacheManagerFactory;
-import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.statistic.Stopwatch;
 
-public class JcrSessionTest {
-
-    private static final String REPO_NAME = "testRepo";
-
-    private CacheContainer cm;
-    private RepositoryConfiguration config;
-    private JcrRepository repository;
-    private JcrSession session;
-
-    @Before
-    public void beforeEach() throws Exception {
-        Configuration c = new Configuration();
-        c = c.fluent().transaction().transactionManagerLookup(new DummyTransactionManagerLookup()).build();
-        cm = TestCacheManagerFactory.createCacheManager(c);
-
-        // Configuration c = new Configuration();
-        // cm = TestCacheManagerFactory.createCacheManager(c, true);
-        config = new RepositoryConfiguration(REPO_NAME, cm);
-        repository = new JcrRepository(config);
-        repository.start();
-        session = repository.login();
-    }
-
-    @After
-    public void afterEach() throws Exception {
-        try {
-            repository.shutdown().get(3L, TimeUnit.SECONDS);
-        } finally {
-            repository = null;
-            config = null;
-            try {
-                TestingUtil.killCacheManagers(cm);
-            } finally {
-                cm = null;
-            }
-        }
-    }
+public class JcrSessionTest extends SingleUseAbstractTest {
 
     @Test
     public void shouldHaveRootNode() throws Exception {

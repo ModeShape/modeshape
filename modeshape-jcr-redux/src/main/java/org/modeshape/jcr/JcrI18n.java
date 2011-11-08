@@ -142,6 +142,8 @@ public final class JcrI18n {
     public static I18n invalidOptionProvided;
     public static I18n noOptionValueProvided;
     public static I18n valueMayNotContainNull;
+    public static I18n propertyNoLongerSatisfiesConstraints;
+    public static I18n propertyNoLongerHasValidDefinition;
 
     public static I18n cannotRemoveRootNode;
     public static I18n cannotRemoveParentNodeOfTarget;
@@ -263,6 +265,9 @@ public final class JcrI18n {
     public static I18n errorRefreshingNodeTypesFromSystem;
     public static I18n problemRefreshingNodeTypesFromSystem;
     public static I18n errorRefreshingNodeTypes;
+
+    public static I18n errorsParsingCnd;
+    public static I18n errorsParsingCndFromStream;
 
     // Lock messages
     public static I18n nodeNotLockable;

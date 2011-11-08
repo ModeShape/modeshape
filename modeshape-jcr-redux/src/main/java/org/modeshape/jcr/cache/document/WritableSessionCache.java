@@ -28,6 +28,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
@@ -113,12 +114,6 @@ public class WritableSessionCache extends AbstractSessionCache {
         assert this.changedNodes.get(node.getKey()) == node : "Node " + node.getKey() + " is not in this session";
     }
 
-    protected final void checkNotRemoved( CachedNode node ) {
-        if (node == REMOVED) {
-            throw new NodeNotFoundException(node.getKey());
-        }
-    }
-
     @Override
     public CachedNode getNode( NodeKey key ) {
         CachedNode sessionNode = null;
@@ -129,7 +124,10 @@ public class WritableSessionCache extends AbstractSessionCache {
         } finally {
             lock.unlock();
         }
-        checkNotRemoved(sessionNode);
+        if (sessionNode == REMOVED) {
+            // This node's been removed ...
+            return null;
+        }
         return sessionNode != null ? sessionNode : super.getNode(key);
     }
 
@@ -143,7 +141,7 @@ public class WritableSessionCache extends AbstractSessionCache {
         } finally {
             lock.unlock();
         }
-        if (sessionNode == null) {
+        if (sessionNode == null || sessionNode == REMOVED) {
             sessionNode = new SessionNode(key, false);
             lock = this.lock.writeLock();
             try {
@@ -157,8 +155,6 @@ public class WritableSessionCache extends AbstractSessionCache {
             } finally {
                 lock.unlock();
             }
-        } else {
-            checkNotRemoved(sessionNode);
         }
         return sessionNode;
     }
@@ -234,7 +230,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
                 try {
                     // Now persist the changes ...
-                    events = persistChanges();
+                    events = persistChanges(this.changedNodesInOrder);
                 } catch (RuntimeException e) {
                     // Some error occurred (likely within our code) ...
                     if (tm != null) tm.rollback();
@@ -287,6 +283,96 @@ public class WritableSessionCache extends AbstractSessionCache {
         }
     }
 
+    @Override
+    public void save( CachedNode node ) {
+        if (!this.hasChanges()) return;
+
+        Path topPath = node.getPath(this);
+
+        Logger logger = Logger.getLogger(getClass());
+        if (logger.isDebugEnabled()) {
+            String pathStr = topPath.getString(context().getNamespaceRegistry());
+            logger.debug("Beginning SessionCache.save(Path) with subset of changes below '{0}': \n{1}", pathStr, this);
+        }
+
+        ChangeSet events = null;
+        Lock lock = this.lock.writeLock();
+        try {
+            lock.lock();
+
+            // Figure out which changed nodes are at or below the specified path ...
+            List<NodeKey> savedNodesInOrder = new LinkedList<NodeKey>();
+            for (NodeKey key : this.changedNodesInOrder) {
+                Path path = getNode(key).getPath(this);
+                if (topPath.isAtOrAbove(path)) savedNodesInOrder.add(key);
+            }
+
+            try {
+                // Try to begin a transaction, if there is a transaction manager ...
+                boolean closeTxn = false;
+                if (tm != null) {
+                    // Start a transaction ...
+                    tm.begin();
+                    closeTxn = true;
+                }
+
+                try {
+                    // Now persist the changes ...
+                    events = persistChanges(savedNodesInOrder);
+                } catch (RuntimeException e) {
+                    // Some error occurred (likely within our code) ...
+                    if (tm != null) tm.rollback();
+                    throw e;
+                }
+
+                if (closeTxn) {
+                    assert tm != null;
+                    // Commit the transaction ...
+                    tm.commit();
+                }
+
+            } catch (NotSupportedException err) {
+                // No nested transactions are supported ...
+            } catch (SecurityException err) {
+                // No privilege to commit ...
+                throw new SystemFailureException(err);
+            } catch (IllegalStateException err) {
+                // Not associated with a txn??
+                throw new SystemFailureException(err);
+            } catch (RollbackException err) {
+                // Couldn't be committed, but the txn is already rolled back ...
+            } catch (HeuristicMixedException err) {
+            } catch (HeuristicRollbackException err) {
+                // Rollback has occurred ...
+                return;
+            } catch (SystemException err) {
+                // System failed unexpectedly ...
+                throw new SystemFailureException(err);
+            }
+
+            // The changes have been made, so create a new map (we're using the keys from the current map) ...
+            for (NodeKey savedNode : savedNodesInOrder) {
+                this.changedNodes.remove(savedNode);
+                this.changedNodesInOrder.remove(savedNode);
+            }
+
+        } finally {
+            lock.unlock();
+        }
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("Completing SessionCache.save()");
+        }
+
+        if (events != null) {
+            // Then there were changes made, so first record metrics for the changes ...
+            recordMetrics(events);
+
+            // and now notify the workspace (outside of the lock, but still before the save returns) ...
+            workspaceCache.changed(events);
+        }
+    }
+
     /**
      * This method saves the changes made by both sessions within a single transaction. <b>Note that this must be used with
      * caution, as this method attempts to get write locks on both sessions, meaning they <i>cannot<i> be concurrently used
@@ -297,7 +383,7 @@ public class WritableSessionCache extends AbstractSessionCache {
      */
     @Override
     public void save( SessionCache other ) {
-        if (other.hasChanges() || !(other instanceof WritableSessionCache)) {
+        if (!other.hasChanges() || !(other instanceof WritableSessionCache)) {
             save();
             return;
         }
@@ -328,8 +414,8 @@ public class WritableSessionCache extends AbstractSessionCache {
 
                 try {
                     // Now persist the changes ...
-                    events1 = persistChanges();
-                    events2 = that.persistChanges();
+                    events1 = persistChanges(this.changedNodesInOrder);
+                    events2 = that.persistChanges(that.changedNodesInOrder);
                 } catch (RuntimeException e) {
                     // Some error occurred (likely within our code) ...
                     if (tm != null) tm.rollback();
@@ -364,6 +450,9 @@ public class WritableSessionCache extends AbstractSessionCache {
             // The changes have been made, so create a new map (we're using the keys from the current map) ...
             this.changedNodes = new HashMap<NodeKey, SessionNode>();
             this.changedNodesInOrder.clear();
+            // And in the referenced session ...
+            that.changedNodes = new HashMap<NodeKey, SessionNode>();
+            that.changedNodesInOrder.clear();
 
         } finally {
             try {
@@ -407,11 +496,12 @@ public class WritableSessionCache extends AbstractSessionCache {
     /**
      * Persist the changes within an already-established transaction.
      * 
+     * @param changedNodesInOrder the nodes that are to be persisted; may not be null
      * @return the ChangeSet encapsulating the changes that were made
      * @throws LockFailureException if a requested lock could not be made
      */
     @GuardedBy( "lock" )
-    protected ChangeSet persistChanges() {
+    protected ChangeSet persistChanges( Iterable<NodeKey> changedNodesInOrder ) {
         // Compute the save meta-info ...
         ExecutionContext context = context();
         String userId = context.getSecurityContext().getUserName();
@@ -638,7 +728,11 @@ public class WritableSessionCache extends AbstractSessionCache {
             lock.lock();
             NodeKey key = newNode.getKey();
             SessionNode node = changedNodes.put(key, newNode);
-            if (node != null) return node;
+            if (node != null && node != REMOVED) {
+                // Put the original node back ...
+                changedNodes.put(key, node);
+                return node;
+            }
             changedNodesInOrder.add(key);
             return newNode;
         } finally {

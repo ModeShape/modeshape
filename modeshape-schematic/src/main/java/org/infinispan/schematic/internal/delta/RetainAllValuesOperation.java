@@ -28,11 +28,11 @@ import java.io.ObjectOutput;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-
 import org.infinispan.marshall.AbstractExternalizer;
 import org.infinispan.schematic.document.Path;
 import org.infinispan.schematic.internal.document.MutableArray;
 import org.infinispan.schematic.internal.document.MutableArray.Entry;
+import org.infinispan.schematic.internal.document.MutableDocument;
 import org.infinispan.schematic.internal.marshall.Ids;
 import org.infinispan.util.Util;
 
@@ -44,63 +44,72 @@ import org.infinispan.util.Util;
  */
 public class RetainAllValuesOperation extends ArrayOperation {
 
-   protected final Collection<?> values;
-   protected transient List<Entry> removedEntries;
+    protected final Collection<?> values;
+    protected transient List<Entry> removedEntries;
 
-   public RetainAllValuesOperation(Path path, Collection<?> values) {
-      super(path);
-      this.values = values;
-   }
+    public RetainAllValuesOperation( Path parentPath,
+                                     Collection<?> values ) {
+        super(parentPath);
+        this.values = values;
+    }
 
-   @Override
-   public void rollback(MutableArray delegate) {
-      if (removedEntries != null) {
-         // Add into the same locations ...
-         for (Entry entry : removedEntries) {
-            delegate.add(entry.getIndex(), entry.getValue());
-         }
-      }
-   }
+    @Override
+    public void rollback( MutableDocument delegate ) {
+        if (removedEntries != null) {
+            // Add into the same locations ...
+            MutableArray array = mutableParent(delegate);
+            for (Entry entry : removedEntries) {
+                array.add(entry.getIndex(), entry.getValue());
+            }
+        }
+    }
 
-   public Collection<?> getRetainedValues() {
-      return values;
-   }
+    public Collection<?> getRetainedValues() {
+        return values;
+    }
 
-   public List<Entry> getRemovedEntries() {
-      return removedEntries;
-   }
+    public List<Entry> getRemovedEntries() {
+        return removedEntries;
+    }
 
-   @Override
-   public void replay(MutableArray delegate) {
-      removedEntries = delegate.retainAllValues(values);
-   }
+    @Override
+    public void replay( MutableDocument delegate ) {
+        MutableArray array = mutableParent(delegate);
+        removedEntries = array.retainAllValues(values);
+    }
 
-   public static class Externalizer extends AbstractExternalizer<RetainAllValuesOperation> {
-      /** The serialVersionUID */
-      private static final long serialVersionUID = 1L;
+    @Override
+    public String toString() {
+        return "Retain at '" + parentPath + "' the values: " + values;
+    }
 
-      @Override
-      public void writeObject(ObjectOutput output, RetainAllValuesOperation put) throws IOException {
-         output.writeObject(put.path);
-         output.writeObject(put.values);
-      }
+    public static class Externalizer extends AbstractExternalizer<RetainAllValuesOperation> {
+        /** The serialVersionUID */
+        private static final long serialVersionUID = 1L;
 
-      @Override
-      public RetainAllValuesOperation readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-         Path path = (Path) input.readObject();
-         Collection<?> values = (Collection<?>) input.readObject();
-         return new RetainAllValuesOperation(path, values);
-      }
+        @Override
+        public void writeObject( ObjectOutput output,
+                                 RetainAllValuesOperation put ) throws IOException {
+            output.writeObject(put.parentPath);
+            output.writeObject(put.values);
+        }
 
-      @Override
-      public Integer getId() {
-         return Ids.SCHEMATIC_VALUE_RETAIN_ALL_VALUES_OPERATION;
-      }
+        @Override
+        public RetainAllValuesOperation readObject( ObjectInput input ) throws IOException, ClassNotFoundException {
+            Path path = (Path)input.readObject();
+            Collection<?> values = (Collection<?>)input.readObject();
+            return new RetainAllValuesOperation(path, values);
+        }
 
-      @SuppressWarnings("unchecked")
-      @Override
-      public Set<Class<? extends RetainAllValuesOperation>> getTypeClasses() {
-         return Util.<Class<? extends RetainAllValuesOperation>> asSet(RetainAllValuesOperation.class);
-      }
-   }
+        @Override
+        public Integer getId() {
+            return Ids.SCHEMATIC_VALUE_RETAIN_ALL_VALUES_OPERATION;
+        }
+
+        @SuppressWarnings( "unchecked" )
+        @Override
+        public Set<Class<? extends RetainAllValuesOperation>> getTypeClasses() {
+            return Util.<Class<? extends RetainAllValuesOperation>>asSet(RetainAllValuesOperation.class);
+        }
+    }
 }

@@ -63,6 +63,11 @@ public class ReadOnlySessionCache extends AbstractSessionCache {
     }
 
     @Override
+    public void save( CachedNode node ) {
+        // do nothing
+    }
+
+    @Override
     public void save( SessionCache otherSession ) {
         // do nothing
     }

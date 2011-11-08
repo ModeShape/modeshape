@@ -26,10 +26,10 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Set;
-
 import org.infinispan.marshall.AbstractExternalizer;
 import org.infinispan.schematic.document.Path;
 import org.infinispan.schematic.internal.document.MutableArray;
+import org.infinispan.schematic.internal.document.MutableDocument;
 import org.infinispan.schematic.internal.marshall.Ids;
 import org.infinispan.util.Util;
 
@@ -41,54 +41,63 @@ import org.infinispan.util.Util;
  */
 public class AddValueIfAbsentOperation extends AddValueOperation {
 
-   protected transient boolean added;
+    protected transient boolean added;
 
-   public AddValueIfAbsentOperation(Path path, Object value) {
-      super(path, value);
-   }
+    public AddValueIfAbsentOperation( Path path,
+                                      Object value ) {
+        super(path, value);
+    }
 
-   public boolean isAdded() {
-      return added;
-   }
+    public boolean isAdded() {
+        return added;
+    }
 
-   @Override
-   public void rollback(MutableArray delegate) {
-      if (added) {
-         delegate.remove(this.index);
-      }
-   }
+    @Override
+    public void rollback( MutableDocument delegate ) {
+        if (added) {
+            MutableArray array = mutableParent(delegate);
+            array.remove(this.index);
+        }
+    }
 
-   @Override
-   public void replay(MutableArray delegate) {
-      added = delegate.addValueIfAbsent(value);
-   }
+    @Override
+    public void replay( MutableDocument delegate ) {
+        MutableArray array = mutableParent(delegate);
+        added = array.addValueIfAbsent(value);
+    }
 
-   public static class Externalizer extends AbstractExternalizer<AddValueIfAbsentOperation> {
-      /** The serialVersionUID */
-      private static final long serialVersionUID = 1L;
+    @Override
+    public String toString() {
+        return super.toString() + " if absent";
+    }
 
-      @Override
-      public void writeObject(ObjectOutput output, AddValueIfAbsentOperation put) throws IOException {
-         output.writeObject(put.path);
-         output.writeObject(put.value);
-      }
+    public static class Externalizer extends AbstractExternalizer<AddValueIfAbsentOperation> {
+        /** The serialVersionUID */
+        private static final long serialVersionUID = 1L;
 
-      @Override
-      public AddValueIfAbsentOperation readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-         Path path = (Path) input.readObject();
-         Object value = input.readObject();
-         return new AddValueIfAbsentOperation(path, value);
-      }
+        @Override
+        public void writeObject( ObjectOutput output,
+                                 AddValueIfAbsentOperation put ) throws IOException {
+            output.writeObject(put.parentPath);
+            output.writeObject(put.value);
+        }
 
-      @Override
-      public Integer getId() {
-         return Ids.SCHEMATIC_VALUE_ADD_IF_ABSENT_OPERATION;
-      }
+        @Override
+        public AddValueIfAbsentOperation readObject( ObjectInput input ) throws IOException, ClassNotFoundException {
+            Path path = (Path)input.readObject();
+            Object value = input.readObject();
+            return new AddValueIfAbsentOperation(path, value);
+        }
 
-      @SuppressWarnings("unchecked")
-      @Override
-      public Set<Class<? extends AddValueIfAbsentOperation>> getTypeClasses() {
-         return Util.<Class<? extends AddValueIfAbsentOperation>> asSet(AddValueIfAbsentOperation.class);
-      }
-   }
+        @Override
+        public Integer getId() {
+            return Ids.SCHEMATIC_VALUE_ADD_IF_ABSENT_OPERATION;
+        }
+
+        @SuppressWarnings( "unchecked" )
+        @Override
+        public Set<Class<? extends AddValueIfAbsentOperation>> getTypeClasses() {
+            return Util.<Class<? extends AddValueIfAbsentOperation>>asSet(AddValueIfAbsentOperation.class);
+        }
+    }
 }

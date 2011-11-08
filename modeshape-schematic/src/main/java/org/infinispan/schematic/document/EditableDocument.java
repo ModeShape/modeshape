@@ -177,6 +177,15 @@ public interface EditableDocument extends Document {
     EditableDocument getDocument( String name );
 
     /**
+     * Get the existing document value in this document for the given field name, or create a new document if there is no existing
+     * document at this field.
+     * 
+     * @param name The name of the pair
+     * @return The editable document field value; never null
+     */
+    EditableDocument getOrCreateDocument( String name );
+
+    /**
      * Set the value for the field with the given name to be a new, empty array.
      * 
      * @param name The name of the field
@@ -204,6 +213,15 @@ public interface EditableDocument extends Document {
      */
     @Override
     EditableArray getArray( String name );
+
+    /**
+     * Get the existing array value in this document for the given field name, or create a new array if there is no existing array
+     * at this field.
+     * 
+     * @param name The name of the pair
+     * @return The editable array field value; never null
+     */
+    EditableArray getOrCreateArray( String name );
 
     /**
      * Set the value for the field with the given name to the supplied date value.

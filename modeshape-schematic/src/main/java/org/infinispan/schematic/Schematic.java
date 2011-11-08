@@ -279,7 +279,10 @@ public class Schematic {
                 }
             }
         };
-        return new EditorImpl((MutableDocument)document, observer, operations);
+        MutableDocument mutable = null;
+        if (document instanceof MutableDocument) mutable = (MutableDocument)document;
+        else if (document instanceof DocumentEditor) mutable = ((DocumentEditor)document).asMutableDocument();
+        return new EditorImpl(mutable, observer, operations);
     }
 
     protected static class EditorImpl extends ObservableDocumentEditor implements Editor {
@@ -320,45 +323,45 @@ public class Schematic {
                 if (observer != null) {
                     if (operation instanceof SetValueOperation) {
                         SetValueOperation op = (SetValueOperation)operation;
-                        observer.setArrayValue(op.getPath(), newEntry(op.getIndex(), op.getValue()));
+                        observer.setArrayValue(op.getParentPath(), newEntry(op.getIndex(), op.getValue()));
                     } else if (operation instanceof AddValueOperation) {
                         AddValueOperation op = (AddValueOperation)operation;
                         if (op.getActualIndex() != -1) {
-                            observer.addArrayValue(op.getPath(), newEntry(op.getActualIndex(), op.getValue()));
+                            observer.addArrayValue(op.getParentPath(), newEntry(op.getActualIndex(), op.getValue()));
                         }
                     } else if (operation instanceof AddValueIfAbsentOperation) {
                         AddValueIfAbsentOperation op = (AddValueIfAbsentOperation)operation;
                         if (op.isAdded()) {
-                            observer.addArrayValue(op.getPath(), newEntry(op.getIndex(), op.getValue()));
+                            observer.addArrayValue(op.getParentPath(), newEntry(op.getIndex(), op.getValue()));
                         }
                     } else if (operation instanceof RemoveValueOperation) {
                         RemoveValueOperation op = (RemoveValueOperation)operation;
                         if (op.getActualIndex() != -1) {
-                            observer.removeArrayValue(op.getPath(), newEntry(op.getActualIndex(), op.getRemovedValue()));
+                            observer.removeArrayValue(op.getParentPath(), newEntry(op.getActualIndex(), op.getRemovedValue()));
                         }
                     } else if (operation instanceof RemoveAtIndexOperation) {
                         RemoveAtIndexOperation op = (RemoveAtIndexOperation)operation;
-                        observer.removeArrayValue(op.getPath(), newEntry(op.getIndex(), op.getRemovedValue()));
+                        observer.removeArrayValue(op.getParentPath(), newEntry(op.getIndex(), op.getRemovedValue()));
                     } else if (operation instanceof RetainAllValuesOperation) {
                         RetainAllValuesOperation op = (RetainAllValuesOperation)operation;
                         for (Entry entry : op.getRemovedEntries()) {
-                            observer.removeArrayValue(op.getPath(), entry);
+                            observer.removeArrayValue(op.getParentPath(), entry);
                         }
                     } else if (operation instanceof RemoveAllValuesOperation) {
                         RemoveAllValuesOperation op = (RemoveAllValuesOperation)operation;
                         for (Entry entry : op.getRemovedEntries()) {
-                            observer.removeArrayValue(op.getPath(), entry);
+                            observer.removeArrayValue(op.getParentPath(), entry);
                         }
                     } else if (operation instanceof ClearOperation) {
                         ClearOperation op = (ClearOperation)operation;
-                        observer.clear(op.getPath());
+                        observer.clear(op.getParentPath());
                     } else if (operation instanceof PutOperation) {
                         PutOperation op = (PutOperation)operation;
-                        observer.put(op.getPath(), op.getNewValue());
+                        observer.put(op.getParentPath(), op.getFieldName(), op.getNewValue());
                     } else if (operation instanceof RemoveOperation) {
                         RemoveOperation op = (RemoveOperation)operation;
                         if (op.isRemoved()) {
-                            observer.remove(op.getPath());
+                            observer.remove(op.getParentPath(), op.getFieldName());
                         }
                     }
                 }
@@ -382,6 +385,19 @@ public class Schematic {
         @Override
         public boolean isEmpty() {
             return operations.isEmpty();
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            Iterator<Operation> iter = operations.iterator();
+            if (iter.hasNext()) {
+                sb.append(iter.next());
+                while (iter.hasNext()) {
+                    sb.append("\n").append(iter.next());
+                }
+            }
+            return sb.toString();
         }
 
         public static class Externalizer extends AbstractExternalizer<DocumentChanges> {

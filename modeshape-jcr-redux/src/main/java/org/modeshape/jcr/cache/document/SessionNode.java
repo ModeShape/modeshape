@@ -113,6 +113,29 @@ public class SessionNode implements MutableCachedNode {
     }
 
     @Override
+    public final boolean isPropertyNew( SessionCache cache,
+                                        Name propertyName ) {
+        return isNew || (changedProperties.containsKey(propertyName) && !isPropertyInWorkspaceCache(cache, propertyName));
+    }
+
+    @Override
+    public final boolean isPropertyModified( SessionCache cache,
+                                             Name propertyName ) {
+        return !isNew && changedProperties.containsKey(propertyName) && isPropertyInWorkspaceCache(cache, propertyName);
+    }
+
+    private boolean isPropertyInWorkspaceCache( SessionCache cache,
+                                                Name propertyName ) {
+        AbstractSessionCache session = session(cache);
+        CachedNode raw = nodeInWorkspace(session);
+        if (raw == null) {
+            return false; // the node doesn't exist in the workspace cache
+        }
+        WorkspaceCache workspaceCache = workspace(cache);
+        return raw.hasProperty(propertyName, workspaceCache);
+    }
+
+    @Override
     public boolean hasChanges() {
         if (isNew) return true;
         if (newParent != null) return true;
@@ -568,6 +591,12 @@ public class SessionNode implements MutableCachedNode {
 
     @Override
     public ChildReferences getChildReferences( NodeCache cache ) {
+        if (isNew) {
+            // Then this node was created in this session. Note that it is possible that there still may be a persisted node,
+            // meaning that the persisted node was likely removed in this session and (without saving) a new node was created
+            // using the same key as the persisted node. Therefore, we do NOT want to use the persisted node in this case ...
+            return new SessionChildReferences(null, appended.get(), changedChildren);
+        }
         // Find the persisted information, since the info we have is relative to it ...
         CachedNode persistedNode = nodeInWorkspace(session(cache));
         ChildReferences persisted = persistedNode != null ? persistedNode.getChildReferences(cache) : null;
@@ -600,7 +629,7 @@ public class SessionNode implements MutableCachedNode {
         }
         if (additionalProperties != null) {
             for (Property property : additionalProperties) {
-                child.setProperty(cache, property);
+                if (property != null) child.setProperty(cache, property);
             }
         }
 
@@ -633,7 +662,7 @@ public class SessionNode implements MutableCachedNode {
         // Add the properties ...
         if (properties != null) {
             for (Property property : properties) {
-                child.setProperty(cache, property);
+                if (property != null) child.setProperty(cache, property);
             }
         }
 
@@ -778,6 +807,21 @@ public class SessionNode implements MutableCachedNode {
             // Add it as a parent of this node ...
             appended(true).append(childKey, name);
         }
+    }
+
+    @Override
+    public int hashCode() {
+        return key.hashCode();
+    }
+
+    @Override
+    public boolean equals( Object obj ) {
+        if (obj == this) return true;
+        if (obj instanceof CachedNode) {
+            CachedNode that = (CachedNode)obj;
+            return this.getKey().equals(that.getKey());
+        }
+        return false;
     }
 
     @Override
@@ -954,9 +998,9 @@ public class SessionNode implements MutableCachedNode {
         }
 
         @Override
-        public boolean isRemoved( ChildReference key ) {
+        public boolean isRemoved( ChildReference ref ) {
             Set<NodeKey> removals = this.removals.get();
-            return removals == null ? false : removals.contains(key);
+            return removals == null ? false : removals.contains(ref.getKey());
         }
 
         /**

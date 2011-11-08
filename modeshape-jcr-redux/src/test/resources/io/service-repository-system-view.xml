@@ -1,0 +1,641 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sv:node xmlns:fn="http://www.w3.org/2005/xpath-functions" xmlns:fn_old="http://www.w3.org/2004/10/xpath-functions" xmlns:drools="http://www.jboss.org/drools-repository/1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:mix="http://www.jcp.org/jcr/mix/1.0" xmlns:sv="http://www.jcp.org/jcr/sv/1.0" xmlns:rep="internal" xmlns:nt="http://www.jcp.org/jcr/nt/1.0" sv:name="drools:repository">
+    <sv:property sv:name="jcr:primaryType" sv:type="Name">
+        <sv:value>nt:folder</sv:value>
+    </sv:property>
+    <sv:property sv:name="jcr:created" sv:type="Date">
+        <sv:value>2010-03-09T22:52:02.418-07:00</sv:value>
+    </sv:property>
+    <sv:node sv:name="drools:package_area">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+            <sv:value>nt:folder</sv:value>
+        </sv:property>
+        <sv:property sv:name="jcr:created" sv:type="Date">
+            <sv:value>2010-03-09T22:52:02.420-07:00</sv:value>
+        </sv:property>
+        <sv:node sv:name="globalArea">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                <sv:value>drools:packageNodeType</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:uuid" sv:type="String">
+                <sv:value>1c9dac51-3baf-480f-911c-e98cabeb6489</sv:value>
+            </sv:property>
+            <sv:property sv:name="drools:archive" sv:type="Boolean">
+                <sv:value>false</sv:value>
+            </sv:property>
+            <sv:property sv:name="drools:creator" sv:type="String">
+                <sv:value>admin</sv:value>
+            </sv:property>
+            <sv:property sv:name="drools:description" sv:type="String">
+                <sv:value>the global area that holds sharable assets</sv:value>
+            </sv:property>
+            <sv:property sv:name="drools:format" sv:type="String">
+                <sv:value>package</sv:value>
+            </sv:property>
+            <sv:property sv:name="drools:lastModified" sv:type="Date">
+                <sv:value>2010-03-09T22:52:02.423-07:00</sv:value>
+            </sv:property>
+            <sv:property sv:name="drools:title" sv:type="String">
+                <sv:value>globalArea</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:baseVersion" sv:type="Reference">
+                <sv:value>301796ba-f19c-4d9d-ab3b-29d23ca623d8</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:created" sv:type="Date">
+                <sv:value>2010-03-09T22:52:02.422-07:00</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:isCheckedOut" sv:type="Boolean">
+                <sv:value>true</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:predecessors" sv:type="Reference">
+                <sv:value>301796ba-f19c-4d9d-ab3b-29d23ca623d8</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:versionHistory" sv:type="Reference">
+                <sv:value>2158f904-a421-4e31-9b2f-a1170b26e7e8</sv:value>
+            </sv:property>
+            <sv:node sv:name="assets">
+                <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                    <sv:value>drools:versionableAssetFolder</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:uuid" sv:type="String">
+                    <sv:value>4cd159ad-1025-4cd0-9426-1641e551daf9</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:baseVersion" sv:type="Reference">
+                    <sv:value>4fd567cb-342a-4aac-93c7-b6a0d70e3fc6</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:created" sv:type="Date">
+                    <sv:value>2010-03-09T22:52:02.423-07:00</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:isCheckedOut" sv:type="Boolean">
+                    <sv:value>true</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:predecessors" sv:type="Reference">
+                    <sv:value>4fd567cb-342a-4aac-93c7-b6a0d70e3fc6</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:versionHistory" sv:type="Reference">
+                    <sv:value>c016b7fe-6955-404a-9ca2-901450d4d484</sv:value>
+                </sv:property>
+            </sv:node>
+        </sv:node>
+        <sv:node sv:name="defaultPackage">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                <sv:value>drools:packageNodeType</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:uuid" sv:type="String">
+                <sv:value>46d03e5e-d1e7-4065-8da3-d75a550fb87c</sv:value>
+            </sv:property>
+            <sv:property sv:name="drools:archive" sv:type="Boolean">
+                <sv:value>false</sv:value>
+            </sv:property>
+            <sv:property sv:name="drools:checkinComment" sv:type="String">
+                <sv:value>Initial</sv:value>
+            </sv:property>
+            <sv:property sv:name="drools:creator" sv:type="String">
+                <sv:value>admin</sv:value>
+            </sv:property>
+            <sv:property sv:name="drools:description" sv:type="String">
+                <sv:value>The default rule package</sv:value>
+            </sv:property>
+            <sv:property sv:name="drools:format" sv:type="String">
+                <sv:value>package</sv:value>
+            </sv:property>
+            <sv:property sv:name="drools:lastContributor" sv:type="String">
+                <sv:value>admin</sv:value>
+            </sv:property>
+            <sv:property sv:name="drools:lastModified" sv:type="Date">
+                <sv:value>2010-03-09T22:52:02.560-07:00</sv:value>
+            </sv:property>
+            <sv:property sv:name="drools:title" sv:type="String">
+                <sv:value>defaultPackage</sv:value>
+            </sv:property>
+            <sv:property sv:name="drools:versionNumber" sv:type="Long">
+                <sv:value>1</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:baseVersion" sv:type="Reference">
+                <sv:value>aafd3fa4-c3e1-4013-93d8-226d751a1504</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:created" sv:type="Date">
+                <sv:value>2010-03-09T22:52:02.557-07:00</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:isCheckedOut" sv:type="Boolean">
+                <sv:value>false</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:predecessors" sv:type="Reference"/>
+            <sv:property sv:name="jcr:versionHistory" sv:type="Reference">
+                <sv:value>597ee7ac-6d81-47a0-bafb-0ee07cbe304d</sv:value>
+            </sv:property>
+            <sv:node sv:name="assets">
+                <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                    <sv:value>drools:versionableAssetFolder</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:uuid" sv:type="String">
+                    <sv:value>20052bac-95c6-48e3-a3d1-20cfe86fe203</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:baseVersion" sv:type="Reference">
+                    <sv:value>17065fa3-69e3-4529-a30c-940e9cde6e0c</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:created" sv:type="Date">
+                    <sv:value>2010-03-09T22:52:02.557-07:00</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:isCheckedOut" sv:type="Boolean">
+                    <sv:value>true</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:predecessors" sv:type="Reference">
+                    <sv:value>17065fa3-69e3-4529-a30c-940e9cde6e0c</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:versionHistory" sv:type="Reference">
+                    <sv:value>c00db902-21cb-4696-95ef-97026c051cf7</sv:value>
+                </sv:property>
+                <sv:node sv:name="drools">
+                    <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                        <sv:value>drools:assetNodeType</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:uuid" sv:type="String">
+                        <sv:value>194db871-035c-42b9-987a-f1ae00b310bf</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="drools:archive" sv:type="Boolean">
+                        <sv:value>false</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="drools:checkinComment" sv:type="String">
+                        <sv:value/>
+                    </sv:property>
+                    <sv:property sv:name="drools:content" sv:type="String">
+                        <sv:value/>
+                    </sv:property>
+                    <sv:property sv:name="drools:creator" sv:type="String">
+                        <sv:value>admin</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="drools:description" sv:type="String">
+                        <sv:value/>
+                    </sv:property>
+                    <sv:property sv:name="drools:format" sv:type="String">
+                        <sv:value>package</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="drools:lastContributor" sv:type="String">
+                        <sv:value>admin</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="drools:lastModified" sv:type="Date">
+                        <sv:value>2010-03-09T22:52:02.659-07:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="drools:packageName" sv:type="String">
+                        <sv:value>defaultPackage</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="drools:stateReference" sv:type="Reference">
+                        <sv:value>cfe5fa36-3ee7-41f1-9b79-ec989bfaa013</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="drools:title" sv:type="String">
+                        <sv:value>drools</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="drools:versionNumber" sv:type="Long">
+                        <sv:value>1</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:baseVersion" sv:type="Reference">
+                        <sv:value>a384ff0b-44d8-419a-a72a-3e6c0798f91e</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:created" sv:type="Date">
+                        <sv:value>2010-03-09T22:52:02.655-07:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:isCheckedOut" sv:type="Boolean">
+                        <sv:value>false</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:predecessors" sv:type="Reference"/>
+                    <sv:property sv:name="jcr:versionHistory" sv:type="Reference">
+                        <sv:value>873a4bf9-6309-42e3-a54a-6f7cfa4cb2c5</sv:value>
+                    </sv:property>
+                </sv:node>
+            </sv:node>
+        </sv:node>
+        <sv:node sv:name="ServicesGlobal">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                <sv:value>drools:packageNodeType</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:uuid" sv:type="String">
+                <sv:value>9a0545b8-f9b5-4306-95b3-3776d52756b7</sv:value>
+            </sv:property>
+            <sv:property sv:name="drools:archive" sv:type="Boolean">
+                <sv:value>false</sv:value>
+            </sv:property>
+            <sv:property sv:name="drools:checkinComment" sv:type="String">
+                <sv:value>Initial</sv:value>
+            </sv:property>
+            <sv:property sv:name="drools:creator" sv:type="String">
+                <sv:value>admin</sv:value>
+            </sv:property>
+            <sv:property sv:name="drools:description" sv:type="String">
+                <sv:value>This area is used to manage all non-service specific assets</sv:value>
+            </sv:property>
+            <sv:property sv:name="drools:format" sv:type="String">
+                <sv:value>package</sv:value>
+            </sv:property>
+            <sv:property sv:name="drools:lastContributor" sv:type="String">
+                <sv:value>admin</sv:value>
+            </sv:property>
+            <sv:property sv:name="drools:lastModified" sv:type="Date">
+                <sv:value>2010-03-10T13:11:16.124-07:00</sv:value>
+            </sv:property>
+            <sv:property sv:name="drools:title" sv:type="String">
+                <sv:value>ServicesGlobal</sv:value>
+            </sv:property>
+            <sv:property sv:name="drools:versionNumber" sv:type="Long">
+                <sv:value>1</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:baseVersion" sv:type="Reference">
+                <sv:value>e73cf559-1581-4a8c-a28e-6ba9025b6029</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:created" sv:type="Date">
+                <sv:value>2010-03-10T13:11:16.123-07:00</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:isCheckedOut" sv:type="Boolean">
+                <sv:value>false</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:predecessors" sv:type="Reference"/>
+            <sv:property sv:name="jcr:versionHistory" sv:type="Reference">
+                <sv:value>7584890b-0666-4973-9cb1-c37156583944</sv:value>
+            </sv:property>
+            <sv:node sv:name="assets">
+                <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                    <sv:value>drools:versionableAssetFolder</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:uuid" sv:type="String">
+                    <sv:value>7431b03d-2b09-4384-aead-7c0b35d9c37d</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:baseVersion" sv:type="Reference">
+                    <sv:value>daa15f0f-41bb-4a37-a935-cb1564f9b524</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:created" sv:type="Date">
+                    <sv:value>2010-03-10T13:11:16.123-07:00</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:isCheckedOut" sv:type="Boolean">
+                    <sv:value>true</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:predecessors" sv:type="Reference">
+                    <sv:value>daa15f0f-41bb-4a37-a935-cb1564f9b524</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:versionHistory" sv:type="Reference">
+                    <sv:value>1ab49a20-350c-46aa-9879-841c70fd20d5</sv:value>
+                </sv:property>
+            </sv:node>
+        </sv:node>
+    </sv:node>
+    <sv:node sv:name="drools:packagesnapshot_area">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+            <sv:value>nt:folder</sv:value>
+        </sv:property>
+        <sv:property sv:name="jcr:created" sv:type="Date">
+            <sv:value>2010-03-09T22:52:02.439-07:00</sv:value>
+        </sv:property>
+    </sv:node>
+    <sv:node sv:name="drools:tag_area">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+            <sv:value>nt:folder</sv:value>
+        </sv:property>
+        <sv:property sv:name="jcr:created" sv:type="Date">
+            <sv:value>2010-03-09T22:52:02.440-07:00</sv:value>
+        </sv:property>
+        <sv:node sv:name="Services">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                <sv:value>drools:categoryNodeType</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:uuid" sv:type="String">
+                <sv:value>0540d11d-5dae-4b9a-980e-fe3de4372d14</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:created" sv:type="Date">
+                <sv:value>2010-03-10T12:33:28.047-07:00</sv:value>
+            </sv:property>
+            <sv:node sv:name="Entity Services">
+                <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                    <sv:value>drools:categoryNodeType</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:uuid" sv:type="String">
+                    <sv:value>33414533-4e7b-453e-96bc-b16976f5af0f</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:created" sv:type="Date">
+                    <sv:value>2010-03-10T12:33:41.785-07:00</sv:value>
+                </sv:property>
+            </sv:node>
+            <sv:node sv:name="Task Services">
+                <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                    <sv:value>drools:categoryNodeType</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:uuid" sv:type="String">
+                    <sv:value>7699f3d3-3ba4-4f40-a787-f610964f44ac</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:created" sv:type="Date">
+                    <sv:value>2010-03-10T12:33:50.555-07:00</sv:value>
+                </sv:property>
+            </sv:node>
+            <sv:node sv:name="Utility Services">
+                <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                    <sv:value>drools:categoryNodeType</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:uuid" sv:type="String">
+                    <sv:value>8e2e5c6f-2a78-45f6-ab90-08f0595f948f</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:created" sv:type="Date">
+                    <sv:value>2010-03-10T12:34:10.276-07:00</sv:value>
+                </sv:property>
+            </sv:node>
+            <sv:node sv:name="Orchestrated Services">
+                <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                    <sv:value>drools:categoryNodeType</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:uuid" sv:type="String">
+                    <sv:value>14ade576-def0-477f-905c-a00b82d607fa</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:created" sv:type="Date">
+                    <sv:value>2010-03-10T12:34:22.968-07:00</sv:value>
+                </sv:property>
+            </sv:node>
+        </sv:node>
+        <sv:node sv:name="XML Schemas">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                <sv:value>drools:categoryNodeType</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:uuid" sv:type="String">
+                <sv:value>c3104421-26a2-4013-8c31-c033cb36f35c</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:created" sv:type="Date">
+                <sv:value>2010-03-10T12:35:01.665-07:00</sv:value>
+            </sv:property>
+        </sv:node>
+        <sv:node sv:name="Sample Messages">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                <sv:value>drools:categoryNodeType</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:uuid" sv:type="String">
+                <sv:value>1db2fb05-09bc-4a09-8477-6e174e2024ac</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:created" sv:type="Date">
+                <sv:value>2010-03-10T12:35:14.636-07:00</sv:value>
+            </sv:property>
+        </sv:node>
+        <sv:node sv:name="WSDLs">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                <sv:value>drools:categoryNodeType</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:uuid" sv:type="String">
+                <sv:value>4cc4940f-27ea-4f5b-8247-1748131857fa</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:created" sv:type="Date">
+                <sv:value>2010-03-10T12:38:20.694-07:00</sv:value>
+            </sv:property>
+        </sv:node>
+        <sv:node sv:name="BPEL Process Definitions">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                <sv:value>drools:categoryNodeType</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:uuid" sv:type="String">
+                <sv:value>7b62642b-20b0-481d-ae47-2a41ec07e660</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:created" sv:type="Date">
+                <sv:value>2010-03-10T12:38:59.605-07:00</sv:value>
+            </sv:property>
+        </sv:node>
+        <sv:node sv:name="Scenario Diagrams">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                <sv:value>drools:categoryNodeType</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:uuid" sv:type="String">
+                <sv:value>5a6eeee1-127e-441c-b2e6-f7af541d5e41</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:created" sv:type="Date">
+                <sv:value>2010-03-10T12:40:10.356-07:00</sv:value>
+            </sv:property>
+        </sv:node>
+        <sv:node sv:name="Choreography Models">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                <sv:value>drools:categoryNodeType</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:uuid" sv:type="String">
+                <sv:value>a2de1f1c-d0a5-4786-b727-63424f8d8eda</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:created" sv:type="Date">
+                <sv:value>2010-03-10T12:40:31.753-07:00</sv:value>
+            </sv:property>
+        </sv:node>
+        <sv:node sv:name="Deployment Archives">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                <sv:value>drools:categoryNodeType</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:uuid" sv:type="String">
+                <sv:value>a63b70a2-38b5-49e8-b10c-85c2512b0299</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:created" sv:type="Date">
+                <sv:value>2010-03-10T12:42:05.972-07:00</sv:value>
+            </sv:property>
+        </sv:node>
+        <sv:node sv:name="JMS Destinations">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                <sv:value>drools:categoryNodeType</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:uuid" sv:type="String">
+                <sv:value>8fcc049b-093d-4b03-91cd-fece7f094c3b</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:created" sv:type="Date">
+                <sv:value>2010-03-10T12:42:33.998-07:00</sv:value>
+            </sv:property>
+        </sv:node>
+        <sv:node sv:name="JBossESB Configurations">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                <sv:value>drools:categoryNodeType</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:uuid" sv:type="String">
+                <sv:value>41bdfb5e-6f48-4210-88d4-dc115c38f778</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:created" sv:type="Date">
+                <sv:value>2010-03-10T12:39:28.495-07:00</sv:value>
+            </sv:property>
+        </sv:node>
+        <sv:node sv:name="Smooks Transformations">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                <sv:value>drools:categoryNodeType</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:uuid" sv:type="String">
+                <sv:value>9b641e74-26b5-43af-a844-49ea0cebb7e9</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:created" sv:type="Date">
+                <sv:value>2010-03-10T12:39:44.955-07:00</sv:value>
+            </sv:property>
+        </sv:node>
+        <sv:node sv:name="Java Source">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                <sv:value>drools:categoryNodeType</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:uuid" sv:type="String">
+                <sv:value>39552cd8-1eb5-4174-b6a9-1612226fcb35</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:created" sv:type="Date">
+                <sv:value>2010-03-11T10:32:34.702-07:00</sv:value>
+            </sv:property>
+        </sv:node>
+        <sv:node sv:name="Documentation">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                <sv:value>drools:categoryNodeType</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:uuid" sv:type="String">
+                <sv:value>be4fce80-fa32-4415-bb34-3a21ddc4c154</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:created" sv:type="Date">
+                <sv:value>2010-03-11T10:32:43.896-07:00</sv:value>
+            </sv:property>
+        </sv:node>
+        <sv:node sv:name="Other">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                <sv:value>drools:categoryNodeType</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:uuid" sv:type="String">
+                <sv:value>7c7ebb31-f636-4b9b-ab77-ae40ec350127</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:created" sv:type="Date">
+                <sv:value>2010-03-11T10:33:32.545-07:00</sv:value>
+            </sv:property>
+        </sv:node>
+    </sv:node>
+    <sv:node sv:name="drools:state_area">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+            <sv:value>nt:folder</sv:value>
+        </sv:property>
+        <sv:property sv:name="jcr:created" sv:type="Date">
+            <sv:value>2010-03-09T22:52:02.441-07:00</sv:value>
+        </sv:property>
+        <sv:node sv:name="Draft">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                <sv:value>drools:stateNodeType</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:uuid" sv:type="String">
+                <sv:value>cfe5fa36-3ee7-41f1-9b79-ec989bfaa013</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:created" sv:type="Date">
+                <sv:value>2010-03-09T22:52:02.442-07:00</sv:value>
+            </sv:property>
+        </sv:node>
+        <sv:node sv:name="Business Analysis">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                <sv:value>drools:stateNodeType</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:uuid" sv:type="String">
+                <sv:value>2b3ba2ed-5842-491d-a107-2e111f2c1e84</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:created" sv:type="Date">
+                <sv:value>2010-03-10T12:52:21.684-07:00</sv:value>
+            </sv:property>
+        </sv:node>
+        <sv:node sv:name="Architecture Modeling">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                <sv:value>drools:stateNodeType</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:uuid" sv:type="String">
+                <sv:value>28cbb440-cd14-428e-ade8-64181832a231</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:created" sv:type="Date">
+                <sv:value>2010-03-10T12:52:31.770-07:00</sv:value>
+            </sv:property>
+        </sv:node>
+        <sv:node sv:name="Service Oriented Analysis">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                <sv:value>drools:stateNodeType</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:uuid" sv:type="String">
+                <sv:value>05cfbbbf-65a8-43fa-a529-1008ed442a57</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:created" sv:type="Date">
+                <sv:value>2010-03-10T12:52:49.098-07:00</sv:value>
+            </sv:property>
+        </sv:node>
+        <sv:node sv:name="Service Oriented Design">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                <sv:value>drools:stateNodeType</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:uuid" sv:type="String">
+                <sv:value>daf456bf-ddef-49e8-9899-ca6bc7de8c19</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:created" sv:type="Date">
+                <sv:value>2010-03-10T12:53:00.955-07:00</sv:value>
+            </sv:property>
+        </sv:node>
+        <sv:node sv:name="Service Development">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                <sv:value>drools:stateNodeType</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:uuid" sv:type="String">
+                <sv:value>382dfed9-ef44-4697-99fc-9c74777d6225</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:created" sv:type="Date">
+                <sv:value>2010-03-10T12:53:14.419-07:00</sv:value>
+            </sv:property>
+        </sv:node>
+        <sv:node sv:name="Service Testing">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                <sv:value>drools:stateNodeType</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:uuid" sv:type="String">
+                <sv:value>9c432d88-5323-4306-8c40-592ed5261820</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:created" sv:type="Date">
+                <sv:value>2010-03-10T12:53:32.873-07:00</sv:value>
+            </sv:property>
+        </sv:node>
+        <sv:node sv:name="Deployed">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                <sv:value>drools:stateNodeType</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:uuid" sv:type="String">
+                <sv:value>bb84893a-4676-49d5-8148-4d1e577ac448</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:created" sv:type="Date">
+                <sv:value>2010-03-10T12:53:57.104-07:00</sv:value>
+            </sv:property>
+        </sv:node>
+        <sv:node sv:name="Retired">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                <sv:value>drools:stateNodeType</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:uuid" sv:type="String">
+                <sv:value>9f62058d-e228-49fc-962a-f0c8b9ba10e1</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:created" sv:type="Date">
+                <sv:value>2010-03-10T12:54:04.730-07:00</sv:value>
+            </sv:property>
+        </sv:node>
+    </sv:node>
+    <sv:node sv:name="drools.package.migrated">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+            <sv:value>nt:folder</sv:value>
+        </sv:property>
+        <sv:property sv:name="jcr:created" sv:type="Date">
+            <sv:value>2010-03-09T22:52:02.698-07:00</sv:value>
+        </sv:property>
+    </sv:node>
+    <sv:node sv:name="user_info">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+            <sv:value>nt:folder</sv:value>
+        </sv:property>
+        <sv:property sv:name="jcr:created" sv:type="Date">
+            <sv:value>2010-03-09T22:52:02.743-07:00</sv:value>
+        </sv:property>
+        <sv:node sv:name="mailman">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                <sv:value>nt:folder</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:created" sv:type="Date">
+                <sv:value>2010-03-09T22:52:02.743-07:00</sv:value>
+            </sv:property>
+            <sv:node sv:name="inbox">
+                <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                    <sv:value>nt:file</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:created" sv:type="Date">
+                    <sv:value>2010-03-09T22:52:02.744-07:00</sv:value>
+                </sv:property>
+                <sv:node sv:name="jcr:content">
+                    <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                        <sv:value>nt:unstructured</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="incoming" sv:type="String">
+                        <sv:value/>
+                    </sv:property>
+                </sv:node>
+            </sv:node>
+        </sv:node>
+    </sv:node>
+</sv:node>

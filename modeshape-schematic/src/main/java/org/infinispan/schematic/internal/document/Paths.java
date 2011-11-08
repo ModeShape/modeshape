@@ -45,11 +45,10 @@ public class Paths {
         if (value == null) throw new IllegalArgumentException("The '" + name + "' argument may not be null");
     }
 
-    protected static final String notNullOrEmpty( String value,
-                                                  String name ) {
+    protected static final String notNull( String value,
+                                           String name ) {
         if (value == null) throw new IllegalArgumentException("The '" + name + "' argument may not be null");
         value = value.trim();
-        if (value.length() == 0) throw new IllegalArgumentException("The '" + name + "' argument may not be empty");
         return value;
     }
 
@@ -58,7 +57,7 @@ public class Paths {
     }
 
     public static Path path( String fieldName ) {
-        return new SinglePath(notNullOrEmpty(fieldName, "fieldName"));
+        return new SinglePath(notNull(fieldName, "fieldName"));
     }
 
     public static Path path( String... fieldNames ) {
@@ -89,7 +88,7 @@ public class Paths {
     public static Path path( Path path,
                              String fieldName ) {
         notNull(path, "path");
-        return path.with(notNullOrEmpty(fieldName, "fieldName"));
+        return path.with(notNull(fieldName, "fieldName"));
     }
 
     public static Path path( Path path,
@@ -100,10 +99,10 @@ public class Paths {
         ArrayList<String> names = new ArrayList<String>(path.size() + fieldNames.length);
         int i = 0;
         for (String name : path) {
-            names.add(notNullOrEmpty(name, "fieldNames[" + i++ + "]"));
+            names.add(notNull(name, "fieldNames[" + i++ + "]"));
         }
         for (String name : fieldNames) {
-            names.add(notNullOrEmpty(name, "fieldNames[" + i++ + "]"));
+            names.add(notNull(name, "fieldNames[" + i++ + "]"));
         }
         return new MultiSegmentPath(names);
     }
@@ -116,10 +115,10 @@ public class Paths {
         ArrayList<String> names = new ArrayList<String>(path.size() + fieldNames.size());
         int i = 0;
         for (String name : path) {
-            names.add(notNullOrEmpty(name, "fieldNames[" + i++ + "]"));
+            names.add(notNull(name, "fieldNames[" + i++ + "]"));
         }
         for (String name : fieldNames) {
-            names.add(notNullOrEmpty(name, "fieldNames[" + i++ + "]"));
+            names.add(notNull(name, "fieldNames[" + i++ + "]"));
         }
         return new MultiSegmentPath(names);
     }
@@ -168,7 +167,7 @@ public class Paths {
 
         @Override
         public Path with( String fieldName ) {
-            return fieldName != null ? new SinglePath(notNullOrEmpty(fieldName, "fieldName")) : this;
+            return fieldName != null ? new SinglePath(notNull(fieldName, "fieldName")) : this;
         }
 
         @Override
@@ -220,7 +219,7 @@ public class Paths {
 
                 @Override
                 public boolean hasNext() {
-                    return done;
+                    return !done;
                 }
 
                 @SuppressWarnings( "synthetic-access" )
@@ -363,7 +362,7 @@ public class Paths {
 
         @Override
         public Path with( String fieldName ) {
-            fieldName = notNullOrEmpty(fieldName, "fieldName");
+            fieldName = notNull(fieldName, "fieldName");
             List<String> newFieldNames = new ArrayList<String>(fieldNames.size() + 1);
             newFieldNames.addAll(this.fieldNames);
             newFieldNames.add(fieldName);

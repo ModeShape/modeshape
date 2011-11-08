@@ -58,6 +58,7 @@ import org.infinispan.util.Util;
 public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
 
     protected static class FieldPath {
+        protected static final Path ROOT = Paths.path();
         protected static final Path METADATA = Paths.path(FieldName.METADATA);
         protected static final Path CONTENT = Paths.path(FieldName.CONTENT);
         protected static final Path ID = Paths.path(FieldName.METADATA, FieldName.ID);
@@ -221,9 +222,9 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
         assert content != null;
         Object existing = this.value.put(FieldName.CONTENT, content);
         if (existing != null) {
-            getDelta().addOperation(new PutOperation(FieldPath.CONTENT, existing, content));
+            getDelta().addOperation(new PutOperation(FieldPath.ROOT, FieldName.CONTENT, existing, content));
         } else {
-            getDelta().addOperation(new RemoveOperation(FieldPath.CONTENT, content));
+            getDelta().addOperation(new RemoveOperation(FieldPath.ROOT, FieldName.CONTENT, content));
         }
         return existing;
     }
@@ -250,7 +251,7 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
 
             // Now record the change ...
             value.put(FieldName.METADATA, newMetadata);
-            PutOperation op = new PutOperation(FieldPath.METADATA, existingMetadata, newMetadata);
+            PutOperation op = new PutOperation(FieldPath.ROOT, FieldName.METADATA, existingMetadata, newMetadata);
             getDelta().addOperation(op);
         }
     }

@@ -33,6 +33,7 @@ import javax.jcr.InvalidSerializedDataException;
 import javax.jcr.ItemExistsException;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.PathNotFoundException;
+import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.UnsupportedRepositoryOperationException;
@@ -44,9 +45,16 @@ import javax.jcr.observation.ObservationManager;
 import javax.jcr.query.QueryManager;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
+import org.modeshape.common.util.CheckArg;
+import org.modeshape.jcr.JcrContentHandler.EnclosingSAXException;
 import org.modeshape.jcr.RepositoryStatistics.ValueMetric;
 import org.modeshape.jcr.core.ExecutionContext;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.XMLReaderFactory;
 
 /**
  * 
@@ -189,9 +197,25 @@ class JcrWorkspace implements Workspace {
                                                    int uuidBehavior )
         throws PathNotFoundException, ConstraintViolationException, VersionException, LockException, AccessDeniedException,
         RepositoryException {
+
+        CheckArg.isNotNull(parentAbsPath, "parentAbsPath");
         session.checkLive();
-        // TODO: Import/export
-        return null;
+
+        // Create a new session, since we don't want to mess with the current session and because we'll save right
+        // when finished reading the document ...
+        JcrSession session = this.session.spawnSession(false);
+        boolean saveWhenFinished = true;
+
+        // Find the parent path ...
+        AbstractJcrNode parent = session.getNode(parentAbsPath);
+        if (!parent.isCheckedOut()) {
+            throw new VersionException(JcrI18n.nodeIsCheckedIn.text(parent.getPath()));
+        }
+
+        Repository repo = getSession().getRepository();
+        boolean retainLifecycleInfo = repo.getDescriptorValue(Repository.OPTION_LIFECYCLE_SUPPORTED).getBoolean();
+        boolean retainRetentionInfo = repo.getDescriptorValue(Repository.OPTION_RETENTION_SUPPORTED).getBoolean();
+        return new JcrContentHandler(session, parent, uuidBehavior, saveWhenFinished, retainRetentionInfo, retainLifecycleInfo);
     }
 
     @Override
@@ -200,9 +224,36 @@ class JcrWorkspace implements Workspace {
                            int uuidBehavior )
         throws IOException, VersionException, PathNotFoundException, ItemExistsException, ConstraintViolationException,
         InvalidSerializedDataException, LockException, AccessDeniedException, RepositoryException {
+        CheckArg.isNotNull(parentAbsPath, "parentAbsPath");
+        CheckArg.isNotNull(in, "in");
         session.checkLive();
-        // TODO: Import/export
-        throw new IOException();
+
+        boolean error = false;
+        try {
+            XMLReader parser = XMLReaderFactory.createXMLReader();
+            parser.setContentHandler(getImportContentHandler(parentAbsPath, uuidBehavior));
+            parser.parse(new InputSource(in));
+        } catch (EnclosingSAXException ese) {
+            Exception cause = ese.getException();
+            if (cause instanceof RepositoryException) {
+                throw (RepositoryException)cause;
+            }
+            throw new RepositoryException(cause);
+        } catch (SAXParseException se) {
+            error = true;
+            throw new InvalidSerializedDataException(se);
+        } catch (SAXException se) {
+            error = true;
+            throw new RepositoryException(se);
+        } finally {
+            try {
+                in.close();
+            } catch (IOException t) {
+                if (!error) throw t; // throw only if no error in outer try
+            } catch (RuntimeException re) {
+                if (!error) throw re; // throw only if no error in outer try
+            }
+        }
     }
 
     @Override

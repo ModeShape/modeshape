@@ -40,34 +40,45 @@ import org.infinispan.util.Util;
  */
 @Immutable
 public class RemoveOperation extends Operation {
+    protected final String fieldName;
     protected final Object oldValue;
 
     private transient boolean removed;
 
-    public RemoveOperation( Path path,
+    public RemoveOperation( Path parentPath,
+                            String fieldName,
                             Object oldValue ) {
-        super(path);
+        super(parentPath);
+        this.fieldName = fieldName;
         this.oldValue = oldValue;
+    }
+
+    public String getFieldName() {
+        return fieldName;
     }
 
     @Override
     public void rollback( MutableDocument delegate ) {
-        MutableDocument parent = mutableParentInDelegate(delegate);
-        assert parent != null;
         if (oldValue != null) {
-            delegate.put(path.getLast(), oldValue);
+            delegate = mutableParent(delegate);
+            delegate.put(fieldName, oldValue);
         }
     }
 
     @Override
     public void replay( MutableDocument delegate ) {
-        MutableDocument parent = mutableParentInDelegate(delegate);
+        MutableDocument parent = mutableParent(delegate);
         assert parent != null;
-        removed = parent.remove(path.getLast()) != null;
+        removed = parent.remove(fieldName) != null;
     }
 
     public boolean isRemoved() {
         return removed;
+    }
+
+    @Override
+    public String toString() {
+        return "Remove from '" + parentPath + "' the '" + fieldName + "' field value '" + oldValue + "'";
     }
 
     public static class Externalizer extends AbstractExternalizer<RemoveOperation> {
@@ -77,13 +88,15 @@ public class RemoveOperation extends Operation {
         @Override
         public void writeObject( ObjectOutput output,
                                  RemoveOperation remove ) throws IOException {
-            output.writeObject(remove.path);
+            output.writeObject(remove.parentPath);
+            output.writeUTF(remove.fieldName);
         }
 
         @Override
         public RemoveOperation readObject( ObjectInput input ) throws IOException, ClassNotFoundException {
-            Path path = (Path)input.readObject();
-            return new RemoveOperation(path, null);
+            Path parentPath = (Path)input.readObject();
+            String fieldName = input.readUTF();
+            return new RemoveOperation(parentPath, fieldName, null);
         }
 
         @Override

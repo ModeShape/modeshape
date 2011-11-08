@@ -612,14 +612,16 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         }
 
         @Override
-        public void put( Path path,
+        public void put( Path parentPath,
+                         String field,
                          Object newValue ) {
-            checkForChanges(path);
+            checkForChanges(parentPath.with(field));
         }
 
         @Override
-        public void remove( Path path ) {
-            checkForChanges(path);
+        public void remove( Path path,
+                            String field ) {
+            checkForChanges(path.with(field));
         }
 
         private void checkForChanges( Path path ) {
@@ -844,6 +846,12 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     // We can update the value used in the repository cache dynamically ...
                     this.cache.setLargeValueSizeInBytes(config.getLargeValueSizeInBytes());
                 }
+                if (change.workspacesChanged) {
+                    // Make sure that all the predefined workspaces are available ...
+                    for (String workspaceName : config.getPredefinedWorkspaceNames()) {
+                        this.cache.createWorkspace(workspaceName);
+                    }
+                }
             } else {
                 // find the Schematic database and Infinispan Cache ...
                 CacheContainer container = config.getCacheContainer();
@@ -885,6 +893,9 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                         throw new IllegalStateException("Could not access node type definition files", ioe);
                     }
                 }
+                // Add the built-ins, ensuring we overwrite any badly-initialized values ...
+                this.persistentRegistry.register(JcrNamespaceRegistry.STANDARD_BUILT_IN_NAMESPACES_BY_PREFIX);
+
                 // Record the number of workspaces that are available/predefined ...
                 this.statistics.set(ValueMetric.WORKSPACE_COUNT, cache.getWorkspaceNames().size());
             }

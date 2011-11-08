@@ -38,13 +38,16 @@ import org.infinispan.util.Util;
  * @author (various)
  */
 public class PutOperation extends Operation {
+    protected final String fieldName;
     protected final Object oldValue;
     protected final Object newValue;
 
-    public PutOperation( Path path,
+    public PutOperation( Path parentPath,
+                         String fieldName,
                          Object oldValue,
                          Object newValue ) {
-        super(path);
+        super(parentPath);
+        this.fieldName = fieldName;
         this.oldValue = oldValue;
         this.newValue = newValue;
     }
@@ -57,22 +60,32 @@ public class PutOperation extends Operation {
         return oldValue;
     }
 
+    public String getFieldName() {
+        return fieldName;
+    }
+
     @Override
     public void rollback( MutableDocument delegate ) {
-        MutableDocument parent = mutableParentInDelegate(delegate);
+        MutableDocument parent = mutableParent(delegate);
         assert parent != null;
         if (oldValue == null) {
-            parent.remove(path.getLast());
+            parent.remove(fieldName);
         } else {
-            delegate.put(path.getLast(), oldValue);
+            parent.put(fieldName, oldValue);
         }
     }
 
     @Override
     public void replay( MutableDocument delegate ) {
-        MutableDocument parent = mutableParentInDelegate(delegate);
+        MutableDocument parent = mutableParent(delegate);
         assert parent != null;
-        delegate.put(path.getLast(), newValue);
+        parent.put(fieldName, newValue);
+    }
+
+    @Override
+    public String toString() {
+        return "Put at '" + parentPath + "' the '" + fieldName + "' field value '" + newValue
+               + (oldValue != null ? "' (replaces '" + oldValue + "')" : "");
     }
 
     public static class Externalizer extends AbstractExternalizer<PutOperation> {
@@ -82,15 +95,17 @@ public class PutOperation extends Operation {
         @Override
         public void writeObject( ObjectOutput output,
                                  PutOperation put ) throws IOException {
-            output.writeObject(put.path);
+            output.writeObject(put.parentPath);
+            output.writeUTF(put.fieldName);
             output.writeObject(put.newValue);
         }
 
         @Override
         public PutOperation readObject( ObjectInput input ) throws IOException, ClassNotFoundException {
             Path path = (Path)input.readObject();
+            String fieldName = input.readUTF();
             Object newValue = input.readObject();
-            return new PutOperation(path, null, newValue);
+            return new PutOperation(path, fieldName, null, newValue);
         }
 
         @Override

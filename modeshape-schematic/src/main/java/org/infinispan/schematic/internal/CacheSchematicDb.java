@@ -240,8 +240,8 @@ public class CacheSchematicDb implements SchematicDb {
                                Document document,
                                Document metadata ) {
         SchematicEntry newEntry = new SchematicEntryLiteral(key);
-        SchematicEntry oldValue = store.putIfAbsent(key, newEntry);
         newEntry.setContent(document, metadata, defaultContentTypeForDocument);
+        SchematicEntry oldValue = store.put(key, newEntry);
         return oldValue != null ? removedResult(key, oldValue) : null;
     }
 
@@ -250,8 +250,8 @@ public class CacheSchematicDb implements SchematicDb {
                                Binary binaryContent,
                                Document metadata ) {
         SchematicEntry newEntry = new SchematicEntryLiteral(key);
-        SchematicEntry oldValue = store.putIfAbsent(key, newEntry);
         newEntry.setContent(binaryContent, metadata, defaultContentTypeForBinary);
+        SchematicEntry oldValue = store.put(key, newEntry);
         return oldValue != null ? removedResult(key, oldValue) : null;
     }
 

@@ -26,10 +26,10 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Set;
-
 import org.infinispan.marshall.AbstractExternalizer;
 import org.infinispan.schematic.document.Path;
 import org.infinispan.schematic.internal.document.MutableArray;
+import org.infinispan.schematic.internal.document.MutableDocument;
 import org.infinispan.schematic.internal.marshall.Ids;
 import org.infinispan.util.Util;
 
@@ -41,61 +41,70 @@ import org.infinispan.util.Util;
  */
 public class RemoveValueOperation extends ArrayOperation {
 
-   protected final Object value;
-   protected transient int actualIndex = -1;
+    protected final Object value;
+    protected transient int actualIndex = -1;
 
-   public RemoveValueOperation(Path path, Object value) {
-      super(path);
-      this.value = value;
-   }
+    public RemoveValueOperation( Path parentPath,
+                                 Object value ) {
+        super(parentPath);
+        this.value = value;
+    }
 
-   @Override
-   public void rollback(MutableArray delegate) {
-      if (actualIndex > -1) {
-         delegate.add(actualIndex, value);
-      }
-   }
+    @Override
+    public void rollback( MutableDocument delegate ) {
+        if (actualIndex > -1) {
+            MutableArray array = mutableParent(delegate);
+            array.add(actualIndex, value);
+        }
+    }
 
-   public Object getRemovedValue() {
-      return value;
-   }
+    public Object getRemovedValue() {
+        return value;
+    }
 
-   public int getActualIndex() {
-      return actualIndex;
-   }
+    public int getActualIndex() {
+        return actualIndex;
+    }
 
-   @Override
-   public void replay(MutableArray delegate) {
-      actualIndex = delegate.indexOf(value);
-      delegate.remove(actualIndex);
-   }
+    @Override
+    public void replay( MutableDocument delegate ) {
+        MutableArray array = mutableParent(delegate);
+        actualIndex = array.indexOf(value);
+        array.remove(actualIndex);
+    }
 
-   public static class Externalizer extends AbstractExternalizer<RemoveValueOperation> {
-      /** The serialVersionUID */
-      private static final long serialVersionUID = 1L;
+    @Override
+    public String toString() {
+        return "Remove at '" + parentPath + "' the value '" + value + "'";
+    }
 
-      @Override
-      public void writeObject(ObjectOutput output, RemoveValueOperation put) throws IOException {
-         output.writeObject(put.path);
-         output.writeObject(put.value);
-      }
+    public static class Externalizer extends AbstractExternalizer<RemoveValueOperation> {
+        /** The serialVersionUID */
+        private static final long serialVersionUID = 1L;
 
-      @Override
-      public RemoveValueOperation readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-         Path path = (Path) input.readObject();
-         Object value = input.readObject();
-         return new RemoveValueOperation(path, value);
-      }
+        @Override
+        public void writeObject( ObjectOutput output,
+                                 RemoveValueOperation put ) throws IOException {
+            output.writeObject(put.parentPath);
+            output.writeObject(put.value);
+        }
 
-      @Override
-      public Integer getId() {
-         return Ids.SCHEMATIC_VALUE_REMOVE_VALUE_OPERATION;
-      }
+        @Override
+        public RemoveValueOperation readObject( ObjectInput input ) throws IOException, ClassNotFoundException {
+            Path path = (Path)input.readObject();
+            Object value = input.readObject();
+            return new RemoveValueOperation(path, value);
+        }
 
-      @SuppressWarnings("unchecked")
-      @Override
-      public Set<Class<? extends RemoveValueOperation>> getTypeClasses() {
-         return Util.<Class<? extends RemoveValueOperation>> asSet(RemoveValueOperation.class);
-      }
-   }
+        @Override
+        public Integer getId() {
+            return Ids.SCHEMATIC_VALUE_REMOVE_VALUE_OPERATION;
+        }
+
+        @SuppressWarnings( "unchecked" )
+        @Override
+        public Set<Class<? extends RemoveValueOperation>> getTypeClasses() {
+            return Util.<Class<? extends RemoveValueOperation>>asSet(RemoveValueOperation.class);
+        }
+    }
 }

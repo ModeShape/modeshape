@@ -26,6 +26,7 @@ package org.modeshape.jcr;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -980,27 +981,25 @@ public class SystemContent {
      * 
      * @param versionableNodeKey the identifier of the versionable node for which the history is to be created; may not be null
      * @param versionHistoryKey the key to the version history node; may not be null
+     * @param versionKey the key to be used for the initial version; may be null if the key should be generated
      * @param primaryTypeName the name of the primary type of the versionable node; may not be null
      * @param mixinTypeNames the names of the mixin types for the versionable node; may be null or empty
      * @param versionHistoryPath the path of the version history node; may not be null
      * @param originalVersionKey the key of the original node from which the new versionable node was copied; may be null
-     * @param context the execution context; may not be null
-     * @param workspace the name of the workspace; may not be null
      * @param now the current date time; may not be null
+     * @return the history node; never null
      */
-    public void initializeVersionStorage( NodeKey versionableNodeKey,
-                                          NodeKey versionHistoryKey,
-                                          Name primaryTypeName,
-                                          Set<Name> mixinTypeNames,
-                                          Path versionHistoryPath,
-                                          NodeKey originalVersionKey,
-                                          ExecutionContext context,
-                                          String workspace,
-                                          DateTime now ) {
+    protected MutableCachedNode initializeVersionStorage( NodeKey versionableNodeKey,
+                                                          NodeKey versionHistoryKey,
+                                                          NodeKey versionKey,
+                                                          Name primaryTypeName,
+                                                          Set<Name> mixinTypeNames,
+                                                          Path versionHistoryPath,
+                                                          NodeKey originalVersionKey,
+                                                          DateTime now ) {
         assert versionHistoryPath != null;
         assert versionHistoryPath.size() == 6;
 
-        PropertyFactory props = context.getPropertyFactory();
         CachedNode node = versionStorageNode();
         MutableCachedNode mutable = null;
 
@@ -1018,7 +1017,7 @@ public class SystemContent {
                 MutableCachedNode mutableNode = system.mutable(node.getKey());
                 NodeKey key = systemKey().withRandomId();
                 if (primaryType == null) {
-                    primaryType = props.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.VERSION_HISTORY_FOLDER);
+                    primaryType = propertyFactory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.VERSION_HISTORY_FOLDER);
                 }
                 mutable = mutableNode.createChild(system, key, segment.getName(), primaryType);
                 node = mutable;
@@ -1030,37 +1029,191 @@ public class SystemContent {
 
         // Now create the version history node itself ...
         List<Property> historyProps = new ArrayList<Property>();
-        historyProps.add(props.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION_HISTORY));
-        historyProps.add(props.create(JcrLexicon.VERSIONABLE_UUID, versionableNodeKey.toString()));
-        historyProps.add(props.create(JcrLexicon.UUID, versionHistoryKey.toString()));
+        historyProps.add(propertyFactory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION_HISTORY));
+        historyProps.add(propertyFactory.create(JcrLexicon.VERSIONABLE_UUID, versionableNodeKey.toString()));
+        historyProps.add(propertyFactory.create(JcrLexicon.UUID, versionHistoryKey.toString()));
         if (originalVersionKey != null) {
-            historyProps.add(props.create(JcrLexicon.COPIED_FROM, originalVersionKey.toString()));
+            historyProps.add(propertyFactory.create(JcrLexicon.COPIED_FROM, originalVersionKey.toString()));
         }
         Name historyName = versionHistoryPath.getLastSegment().getName();
         MutableCachedNode history = historyParent.createChild(system, versionHistoryKey, historyName, historyProps);
 
         // Now create the 'nt:versionLabels' child node ...
-        Property labelProp = props.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION_LABELS);
+        Property labelProp = propertyFactory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION_LABELS);
         MutableCachedNode labels = history.createChild(system, null, JcrLexicon.VERSION_LABELS, labelProp);
         assert labels != null;
 
         // And create the 'nt:rootVersion' child node ...
-        NodeKey rootVersionKey = systemKey().withRandomId();
+        NodeKey rootVersionKey = versionKey != null ? versionKey : systemKey().withRandomId();
         List<Property> rootProps = new ArrayList<Property>();
-        rootProps.add(props.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION));
-        rootProps.add(props.create(JcrLexicon.CREATED, now));
-        rootProps.add(props.create(JcrLexicon.UUID, rootVersionKey.toString()));
+        rootProps.add(propertyFactory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION));
+        rootProps.add(propertyFactory.create(JcrLexicon.CREATED, now));
+        rootProps.add(propertyFactory.create(JcrLexicon.UUID, rootVersionKey.toString()));
         MutableCachedNode rootVersion = historyParent.createChild(system, rootVersionKey, JcrLexicon.ROOT_VERSION, rootProps);
 
         // And create the 'nt:rootVersion/nt:frozenNode' child node ...
         List<Property> frozenProps = new ArrayList<Property>();
-        frozenProps.add(props.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FROZEN_NODE));
-        frozenProps.add(props.create(JcrLexicon.FROZEN_UUID, versionableNodeKey.toString()));
-        frozenProps.add(props.create(JcrLexicon.FROZEN_PRIMARY_TYPE, primaryTypeName));
+        frozenProps.add(propertyFactory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FROZEN_NODE));
+        frozenProps.add(propertyFactory.create(JcrLexicon.FROZEN_UUID, versionableNodeKey.toString()));
+        frozenProps.add(propertyFactory.create(JcrLexicon.FROZEN_PRIMARY_TYPE, primaryTypeName));
         if (mixinTypeNames != null && !mixinTypeNames.isEmpty()) {
-            frozenProps.add(props.create(JcrLexicon.FROZEN_MIXIN_TYPES, mixinTypeNames));
+            frozenProps.add(propertyFactory.create(JcrLexicon.FROZEN_MIXIN_TYPES, mixinTypeNames));
         }
         MutableCachedNode frozenNode = rootVersion.createChild(system, null, JcrLexicon.FROZEN_NODE, frozenProps);
         assert frozenNode != null;
+
+        return history;
+    }
+
+    /**
+     * The method efficiently updates the JCR version history and storage with a new version of a node being checked in. However,
+     * it does not update the versionable node with the "mix:versionable" properties.
+     * <p>
+     * Note that this method will initialize the version history for the node if the version history does not already exist.
+     * </p>
+     * 
+     * @param versionableNode the versionable node for which a new version is to be created in the node's version history; may not
+     *        be null
+     * @param cacheForVersionableNode the cache used to access the versionable node and any descendants; may not be null
+     * @param versionHistoryPath the path of the version history node; may not be null
+     * @param originalVersionKey the key of the original node from which the new versionable node was copied; may be null
+     * @param now the current date time; may not be null
+     * @return the version node in the version history; never null
+     */
+    public MutableCachedNode recordNewVersion( CachedNode versionableNode,
+                                               SessionCache cacheForVersionableNode,
+                                               Path versionHistoryPath,
+                                               NodeKey originalVersionKey,
+                                               DateTime now ) {
+        assert versionHistoryPath != null;
+        assert versionHistoryPath.size() == 6;
+
+        // Get the information from this node ...
+        NodeKey versionableNodeKey = versionableNode.getKey();
+        Name primaryTypeName = versionableNode.getPrimaryType(cacheForVersionableNode);
+        Set<Name> mixinTypeNames = versionableNode.getMixinTypes(cacheForVersionableNode);
+        NodeKey versionHistoryKey = versionHistoryNodeKeyFor(versionableNodeKey);
+
+        // Find the existing version history for this node (if it exists) ...
+        Name versionName = null;
+        MutableCachedNode historyNode = system.mutable(versionHistoryKey);
+        Property predecessors = null;
+        NodeKey versionKey = versionHistoryKey.withRandomId();
+        if (historyNode == null) {
+            // Initialize the version history ...
+            historyNode = initializeVersionStorage(versionableNodeKey,
+                                                   versionHistoryKey,
+                                                   null,
+                                                   primaryTypeName,
+                                                   mixinTypeNames,
+                                                   versionHistoryPath,
+                                                   originalVersionKey,
+                                                   now);
+            // Overwrite the predecessor's property ...
+            predecessors = propertyFactory.create(JcrLexicon.PREDECESSORS, versionKey.toString());
+            versionName = names.create("1.0");
+        } else {
+            ChildReferences historyChildren = historyNode.getChildReferences(system);
+            predecessors = versionableNode.getProperty(JcrLexicon.PREDECESSORS, cacheForVersionableNode);
+            versionName = nextNameForVersionNode(predecessors, historyChildren);
+        }
+
+        // Create a 'nt:version' node under the version history node ...
+        List<Property> props = new ArrayList<Property>();
+        props.add(propertyFactory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION));
+        props.add(propertyFactory.create(JcrLexicon.CREATED, now));
+        props.add(propertyFactory.create(JcrLexicon.UUID, versionKey.toString()));
+        MutableCachedNode versionNode = historyNode.createChild(system, versionKey, versionName, props);
+
+        // Create a 'nt:frozenNode' node under the 'nt:version' node ...
+        props = new ArrayList<Property>();
+        props.add(propertyFactory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FROZEN_NODE));
+        props.add(propertyFactory.create(JcrLexicon.FROZEN_UUID, versionableNodeKey.toString()));
+        props.add(propertyFactory.create(JcrLexicon.FROZEN_PRIMARY_TYPE, primaryTypeName));
+        props.add(propertyFactory.create(JcrLexicon.FROZEN_MIXIN_TYPES, mixinTypeNames));
+        Iterator<Property> propIter = versionableNode.getProperties(cacheForVersionableNode);
+        while (propIter.hasNext()) {
+            Property prop = propIter.next();
+            // We want to skip the actual primary type, mixin types, and uuid since those are handled above ...
+            Name name = prop.getName();
+            if (JcrLexicon.PRIMARY_TYPE.equals(name)) continue;
+            if (JcrLexicon.MIXIN_TYPES.equals(name)) continue;
+            if (JcrLexicon.UUID.equals(name)) continue;
+            // Otherwise, add in the property ...
+            props.add(prop);
+        }
+        NodeKey frozenNodeKey = systemKey().withRandomId();
+        MutableCachedNode frozenNode = versionNode.createChild(system, frozenNodeKey, JcrLexicon.FROZEN_NODE, props);
+        assert frozenNode != null;
+
+        // Now update the predecessor nodes to have the new version node be included as one of their successors ...
+        Property successors = null;
+        final Set<String> successorKeys = new HashSet<String>();
+        for (Object value : predecessors) {
+            NodeKey predecessorKey = new NodeKey(strings.create(value));
+            CachedNode predecessor = system.getNode(predecessorKey);
+
+            // Look up the 'jcr:successors' property on the predecessor ...
+            successors = predecessor.getProperty(JcrLexicon.SUCCESSORS, system);
+            if (successors != null) {
+                // There were already successors, so we need to add our new version node the list ...
+                successorKeys.clear();
+                for (Object successorValue : successors) {
+                    successorKeys.add(strings.create(successorValue));
+                }
+
+                // Now add the uuid of the versionable node ...
+                if (successorKeys.add(versionKey.toString())) {
+                    // It is not already a successor, so we need to update the successors property ...
+                    successors = propertyFactory.create(JcrLexicon.SUCCESSORS, successorKeys);
+                    system.mutable(predecessorKey).setProperty(system, successors);
+                }
+            } else {
+                // There was no 'jcr:successors' property, so create it ...
+                successors = propertyFactory.create(JcrLexicon.SUCCESSORS, versionKey.toString());
+                system.mutable(predecessorKey).setProperty(system, successors);
+            }
+        }
+
+        // Return the newly-created version node ...
+        return versionNode;
+    }
+
+    protected Name nextNameForVersionNode( Property predecessors,
+                                           ChildReferences historyChildren ) {
+        String proposedName = null;
+        CachedNode versionNode = null;
+
+        // Try to find the versions in the history that are considered predecessors ...
+        for (Object predecessor : predecessors) {
+            if (predecessor == null) continue;
+            NodeKey key = new NodeKey(strings.create(predecessor));
+            CachedNode predecessorNode = system.getNode(key);
+            Name predecessorName = predecessorNode.getName(system);
+            if (proposedName == null || predecessorName.getLocalName().length() < proposedName.length()) {
+                proposedName = predecessorName.getLocalName();
+                versionNode = predecessorNode;
+            }
+        }
+        if (proposedName == null) {
+            proposedName = "1.0";
+            versionNode = system.getNode(historyChildren.getChild(JcrLexicon.ROOT_VERSION));
+        }
+        assert versionNode != null;
+
+        // Now make sure the name is not used ...
+        int index = proposedName.lastIndexOf('.');
+        if (index > 0) {
+            Name versionName = names.create(proposedName.substring(0, index + 1)); // includes the trailing '.'
+            while (historyChildren.getChild(versionName) != null) {
+                proposedName = proposedName + ".0";
+                versionName = names.create(proposedName);
+            }
+            return versionName;
+        }
+
+        // Get the number of successors of the version
+        Property successors = versionNode.getProperty(JcrLexicon.SUCCESSORS, system);
+        return names.create(Integer.toString(successors.size() + 1) + ".0");
     }
 }

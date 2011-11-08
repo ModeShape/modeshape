@@ -26,10 +26,10 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Set;
-
 import org.infinispan.marshall.AbstractExternalizer;
 import org.infinispan.schematic.document.Path;
 import org.infinispan.schematic.internal.document.MutableArray;
+import org.infinispan.schematic.internal.document.MutableDocument;
 import org.infinispan.schematic.internal.marshall.Ids;
 import org.infinispan.util.Util;
 
@@ -41,80 +41,92 @@ import org.infinispan.util.Util;
  */
 public class AddValueOperation extends ArrayOperation {
 
-   protected static final int APPEND_INDEX = -1;
+    protected static final int APPEND_INDEX = -1;
 
-   protected final Object value;
-   protected final int index;
-   protected transient int actualIndex = -1;
+    protected final Object value;
+    protected final int index;
+    protected transient int actualIndex = -1;
 
-   public AddValueOperation(Path path, Object value) {
-      super(path);
-      this.value = value;
-      this.index = APPEND_INDEX;
-   }
+    public AddValueOperation( Path path,
+                              Object value ) {
+        super(path);
+        this.value = value;
+        this.index = APPEND_INDEX;
+    }
 
-   public AddValueOperation(Path path, Object value, int index) {
-      super(path);
-      this.value = value;
-      this.index = index;
-   }
+    public AddValueOperation( Path path,
+                              Object value,
+                              int index ) {
+        super(path);
+        this.value = value;
+        this.index = index;
+    }
 
-   public Object getValue() {
-      return value;
-   }
+    public Object getValue() {
+        return value;
+    }
 
-   public int getIndex() {
-      return index;
-   }
+    public int getIndex() {
+        return index;
+    }
 
-   public int getActualIndex() {
-      return actualIndex;
-   }
+    public int getActualIndex() {
+        return actualIndex;
+    }
 
-   @Override
-   public void rollback(MutableArray delegate) {
-      if (actualIndex > -1)
-         delegate.remove(actualIndex);
-   }
+    @Override
+    public void rollback( MutableDocument delegate ) {
+        if (actualIndex > -1) {
+            MutableArray array = mutableParent(delegate);
+            array.remove(actualIndex);
+        }
+    }
 
-   @Override
-   public void replay(MutableArray delegate) {
-      if (index == APPEND_INDEX) {
-         actualIndex = delegate.addValue(value);
-      } else {
-         delegate.addValue(index, value);
-         actualIndex = index;
-      }
-   }
+    @Override
+    public void replay( MutableDocument delegate ) {
+        MutableArray array = mutableParent(delegate);
+        if (index == APPEND_INDEX) {
+            actualIndex = array.addValue(value);
+        } else {
+            array.addValue(index, value);
+            actualIndex = index;
+        }
+    }
 
-   public static class Externalizer extends AbstractExternalizer<AddValueOperation> {
-      /** The serialVersionUID */
-      private static final long serialVersionUID = 1L;
+    @Override
+    public String toString() {
+        return "Add to '" + parentPath + "' the value '" + value + "'" + (index >= 0 ? " at index " + index : "");
+    }
 
-      @Override
-      public void writeObject(ObjectOutput output, AddValueOperation put) throws IOException {
-         output.writeObject(put.path);
-         output.writeObject(put.index);
-         output.writeObject(put.value);
-      }
+    public static class Externalizer extends AbstractExternalizer<AddValueOperation> {
+        /** The serialVersionUID */
+        private static final long serialVersionUID = 1L;
 
-      @Override
-      public AddValueOperation readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-         Path path = (Path) input.readObject();
-         int index = input.readInt();
-         Object value = input.readObject();
-         return new AddValueOperation(path, value, index);
-      }
+        @Override
+        public void writeObject( ObjectOutput output,
+                                 AddValueOperation put ) throws IOException {
+            output.writeObject(put.parentPath);
+            output.writeObject(put.index);
+            output.writeObject(put.value);
+        }
 
-      @Override
-      public Integer getId() {
-         return Ids.SCHEMATIC_VALUE_ADD_OPERATION;
-      }
+        @Override
+        public AddValueOperation readObject( ObjectInput input ) throws IOException, ClassNotFoundException {
+            Path path = (Path)input.readObject();
+            int index = input.readInt();
+            Object value = input.readObject();
+            return new AddValueOperation(path, value, index);
+        }
 
-      @SuppressWarnings("unchecked")
-      @Override
-      public Set<Class<? extends AddValueOperation>> getTypeClasses() {
-         return Util.<Class<? extends AddValueOperation>> asSet(AddValueOperation.class);
-      }
-   }
+        @Override
+        public Integer getId() {
+            return Ids.SCHEMATIC_VALUE_ADD_OPERATION;
+        }
+
+        @SuppressWarnings( "unchecked" )
+        @Override
+        public Set<Class<? extends AddValueOperation>> getTypeClasses() {
+            return Util.<Class<? extends AddValueOperation>>asSet(AddValueOperation.class);
+        }
+    }
 }

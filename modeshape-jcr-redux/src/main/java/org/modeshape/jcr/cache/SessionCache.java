@@ -43,6 +43,14 @@ public interface SessionCache extends NodeCache {
     public void save();
 
     /**
+     * Saves all of this session's changes that were made at or below the specified path. Note that this is not terribly
+     * efficient, but is done to implement the deprecated {@link javax.jcr.Item#save()}.
+     * 
+     * @param node the node at or below which all changes should be saved; may not be null
+     */
+    public void save( CachedNode node );
+
+    /**
      * Saves all changes made within this session and the supplied session, using a single transaction for both.
      * 
      * @param otherSession another session whose changes should be saved with this session's changes; may not be null

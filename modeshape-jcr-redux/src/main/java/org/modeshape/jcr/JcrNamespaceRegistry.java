@@ -140,6 +140,11 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
     @Override
     public String getPrefix( String uri ) throws NamespaceException, RepositoryException {
         checkSession();
+        if (behavior == Behavior.WORKSPACE) {
+            // Check the standard ones first, ensuring that invalid changes to the persistent storage don't matter ...
+            String prefix = STANDARD_BUILT_IN_PREFIXES_BY_NAMESPACE.get(uri);
+            if (prefix != null) return prefix;
+        }
         String prefix = registry.getPrefixForNamespaceUri(uri, false);
         if (prefix == null) {
             throw new NamespaceException(JcrI18n.noNamespaceWithUri.text(uri));
@@ -162,6 +167,11 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
     @Override
     public String getURI( String prefix ) throws NamespaceException, RepositoryException {
         checkSession();
+        if (behavior == Behavior.WORKSPACE) {
+            // Check the standard ones first, ensuring that invalid changes to the persistent storage don't matter ...
+            String uri = STANDARD_BUILT_IN_NAMESPACES_BY_PREFIX.get(prefix);
+            if (uri != null) return uri;
+        }
         String uri = registry.getNamespaceForPrefix(prefix);
         if (uri == null) {
             throw new NamespaceException(JcrI18n.noNamespaceWithPrefix.text(prefix));

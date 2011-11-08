@@ -26,10 +26,10 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Set;
-
 import org.infinispan.marshall.AbstractExternalizer;
 import org.infinispan.schematic.document.Path;
 import org.infinispan.schematic.internal.document.MutableArray;
+import org.infinispan.schematic.internal.document.MutableDocument;
 import org.infinispan.schematic.internal.marshall.Ids;
 import org.infinispan.util.Util;
 
@@ -41,67 +41,77 @@ import org.infinispan.util.Util;
  */
 public class SetValueOperation extends ArrayOperation {
 
-   protected final Object value;
-   protected final int index;
+    protected final Object value;
+    protected final int index;
 
-   protected transient Object oldValue;
+    protected transient Object oldValue;
 
-   public SetValueOperation(Path path, Object value, int index) {
-      super(path);
-      this.value = value;
-      this.index = index;
-   }
+    public SetValueOperation( Path parentPath,
+                              Object value,
+                              int index ) {
+        super(parentPath);
+        this.value = value;
+        this.index = index;
+    }
 
-   @Override
-   public void rollback(MutableArray delegate) {
-      if (oldValue != null) {
-         delegate.set(index, oldValue);
-      } else {
-         delegate.remove(index);
-      }
-   }
+    @Override
+    public void rollback( MutableDocument delegate ) {
+        MutableArray array = mutableParent(delegate);
+        if (oldValue != null) {
+            array.set(index, oldValue);
+        } else {
+            array.remove(index);
+        }
+    }
 
-   public int getIndex() {
-      return index;
-   }
+    public int getIndex() {
+        return index;
+    }
 
-   public Object getValue() {
-      return value;
-   }
+    public Object getValue() {
+        return value;
+    }
 
-   @Override
-   public void replay(MutableArray delegate) {
-      oldValue = delegate.setValue(index, value);
-   }
+    @Override
+    public void replay( MutableDocument delegate ) {
+        MutableArray array = mutableParent(delegate);
+        oldValue = array.setValue(index, value);
+    }
 
-   public static class Externalizer extends AbstractExternalizer<SetValueOperation> {
-      /** The serialVersionUID */
-      private static final long serialVersionUID = 1L;
+    @Override
+    public String toString() {
+        return "Set at '" + parentPath + "' the value '" + value + "' (at index " + index + ")";
+    }
 
-      @Override
-      public void writeObject(ObjectOutput output, SetValueOperation put) throws IOException {
-         output.writeObject(put.path);
-         output.writeObject(put.index);
-         output.writeObject(put.value);
-      }
+    public static class Externalizer extends AbstractExternalizer<SetValueOperation> {
+        /** The serialVersionUID */
+        private static final long serialVersionUID = 1L;
 
-      @Override
-      public SetValueOperation readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-         Path path = (Path) input.readObject();
-         int index = input.readInt();
-         Object value = input.readObject();
-         return new SetValueOperation(path, value, index);
-      }
+        @Override
+        public void writeObject( ObjectOutput output,
+                                 SetValueOperation put ) throws IOException {
+            output.writeObject(put.parentPath);
+            output.writeObject(put.index);
+            output.writeObject(put.value);
+        }
 
-      @Override
-      public Integer getId() {
-         return Ids.SCHEMATIC_VALUE_SET_VALUE_OPERATION;
-      }
+        @Override
+        public SetValueOperation readObject( ObjectInput input ) throws IOException, ClassNotFoundException {
+            Path path = (Path)input.readObject();
+            int index = input.readInt();
+            Object value = input.readObject();
+            return new SetValueOperation(path, value, index);
+        }
 
-      @SuppressWarnings("unchecked")
-      @Override
-      public Set<Class<? extends SetValueOperation>> getTypeClasses() {
-         return Util.<Class<? extends SetValueOperation>> asSet(SetValueOperation.class);
-      }
-   }
+        @Override
+        public Integer getId() {
+            return Ids.SCHEMATIC_VALUE_SET_VALUE_OPERATION;
+        }
+
+        @SuppressWarnings( "unchecked" )
+        @Override
+        public Set<Class<? extends SetValueOperation>> getTypeClasses() {
+            return Util.<Class<? extends SetValueOperation>>asSet(SetValueOperation.class);
+        }
+    }
 }

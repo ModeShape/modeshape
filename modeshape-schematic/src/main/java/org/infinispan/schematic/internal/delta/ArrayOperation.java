@@ -23,6 +23,7 @@
 package org.infinispan.schematic.internal.delta;
 
 import org.infinispan.schematic.document.Array;
+import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.Immutable;
 import org.infinispan.schematic.document.Path;
 import org.infinispan.schematic.internal.document.MutableArray;
@@ -43,17 +44,11 @@ public abstract class ArrayOperation extends Operation {
     }
 
     @Override
-    public void replay( MutableDocument delegate ) {
-        replay((MutableArray)delegate);
+    protected MutableArray mutableParent( MutableDocument delegate ) {
+        Document parent = delegate;
+        for (String fieldName : getParentPath()) {
+            parent = parent.getDocument(fieldName);
+        }
+        return (MutableArray)parent;
     }
-
-    @Override
-    public void rollback( MutableDocument delegate ) {
-        rollback((MutableArray)delegate);
-    }
-
-    public abstract void replay( MutableArray delegate );
-
-    public abstract void rollback( MutableArray delegate );
-
 }

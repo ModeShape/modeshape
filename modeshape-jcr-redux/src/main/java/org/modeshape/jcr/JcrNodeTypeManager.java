@@ -23,6 +23,10 @@
  */
 package org.modeshape.jcr;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,12 +44,15 @@ import javax.jcr.nodetype.NodeDefinitionTemplate;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.NodeTypeDefinition;
 import javax.jcr.nodetype.NodeTypeIterator;
-import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.nodetype.PropertyDefinitionTemplate;
 import org.modeshape.common.annotation.Immutable;
+import org.modeshape.common.collection.Problem;
+import org.modeshape.common.collection.Problems;
+import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.core.ExecutionContext;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
@@ -793,5 +800,50 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         }
 
         return false;
+    }
+
+    protected String messageFrom( Problems problems,
+                                  String message ) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(message);
+        for (Problem problem : problems) {
+            sb.append('\n').append(problem.getMessageString());
+        }
+        return sb.toString();
+    }
+
+    @Override
+    public void registerNodeTypeDefinitions( File file ) throws IOException, RepositoryException {
+        CndImporter importer = new CndImporter(context(), true);
+        Problems problems = new SimpleProblems();
+        importer.importFrom(file, problems);
+        if (problems.hasErrors()) {
+            throw new RepositoryException(messageFrom(problems, JcrI18n.errorsParsingCnd.text(file.getAbsolutePath())));
+        }
+        registerNodeTypes(importer.getNodeTypeDefinitions());
+    }
+
+    @Override
+    public void registerNodeTypeDefinitions( InputStream stream )
+        throws IOException, javax.jcr.nodetype.InvalidNodeTypeDefinitionException, javax.jcr.nodetype.NodeTypeExistsException,
+        UnsupportedRepositoryOperationException, RepositoryException {
+        CndImporter importer = new CndImporter(context(), true);
+        Problems problems = new SimpleProblems();
+        importer.importFrom(stream, problems, "stream");
+        if (problems.hasErrors()) {
+            throw new RepositoryException(messageFrom(problems, JcrI18n.errorsParsingCndFromStream.text()));
+        }
+        registerNodeTypes(importer.getNodeTypeDefinitions());
+    }
+
+    @Override
+    public void registerNodeTypeDefinitions( URL url ) throws IOException, RepositoryException {
+        CndImporter importer = new CndImporter(context(), true);
+        Problems problems = new SimpleProblems();
+        importer.importFrom(url.openStream(), problems, url.toExternalForm());
+        if (problems.hasErrors()) {
+            throw new RepositoryException(messageFrom(problems, JcrI18n.errorsParsingCnd.text(url.toExternalForm())));
+        }
+        registerNodeTypes(importer.getNodeTypeDefinitions());
     }
 }

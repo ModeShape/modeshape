@@ -30,46 +30,59 @@ import org.infinispan.schematic.internal.delta.RemoveOperation;
 
 public class ObservableDocumentEditor extends DocumentEditor {
 
-   private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-   private final Path path;
-   private final DocumentObserver observer;
+    private final Path path;
+    private final DocumentObserver observer;
 
-   public ObservableDocumentEditor(MutableDocument document, Path path, DocumentObserver delta,
-            DocumentValueFactory factory) {
-      super(document, factory);
-      this.path = path;
-      this.observer = delta;
-   }
+    public ObservableDocumentEditor( MutableDocument document,
+                                     Path path,
+                                     DocumentObserver delta,
+                                     DocumentValueFactory factory ) {
+        super(document, factory);
+        this.path = path;
+        this.observer = delta;
+    }
 
-   @Override
-   protected Object doSetValue(String name, Object newValue) {
-      Object oldValue = super.doSetValue(name, newValue);
-      observer.addOperation(new PutOperation(path.with(name), oldValue, newValue));
-      return oldValue;
-   }
+    @Override
+    protected Object doSetValue( String name,
+                                 Object newValue ) {
+        Object oldValue = super.doSetValue(name, newValue);
+        observer.addOperation(new PutOperation(path, name, copy(oldValue), copy(newValue)));
+        return oldValue;
+    }
 
-   @Override
-   public Object remove(String name) {
-      Object oldValue = super.remove(name);
-      observer.addOperation(new RemoveOperation(path.with(name), oldValue));
-      return oldValue;
-   }
+    @Override
+    public Object remove( String name ) {
+        Object oldValue = super.remove(name);
+        observer.addOperation(new RemoveOperation(path, name, copy(oldValue)));
+        return oldValue;
+    }
 
-   @Override
-   public void removeAll() {
-      super.removeAll();
-      observer.addOperation(new PutOperation(path, unwrap(), new BasicDocument()));
-   }
+    protected Object copy( Object value ) {
+        if (value instanceof MutableArray) return ((MutableArray)value).clone();
+        if (value instanceof MutableDocument) return ((MutableDocument)value).clone();
+        return value;
+    }
 
-   @Override
-   protected EditableDocument createEditableDocument(MutableDocument document, DocumentValueFactory factory) {
-      return new ObservableDocumentEditor(document, path, observer, factory);
-   }
+    @Override
+    public void removeAll() {
+        super.removeAll();
+        observer.addOperation(new PutOperation(path.parent(), path.getLast(), copy(unwrap()), new BasicDocument()));
+    }
 
-   @Override
-   protected EditableArray createEditableArray(BasicArray array, DocumentValueFactory factory) {
-      return new ObservableArrayEditor(array, path, observer, factory);
-   }
+    @Override
+    protected EditableDocument createEditableDocument( MutableDocument document,
+                                                       String fieldName,
+                                                       DocumentValueFactory factory ) {
+        return new ObservableDocumentEditor(document, path.with(fieldName), observer, factory);
+    }
+
+    @Override
+    protected EditableArray createEditableArray( MutableArray array,
+                                                 String fieldName,
+                                                 DocumentValueFactory factory ) {
+        return new ObservableArrayEditor(array, path.with(fieldName), observer, factory);
+    }
 
 }

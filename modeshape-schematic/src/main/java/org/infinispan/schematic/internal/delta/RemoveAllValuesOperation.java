@@ -30,12 +30,12 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-
 import org.infinispan.marshall.AbstractExternalizer;
 import org.infinispan.schematic.document.Path;
 import org.infinispan.schematic.internal.document.BasicArray;
 import org.infinispan.schematic.internal.document.MutableArray;
 import org.infinispan.schematic.internal.document.MutableArray.Entry;
+import org.infinispan.schematic.internal.document.MutableDocument;
 import org.infinispan.schematic.internal.marshall.Ids;
 import org.infinispan.util.Util;
 
@@ -47,83 +47,91 @@ import org.infinispan.util.Util;
  */
 public class RemoveAllValuesOperation extends ArrayOperation {
 
-   protected final Collection<?> values;
-   protected transient int[] actualIndexes;
+    protected final Collection<?> values;
+    protected transient int[] actualIndexes;
 
-   public RemoveAllValuesOperation(Path path, Collection<?> values) {
-      super(path);
-      this.values = values;
-   }
+    public RemoveAllValuesOperation( Path path,
+                                     Collection<?> values ) {
+        super(path);
+        this.values = values;
+    }
 
-   public Collection<?> getValuesToRemove() {
-      return values;
-   }
+    public Collection<?> getValuesToRemove() {
+        return values;
+    }
 
-   public synchronized List<Entry> getRemovedEntries() {
-      List<Entry> entries = new ArrayList<Entry>(this.values.size());
-      Iterator<?> valueIter = values.iterator();
-      for (int i = 0; i != actualIndexes.length; ++i) {
-         int index = actualIndexes[i];
-         Object value = valueIter.next();
-         entries.add(new BasicArray.BasicEntry(index, value));
-      }
-      return entries;
-   }
+    public synchronized List<Entry> getRemovedEntries() {
+        List<Entry> entries = new ArrayList<Entry>(this.values.size());
+        Iterator<?> valueIter = values.iterator();
+        for (int i = 0; i != actualIndexes.length; ++i) {
+            int index = actualIndexes[i];
+            Object value = valueIter.next();
+            entries.add(new BasicArray.BasicEntry(index, value));
+        }
+        return entries;
+    }
 
-   @Override
-   public synchronized void rollback(MutableArray delegate) {
-      if (actualIndexes != null) {
-         // Add into the same locations ...
-         int i = 0;
-         for (Object value : values) {
-            int index = actualIndexes[i++];
-            if (index != -1)
-               delegate.add(index, value);
-         }
-      }
-   }
+    @Override
+    public synchronized void rollback( MutableDocument delegate ) {
+        if (actualIndexes != null) {
+            MutableArray array = mutableParent(delegate);
+            // Add into the same locations ...
+            int i = 0;
+            for (Object value : values) {
+                int index = actualIndexes[i++];
+                if (index != -1) array.add(index, value);
+            }
+        }
+    }
 
-   @Override
-   public synchronized void replay(MutableArray delegate) {
-      if (!values.isEmpty()) {
-         actualIndexes = new int[values.size()];
-         int i = 0;
-         for (Object value : values) {
-            int actualIndex = delegate.indexOf(value);
-            delegate.remove(actualIndex);
-            actualIndexes[i++] = actualIndex;
-         }
-      } else {
-         actualIndexes = null;
-      }
-   }
+    @Override
+    public synchronized void replay( MutableDocument delegate ) {
+        if (!values.isEmpty()) {
+            actualIndexes = new int[values.size()];
+            int i = 0;
+            MutableArray array = mutableParent(delegate);
+            for (Object value : values) {
+                int actualIndex = array.indexOf(value);
+                array.remove(actualIndex);
+                actualIndexes[i++] = actualIndex;
+            }
+        } else {
+            actualIndexes = null;
+        }
+    }
 
-   public static class Externalizer extends AbstractExternalizer<RemoveAllValuesOperation> {
-      /** The serialVersionUID */
-      private static final long serialVersionUID = 1L;
+    @Override
+    public String toString() {
+        return "Remove at '" + parentPath + "' the values: " + values;
+    }
 
-      @Override
-      public void writeObject(ObjectOutput output, RemoveAllValuesOperation put) throws IOException {
-         output.writeObject(put.path);
-         output.writeObject(put.values);
-      }
+    public static class Externalizer extends AbstractExternalizer<RemoveAllValuesOperation> {
+        /** The serialVersionUID */
+        private static final long serialVersionUID = 1L;
 
-      @Override
-      public RemoveAllValuesOperation readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-         Path path = (Path) input.readObject();
-         Collection<?> values = (Collection<?>) input.readObject();
-         return new RemoveAllValuesOperation(path, values);
-      }
+        @Override
+        public void writeObject( ObjectOutput output,
+                                 RemoveAllValuesOperation put ) throws IOException {
+            output.writeObject(put.parentPath);
+            output.writeObject(put.values);
+        }
 
-      @Override
-      public Integer getId() {
-         return Ids.SCHEMATIC_VALUE_REMOVE_ALL_VALUES_OPERATION;
-      }
+        @Override
+        public RemoveAllValuesOperation readObject( ObjectInput input ) throws IOException, ClassNotFoundException {
+            Path path = (Path)input.readObject();
+            Collection<?> values = (Collection<?>)input.readObject();
+            return new RemoveAllValuesOperation(path, values);
+        }
 
-      @SuppressWarnings("unchecked")
-      @Override
-      public Set<Class<? extends RemoveAllValuesOperation>> getTypeClasses() {
-         return Util.<Class<? extends RemoveAllValuesOperation>> asSet(RemoveAllValuesOperation.class);
-      }
-   }
+        @Override
+        public Integer getId() {
+            return Ids.SCHEMATIC_VALUE_REMOVE_ALL_VALUES_OPERATION;
+        }
+
+        @SuppressWarnings( "unchecked" )
+        @Override
+        public Set<Class<? extends RemoveAllValuesOperation>> getTypeClasses() {
+            return Util.<Class<? extends RemoveAllValuesOperation>>asSet(RemoveAllValuesOperation.class);
+        }
+    }
 }

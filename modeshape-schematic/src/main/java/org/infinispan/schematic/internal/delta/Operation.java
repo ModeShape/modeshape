@@ -36,30 +36,26 @@ import org.infinispan.schematic.internal.document.MutableDocument;
 @Immutable
 public abstract class Operation {
 
-    protected final Path path;
+    protected final Path parentPath;
 
-    protected Operation( Path path ) {
-        this.path = path;
+    protected Operation( Path parentPath ) {
+        this.parentPath = parentPath;
     }
 
     public abstract void replay( MutableDocument delegate );
 
     public abstract void rollback( MutableDocument delegate );
 
-    public Path getPath() {
-        return path;
+    public Path getParentPath() {
+        return parentPath;
     }
 
-    protected MutableDocument mutableParentInDelegate( MutableDocument delegate ) {
+    protected MutableDocument mutableParent( MutableDocument delegate ) {
         Document parent = delegate;
-        for (String fieldName : getPath().parent()) {
+        for (String fieldName : getParentPath()) {
             parent = parent.getDocument(fieldName);
         }
         return (MutableDocument)parent;
-    }
-
-    protected String lastField() {
-        return path.getLast();
     }
 
 }

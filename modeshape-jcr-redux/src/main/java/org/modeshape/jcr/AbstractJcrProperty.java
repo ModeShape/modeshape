@@ -24,7 +24,9 @@
 package org.modeshape.jcr;
 
 import java.util.Iterator;
+import java.util.Set;
 import javax.jcr.Item;
+import javax.jcr.ItemNotFoundException;
 import javax.jcr.ItemVisitor;
 import javax.jcr.Node;
 import javax.jcr.Property;
@@ -33,7 +35,6 @@ import javax.jcr.ValueFormatException;
 import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
-import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.version.VersionException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.NotThreadSafe;
@@ -89,21 +90,45 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
     }
 
     /**
-     * Get the cached property definition ID.
+     * Get the property definition ID.
      * 
-     * @return the cached property definition ID, or null if there is no cached ID or it is potentially out of date
+     * @return the cached property definition ID; never null
+     * @throws ItemNotFoundException if the node that contains this property doesn't exist anymore
+     * @throws ConstraintViolationException if no valid property definition could be found
      */
-    final PropertyDefinitionId propertyDefinitionId() {
+    final PropertyDefinitionId propertyDefinitionId() throws ItemNotFoundException, ConstraintViolationException {
         CachedDefinition defn = cachedDefn;
-        if (defn == null) return null;
-        if (node.session().nodeTypesVersion() > defn.nodeTypesVersion) {
-            defn = null;
-            return null;
+        if (defn == null || node.session().nodeTypesVersion() > defn.nodeTypesVersion) {
+            Name primaryType = node.getPrimaryTypeName();
+            Set<Name> mixinTypes = node.getMixinTypeNames();
+            PropertyDefinitionId id = node.propertyDefinitionFor(property(), primaryType, mixinTypes).getId();
+            setPropertyDefinitionId(id);
+            return id;
         }
         return defn.propDefnId;
     }
 
-    final CachedNode cachedNode() throws RepositoryException {
+    /**
+     * Get the definition for this property.
+     * 
+     * @return the cached property definition ID; never null
+     * @throws ItemNotFoundException if the node that contains this property doesn't exist anymore
+     * @throws ConstraintViolationException if no valid property definition could be found
+     */
+    final JcrPropertyDefinition propertyDefinition() throws ItemNotFoundException, ConstraintViolationException {
+        CachedDefinition defn = cachedDefn;
+        if (defn == null || node.session().nodeTypesVersion() > defn.nodeTypesVersion) {
+            Name primaryType = node.getPrimaryTypeName();
+            Set<Name> mixinTypes = node.getMixinTypeNames();
+            JcrPropertyDefinition propDefn = node.propertyDefinitionFor(property(), primaryType, mixinTypes);
+            PropertyDefinitionId id = propDefn.getId();
+            setPropertyDefinitionId(id);
+            return propDefn;
+        }
+        return session.repository().nodeTypeManager().getPropertyDefinition(defn.propDefnId);
+    }
+
+    final CachedNode cachedNode() throws ItemNotFoundException {
         return node.node();
     }
 
@@ -119,7 +144,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
         return node.session().propertyFactory();
     }
 
-    final org.modeshape.jcr.value.Property property() throws RepositoryException {
+    final org.modeshape.jcr.value.Property property() throws ItemNotFoundException {
         return cachedNode().getProperty(name, sessionCache());
     }
 
@@ -193,9 +218,9 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
     }
 
     @Override
-    public final PropertyDefinition getDefinition() throws RepositoryException {
+    public final JcrPropertyDefinition getDefinition() throws RepositoryException {
         checkSession();
-        return null;
+        return propertyDefinition();
     }
 
     @Override
@@ -217,7 +242,8 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
     public final boolean isModified() {
         try {
             checkSession();
-            return false;
+            CachedNode node = cachedNode();
+            return node instanceof MutableCachedNode && ((MutableCachedNode)node).isPropertyModified(sessionCache(), name);
         } catch (RepositoryException re) {
             throw new IllegalStateException(re);
         }
@@ -227,7 +253,8 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
     public final boolean isNew() {
         try {
             checkSession();
-            return false;
+            CachedNode node = cachedNode();
+            return node instanceof MutableCachedNode && ((MutableCachedNode)node).isPropertyNew(sessionCache(), name);
         } catch (RepositoryException re) {
             throw new IllegalStateException(re);
         }
