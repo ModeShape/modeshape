@@ -24,24 +24,17 @@
 
 package org.modeshape.sequencer.zip;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.InputStream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.JcrNtLexicon;
 import org.modeshape.graph.mimetype.MimeTypeDetector;
-import org.modeshape.graph.property.BinaryFactory;
-import org.modeshape.graph.property.DateTime;
-import org.modeshape.graph.property.DateTimeFactory;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.NameFactory;
-import org.modeshape.graph.property.Path;
-import org.modeshape.graph.property.PathFactory;
+import org.modeshape.graph.property.*;
 import org.modeshape.graph.sequencer.SequencerOutput;
 import org.modeshape.graph.sequencer.StreamSequencer;
 import org.modeshape.graph.sequencer.StreamSequencerContext;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 /**
  * A sequencer that processes and extract the files and folders from ZIP archive files.
@@ -50,30 +43,21 @@ public class ZipSequencer implements StreamSequencer {
 
     /**
      * {@inheritDoc}
-     * 
+     *
      * @see org.modeshape.graph.sequencer.StreamSequencer#sequence(java.io.InputStream,
      *      org.modeshape.graph.sequencer.SequencerOutput, org.modeshape.graph.sequencer.StreamSequencerContext)
      */
     @Override
-    public void sequence( InputStream stream,
-                          SequencerOutput output,
-                          StreamSequencerContext context ) {
+    public void sequence( InputStream stream, SequencerOutput output, StreamSequencerContext context ) {
+        Name zipFileName = getZipFileName(context);
+        parseZipFile(stream, output, context, zipFileName);
+    }
+
+    private void parseZipFile( InputStream stream, SequencerOutput output, StreamSequencerContext context, Name zipFileName ) {
         BinaryFactory binaryFactory = context.getValueFactories().getBinaryFactory();
-        DateTimeFactory dateFactory = context.getValueFactories().getDateFactory();
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
         NameFactory nameFactory = context.getValueFactories().getNameFactory();
-
-        // Figure out the name of the archive file ...
-        Path pathToArchiveFile = context.getInputPath();
-        Name zipFileName = null;
-        if (pathToArchiveFile != null && !pathToArchiveFile.isRoot()) {
-            // Remove the 'jcr:content' node (of type 'nt:resource'), if it is there ...
-            if (pathToArchiveFile.getLastSegment().getName().equals(JcrLexicon.CONTENT)) pathToArchiveFile = pathToArchiveFile.getParent();
-            if (!pathToArchiveFile.isRoot()) zipFileName = pathToArchiveFile.getLastSegment().getName();
-        }
-        if (zipFileName == null) {
-            zipFileName = ZipLexicon.CONTENT;
-        }
+        DateTimeFactory dateFactory = context.getValueFactories().getDateFactory();
 
         DateTime now = dateFactory.create();
         String username = context.getSecurityContext().getUserName();
@@ -91,7 +75,7 @@ public class ZipSequencer implements StreamSequencer {
             while (entry != null) {
                 Path entryPath = zipPath;
                 String entryName = entry.getName();
-                for (String segment : entryName.split(File.separator)) {
+                for (String segment : entryName.split("/")) {
                     entryPath = pathFactory.create(entryPath, nameFactory.create(segment));
                 }
 
@@ -99,7 +83,9 @@ public class ZipSequencer implements StreamSequencer {
                 long time = entry.getTime();
                 DateTime dateTime = time != -1 ? dateFactory.create(time) : now;
                 output.setProperty(entryPath, JcrLexicon.CREATED, dateTime);
-                if (username != null) output.setProperty(entryPath, JcrLexicon.CREATED_BY, username);
+                if (username != null) {
+                    output.setProperty(entryPath, JcrLexicon.CREATED_BY, username);
+                }
 
                 if (entry.isDirectory()) { // If entry is directory, create nt:folder node
                     output.setProperty(entryPath, JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FOLDER);
@@ -119,11 +105,15 @@ public class ZipSequencer implements StreamSequencer {
                     // default them here
                     // output.setProperty(contentPath, JcrLexicon.ENCODING, "binary");
                     output.setProperty(contentPath, JcrLexicon.LAST_MODIFIED, dateTime);
-                    if (username != null) output.setProperty(contentPath, JcrLexicon.LAST_MODIFIED_BY, username);
+                    if (username != null) {
+                        output.setProperty(contentPath, JcrLexicon.LAST_MODIFIED_BY, username);
+                    }
 
                     // Figure out the mime type ...
                     String mimeType = mimeDetector.mimeTypeOf(entryName, null);
-                    if (mimeType != null) output.setProperty(contentPath, JcrLexicon.MIMETYPE, mimeType);
+                    if (mimeType != null) {
+                        output.setProperty(contentPath, JcrLexicon.MIMETYPE, mimeType);
+                    }
 
                 }
                 in.closeEntry();
@@ -142,5 +132,23 @@ public class ZipSequencer implements StreamSequencer {
                 }
             }
         }
+    }
+
+    private Name getZipFileName( StreamSequencerContext context ) {
+        // Figure out the name of the archive file ...
+        Path pathToArchiveFile = context.getInputPath();
+
+        Name zipFileName = null;
+        if (pathToArchiveFile != null && !pathToArchiveFile.isRoot()) {
+            // Remove the 'jcr:content' node (of type 'nt:resource'), if it is there ...
+            if (pathToArchiveFile.getLastSegment().getName().equals(JcrLexicon.CONTENT)) {
+                pathToArchiveFile = pathToArchiveFile.getParent();
+            }
+            if (!pathToArchiveFile.isRoot()) {
+                zipFileName = pathToArchiveFile.getLastSegment().getName();
+            }
+        }
+        //TODO author=Horia Chiorean date=11/4/11 description=Think of better default name ?
+        return zipFileName != null ? zipFileName : ZipLexicon.CONTENT;
     }
 }

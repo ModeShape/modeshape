@@ -26,64 +26,82 @@ package org.modeshape.sequencer.zip;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
-import java.io.InputStream;
 import org.junit.After;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.util.Logger;
 import org.modeshape.graph.JcrLexicon;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.NameFactory;
-import org.modeshape.graph.property.Path;
-import org.modeshape.graph.property.PathFactory;
-import org.modeshape.graph.property.Property;
-import org.modeshape.graph.property.ValueFactory;
+import org.modeshape.graph.property.*;
 import org.modeshape.graph.sequencer.MockSequencerContext;
 import org.modeshape.graph.sequencer.MockSequencerOutput;
-import org.modeshape.graph.sequencer.StreamSequencerContext;
+
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * @author Michael Trezzi
+ * @author Horia Chiorean
  */
 public class ZipSequencerTest {
-    private InputStream imageStream;
+
+    private static final org.modeshape.common.util.Logger LOGGER = Logger.getLogger(ZipSequencerTest.class);
+
+    private InputStream zipStream;
+    private MockSequencerContext seqContext;
+    private MockSequencerOutput seqOutput;
+
+    @Before
+    public void beforeEach() {
+        seqContext = new MockSequencerContext();
+        seqOutput = new MockSequencerOutput(seqContext);
+    }
 
     @After
     public void afterEach() throws Exception {
-        if (imageStream != null) {
+        logPotentialErrors();
+        closeZipStream();
+    }
+
+    private void logPotentialErrors() {
+        if (seqContext.getProblems().hasErrors()) {
+            seqContext.getProblems().writeTo(LOGGER);
+        }
+    }
+
+    private void closeZipStream() throws IOException {
+        if (zipStream != null) {
             try {
-                imageStream.close();
+                zipStream.close();
             } finally {
-                imageStream = null;
+                zipStream = null;
             }
         }
     }
 
-    protected InputStream getTestZip( String resourcePath ) {
-        return this.getClass().getResourceAsStream("/" + resourcePath);
-    }
-
     @Test
     public void shouldBeAbleToExtractZip() {
-        InputStream is = getTestZip("testzip.zip");
-        ZipSequencer zs = new ZipSequencer();
-        StreamSequencerContext context = new MockSequencerContext();
+        loadZipStream("testzip.zip");
 
-        MockSequencerOutput seqtest = new MockSequencerOutput(context);
+        new ZipSequencer().sequence(zipStream, seqOutput, seqContext);
 
-        zs.sequence(is, seqtest, context);
-
-        PathFactory pathFactory = context.getValueFactories().getPathFactory();
-        NameFactory nameFactory = context.getValueFactories().getNameFactory();
-        ValueFactory<String> stringFactory = context.getValueFactories().getStringFactory();
+        PathFactory pathFactory = seqContext.getValueFactories().getPathFactory();
+        NameFactory nameFactory = seqContext.getValueFactories().getNameFactory();
+        ValueFactory<String> stringFactory = seqContext.getValueFactories().getStringFactory();
 
         Name folderName = nameFactory.create("test subfolder");
         Name fileName = nameFactory.create("test2.txt");
 
         Path nodePath = pathFactory.createRelativePath(ZipLexicon.CONTENT, folderName, fileName, JcrLexicon.CONTENT);
 
-        Property property = seqtest.getProperty(nodePath, JcrLexicon.DATA);
+        Property property = seqOutput.getProperty(nodePath, JcrLexicon.DATA);
         assertThat(property, is(notNullValue()));
         assertThat(stringFactory.create(property.getFirstValue()), is("This is a test content of file2\n"));
     }
 
+    private void loadZipStream( String resourcePath ) {
+        zipStream = this.getClass().getResourceAsStream("/" + resourcePath);
+        assertNotNull(zipStream);
+    }
 }
