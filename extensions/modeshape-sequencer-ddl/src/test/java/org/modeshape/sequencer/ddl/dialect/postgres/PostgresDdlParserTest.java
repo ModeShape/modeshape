@@ -51,7 +51,7 @@ import org.modeshape.sequencer.ddl.node.AstNode;
 public class PostgresDdlParserTest extends DdlParserTestHelper {
     private static final String SPACE = DdlConstants.SPACE;
 
-    public static final String DDL_FILE_PATH = "src/test/resources/ddl/dialect/postgres/";
+    public static final String DDL_FILE_PATH = "ddl/dialect/postgres/";
 
     @Before
     public void beforeEach() {

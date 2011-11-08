@@ -70,8 +70,8 @@ import org.modeshape.sequencer.ddl.node.AstNode;
 
 public class StandardDdlParserTest extends DdlParserTestHelper {
 
-    public static final String DDL_FILE_PATH = "src/test/resources/ddl/";
-    public static final String MM_DDL_FILE_PATH = "src/test/resources/mmddl/";
+    public static final String DDL_FILE_PATH = "ddl/";
+    public static final String MM_DDL_FILE_PATH = "mmddl/";
 
     @Before
     public void beforeEach() {
