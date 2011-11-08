@@ -44,7 +44,7 @@ import org.modeshape.sequencer.ddl.node.AstNode;
  */
 public class MySqlDdlParserTest extends DdlParserTestHelper {
 
-    public static final String DDL_FILE_PATH = "src/test/resources/ddl/dialect/mysql/";
+    public static final String DDL_FILE_PATH = "ddl/dialect/mysql/";
 
     @Before
     public void beforeEach() {
