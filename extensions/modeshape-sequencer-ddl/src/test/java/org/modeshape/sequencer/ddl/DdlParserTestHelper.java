@@ -25,14 +25,14 @@ package org.modeshape.sequencer.ddl;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_PROBLEM;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_UNKNOWN_STATEMENT;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.util.List;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Property;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_PROBLEM;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_UNKNOWN_STATEMENT;
 import org.modeshape.sequencer.ddl.node.AstNode;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.List;
 
 /**
  *
@@ -90,7 +90,7 @@ public class DdlParserTestHelper implements DdlConstants {
     }
 
     @SuppressWarnings( "null" )
-    public String getFileContent( String filePath ) {
+    protected String getFileContent( String filePath ) {
         StringBuilder sb = new StringBuilder(1000);
 
         if (isPrintToConsole()) {
@@ -98,31 +98,23 @@ public class DdlParserTestHelper implements DdlConstants {
         }
 
         if (filePath != null && filePath.length() > 0) {
-            FileReader fr = null;
             BufferedReader in = null;
-
             try {
-                fr = new FileReader(filePath);
-                in = new BufferedReader(fr);
-
+                in = new BufferedReader(new InputStreamReader(getClass().getClassLoader().getResourceAsStream(filePath)));
                 int ch = in.read();
-
                 while (ch > -1) {
-                    sb.append((char)ch);
+                    sb.append((char) ch);
                     ch = in.read();
                 }
             } catch (Exception e) {
-                System.out.print(e);
+                throw new RuntimeException(e);
             } finally {
-                try {
-                    fr.close();
-                } catch (java.io.IOException e) {
+                if (in != null) {
+                    try {
+                        in.close();
+                    } catch (java.io.IOException e) {
+                    }
                 }
-                try {
-                    in.close();
-                } catch (java.io.IOException e) {
-                }
-
             }
         }
         return sb.toString();
@@ -157,12 +149,16 @@ public class DdlParserTestHelper implements DdlConstants {
         Object result = parser.score(content, filename, scorer);
         parser.parse(content, rootNode, result);
         assertThat(scorer.getScore() > 0, is(true));
-        if (childCount >= 0) assertThat(rootNode.getChildCount(), is(childCount));
+        if (childCount >= 0) {
+            assertThat(rootNode.getChildCount(), is(childCount));
+        }
 
         // Do it again, but this time without scoring first ...
         rootNode = parser.nodeFactory().node("ddlRootNode");
         parser.setRootNode(rootNode);
         parser.parse(content, rootNode, null);
-        if (childCount >= 0) assertThat(rootNode.getChildCount(), is(childCount));
+        if (childCount >= 0) {
+            assertThat(rootNode.getChildCount(), is(childCount));
+        }
     }
 }

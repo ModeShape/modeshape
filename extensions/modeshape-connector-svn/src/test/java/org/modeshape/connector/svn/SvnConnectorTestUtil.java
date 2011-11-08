@@ -23,33 +23,36 @@
  */
 package org.modeshape.connector.svn;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Iterator;
 import org.modeshape.common.util.FileUtil;
-import org.tmatesoft.svn.core.SVNDirEntry;
-import org.tmatesoft.svn.core.SVNException;
-import org.tmatesoft.svn.core.SVNNodeKind;
-import org.tmatesoft.svn.core.SVNURL;
+import org.modeshape.common.util.Logger;
+import org.tmatesoft.svn.core.*;
 import org.tmatesoft.svn.core.auth.ISVNAuthenticationManager;
 import org.tmatesoft.svn.core.internal.io.dav.DAVRepositoryFactory;
 import org.tmatesoft.svn.core.internal.io.fs.FSRepositoryFactory;
 import org.tmatesoft.svn.core.internal.io.svn.SVNRepositoryFactoryImpl;
+import org.tmatesoft.svn.core.internal.wc.DefaultSVNOptions;
 import org.tmatesoft.svn.core.io.SVNRepository;
 import org.tmatesoft.svn.core.io.SVNRepositoryFactory;
 import org.tmatesoft.svn.core.wc.SVNWCUtil;
+import java.io.File;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.Collection;
+import java.util.Iterator;
 
 /**
  * @author Serge Pagop
+ * @author Horia Chiorean
  */
 public class SvnConnectorTestUtil {
+
+    private static final Logger LOGGER = Logger.getLogger(SvnConnectorTestUtil.class);
 
     @SuppressWarnings( "unchecked" )
     public static void main( String[] args ) throws Exception {
         try {
             System.out.println("My repos. ......");
-            String svnUrl = SvnConnectorTestUtil.createURL("src/test/resources/dummy_svn_repos", "target/copy_of dummy_svn_repos");
+            String svnUrl = SvnConnectorTestUtil.createTestRepoURL();
             String username = "sp";
             String password = "";
             System.out.println(svnUrl);
@@ -124,23 +127,31 @@ public class SvnConnectorTestUtil {
         // The factory knows how to create a DAVRepository
         SVNRepository repository = SVNRepositoryFactory.create(SVNURL.parseURIDecoded(url));
         ISVNAuthenticationManager authManager = SVNWCUtil.createDefaultAuthenticationManager(username, password);
+        DefaultSVNOptions options = SVNWCUtil.createDefaultOptions(false);
+        options.setPropertyValue(SVNProperty.EOL_STYLE, SVNProperty.EOL_STYLE_NATIVE);
         repository.setAuthenticationManager(authManager);
+
         return repository;
     }
 
-    public static String createURL( String src,
-                                    String dst ) throws IOException, SVNException {
-        // First we need to find the absolute path. Note that Maven always runs the tests from the project's directory,
-        // so use new File to create an instance at the current location ...
-        File mySrc = new File(src);
-        File myDst = new File(dst);
+    public static String createTestRepoURL() throws IOException, SVNException, URISyntaxException {
+        String srcRepoPath = "dummy_svn_repos";
+        File srcRepoRepo = new File(SvnConnectorTestUtil.class.getClassLoader().getResource(srcRepoPath).toURI());
+        File srcRepoParentDir = new File(srcRepoRepo.getParent());
+
+        String dstRepoPath = "copyOf_" + srcRepoPath;
+        File dstRepoDir = new File(srcRepoParentDir, dstRepoPath);
 
         // make sure the destination is empty before we copy
-        FileUtil.delete(myDst);
-        FileUtil.copy(mySrc, myDst);
+        if (dstRepoDir.exists() && !FileUtil.delete(dstRepoDir)) {
+            LOGGER.debug("Cannot delete directory " + dstRepoDir);
+            dstRepoDir = new File(srcRepoParentDir, dstRepoPath + "_" + System.currentTimeMillis());
+        }
+        dstRepoDir.deleteOnExit();
+        FileUtil.copy(srcRepoRepo, dstRepoDir);
 
         // Now set the two path roots
-        String url = myDst.getCanonicalFile().toURI().toURL().toExternalForm();
+        String url = dstRepoDir.getCanonicalFile().toURI().toURL().toExternalForm();
 
         url = url.replaceFirst("file:/", "file://localhost/");
 
