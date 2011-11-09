@@ -44,9 +44,12 @@ public final class JaasCredentials implements Credentials {
      * Create a credentials that uses the supplied JAAS LoginContext for authentication and authorization.
      * 
      * @param loginContext the JAAS login context
+     * @throws <code></code>IllegalArgumentException</code> if the provided argument is null
      */
     public JaasCredentials( LoginContext loginContext ) {
-        assert loginContext != null;
+        if (loginContext == null) {
+            throw new IllegalArgumentException("loginContext cannot be null");
+        }
         this.loginContext = loginContext;
     }
 

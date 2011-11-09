@@ -38,13 +38,4 @@ public interface QueryResult extends javax.jcr.query.QueryResult {
      *         {@link QueryResult#getColumnNames()}.
      */
     public String[] getColumnTypes();
-
-    /**
-     * Returns an array of the name of the selector (i.e., table) from which each column originates. Note that the table name will
-     * be "" for all fabricated columns.
-     * 
-     * @return the array of table names; never null, and the size always matches {@link QueryResult#getColumnNames()}
-     * @since JCR 2.0
-     */
-    public String[] getSelectorNames();
 }
