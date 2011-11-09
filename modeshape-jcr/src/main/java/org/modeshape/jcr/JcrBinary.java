@@ -46,7 +46,7 @@ class JcrBinary implements javax.jcr.Binary, org.modeshape.jcr.api.Binary {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.jcr.api.Binary#dispose()
+     * @see javax.jcr.Binary#dispose()
      */
     public void dispose() {
         this.binary.release();
@@ -55,7 +55,7 @@ class JcrBinary implements javax.jcr.Binary, org.modeshape.jcr.api.Binary {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.jcr.api.Binary#getSize()
+     * @see javax.jcr.Binary#getSize()
      */
     public long getSize() {
         try {
@@ -69,7 +69,7 @@ class JcrBinary implements javax.jcr.Binary, org.modeshape.jcr.api.Binary {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.jcr.api.Binary#getStream()
+     * @see javax.jcr.Binary#getStream()
      */
     public InputStream getStream() {
         return new SelfClosingInputStream(this.binary);
@@ -78,7 +78,7 @@ class JcrBinary implements javax.jcr.Binary, org.modeshape.jcr.api.Binary {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.jcr.api.Binary#read(byte[], long)
+     * @see javax.jcr.Binary#read(byte[], long)
      */
     public int read( byte[] b,
                      long position ) throws IOException {

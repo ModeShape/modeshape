@@ -124,7 +124,7 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.jcr.api.query.QueryResult#getSelectorNames()
+     * @see javax.jcr.query.QueryResult#getSelectorNames()
      */
     public String[] getSelectorNames() {
         if (columnTables == null) {
@@ -628,7 +628,7 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
         /**
          * {@inheritDoc}
          * 
-         * @see org.modeshape.jcr.api.query.Row#getNode(java.lang.String)
+         * @see javax.jcr.query.Row#getNode(java.lang.String)
          */
         public Node getNode( String selectorName ) throws RepositoryException {
             int nodeIndex = iterator.columns.getSelectorNames().indexOf(selectorName);
