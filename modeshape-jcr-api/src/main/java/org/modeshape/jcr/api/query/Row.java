@@ -23,22 +23,10 @@
  */
 package org.modeshape.jcr.api.query;
 
-import javax.jcr.Node;
-import javax.jcr.RepositoryException;
-
 /**
  * Replicates some of the methods introduced in JCR 2.0.
+ *
+ * @deprecated use <code>javax.jcr.query.Row</code> instead
  */
 public interface Row extends javax.jcr.query.Row {
-
-    /**
-     * Returns the Node corresponding to this Row and the specified selector.
-     * 
-     * @param selectorName the name of the selector for which the node is to be returned
-     * @return the node
-     * @throws RepositoryException if selectorName is not the alias of a selector in this query or if another error occurs.
-     * @since JCR 2.0
-     */
-    Node getNode( String selectorName ) throws RepositoryException;
-
 }

@@ -26,8 +26,8 @@ package org.modeshape.jcr.api;
 
 /**
  * Replicates JCR 2.0's javax.jcr.Value interface with the ability to return a Binary representation.
+ *
+ * @deprecated use <code>javax.jcr.Value</code> instead
  */
 public interface Value extends javax.jcr.Value {
-
-
 }
