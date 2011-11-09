@@ -50,7 +50,7 @@ import org.modeshape.jcr.value.ValueFactories;
  * ModeShape implementation of a {@link Value JCR Value}.
  */
 @NotThreadSafe
-final class JcrValue implements org.modeshape.jcr.api.Value {
+final class JcrValue implements javax.jcr.Value {
 
     static final JcrValue[] EMPTY_ARRAY = new JcrValue[] {};
 

@@ -32,7 +32,7 @@ import org.modeshape.common.annotation.Immutable;
  * Value holder for binary data. Binary instances are not mutable.
  */
 @Immutable
-public interface Binary extends Comparable<Binary>, Serializable, org.modeshape.jcr.api.Binary {
+public interface Binary extends Comparable<Binary>, Serializable, javax.jcr.Binary {
 
     /**
      * Get the length of this binary data.
