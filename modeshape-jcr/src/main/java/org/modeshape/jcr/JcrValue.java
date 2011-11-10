@@ -50,7 +50,7 @@ import org.modeshape.graph.property.ValueFactories;
  * ModeShape implementation of a {@link Value JCR Value}.
  */
 @NotThreadSafe
-final class JcrValue implements org.modeshape.jcr.api.Value {
+final class JcrValue implements javax.jcr.Value {
 
     static final JcrValue[] EMPTY_ARRAY = new JcrValue[] {};
 
@@ -223,7 +223,7 @@ final class JcrValue implements org.modeshape.jcr.api.Value {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.jcr.api.Value#getBinary()
+     * @see javax.jcr.Value#getBinary()
      */
     public javax.jcr.Binary getBinary() throws RepositoryException {
         try {

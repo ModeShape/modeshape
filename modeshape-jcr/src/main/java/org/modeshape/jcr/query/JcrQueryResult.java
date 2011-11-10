@@ -494,7 +494,7 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
         }
     }
 
-    protected static class SingleSelectorQueryResultRow implements org.modeshape.jcr.api.query.Row {
+    protected static class SingleSelectorQueryResultRow implements javax.jcr.query.Row {
         protected final SingleSelectorQueryResultRowIterator iterator;
         protected final Node node;
         protected final Object[] tuple;
@@ -514,7 +514,7 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
         /**
          * {@inheritDoc}
          * 
-         * @see org.modeshape.jcr.api.query.Row#getNode(java.lang.String)
+         * @see javax.jcr.query.Row#getNode(java.lang.String)
          */
         public Node getNode( String selectorName ) throws RepositoryException {
             if (!iterator.hasSelector(selectorName)) {
@@ -608,7 +608,7 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
         }
     }
 
-    protected static class MultiSelectorQueryResultRow implements org.modeshape.jcr.api.query.Row {
+    protected static class MultiSelectorQueryResultRow implements javax.jcr.query.Row {
         protected final QueryResultRowIterator iterator;
         protected final Object[] tuple;
         private Value[] values = null;
@@ -628,7 +628,7 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
         /**
          * {@inheritDoc}
          * 
-         * @see org.modeshape.jcr.api.query.Row#getNode(java.lang.String)
+         * @see javax.jcr.query.Row#getNode(java.lang.String)
          */
         public Node getNode( String selectorName ) throws RepositoryException {
             int nodeIndex = iterator.columns.getSelectorNames().indexOf(selectorName);

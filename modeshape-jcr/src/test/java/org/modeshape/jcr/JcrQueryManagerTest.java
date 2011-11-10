@@ -158,7 +158,9 @@ public class JcrQueryManagerTest {
 
                 // Create a branch that contains some same-name-siblings ...
                 Node other = session.getRootNode().addNode("Other", "nt:unstructured");
-                other.addNode("NodeA", "nt:unstructured").setProperty("something", "value3 quick brown fox");
+                Node a = other.addNode("NodeA", "nt:unstructured");
+                a.setProperty("something", "value3 quick brown fox");
+                a.setProperty("somethingElse", "value2");
                 other.addNode("NodeA", "nt:unstructured").setProperty("something", "value2 quick brown cat");
                 other.addNode("NodeA", "nt:unstructured").setProperty("something", new String[] {"black dog", "white dog"});
                 Node c = other.addNode("NodeC", "notion:typed");
@@ -1871,7 +1873,8 @@ public class JcrQueryManagerTest {
     public void shouldBeAbleToExecuteXPathQueryWithRangeCriteria() throws RepositoryException {
         Query query = session.getWorkspace()
                              .getQueryManager()
-                             .createQuery("/jcr:root/Other/*[@something <= 'value2' and @something > 'value1']", Query.XPATH);
+                             .createQuery("/jcr:root/Other/*[@somethingElse <= 'value2' and @somethingElse > 'value1']",
+                                          Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
@@ -1974,7 +1977,7 @@ public class JcrQueryManagerTest {
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertThat(result.getRows().getSize(), is(3L));
+        assertThat(result.getRows().getSize(), is(2L));
         for (NodeIterator iter = result.getNodes(); iter.hasNext();) {
             assertThat(iter.nextNode().hasProperty("something"), is(true));
         }

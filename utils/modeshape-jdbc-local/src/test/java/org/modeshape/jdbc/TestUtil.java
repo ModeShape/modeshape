@@ -458,7 +458,7 @@ class QueryResultRowIterator implements RowIterator {
     }
 }
 
-class QueryResultRow implements org.modeshape.jcr.api.query.Row {
+class QueryResultRow implements javax.jcr.query.Row {
     protected final QueryResultRowIterator iterator;
     private Node[] nodes;
     protected final Object[] tuple;
