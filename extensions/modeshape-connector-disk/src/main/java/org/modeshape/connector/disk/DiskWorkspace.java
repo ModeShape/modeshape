@@ -52,9 +52,9 @@ import org.modeshape.graph.connector.base.cache.NodeCachePolicyChangedEvent;
 import org.modeshape.graph.property.Binary;
 import org.modeshape.graph.property.BinaryFactory;
 import org.modeshape.graph.property.Name;
+import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.PropertyFactory;
-import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.property.basic.FileSystemBinary;
 
 /**
@@ -135,7 +135,6 @@ public class DiskWorkspace extends MapWorkspace<DiskNode> implements NodeCaching
 
         repository.diskSource().addNodeCachePolicyChangedListener(this);
     }
-
 
     public void destroy() {
         FileUtil.delete(workspaceRoot);
@@ -512,7 +511,7 @@ public class DiskWorkspace extends MapWorkspace<DiskNode> implements NodeCaching
      * A record of a reference from a node in a workspace to a value in the large value area.
      */
     @Immutable
-    private static class ValueReference implements Serializable {
+    static class ValueReference implements Serializable {
         private static final long serialVersionUID = 1L;
 
         private final String workspaceName;
@@ -540,13 +539,18 @@ public class DiskWorkspace extends MapWorkspace<DiskNode> implements NodeCaching
             }
             return false;
         }
+
+        @Override
+        public String toString() {
+            return this.owningNodeUuid + " @ " + workspaceName;
+        }
     }
 
     /**
      * A set of {@link ValueReference} instances.
      */
     @NotThreadSafe
-    private static class ValueReferences implements Serializable {
+    static class ValueReferences implements Serializable {
         private static final long serialVersionUID = 1L;
 
         private final Set<ValueReference> references;
@@ -587,6 +591,26 @@ public class DiskWorkspace extends MapWorkspace<DiskNode> implements NodeCaching
 
         boolean hasReference( ValueReference ref ) {
             return this.references.contains(ref);
+        }
+
+        @Override
+        public int hashCode() {
+            return references.hashCode();
+        }
+
+        @Override
+        public boolean equals( Object obj ) {
+            if (obj == this) return true;
+            if (obj instanceof ValueReferences) {
+                ValueReferences that = (ValueReferences)obj;
+                return this.references.equals(that.references);
+            }
+            return false;
+        }
+
+        @Override
+        public String toString() {
+            return references.toString();
         }
     }
 

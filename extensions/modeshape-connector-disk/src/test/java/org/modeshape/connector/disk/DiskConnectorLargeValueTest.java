@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
@@ -17,6 +18,7 @@ import org.modeshape.common.util.Base64;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
+import org.modeshape.graph.Location;
 import org.modeshape.graph.Node;
 import org.modeshape.graph.connector.MockRepositoryContext;
 import org.modeshape.graph.property.Binary;
@@ -400,5 +402,124 @@ public class DiskConnectorLargeValueTest {
         assertTrue(node.getProperty("binaryProp").getFirstValue() instanceof FileSystemBinary);
         assertThat((Binary)node.getProperty("binaryProp").getFirstValue(), is(binary));
 
+    }
+
+    @Test
+    public void shouldAllowUsingLargeValuesInMultipleWorkspacesCreatedByCloning() {
+        source = new DiskSource();
+        source.setName("Disk Source");
+        source.setLargeValueSizeInBytes(LARGE_VALUE_THRESHOLD);
+        source.setRepositoryRootPath(REPO_ROOT_PATH);
+        source.setLargeValuePath("large/values");
+        source.initialize(new MockRepositoryContext(context));
+
+        graph = Graph.create(source, context);
+
+        largeValuePath = new File(repoRootPath, source.getLargeValuePath());
+
+        Binary binary = binFactory.create(createBinaryValueOfSize(LARGE_VALUE_THRESHOLD + 1));
+        graph.create("/oneLargeValue").with("binaryProp", binary).and();
+
+        String hash = keyFor(binary.getHash());
+        Set<String> largeValuePaths = new HashSet<String>();
+        largeValuePaths.addAll(Arrays.asList(largeValuePath.list()));
+
+        assertThat(largeValuePaths.size(), is(2));
+        assertTrue(largeValuePaths.contains(hash + ".dat"));
+        assertTrue(largeValuePaths.contains(hash + ".ref"));
+
+        Node node = graph.getNodeAt("/oneLargeValue");
+        assertThat(node.getProperty("binaryProp"), is(notNullValue()));
+        assertThat(node.getProperty("binaryProp").size(), is(1));
+        assertTrue(node.getProperty("binaryProp").getFirstValue() instanceof Binary);
+        assertTrue(node.getProperty("binaryProp").getFirstValue() instanceof FileSystemBinary);
+        assertThat((Binary)node.getProperty("binaryProp").getFirstValue(), is(binary));
+
+        // Create the second workspace where we'll clone the node ...
+        String workspace = graph.getCurrentWorkspaceName();
+        graph.createWorkspace().named("copyOf" + workspace);
+        assertThat(graph.getCurrentWorkspaceName(), is("copyOf" + workspace));
+
+        // Now clone the node into the current workspace ...
+        graph.clone("/oneLargeValue")
+             .fromWorkspace(workspace)
+             .as("copyOfLargeValue")
+             .into("/")
+             .replacingExistingNodesWithSameUuids();
+        List<Location> children = graph.getChildren().of("/");
+        assertThat(children.size(), is(1));
+
+        Node node2 = graph.getNodeAt("/copyOfLargeValue");
+        assertThat(node2.getProperty("binaryProp"), is(notNullValue()));
+        assertThat(node2.getProperty("binaryProp").size(), is(1));
+        assertTrue(node2.getProperty("binaryProp").getFirstValue() instanceof Binary);
+        assertTrue(node2.getProperty("binaryProp").getFirstValue() instanceof FileSystemBinary);
+        assertThat((Binary)node2.getProperty("binaryProp").getFirstValue(), is(binary));
+        FileSystemBinary binary2 = (FileSystemBinary)node2.getProperty("binaryProp").getFirstValue();
+        assertThat(binary2.getHash(), is(binary.getHash()));
+    }
+
+    @Test
+    public void shouldSupportChangingBinaryValueAndRestarting() {
+        source = new DiskSource();
+        source.setName("Disk Source");
+        source.setLargeValueSizeInBytes(LARGE_VALUE_THRESHOLD);
+        source.setRepositoryRootPath(REPO_ROOT_PATH);
+        source.setLargeValuePath("large/values");
+        source.initialize(new MockRepositoryContext(context));
+
+        graph = Graph.create(source, context);
+
+        largeValuePath = new File(repoRootPath, source.getLargeValuePath());
+
+        Binary binary = binFactory.create(createBinaryValueOfSize(LARGE_VALUE_THRESHOLD + 1));
+        graph.create("/oneLargeValue").with("binaryProp", binary).and();
+
+        String hash = keyFor(binary.getHash());
+        Set<String> largeValuePaths = new HashSet<String>();
+        largeValuePaths.addAll(Arrays.asList(largeValuePath.list()));
+
+        assertThat(largeValuePaths.size(), is(2));
+        assertTrue(largeValuePaths.contains(hash + ".dat"));
+        assertTrue(largeValuePaths.contains(hash + ".ref"));
+
+        Node node = graph.getNodeAt("/oneLargeValue");
+        assertThat(node.getProperty("binaryProp"), is(notNullValue()));
+        assertThat(node.getProperty("binaryProp").size(), is(1));
+        assertTrue(node.getProperty("binaryProp").getFirstValue() instanceof Binary);
+        assertTrue(node.getProperty("binaryProp").getFirstValue() instanceof FileSystemBinary);
+        assertThat((Binary)node.getProperty("binaryProp").getFirstValue(), is(binary));
+
+        // Now set the value to a new binary value ...
+        Binary binary2 = binFactory.create(createBinaryValueOfSize(LARGE_VALUE_THRESHOLD + 2));
+        graph.set("binaryProp").on("/oneLargeValue").to(binary2).and();
+
+        // Now re-read the value ...
+        Node node2 = graph.getNodeAt("/oneLargeValue");
+        assertThat(node2.getProperty("binaryProp"), is(notNullValue()));
+        assertThat(node2.getProperty("binaryProp").size(), is(1));
+        assertTrue(node2.getProperty("binaryProp").getFirstValue() instanceof Binary);
+        assertTrue(node2.getProperty("binaryProp").getFirstValue() instanceof FileSystemBinary);
+        assertThat((Binary)node2.getProperty("binaryProp").getFirstValue(), is(binary2));
+
+        // Close the source ...
+        source.close();
+
+        // Create a new source and graph ...
+        source = new DiskSource();
+        source.setName("Disk Source");
+        source.setLargeValueSizeInBytes(LARGE_VALUE_THRESHOLD);
+        source.setRepositoryRootPath(REPO_ROOT_PATH);
+        source.setLargeValuePath("large/values");
+        source.initialize(new MockRepositoryContext(context));
+        graph = Graph.create(source, context);
+
+        // Re-read the value ...
+        node = graph.getNodeAt("/oneLargeValue");
+        assertThat(node.getProperty("binaryProp"), is(notNullValue()));
+        assertThat(node.getProperty("binaryProp").size(), is(1));
+        assertTrue(node.getProperty("binaryProp").getFirstValue() instanceof Binary);
+        assertTrue(node.getProperty("binaryProp").getFirstValue() instanceof FileSystemBinary);
+        assertThat((Binary)node.getProperty("binaryProp").getFirstValue(), is(binary2));
     }
 }
