@@ -62,10 +62,10 @@ import org.infinispan.schematic.SchemaLibrary.Results;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
+import org.infinispan.schematic.document.Array;
 import org.infinispan.schematic.document.Changes;
 import org.infinispan.schematic.document.Editor;
 import org.infinispan.schematic.document.Path;
-import org.infinispan.schematic.internal.document.MutableArray.Entry;
 import org.infinispan.schematic.internal.document.Paths;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.Problems;
@@ -73,6 +73,9 @@ import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.NamedThreadFactory;
 import org.modeshape.jcr.JcrEngine.State;
+import org.modeshape.jcr.JcrRepository.ConfigurationChange;
+import org.modeshape.jcr.JcrRepository.RunningState;
+import org.modeshape.jcr.JcrRepository.SessionMonitor;
 import org.modeshape.jcr.RepositoryConfiguration.AnonymousSecurity;
 import org.modeshape.jcr.RepositoryConfiguration.Component;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
@@ -143,10 +146,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
     protected static final Set<String> MISSING_JAAS_POLICIES = new CopyOnWriteArraySet<String>();
 
-    static {
-        Logger.getLogger(JcrRepository.class).info(JcrI18n.initializing, ModeShape.getName(), ModeShape.getVersion());
-    }
-
     private static final boolean AUTO_START_REPO_UPON_LOGIN = true;
 
     protected final Logger logger;
@@ -159,7 +158,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
     private final AtomicBoolean allowAutoStartDuringLogin = new AtomicBoolean(AUTO_START_REPO_UPON_LOGIN);
 
     /**
-     * Create a Repository instance given the configuration.
+     * Create a Repository instance given the {@link RepositoryConfiguration configuration}.
      * 
      * @param configuration the repository configuration; may not be null
      * @throws ConfigurationException if there is a problem with the configuration
@@ -393,7 +392,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         return runningState().systemWorkspaceKey();
     }
 
-    protected final RunningState runningState() {
+    protected final JcrRepository.RunningState runningState() {
         RunningState running = runningState.get();
         if (running == null) {
             throw new IllegalStateException(JcrI18n.repositoryIsNotRunningOrHasBeenShutDown.text(repositoryName()));
@@ -562,7 +561,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         return workspaceName;
     }
 
-    protected class ConfigurationChange implements org.infinispan.schematic.document.Editor.Observer {
+    protected static class ConfigurationChange implements org.infinispan.schematic.document.Editor.Observer {
 
         private final Path SECURITY_PATH = Paths.path(FieldName.SECURITY);
         private final Path QUERY_PATH = Paths.path(FieldName.QUERY);
@@ -590,19 +589,19 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
         @Override
         public void setArrayValue( Path path,
-                                   Entry entry ) {
+                                   Array.Entry entry ) {
             checkForChanges(path);
         }
 
         @Override
         public void addArrayValue( Path path,
-                                   Entry entry ) {
+                                   Array.Entry entry ) {
             checkForChanges(path);
         }
 
         @Override
         public void removeArrayValue( Path path,
-                                      Entry entry ) {
+                                      Array.Entry entry ) {
             checkForChanges(path);
         }
 
@@ -797,8 +796,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             this(null, null);
         }
 
-        protected RunningState( RunningState other,
-                                ConfigurationChange change ) throws IOException, NamingException {
+        protected RunningState( JcrRepository.RunningState other,
+                                JcrRepository.ConfigurationChange change ) throws IOException, NamingException {
             this.config = repositoryConfiguration();
             ExecutionContext tempContext = new ExecutionContext();
 

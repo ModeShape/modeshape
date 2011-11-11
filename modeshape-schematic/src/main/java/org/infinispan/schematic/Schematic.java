@@ -37,6 +37,7 @@ import org.infinispan.manager.CacheContainer;
 import org.infinispan.marshall.AbstractExternalizer;
 import org.infinispan.marshall.AdvancedExternalizer;
 import org.infinispan.marshall.Externalizer;
+import org.infinispan.schematic.document.Array;
 import org.infinispan.schematic.document.Binary;
 import org.infinispan.schematic.document.Changes;
 import org.infinispan.schematic.document.Code;
@@ -72,7 +73,6 @@ import org.infinispan.schematic.internal.document.DefaultDocumentValueFactory;
 import org.infinispan.schematic.internal.document.DocumentEditor;
 import org.infinispan.schematic.internal.document.DocumentExternalizer;
 import org.infinispan.schematic.internal.document.DocumentValueFactory;
-import org.infinispan.schematic.internal.document.MutableArray.Entry;
 import org.infinispan.schematic.internal.document.MutableDocument;
 import org.infinispan.schematic.internal.document.ObservableDocumentEditor;
 import org.infinispan.schematic.internal.document.Paths;
@@ -306,8 +306,8 @@ public class Schematic {
             apply(changes, null);
         }
 
-        private final static Entry newEntry( int index,
-                                             Object value ) {
+        private final static Array.Entry newEntry( int index,
+                                                   Object value ) {
             return new BasicArray.BasicEntry(index, value);
         }
 
@@ -344,12 +344,12 @@ public class Schematic {
                         observer.removeArrayValue(op.getParentPath(), newEntry(op.getIndex(), op.getRemovedValue()));
                     } else if (operation instanceof RetainAllValuesOperation) {
                         RetainAllValuesOperation op = (RetainAllValuesOperation)operation;
-                        for (Entry entry : op.getRemovedEntries()) {
+                        for (Array.Entry entry : op.getRemovedEntries()) {
                             observer.removeArrayValue(op.getParentPath(), entry);
                         }
                     } else if (operation instanceof RemoveAllValuesOperation) {
                         RemoveAllValuesOperation op = (RemoveAllValuesOperation)operation;
-                        for (Entry entry : op.getRemovedEntries()) {
+                        for (Array.Entry entry : op.getRemovedEntries()) {
                             observer.removeArrayValue(op.getParentPath(), entry);
                         }
                     } else if (operation instanceof ClearOperation) {

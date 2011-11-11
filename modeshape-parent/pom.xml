@@ -49,6 +49,26 @@
 			<timezone>-6</timezone>
 		</developer>
 		<developer>
+			<name>Van Halbert</name>
+			<id>vhalbert@redhat.com</id>
+			<email>vhalbert@redhat.com</email>
+			<organization>JBoss, a division of Red Hat</organization>
+			<roles>
+				<role>Developer</role>
+			</roles>
+			<timezone>-6</timezone>
+		</developer>
+		<developer>
+			<name>Horia Chiorean</name>
+			<id>hchiorea@redhat.com</id>
+			<email>hchiorea@redhat.com</email>
+			<organization>JBoss, a division of Red Hat</organization>
+			<roles>
+				<role>Developer</role>
+			</roles>
+			<timezone>+2</timezone>
+		</developer>
+		<developer>
 			<name>John Verhaeg</name>
 			<id>johnny</id>
 			<email>jverhaeg@redhat.com</email>
@@ -122,15 +142,6 @@
 			</roles>
 			<timezone>+1</timezone>
 		</developer>
-		<developer>
-			<name>Van Halbert</name>
-			<id>vhalbert@redhat.com</id>
-			<email>vhalbert@redhat.com</email>
-			<roles>
-				<role>Developer</role>
-			</roles>
-			<timezone>-6</timezone>
-		</developer>
 	</developers>
 	
 	<contributors>
@@ -150,6 +161,7 @@
 
 		<!-- Used to define the JCR Descriptor value -->
 		<jcr.repository.vendor>${project.organization.name}</jcr.repository.vendor>
+		<jcr.repository.name>ModeShape</jcr.repository.name>
 
 		<!-- Instruct the build to use only UTF-8 encoding for source code -->
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

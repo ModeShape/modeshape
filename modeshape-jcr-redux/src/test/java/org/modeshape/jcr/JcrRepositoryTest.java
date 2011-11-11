@@ -33,7 +33,13 @@ import java.util.LinkedList;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Repository;
+import javax.jcr.Session;
 import javax.jcr.ValueFormatException;
+import org.infinispan.config.Configuration;
+import org.infinispan.manager.CacheContainer;
+import org.infinispan.test.TestingUtil;
+import org.infinispan.test.fwk.TestCacheManagerFactory;
+import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -48,12 +54,17 @@ import org.modeshape.jcr.cache.WorkspaceNotFoundException;
 
 public class JcrRepositoryTest {
 
+    private CacheContainer cm;
     private RepositoryConfiguration config;
     private JcrRepository repository;
 
     @Before
     public void beforeEach() throws Exception {
-        config = new RepositoryConfiguration("repoName");
+        Configuration c = new Configuration();
+        c = c.fluent().transaction().transactionManagerLookup(new DummyTransactionManagerLookup()).build();
+        cm = TestCacheManagerFactory.createCacheManager(c);
+
+        config = new RepositoryConfiguration("repoName", cm);
         repository = new JcrRepository(config);
         repository.start();
     }
@@ -65,6 +76,26 @@ public class JcrRepositoryTest {
         } finally {
             repository = null;
             config = null;
+            try {
+                TestingUtil.killCacheManagers(cm);
+            } finally {
+                cm = null;
+            }
+        }
+    }
+
+    @Test
+    public void shouldCreateRepositoryInstanceWithoutPassingInCacheManager() throws Exception {
+        // This will use log: "Falling back to DummyTransactionManager from Infinispan"
+        // since we're not specifying a transaction manager ...
+        RepositoryConfiguration config = new RepositoryConfiguration("repoName");
+        JcrRepository repository = new JcrRepository(config);
+        repository.start();
+        try {
+            Session session = repository.login();
+            assertThat(session, is(notNullValue()));
+        } finally {
+            repository.shutdown().get(3L, TimeUnit.SECONDS);
         }
     }
 
@@ -265,11 +296,11 @@ public class JcrRepositoryTest {
         assertThat(repository.getDescriptor(Repository.OPTION_VERSIONING_SUPPORTED), is("true"));
         assertThat(repository.getDescriptor(Repository.QUERY_XPATH_DOC_ORDER), is("false"));
         assertThat(repository.getDescriptor(Repository.QUERY_XPATH_POS_INDEX), is("true"));
-        assertThat(repository.getDescriptor(Repository.REP_NAME_DESC), is("ModeShape JCR Repository"));
+        assertThat(repository.getDescriptor(Repository.REP_NAME_DESC), is("ModeShape"));
         assertThat(repository.getDescriptor(Repository.REP_VENDOR_DESC), is("JBoss, a division of Red Hat"));
         assertThat(repository.getDescriptor(Repository.REP_VENDOR_URL_DESC), is("http://www.modeshape.org"));
         assertThat(repository.getDescriptor(Repository.REP_VERSION_DESC), is(notNullValue()));
-        // assertThat(repository.getDescriptor(Repository.REP_VERSION_DESC), is("1.1-SNAPSHOT"));
+        assertThat(repository.getDescriptor(Repository.REP_VERSION_DESC).startsWith("3."), is(true));
         assertThat(repository.getDescriptor(Repository.SPEC_NAME_DESC), is(JcrI18n.SPEC_NAME_DESC.text()));
         assertThat(repository.getDescriptor(Repository.SPEC_VERSION_DESC), is("2.0"));
     }

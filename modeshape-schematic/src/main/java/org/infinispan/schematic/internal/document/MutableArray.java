@@ -124,20 +124,4 @@ public interface MutableArray extends Array, MutableDocument {
      */
     List<Entry> retainAllValues( Collection<?> values );
 
-    static interface Entry extends Comparable<Entry> {
-        /**
-         * Get the index for this entry.
-         * 
-         * @return the index
-         */
-        int getIndex();
-
-        /**
-         * Get the value for this entry.
-         * 
-         * @return the value
-         */
-        Object getValue();
-    }
-
 }
