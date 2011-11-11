@@ -35,7 +35,6 @@ import org.infinispan.schematic.internal.delta.RemoveAtIndexOperation;
 import org.infinispan.schematic.internal.delta.RemoveValueOperation;
 import org.infinispan.schematic.internal.delta.RetainAllValuesOperation;
 import org.infinispan.schematic.internal.delta.SetValueOperation;
-import org.infinispan.schematic.internal.document.MutableArray.Entry;
 
 public class ObservableArrayEditor extends ArrayEditor {
 

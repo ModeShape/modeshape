@@ -41,4 +41,30 @@ public interface Array extends Document, List<Object> {
     @Override
     Array clone();
 
+    /**
+     * Get the entries in this array.
+     * 
+     * @return an iterable containing the array's entries; never null
+     */
+    Iterable<Entry> getEntries();
+
+    /**
+     * A representation of an entry within the array.
+     */
+    static interface Entry extends Comparable<Entry> {
+        /**
+         * Get the index for this entry.
+         * 
+         * @return the index
+         */
+        int getIndex();
+
+        /**
+         * Get the value for this entry.
+         * 
+         * @return the value
+         */
+        Object getValue();
+    }
+
 }

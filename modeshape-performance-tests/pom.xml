@@ -275,14 +275,6 @@
   </dependencies>
   <build>
     <resources>
-      <resource>
-        <filtering>false</filtering>
-        <directory>src/main/resources</directory>
-        <includes>
-          <include>*</include>
-          <include>**/*</include>
-        </includes>
-      </resource>
 	    <!-- Apply the properties set in the POM to the resource files -->
       <resource>
         <filtering>true</filtering>
@@ -305,55 +297,6 @@
                 <showWarnings>false</showWarnings>
             </configuration>
       </plugin>
-      <!--
-    	Adding OSGI metadata to the JAR without changing the packaging type.
-      -->
-      <plugin>
-        <artifactId>maven-jar-plugin</artifactId>
-        <configuration>
-          <archive>
-            <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
-          </archive>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.felix</groupId>
-        <artifactId>maven-bundle-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>bundle-manifest</id>
-            <phase>process-classes</phase>
-            <goals>
-              <goal>manifest</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
 		</plugins>
   </build>
-	<profiles>
-		<profile>
-			<id>assembly</id>
-			<build>
-	    	<plugins>
-		      <plugin>
-		        <artifactId>maven-assembly-plugin</artifactId>
-		        <configuration>
-              <descriptors>
-                <descriptor>src/main/assembly/with-dependencies.xml</descriptor>
-              </descriptors>
-		        </configuration>
-		        <executions>
-		          <execution>
-		            <phase>package</phase>
-		            <goals>
-		              <goal>single</goal>
-		            </goals>
-		          </execution>
-		        </executions>
-		      </plugin>
-				</plugins>
-			</build>
-		</profile>
-	</profiles>
 </project>

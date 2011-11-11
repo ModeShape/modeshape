@@ -42,7 +42,6 @@ import org.infinispan.schematic.document.MaxKey;
 import org.infinispan.schematic.document.MinKey;
 import org.infinispan.schematic.document.ObjectId;
 import org.infinispan.schematic.document.Symbol;
-import org.infinispan.schematic.internal.document.MutableArray.Entry;
 
 public class ArrayEditor implements EditableArray {
 
@@ -713,6 +712,11 @@ public class ArrayEditor implements EditableArray {
     @Override
     public int lastIndexOf( Object o ) {
         return array.lastIndexOf(o);
+    }
+
+    @Override
+    public Iterable<Entry> getEntries() {
+        return array.getEntries();
     }
 
     @Override

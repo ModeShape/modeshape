@@ -285,6 +285,36 @@ public class BasicArray implements MutableArray {
     }
 
     @Override
+    public Iterable<Entry> getEntries() {
+        return new Iterable<Array.Entry>() {
+            @Override
+            public Iterator<Entry> iterator() {
+                return new Iterator<Array.Entry>() {
+                    @SuppressWarnings( "synthetic-access" )
+                    private final Iterator<Object> valueIter = BasicArray.this.values.iterator();
+                    private int index = 0;
+
+                    @Override
+                    public boolean hasNext() {
+                        return valueIter.hasNext();
+                    }
+
+                    @Override
+                    public Entry next() {
+                        Object value = valueIter.next();
+                        return new BasicEntry(index++, value);
+                    }
+
+                    @Override
+                    public void remove() {
+                        throw new UnsupportedOperationException();
+                    }
+                };
+            }
+        };
+    }
+
+    @Override
     public Boolean getBoolean( String name ) {
         Object value = get(name);
         return (value instanceof Boolean) ? (Boolean)value : null;

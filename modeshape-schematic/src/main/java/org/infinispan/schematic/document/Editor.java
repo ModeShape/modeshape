@@ -21,7 +21,6 @@
  */
 package org.infinispan.schematic.document;
 
-import org.infinispan.schematic.internal.document.MutableArray.Entry;
 
 public interface Editor extends EditableDocument {
 
@@ -68,7 +67,7 @@ public interface Editor extends EditableDocument {
          * @param entry the entry containing the new value and the index
          */
         void setArrayValue( Path path,
-                            Entry entry );
+                            Array.Entry entry );
 
         /**
          * Insert the entry into the array at the given path.
@@ -77,7 +76,7 @@ public interface Editor extends EditableDocument {
          * @param entry the entry containing the new value and the index
          */
         void addArrayValue( Path path,
-                            Entry entry );
+                            Array.Entry entry );
 
         /**
          * Remove the entry from the array at the given path.
@@ -86,7 +85,7 @@ public interface Editor extends EditableDocument {
          * @param entry the entry containing the new value and the index
          */
         void removeArrayValue( Path path,
-                               Entry entry );
+                               Array.Entry entry );
 
         /**
          * Remove all fields from the document at the supplied path.

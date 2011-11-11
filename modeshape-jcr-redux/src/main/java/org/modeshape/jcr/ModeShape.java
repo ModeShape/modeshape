@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 import org.modeshape.common.collection.UnmodifiableProperties;
+import org.modeshape.common.util.Logger;
 
 /**
  * Information about ModeShape.
@@ -56,6 +57,10 @@ public final class ModeShape {
                 }
             }
         }
+    }
+
+    static {
+        Logger.getLogger(JcrRepository.class).info(JcrI18n.initializing, getName(), getVersion());
     }
 
     /**
