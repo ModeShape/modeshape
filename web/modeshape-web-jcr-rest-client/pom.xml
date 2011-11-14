@@ -185,7 +185,7 @@
 					<plugin>
 						<groupId>org.codehaus.cargo</groupId>
 						<artifactId>cargo-maven2-plugin</artifactId>
-          	<version>${cargo.maven2.plugin.version}</version>
+          	            <version>${maven.codehaus.cargo.plugin.version}</version>
 						<executions>
 							<execution>
 								<id>start-container</id>
@@ -226,7 +226,6 @@
 									</deployable>
 								</deployables>
 							</configuration>
-							<wait>false</wait>
 						</configuration>
 					</plugin>
 					<!--
@@ -336,7 +335,7 @@
 					<plugin>
 						<groupId>org.codehaus.cargo</groupId>
 						<artifactId>cargo-maven2-plugin</artifactId>
-          	<version>${cargo.maven2.plugin.version}</version>
+          	            <version>${maven.codehaus.cargo.plugin.version}</version>
 						<executions>
 							<execution>
 								<id>start-container</id>
@@ -380,7 +379,6 @@
 									</deployable>
 								</deployables>
 							</configuration>
-							<wait>false</wait>
 						</configuration>
 					</plugin>
 					<!--
