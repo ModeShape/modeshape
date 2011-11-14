@@ -32,8 +32,6 @@ import org.modeshape.common.i18n.I18n;
 @Immutable
 public final class JcrI18n {
 
-    public static I18n description;
-
     public static I18n initializing;
 
     public static I18n engineStarting;
@@ -266,8 +264,8 @@ public final class JcrI18n {
     public static I18n problemRefreshingNodeTypesFromSystem;
     public static I18n errorRefreshingNodeTypes;
 
-    public static I18n errorsParsingCnd;
-    public static I18n errorsParsingCndFromStream;
+    public static I18n errorsParsingNodeTypeDefinitions;
+    public static I18n errorsParsingStreamOfNodeTypeDefinitions;
 
     // Lock messages
     public static I18n nodeNotLockable;
@@ -331,6 +329,7 @@ public final class JcrI18n {
     public static I18n storageRelatedConfigurationChangesWillTakeEffectAfterShutdown;
 
     public static I18n failedWhileRollingBackDestroyToRuntimeError;
+    public static I18n unexpectedException;
 
     static {
         try {

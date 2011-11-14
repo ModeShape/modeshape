@@ -56,6 +56,7 @@ import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.NodeNotFoundException;
 import org.modeshape.jcr.cache.SessionCache;
+import org.modeshape.jcr.value.Binary;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.NamespaceRegistry;
@@ -361,7 +362,7 @@ public class SessionNode implements MutableCachedNode {
         assert mixinName != null;
         if (isNew) {
             // We have the actual properties, so just update the jcr:mixinTypes property ...
-            Property mixinTypes = cache.getContext().getPropertyFactory().create(JcrLexicon.MIXIN_TYPES, mixinName);
+            Property mixinTypes = cache.getContext().getPropertyFactory().create(JcrLexicon.MIXIN_TYPES, new Name[] {mixinName});
             Property existing = changedProperties().putIfAbsent(mixinTypes.getName(), mixinTypes);
             while (existing != null) {
                 // There was an existing property ...
@@ -758,6 +759,10 @@ public class SessionNode implements MutableCachedNode {
             // Try to remove it from the appended nodes ...
             toBeMoved = appended.remove(key);
         }
+
+        // We need a mutable node in the session for the child, so that we can find changes in the parent ...
+        cache.mutable(key);
+
         if (toBeMoved == null) {
             // It wasn't appended, so verify it is really a child ...
             toBeMoved = references.getChild(key);
@@ -786,8 +791,12 @@ public class SessionNode implements MutableCachedNode {
         session.assertInSession(this);
         ChildReferences references = getChildReferences(session);
         ChildReference node = references.getChild(key);
-        if (node != null) throw new NodeNotFoundException(key);
+        if (node == null) throw new NodeNotFoundException(key);
 
+        // We need a mutable node in the session for the child, so that we can find changes in the parent ...
+        cache.mutable(key);
+
+        // Now perform the rename ...
         changedChildren.renameTo(key, newName);
     }
 
@@ -807,6 +816,24 @@ public class SessionNode implements MutableCachedNode {
             // Add it as a parent of this node ...
             appended(true).append(childKey, name);
         }
+    }
+
+    @Override
+    public String getEtag( SessionCache cache ) {
+        StringBuilder sb = new StringBuilder();
+        Iterator<Property> iter = getProperties(cache);
+        while (iter.hasNext()) {
+            Property prop = iter.next();
+            if (prop.isEmpty()) continue;
+            for (Object value : prop) {
+                if (value instanceof Binary) {
+                    Binary binary = (Binary)value;
+                    // we don't care about the string encoding, as long as its consistent and will change if a property changes
+                    sb.append(binary.getHash());
+                }
+            }
+        }
+        return sb.toString();
     }
 
     @Override
@@ -1001,6 +1028,18 @@ public class SessionNode implements MutableCachedNode {
         public boolean isRemoved( ChildReference ref ) {
             Set<NodeKey> removals = this.removals.get();
             return removals == null ? false : removals.contains(ref.getKey());
+        }
+
+        @Override
+        public boolean isRenamed( ChildReference ref ) {
+            Map<NodeKey, Name> renames = this.newNames.get();
+            return renames == null ? false : renames.containsKey(ref.getKey());
+        }
+
+        @Override
+        public boolean isRenamed( Name newName ) {
+            Map<NodeKey, Name> renames = this.newNames.get();
+            return renames == null ? false : renames.containsValue(newName);
         }
 
         /**

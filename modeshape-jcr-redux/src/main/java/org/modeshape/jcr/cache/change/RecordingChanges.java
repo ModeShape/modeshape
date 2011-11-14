@@ -34,6 +34,7 @@ import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.value.DateTime;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
+import org.modeshape.jcr.value.Path.Segment;
 import org.modeshape.jcr.value.Property;
 
 /**
@@ -89,6 +90,13 @@ public class RecordingChanges implements Changes, ChangeSet {
                              NodeKey parentKey,
                              Path path ) {
         events.add(new NodeRemoved(key, parentKey, path));
+    }
+
+    @Override
+    public void nodeRenamed( NodeKey key,
+                             Path newPath,
+                             Segment oldName ) {
+        events.add(new NodeRenamed(key, newPath, oldName));
     }
 
     @Override

@@ -101,6 +101,12 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
     private volatile int nodeTypesVersion = 1;
     private volatile JcrNodeDefinition ntUnstructuredSnsChildDefinition;
     private volatile JcrNodeDefinition ntUnstructuredSingleChildDefinition;
+    /** The set of names for the node type that are 'mix:created'. See {@link #isCreatedType} */
+    private Set<Name> createdNodeTypeNames = new HashSet<Name>();
+    /** The set of names for the node type that are 'mix:lastModified'. See {@link #isLastModifiedType} */
+    private Set<Name> lastModifiedNodeTypeNames = new HashSet<Name>();
+    /** The set of names for the node type that are 'mix:etag'. See {@link #isLastModifiedType} */
+    private Set<Name> etagNodeTypeNames = new HashSet<Name>();
 
     // TODO: Query
 
@@ -158,6 +164,75 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
 
     protected final ValueFactory<String> strings() {
         return this.context.getValueFactories().getStringFactory();
+    }
+
+    /**
+     * Determine if the named node type is or subtypes the 'mix:created' mixin type.
+     * 
+     * @param nodeTypeName the node type name
+     * @return true if the named node type is or subtypes 'mix:created', or false otherwise
+     */
+    public boolean isCreatedType( Name nodeTypeName ) {
+        return createdNodeTypeNames.contains(nodeTypeName);
+    }
+
+    /**
+     * Determine if one of the named node type is or subtypes the 'mix:created' mixin type.
+     * 
+     * @param nodeTypeNames the node type names; may not be null
+     * @return true if the named node type is or subtypes 'mix:created', or false otherwise
+     */
+    public boolean isCreatedType( Iterable<Name> nodeTypeNames ) {
+        for (Name nodeTypeName : nodeTypeNames) {
+            if (createdNodeTypeNames.contains(nodeTypeName)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Determine if the named node type is or subtypes the 'mix:lastModified' mixin type.
+     * 
+     * @param nodeTypeName the node type name
+     * @return true if the named node type is or subtypes 'mix:lastModified', or false otherwise
+     */
+    public boolean isLastModifiedType( Name nodeTypeName ) {
+        return lastModifiedNodeTypeNames.contains(nodeTypeName);
+    }
+
+    /**
+     * Determine if one of the named node type is or subtypes the 'mix:lastModified' mixin type.
+     * 
+     * @param nodeTypeNames the node type names; may not be null
+     * @return true if the named node type is or subtypes 'mix:lastModified', or false otherwise
+     */
+    public boolean isLastModifiedType( Iterable<Name> nodeTypeNames ) {
+        for (Name nodeTypeName : nodeTypeNames) {
+            if (lastModifiedNodeTypeNames.contains(nodeTypeName)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Determine if the named node type is or subtypes the 'mix:etag' mixin type.
+     * 
+     * @param nodeTypeName the node type name
+     * @return true if the named node type is or subtypes 'mix:etag', or false otherwise
+     */
+    public boolean isETagType( Name nodeTypeName ) {
+        return etagNodeTypeNames.contains(nodeTypeName);
+    }
+
+    /**
+     * Determine if one of the named node type is or subtypes the 'mix:etag' mixin type.
+     * 
+     * @param nodeTypeNames the node type names; may not be null
+     * @return true if the named node type is or subtypes 'mix:etag', or false otherwise
+     */
+    public boolean isETagType( Iterable<Name> nodeTypeNames ) {
+        for (Name nodeTypeName : nodeTypeNames) {
+            if (etagNodeTypeNames.contains(nodeTypeName)) return true;
+        }
+        return false;
     }
 
     /**
@@ -1400,7 +1475,7 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
             // this.schemata = null;
 
             // Remove the node types from persistent storage ...
-            SessionCache system = repository.createSystemSession(context, true);
+            SessionCache system = repository.createSystemSession(context, false);
             for (JcrNodeType nodeType : removedNodeTypes) {
                 for (JcrPropertyDefinition propDefn : nodeType.getDeclaredPropertyDefinitions()) {
                     // unregister the definition ...
@@ -1670,6 +1745,19 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
 
                 if (system != null) system.save();
                 ++nodeTypesVersion;
+
+                // Update the node types that are 'mix:created' or 'mix:lastModified' ...
+                Set<Name> createdNodeTypes = new HashSet<Name>();
+                Set<Name> lastModifiedNodeTypes = new HashSet<Name>();
+                Set<Name> etagNodeTypeNames = new HashSet<Name>();
+                for (JcrNodeType nodeType : nodeTypes.values()) {
+                    if (nodeType.isNodeType(JcrMixLexicon.CREATED)) createdNodeTypes.add(nodeType.getInternalName());
+                    if (nodeType.isNodeType(JcrMixLexicon.LAST_MODIFIED)) lastModifiedNodeTypes.add(nodeType.getInternalName());
+                    if (nodeType.isNodeType(JcrMixLexicon.ETAG)) etagNodeTypeNames.add(nodeType.getInternalName());
+                }
+                this.createdNodeTypeNames = createdNodeTypes;
+                this.lastModifiedNodeTypeNames = lastModifiedNodeTypes;
+                this.etagNodeTypeNames = etagNodeTypeNames;
             }
         } finally {
             nodeTypeManagerLock.writeLock().unlock();

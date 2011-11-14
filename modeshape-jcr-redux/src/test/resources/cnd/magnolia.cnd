@@ -1,0 +1,63 @@
+/*
+ * Copyright 2004-2005 The Apache Software Foundation or its licensors,
+ *      as applicable.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+//------------------------------------------------------------------------------
+// N A M E S P A C E S
+//------------------------------------------------------------------------------
+<jcr='http://www.jcp.org/jcr/1.0'>
+<nt='http://www.jcp.org/jcr/nt/1.0'>
+<mix='http://www.jcp.org/jcr/mix/1.0'>
+<mgnl='http://www.magnolia.info/jcr/mgnl'>
+
+//------------------------------------------------------------------------------
+// N O D E T Y P E S
+//------------------------------------------------------------------------------
+
+[mgnl:metaData] > nt:hierarchyNode, mix:referenceable orderable
+- * (undefined) copy
+
+[mgnl:content] > nt:hierarchyNode, mix:referenceable orderable
++ MetaData (mgnl:metaData) = mgnl:metaData autocreated mandatory copy
+- * (undefined) copy
+- * (undefined) multiple copy
++ * (nt:base) copy
++ * (nt:base) sns copy
+
+[mgnl:contentNode] > nt:hierarchyNode, mix:referenceable orderable
+- * (undefined) copy
+- * (undefined) multiple copy
++ MetaData (mgnl:metaData) = mgnl:metaData autocreated mandatory copy
++ * (nt:base) sns copy
+
+[mgnl:folder] > nt:folder, mix:referenceable orderable
+- * (undefined) copy
+- * (undefined) multiple copy
++ MetaData (mgnl:metaData) = mgnl:metaData autocreated mandatory copy
++ * (nt:base) sns copy
+
+[mgnl:resource] > nt:resource
+- * (undefined) copy
+
+[mgnl:reserve] > nt:hierarchyNode orderable
++ * (nt:base) sns copy
+- * (undefined) copy
+
+[mgnl:user] > mgnl:content orderable
+
+[mgnl:role] > mgnl:content orderable
+
+[mgnl:group] > mgnl:content orderable

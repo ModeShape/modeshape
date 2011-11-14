@@ -168,6 +168,10 @@ public class LazyCachedNode implements CachedNode {
         return parentReferenceToSelf(workspaceCache(cache)).getSegment();
     }
 
+    protected Segment getSegment( WorkspaceCache cache ) {
+        return parentReferenceToSelf(cache).getSegment();
+    }
+
     @Override
     public Path getPath( NodeCache cache ) {
         WorkspaceCache wsCache = workspaceCache(cache);

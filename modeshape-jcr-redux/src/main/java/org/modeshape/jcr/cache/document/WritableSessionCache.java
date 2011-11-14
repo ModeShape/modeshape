@@ -57,6 +57,7 @@ import org.modeshape.jcr.cache.CachedNode.ReferenceType;
 import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.ChildReferences;
 import org.modeshape.jcr.cache.LockFailureException;
+import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.NodeNotFoundException;
@@ -207,6 +208,11 @@ public class WritableSessionCache extends AbstractSessionCache {
      */
     @Override
     public void save() {
+        save((PreSave)null);
+    }
+
+    @Override
+    public void save( PreSave preSaveOperation ) {
         if (!this.hasChanges()) return;
 
         Logger logger = Logger.getLogger(getClass());
@@ -218,6 +224,15 @@ public class WritableSessionCache extends AbstractSessionCache {
         Lock lock = this.lock.writeLock();
         try {
             lock.lock();
+
+            // Before we start the transaction, apply the pre-save operations to the new and changed nodes ...
+            if (preSaveOperation != null) {
+                SaveContext saveContext = new BasicSaveContext(context());
+                for (MutableCachedNode node : this.changedNodes.values()) {
+                    if (node == REMOVED) continue;
+                    preSaveOperation.process(node, saveContext);
+                }
+            }
 
             try {
                 // Try to begin a transaction, if there is a transaction manager ...
@@ -284,7 +299,8 @@ public class WritableSessionCache extends AbstractSessionCache {
     }
 
     @Override
-    public void save( CachedNode node ) {
+    public void save( CachedNode node,
+                      PreSave preSaveOperation ) {
         if (!this.hasChanges()) return;
 
         Path topPath = node.getPath(this);
@@ -300,12 +316,29 @@ public class WritableSessionCache extends AbstractSessionCache {
         try {
             lock.lock();
 
-            // Figure out which changed nodes are at or below the specified path ...
+            // Before we start the transaction, apply the pre-save operations to the new and changed nodes below the path ...
             List<NodeKey> savedNodesInOrder = new LinkedList<NodeKey>();
-            for (NodeKey key : this.changedNodesInOrder) {
-                Path path = getNode(key).getPath(this);
-                if (topPath.isAtOrAbove(path)) savedNodesInOrder.add(key);
+            if (preSaveOperation != null) {
+                SaveContext saveContext = new BasicSaveContext(context());
+                for (NodeKey key : this.changedNodesInOrder) {
+                    MutableCachedNode changedNode = this.changedNodes.get(key);
+                    if (changedNode == REMOVED) continue;
+                    Path path = changedNode.getPath(this);
+                    if (topPath.isAtOrAbove(path)) {
+                        preSaveOperation.process(changedNode, saveContext);
+                        savedNodesInOrder.add(key);
+                    }
+                }
+            } else {
+                for (NodeKey key : this.changedNodesInOrder) {
+                    MutableCachedNode changedNode = this.changedNodes.get(key);
+                    if (changedNode == REMOVED) continue;
+                    Path path = changedNode.getPath(this);
+                    if (topPath.isAtOrAbove(path)) savedNodesInOrder.add(key);
+                }
             }
+
+            // Figure out which changed nodes are at or below the specified path ...
 
             try {
                 // Try to begin a transaction, if there is a transaction manager ...
@@ -649,21 +682,25 @@ public class WritableSessionCache extends AbstractSessionCache {
                             if (persistent != null) workspacePaths.getPath(persistent);
                         }
                     }
+
                     // Now change the children ...
                     translator.changeChildren(key, doc, changedChildren, appended);
 
                     // Generate events for renames, as this is only captured in the parent node ...
-                    for (Map.Entry<NodeKey, Name> renameEntry : changedChildren.getNewNames().entrySet()) {
-                        NodeKey renamedKey = renameEntry.getKey();
-                        CachedNode oldRenamedNode = workspaceCache.getNode(renamedKey);
-                        if (oldRenamedNode == null) {
-                            // The node was created in this session, so we can ignore this ...
-                            continue;
+                    Map<NodeKey, Name> newNames = changedChildren.getNewNames();
+                    if (!newNames.isEmpty()) {
+                        for (Map.Entry<NodeKey, Name> renameEntry : newNames.entrySet()) {
+                            NodeKey renamedKey = renameEntry.getKey();
+                            CachedNode oldRenamedNode = workspaceCache.getNode(renamedKey);
+                            if (oldRenamedNode == null) {
+                                // The node was created in this session, so we can ignore this ...
+                                continue;
+                            }
+                            CachedNode renamedNode = getNode(renamedKey);
+                            Path renamedFromPath = workspacePaths.getPath(oldRenamedNode);
+                            Path renamedToPath = sessionPaths.getPath(renamedNode);
+                            changes.nodeRenamed(renamedKey, renamedToPath, renamedFromPath.getLastSegment());
                         }
-                        CachedNode renamedNode = getNode(renamedKey);
-                        Path renamedToPath = sessionPaths.getPath(renamedNode);
-                        Path renamedFromPath = workspacePaths.getPath(oldRenamedNode);
-                        changes.nodeMoved(renamedKey, key, key, renamedToPath, renamedFromPath);
                     }
                 }
 
@@ -718,6 +755,10 @@ public class WritableSessionCache extends AbstractSessionCache {
                 paths.put(key, path); // even if null
             }
             return path;
+        }
+
+        public boolean removePath( NodeKey key ) {
+            return paths.remove(key) != null;
         }
     }
 

@@ -32,18 +32,16 @@ import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
-import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
+import org.modeshape.jcr.api.JcrTools;
 
-@Migrated
-public class JcrToolsTest {
-    private JcrEngine engine;
-    private Session session;
+/**
+ *
+ */
+public class JcrToolsTest extends SingleUseAbstractTest {
     private JcrTools tools;
     private Node personNode;
     private Node addressNode;
@@ -53,39 +51,11 @@ public class JcrToolsTest {
 
     private static final String DEF_TYPE = "nt:unstructured";
 
-    @BeforeClass
-    public static void beforeAll() {
-        // Initialize the JAAS configuration to allow for an admin login later
-        JaasTestUtil.initJaas("security/jaas.conf.xml");
-    }
-
-    @AfterClass
-    public static void afterAll() {
-        JaasTestUtil.releaseJaas();
-    }
-
     @Before
-    public void before() throws Exception {
+    @Override
+    public void beforeEach() throws Exception {
+        super.beforeEach();
         tools = new JcrTools();
-
-        String repositoryName = "ddlRepository";
-        String workspaceName = "default";
-        String repositorySource = "ddlRepositorySource";
-
-        JcrConfiguration config = new JcrConfiguration();
-        // Set up the in-memory source where we'll upload the content and where the sequenced output will be stored ...
-        config.repositorySource(repositorySource)
-              .usingClass(InMemoryRepositorySource.class)
-              .setDescription("The repository for our content")
-              .setProperty("defaultWorkspaceName", workspaceName);
-        // Set up the JCR repository to use the source ...
-        config.repository(repositoryName).setSource(repositorySource);
-
-        config.save();
-        this.engine = config.build();
-        this.engine.start();
-
-        this.session = this.engine.getRepository(repositoryName).login(workspaceName);
 
         Node rootNode = session.getRootNode();
 
@@ -107,21 +77,12 @@ public class JcrToolsTest {
         problems = new SimpleProblems();
     }
 
+    @Override
     @After
     public void afterEach() throws Exception {
-        if (this.session != null) {
-            this.session.logout();
-        }
-        if (this.engine != null) {
-            this.engine.shutdown();
-        }
+        super.afterEach();
     }
 
-    /**
-     * Test method for {@link org.modeshape.jcr.JcrTools#getNode(javax.jcr.Node, java.lang.String, boolean)}.
-     * 
-     * @throws RepositoryException
-     */
     @Test
     public void shouldGetNode() throws RepositoryException {
         Node node = tools.getNode(session.getRootNode(), "Person", true);
@@ -157,20 +118,12 @@ public class JcrToolsTest {
         }
     }
 
-    /**
-     * Test method for {@link org.modeshape.jcr.JcrTools#getReadable(javax.jcr.Node)}.
-     */
     @Test
     public void testGetReadable() {
         String personStr = tools.getReadable(personNode);
         assertThat(personStr, is("/Person"));
     }
 
-    /**
-     * Test method for {@link org.modeshape.jcr.JcrTools#findOrCreateNode(javax.jcr.Session, java.lang.String)}.
-     * 
-     * @throws RepositoryException
-     */
     @Test
     public void testCreateNodeSessionPath() throws RepositoryException {
         Node node = tools.findOrCreateNode(session, "Hobby");
@@ -204,11 +157,6 @@ public class JcrToolsTest {
         }
     }
 
-    /**
-     * Test method for {@link org.modeshape.jcr.JcrTools#findOrCreateNode(javax.jcr.Session, java.lang.String, java.lang.String)}.
-     * 
-     * @throws RepositoryException
-     */
     @Test
     public void testCreateNodeSessionPathType() throws RepositoryException {
         Node node = tools.findOrCreateNode(session, "Hobby", DEF_TYPE);
@@ -242,13 +190,6 @@ public class JcrToolsTest {
         }
     }
 
-    /**
-     * Test method for
-     * {@link org.modeshape.jcr.JcrTools#findOrCreateNode(javax.jcr.Session, java.lang.String, java.lang.String, java.lang.String)}
-     * .
-     * 
-     * @throws RepositoryException
-     */
     @Test
     public void testCreateNodeSessionPathTypeType() throws RepositoryException {
         Node node = tools.findOrCreateNode(session, "Hobby", DEF_TYPE, DEF_TYPE);
@@ -282,12 +223,6 @@ public class JcrToolsTest {
         }
     }
 
-    /**
-     * Test method for
-     * {@link org.modeshape.jcr.JcrTools#findOrCreateNode(javax.jcr.Node, java.lang.String, java.lang.String, java.lang.String)}.
-     * 
-     * @throws RepositoryException
-     */
     @Test
     public void shouldCreateNodeNodePathTypeType() throws RepositoryException {
         Node node = tools.findOrCreateNode(personNode, "Hobby", DEF_TYPE, "nt:unstructured");
@@ -320,11 +255,6 @@ public class JcrToolsTest {
         }
     }
 
-    /**
-     * Test method for {@link org.modeshape.jcr.JcrTools#findOrCreateChild(javax.jcr.Node, java.lang.String)}.
-     * 
-     * @throws RepositoryException
-     */
     @Test
     public void shouldCreateChildNodeWithParentName() throws RepositoryException {
         Node childNode = tools.findOrCreateChild(personNode, "Hobby");
@@ -357,11 +287,6 @@ public class JcrToolsTest {
         }
     }
 
-    /**
-     * Test method for {@link org.modeshape.jcr.JcrTools#findOrCreateChild(javax.jcr.Node, java.lang.String, java.lang.String)}.
-     * 
-     * @throws RepositoryException
-     */
     @Test
     public void testCreateChildNodeWithParentNameType() throws RepositoryException {
         Node childNode = tools.findOrCreateChild(personNode, "Hobby", DEF_TYPE);

@@ -65,6 +65,15 @@ class JcrLockManager implements LockManager {
         return lockTokens.containsKey(token);
     }
 
+    /**
+     * Unlocks all locks corresponding to the tokens held by the supplied session.
+     * 
+     * @throws RepositoryException if the session is not live
+     */
+    final void cleanLocks() throws RepositoryException {
+        lockManager.cleanLocks(session);
+    }
+
     @Override
     public void addLockToken( String lockToken ) throws LockException {
         CheckArg.isNotNull(lockToken, "lockToken");

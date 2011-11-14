@@ -21,43 +21,23 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.cache;
+package org.modeshape.jcr;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import org.junit.Test;
 
 /**
+ * An annotation that describes a test as being migrated to the 3.0 codebase.
  * 
+ * @see Test
  */
-public interface NodeCache {
+@Documented
+@Target( {ElementType.METHOD, ElementType.TYPE} )
+@Retention( RetentionPolicy.SOURCE )
+public @interface Migrated {
 
-    /**
-     * Clears all changes in the cache.
-     */
-    void clear();
-
-    /**
-     * Get the node key for the root node.
-     * 
-     * @return the root node's key; never null
-     */
-    NodeKey getRootKey();
-
-    /**
-     * Get the cached representation of the node with the supplied node key.
-     * 
-     * @param key the node key; may not be null
-     * @return the cached node, or null if there is no such node
-     */
-    CachedNode getNode( NodeKey key );
-
-    /**
-     * Get the cached representation of the node as represented by the supplied child reference. This is a convenience method that
-     * is equivalent to calling:
-     * 
-     * <pre>
-     * getNode(reference.getKey());
-     * </pre>
-     * 
-     * @param reference the child node reference; may not be null
-     * @return the cached node to which the reference points, or null if the child reference no longer points to a valid node
-     */
-    CachedNode getNode( ChildReference reference );
 }

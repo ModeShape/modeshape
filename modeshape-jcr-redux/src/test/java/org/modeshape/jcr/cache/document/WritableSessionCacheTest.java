@@ -28,6 +28,7 @@ import static org.junit.Assert.assertThat;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.statistic.Stopwatch;
+import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.SessionCache;
@@ -283,5 +284,76 @@ public class WritableSessionCacheTest extends AbstractSessionCacheTest {
         nodeB.getChildReferences(session1).getChild(name("newChild"), 10);
         total.stop();
         print("Time (getchild#10): " + total.getTotalDuration());
+    }
+
+    @Test
+    public void shouldAllowTransientlyRenamingChildNode() {
+        MutableCachedNode root = session1.mutable(session1.getRootKey());
+        MutableCachedNode node = root.createChild(session(), newKey("node"), name("node"), property("p1", "value"));
+        NodeKey childAKey = node.createChild(session(), newKey("childA"), name("childA"), property("p1", "value A")).getKey();
+        NodeKey childBKey = node.createChild(session(), newKey("childB"), name("childB"), property("p1", "value B")).getKey();
+        NodeKey childCKey = node.createChild(session(), newKey("childC"), name("childC"), property("p1", "value C")).getKey();
+        session1.save();
+
+        // Check the children ...
+        node = check(session1).mutableNode(node.getKey(), "/node");
+        check(session1).node(childAKey, "/node/childA");
+        check(session1).node(childBKey, "/node/childB");
+        check(session1).node(childCKey, "/node/childC");
+        check(session1).children(node.getKey(), "childA", "childB", "childC");
+
+        // Now transiently rename child b ...
+        node.renameChild(session1, childBKey, name("childD"));
+
+        // Check that the session uses the new name ...
+        CachedNode renamed = session1.getNode(childBKey);
+        assertThat(renamed.getSegment(session1), is(segment("childD")));
+
+        check(session1).node("/node");
+        check(session1).node("/node/childA");
+        check(session1).node("/node/childC");
+        check(session1).node("/node/childD");
+        check(session1).noNode("/node/childB");
+        check(session1).children(node.getKey(), "childA", "childD", "childC");
+    }
+
+    @Test
+    public void shouldAllowAccessingRenamedChildNodeAfterPersisting() {
+        MutableCachedNode root = session1.mutable(session1.getRootKey());
+        MutableCachedNode node = root.createChild(session(), newKey("node"), name("node"), property("p1", "value"));
+        NodeKey childAKey = node.createChild(session(), newKey("childA"), name("childA"), property("p1", "value A")).getKey();
+        NodeKey childBKey = node.createChild(session(), newKey("childB"), name("childB"), property("p1", "value B")).getKey();
+        NodeKey childCKey = node.createChild(session(), newKey("childC"), name("childC"), property("p1", "value C")).getKey();
+        session1.save();
+
+        // Check the children ...
+        node = check(session1).mutableNode(node.getKey(), "/node");
+        check(session1).node(childAKey, "/node/childA");
+        check(session1).node(childBKey, "/node/childB");
+        check(session1).node(childCKey, "/node/childC");
+        check(session1).children(node.getKey(), "childA", "childB", "childC");
+
+        // Now transiently rename child b ...
+        node.renameChild(session1, childBKey, name("childD"));
+
+        // Now save ...
+        session1.save();
+
+        check(session1).node("/node");
+        check(session1).node("/node/childA");
+        check(session1).node("/node/childC");
+        check(session1).node("/node/childD");
+        check(session1).noNode("/node/childB");
+        check(session1).children(node.getKey(), "childA", "childD", "childC");
+    }
+
+    @Test
+    public void shouldAllowTransientlyMovingNode() {
+
+    }
+
+    @Test
+    public void shouldAllowAccessingRenamedMovedNodeAfterPersisting() {
+
     }
 }

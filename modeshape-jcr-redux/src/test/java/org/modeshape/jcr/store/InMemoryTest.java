@@ -48,7 +48,7 @@ import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.RepositoryConfiguration;
 
-public class InMemoryPerformanceTest {
+public class InMemoryTest {
 
     private static final String LARGE_STRING_VALUE = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed fermentum iaculis placerat. Mauris condimentum dapibus pretium. Vestibulum gravida sodales tellus vitae porttitor. Nunc dictum, eros vel adipiscing pellentesque, sem mi iaculis dui, a aliquam neque magna non turpis. Maecenas imperdiet est eu lorem placerat mattis. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Vestibulum scelerisque molestie tristique. Mauris nibh diam, vestibulum eu condimentum at, facilisis at nisi. Maecenas vehicula accumsan lacus in venenatis. Nulla nisi eros, fringilla at dapibus mollis, pharetra at urna. Praesent in risus magna, at iaculis sapien. Fusce id velit id dui tempor hendrerit semper a nunc. Nam eget mauris tellus.";
     private static final String SMALL_STRING_VALUE = "The quick brown fox jumped over the moon. What? ";
@@ -142,7 +142,7 @@ public class InMemoryPerformanceTest {
     }
 
     @Test
-    public void shouldAllowCreatingManyUnstructuredNodesWithSameNameSiblings() throws Exception {
+    public void shouldAllowCreatingMultipleUnstructuredNodesWithSameNameSiblings() throws Exception {
         Stopwatch sw = new Stopwatch();
         System.out.print("Iterating ");
         for (int i = 0; i != 4; ++i) {
@@ -182,19 +182,19 @@ public class InMemoryPerformanceTest {
     public void shouldAllowCreatingManyUnstructuredNodesWithNoSameNameSiblings() throws Exception {
         Stopwatch sw = new Stopwatch();
         System.out.print("Iterating ");
-        for (int i = 0; i != 4; ++i) {
+        for (int i = 0; i != 2; ++i) {
             System.out.print(".");
             // Each iteration adds another node under the root and creates the many nodes under that node ...
             Node node = session.getRootNode().addNode("testNode");
             session.save();
 
             int count = 10;
-            if (i > 2) sw.start();
+            if (i > 1) sw.start();
             for (int j = 0; j != count; ++j) {
                 node.addNode("childNode" + j);
             }
             session.save();
-            if (i > 2) sw.stop();
+            if (i > 1) sw.stop();
 
             // Now add another node ...
             node.addNode("oneMore");

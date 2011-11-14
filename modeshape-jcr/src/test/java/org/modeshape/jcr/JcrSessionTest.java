@@ -66,9 +66,7 @@ import org.modeshape.graph.JaasSecurityContext;
 import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
 
-/**
- * @author jverhaeg
- */
+@Migrated
 public class JcrSessionTest extends AbstractSessionTest {
 
     private static final String MULTI_LINE_VALUE = "Line\t1\nLine 2\rLine 3\r\nLine 4";

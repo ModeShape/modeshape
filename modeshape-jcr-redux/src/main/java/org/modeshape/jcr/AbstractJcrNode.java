@@ -245,6 +245,16 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         return key.toString();
     }
 
+    /**
+     * Get the absolute and normalized identifier path for this node, regardless of whether this node is referenceable.
+     * 
+     * @return the node's identifier path; never null
+     * @throws RepositoryException if there is an error accessing the identifier of this node
+     */
+    final String identifierPath() throws RepositoryException {
+        return "[" + getIdentifier() + "]";
+    }
+
     @Override
     public final JcrSession getSession() {
         return session();
@@ -637,7 +647,11 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             }
             // We know it's a resolved relative path with more than one segment ...
             if (path.size() > 1) {
-                return session().node(node(), path) != null;
+                try {
+                    return session().node(node(), path) != null;
+                } catch (PathNotFoundException e) {
+                    return false;
+                }
             }
             segment = path.getLastSegment();
         } else {
@@ -1096,15 +1110,19 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         checkSession();
         if (values == null) return removeExistingProperty(nameFrom(name));
 
-        // Check for a non-null Value that contains a null reference ...
-        for (Value value : values) {
-            JcrValue jcrValue = (JcrValue)value;
-            if (jcrValue != null && jcrValue.value() == null) {
-                throw new ValueFormatException(JcrI18n.valueMayNotContainNull.text(name));
+        if (values.length == 0) {
+            values = new JcrValue[] {};
+        } else {
+            // Check for a non-null Value that contains a null reference ...
+            for (Value value : values) {
+                JcrValue jcrValue = (JcrValue)value;
+                if (jcrValue != null && jcrValue.value() == null) {
+                    throw new ValueFormatException(JcrI18n.valueMayNotContainNull.text(name));
+                }
             }
         }
 
-        return setProperty(nameFrom(name), (JcrValue[])values, PropertyType.UNDEFINED, false);
+        return setProperty(nameFrom(name), values, PropertyType.UNDEFINED, false);
     }
 
     @Override
@@ -1116,16 +1134,20 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         checkSession();
         if (values == null) return removeExistingProperty(nameFrom(name));
 
-        // Check for a non-null Value that contains a null reference ...
-        for (Value value : values) {
-            JcrValue jcrValue = (JcrValue)value;
-            if (jcrValue != null && jcrValue.value() == null) {
-                throw new ValueFormatException(JcrI18n.valueMayNotContainNull.text(name));
+        if (values.length == 0) {
+            values = new JcrValue[] {};
+        } else {
+            // Check for a non-null Value that contains a null reference ...
+            for (Value value : values) {
+                JcrValue jcrValue = (JcrValue)value;
+                if (jcrValue != null && jcrValue.value() == null) {
+                    throw new ValueFormatException(JcrI18n.valueMayNotContainNull.text(name));
+                }
             }
         }
 
         // Set the value, perhaps to an empty array ...
-        return setProperty(nameFrom(name), (JcrValue[])values, type, false);
+        return setProperty(nameFrom(name), values, type, false);
     }
 
     @Override
@@ -1368,7 +1390,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @throws RepositoryException if the named property does not exist, or if some other error occurred
      */
     final AbstractJcrProperty setProperty( Name name,
-                                           JcrValue[] values,
+                                           Value[] values,
                                            int jcrPropertyType,
                                            boolean skipReferenceValidation )
         throws VersionException, LockException, ConstraintViolationException, RepositoryException {
@@ -1386,7 +1408,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             } else {
                 List<JcrValue> valuesWithDesiredType = new ArrayList<JcrValue>(len);
                 for (int i = 0; i != len; ++i) {
-                    JcrValue value = values[i];
+                    JcrValue value = (JcrValue)values[i];
                     if (value == null) continue; // null values are removed
                     if (value.getType() != jcrPropertyType) {
                         value = value.asType(jcrPropertyType);
@@ -1487,7 +1509,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         if (propertyType == PropertyType.UNDEFINED || propertyType == jcrPropertyType) {
             // Can use the values as is ...
             for (int i = 0; i != numValues; ++i) {
-                objValues[i] = values[i].value();
+                objValues[i] = ((JcrValue)values[i]).value();
             }
         } else {
             // A conversion is required ...
@@ -1495,7 +1517,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 org.modeshape.jcr.value.PropertyType msType = PropertyTypeUtil.modePropertyTypeFor(propertyType);
                 org.modeshape.jcr.value.ValueFactory<?> factory = context().getValueFactories().getValueFactory(msType);
                 for (int i = 0; i != numValues; ++i) {
-                    objValues[i] = factory.create(values[i].value());
+                    objValues[i] = factory.create(((JcrValue)values[i]).value());
                 }
             } catch (org.modeshape.jcr.value.ValueFormatException e) {
                 throw new ValueFormatException(e.getMessage());
@@ -1589,8 +1611,12 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         }
     }
 
+    @Deprecated
     @Override
-    public final String getUUID() {
+    public final String getUUID() throws UnsupportedRepositoryOperationException, RepositoryException {
+        if (!isReferenceable()) {
+            throw new UnsupportedRepositoryOperationException();
+        }
         return getIdentifier();
     }
 

@@ -50,6 +50,7 @@ import org.modeshape.graph.property.Name;
  * from a Jackrabbit XML file registers the expected type rather than attempting to validate all of the type registration
  * functionality already tested in {@link TypeRegistrationTest}.
  */
+@Migrated
 public class JackrabbitXmlNodeTypeRegistrationTest {
 
     /** Location of XML files for this test */

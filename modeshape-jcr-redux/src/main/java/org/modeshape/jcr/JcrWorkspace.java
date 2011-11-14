@@ -160,6 +160,10 @@ class JcrWorkspace implements Workspace {
         return lockManager;
     }
 
+    final JcrLockManager lockManager() {
+        return lockManager;
+    }
+
     @Override
     public QueryManager getQueryManager() throws RepositoryException {
         session.checkLive();

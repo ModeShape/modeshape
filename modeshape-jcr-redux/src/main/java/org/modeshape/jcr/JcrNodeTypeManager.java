@@ -24,8 +24,10 @@
 package org.modeshape.jcr;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.net.URL;
 import java.security.AccessControlException;
 import java.util.ArrayList;
@@ -34,10 +36,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import javax.jcr.AccessDeniedException;
+import javax.jcr.InvalidSerializedDataException;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Value;
+import javax.jcr.nodetype.InvalidNodeTypeDefinitionException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeDefinitionTemplate;
@@ -52,11 +56,18 @@ import org.modeshape.common.collection.Problem;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.IoUtil;
+import org.modeshape.jcr.JcrContentHandler.EnclosingSAXException;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.core.ExecutionContext;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.Path;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.XMLReaderFactory;
 
 /**
  * Local implementation of @{link NodeTypeManager}. This class handles translation between {@link Name}s and {@link String}s based
@@ -812,38 +823,86 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         return sb.toString();
     }
 
+    protected List<NodeTypeDefinition> importFromXml( InputSource source ) throws RepositoryException {
+        XmlNodeTypeReader handler = new XmlNodeTypeReader(session);
+        try {
+            XMLReader parser = XMLReaderFactory.createXMLReader();
+            parser.setContentHandler(handler);
+            parser.parse(source);
+        } catch (EnclosingSAXException ese) {
+            Exception cause = ese.getException();
+            if (cause instanceof RepositoryException) {
+                throw (RepositoryException)cause;
+            }
+            throw new RepositoryException(cause);
+        } catch (SAXParseException se) {
+            throw new InvalidSerializedDataException(se);
+        } catch (SAXException se) {
+            throw new RepositoryException(se);
+        } catch (IOException ioe) {
+            throw new RepositoryException(ioe);
+        } catch (RuntimeException t) {
+            throw t;
+        } catch (Throwable t) {
+            throw new RepositoryException(t);
+        }
+        return handler.getNodeTypeDefinitions();
+    }
+
     @Override
     public void registerNodeTypeDefinitions( File file ) throws IOException, RepositoryException {
-        CndImporter importer = new CndImporter(context(), true);
-        Problems problems = new SimpleProblems();
-        importer.importFrom(file, problems);
-        if (problems.hasErrors()) {
-            throw new RepositoryException(messageFrom(problems, JcrI18n.errorsParsingCnd.text(file.getAbsolutePath())));
+        String content = IoUtil.read(file);
+        if (content.startsWith("<?xml")) {
+            registerNodeTypes(importFromXml(new InputSource(new FileInputStream(file))));
+        } else {
+            CndImporter importer = new CndImporter(context(), true);
+            Problems problems = new SimpleProblems();
+            importer.importFrom(content, problems, file.getAbsolutePath());
+            if (problems.hasErrors()) {
+                // There are problems, so report the original problems ...
+                String msg = JcrI18n.errorsParsingNodeTypeDefinitions.text(file.getAbsolutePath());
+                throw new RepositoryException(messageFrom(problems, msg));
+            }
+            registerNodeTypes(importer.getNodeTypeDefinitions());
         }
-        registerNodeTypes(importer.getNodeTypeDefinitions());
     }
 
     @Override
     public void registerNodeTypeDefinitions( InputStream stream )
         throws IOException, javax.jcr.nodetype.InvalidNodeTypeDefinitionException, javax.jcr.nodetype.NodeTypeExistsException,
         UnsupportedRepositoryOperationException, RepositoryException {
-        CndImporter importer = new CndImporter(context(), true);
-        Problems problems = new SimpleProblems();
-        importer.importFrom(stream, problems, "stream");
-        if (problems.hasErrors()) {
-            throw new RepositoryException(messageFrom(problems, JcrI18n.errorsParsingCndFromStream.text()));
+
+        String content = IoUtil.read(stream);
+        if (content.startsWith("<?xml")) {
+            registerNodeTypes(importFromXml(new InputSource(new StringReader(content))));
+        } else {
+            CndImporter importer = new CndImporter(context(), true);
+            Problems problems = new SimpleProblems();
+            importer.importFrom(content, problems, "stream");
+            if (problems.hasErrors()) {
+                // There are problems, so report the original problems ...
+                String msg = JcrI18n.errorsParsingStreamOfNodeTypeDefinitions.text();
+                throw new RepositoryException(messageFrom(problems, msg));
+            }
+            registerNodeTypes(importer.getNodeTypeDefinitions());
         }
-        registerNodeTypes(importer.getNodeTypeDefinitions());
     }
 
     @Override
     public void registerNodeTypeDefinitions( URL url ) throws IOException, RepositoryException {
-        CndImporter importer = new CndImporter(context(), true);
-        Problems problems = new SimpleProblems();
-        importer.importFrom(url.openStream(), problems, url.toExternalForm());
-        if (problems.hasErrors()) {
-            throw new RepositoryException(messageFrom(problems, JcrI18n.errorsParsingCnd.text(url.toExternalForm())));
+        String content = IoUtil.read(url.openStream());
+        if (content.startsWith("<?xml")) {
+            registerNodeTypes(importFromXml(new InputSource(new StringReader(content))));
+        } else {
+            CndImporter importer = new CndImporter(context(), true);
+            Problems problems = new SimpleProblems();
+            importer.importFrom(content, problems, url.toExternalForm());
+            if (problems.hasErrors()) {
+                // There are problems, so report the original problems ...
+                String msg = JcrI18n.errorsParsingNodeTypeDefinitions.text(url.toExternalForm());
+                throw new RepositoryException(messageFrom(problems, msg));
+            }
+            registerNodeTypes(importer.getNodeTypeDefinitions());
         }
-        registerNodeTypes(importer.getNodeTypeDefinitions());
     }
 }

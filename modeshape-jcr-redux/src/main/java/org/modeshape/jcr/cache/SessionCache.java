@@ -24,11 +24,21 @@
 package org.modeshape.jcr.cache;
 
 import org.modeshape.jcr.core.ExecutionContext;
+import org.modeshape.jcr.value.DateTime;
 
 /**
  * 
  */
 public interface SessionCache extends NodeCache {
+
+    static interface SaveContext {
+        DateTime getTime();
+    }
+
+    static interface PreSave {
+        void process( MutableCachedNode newNode,
+                      SaveContext context );
+    }
 
     /**
      * Get the context for this session.
@@ -43,12 +53,21 @@ public interface SessionCache extends NodeCache {
     public void save();
 
     /**
+     * Saves all changes made within this session.
+     * 
+     * @param preSaveOperation the set of operations to run against the new and changed nodes prior to saving; may be null
+     */
+    public void save( PreSave preSaveOperation );
+
+    /**
      * Saves all of this session's changes that were made at or below the specified path. Note that this is not terribly
      * efficient, but is done to implement the deprecated {@link javax.jcr.Item#save()}.
      * 
      * @param node the node at or below which all changes should be saved; may not be null
+     * @param preSaveOperation the set of operations to run against the new and changed nodes prior to saving; may be null
      */
-    public void save( CachedNode node );
+    public void save( CachedNode node,
+                      PreSave preSaveOperation );
 
     /**
      * Saves all changes made within this session and the supplied session, using a single transaction for both.

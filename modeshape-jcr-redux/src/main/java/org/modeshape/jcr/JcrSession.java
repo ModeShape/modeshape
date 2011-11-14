@@ -59,6 +59,7 @@ import javax.jcr.security.AccessControlManager;
 import javax.jcr.version.VersionException;
 import org.infinispan.schematic.SchematicEntry;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.Logger;
 import org.modeshape.jcr.AbstractJcrNode.Type;
 import org.modeshape.jcr.JcrContentHandler.EnclosingSAXException;
 import org.modeshape.jcr.JcrNamespaceRegistry.Behavior;
@@ -72,6 +73,7 @@ import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.NodeNotFoundException;
 import org.modeshape.jcr.cache.SessionCache;
+import org.modeshape.jcr.cache.SessionCache.SaveContext;
 import org.modeshape.jcr.cache.WorkspaceNotFoundException;
 import org.modeshape.jcr.core.ExecutionContext;
 import org.modeshape.jcr.core.SecurityContext;
@@ -114,6 +116,7 @@ public class JcrSession implements Session {
     private final JcrNamespaceRegistry sessionRegistry;
     private volatile boolean isLive = true;
     private final long nanosCreated;
+    private final ConcurrentMap<NodeKey, Object> nodesWithBinaryPropertyChanges = new ConcurrentHashMap<NodeKey, Object>();
 
     protected JcrSession( JcrRepository repository,
                           String workspaceName,
@@ -194,10 +197,16 @@ public class JcrSession implements Session {
         }
 
         isLive = false;
+
         // TODO: Observation
         // this.workspace().observationManager().removeAllEventListeners();
-        // TODO: Locks
-        // this.lockManager().cleanLocks();
+
+        try {
+            lockManager().cleanLocks();
+        } catch (RepositoryException e) {
+            // This can only happen if the session is not live, which is checked above ...
+            Logger.getLogger(getClass()).error(e, JcrI18n.unexpectedException, e.getMessage());
+        }
         if (removeFromActiveSession) this.repository.runningState().removeSession(this);
         this.context.getSecurityContext().logout();
     }
@@ -281,8 +290,8 @@ public class JcrSession implements Session {
         return this.repository().nodeTypeManager().nodeTypesVersion();
     }
 
-    final JcrLockManager lockManager() throws RepositoryException {
-        return workspace().getLockManager();
+    final JcrLockManager lockManager() {
+        return workspace().lockManager();
     }
 
     final void signalNamespaceChanges( boolean global ) {
@@ -301,6 +310,10 @@ public class JcrSession implements Session {
 
     final SessionCache spawnSessionCache( boolean readOnly ) {
         return repository().repositoryCache().createSession(context(), workspaceName(), readOnly);
+    }
+
+    final void markBinaryPropertyChangesOn( NodeKey key ) {
+        nodesWithBinaryPropertyChanges.put(key, null);
     }
 
     /**
@@ -733,10 +746,15 @@ public class JcrSession implements Session {
         }
 
         try {
-            // Create a session to perform the move ...
             MutableCachedNode mutableSrcParent = srcParent.mutable();
             MutableCachedNode mutableDestParent = destParentNode.mutable();
-            mutableSrcParent.moveChild(cache, srcNode.key(), mutableDestParent, destPath.getLastSegment().getName());
+            if (mutableSrcParent.equals(mutableDestParent)) {
+                // It's just a rename ...
+                mutableSrcParent.renameChild(cache, srcNode.key(), destPath.getLastSegment().getName());
+            } else {
+                // It is a move from one parent to another ...
+                mutableSrcParent.moveChild(cache, srcNode.key(), mutableDestParent, destPath.getLastSegment().getName());
+            }
         } catch (NodeNotFoundException e) {
             // Not expected ...
             String msg = JcrI18n.nodeNotFound.text(stringFactory().create(srcPath.getParent()), workspaceName());
@@ -749,7 +767,9 @@ public class JcrSession implements Session {
         throws AccessDeniedException, ItemExistsException, ReferentialIntegrityException, ConstraintViolationException,
         InvalidItemStateException, VersionException, LockException, NoSuchNodeTypeException, RepositoryException {
         checkLive();
-        cache().save();
+        cache().save(new JcrPreSave(nodesWithBinaryPropertyChanges.keySet()));
+        nodesWithBinaryPropertyChanges.clear();
+
         // Record the save operation ...
         repository().statistics().increment(ValueMetric.SESSION_SAVES);
     }
@@ -762,7 +782,9 @@ public class JcrSession implements Session {
      * @see AbstractJcrNode#save()
      */
     void save( AbstractJcrNode node ) throws RepositoryException {
-        cache().save(node.node());
+        cache().save(node.node(), new JcrPreSave(nodesWithBinaryPropertyChanges.keySet()));
+        // Don't clear the nodes with binary properties ...
+
         // Record the save operation ...
         repository().statistics().increment(ValueMetric.SESSION_SAVES);
     }
@@ -772,6 +794,7 @@ public class JcrSession implements Session {
         checkLive();
         if (!keepChanges) {
             cache.clear();
+            nodesWithBinaryPropertyChanges.clear();
         }
         // Otherwise there is nothing to do, as all persistent changes are always immediately vislble to all sessions
         // using that same workspace
@@ -854,6 +877,7 @@ public class JcrSession implements Session {
     public void checkPermission( String path,
                                  String actions ) {
         CheckArg.isNotEmpty(path, "path");
+        CheckArg.isNotEmpty(actions, "actions");
         try {
             this.checkPermission(absolutePathFor(path), actions.split(","));
         } catch (RepositoryException e) {
@@ -1095,15 +1119,8 @@ public class JcrSession implements Session {
     @Override
     public void addLockToken( String lockToken ) {
         CheckArg.isNotNull(lockToken, "lockToken");
-        JcrLockManager lockManager = null;
         try {
-            lockManager = lockManager();
-        } catch (RepositoryException le) {
-            // basically means this session is not live ...
-            return;
-        }
-        try {
-            lockManager.addLockToken(lockToken);
+            lockManager().addLockToken(lockToken);
         } catch (LockException le) {
             // For backwards compatibility (and API compatibility), the LockExceptions from the LockManager need to get swallowed
         }
@@ -1111,29 +1128,16 @@ public class JcrSession implements Session {
 
     @Override
     public String[] getLockTokens() {
-        JcrLockManager lockManager = null;
-        try {
-            lockManager = lockManager();
-        } catch (RepositoryException le) {
-            // basically means this session is not live ...
-            return new String[] {};
-        }
-        return lockManager.getLockTokens();
+        if (!isLive()) return new String[] {};
+        return lockManager().getLockTokens();
     }
 
     @Override
     public void removeLockToken( String lockToken ) {
         CheckArg.isNotNull(lockToken, "lockToken");
-        JcrLockManager lockManager = null;
-        try {
-            lockManager = lockManager();
-        } catch (RepositoryException le) {
-            // basically means this session is not live ...
-            return;
-        }
         // A LockException is thrown if the lock associated with the specified lock token is session-scoped.
         try {
-            lockManager.removeLockToken(lockToken);
+            lockManager().removeLockToken(lockToken);
         } catch (LockException le) {
             // For backwards compatibility (and API compatibility), the LockExceptions from the LockManager need to get swallowed
         }
@@ -1202,5 +1206,62 @@ public class JcrSession implements Session {
     @Override
     public String toString() {
         return cache.toString();
+    }
+
+    protected class JcrPreSave implements SessionCache.PreSave {
+        private final RepositoryNodeTypeManager nodeTypeMgr = repository().nodeTypeManager();
+        private final SessionCache cache = cache();
+        private final String username = getUserID();
+        private final PropertyFactory propertyFactory = propertyFactory();
+        private final Set<NodeKey> nodesWithBinaryPropertyChanges;
+
+        protected JcrPreSave( Set<NodeKey> nodesWithBinaryPropertyChanges ) {
+            this.nodesWithBinaryPropertyChanges = nodesWithBinaryPropertyChanges;
+        }
+
+        @Override
+        public void process( MutableCachedNode node,
+                             SaveContext context ) {
+            Name primaryType = node.getPrimaryType(cache);
+            Set<Name> mixinTypes = null;
+            boolean created = node.isNew() && nodeTypeMgr.isCreatedType(primaryType);
+            boolean lastModified = nodeTypeMgr.isLastModifiedType(primaryType);
+            boolean etag = nodeTypeMgr.isETagType(primaryType);
+            if (!created || !lastModified || !etag) {
+                mixinTypes = node.getMixinTypes(cache);
+                if (!created && node.isNew()) created = nodeTypeMgr.isCreatedType(mixinTypes);
+                if (!lastModified) lastModified = nodeTypeMgr.isLastModifiedType(mixinTypes);
+                if (!etag) etag = nodeTypeMgr.isETagType(mixinTypes);
+            }
+
+            if (created) {
+                // Set the created by and time information ...
+                node.setProperty(cache, propertyFactory.create(JcrLexicon.CREATED, context.getTime()));
+                node.setProperty(cache, propertyFactory.create(JcrLexicon.CREATED_BY, username));
+            }
+
+            if (lastModified) {
+                // Set the last modified by and time information ...
+                node.setProperty(cache, propertyFactory.create(JcrLexicon.LAST_MODIFIED, context.getTime()));
+                node.setProperty(cache, propertyFactory.create(JcrLexicon.LAST_MODIFIED_BY, username));
+            }
+            if (etag) {
+                // Per section 3.7.12 of JCR 2, the 'jcr:etag' property should be changed whenever BINARY properties
+                // are added, removed, or changed. So, go through the properties (in sorted-name order so it is repeatable)
+                // and create this value by simply concatenating the SHA-1 hash of each BINARY value ...
+                if (nodesWithBinaryPropertyChanges.contains(node.getKey())) {
+                    String etagValue = node.getEtag(cache);
+                    node.setProperty(cache, propertyFactory.create(JcrLexicon.ETAG, etagValue));
+                }
+            }
+        }
+
+        protected void addBinaryHash( JcrValue value,
+                                      StringBuilder sb ) throws RepositoryException {
+            org.modeshape.jcr.value.Binary binary = value.getBinary();
+            String hash = new String(binary.getHash()); // doesn't matter what charset, as long as its always the
+            // same
+            sb.append(hash);
+        }
     }
 }

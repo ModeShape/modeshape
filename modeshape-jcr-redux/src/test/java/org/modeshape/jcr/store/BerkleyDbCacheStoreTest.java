@@ -21,43 +21,26 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.cache;
+package org.modeshape.jcr.store;
 
-/**
- * 
- */
-public interface NodeCache {
+import java.io.File;
+import org.infinispan.loaders.CacheLoaderConfig;
+import org.infinispan.loaders.bdbje.BdbjeCacheStoreConfig;
+import org.modeshape.common.util.FileUtil;
 
-    /**
-     * Clears all changes in the cache.
-     */
-    void clear();
+public class BerkleyDbCacheStoreTest extends InMemoryTest {
 
-    /**
-     * Get the node key for the root node.
-     * 
-     * @return the root node's key; never null
-     */
-    NodeKey getRootKey();
+    private final File dbDir = new File("target/database");
 
-    /**
-     * Get the cached representation of the node with the supplied node key.
-     * 
-     * @param key the node key; may not be null
-     * @return the cached node, or null if there is no such node
-     */
-    CachedNode getNode( NodeKey key );
+    @Override
+    protected void cleanUpFileSystem() {
+        FileUtil.delete(dbDir);
+    }
 
-    /**
-     * Get the cached representation of the node as represented by the supplied child reference. This is a convenience method that
-     * is equivalent to calling:
-     * 
-     * <pre>
-     * getNode(reference.getKey());
-     * </pre>
-     * 
-     * @param reference the child node reference; may not be null
-     * @return the cached node to which the reference points, or null if the child reference no longer points to a valid node
-     */
-    CachedNode getNode( ChildReference reference );
+    @Override
+    protected CacheLoaderConfig getCacheLoaderConfiguration() {
+        BdbjeCacheStoreConfig config = new BdbjeCacheStoreConfig();
+        config.setLocation(dbDir.getAbsolutePath());
+        return config;
+    }
 }

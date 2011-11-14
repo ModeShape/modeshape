@@ -245,4 +245,11 @@ public interface MutableCachedNode extends CachedNode {
                          NodeKey referrerKey,
                          ReferenceType type );
 
+    /**
+     * Compute an ETag value for this node.
+     * 
+     * @param cache the cache to which this node belongs; may not be null
+     * @return an ETag value; never null but possibly empty
+     */
+    String getEtag( SessionCache cache );
 }

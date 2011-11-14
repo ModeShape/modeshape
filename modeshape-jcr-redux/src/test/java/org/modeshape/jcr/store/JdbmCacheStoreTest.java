@@ -21,52 +21,31 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr;
+package org.modeshape.jcr.store;
 
-import org.modeshape.common.annotation.Immutable;
+import java.io.File;
+import org.infinispan.loaders.CacheLoaderConfig;
+import org.infinispan.loaders.jdbm.JdbmCacheStoreConfig;
+import org.junit.Ignore;
+import org.modeshape.common.util.FileUtil;
 
 /**
- * Exception representing that a node type definition is somehow invalid
+ * Currently ignored because of the time required to run it.
  */
-@Immutable
-public class InvalidNodeTypeDefinitionException extends javax.jcr.nodetype.InvalidNodeTypeDefinitionException {
+@Ignore
+public class JdbmCacheStoreTest extends InMemoryTest {
 
-    /**
-     */
-    private static final long serialVersionUID = 1L;
+    private final File dbDir = new File("target/database");
 
-    /**
-     * 
-     */
-    public InvalidNodeTypeDefinitionException() {
-        super();
-
+    @Override
+    protected void cleanUpFileSystem() {
+        FileUtil.delete(dbDir);
     }
 
-    /**
-     * @param message
-     * @param rootCause
-     */
-    public InvalidNodeTypeDefinitionException( String message,
-                                               Throwable rootCause ) {
-        super(message, rootCause);
-
+    @Override
+    protected CacheLoaderConfig getCacheLoaderConfiguration() {
+        JdbmCacheStoreConfig config = new JdbmCacheStoreConfig();
+        config.setLocation(dbDir.getAbsolutePath());
+        return config;
     }
-
-    /**
-     * @param message
-     */
-    public InvalidNodeTypeDefinitionException( String message ) {
-        super(message);
-
-    }
-
-    /**
-     * @param rootCause
-     */
-    public InvalidNodeTypeDefinitionException( Throwable rootCause ) {
-        super(rootCause);
-
-    }
-
 }

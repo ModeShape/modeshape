@@ -260,6 +260,7 @@ class RepositoryLockManager implements ChangeSetListener {
 
     private void unlock( JcrSession session,
                          Iterable<ModeShapeLock> locks ) {
+        if (locks == null) return;
 
         // Create a system session to remove the locks ...
         final ExecutionContext context = session.context();
@@ -284,7 +285,7 @@ class RepositoryLockManager implements ChangeSetListener {
      * Unlocks all locks corresponding to the tokens held by the supplied session.
      * 
      * @param session the session on behalf of which the lock operation is being performed
-     * @throws RepositoryException if there is a problem cleaning the locks
+     * @throws RepositoryException if the session is not live
      */
     void cleanLocks( JcrSession session ) throws RepositoryException {
         Set<String> lockTokens = session.lockManager().lockTokens();
@@ -295,7 +296,7 @@ class RepositoryLockManager implements ChangeSetListener {
                 locks.add(lock);
             }
         }
-        unlock(session, locks);
+        if (locks != null) unlock(session, locks);
     }
 
     @Override

@@ -47,6 +47,7 @@ import org.modeshape.graph.property.Name;
  * expected type rather than attempting to validate all of the type registration functionality already tested in
  * {@link TypeRegistrationTest}.
  */
+@Migrated
 public class CndNodeTypeRegistrationTest {
 
     /** Location of CND files for this test */

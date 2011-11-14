@@ -393,12 +393,12 @@ public class SystemContent {
                     throw new IllegalStateException(re);
                 }
             }
-            properties.add(propertyFactory.create(JcrLexicon.DEFAULT_VALUES, (Object[])defaultsAsString));
+            properties.add(propertyFactory.create(JcrLexicon.DEFAULT_VALUES, defaultsAsString));
         }
 
         String[] valueConstraints = propertyDef.getValueConstraints();
         if (valueConstraints.length > 0) {
-            properties.add(propertyFactory.create(JcrLexicon.VALUE_CONSTRAINTS, (Object[])valueConstraints));
+            properties.add(propertyFactory.create(JcrLexicon.VALUE_CONSTRAINTS, valueConstraints));
         }
 
         // Now either update the existing node or create a new node ..
@@ -450,7 +450,7 @@ public class SystemContent {
             props.add(propertyFactory.create(JcrLexicon.DEFAULT_PRIMARY_TYPE, childNodeDef.getDefaultPrimaryType().getName()));
         }
 
-        props.add(propertyFactory.create(JcrLexicon.REQUIRED_PRIMARY_TYPES, (Object[])childNodeDef.requiredPrimaryTypeNames()));
+        props.add(propertyFactory.create(JcrLexicon.REQUIRED_PRIMARY_TYPES, childNodeDef.requiredPrimaryTypeNames()));
         props.add(propertyFactory.create(JcrLexicon.SAME_NAME_SIBLINGS, childNodeDef.allowsSameNameSiblings()));
         props.add(propertyFactory.create(JcrLexicon.ON_PARENT_VERSION,
                                          OnParentVersionAction.nameFromValue(childNodeDef.getOnParentVersion())));

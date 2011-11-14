@@ -47,6 +47,10 @@ public interface Changes {
                       NodeKey parentKey,
                       Path path );
 
+    void nodeRenamed( NodeKey key,
+                      Path newPath,
+                      Path.Segment oldName );
+
     void nodeMoved( NodeKey key,
                     NodeKey newParent,
                     NodeKey oldParent,

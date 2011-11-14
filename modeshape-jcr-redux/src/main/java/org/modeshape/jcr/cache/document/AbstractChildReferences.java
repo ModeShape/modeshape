@@ -45,18 +45,18 @@ public abstract class AbstractChildReferences implements ChildReferences {
 
     @Override
     public ChildReference getChild( Name name ) {
-        return getChild(name, 1, new SingleNameContext());
+        return getChild(name, 1, new BasicContext());
     }
 
     @Override
     public ChildReference getChild( Segment segment ) {
-        return getChild(segment.getName(), segment.getIndex(), new SingleNameContext());
+        return getChild(segment.getName(), segment.getIndex(), new BasicContext());
     }
 
     @Override
     public ChildReference getChild( Name name,
                                     int snsIndex ) {
-        return getChild(name, snsIndex, new SingleNameContext());
+        return getChild(name, snsIndex, new BasicContext());
     }
 
     @Override
@@ -116,7 +116,7 @@ public abstract class AbstractChildReferences implements ChildReferences {
             @Override
             public boolean hasNext() {
                 while (true) {
-                    while (iter.hasNext()) {
+                    while (next == null && iter.hasNext()) {
                         // Verify the next reference is valid ...
                         ChildReference next = iter.next();
 
@@ -130,6 +130,13 @@ public abstract class AbstractChildReferences implements ChildReferences {
 
                         // See if this child has been removed ...
                         if (changes.isRemoved(next)) continue;
+
+                        // See if this child has been renamed ...
+                        Name newName = changes.renamed(next.getKey());
+                        if (newName != null) {
+                            next = next.with(newName, 1);
+                        }
+
                         this.next = next;
                     }
                     if (iter != delegate) {
@@ -143,7 +150,7 @@ public abstract class AbstractChildReferences implements ChildReferences {
                             nextAfterIter = null;
                         }
                     }
-                    return false;
+                    return next != null;
                 }
             }
 

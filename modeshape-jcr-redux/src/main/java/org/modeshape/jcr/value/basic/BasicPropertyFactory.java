@@ -73,44 +73,65 @@ public class BasicPropertyFactory implements PropertyFactory {
     }
 
     @Override
+    public Property create( Name name ) {
+        return new BasicEmptyProperty(name);
+    }
+
+    @Override
     public Property create( Name name,
-                            Object... values ) {
+                            Object value ) {
+        return create(name, PropertyType.OBJECT, value);
+    }
+
+    @Override
+    public Property create( Name name,
+                            Object[] values ) {
         return create(name, PropertyType.OBJECT, values);
     }
 
     @Override
     public Property create( Name name,
                             PropertyType desiredType,
-                            Object... values ) {
+                            Object firstValue ) {
         CheckArg.isNotNull(name, "name");
-        if (values == null || values.length == 0) {
-            return new BasicEmptyProperty(name);
-        }
-        final int len = values.length;
         if (desiredType == null) desiredType = PropertyType.OBJECT;
         final ValueFactory<?> factory = factories.getValueFactory(desiredType);
-        if (values.length == 1) {
-            Object value = values[0];
-            // Check whether the sole value was a collection ...
-            if (value instanceof Path) {
-                value = factory.create(value);
-                return new BasicSingleValueProperty(name, value);
-            }
-            if (value instanceof Collection<?>) {
-                // The single value is a collection, so create property with the collection's contents ...
-                return create(name, desiredType, (Iterable<?>)value);
-            }
-            if (value instanceof Iterator<?>) {
-                // The single value is an iterator over a collection, so create property with the iterator's contents ...
-                return create(name, desiredType, (Iterator<?>)value);
-            }
-            if (value instanceof Object[]) {
-                // The single value is an object array, so create the property with the array as the value(s)...
-                return create(name, desiredType, (Object[])value);
-            }
+        Object value = firstValue;
+        // Check whether the sole value was a collection ...
+        if (value instanceof Path) {
             value = factory.create(value);
             return new BasicSingleValueProperty(name, value);
         }
+        if (value instanceof Collection<?>) {
+            // The single value is a collection, so create property with the collection's contents ...
+            return create(name, desiredType, (Iterable<?>)value);
+        }
+        if (value instanceof Iterator<?>) {
+            // The single value is an iterator over a collection, so create property with the iterator's contents ...
+            return create(name, desiredType, (Iterator<?>)value);
+        }
+        if (value instanceof Object[]) {
+            // The single value is an object array, so create the property with the array as the value(s)...
+            return create(name, desiredType, (Object[])value);
+        }
+        value = factory.create(value);
+        return new BasicSingleValueProperty(name, value);
+    }
+
+    @Override
+    public Property create( Name name,
+                            PropertyType desiredType,
+                            Object[] values ) {
+        CheckArg.isNotNull(name, "name");
+        if (values == null) {
+            return new BasicEmptyProperty(name);
+        }
+        final int len = values.length;
+        if (len == 0) {
+            return new BasicEmptyProperty(name);
+        }
+        if (desiredType == null) desiredType = PropertyType.OBJECT;
+        final ValueFactory<?> factory = factories.getValueFactory(desiredType);
         List<Object> valueList = new ArrayList<Object>(len);
         for (int i = 0; i != len; ++i) {
             Object value = factory.create(values[i]);
@@ -145,9 +166,6 @@ public class BasicPropertyFactory implements PropertyFactory {
         if (valueList.isEmpty()) { // may not have been a collection earlier
             return new BasicEmptyProperty(name);
         }
-        if (valueList.size() == 1) {
-            return new BasicSingleValueProperty(name, valueList.get(0));
-        }
         return new BasicMultiValueProperty(name, valueList);
     }
 
@@ -166,9 +184,6 @@ public class BasicPropertyFactory implements PropertyFactory {
         }
         if (valueList.isEmpty()) {
             return new BasicEmptyProperty(name);
-        }
-        if (valueList.size() == 1) {
-            return new BasicSingleValueProperty(name, valueList.get(0));
         }
         return new BasicMultiValueProperty(name, valueList);
     }

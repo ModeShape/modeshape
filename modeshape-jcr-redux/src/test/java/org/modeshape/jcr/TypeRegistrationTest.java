@@ -31,38 +31,52 @@ import static org.junit.Assert.fail;
 import java.util.Arrays;
 import java.util.List;
 import javax.jcr.PropertyType;
+import javax.jcr.RepositoryException;
+import javax.jcr.Value;
+import javax.jcr.nodetype.InvalidNodeTypeDefinitionException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.nodetype.NodeTypeDefinition;
+import javax.jcr.nodetype.NodeTypeTemplate;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.NameFactory;
-import org.modeshape.graph.property.NamespaceRegistry;
-import org.modeshape.jcr.nodetype.InvalidNodeTypeDefinitionException;
-import org.modeshape.jcr.nodetype.NodeTypeExistsException;
-import org.modeshape.jcr.nodetype.NodeTypeTemplate;
+import org.modeshape.jcr.core.ExecutionContext;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.NameFactory;
+import org.modeshape.jcr.value.NamespaceRegistry;
 
-@Migrated
-public class TypeRegistrationTest extends AbstractSessionTest {
+public class TypeRegistrationTest extends SingleUseAbstractTest {
 
     private static final String TEST_TYPE_NAME = "mode:testNode";
     private static final String TEST_TYPE_NAME2 = "mode:testNode2";
     private static final String TEST_PROPERTY_NAME = "mode:testProperty";
     private static final String TEST_CHILD_NODE_NAME = "mode:testChildNode";
 
+    private ExecutionContext context;
     private JcrNodeTypeTemplate ntTemplate;
     private NamespaceRegistry registry;
     private NameFactory nameFactory;
+    private RepositoryNodeTypeManager repoTypeManager;
 
     @Override
     @Before
     public void beforeEach() throws Exception {
         super.beforeEach();
+        context = session.context();
         ntTemplate = new JcrNodeTypeTemplate(context);
-        registry = context.getNamespaceRegistry();
-        nameFactory = context.getValueFactories().getNameFactory();
+        registry = session.namespaces();
+        nameFactory = session.nameFactory();
+        repoTypeManager = session.repository().nodeTypeManager();
+    }
+
+    protected Value[] valuesFrom( String... values ) throws RepositoryException {
+        Value[] result = new Value[values.length];
+        int i = 0;
+        for (String value : values) {
+            result[i++] = session.getValueFactory().createValue(value);
+        }
+        return result;
     }
 
     @Ignore
@@ -264,7 +278,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         prop.setName(TEST_PROPERTY_NAME);
         prop.setRequiredType(PropertyType.STRING);
         prop.setAutoCreated(true);
-        prop.setDefaultValues(new String[] {"<default>"});
+        prop.setDefaultValues(valuesFrom("<default>"));
         ntTemplate.getPropertyDefinitionTemplates().add(prop);
 
         List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate});
@@ -280,7 +294,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         prop.setName(TEST_PROPERTY_NAME);
         prop.setRequiredType(PropertyType.STRING);
         prop.setAutoCreated(true);
-        prop.setDefaultValues(new String[] {"<default>", "too many values"});
+        prop.setDefaultValues(valuesFrom("<default>", "too many values"));
         ntTemplate.getPropertyDefinitionTemplates().add(prop);
 
         List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate});
@@ -749,7 +763,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         ntTemplate.setName(TEST_TYPE_NAME);
 
         JcrNodeDefinitionTemplate childNode = new JcrNodeDefinitionTemplate(this.context);
-        childNode.setDefaultPrimaryType(JcrNtLexicon.FILE.getString(this.registry));
+        childNode.setDefaultPrimaryTypeName(JcrNtLexicon.FILE.getString(this.registry));
         ntTemplate.getNodeDefinitionTemplates().add(childNode);
 
         try {
@@ -766,7 +780,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         ntTemplate.setName(TEST_TYPE_NAME);
 
         JcrNodeDefinitionTemplate childNode = new JcrNodeDefinitionTemplate(this.context);
-        childNode.setDefaultPrimaryType(JcrNtLexicon.FILE.getString(this.registry));
+        childNode.setDefaultPrimaryTypeName(JcrNtLexicon.FILE.getString(this.registry));
         ntTemplate.getNodeDefinitionTemplates().add(childNode);
 
         try {
@@ -788,14 +802,14 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         ntTemplate.setName(TEST_TYPE_NAME);
 
         JcrNodeDefinitionTemplate childNode = new JcrNodeDefinitionTemplate(this.context);
-        childNode.setDefaultPrimaryType(TEST_TYPE_NAME2);
+        childNode.setDefaultPrimaryTypeName(TEST_TYPE_NAME2);
         ntTemplate.getNodeDefinitionTemplates().add(childNode);
 
         NodeTypeTemplate ntTemplate2 = new JcrNodeTypeTemplate(this.context);
         ntTemplate2.setName(TEST_TYPE_NAME2);
 
         JcrNodeDefinitionTemplate childNode2 = new JcrNodeDefinitionTemplate(this.context);
-        childNode2.setDefaultPrimaryType(TEST_TYPE_NAME);
+        childNode2.setDefaultPrimaryTypeName(TEST_TYPE_NAME);
         ntTemplate2.getNodeDefinitionTemplates().add(childNode2);
 
         try {
@@ -821,7 +835,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
 
         // Create the residual child node definition ...
         JcrNodeDefinitionTemplate childNode = new JcrNodeDefinitionTemplate(this.context);
-        childNode.setDefaultPrimaryType(TEST_TYPE_NAME2);
+        childNode.setDefaultPrimaryTypeName(TEST_TYPE_NAME2);
         childNode.setName("*");
         ntTemplate.getNodeDefinitionTemplates().add(childNode);
 
@@ -873,7 +887,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
 
         // Create the residual child node definition ...
         JcrNodeDefinitionTemplate childNode = new JcrNodeDefinitionTemplate(this.context);
-        childNode.setDefaultPrimaryType(TEST_TYPE_NAME2);
+        childNode.setDefaultPrimaryTypeName(TEST_TYPE_NAME2);
         childNode.setName(TEST_CHILD_NODE_NAME);
         ntTemplate.getNodeDefinitionTemplates().add(childNode);
 
@@ -891,7 +905,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
 
         // Create the residual child node definition ...
         JcrNodeDefinitionTemplate childNode = new JcrNodeDefinitionTemplate(this.context);
-        childNode.setDefaultPrimaryType(TEST_TYPE_NAME2);
+        childNode.setDefaultPrimaryTypeName(TEST_TYPE_NAME2);
         childNode.setName("*");
         ntTemplate.getNodeDefinitionTemplates().add(childNode);
 

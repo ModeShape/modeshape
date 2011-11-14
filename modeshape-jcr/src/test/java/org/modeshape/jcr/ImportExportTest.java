@@ -65,6 +65,7 @@ import org.modeshape.jcr.JcrRepository.Option;
 /**
  * Tests of round-trip importing/exporting of repository content.
  */
+@Migrated
 public class ImportExportTest {
 
     private enum ExportType {
