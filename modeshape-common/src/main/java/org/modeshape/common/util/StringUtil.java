@@ -479,6 +479,13 @@ public class StringUtil {
         return data;
     }
 
+    /**
+     * Returns true if the given string is null or represents the empty string
+     */
+    public static boolean isBlank(String str) {
+        return str == null || str.trim().isEmpty();
+    }
+
     private StringUtil() {
         // Prevent construction
     }
