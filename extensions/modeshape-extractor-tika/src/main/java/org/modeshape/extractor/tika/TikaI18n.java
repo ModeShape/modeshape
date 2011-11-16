@@ -23,9 +23,6 @@
  */
 package org.modeshape.extractor.tika;
 
-import java.util.Locale;
-import java.util.Set;
-import org.modeshape.common.CommonI18n;
 import org.modeshape.common.i18n.I18n;
 
 public class TikaI18n {
@@ -39,17 +36,5 @@ public class TikaI18n {
         } catch (final Exception err) {
             System.err.println(err);
         }
-    }
-
-    public static Set<Locale> getLocalizationProblemLocales() {
-        return I18n.getLocalizationProblemLocales(CommonI18n.class);
-    }
-
-    public static Set<String> getLocalizationProblems() {
-        return I18n.getLocalizationProblems(CommonI18n.class);
-    }
-
-    public static Set<String> getLocalizationProblems( Locale locale ) {
-        return I18n.getLocalizationProblems(CommonI18n.class, locale);
     }
 }

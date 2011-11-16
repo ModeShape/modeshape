@@ -23,8 +23,6 @@
  */
 package org.modeshape.connector.jcr;
 
-import java.util.Locale;
-import java.util.Set;
 import org.modeshape.common.i18n.I18n;
 
 /**
@@ -72,17 +70,5 @@ public final class JcrConnectorI18n {
         } catch (final Exception err) {
             System.err.println(err);
         }
-    }
-
-    public static Set<Locale> getLocalizationProblemLocales() {
-        return I18n.getLocalizationProblemLocales(JcrConnectorI18n.class);
-    }
-
-    public static Set<String> getLocalizationProblems() {
-        return I18n.getLocalizationProblems(JcrConnectorI18n.class);
-    }
-
-    public static Set<String> getLocalizationProblems( Locale locale ) {
-        return I18n.getLocalizationProblems(JcrConnectorI18n.class, locale);
     }
 }

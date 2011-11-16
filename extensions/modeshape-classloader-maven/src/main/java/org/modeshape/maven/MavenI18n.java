@@ -23,8 +23,6 @@
  */
 package org.modeshape.maven;
 
-import java.util.Locale;
-import java.util.Set;
 import org.modeshape.common.i18n.I18n;
 
 /**
@@ -63,17 +61,5 @@ public final class MavenI18n {
         } catch (final Exception err) {
             System.err.println(err);
         }
-    }
-
-    public static Set<Locale> getLocalizationProblemLocales() {
-        return I18n.getLocalizationProblemLocales(MavenI18n.class);
-    }
-
-    public static Set<String> getLocalizationProblems() {
-        return I18n.getLocalizationProblems(MavenI18n.class);
-    }
-
-    public static Set<String> getLocalizationProblems( Locale locale ) {
-        return I18n.getLocalizationProblems(MavenI18n.class, locale);
     }
 }
