@@ -23,8 +23,6 @@
  */
 package org.modeshape.sequencer.msoffice;
 
-import java.util.Locale;
-import java.util.Set;
 import org.modeshape.common.i18n.I18n;
 
 /**
@@ -43,17 +41,5 @@ public final class MSOfficeMetadataI18n {
         } catch (final Exception err) {
             System.err.println(err);
         }
-    }
-
-    public static Set<Locale> getLocalizationProblemLocales() {
-        return I18n.getLocalizationProblemLocales(MSOfficeMetadataI18n.class);
-    }
-
-    public static Set<String> getLocalizationProblems() {
-        return I18n.getLocalizationProblems(MSOfficeMetadataI18n.class);
-    }
-
-    public static Set<String> getLocalizationProblems( Locale locale ) {
-        return I18n.getLocalizationProblems(MSOfficeMetadataI18n.class, locale);
     }
 }

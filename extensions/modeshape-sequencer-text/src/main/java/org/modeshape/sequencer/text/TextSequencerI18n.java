@@ -23,8 +23,6 @@
  */
 package org.modeshape.sequencer.text;
 
-import java.util.Locale;
-import java.util.Set;
 import org.modeshape.common.i18n.I18n;
 
 /**
@@ -41,17 +39,5 @@ public final class TextSequencerI18n {
         } catch (final Exception err) {
             System.err.println(err);
         }
-    }
-
-    public static Set<Locale> getLocalizationProblemLocales() {
-        return I18n.getLocalizationProblemLocales(TextSequencerI18n.class);
-    }
-
-    public static Set<String> getLocalizationProblems() {
-        return I18n.getLocalizationProblems(TextSequencerI18n.class);
-    }
-
-    public static Set<String> getLocalizationProblems( Locale locale ) {
-        return I18n.getLocalizationProblems(TextSequencerI18n.class, locale);
     }
 }

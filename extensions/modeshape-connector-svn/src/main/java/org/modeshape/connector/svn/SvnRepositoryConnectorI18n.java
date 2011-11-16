@@ -23,8 +23,6 @@
  */
 package org.modeshape.connector.svn;
 
-import java.util.Locale;
-import java.util.Set;
 import org.modeshape.common.i18n.I18n;
 
 /**
@@ -95,17 +93,4 @@ public final class SvnRepositoryConnectorI18n {
             System.err.println(err);
         }
     }
-
-    public static Set<Locale> getLocalizationProblemLocales() {
-        return I18n.getLocalizationProblemLocales(SvnRepositoryConnectorI18n.class);
-    }
-
-    public static Set<String> getLocalizationProblems() {
-        return I18n.getLocalizationProblems(SvnRepositoryConnectorI18n.class);
-    }
-
-    public static Set<String> getLocalizationProblems( Locale locale ) {
-        return I18n.getLocalizationProblems(SvnRepositoryConnectorI18n.class, locale);
-    }
-
 }

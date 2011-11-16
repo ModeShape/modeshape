@@ -91,7 +91,7 @@ public final class I18n {
      *         locale; never <code>null</code>.
      */
     public static Set<String> getLocalizationProblems( Class<?> i18nClass ) {
-        return getLocalizationProblems(i18nClass, null);
+        return getLocalizationProblems(i18nClass, Locale.getDefault());
     }
 
     /**
@@ -146,50 +146,59 @@ public final class I18n {
      * @param i18nClass A class declaring one or more public, static, non-final fields of type <code>I18n</code>.
      */
     public static void initialize( Class<?> i18nClass ) {
-        CheckArg.isNotNull(i18nClass, "i18nClass");
-        if (i18nClass.isInterface()) {
-            throw new IllegalArgumentException(CommonI18n.i18nClassInterface.text(i18nClass.getName()));
-        }
+        validateI18nClass(i18nClass);
 
         synchronized (i18nClass) {
             // Find all public static non-final String fields in the supplied class and instantiate an I18n object for each.
             try {
                 for (Field fld : i18nClass.getDeclaredFields()) {
-
                     // Ensure field is of type I18n
                     if (fld.getType() == I18n.class) {
-
-                        // Ensure field is public
-                        if ((fld.getModifiers() & Modifier.PUBLIC) != Modifier.PUBLIC) {
-                            throw new SystemFailureException(CommonI18n.i18nFieldNotPublic.text(fld.getName(), i18nClass));
-                        }
-
-                        // Ensure field is static
-                        if ((fld.getModifiers() & Modifier.STATIC) != Modifier.STATIC) {
-                            throw new SystemFailureException(CommonI18n.i18nFieldNotStatic.text(fld.getName(), i18nClass));
-                        }
-
-                        // Ensure field is not final
-                        if ((fld.getModifiers() & Modifier.FINAL) == Modifier.FINAL) {
-                            throw new SystemFailureException(CommonI18n.i18nFieldFinal.text(fld.getName(), i18nClass));
-                        }
-
-                        // Ensure we can access field even if it's in a private class
-                        ClassUtil.makeAccessible(fld);
-
-                        // Initialize field. Do this every time the class is initialized (or re-initialized)
-                        fld.set(null, new I18n(fld.getName(), i18nClass));
+                        initializeI18nField(fld);
                     }
                 }
-
-                // Remove all entries for the supplied i18n class to indicate it has not been localized.
-                for (Entry<Locale, Map<Class<?>, Set<String>>> entry : LOCALE_TO_CLASS_TO_PROBLEMS_MAP.entrySet()) {
-                    entry.getValue().remove(i18nClass);
-                }
+                cleanupPreviousProblems(i18nClass);
             } catch (IllegalAccessException err) {
                 // If this happens, it will happen with the first field visited in the above loop
                 throw new IllegalArgumentException(CommonI18n.i18nClassNotPublic.text(i18nClass));
             }
+        }
+    }
+
+    private static void cleanupPreviousProblems( Class<?> i18nClass ) {
+        // Remove all entries for the supplied i18n class to indicate it has not been localized.
+        for (Entry<Locale, Map<Class<?>, Set<String>>> entry : LOCALE_TO_CLASS_TO_PROBLEMS_MAP.entrySet()) {
+            entry.getValue().remove(i18nClass);
+        }
+    }
+
+    private static void initializeI18nField( Field fld ) throws IllegalAccessException {
+        // Ensure field is public
+        if ((fld.getModifiers() & Modifier.PUBLIC) != Modifier.PUBLIC) {
+            throw new SystemFailureException(CommonI18n.i18nFieldNotPublic.text(fld.getName(), fld.getDeclaringClass()));
+        }
+
+        // Ensure field is static
+        if ((fld.getModifiers() & Modifier.STATIC) != Modifier.STATIC) {
+            throw new SystemFailureException(CommonI18n.i18nFieldNotStatic.text(fld.getName(), fld.getDeclaringClass()));
+        }
+
+        // Ensure field is not final
+        if ((fld.getModifiers() & Modifier.FINAL) == Modifier.FINAL) {
+            throw new SystemFailureException(CommonI18n.i18nFieldFinal.text(fld.getName(), fld.getDeclaringClass()));
+        }
+
+        // Ensure we can access field even if it's in a private class
+        ClassUtil.makeAccessible(fld);
+
+        // Initialize field. Do this every time the class is initialized (or re-initialized)
+        fld.set(null, new I18n(fld.getName(), fld.getDeclaringClass()));
+    }
+
+    private static void validateI18nClass( Class<?> i18nClass ) {
+        CheckArg.isNotNull(i18nClass, "i18nClass");
+        if (i18nClass.isInterface()) {
+            throw new IllegalArgumentException(CommonI18n.i18nClassInterface.text(i18nClass.getName()));
         }
     }
 
@@ -227,63 +236,24 @@ public final class I18n {
             // Get the URL to the localization properties file ...
             final LocalizationRepository repos = getLocalizationRepository();
             final String localizationBaseName = i18nClass.getName();
-            URL url = repos.getLocalizationBundle(localizationBaseName, locale);
-            if (url == null) {
+            URL bundleUrl = repos.getLocalizationBundle(localizationBaseName, locale);
+            if (bundleUrl == null) {
                 // Nothing was found, so try the default locale
                 Locale defaultLocale = Locale.getDefault();
                 if (!defaultLocale.equals(locale)) {
-                    url = repos.getLocalizationBundle(localizationBaseName, defaultLocale);
+                    bundleUrl = repos.getLocalizationBundle(localizationBaseName, defaultLocale);
                 }
                 // Return if no applicable localization file could be found
-                if (url == null) {
+                if (bundleUrl == null) {
                     problems.add(CommonI18n.i18nLocalizationFileNotFound.text(localizationBaseName));
                     return;
                 }
             }
             // Initialize i18n map
-            final URL finalUrl = url;
-            final Set<String> finalProblems = problems;
-            Properties props = new Properties() {
-
-                /**
-                 */
-                private static final long serialVersionUID = 3920620306881072843L;
-
-                @Override
-                public synchronized Object put( Object key,
-                                                Object value ) {
-                    String id = (String)key;
-                    String text = (String)value;
-
-                    try {
-                        Field fld = i18nClass.getDeclaredField(id);
-                        if (fld.getType() != I18n.class) {
-                            // Invalid field type
-                            finalProblems.add(CommonI18n.i18nFieldInvalidType.text(id, finalUrl, getClass().getName()));
-                        } else {
-                            I18n i18n = (I18n)fld.get(null);
-                            if (i18n.localeToTextMap.putIfAbsent(locale, text) != null) {
-                                // Duplicate id encountered
-                                String prevProblem = i18n.localeToProblemMap.putIfAbsent(locale,
-                                                                                         CommonI18n.i18nPropertyDuplicate.text(id,
-                                                                                                                               finalUrl));
-                                assert prevProblem == null;
-                            }
-                        }
-                    } catch (NoSuchFieldException err) {
-                        // No corresponding field exists
-                        finalProblems.add(CommonI18n.i18nPropertyUnused.text(id, finalUrl));
-                    } catch (IllegalAccessException notPossible) {
-                        // Would have already occurred in initialize method, but allowing for the impossible...
-                        finalProblems.add(notPossible.getMessage());
-                    }
-
-                    return null;
-                }
-            };
+            Properties props = prepareBundleLoading(i18nClass, locale, bundleUrl, problems);
 
             try {
-                InputStream propStream = url.openStream();
+                InputStream propStream = bundleUrl.openStream();
                 try {
                     props.load(propStream);
                     // Check for uninitialized fields
@@ -292,11 +262,11 @@ public final class I18n {
                             try {
                                 I18n i18n = (I18n)fld.get(null);
                                 if (i18n.localeToTextMap.get(locale) == null) {
-                                    i18n.localeToProblemMap.put(locale, CommonI18n.i18nPropertyMissing.text(fld.getName(), url));
+                                    i18n.localeToProblemMap.put(locale, CommonI18n.i18nPropertyMissing.text(fld.getName(), bundleUrl));
                                 }
                             } catch (IllegalAccessException notPossible) {
                                 // Would have already occurred in initialize method, but allowing for the impossible...
-                                finalProblems.add(notPossible.getMessage());
+                                problems.add(notPossible.getMessage());
                             }
                         }
                     }
@@ -304,9 +274,47 @@ public final class I18n {
                     propStream.close();
                 }
             } catch (IOException err) {
-                finalProblems.add(err.getMessage());
+                problems.add(err.getMessage());
             }
         }
+    }
+
+    private static Properties prepareBundleLoading( final Class<?> i18nClass, final Locale locale, final URL bundleUrl,
+                                                    final Set<String> problems ) {
+        return new Properties() {
+            private static final long serialVersionUID = 3920620306881072843L;
+
+            @Override
+            public synchronized Object put( Object key,
+                                            Object value ) {
+                String id = (String)key;
+                String text = (String)value;
+
+                try {
+                    Field fld = i18nClass.getDeclaredField(id);
+                    if (fld.getType() != I18n.class) {
+                        // Invalid field type
+                        problems.add(CommonI18n.i18nFieldInvalidType.text(id, bundleUrl, getClass().getName()));
+                    } else {
+                        I18n i18n = (I18n)fld.get(null);
+                        if (i18n.localeToTextMap.putIfAbsent(locale, text) != null) {
+                            // Duplicate id encountered
+                            String prevProblem = i18n.localeToProblemMap.putIfAbsent(locale,
+                                    CommonI18n.i18nPropertyDuplicate.text(id, bundleUrl));
+                            assert prevProblem == null;
+                        }
+                    }
+                } catch (NoSuchFieldException err) {
+                    // No corresponding field exists
+                    problems.add(CommonI18n.i18nPropertyUnused.text(id, bundleUrl));
+                } catch (IllegalAccessException notPossible) {
+                    // Would have already occurred in initialize method, but allowing for the impossible...
+                    problems.add(notPossible.getMessage());
+                }
+
+                return null;
+            }
+        };
     }
 
     private final String id;
