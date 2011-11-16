@@ -1104,6 +1104,11 @@ public class RepositoryConfiguration {
             return properties;
         }
 
+        @Override
+        public String toString() {
+            return "\"" + name + "\" (" + this.classname + ") " + this.properties;
+        }
+
         /**
          * Create an instance of this class.
          * 
@@ -1117,7 +1122,7 @@ public class RepositoryConfiguration {
                                            ClassLoader classLoader ) {
             try {
                 // Handle some of the built-in providers in a special way ...
-                if (AnonymousProvider.class.equals(type)) {
+                if (AnonymousProvider.class.getName().equals(getClassname())) {
                     Object roles = this.properties.get(FieldName.ANONYMOUS_ROLES);
                     Set<String> roleNames = new HashSet<String>();
                     if (roles instanceof Array) {
@@ -1129,7 +1134,7 @@ public class RepositoryConfiguration {
                     Object usernameValue = this.properties.get(FieldName.ANONYMOUS_USERNAME);
                     String username = usernameValue instanceof String ? usernameValue.toString() : Default.ANONYMOUS_USERNAME;
                     return (Type)new AnonymousProvider(username, roleNames);
-                } else if (JaasProvider.class.equals(type)) {
+                } else if (JaasProvider.class.getName().equals(getClassname())) {
                     Object value = this.properties.get(FieldName.JAAS_POLICY_NAME);
                     String policyName = value instanceof String ? value.toString() : Default.JAAS_POLICY_NAME;
                     return (Type)new JaasProvider(policyName);

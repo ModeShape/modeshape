@@ -54,6 +54,11 @@ final class JcrRootNode extends AbstractJcrNode {
     }
 
     @Override
+    public JcrNodeDefinition getDefinition() throws RepositoryException {
+        return session.workspace().nodeTypeManager().getRootNodeDefinition();
+    }
+
+    @Override
     final boolean isRoot() {
         return true;
     }

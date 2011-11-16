@@ -37,6 +37,7 @@ import org.modeshape.jcr.JcrRepository.Option;
 /**
  * A simple test that shows how to configure ModeShape to use anonymous access.
  */
+@Migrated
 public class AccessRolesTest {
 
     private JcrEngine engine;
