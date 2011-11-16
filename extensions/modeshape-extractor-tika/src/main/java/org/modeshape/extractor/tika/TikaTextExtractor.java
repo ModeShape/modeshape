@@ -23,13 +23,7 @@
  */
 package org.modeshape.extractor.tika;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.DefaultParser;
@@ -37,11 +31,19 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.modeshape.common.collection.Collections;
+import org.modeshape.common.util.Logger;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.graph.text.TextExtractor;
 import org.modeshape.graph.text.TextExtractorContext;
 import org.modeshape.graph.text.TextExtractorOutput;
 import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * A {@link TextExtractor} that uses the Apache Tika library.
@@ -63,6 +65,8 @@ import org.xml.sax.SAXException;
  * </p>
  */
 public class TikaTextExtractor implements TextExtractor {
+
+    private static final Logger LOGGER = Logger.getLogger(TikaTextExtractor.class);
 
     /**
      * The MIME types that are excluded by default. Currently, this list consists of:
@@ -126,39 +130,12 @@ public class TikaTextExtractor implements TextExtractor {
                              TextExtractorOutput output,
                              TextExtractorContext context ) throws IOException {
         final DefaultParser parser = initialize();
+        Metadata metadata = prepareMetadata(stream, context);
 
-        // Set up the metadata to use at least the mime type ...
-        String mimeType = context.getMimeType();
-        Metadata metadata = new Metadata();
-        if (mimeType != null) {
-            metadata.set(Metadata.CONTENT_TYPE, mimeType);
-        }
-
-        // Set up the content handler that returns only text content ...
-        ContentHandler textHandler = new BodyContentHandler() {
-            private char[] space = new char[] {' '};
-            private boolean first = true;
-
-            /**
-             * {@inheritDoc}
-             * 
-             * @see org.apache.tika.sax.ContentHandlerDecorator#characters(char[], int, int)
-             */
-            @Override
-            public void characters( char[] ch,
-                                    int start,
-                                    int length ) throws SAXException {
-                if (!first) super.characters(space, 0, 1);
-                super.characters(ch, start, length);
-                first = false;
-            }
-        };
-
-        // Set up an empty parse context ...
-        ParseContext parseContext = new ParseContext();
         try {
+            ContentHandler textHandler = new BodyContentHandler();
             // Parse the input stream ...
-            parser.parse(stream, textHandler, metadata, parseContext);
+            parser.parse(stream, textHandler, metadata, new ParseContext());
 
             // Record all of the text in the body ...
             output.recordText(textHandler.toString().trim());
@@ -167,6 +144,31 @@ public class TikaTextExtractor implements TextExtractor {
         } catch (Throwable e) {
             context.getProblems().addError(e, TikaI18n.errorWhileExtractingTextFrom, context.getInputPath(), e.getMessage());
         }
+    }
+
+    /**
+     * Creates a new tika metadata object used by the parser. This will contain the mime-type of the content being parsed,
+     * if this is available to the underlying context. If not, Tika's autodetection mechanism is used to try and get the
+     * mime-type.
+     *
+     * @param stream a <code>InputStream</code> instance of the content being parsed
+     * @param context the text extraction context
+     * @return a <code>Metadata</code> instance.
+     * @throws java.io.IOException if auto-detecting the mime-type via Tika fails
+     */
+    private Metadata prepareMetadata( InputStream stream, TextExtractorContext context ) throws IOException {
+        Metadata metadata = new Metadata();
+
+        if (StringUtil.isBlank(context.getMimeType())) {
+            LOGGER.warn(TikaI18n.warnMimeTypeNotSet);
+            metadata.set(Metadata.RESOURCE_NAME_KEY, context.getInputPath().getLastSegment().getString());
+            MediaType autoDetectedMimeType = new DefaultDetector(this.getClass().getClassLoader()).detect(stream, metadata);
+            metadata.set(Metadata.CONTENT_TYPE, autoDetectedMimeType.toString());
+        }
+        else {
+            metadata.set(Metadata.CONTENT_TYPE, context.getMimeType());
+        }
+        return metadata;
     }
 
     /**

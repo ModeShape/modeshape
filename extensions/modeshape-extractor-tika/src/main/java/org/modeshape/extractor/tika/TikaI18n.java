@@ -28,6 +28,7 @@ import org.modeshape.common.i18n.I18n;
 public class TikaI18n {
 
     public static I18n errorWhileExtractingTextFrom;
+    public static I18n warnMimeTypeNotSet;
 
     static {
         try {

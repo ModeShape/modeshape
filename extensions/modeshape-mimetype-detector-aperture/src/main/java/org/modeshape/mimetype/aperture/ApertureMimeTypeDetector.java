@@ -44,11 +44,6 @@ public class ApertureMimeTypeDetector implements MimeTypeDetector {
     @Override
     public String mimeTypeOf( String name,
                               InputStream content ) throws IOException {
-        /*
-            MimeTypes identifier = TikaConfig.getDefaultConfig().getMimeRepository();
-            MimeTypeDetectors mimeType = identifier.getMimeType(path.getLastSegment().getName().getLocalName(), stream);
-            return mimeType == null ? null : mimeType.getName();
-        */
         MimeTypeIdentifier identifier = new MagicMimeTypeIdentifier();
         // Read as many bytes of the file as desired by the MIME-type identifier
         int minimumArrayLength = identifier.getMinArrayLength();

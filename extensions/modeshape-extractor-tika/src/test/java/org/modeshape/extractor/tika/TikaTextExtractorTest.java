@@ -23,6 +23,7 @@
  */
 package org.modeshape.extractor.tika;
 
+import org.apache.tika.exception.TikaException;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
@@ -34,6 +35,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
@@ -43,6 +45,7 @@ import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.text.TextExtractorContext;
 import org.modeshape.graph.text.TextExtractorOutput;
+import org.xml.sax.SAXException;
 
 public class TikaTextExtractorTest {
 
@@ -103,7 +106,6 @@ public class TikaTextExtractorTest {
 
     @Test
     public void shouldExtractTextFromTextFile() throws IOException {
-        // print = true;
         extractTermsFrom("modeshape.txt");
         loadExpectedFrom("modeshape.txt");
         extractedShouldHave(remainingExpectedTerms());
@@ -111,7 +113,6 @@ public class TikaTextExtractorTest {
 
     @Test
     public void shouldExtractTextFromDocFile() throws IOException {
-        // print = true;
         extractTermsFrom("modeshape.doc");
         loadExpectedFrom("modeshape.txt");
         extractedShouldHave(remainingExpectedTerms());
@@ -119,30 +120,30 @@ public class TikaTextExtractorTest {
 
     @Test
     public void shouldExtractTextFromDocxFile() throws IOException {
-        print = true;
         extractTermsFrom("modeshape.docx");
         loadExpectedFrom("modeshape.txt");
-        // extractedShouldHave(remainingExpectedTerms()); // screwy results with intermittent spaces
     }
 
     @Test
-    public void shouldExtractTextFromPdfFile() throws IOException {
-        // print = true;
-        extractTermsFrom("modeshape.pdf");
+    public void shouldExtractTextFromPdfFileGS() throws IOException, SAXException, TikaException {
+        extractTermsFrom("modeshape_gs.pdf");
+        assertExtractedMatchesExpected();
+    }
+
+    @Test
+    @Ignore("Exposes the Tika/PDF box bug that characters get duplicated when parsing pdfs produced by PDF Context")
+    public void shouldExtractTextFromPdfFilePdfContext() throws IOException, SAXException, TikaException {
+        extractTermsFrom("modeshape_pdfcontext.pdf");
+        assertExtractedMatchesExpected();
+    }
+
+    private void assertExtractedMatchesExpected() throws IOException {
         loadExpectedFrom("modeshape.txt");
         extractedShouldHave("2011-01-24");
-        extractedShouldHave(expectedTermsThrough("-", "versioning"));
         extractedShouldHave("-", "1/2", "-");
-
-        // --- START HACK ---
-        // Tika's PDF parser repeats some of the text, so as a hack we have to reload the expected terms and skip part
-        // of the first page ...
-        loadExpectedFrom("modeshape.txt");
-        expectedTermsThrough("managing", "this", "complex", "and");
         extractedShouldHave(expectedTermsThrough("-", "versioning"));
-        // --- END HACK ---
-
         extractedShouldHave("2011-01-24");
+        extractedShouldHave("-", "2/2", "-");
         extractedShouldHave(remainingExpectedTerms());
     }
 
