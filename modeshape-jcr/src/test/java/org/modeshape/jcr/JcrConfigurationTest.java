@@ -64,6 +64,7 @@ import org.modeshape.repository.ModeShapeConfiguration;
 import org.modeshape.repository.ModeShapeConfiguration.ConfigurationDefinition;
 import org.modeshape.repository.ModeShapeLexicon;
 
+@Migrated
 public class JcrConfigurationTest {
 
     private JcrConfiguration configuration;

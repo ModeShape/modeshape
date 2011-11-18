@@ -465,7 +465,7 @@ class JcrNodeType implements NodeType {
      * 
      * @return the internal {@link Name} object for the node type.
      */
-    Name getInternalName() {
+    final Name getInternalName() {
         return name;
     }
 

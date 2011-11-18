@@ -68,8 +68,8 @@
         'IGNORE', 'ABORT' 
   - jcr:protected (boolean) mandatory protected 
   - jcr:requiredType (string) mandatory protected
-    < 'STRING', 'BINARY', 'LONG', 'DOUBLE', 'BOOLEAN', 
-      'DATE', 'NAME', 'PATH', 'REFERENCE', 'UNDEFINED' 
+    < 'STRING', 'URI', 'BINARY', 'LONG', 'DOUBLE', 'DECIMAL', 'BOOLEAN', 
+      'DATE', 'NAME', 'PATH', 'REFERENCE', 'WEAKREFERENCE', 'UNDEFINED'
   - jcr:valueConstraints (string) multiple protected 
   - jcr:availableQueryOperators (name) mandatory multiple protected 
   - jcr:defaultValues (undefined) multiple protected

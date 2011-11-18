@@ -23,6 +23,9 @@
  */
 package org.modeshape.jcr;
 
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.LoginException;
 import javax.jcr.SimpleCredentials;
@@ -41,7 +44,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class AccessRolesTest {
+public class AuthenticationAndAuthorizationTest {
 
     private static final String REPO_NAME = "testRepo";
 
@@ -121,23 +124,47 @@ public class AccessRolesTest {
      * }
      * </pre>
      * 
+     * If anonymous logins <i>are</i> enabled, then they are also enabled on failed logins:
+     * 
+     * <pre>
+     * {
+     *     "name" : "repositoryNameParameter";
+     *     "security" : {
+     *         "anonymous" : {
+     *             "useOnFailedLogin" : true
+     *         },
+     *         "providers" : [
+     *             {
+     *                 "type" : "JAAS",
+     *                 "policyName" : "modeshape-jcr"
+     *             }
+     *         ]
+     *     }
+     * }
+     * </pre>
+     * 
      * </p>
      * 
      * @param repositoryName the name of the repository; may not be null
-     * @param enableAnonymousLogins flag denoting whether anonymous logins should be enabled
      * @param jaasPolicyName the name of the jaas policy; may be null if JAAS should be not be enabled
+     * @param anonymousRoleNames the anonymous role names, or empty if anonymous logins should be disabled
      * @return the configuration document; never null
      */
     protected Document createRepositoryConfiguration( String repositoryName,
-                                                      boolean enableAnonymousLogins,
-                                                      String jaasPolicyName ) {
+                                                      String jaasPolicyName,
+                                                      String... anonymousRoleNames ) {
         EditableDocument doc = Schematic.newDocument("name", repositoryName);
         EditableDocument security = doc.getOrCreateDocument("security");
 
-        if (!enableAnonymousLogins) {
+        if (anonymousRoleNames == null || anonymousRoleNames.length == 0) {
             // Disable anonymous logins ...
             EditableDocument anonymous = security.getOrCreateDocument("anonymous");
             anonymous.setArray("roles");
+        } else {
+            // Set the roles and use on failed logins ...
+            EditableDocument anonymous = security.getOrCreateDocument("anonymous");
+            anonymous.setArray("roles", (Object[])anonymousRoleNames);
+            anonymous.setBoolean("useOnFailedLogin", true);
         }
 
         if (jaasPolicyName != null) {
@@ -154,8 +181,8 @@ public class AccessRolesTest {
     public void shouldLogInAsAnonymousUsingNoCredentials() throws Exception {
         String repoName = REPO_NAME;
         String jaasPolicyName = "modeshape-jcr-non-existant";
-        boolean useAnonymous = true;
-        Document config = createRepositoryConfiguration(repoName, useAnonymous, jaasPolicyName);
+        String[] anonRoleNames = {ModeShapeRoles.READWRITE};
+        Document config = createRepositoryConfiguration(repoName, jaasPolicyName, anonRoleNames);
 
         startRepositoryWith(config, repoName);
 
@@ -165,26 +192,51 @@ public class AccessRolesTest {
     }
 
     @Test
-    public void shouldLogInAsUserWithReadOnlyRole() throws Exception {
+    public void shouldLogInAsAnonymousWithReadOnlyPrivilegesUsingNoCredentials() throws Exception {
         String repoName = REPO_NAME;
-        String jaasPolicyName = "modeshape-jcr";
-        boolean useAnonymous = false;
-        Document config = createRepositoryConfiguration(repoName, useAnonymous, jaasPolicyName);
+        String jaasPolicyName = "modeshape-jcr-non-existant";
+        String[] anonRoleNames = {ModeShapeRoles.READONLY};
+        Document config = createRepositoryConfiguration(repoName, jaasPolicyName, anonRoleNames);
 
         startRepositoryWith(config, repoName);
 
-        session = repository.login(new SimpleCredentials("readonly", "readonly".toCharArray()));
+        session = repository.login();
+        session.getRootNode().getPath();
+        try {
+            session.getRootNode().addNode("someNewNode");
+            fail("Should not have been able to update content with a read-only user");
+        } catch (javax.jcr.AccessDeniedException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void shouldLogInAsUserWithReadOnlyRole() throws Exception {
+        String repoName = REPO_NAME;
+        String jaasPolicyName = "modeshape-jcr";
+        String[] anonRoleNames = {};
+        Document config = createRepositoryConfiguration(repoName, jaasPolicyName, anonRoleNames);
+
+        startRepositoryWith(config, repoName);
+
+        session = repository.login(new SimpleCredentials(ModeShapeRoles.READONLY, ModeShapeRoles.READONLY.toCharArray()));
 
         session.getRootNode().getPath();
         session.getRootNode().getDefinition();
+        try {
+            session.getRootNode().addNode("someNewNode");
+            fail("Should not have been able to update content with a read-only user");
+        } catch (javax.jcr.AccessDeniedException e) {
+            // expected
+        }
     }
 
     @Test
     public void shouldLogInAsUserWithReadWriteRole() throws Exception {
         String repoName = REPO_NAME;
         String jaasPolicyName = "modeshape-jcr";
-        boolean useAnonymous = false;
-        Document config = createRepositoryConfiguration(repoName, useAnonymous, jaasPolicyName);
+        String[] anonRoleNames = {};
+        Document config = createRepositoryConfiguration(repoName, jaasPolicyName, anonRoleNames);
 
         startRepositoryWith(config, repoName);
 
@@ -199,15 +251,58 @@ public class AccessRolesTest {
     public void shouldNotAllowAnonymousLoginsWhenUsingOnlyJaas() throws Exception {
         String repoName = REPO_NAME;
         String jaasPolicyName = "modeshape-jcr";
-        boolean useAnonymous = false;
-        Document config = createRepositoryConfiguration(repoName, useAnonymous, jaasPolicyName);
+        String[] anonRoleNames = {};
+        Document config = createRepositoryConfiguration(repoName, jaasPolicyName, anonRoleNames);
 
         startRepositoryWith(config, repoName);
 
         try {
             session = repository.login();
+            fail("Should not have been able to login anonymously if anonymous logins are disabled");
         } catch (LoginException e) {
             // expected
         }
     }
+
+    @Test
+    public void shouldLogInAsAnonymousUserIfNoProviderAuthenticatesCredentials() throws Exception {
+        String repoName = REPO_NAME;
+        String jaasPolicyName = "modeshape-jcr";
+        String[] anonRoleNames = {ModeShapeRoles.READONLY};
+        Document config = createRepositoryConfiguration(repoName, jaasPolicyName, anonRoleNames);
+
+        startRepositoryWith(config, repoName);
+
+        session = repository.login(new SimpleCredentials("readwrite", "wrongpassword".toCharArray()));
+
+        assertThat(session.isAnonymous(), is(true));
+
+        session.getRootNode().getPath();
+        session.getRootNode().getDefinition();
+        try {
+            session.getRootNode().addNode("someNewNode");
+            fail("Should not have been able to update content with a read-only user");
+        } catch (javax.jcr.AccessDeniedException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void shouldLogInAsWritableAnonymousUserIfNoProviderAuthenticatesCredentials() throws Exception {
+        String repoName = REPO_NAME;
+        String jaasPolicyName = "modeshape-jcr";
+        String[] anonRoleNames = {ModeShapeRoles.READWRITE};
+        Document config = createRepositoryConfiguration(repoName, jaasPolicyName, anonRoleNames);
+
+        startRepositoryWith(config, repoName);
+
+        session = repository.login(new SimpleCredentials("readwrite", "wrongpassword".toCharArray()));
+
+        assertThat(session.isAnonymous(), is(true));
+
+        session.getRootNode().getPath();
+        session.getRootNode().getDefinition();
+        session.getRootNode().addNode("someNewNode");
+    }
+
 }

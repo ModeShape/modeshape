@@ -187,7 +187,7 @@ public class InMemoryPerformanceTest {
     public void shouldAllowCreatingManyUnstructuredNodesWithNoSameNameSiblings() throws Exception {
         Stopwatch sw = new Stopwatch();
         System.out.print("Iterating ");
-        for (int i = 0; i != 5; ++i) {
+        for (int i = 0; i != 10; ++i) {
             System.out.print(".");
             // Each iteration adds another node under the root and creates the many nodes under that node ...
             Node node = session.getRootNode().addNode("testNode");
@@ -205,7 +205,7 @@ public class InMemoryPerformanceTest {
             node.addNode("oneMore");
             session.save();
 
-            session.getRootNode().getNode("testNode").remove();
+            node.remove();
             session.save();
             assertThat(session.getRootNode().getNodes().getSize(), is(1L));
         }

@@ -359,13 +359,13 @@ public class DocumentTranslator {
         }
     }
 
-    public void removeProperty( EditableDocument document,
-                                Name propertyName ) {
+    public Property removeProperty( EditableDocument document,
+                                    Name propertyName ) {
         // Get the properties container if it exists ...
         EditableDocument properties = document.getDocument(PROPERTIES);
         if (properties == null) {
             // Doesn't contain the property ...
-            return;
+            return null;
         }
 
         // Get the namespace container for the property name's namespace ...
@@ -373,17 +373,18 @@ public class DocumentTranslator {
         EditableDocument urlProps = properties.getDocument(namespaceUri);
         if (urlProps == null) {
             // Doesn't contain the property ...
-            return;
+            return null;
         }
 
         // Now remove the property ...
         String localName = propertyName.getLocalName();
-        urlProps.remove(localName);
+        Object fieldValue = urlProps.remove(localName);
 
         // Now remove the namespace if empty ...
         if (urlProps.isEmpty()) {
             properties.remove(namespaceUri);
         }
+        return fieldValue == null ? null : propertyFor(propertyName, fieldValue);
     }
 
     public void addPropertyValues( EditableDocument document,

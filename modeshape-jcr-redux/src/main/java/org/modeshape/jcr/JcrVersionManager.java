@@ -36,6 +36,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.InvalidItemStateException;
 import javax.jcr.ItemExistsException;
@@ -78,6 +79,8 @@ import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PathFactory;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.PropertyFactory;
+import org.modeshape.jcr.value.Reference;
+import org.modeshape.jcr.value.ReferenceFactory;
 
 /**
  * Local implementation of version management code, comparable to an implementation of the JSR-283 {@code VersionManager}
@@ -206,14 +209,49 @@ final class JcrVersionManager implements VersionManager {
         if (historyNode != null) {
             return (JcrVersionHistoryNode)session.node(historyNode, Type.VERSION_HISTORY);
         }
-        // We have to initialize the version history for this node ...
+        // Per Section 15.1:
+        // "Under both simple and full versioning, on persist of a new versionable node N that neither corresponds
+        // nor shares with an existing node:
+        // - The jcr:isCheckedOut property of N is set to true and
+        // - A new VersionHistory (H) is created for N. H contains one Version, the root version (V0)
+        // (see §3.13.5.2 Root Version)."
+        //
+        // This means that the version history should not be created until save is performed. This makes sense,
+        // because otherwise the version history would be persisted for a newly-created node, even though that node
+        // is not yet persisted. Tests with the reference implementation (see sandbox) verified this behavior.
+        //
+        // If the node is new, then we'll throw an exception
+        if (node.isNew()) {
+            String msg = JcrI18n.noVersionHistoryForTransientVersionableNodes.text(node.location());
+            throw new InvalidItemStateException(msg);
+        }
+
+        // Get the cached node and see if the 'mix:versionable' mixin was added transiently ...
+        CachedNode cachedNode = node.node();
+        if (cachedNode instanceof MutableCachedNode) {
+            // There are at least some changes. See if the node is newly versionable ...
+            MutableCachedNode mutable = (MutableCachedNode)cachedNode;
+            RepositoryNodeTypeManager.Capabilities nodeTypeCapabilities = repository().nodeTypeManager().getCapabilities();
+            Name primaryType = mutable.getPrimaryType(cache);
+            Set<Name> mixinTypes = mutable.getAddedMixins(cache);
+            if (nodeTypeCapabilities.isVersionable(primaryType, mixinTypes)) {
+                // We don't create the verison history until the versionable state is persisted ...
+                String msg = JcrI18n.versionHistoryForNewlyVersionableNodesNotAvailableUntilSave.text(node.location());
+                throw new UnsupportedRepositoryOperationException(msg);
+            }
+        }
+
+        // Otherwise the node IS versionable and we need to initialize the version history ...
         initializeVersionHistoryFor(node, historyKey, cache);
+        // Look up the history node again, using this session ...
+        historyNode = cache.getNode(historyKey);
         return (JcrVersionHistoryNode)session.node(historyNode, Type.VERSION_HISTORY);
     }
 
     private void initializeVersionHistoryFor( AbstractJcrNode node,
                                               NodeKey historyKey,
                                               SessionCache cache ) throws RepositoryException {
+        SystemContent content = new SystemContent(session.createSystemCache(false));
         CachedNode cachedNode = node.node();
         Name primaryTypeName = cachedNode.getPrimaryType(cache);
         Set<Name> mixinTypeNames = cachedNode.getMixinTypes(cache);
@@ -221,7 +259,6 @@ final class JcrVersionManager implements VersionManager {
         Path versionHistoryPath = versionHistoryPathFor(versionedKey);
         DateTime now = session().dateFactory().create();
 
-        SystemContent content = new SystemContent(session.createSystemCache(false));
         content.initializeVersionStorage(versionedKey,
                                          historyKey,
                                          null,
@@ -309,27 +346,35 @@ final class JcrVersionManager implements VersionManager {
         MutableCachedNode version = null;
         try {
             // Create a new version in the history for this node; this initializes the version history if it is missing ...
-            version = systemContent.recordNewVersion(cachedNode, cache, versionHistoryPath, null, now);
+            List<Property> versionableProps = new ArrayList<Property>();
+            addVersionedPropertiesFor(node, false, versionableProps);
+
+            AtomicReference<MutableCachedNode> frozen = new AtomicReference<MutableCachedNode>();
+            version = systemContent.recordNewVersion(cachedNode, cache, versionHistoryPath, null, versionableProps, now, frozen);
             NodeKey historyKey = version.getParentKey(systemSession);
 
             // Update the node's 'mix:versionable' properties, using a new session ...
             SessionCache versionSession = session.spawnSessionCache(false);
             MutableCachedNode versionableNode = versionSession.mutable(versionedKey);
             PropertyFactory props = propertyFactory();
-            versionableNode.setProperty(versionSession, props.create(JcrLexicon.VERSION_HISTORY, historyKey.toString()));
-            versionableNode.setProperty(versionSession, props.create(JcrLexicon.BASE_VERSION, version.getKey().toString()));
+            ReferenceFactory refFactory = session.referenceFactory();
+            Reference historyRef = refFactory.create(historyKey);
+            Reference baseVersionRef = refFactory.create(version.getKey());
+            versionableNode.setProperty(versionSession, props.create(JcrLexicon.VERSION_HISTORY, historyRef));
+            versionableNode.setProperty(versionSession, props.create(JcrLexicon.BASE_VERSION, baseVersionRef));
             versionableNode.setProperty(versionSession, props.create(JcrLexicon.IS_CHECKED_OUT, Boolean.FALSE));
             // The 'jcr:predecessors' set to an empty array, per Section 15.2 in JSR-283
             versionableNode.setProperty(versionSession, props.create(JcrLexicon.PREDECESSORS, new Object[] {}));
 
-            // Now process the children of the versionable node ...
+            // Now process the children of the versionable node, and add them under the frozen node ...
+            MutableCachedNode frozenNode = frozen.get();
             for (ChildReference childRef : cachedNode.getChildReferences(versionSession)) {
                 AbstractJcrNode child = session.node(childRef.getKey(), null);
-                versionNodeAt(child, version, false, versionSession, systemSession);
+                versionNodeAt(child, frozenNode, false, versionSession, systemSession);
             }
 
             // Now save all of the changes ...
-            versionSession.save(systemSession);
+            versionSession.save(systemSession, null);
         } finally {
             // TODO: Versioning: may want to catch this block and retry, if the new version name couldn't be created
         }
@@ -395,16 +440,14 @@ final class JcrVersionManager implements VersionManager {
                 props.add(factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FROZEN_NODE));
                 props.add(factory.create(JcrLexicon.FROZEN_PRIMARY_TYPE, primaryTypeName));
                 props.add(factory.create(JcrLexicon.FROZEN_MIXIN_TYPES, mixinTypeNames));
-                if (node.isReferenceable()) {
-                    props.add(factory.create(JcrLexicon.FROZEN_UUID, node.getIdentifier()));
-                }
+                props.add(factory.create(JcrLexicon.FROZEN_UUID, node.getIdentifier()));
                 addVersionedPropertiesFor(node, forceCopy, props);
                 MutableCachedNode newCopy = parentInVersionHistory.createChild(versionHistoryCache, key, node.name(), props);
 
                 // Now process the children of the versionable node ...
                 for (ChildReference childRef : node.node().getChildReferences(nodeCache)) {
                     AbstractJcrNode child = session.node(childRef.getKey(), null);
-                    versionNodeAt(child, newCopy, false, nodeCache, versionHistoryCache);
+                    versionNodeAt(child, newCopy, forceCopy, nodeCache, versionHistoryCache);
                 }
                 return;
             case OnParentVersionAction.INITIALIZE:
@@ -539,7 +582,7 @@ final class JcrVersionManager implements VersionManager {
             Name p1 = names.create(sha1OrUuid.substring(0, 2));
             Name p2 = names.create(sha1OrUuid.substring(2, 4));
             Name p3 = names.create(sha1OrUuid.substring(4, 6));
-            Name p4 = names.create(sha1OrUuid.substring(6));
+            Name p4 = names.create(sha1OrUuid);
             return paths.createAbsolutePath(JcrLexicon.SYSTEM, JcrLexicon.VERSION_STORAGE, p1, p2, p3, p4);
         }
     }
@@ -773,7 +816,7 @@ final class JcrVersionManager implements VersionManager {
                                                                           .property()
                                                                           .getFirstValue());
             AbstractJcrProperty uuidProp = sourceNode.getProperty(JcrLexicon.FROZEN_UUID);
-            NodeKey desiredKey = new NodeKey(session.stringFactory().create(uuidProp.property().getFirstValue()));
+            NodeKey desiredKey = parentNode.key().withId(session.stringFactory().create(uuidProp.property().getFirstValue()));
 
             Property primaryType = propFactory.create(JcrLexicon.PRIMARY_TYPE, primaryTypeName);
             MutableCachedNode newChild = parentNode.mutable().createChild(cache,
@@ -794,9 +837,12 @@ final class JcrVersionManager implements VersionManager {
                                                labelToRestore, removeExisting);
         op.execute();
 
+        ReferenceFactory refFactory = session.referenceFactory();
+        Reference baseVersionRef = refFactory.create(jcrVersion.key());
+
         MutableCachedNode mutable = existingNode.mutable();
-        mutable.setProperty(cache, propFactory.create(JcrLexicon.IS_CHECKED_OUT, PropertyType.BOOLEAN));
-        mutable.setProperty(cache, propFactory.create(JcrLexicon.BASE_VERSION, jcrVersion.key().toString()));
+        mutable.setProperty(cache, propFactory.create(JcrLexicon.IS_CHECKED_OUT, Boolean.FALSE));
+        mutable.setProperty(cache, propFactory.create(JcrLexicon.BASE_VERSION, baseVersionRef));
 
         session.save();
     }
@@ -1059,7 +1105,7 @@ final class JcrVersionManager implements VersionManager {
             Map<NodeKey, CachedNode> presentInBoth = new HashMap<NodeKey, CachedNode>();
 
             // Start with all target children in this set and pull them out as matches are found
-            List<ChildReference> inTargetOnly = asList(target.getChildReferences(cache));
+            List<NodeKey> inTargetOnly = asList(target.getChildReferences(cache));
 
             // Start with no source children in this set, but add them in when no match is found
             Map<CachedNode, CachedNode> inSourceOnly = new HashMap<CachedNode, CachedNode>();
@@ -1081,7 +1127,7 @@ final class JcrVersionManager implements VersionManager {
                         // use match directly
                         versionedChildrenThatShouldNotBeRestored.add(match);
                     }
-                    inTargetOnly.remove(match);
+                    inTargetOnly.remove(match.getKey());
                     presentInBoth.put(child.getKey(), match);
 
                 } else {
@@ -1090,16 +1136,15 @@ final class JcrVersionManager implements VersionManager {
             }
 
             // Remove all the extraneous children of the target node
-            for (ChildReference targetChild : inTargetOnly) {
-                NodeKey childKey = targetChild.getKey();
+            for (NodeKey childKey : inTargetOnly) {
                 AbstractJcrNode child = session.node(childKey, null);
                 switch (child.getDefinition().getOnParentVersion()) {
-                    case OnParentVersionAction.COPY:
                     case OnParentVersionAction.ABORT:
                     case OnParentVersionAction.VERSION:
+                    case OnParentVersionAction.COPY:
                         target.removeChild(cache, childKey);
+                        // Otherwise we're going to reuse the exisitng node
                         break;
-
                     case OnParentVersionAction.COMPUTE:
                         // Technically, this should reinitialize the node per its defaults.
                     case OnParentVersionAction.INITIALIZE:
@@ -1132,7 +1177,7 @@ final class JcrVersionManager implements VersionManager {
                     resolvedChild = resolveSourceNode(sourceChild, checkinTime, cache);
 
                     sourceChildNode = session.node(resolvedChild, (Type)null);
-                    targetChildNode = session.node(resolvedChild, (Type)null);
+                    targetChildNode = session.node(targetChild, (Type)null);
 
                 } else {
                     // Pull the resolved node
@@ -1146,12 +1191,12 @@ final class JcrVersionManager implements VersionManager {
                     if (JcrNtLexicon.FROZEN_NODE.equals(resolvedPrimaryTypeName)) {
                         primaryTypeName = name(resolvedChild.getProperty(JcrLexicon.FROZEN_PRIMARY_TYPE, cache).getFirstValue());
                         Property idProp = resolvedChild.getProperty(JcrLexicon.FROZEN_UUID, cache);
-                        desiredKey = new NodeKey(string(idProp.getFirstValue()));
+                        desiredKey = target.getKey().withId(string(idProp.getFirstValue()));
                     } else {
                         primaryTypeName = resolvedChild.getPrimaryType(cache);
                         Property idProp = resolvedChild.getProperty(JcrLexicon.UUID, cache);
-                        desiredKey = idProp != null && !idProp.isEmpty() ? new NodeKey(string(idProp.getFirstValue())) : target.getKey()
-                                                                                                                               .withRandomId();
+                        desiredKey = idProp != null && !idProp.isEmpty() ? target.getKey().withId(string(idProp.getFirstValue())) : target.getKey()
+                                                                                                                                          .withRandomId();
                     }
                     Property primaryType = propFactory.create(JcrLexicon.PRIMARY_TYPE, primaryTypeName);
                     targetChild = target.createChild(cache, desiredKey, sourceChildNode.name(), primaryType);
@@ -1182,8 +1227,9 @@ final class JcrVersionManager implements VersionManager {
                                           NodeKey baseVersion,
                                           SessionCache cache,
                                           PropertyFactory propFactory ) {
-            node.setProperty(cache, propFactory.create(JcrLexicon.IS_CHECKED_OUT, PropertyType.BOOLEAN));
-            node.setProperty(cache, propFactory.create(JcrLexicon.BASE_VERSION, baseVersion.toString()));
+            Reference baseVersionRef = session.referenceFactory().create(baseVersion);
+            node.setProperty(cache, propFactory.create(JcrLexicon.IS_CHECKED_OUT, Boolean.FALSE));
+            node.setProperty(cache, propFactory.create(JcrLexicon.BASE_VERSION, baseVersionRef));
         }
 
         /**
@@ -1370,11 +1416,11 @@ final class JcrVersionManager implements VersionManager {
          * @param references the child references
          * @return a list containing the same elements as {@code references} in the same order; never null
          */
-        private List<ChildReference> asList( ChildReferences references ) {
+        private List<NodeKey> asList( ChildReferences references ) {
             assert references.size() < Integer.MAX_VALUE;
-            List<ChildReference> newList = new ArrayList<ChildReference>((int)references.size());
+            List<NodeKey> newList = new ArrayList<NodeKey>((int)references.size());
             for (ChildReference ref : references) {
-                newList.add(ref);
+                newList.add(ref.getKey());
             }
             return newList;
         }

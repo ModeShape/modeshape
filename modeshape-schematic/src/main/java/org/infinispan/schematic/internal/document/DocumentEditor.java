@@ -393,6 +393,14 @@ public class DocumentEditor implements EditableDocument {
     }
 
     @Override
+    public EditableArray setArray( String name,
+                                   Object... values ) {
+        List<?> array = new BasicArray(values);
+        doSetValue(name, array);
+        return editable(array, name);
+    }
+
+    @Override
     public EditableDocument setDate( String name,
                                      Date value ) {
         doSetValue(name, value);

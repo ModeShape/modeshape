@@ -74,6 +74,7 @@ import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.jcr.RepositoryNodeTypeManager.Capabilities;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.CachedNode.ReferenceType;
 import org.modeshape.jcr.cache.ChildReference;
@@ -90,6 +91,7 @@ import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
 import org.modeshape.jcr.value.PathFactory;
 import org.modeshape.jcr.value.Property;
+import org.modeshape.jcr.value.PropertyFactory;
 import org.modeshape.jcr.value.Reference;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFactory;
@@ -179,8 +181,12 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     abstract Type type();
 
-    @SuppressWarnings( "unused" )
-    protected void checkForWrites() throws RepositoryException {
+    /**
+     * Check that this type of node can be modified
+     * 
+     * @throws RepositoryException
+     */
+    protected void checkNodeTypeCanBeModified() throws RepositoryException {
     }
 
     protected SessionCache sessionCache() {
@@ -194,12 +200,16 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     /**
      * Get the cached node.
      * 
-     * @return teh cached node
-     * @throws ItemNotFoundException if the node no longer exists
+     * @return the cached node
+     * @throws InvalidItemStateException if the node has been removed in this session's transient state
+     * @throws ItemNotFoundException if the node does not exist
      */
-    protected final CachedNode node() throws ItemNotFoundException {
+    protected final CachedNode node() throws ItemNotFoundException, InvalidItemStateException {
         CachedNode node = sessionCache().getNode(key);
         if (node == null) {
+            if (sessionCache().isDestroyed(key)) {
+                throw new InvalidItemStateException("The node with key " + key + " has been removed in this session.");
+            }
             throw new ItemNotFoundException("The node with key " + key + " no longer exists.");
         }
         return node;
@@ -215,7 +225,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     }
 
     @Override
-    Path path() throws ItemNotFoundException {
+    Path path() throws ItemNotFoundException, InvalidItemStateException {
         return node().getPath(sessionCache());
     }
 
@@ -242,7 +252,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     @Override
     public final String getIdentifier() {
-        return key.toString();
+        return key.getIdentifier();
     }
 
     /**
@@ -325,6 +335,14 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                     }
                 }
             }
+        } else {
+            // Make sure the property hasn't been removed by another session ...
+            CachedNode node = node();
+            SessionCache cache = sessionCache();
+            if (!node.hasProperty(propertyName, cache)) {
+                jcrProperties.remove(propertyName);
+                prop = null;
+            }
         }
         return prop;
     }
@@ -363,6 +381,22 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         return session.stringFactory().create(obj);
     }
 
+    final String readable( Collection<?> obj ) {
+        ValueFactory<String> stringFactory = session.stringFactory();
+        StringBuilder sb = new StringBuilder();
+        sb.append('[');
+        Iterator<?> iter = obj.iterator();
+        if (iter.hasNext()) {
+            sb.append(stringFactory.create(iter.next()));
+            while (iter.hasNext()) {
+                sb.append(',');
+                sb.append(stringFactory.create(iter.next()));
+            }
+        }
+        sb.append(']');
+        return sb.toString();
+    }
+
     /**
      * Find the property definition for the property, given this node's primary type and mixin types.
      * 
@@ -390,7 +424,11 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             I18n msg = JcrI18n.propertyNoLongerSatisfiesConstraints;
             throw new ConstraintViolationException(msg.text(pName, loc, defn.getName(), defn.getDeclaringNodeType().getName()));
         }
-        throw new ConstraintViolationException(JcrI18n.propertyNoLongerHasValidDefinition.text(pName, loc));
+        CachedNode node = sessionCache().getNode(key);
+        String ptype = readable(node.getPrimaryType(sessionCache()));
+        String mixins = readable(node.getMixinTypes(sessionCache()));
+        String pstr = property.getString(session.namespaces());
+        throw new ConstraintViolationException(JcrI18n.propertyNoLongerHasValidDefinition.text(pstr, loc, ptype, mixins));
     }
 
     /**
@@ -544,14 +582,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @see Lock#getLockToken()
      */
     protected final void checkForLock() throws LockException, RepositoryException {
-        if (isLocked()) {
-            Lock lock = getLock();
-            assert lock != null;
-            if (!lock.isLockOwningSession()) {
-                if (lock.getLockToken() == null) {
-                    throw new LockException(JcrI18n.lockTokenNotHeld.text(key(), location()));
-                }
-            }
+        Lock lock = getLockIfExists();
+        if (lock != null && !lock.isLockOwningSession() && lock.getLockToken() == null) {
+            throw new LockException(JcrI18n.lockTokenNotHeld.text(location()));
         }
     }
 
@@ -596,9 +629,11 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @return the JCR node; never null
      * @throws PathNotFoundException if there is no child with the supplied name
      * @throws ItemNotFoundException if this node or the referenced child no longer exist or cannot be found
+     * @throws InvalidItemStateException if this node has been removed in this session's transient state
      */
     protected final AbstractJcrNode childNode( Name name,
-                                               Type expectedType ) throws PathNotFoundException, ItemNotFoundException {
+                                               Type expectedType )
+        throws PathNotFoundException, ItemNotFoundException, InvalidItemStateException {
         ChildReference ref = node().getChildReferences(sessionCache()).getChild(name);
         if (ref == null) {
             String msg = JcrI18n.childNotFoundUnderNode.text(readable(name), location(), session.workspaceName());
@@ -614,10 +649,12 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @param expectedType the expected implementation type for the node, or null if it is not known
      * @return the JCR node; never null
      * @throws PathNotFoundException if there is no child with the supplied name
-     * @throws ItemNotFoundException if this node or the referenced child no longer exist or cannot be found
+     * @throws ItemNotFoundException if this node or the referenced child cannot be found
+     * @throws InvalidItemStateException if this node has been removed in this session's transient state
      */
     protected final AbstractJcrNode childNode( Segment segment,
-                                               Type expectedType ) throws PathNotFoundException, ItemNotFoundException {
+                                               Type expectedType )
+        throws PathNotFoundException, ItemNotFoundException, InvalidItemStateException {
         ChildReference ref = node().getChildReferences(sessionCache()).getChild(segment);
         if (ref == null) {
             String msg = JcrI18n.childNotFoundUnderNode.text(readable(segment), location(), session.workspaceName());
@@ -877,7 +914,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 if (parent instanceof AbstractJcrNode) {
                     // delegate to the parent node ...
                     Name childName = path.getLastSegment().getName();
-                    ((AbstractJcrNode)parent).addChildNode(childName, childPrimaryTypeName, desiredKey);
+                    session.checkPermission(path, ModeShapePermissions.ADD_NODE);
+                    return ((AbstractJcrNode)parent).addChildNode(childName, childPrimaryTypeName, desiredKey);
                 } else if (parent instanceof AbstractJcrProperty) {
                     // Per the TCK, if relPath references a property, then we have to throw a ConstraintViolationException.
                     throw new ConstraintViolationException(JcrI18n.invalidPathParameter.text(relPath, "relPath"));
@@ -891,6 +929,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         }
 
         // Otherwise, the path has size == 1 and it specifies the child ...
+        session.checkPermission(path, ModeShapePermissions.ADD_NODE);
         Name childName = path.getLastSegment().getName();
         return addChildNode(childName, childPrimaryTypeName, desiredKey);
     }
@@ -917,6 +956,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                                         NodeKey desiredKey )
         throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException, LockException,
         RepositoryException {
+        checkNodeTypeCanBeModified();
 
         if (isLocked() && !getLock().isLockOwningSession()) {
             throw new LockException(JcrI18n.lockTokenNotHeld.text(location()));
@@ -1016,17 +1056,122 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         }
 
         // We can create the child, so start by building the required properties ...
-        Property ptProp = session.propertyFactory().create(JcrLexicon.PRIMARY_TYPE, childPrimaryNodeTypeName);
+        PropertyFactory propFactory = session.propertyFactory();
+        Property ptProp = propFactory.create(JcrLexicon.PRIMARY_TYPE, childPrimaryNodeTypeName);
+
+        if (JcrNtLexicon.UNSTRUCTURED.equals(childPrimaryNodeTypeName)) {
+            // This is very common, and we know they don't have auto-created properties or children ...
+            MutableCachedNode newChild = mutable().createChild(cache, desiredKey, childName, ptProp);
+
+            // And get or create the JCR node ...
+            AbstractJcrNode jcrNode = session.node(newChild.getKey(), null);
+
+            // Set the child node definition ...
+            jcrNode.setNodeDefinitionId(childDefn.getId());
+            return jcrNode;
+        }
+
+        // Auto-create the properties ...
+        Capabilities capabilities = session.repository().nodeTypeManager().getCapabilities();
+        int sns = numExistingSns + 1;
+        LinkedList<Property> props = autoCreatePropertiesFor(childName, sns, childPrimaryNodeTypeName, propFactory, capabilities);
 
         // Then create the node ...
-        MutableCachedNode newChild = mutable().createChild(cache, desiredKey, childName, ptProp);
+        MutableCachedNode newChild = null;
+        if (props != null) {
+            props.addFirst(ptProp);
+            newChild = mutable().createChild(cache, desiredKey, childName, props);
+        } else {
+            newChild = mutable().createChild(cache, desiredKey, childName, ptProp);
+        }
+
+        // And get or create the JCR node ...
+        AbstractJcrNode jcrNode = session.node(newChild.getKey(), null);
 
         // Set the child node definition ...
+        jcrNode.setNodeDefinitionId(childDefn.getId());
 
-        // And return the JCR node ...
-        AbstractJcrNode result = session.node(newChild.getKey(), null);
-        result.setNodeDefinitionId(childDefn.getId());
-        return result;
+        // Create any mandatory properties or child nodes ...
+        jcrNode.autoCreateChildren(childPrimaryNodeTypeName, capabilities);
+
+        return jcrNode;
+    }
+
+    /**
+     * If there are any auto-created properties, create them and return them in a list.
+     * 
+     * @param nodeName the name of the node; may not be null
+     * @param snsIndex the same-name-sibling index for this node
+     * @param primaryType the name of the primary type; may not be null
+     * @param propertyFactory the factory for properties; may not be null
+     * @param capabilities the node type capabilities cache; may not be null
+     * @return the list of auto-created properties, or null if there are none
+     */
+    protected LinkedList<Property> autoCreatePropertiesFor( Name nodeName,
+                                                            int snsIndex,
+                                                            Name primaryType,
+                                                            PropertyFactory propertyFactory,
+                                                            Capabilities capabilities ) {
+        Collection<JcrPropertyDefinition> autoPropDefns = capabilities.getAutoCreatedPropertyDefinitions(primaryType);
+        if (autoPropDefns.isEmpty()) {
+            return null;
+        }
+        // There is at least one auto-created property on this node ...
+        LinkedList<Property> props = new LinkedList<Property>();
+        for (JcrPropertyDefinition defn : autoPropDefns) {
+            Name propName = defn.getInternalName();
+            if (defn.hasDefaultValues()) {
+                // This may or may not be auto-created; we don't care ...
+                Object[] defaultValues = defn.getRawDefaultValues();
+                Property prop = null;
+                if (defn.isMultiple()) {
+                    prop = propertyFactory.create(propName, defaultValues);
+                } else {
+                    prop = propertyFactory.create(propName, defaultValues[0]);
+                }
+                props.add(prop);
+            }
+        }
+        return props;
+    }
+
+    /**
+     * Create in this node any auto-created child nodes.
+     * 
+     * @param primaryType the desired primary type for the new node; null value indicates that the default primary type from the
+     *        appropriate definition for this node should be used
+     * @param capabilities the node type capabilities cache; may not be null
+     * @throws ItemExistsException if an item at the specified path already exists and same-name siblings are not allowed.
+     * @throws PathNotFoundException if the specified path implies intermediary nodes that do not exist.
+     * @throws VersionException not thrown at this time, but included for compatibility with the specification
+     * @throws ConstraintViolationException if the change would violate a node type or implementation-specific constraint.
+     * @throws LockException not thrown at this time, but included for compatibility with the specification
+     * @throws RepositoryException if another error occurs
+     */
+    protected void autoCreateChildren( Name primaryType,
+                                       Capabilities capabilities )
+        throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException, LockException,
+        RepositoryException {
+        Collection<JcrNodeDefinition> autoChildDefns = capabilities.getAutoCreatedChildNodeDefinitions(primaryType);
+        if (!autoChildDefns.isEmpty()) {
+            // There is at least one auto-created child under this node ...
+            Set<Name> childNames = new HashSet<Name>();
+            for (JcrNodeDefinition defn : autoChildDefns) {
+                // Residual definitions cannot be both auto-created and residual;
+                // see Section 3.7.2.3.4 of the JCR 2.0 specfication"
+                assert !defn.isResidual();
+                if (defn.isProtected()) {
+                    // Protected items are created by the implementation, so we'll not do these ...
+                    continue;
+                }
+                Name childName = defn.getInternalName();
+                if (!childNames.contains(childName)) {
+                    // We've not already created a child with this name ...
+                    JcrNodeType childPrimaryType = defn.getDefaultPrimaryType();
+                    addChildNode(childName, childPrimaryType.getInternalName(), null);
+                }
+            }
+        }
     }
 
     @Override
@@ -1046,6 +1191,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         if (srcPath.isAbsolute() || srcPath.size() != 1) {
             throw new ItemNotFoundException(JcrI18n.invalidPathParameter.text(srcChildRelPath, "destChildRelPath"));
         }
+
+        session.checkPermission(srcPath.getParent(), ModeShapePermissions.ADD_NODE);
+
         SessionCache cache = session.cache();
         ChildReferences childRefs = node().getChildReferences(cache);
         ChildReference srcRef = childRefs.getChild(srcPath.getLastSegment());
@@ -1306,7 +1454,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         assert value.value() != null;
         checkForLock();
         checkForCheckedOut();
-        checkForWrites();
+        checkNodeTypeCanBeModified();
+        session.checkPermission(path(), ModeShapePermissions.SET_PROPERTY);
 
         // Check for an existing JCR property object; note that this will load the internal property if necessary ...
         AbstractJcrProperty existing = getProperty(name);
@@ -1397,7 +1546,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         assert values != null;
         checkForLock();
         checkForCheckedOut();
-        checkForWrites();
+        checkNodeTypeCanBeModified();
+        session.checkPermission(path(), ModeShapePermissions.SET_PROPERTY);
 
         // Force a conversion to the specified property type (if required) ...
         if (jcrPropertyType != PropertyType.UNDEFINED) {
@@ -1759,7 +1909,14 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         return session().nodeTypeManager().getNodeType(node().getPrimaryType(sessionCache()));
     }
 
-    Name getPrimaryTypeName() throws ItemNotFoundException {
+    /**
+     * Get the name of this node's primary type.
+     * 
+     * @return the primary type name
+     * @throws ItemNotFoundException if this node no longer exists in the repository
+     * @throws InvalidItemStateException if the node has been removed in this session's transient state
+     */
+    Name getPrimaryTypeName() throws ItemNotFoundException, InvalidItemStateException {
         return node().getPrimaryType(sessionCache());
     }
 
@@ -1775,7 +1932,14 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         return mixinNodeTypes.toArray(new NodeType[mixinNodeTypes.size()]);
     }
 
-    Set<Name> getMixinTypeNames() throws ItemNotFoundException {
+    /**
+     * Get the names of this node's mixin types.
+     * 
+     * @return the mixin type names; never null but possibly empty
+     * @throws ItemNotFoundException if this node no longer exists in the repository
+     * @throws InvalidItemStateException if the node has been removed in this session's transient state
+     */
+    Set<Name> getMixinTypeNames() throws ItemNotFoundException, InvalidItemStateException {
         return node().getMixinTypes(sessionCache());
     }
 
@@ -1865,7 +2029,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         checkSession();
         checkForLock();
         checkForCheckedOut();
-        checkForWrites();
+        session.checkPermission(path(), ModeShapePermissions.SET_PROPERTY);
 
         JcrNodeType newPrimaryType = session().nodeTypeManager().getNodeType(nodeTypeName);
         if (newPrimaryType.equals(getPrimaryNodeType())) return;
@@ -1945,7 +2109,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         checkSession();
         checkForLock();
         checkForCheckedOut();
-        checkForWrites();
+        Path path = path();
+        session.checkPermission(path, ModeShapePermissions.SET_PROPERTY);
 
         SessionCache cache = sessionCache();
         JcrNodeType mixinType = session().nodeTypeManager().getNodeType(mixinName);
@@ -1983,7 +2148,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         checkSession();
         checkForLock();
         checkForCheckedOut();
-        checkForWrites();
+        session.checkPermission(path(), ModeShapePermissions.SET_PROPERTY);
 
         if (getDefinition().isProtected()) {
             throw new ConstraintViolationException(JcrI18n.cannotRemoveFromProtectedNode.text(getPath()));
@@ -2407,8 +2572,15 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     public void removeShare() throws VersionException, LockException, ConstraintViolationException, RepositoryException {
         checkSession();
         checkForCheckedOut();
-        checkForLock();
-        checkForWrites();
+        // A node that is locked by one session can be removed by another session as long as there is no lock
+        // on the parent node. See Section 17.7 of the JCR 2.0 specification:
+        //
+        // "Removing a node is considered an alteration of its parent. This means that a node within the scope of
+        // a lock may be removed by a session that is not an owner of that lock, assuming no other restriction
+        // prevents the removal."
+        getParent().checkForLock();
+        Path path = path();
+        session.checkPermission(path, ModeShapePermissions.REMOVE);
 
         if (isShareable()) {
             // TODO: Shared nodes
@@ -2456,19 +2628,20 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         }
         // If we get to here, either there are no other nodes in the shared set or this node is a non-shareable node,
         // so simply remove this node (per section 14.2 of the JCR 2.0 specification) ...
-        doRemove();
+        doRemove(path);
     }
 
     /**
      * Perform a real remove of this node.
      * 
+     * @param path the path of this node; never null
      * @throws VersionException
      * @throws LockException
      * @throws ConstraintViolationException
      * @throws AccessDeniedException
      * @throws RepositoryException
      */
-    protected abstract void doRemove()
+    protected abstract void doRemove( Path path )
         throws VersionException, LockException, ConstraintViolationException, AccessDeniedException, RepositoryException;
 
     @Override
@@ -2557,10 +2730,15 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     }
 
     @Override
-    public Lock getLock()
+    public final Lock getLock()
         throws UnsupportedRepositoryOperationException, LockException, AccessDeniedException, RepositoryException {
         // Session's liveness will be checked in 'lockManager()' ...
         return session.lockManager().getLock(this);
+    }
+
+    protected final Lock getLockIfExists()
+        throws UnsupportedRepositoryOperationException, AccessDeniedException, RepositoryException {
+        return session.lockManager().getLockIfExists(this);
     }
 
     @Override
@@ -2572,7 +2750,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     }
 
     @Override
-    public boolean holdsLock() throws RepositoryException {
+    public boolean holdsLock() {
         // Session's liveness will be checked in 'lockManager()' ...
         return session.lockManager().holdsLock(this);
     }
@@ -2625,9 +2803,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     @Override
     public boolean isSame( Item otherItem ) throws RepositoryException {
+        if (otherItem == this) return true;
         if (otherItem instanceof AbstractJcrNode) {
             NodeKey thatKey = ((AbstractJcrNode)otherItem).key();
-            if (this.key.equals(thatKey)) return false;
+            if (!this.key.equals(thatKey)) return false;
             // Make sure they are the same repository ...
             return super.isSameRepository(otherItem);
         }

@@ -31,13 +31,44 @@ import org.modeshape.jcr.value.DateTime;
  */
 public interface SessionCache extends NodeCache {
 
+    /**
+     * The context of a save operation, created during each call to {@link #save} and passed to the
+     * {@link PreSave#process(MutableCachedNode, SaveContext)} invocations.
+     */
     static interface SaveContext {
+        /**
+         * Get the instance in time that the save is taking place.
+         * 
+         * @return the save timestamp; never null
+         */
         DateTime getTime();
+
+        /**
+         * Get the identifier for the user that is making this save.
+         * 
+         * @return the user identifier; never null
+         */
+        String getUserId();
     }
 
+    /**
+     * The definition of a callback that can be implemented and passed to {@link SessionCache#save(SessionCache, PreSave)} and
+     * {@link SessionCache#save(CachedNode, SessionCache, PreSave)}, allowing the caller to recieve a hook where they can
+     * interrogate each of the changed nodes and perform additional logic prior to the actual persisting of the changes. Note that
+     * implementations are free to make additional modifications to the supplied nodes, and even create additional nodes or change
+     * persistent but unchanged nodes, as long as these operations are done within the same calling thread.
+     */
     static interface PreSave {
-        void process( MutableCachedNode newNode,
-                      SaveContext context );
+        /**
+         * Process the supplied node prior to saving the changes. This allows implementations to use the changes to automatically
+         * adjust this node or other content.
+         * 
+         * @param modifiedOrNewNode the mutable node that was changed in this session; never null
+         * @param context the context of the save operation; never null
+         * @throws Exception if there is a problem during the processing
+         */
+        void process( MutableCachedNode modifiedOrNewNode,
+                      SaveContext context ) throws Exception;
     }
 
     /**
@@ -53,28 +84,25 @@ public interface SessionCache extends NodeCache {
     public void save();
 
     /**
-     * Saves all changes made within this session.
-     * 
-     * @param preSaveOperation the set of operations to run against the new and changed nodes prior to saving; may be null
-     */
-    public void save( PreSave preSaveOperation );
-
-    /**
      * Saves all of this session's changes that were made at or below the specified path. Note that this is not terribly
      * efficient, but is done to implement the deprecated {@link javax.jcr.Item#save()}.
      * 
      * @param node the node at or below which all changes should be saved; may not be null
+     * @param otherSession another session whose changes should be saved with this session's changes; may not be null
      * @param preSaveOperation the set of operations to run against the new and changed nodes prior to saving; may be null
      */
     public void save( CachedNode node,
+                      SessionCache otherSession,
                       PreSave preSaveOperation );
 
     /**
      * Saves all changes made within this session and the supplied session, using a single transaction for both.
      * 
      * @param otherSession another session whose changes should be saved with this session's changes; may not be null
+     * @param preSaveOperation the set of operations to run against the new and changed nodes prior to saving; may be null
      */
-    public void save( SessionCache otherSession );
+    public void save( SessionCache otherSession,
+                      PreSave preSaveOperation );
 
     /**
      * Determine whether this session has any transient, unsaved changes.
@@ -117,6 +145,14 @@ public interface SessionCache extends NodeCache {
      * @throws UnsupportedOperationException if this session is marked for read-only operations
      */
     public void destroy( NodeKey key ) throws NodeNotFoundException, UnsupportedOperationException;
+
+    /**
+     * Return whether the node with the supplied key has been removed using this session but not yet persisted.
+     * 
+     * @param key the for the node; may not be null
+     * @return true if the node was removed in this session, or false otherwise
+     */
+    public boolean isDestroyed( NodeKey key );
 
     /**
      * Create a new node key for the current source and workspace.

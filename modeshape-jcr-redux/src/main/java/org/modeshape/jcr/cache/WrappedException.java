@@ -21,30 +21,30 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr;
-
-import org.picketbox.config.PicketBoxConfiguration;
-import org.picketbox.factories.SecurityFactory;
+package org.modeshape.jcr.cache;
 
 /**
- * A simple utility for test cases to initialize the PicketBox JAAS implementation.
+ * An exception that wraps another non-runtime exception.
  */
-@Migrated
-public class JaasTestUtil {
+public class WrappedException extends RuntimeException {
 
-    public static void initJaas( String picketBoxConfigurationFile ) {
-        SecurityFactory.prepare();
-        try {
-            PicketBoxConfiguration idtrustConfig = new PicketBoxConfiguration();
-            idtrustConfig.load(picketBoxConfigurationFile);
-        } catch (Exception ex) {
-            throw new IllegalStateException(ex);
-        }
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * @param cause the cause of this exception
+     */
+    public WrappedException( Throwable cause ) {
+        super(cause);
+        assert cause != null;
     }
 
-    public static void releaseJaas() {
-        // don't release in our test cases ...
-        // SecurityFactory.release();
+    /**
+     * @param message the message
+     * @param cause the cause of this exception
+     */
+    public WrappedException( String message,
+                             Throwable cause ) {
+        super(message, cause);
+        assert cause != null;
     }
-
 }

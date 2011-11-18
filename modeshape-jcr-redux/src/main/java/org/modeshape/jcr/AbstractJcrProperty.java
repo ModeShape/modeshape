@@ -25,6 +25,7 @@ package org.modeshape.jcr;
 
 import java.util.Iterator;
 import java.util.Set;
+import javax.jcr.InvalidItemStateException;
 import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.ItemVisitor;
@@ -95,8 +96,10 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
      * @return the cached property definition ID; never null
      * @throws ItemNotFoundException if the node that contains this property doesn't exist anymore
      * @throws ConstraintViolationException if no valid property definition could be found
+     * @throws InvalidItemStateException if the node has been removed in this session's transient state
      */
-    final PropertyDefinitionId propertyDefinitionId() throws ItemNotFoundException, ConstraintViolationException {
+    final PropertyDefinitionId propertyDefinitionId()
+        throws ItemNotFoundException, ConstraintViolationException, InvalidItemStateException {
         CachedDefinition defn = cachedDefn;
         if (defn == null || node.session().nodeTypesVersion() > defn.nodeTypesVersion) {
             Name primaryType = node.getPrimaryTypeName();
@@ -114,8 +117,10 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
      * @return the cached property definition ID; never null
      * @throws ItemNotFoundException if the node that contains this property doesn't exist anymore
      * @throws ConstraintViolationException if no valid property definition could be found
+     * @throws InvalidItemStateException if the node has been removed in this session's transient state
      */
-    final JcrPropertyDefinition propertyDefinition() throws ItemNotFoundException, ConstraintViolationException {
+    final JcrPropertyDefinition propertyDefinition()
+        throws ItemNotFoundException, ConstraintViolationException, InvalidItemStateException {
         CachedDefinition defn = cachedDefn;
         if (defn == null || node.session().nodeTypesVersion() > defn.nodeTypesVersion) {
             Name primaryType = node.getPrimaryTypeName();
@@ -128,7 +133,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
         return session.repository().nodeTypeManager().getPropertyDefinition(defn.propDefnId);
     }
 
-    final CachedNode cachedNode() throws ItemNotFoundException {
+    final CachedNode cachedNode() throws ItemNotFoundException, InvalidItemStateException {
         return node.node();
     }
 
@@ -144,7 +149,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
         return node.session().propertyFactory();
     }
 
-    final org.modeshape.jcr.value.Property property() throws ItemNotFoundException {
+    final org.modeshape.jcr.value.Property property() throws ItemNotFoundException, InvalidItemStateException {
         return cachedNode().getProperty(name, sessionCache());
     }
 
@@ -178,7 +183,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
         if (this.getParent().isLocked() && !getParent().getLock().isLockOwningSession()) {
             Lock parentLock = this.getParent().getLock();
             if (parentLock != null && parentLock.getLockToken() == null) {
-                throw new LockException(JcrI18n.lockTokenNotHeld.text(node.key, getPath()));
+                throw new LockException(JcrI18n.lockTokenNotHeld.text(node.location()));
             }
         }
     }
@@ -288,6 +293,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
         checkSession();
         checkForLock();
         checkForCheckedOut();
+        session.checkPermission(path(), ModeShapePermissions.REMOVE);
         AbstractJcrNode parentNode = getParent();
         if (parentNode.isLocked()) {
             Lock parentLock = parentNode.getLock();

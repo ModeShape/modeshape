@@ -86,7 +86,7 @@ public class SystemNamespaceRegistry implements NamespaceRegistry {
             this.cache.clear();
             this.cache.register(namespaces);
         } catch (Throwable e) {
-            logger.error(JcrI18n.errorRefreshingNodeTypes, e);
+            logger.error(e, JcrI18n.errorRefreshingNodeTypes, repository.name());
         } finally {
             lock.unlock();
         }

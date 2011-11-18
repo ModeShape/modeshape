@@ -44,6 +44,7 @@ import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PathFactory;
+import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFactory;
 import org.modeshape.jcr.value.ValueFormatException;
@@ -77,7 +78,8 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         return op;
     }
 
-    private final Value[] defaultValues;
+    private final Object[] rawDefaultValues;
+    private final JcrValue[] defaultValues;
     private final int requiredType;
     private final String[] valueConstraints;
     private final boolean multiple;
@@ -96,7 +98,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
                            boolean autoCreated,
                            boolean mandatory,
                            boolean protectedItem,
-                           Value[] defaultValues,
+                           JcrValue[] defaultValues,
                            int requiredType,
                            String[] valueConstraints,
                            boolean multiple,
@@ -119,6 +121,16 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         this.id = this.declaringNodeType == null ? null : new PropertyDefinitionId(this.declaringNodeType.getInternalName(),
                                                                                    this.name, this.requiredType, this.multiple);
         this.key = this.id == null ? prototypeKey : prototypeKey.withId("/jcr:system/jcr:nodeTypes/" + this.id.getString());
+
+        if (this.defaultValues != null) {
+            this.rawDefaultValues = new Object[this.defaultValues.length];
+            int i = 0;
+            for (JcrValue defaultValue : this.defaultValues) {
+                rawDefaultValues[i++] = defaultValue.value();
+            }
+        } else {
+            this.rawDefaultValues = null;
+        }
     }
 
     /**
@@ -136,8 +148,26 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
     }
 
     @Override
-    public Value[] getDefaultValues() {
+    public JcrValue[] getDefaultValues() {
         return defaultValues;
+    }
+
+    /**
+     * Get the default values array consisting of values that can be placed inside {@link Property} instances.
+     * 
+     * @return the default values, or null if there are none
+     */
+    Object[] getRawDefaultValues() {
+        return rawDefaultValues;
+    }
+
+    /**
+     * Return whether this definition has default values.
+     * 
+     * @return true if there default values, or false otherwise
+     */
+    public boolean hasDefaultValues() {
+        return defaultValues != null;
     }
 
     @Override

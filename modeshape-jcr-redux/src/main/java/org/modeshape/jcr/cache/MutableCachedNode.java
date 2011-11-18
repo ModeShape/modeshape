@@ -23,6 +23,7 @@
  */
 package org.modeshape.jcr.cache;
 
+import java.util.Set;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
 
@@ -128,6 +129,21 @@ public interface MutableCachedNode extends CachedNode {
      */
     void removeMixin( SessionCache cache,
                       Name mixinName );
+
+    /**
+     * Get the set of mixin names that were added to this node but not yet saved.
+     * 
+     * @param cache the cache to which this node belongs; may not be null
+     * @return the newly-added mixin type names; never null but possibly empty
+     */
+    Set<Name> getAddedMixins( SessionCache cache );
+
+    /**
+     * Return whether the primary type for the node has changed.
+     * 
+     * @return true if the primary type for the node has changed, or false otherwise
+     */
+    boolean hasChangedPrimaryType();
 
     /**
      * Create a new node as a child of this node with the supplied name and properties.

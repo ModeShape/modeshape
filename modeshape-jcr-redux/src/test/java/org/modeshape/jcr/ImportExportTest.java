@@ -840,6 +840,112 @@ public class ImportExportTest extends SingleUseAbstractTest {
 
     }
 
+    @Test
+    public void shouldImportIntoWorkspaceTheDocumentViewOfTheContentUsedInTckTests() throws Exception {
+        Session session3 = repository.login();
+
+        session.nodeTypeManager().registerNodeTypeDefinitions(resourceStream("tck/tck_test_types.cnd"));
+        session.getWorkspace().importXML("/",
+                                         resourceStream("tck/documentViewForTckTests.xml"),
+                                         ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING);
+        assertThat(session.getRootNode().hasNode("testroot/workarea"), is(true));
+        assertThat(session.getRootNode().getNode("testroot/workarea"), is(notNullValue()));
+        assertThat(session.getNode("/testroot/workarea"), is(notNullValue()));
+        assertNode("/testroot/workarea");
+
+        Session session1 = repository.login();
+        assertThat(session1.getRootNode().hasNode("testroot/workarea"), is(true));
+        assertThat(session1.getRootNode().getNode("testroot/workarea"), is(notNullValue()));
+        assertThat(session1.getNode("/testroot/workarea"), is(notNullValue()));
+        session1.logout();
+
+        assertThat(session3.getRootNode().hasNode("testroot/workarea"), is(true));
+        assertThat(session3.getRootNode().getNode("testroot/workarea"), is(notNullValue()));
+        assertThat(session3.getNode("/testroot/workarea"), is(notNullValue()));
+        session3.logout();
+    }
+
+    @Test
+    public void shouldImportIntoWorkspaceTheSystemViewOfTheContentUsedInTckTests() throws Exception {
+        Session session3 = repository.login();
+
+        session.nodeTypeManager().registerNodeTypeDefinitions(resourceStream("tck/tck_test_types.cnd"));
+        session.getWorkspace().importXML("/",
+                                         resourceStream("tck/systemViewForTckTests.xml"),
+                                         ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING);
+        assertThat(session.getRootNode().hasNode("testroot/workarea"), is(true));
+        assertThat(session.getRootNode().getNode("testroot/workarea"), is(notNullValue()));
+        assertNode("/testroot/workarea");
+
+        Session session1 = repository.login();
+        assertThat(session1.getRootNode().hasNode("testroot/workarea"), is(true));
+        assertThat(session1.getRootNode().getNode("testroot/workarea"), is(notNullValue()));
+        assertThat(session1.getNode("/testroot/workarea"), is(notNullValue()));
+        session1.logout();
+
+        assertThat(session3.getRootNode().hasNode("testroot/workarea"), is(true));
+        assertThat(session3.getRootNode().getNode("testroot/workarea"), is(notNullValue()));
+        assertThat(session3.getNode("/testroot/workarea"), is(notNullValue()));
+        session3.logout();
+    }
+
+    @Test
+    public void shouldImportIntoSessionTheDocumentViewOfTheContentUsedInTckTests() throws Exception {
+        Session session3 = repository.login();
+
+        session.nodeTypeManager().registerNodeTypeDefinitions(resourceStream("tck/tck_test_types.cnd"));
+        session.importXML("/",
+                          resourceStream("tck/documentViewForTckTests.xml"),
+                          ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING);
+        assertThat(session.getRootNode().hasNode("testroot/workarea"), is(true));
+        assertThat(session.getRootNode().getNode("testroot/workarea"), is(notNullValue()));
+        assertThat(session.getNode("/testroot/workarea"), is(notNullValue()));
+        assertNode("/testroot/workarea");
+
+        Session session1 = repository.login();
+        assertThat(session1.getRootNode().hasNode("testroot/workarea"), is(false));
+
+        session.save();
+
+        assertThat(session1.getRootNode().hasNode("testroot/workarea"), is(true));
+        assertThat(session1.getRootNode().getNode("testroot/workarea"), is(notNullValue()));
+        assertThat(session1.getNode("/testroot/workarea"), is(notNullValue()));
+        session1.logout();
+
+        assertThat(session3.getRootNode().hasNode("testroot/workarea"), is(true));
+        assertThat(session3.getRootNode().getNode("testroot/workarea"), is(notNullValue()));
+        assertThat(session3.getNode("/testroot/workarea"), is(notNullValue()));
+        session3.logout();
+    }
+
+    @Test
+    public void shouldImportIntoSessionTheSystemViewOfTheContentUsedInTckTests() throws Exception {
+        Session session3 = repository.login();
+
+        session.nodeTypeManager().registerNodeTypeDefinitions(resourceStream("tck/tck_test_types.cnd"));
+        session.importXML("/",
+                          resourceStream("tck/systemViewForTckTests.xml"),
+                          ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING);
+        assertThat(session.getRootNode().hasNode("testroot/workarea"), is(true));
+        assertThat(session.getRootNode().getNode("testroot/workarea"), is(notNullValue()));
+        assertNode("/testroot/workarea");
+
+        Session session1 = repository.login();
+        assertThat(session1.getRootNode().hasNode("testroot/workarea"), is(false));
+
+        session.save();
+
+        assertThat(session1.getRootNode().hasNode("testroot/workarea"), is(true));
+        assertThat(session1.getRootNode().getNode("testroot/workarea"), is(notNullValue()));
+        assertThat(session1.getNode("/testroot/workarea"), is(notNullValue()));
+        session1.logout();
+
+        assertThat(session3.getRootNode().hasNode("testroot/workarea"), is(true));
+        assertThat(session3.getRootNode().getNode("testroot/workarea"), is(notNullValue()));
+        assertThat(session3.getNode("/testroot/workarea"), is(notNullValue()));
+        session3.logout();
+    }
+
     // ----------------------------------------------------------------------------------------------------------------
     // Utilities
     // ----------------------------------------------------------------------------------------------------------------

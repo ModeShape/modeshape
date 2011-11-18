@@ -81,6 +81,7 @@ public class SessionNode implements MutableCachedNode {
 
     private final NodeKey key;
     private final ConcurrentMap<Name, Property> changedProperties = new ConcurrentHashMap<Name, Property>();
+    private final ConcurrentMap<Name, Name> removedProperties = new ConcurrentHashMap<Name, Name>();
     private volatile NodeKey newParent;
     private final AtomicReference<ChangedAdditionalParents> additionalParents = new AtomicReference<ChangedAdditionalParents>();
     private final ChangedChildren changedChildren = new ChangedChildren();
@@ -98,6 +99,10 @@ public class SessionNode implements MutableCachedNode {
 
     protected final ChangedChildren changedChildren() {
         return changedChildren;
+    }
+
+    protected final Set<Name> removedProperties() {
+        return removedProperties.keySet();
     }
 
     protected final ConcurrentMap<Name, Property> changedProperties() {
@@ -141,6 +146,7 @@ public class SessionNode implements MutableCachedNode {
         if (isNew) return true;
         if (newParent != null) return true;
         if (!changedProperties.isEmpty()) return true;
+        if (!removedProperties.isEmpty()) return true;
         ChangedChildren changedChildren = changedChildren();
         if (changedChildren != null && !changedChildren.isEmpty()) return true;
         MutableChildReferences childRefChanges = appended(false);
@@ -338,21 +344,34 @@ public class SessionNode implements MutableCachedNode {
     }
 
     @Override
+    public boolean hasChangedPrimaryType() {
+        return changedProperties.containsKey(JcrLexicon.PRIMARY_TYPE);
+    }
+
+    @Override
     public Set<Name> getMixinTypes( NodeCache cache ) {
         AbstractSessionCache session = session(cache);
         Property prop = getProperty(JcrLexicon.MIXIN_TYPES, session);
-        if (prop == null || prop.size() == 0) return Collections.emptySet();
+        MixinChanges changes = mixinChanges(false);
+        if (prop == null || prop.size() == 0) {
+            return changes != null ? changes.getAdded() : Collections.<Name>emptySet();
+        }
 
         final NameFactory nameFactory = session.nameFactory();
         if (prop.size() == 1) {
             Name name = nameFactory.create(prop.getFirstValue());
-            return Collections.singleton(name);
+            if (changes == null) return Collections.singleton(name);
+            Set<Name> all = new HashSet<Name>(changes.getAdded());
+            all.add(name);
+            all.removeAll(changes.getRemoved());
+            return all;
         }
         Set<Name> names = new HashSet<Name>();
         for (Object value : prop) {
             Name name = nameFactory.create(value);
-            names.add(name);
+            if (changes == null || !changes.getRemoved().contains(name)) names.add(name);
         }
+        if (changes != null) names.addAll(changes.getAdded());
         return names;
     }
 
@@ -431,6 +450,27 @@ public class SessionNode implements MutableCachedNode {
     }
 
     @Override
+    public Set<Name> getAddedMixins( SessionCache cache ) {
+        if (!isNew()) {
+            MixinChanges mixinChanges = mixinChanges(false);
+            if (mixinChanges != null) return mixinChanges.getAdded();
+            return Collections.emptySet();
+        }
+        // Otherwise this is a new node, so we should get the 'jcr:mixinTypes' property ...
+        Property prop = changedProperties.get(JcrLexicon.MIXIN_TYPES);
+        if (prop == null || prop.size() == 0) {
+            return Collections.emptySet();
+        }
+        final NameFactory nameFactory = session(cache).nameFactory();
+        Set<Name> names = new HashSet<Name>();
+        for (Object value : prop) {
+            Name name = nameFactory.create(value);
+            names.add(name);
+        }
+        return names;
+    }
+
+    @Override
     public Set<NodeKey> getReferrers( NodeCache cache,
                                       ReferenceType type ) {
         AbstractSessionCache session = session(cache);
@@ -491,13 +531,7 @@ public class SessionNode implements MutableCachedNode {
 
     @Override
     public int getPropertyCount( NodeCache cache ) {
-        int count = 0;
-        if (!changedProperties.isEmpty()) {
-            for (Property changed : changedProperties.values()) {
-                if (changed != null) ++count;
-                else --count;
-            }
-        }
+        int count = changedProperties.size() - removedProperties.size();
         // Delegate to the workspace node (if it exists) ...
         AbstractSessionCache session = session(cache);
         CachedNode raw = nodeInWorkspace(session);
@@ -506,11 +540,7 @@ public class SessionNode implements MutableCachedNode {
 
     @Override
     public boolean hasProperties( NodeCache cache ) {
-        if (!changedProperties.isEmpty()) {
-            for (Property changed : changedProperties.values()) {
-                if (changed != null) return true;
-            }
-        }
+        if (!changedProperties.isEmpty()) return true;
         // Delegate to the workspace node (if it exists) ...
         AbstractSessionCache session = session(cache);
         CachedNode raw = nodeInWorkspace(session);
@@ -520,7 +550,8 @@ public class SessionNode implements MutableCachedNode {
     @Override
     public boolean hasProperty( Name name,
                                 NodeCache cache ) {
-        if (changedProperties.get(name) != null) return true;
+        if (changedProperties.containsKey(name)) return true;
+        if (isPropertyRemoved(name)) return false;
         // Otherwise, delegate to the workspace node (if it exists) ...
         AbstractSessionCache session = session(cache);
         CachedNode raw = nodeInWorkspace(session);
@@ -530,24 +561,33 @@ public class SessionNode implements MutableCachedNode {
     @Override
     public Property getProperty( Name name,
                                  NodeCache cache ) {
-        if (changedProperties.containsKey(name)) {
-            // Return the changed property, even if it is null (meaning it was removed) ...
-            return changedProperties.get(name);
-        }
+        Property prop = null;
+        if ((prop = changedProperties.get(name)) != null) return prop;
+        if (isPropertyRemoved(name)) return null;
         // Otherwise, delegate to the workspace node (if it exists) ...
         AbstractSessionCache session = session(cache);
         CachedNode raw = nodeInWorkspace(session);
         return raw != null ? raw.getProperty(name, session) : null;
     }
 
+    protected final boolean isPropertyRemoved( Name name ) {
+        return !isNew && removedProperties.containsKey(name);
+    }
+
     @Override
-    public Iterator<Property> getProperties( NodeCache cache ) {
+    public Iterator<Property> getProperties( final NodeCache cache ) {
         final AbstractSessionCache session = session(cache);
         final CachedNode raw = nodeInWorkspace(session);
         Iterable<Property> rawProps = raw == null ? null : new Iterable<Property>() {
             @Override
             public Iterator<Property> iterator() {
-                return raw.getProperties(session);
+                List<Property> values = new LinkedList<Property>();
+                for (Iterator<Property> iter = raw.getProperties(workspace(cache)); iter.hasNext();) {
+                    Property prop = iter.next();
+                    if (isPropertyRemoved(prop.getName())) continue;
+                    values.add(prop);
+                }
+                return values.iterator();
             }
         };
         // Return an iterator that iterates over the changed properties first, then the raw properties ...
@@ -571,7 +611,9 @@ public class SessionNode implements MutableCachedNode {
     public void setProperty( SessionCache cache,
                              Property property ) {
         writableSession(cache).assertInSession(this);
-        changedProperties.put(property.getName(), property);
+        Name name = property.getName();
+        changedProperties.put(name, property);
+        if (!isNew) removedProperties.remove(name);
     }
 
     @Override
@@ -579,7 +621,9 @@ public class SessionNode implements MutableCachedNode {
                                Iterable<Property> properties ) {
         writableSession(cache).assertInSession(this);
         for (Property property : properties) {
-            changedProperties.put(property.getName(), property);
+            Name name = property.getName();
+            changedProperties.put(name, property);
+            if (!isNew) removedProperties.remove(name);
         }
     }
 
@@ -587,7 +631,8 @@ public class SessionNode implements MutableCachedNode {
     public void removeProperty( SessionCache cache,
                                 Name name ) {
         writableSession(cache).assertInSession(this);
-        changedProperties.put(name, null);
+        changedProperties.remove(name);
+        if (!isNew) removedProperties.put(name, name);
     }
 
     @Override
@@ -883,13 +928,18 @@ public class SessionNode implements MutableCachedNode {
             for (Map.Entry<Name, Property> entry : changedProperties.entrySet()) {
                 if (first) first = false;
                 else sb.append(',');
-                Name name = entry.getKey();
                 Property property = entry.getValue();
-                if (property == null) {
-                    sb.append(" -").append(name.getString(registry));
-                } else {
-                    sb.append(" +").append(property.getString(registry));
-                }
+                sb.append(" +").append(property.getString(registry));
+            }
+            sb.append('}');
+        }
+        if (!removedProperties.isEmpty()) {
+            sb.append(" props: {");
+            boolean first = true;
+            for (Name name : removedProperties.keySet()) {
+                if (first) first = false;
+                else sb.append(',');
+                sb.append(" -").append(name.getString(registry));
             }
             sb.append('}');
         }
@@ -1440,6 +1490,11 @@ public class SessionNode implements MutableCachedNode {
 
         public boolean isEmpty() {
             return added.isEmpty() && removed.isEmpty();
+        }
+
+        @Override
+        public String toString() {
+            return "added: " + added + ", removed: " + removed;
         }
     }
 

@@ -22,6 +22,7 @@
 package org.infinispan.schematic.internal.document;
 
 import java.text.ParseException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
@@ -358,6 +359,13 @@ public class ArrayEditor implements EditableArray {
     public EditableArray setArray( String name,
                                    Array array ) {
         setValue(name, array);
+        return editable((List<?>)array, indexFrom(name));
+    }
+
+    @Override
+    public EditableArray setArray( String name,
+                                   Object... values ) {
+        setValue(name, Arrays.asList(values));
         return editable((List<?>)array, indexFrom(name));
     }
 

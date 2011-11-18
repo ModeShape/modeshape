@@ -58,6 +58,7 @@ import org.infinispan.schematic.document.Editor;
 import org.infinispan.schematic.document.Json;
 import org.infinispan.schematic.document.ParsingException;
 import org.infinispan.transaction.lookup.GenericTransactionManagerLookup;
+import org.infinispan.transaction.lookup.TransactionManagerLookup;
 import org.infinispan.util.FileLookup;
 import org.infinispan.util.FileLookupFactory;
 import org.infinispan.util.ReflectionUtil;
@@ -251,6 +252,13 @@ public class RepositoryConfiguration {
         public static final String CACHE_CONFIGURATION = "cacheConfiguration";
 
         /**
+         * The name for the field containing the name of the Infinispan transaction manager lookup class. This is only used if no
+         * {@link #CACHE_CONFIGURATION cacheConfiguration} value is specified and ModeShape needs to instantiate the Infinispan
+         * {@link CacheContainer}. By default, the {@link GenericTransactionManagerLookup} class is used.
+         */
+        public static final String CACHE_TRANSACTION_MANAGER_LOOKUP = "transactionManagerLookup";
+
+        /**
          * The name for the field containing the size threshold dictating how property values are stored. String and binary values
          * smaller than this value are stored with the node, whereas string and binary values with a size equal to or greater than
          * this limit may be stored separately from the node and keyed by the SHA-1 hash of the value. This is a space and
@@ -352,6 +360,12 @@ public class RepositoryConfiguration {
         public static final String DEFAULT = "default";
 
         /**
+         * The default value of the {@link FieldName#CACHE_TRANSACTION_MANAGER_LOOKUP} field is
+         * "org.infinispan.transaction.lookup.GenericTransactionManagerLookup".
+         */
+        public static final String CACHE_TRANSACTION_MANAGER_LOOKUP = GenericTransactionManagerLookup.class.getName();
+
+        /**
          * The default value of the {@link FieldName#JAAS_POLICY_NAME} field is '{@value} '.
          */
         public static final String JAAS_POLICY_NAME = "modeshape-jcr";
@@ -360,7 +374,7 @@ public class RepositoryConfiguration {
          * The default value of the {@link FieldName#ANONYMOUS_ROLES} field is a list with 'admin' as the role.
          */
         public static final Set<String> ANONYMOUS_ROLES = Collections.unmodifiableSet(new HashSet<String>(
-                                                                                                          Arrays.asList(new String[] {"admin"})));
+                                                                                                          Arrays.asList(new String[] {ModeShapeRoles.ADMIN})));
 
         /**
          * The default value of the {@link FieldName#USE_ANONYMOUS_ON_FAILED_LOGINS} field is '{@value} '.
@@ -541,6 +555,24 @@ public class RepositoryConfiguration {
         return null;
     }
 
+    public String getCacheTransactionManagerLookupClassName() {
+        Document storage = doc.getDocument(FieldName.STORAGE);
+        if (storage != null) {
+            return storage.getString(FieldName.CACHE_TRANSACTION_MANAGER_LOOKUP, Default.CACHE_TRANSACTION_MANAGER_LOOKUP);
+        }
+        return Default.CACHE_TRANSACTION_MANAGER_LOOKUP;
+    }
+
+    @SuppressWarnings( "unchecked" )
+    protected Class<? extends TransactionManagerLookup> getCacheTransactionManagerLookupClass() {
+        String txnMgrLookupClassName = getCacheTransactionManagerLookupClassName();
+        try {
+            return (Class<TransactionManagerLookup>)getClass().getClassLoader().loadClass(txnMgrLookupClassName);
+        } catch (ClassNotFoundException e) {
+            return GenericTransactionManagerLookup.class;
+        }
+    }
+
     public long getLargeValueSizeInBytes() {
         return doc.getLong(FieldName.LARGE_VALUE_SIZE_IN_BYTES, Default.LARGE_VALUE_SIZE_IN_BYTES);
     }
@@ -642,9 +674,13 @@ public class RepositoryConfiguration {
          */
         public AnonymousSecurity getAnonymous() {
             Document anonymous = security.getDocument(FieldName.ANONYMOUS);
-            if (anonymous != null && anonymous.size() == 1 && anonymous.getArray(FieldName.ANONYMOUS_ROLES).isEmpty()) {
-                // Only an empty 'roleNames' field ...
-                return null;
+            if (anonymous != null && anonymous.size() == 1) {
+                // Check the 'roleNames' field ...
+                List<?> roles = anonymous.getArray(FieldName.ANONYMOUS_ROLES);
+                if (roles != null && roles.isEmpty()) {
+                    // Specified empty roles, so this is disabling anonymous logins ...
+                    return null;
+                }
             }
             if (anonymous == null) anonymous = Schematic.newDocument();
             return new AnonymousSecurity(anonymous);
@@ -971,7 +1007,8 @@ public class RepositoryConfiguration {
             // The default Infinispan configuration is in-memory, local and non-clustered.
             // But we need a transaction manager, so use the generic TM which is a good default ...
             FluentConfiguration configurator = new FluentConfiguration(new Configuration());
-            configurator.transaction().transactionManagerLookupClass(GenericTransactionManagerLookup.class);
+            Class<? extends TransactionManagerLookup> lookupClass = getCacheTransactionManagerLookupClass();
+            configurator.transaction().transactionManagerLookupClass(lookupClass);
             container = new DefaultCacheManager(configurator.build());
         }
         return container;
@@ -1066,6 +1103,26 @@ public class RepositoryConfiguration {
         copy.apply(changes);
         RepositoryConfiguration updated = new RepositoryConfiguration(copy, this.getName());
         return updated.validate();
+    }
+
+    /**
+     * Create a copy of this configuration that uses the supplied Infinispan {@link CacheContainer} instance.
+     * 
+     * @param cacheContainer the new cache container; may be null
+     * @return the new configuration; never null
+     */
+    public RepositoryConfiguration with( CacheContainer cacheContainer ) {
+        return new RepositoryConfiguration(doc.clone(), docName, cacheContainer);
+    }
+
+    /**
+     * Create a copy of this configuration that uses the supplied document name.
+     * 
+     * @param docName the new document name; may be null
+     * @return the new configuration; never null
+     */
+    public RepositoryConfiguration withName( String docName ) {
+        return new RepositoryConfiguration(doc.clone(), docName, cacheContainer);
     }
 
     @Immutable

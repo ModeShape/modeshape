@@ -26,6 +26,7 @@ package org.modeshape.jcr;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.InvalidItemStateException;
@@ -62,13 +63,16 @@ import org.xml.sax.helpers.XMLReaderFactory;
 class JcrWorkspace implements Workspace {
 
     private final JcrSession session;
+    private final String workspaceName;
     private final JcrNodeTypeManager nodeTypeManager;
     private final JcrLockManager lockManager;
     private final JcrNamespaceRegistry workspaceRegistry;
     private final JcrVersionManager versionManager;
 
-    JcrWorkspace( JcrSession session ) {
+    JcrWorkspace( JcrSession session,
+                  String workspaceName ) {
         this.session = session;
+        this.workspaceName = workspaceName;
         JcrRepository repository = session.repository();
         this.nodeTypeManager = new JcrNodeTypeManager(session, repository.nodeTypeManager());
         this.workspaceRegistry = new JcrNamespaceRegistry(repository.persistentRegistry(), this.session);
@@ -93,13 +97,13 @@ class JcrWorkspace implements Workspace {
     }
 
     @Override
-    public Session getSession() {
+    public final Session getSession() {
         return session;
     }
 
     @Override
-    public String getName() {
-        return session.workspaceName();
+    public final String getName() {
+        return workspaceName;
     }
 
     @Override
@@ -265,6 +269,16 @@ class JcrWorkspace implements Workspace {
         session.checkLive();
         // Make a copy, since the size may change before we iterate over it ...
         Set<String> names = new HashSet<String>(session.repository().repositoryCache().getWorkspaceNames());
+
+        // Remove any workspaces for which we don't have read access ...
+        for (Iterator<String> iter = names.iterator(); iter.hasNext();) {
+            try {
+                session.checkPermission(iter.next(), null, ModeShapePermissions.READ);
+            } catch (AccessDeniedException ace) {
+                iter.remove();
+            }
+        }
+
         return names.toArray(new String[names.size()]);
     }
 
@@ -287,7 +301,7 @@ class JcrWorkspace implements Workspace {
         throws AccessDeniedException, UnsupportedRepositoryOperationException, NoSuchWorkspaceException, RepositoryException {
         session.checkLive();
         createWorkspace(name);
-        // TODO: copy the workspace contents ...
+        // TODO: Copy the workspace contents ...
     }
 
     @Override
