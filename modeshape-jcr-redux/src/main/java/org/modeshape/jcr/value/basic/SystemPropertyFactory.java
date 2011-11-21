@@ -73,7 +73,36 @@ public class SystemPropertyFactory extends BasicPropertyFactory {
     @Override
     public Property create( Name name,
                             PropertyType desiredType,
-                            Object... values ) {
+                            Object firstValue ) {
+        CheckArg.isNotNull(name, "name");
+        if (desiredType == null) desiredType = PropertyType.OBJECT;
+        final ValueFactory<?> factory = factories.getValueFactory(desiredType);
+        Object value = firstValue;
+        // Check whether the sole value was a collection ...
+        if (value instanceof Path) {
+            value = factory.create(value);
+            return new BasicSingleValueProperty(name, getSubstitutedProperty(value.toString()));
+        }
+        if (value instanceof Collection<?>) {
+            // The single value is a collection, so create property with the collection's contents ...
+            return create(name, desiredType, (Iterable<?>)value);
+        }
+        if (value instanceof Iterator<?>) {
+            // The single value is an iterator over a collection, so create property with the iterator's contents ...
+            return create(name, desiredType, (Iterator<?>)value);
+        }
+        if (value instanceof Object[]) {
+            // The single value is an object array, so create the property with the array as the value(s)...
+            return create(name, desiredType, (Object[])value);
+        }
+        value = factory.create(value);
+        return new BasicSingleValueProperty(name, getSubstitutedProperty(value.toString()));
+    }
+
+    @Override
+    public Property create( Name name,
+                            PropertyType desiredType,
+                            Object[] values ) {
         CheckArg.isNotNull(name, "name");
         if (values == null || values.length == 0) {
             return new BasicEmptyProperty(name);

@@ -27,9 +27,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -52,12 +54,13 @@ import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.NamedThreadFactory;
+import org.modeshape.jcr.api.Repositories;
 
 /**
  * A container for repositories.
  */
 @ThreadSafe
-public class JcrEngine {
+public class JcrEngine implements Repositories {
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
@@ -236,6 +239,7 @@ public class JcrEngine {
      * @see #deploy(RepositoryConfiguration)
      * @see #undeploy(String)
      */
+    @Override
     public final JcrRepository getRepository( String repositoryName ) throws NoSuchRepositoryException {
         CheckArg.isNotEmpty(repositoryName, "repositoryName");
         checkRunning();
@@ -248,6 +252,19 @@ public class JcrEngine {
                 throw new NoSuchRepositoryException(JcrI18n.repositoryDoesNotExist.text(repositoryName));
             }
             return repository;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public Set<String> getRepositoryNames() {
+        checkRunning();
+
+        final Lock lock = this.lock.readLock();
+        try {
+            lock.lock();
+            return new HashSet<String>(repositories.keySet());
         } finally {
             lock.unlock();
         }
