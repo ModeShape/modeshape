@@ -325,14 +325,19 @@ public final class JcrI18n {
 
     // Engine
     public static I18n engineIsNotRunning;
+    public static I18n engineAtJndiLocationIsNotRunning;
     public static I18n repositoryConfigurationIsNotValid;
     public static I18n startingOfRepositoryWasCancelled;
     public static I18n startingOfRepositoryWasInterrupted;
     public static I18n failedToShutdownDeployedRepository;
     public static I18n repositoryIsAlreadyDeployed;
     public static I18n repositoryIsNotRunningOrHasBeenShutDown;
+    public static I18n repositoryIsNotRunningOrHasBeenShutDownInEngineAtJndiLocation;
+    public static I18n repositoryNotFoundInEngineAtJndiLocation;
     public static I18n errorStartingRepository;
     public static I18n storageRelatedConfigurationChangesWillTakeEffectAfterShutdown;
+    public static I18n missingRepositoryNameInUrlContainingJndiLocationOfEngine;
+    public static I18n errorShuttingDownJcrRepositoryFactory;
 
     public static I18n failedWhileRollingBackDestroyToRuntimeError;
     public static I18n unexpectedException;
