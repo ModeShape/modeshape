@@ -25,23 +25,29 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import org.modeshape.jcr.perftests.AbstractPerformanceTestSuite;
+import org.modeshape.jcr.perftests.SuiteConfiguration;
 import org.modeshape.jcr.perftests.util.BinaryImpl;
 
 
 public class SmallFileReadTestSuite extends AbstractPerformanceTestSuite {
 
-    private static final int FILE_COUNT = 1000;
     private static final int FILE_SIZE_MB = 10;
 
     private Session session;
     private Node root;
+    private int fileCount;
+
+    public SmallFileReadTestSuite( SuiteConfiguration suiteConfiguration ) {
+        super(suiteConfiguration);
+    }
 
     @Override
     public void beforeSuite() throws RepositoryException {
-        session = getRepository().login(getCredentials());
+        fileCount = suiteConfiguration.getNodeCount();
+        session = newSession();
 
         root = session.getRootNode().addNode("SmallFileReadTestSuite", "nt:folder");
-        for (int i = 0; i < FILE_COUNT; i++) {
+        for (int i = 0; i < fileCount; i++) {
             Node file = root.addNode("file" + i, "nt:file");
             Node content = file.addNode("jcr:content", "nt:resource");
             content.setProperty("jcr:mimeType", "application/octet-stream");
@@ -53,7 +59,7 @@ public class SmallFileReadTestSuite extends AbstractPerformanceTestSuite {
 
     @Override
     public void runTest() throws Exception {
-        for (int i = 0; i < FILE_COUNT; i++) {
+        for (int i = 0; i < fileCount; i++) {
             Node file = root.getNode("file" + i);
             Node content = file.getNode("jcr:content");
             InputStream stream = content.getProperty("jcr:data").getBinary().getStream();

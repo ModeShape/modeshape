@@ -8,7 +8,6 @@ import org.reflections.Reflections;
 import org.reflections.util.ConfigurationBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.io.IOException;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -21,80 +20,69 @@ public final class PerformanceTestSuiteRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(PerformanceTestSuiteRunner.class);
 
     private PerformanceStatistics perfStatistics;
-    private List<String> excludeTestsRegExp;
-    private List<String> scanSubPackages;
-    private int repeatCount;
+    private RunnerConfiguration runnerConfig;
 
     public PerformanceTestSuiteRunner() {
         perfStatistics = new PerformanceStatistics();
-        excludeTestsRegExp = new ArrayList<String>();
-        scanSubPackages = new ArrayList<String>();
-        repeatCount = 1;
-        initFromConfigFile();
-    }
-
-    private void initFromConfigFile() {
-        try {
-            Properties configParams = new Properties();
-            configParams.load(getClass().getClassLoader().getResourceAsStream("perftests.properties"));
-            parseMultiValuedString(configParams.getProperty("tests.exclude"), excludeTestsRegExp);
-            parseMultiValuedString(configParams.getProperty("scan.subPackages"), scanSubPackages);
-            repeatCount = Integer.valueOf(configParams.getProperty("repeat.count"));
-        } catch (IOException e) {
-            LOGGER.warn("Cannot load config file. Will use defaults ", e);
-        }
-    }
-
-    private void parseMultiValuedString( String multiValueString, List<String> collector) {
-        if (multiValueString == null) {
-            return;
-        }
-        String[] values = multiValueString.split(",");
-        for (String value : values) {
-            if (!value.trim().isEmpty()) {
-                collector.add(value.trim());
-            }
-        }
+        runnerConfig = new RunnerConfiguration("runner.properties");
     }
 
     public void runPerformanceTests( Map repositoryConfigParams, Credentials credentials ) throws Exception {
         for (RepositoryFactory repositoryFactory : ServiceLoader.load(RepositoryFactory.class)) {
             Repository repository = initializeRepository(repositoryConfigParams, repositoryFactory);
-            Set<Class<? extends AbstractPerformanceTestSuite>> perfTestSuites = loadPerformanceTestSuites();
-            for (Class<? extends AbstractPerformanceTestSuite> testSuiteClass : perfTestSuites) {
-                runPerfTestSuite(credentials, repository, testSuiteClass);
+            SuiteConfiguration suiteConfiguration = new SuiteConfiguration(repository, credentials, "testsuite.properties");
+            Set<Class<? extends AbstractPerformanceTestSuite>> testSuites = loadPerformanceTestSuites();
+            for (Class<? extends AbstractPerformanceTestSuite> testSuiteClass : testSuites) {
+                runTestSuite(suiteConfiguration, testSuiteClass);
             }
         }
     }
 
-    private void runPerfTestSuite( Credentials credentials, Repository repository, Class<? extends AbstractPerformanceTestSuite> testSuiteClass ) throws Exception {
-        AbstractPerformanceTestSuite testSuite = testSuiteClass.newInstance();
-        String testSuiteShortName = testSuite.getClass().getSimpleName();
-        String testSuiteFullName = testSuite.getClass().getName();
+    private void runTestSuite( SuiteConfiguration suiteConfiguration, Class<? extends AbstractPerformanceTestSuite> testSuiteClass )
+            throws Exception {
+        AbstractPerformanceTestSuite testSuite = testSuiteClass.getConstructor(SuiteConfiguration.class).newInstance(suiteConfiguration);
 
-        if (!testSuite.isCompatibleWith(repository)) {
-            LOGGER.warn("{} not compatible with {}", testSuiteShortName, repository.getClass().getSimpleName());
+        if (isSuiteExcluded(testSuiteClass)) {
             return;
         }
 
-        for (Iterator<String> it = excludeTestsRegExp.iterator(); it.hasNext();) {
-            String pattern = it.next();
+        if (!testSuite.isCompatibleWithCurrentRepository()) {
+            LOGGER.warn("Test suite {} not compatible with {}", new Object[]{testSuite.getClass().getSimpleName(),
+                    suiteConfiguration.getRepository().getClass().getSimpleName()});
+            return;
+        }
+
+        for (int i = 0; i < runnerConfig.repeatCount; i++) {
+            LOGGER.info("Running {} pass count {}", testSuiteClass.getSimpleName(), i);
+            testSuite.setUp();
+            long duration = testSuite.run();
+            perfStatistics.recordStatisticForRepository(suiteConfiguration.getRepository(), testSuiteClass.getSimpleName(), duration);
+            testSuite.tearDown();
+        }
+    }
+
+    private boolean isSuiteExcluded(Class<? extends AbstractPerformanceTestSuite> testSuiteClass) {
+        //first search excluded list
+        if (patternMatchesSuiteName(testSuiteClass, runnerConfig.excludeTestsRegExp)) {
+            return true;
+        }
+        //then search included list
+        return !runnerConfig.includeTestsRegExp.isEmpty() && !patternMatchesSuiteName(testSuiteClass, runnerConfig.includeTestsRegExp);
+    }
+
+    private boolean patternMatchesSuiteName( Class<? extends AbstractPerformanceTestSuite> suiteClass, List<String> patternsList ) {
+        for (Iterator<String> iterator = patternsList.iterator(); iterator.hasNext();) {
+            String pattern = iterator.next();
             try {
-                if (Pattern.matches(pattern, testSuiteFullName) || Pattern.matches(pattern, testSuiteShortName)){
-                    LOGGER.info("{} will not because it is excluded by {}", testSuiteFullName, pattern);
+                if (Pattern.matches(pattern, suiteClass.getName()) || Pattern.matches(pattern, suiteClass.getSimpleName())){
+                    return true;
                 }
             } catch (PatternSyntaxException e) {
                 LOGGER.warn("Invalid regex {}", pattern);
-                it.remove();
+                iterator.remove();
             }
         }
-
-        for (int i = 0; i < repeatCount; i++) {
-            testSuite.setUp(repository, credentials);
-            long duration = testSuite.run();
-            testSuite.tearDown();
-            perfStatistics.recordStatisticForRepository(repository, testSuiteShortName, duration);
-        }
+        return false;
     }
 
     private Repository initializeRepository( Map repositoryConfigParams, RepositoryFactory repositoryFactory ) throws RepositoryException {
@@ -107,7 +95,7 @@ public final class PerformanceTestSuiteRunner {
 
     private Set<Class<? extends AbstractPerformanceTestSuite>> loadPerformanceTestSuites() {
         ConfigurationBuilder builder = new ConfigurationBuilder();
-        for (String subpackageName : scanSubPackages) {
+        for (String subpackageName : runnerConfig.scanSubPackages) {
             String fullPackageName = this.getClass().getPackage().getName() + "." + subpackageName;
             builder.addUrls(getClass().getClassLoader().getResource(fullPackageName.replaceAll("\\.", "/")));
         }

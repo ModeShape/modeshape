@@ -20,16 +20,18 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import org.modeshape.jcr.perftests.AbstractPerformanceTestSuite;
+import org.modeshape.jcr.perftests.SuiteConfiguration;
 
 /**
- * Test for measuring the performance of creating a node with
- * {@value #CHILD_COUNT} child nodes.
+ * Test for measuring the performance of creating a node with child nodes.
  */
-public class CreateManyChildNodesTestSuite extends AbstractPerformanceTestSuite {
-
-    private static final int CHILD_COUNT = 10 * 1000;
+public class CreateChildNodesTestSuite extends AbstractPerformanceTestSuite {
 
     private Session session;
+
+    public CreateChildNodesTestSuite( SuiteConfiguration suiteConfiguration ) {
+        super(suiteConfiguration);
+    }
 
     @Override
     public void beforeSuite() throws RepositoryException {
@@ -39,16 +41,15 @@ public class CreateManyChildNodesTestSuite extends AbstractPerformanceTestSuite 
     @Override
     public void runTest() throws Exception {
         Node node = session.getRootNode().addNode("testnode", "nt:unstructured");
-        for (int i = 0; i < CHILD_COUNT; i++) {
+        for (int i = 0; i < suiteConfiguration.getNodeCount(); i++) {
             node.addNode("node" + i, "nt:unstructured");
         }
         session.save();
     }
 
     @Override
-    public void afterTest() throws RepositoryException {
+    protected void afterSuite() throws Exception {
         session.getRootNode().getNode("testnode").remove();
         session.save();
     }
-
 }

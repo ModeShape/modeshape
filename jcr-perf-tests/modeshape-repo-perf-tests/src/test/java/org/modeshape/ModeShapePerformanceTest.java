@@ -8,6 +8,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * Runs the performance tests against a Modeshape repo.
+ *
  * @author Horia Chiorean
  */
 public class ModeShapePerformanceTest {

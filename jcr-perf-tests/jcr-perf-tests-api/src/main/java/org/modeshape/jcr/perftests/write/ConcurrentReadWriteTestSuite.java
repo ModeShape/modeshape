@@ -18,6 +18,7 @@ package org.modeshape.jcr.perftests.write;
 
 import javax.jcr.Node;
 import javax.jcr.Session;
+import org.modeshape.jcr.perftests.SuiteConfiguration;
 import org.modeshape.jcr.perftests.read.ConcurrentReadTestSuite;
 import java.util.Random;
 import java.util.concurrent.Callable;
@@ -26,6 +27,10 @@ import java.util.concurrent.Callable;
  * A {@link org.modeshape.jcr.perftests.read.ConcurrentReadTestSuite} with a single writer thread that continuously updates the nodes being accessed by the readers.
  */
 public class ConcurrentReadWriteTestSuite extends ConcurrentReadTestSuite {
+
+    public ConcurrentReadWriteTestSuite( SuiteConfiguration suiteConfiguration ) {
+        super(suiteConfiguration);
+    }
 
     @Override
     public void beforeSuite() throws Exception {
@@ -41,8 +46,8 @@ public class ConcurrentReadWriteTestSuite extends ConcurrentReadTestSuite {
         private long count = 0;
 
         public Void call() throws Exception {
-            int i = random.nextInt(NODE_COUNT);
-            int j = random.nextInt(NODE_COUNT);
+            int i = random.nextInt(nodeCount);
+            int j = random.nextInt(nodeCount);
             Node node = session.getRootNode().getNode("testroot/node" + i + "/node" + j);
             node.setProperty("count", count++);
             session.save();

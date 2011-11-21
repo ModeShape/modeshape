@@ -22,6 +22,7 @@ import javax.jcr.Session;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import org.modeshape.jcr.perftests.AbstractPerformanceTestSuite;
+import org.modeshape.jcr.perftests.SuiteConfiguration;
 import java.util.Random;
 
 /**
@@ -33,20 +34,23 @@ import java.util.Random;
  */
 public class PathBasedQueryTestSuite extends AbstractPerformanceTestSuite {
 
-    public static final int FIRST_LEVEL_NODE_COUNT = 5;
-    public static final int SECOND_LEVEL_NODE_COUNT = 100;
-
     private Session session;
     private Node root;
+    private int nodeCount;
+
+    public PathBasedQueryTestSuite( SuiteConfiguration suiteConfiguration ) {
+        super(suiteConfiguration);
+    }
 
     @Override
     public void beforeSuite() throws Exception {
         session = newSession();
         root = session.getRootNode().addNode(getClass().getSimpleName(), "nt:unstructured");
-        int count = 0;
-        for (int i = 0; i < FIRST_LEVEL_NODE_COUNT; i++) {
+        nodeCount = suiteConfiguration.getNodeCount();
+        int count = 1;
+        for (int i = 0; i < nodeCount; i++) {
             Node n = root.addNode("node-" + i);
-            for (int j = 0; j < SECOND_LEVEL_NODE_COUNT; j++) {
+            for (int j = 0; j < nodeCount; j++) {
                 n.addNode("node-" + j).setProperty("count", count++);
             }
         }
@@ -56,15 +60,14 @@ public class PathBasedQueryTestSuite extends AbstractPerformanceTestSuite {
     @Override
     public void runTest() throws Exception {
         QueryManager qm = session.getWorkspace().getQueryManager();
-        Query q = qm.createQuery("/jcr:root" + root.getPath() + "/*/*[@count = 250]", Query.XPATH);
-        for (int i = 0; i < FIRST_LEVEL_NODE_COUNT; i++) {
+        Query q = qm.createQuery("/jcr:root" + root.getPath() + "/*/*[@count = " + (nodeCount * nodeCount)  +"]", Query.XPATH);
+        for (int i = 0; i < nodeCount; i++) {
             Node result = q.execute().getNodes().nextNode();
             assert result != null;
         }
         Random rnd = new Random();
-        for (int i = 0; i < FIRST_LEVEL_NODE_COUNT; i++) {
-            q = qm.createQuery("/jcr:root" + root.getPath() + "/*/*[@count = " + rnd.nextInt(FIRST_LEVEL_NODE_COUNT * SECOND_LEVEL_NODE_COUNT) +
-                    "]", Query.XPATH);
+        for (int i = 0; i < nodeCount; i++) {
+            q = qm.createQuery("/jcr:root" + root.getPath() + "/*/*[@count = " + rnd.nextInt(nodeCount * nodeCount) + "]", Query.XPATH);
             Node result = q.execute().getNodes().nextNode();
             assert result != null;
         }
@@ -78,8 +81,8 @@ public class PathBasedQueryTestSuite extends AbstractPerformanceTestSuite {
     }
 
     @Override
-    public boolean isCompatibleWith( Repository repository ) {
-        String xpathSupported = repository.getDescriptor(Repository.OPTION_QUERY_SQL_SUPPORTED);
+    public boolean isCompatibleWithCurrentRepository() {
+        String xpathSupported = suiteConfiguration.getRepository().getDescriptor(Repository.OPTION_QUERY_SQL_SUPPORTED);
         return xpathSupported != null && xpathSupported.equalsIgnoreCase(Boolean.TRUE.toString());
     }
 }

@@ -20,13 +20,17 @@ import javax.jcr.*;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import org.modeshape.jcr.perftests.AbstractPerformanceTestSuite;
+import org.modeshape.jcr.perftests.SuiteConfiguration;
 
 public class SimpleSearchTestSuite extends AbstractPerformanceTestSuite {
 
-    private static final int NODE_COUNT = 100;
-
     private Session session;
     private Node root;
+    private int nodeCount;
+
+    public SimpleSearchTestSuite( SuiteConfiguration suiteConfiguration ) {
+        super(suiteConfiguration);
+    }
 
     protected Query createQuery( QueryManager manager, int i )
             throws RepositoryException {
@@ -37,9 +41,10 @@ public class SimpleSearchTestSuite extends AbstractPerformanceTestSuite {
     public void beforeSuite() throws RepositoryException {
         session = newSession();
         root = session.getRootNode().addNode("testroot", "nt:unstructured");
-        for (int i = 0; i < NODE_COUNT; i++) {
+        nodeCount = suiteConfiguration.getNodeCount();
+        for (int i = 0; i < nodeCount; i++) {
             Node node = root.addNode("node" + i, "nt:unstructured");
-            for (int j = 0; j < NODE_COUNT; j++) {
+            for (int j = 0; j < nodeCount; j++) {
                 Node child = node.addNode("node" + j, "nt:unstructured");
                 child.setProperty("testcount", j);
             }
@@ -50,7 +55,7 @@ public class SimpleSearchTestSuite extends AbstractPerformanceTestSuite {
     @Override
     public void runTest() throws Exception {
         QueryManager manager = session.getWorkspace().getQueryManager();
-        for (int i = 0; i < NODE_COUNT; i++) {
+        for (int i = 0; i < nodeCount; i++) {
             Query query = createQuery(manager, i);
             NodeIterator iterator = query.execute().getNodes();
             while (iterator.hasNext()) {
@@ -68,8 +73,8 @@ public class SimpleSearchTestSuite extends AbstractPerformanceTestSuite {
     }
 
     @Override
-    public boolean isCompatibleWith( Repository repository ) {
-        String xpathSupported = repository.getDescriptor(Repository.OPTION_QUERY_SQL_SUPPORTED);
+    public boolean isCompatibleWithCurrentRepository() {
+        String xpathSupported = suiteConfiguration.getRepository().getDescriptor(Repository.OPTION_QUERY_SQL_SUPPORTED);
         return xpathSupported != null && xpathSupported.equalsIgnoreCase(Boolean.TRUE.toString());
     }
 }

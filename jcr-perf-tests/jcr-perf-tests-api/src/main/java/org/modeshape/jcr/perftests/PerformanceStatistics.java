@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Horia Chiorean
@@ -17,6 +18,7 @@ public class PerformanceStatistics {
     private Map<String, Map<String, List<Long>>> reposPerformanceMap = new HashMap<String, Map<String, List<Long>>>();
 
     void recordStatisticForRepository(Repository repository, String operationName, long duration) {
+        duration = TimeUnit.MILLISECONDS.convert(duration, TimeUnit.NANOSECONDS);
         String repoName = repository.getClass().getSimpleName();
         LOGGER.info("Recording statistic: repo {} operation {} duration(ms) {}", new Object[] {repoName, operationName, duration});
 

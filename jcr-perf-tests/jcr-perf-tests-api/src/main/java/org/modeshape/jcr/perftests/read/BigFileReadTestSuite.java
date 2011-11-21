@@ -20,6 +20,7 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import org.modeshape.jcr.perftests.AbstractPerformanceTestSuite;
+import org.modeshape.jcr.perftests.SuiteConfiguration;
 import org.modeshape.jcr.perftests.util.BinaryImpl;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -28,19 +29,24 @@ import java.util.Calendar;
 
 public class BigFileReadTestSuite extends AbstractPerformanceTestSuite {
 
-    private static final int FILE_COUNT = 30;
     private static final int FILE_SIZE_MB = 100;
 
     private Session session;
     private Node root;
+    private int nodeCount;
+
+    public BigFileReadTestSuite( SuiteConfiguration suiteConfiguration ) {
+        super(suiteConfiguration);
+    }
 
     @Override
     public void beforeSuite() throws RepositoryException {
         //failOnRepositoryVersions("1.4", "1.5", "1.6");
         session = newSession();
         root = session.getRootNode().addNode("BigFileReadTestSuite", "nt:folder");
+        nodeCount = suiteConfiguration.getNodeCount();
 
-        for (int i = 0; i < FILE_COUNT; i++) {
+        for (int i = 0; i < nodeCount; i++) {
             Node file = root.addNode("file" + i, "nt:file");
             Node content = file.addNode("jcr:content", "nt:resource");
             content.setProperty("jcr:mimeType", "application/octet-stream");
@@ -52,7 +58,7 @@ public class BigFileReadTestSuite extends AbstractPerformanceTestSuite {
 
     @Override
     public void runTest() throws Exception {
-        for (int i = 0; i < FILE_COUNT; i++) {
+        for (int i = 0; i < nodeCount; i++) {
             Node file = root.getNode("file" + i);
             Node content = file.getNode("jcr:content");
             InputStream stream = content.getProperty("jcr:data").getBinary().getStream();
@@ -74,5 +80,4 @@ public class BigFileReadTestSuite extends AbstractPerformanceTestSuite {
         root.remove();
         session.save();
     }
-
 }

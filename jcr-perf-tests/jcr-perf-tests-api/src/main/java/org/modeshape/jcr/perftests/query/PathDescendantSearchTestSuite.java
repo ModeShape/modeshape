@@ -20,25 +20,29 @@ import javax.jcr.*;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import org.modeshape.jcr.perftests.AbstractPerformanceTestSuite;
+import org.modeshape.jcr.perftests.SuiteConfiguration;
 
 /**
  * Performance test to check performance of queries on sub-trees.
  */
 public class PathDescendantSearchTestSuite extends AbstractPerformanceTestSuite {
 
-    private static final int NODE_COUNT = 100;
-
     private Session session;
     private Node root;
+    private int nodeCount;
+
+    public PathDescendantSearchTestSuite( SuiteConfiguration suiteConfiguration ) {
+        super(suiteConfiguration);
+    }
 
     @Override
     public void beforeSuite() throws RepositoryException {
         session = newSession();
-
+        nodeCount = suiteConfiguration.getNodeCount();
         root = session.getRootNode().addNode("testroot", "nt:unstructured");
-        for (int i = 0; i < NODE_COUNT; i++) {
+        for (int i = 0; i < nodeCount; i++) {
             Node node = root.addNode("node" + i, "nt:unstructured");
-            for (int j = 0; j < NODE_COUNT; j++) {
+            for (int j = 0; j < nodeCount; j++) {
                 Node child = node.addNode("node" + j, "nt:unstructured");
                 child.setProperty("testcount", j);
             }
@@ -49,14 +53,12 @@ public class PathDescendantSearchTestSuite extends AbstractPerformanceTestSuite 
     @Override
     public void runTest() throws Exception {
         QueryManager manager = session.getWorkspace().getQueryManager();
-        for (int i = 0; i < NODE_COUNT; i++) {
+        for (int i = 0; i < nodeCount; i++) {
             Query query = createQuery(manager, i);
             NodeIterator iterator = query.execute().getNodes();
             while (iterator.hasNext()) {
                 Node node = iterator.nextNode();
-                if (node.getProperty("testcount").getLong() != i) {
-                    throw new Exception("Invalid test result: " + node.getPath());
-                }
+                assert  node.getProperty("testcount").getLong() == i;
             }
         }
     }
@@ -78,8 +80,8 @@ public class PathDescendantSearchTestSuite extends AbstractPerformanceTestSuite 
     }
 
     @Override
-    public boolean isCompatibleWith( Repository repository ) {
-        String xpathSupported = repository.getDescriptor(Repository.OPTION_QUERY_SQL_SUPPORTED);
+    public boolean isCompatibleWithCurrentRepository() {
+        String xpathSupported = suiteConfiguration.getRepository().getDescriptor(Repository.OPTION_QUERY_SQL_SUPPORTED);
         return xpathSupported != null && xpathSupported.equalsIgnoreCase(Boolean.TRUE.toString());
     }
 }

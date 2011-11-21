@@ -20,25 +20,28 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import org.modeshape.jcr.perftests.AbstractPerformanceTestSuite;
+import org.modeshape.jcr.perftests.SuiteConfiguration;
 
 /**
  * Test for measuring the performance of {@value #ITERATIONS} iterations of
- * transiently adding and removing a child node to a node that already has
- * {@value #CHILD_COUNT} existing child nodes.
+ * transiently adding and removing a child node to a node that already has existing child nodes.
  */
-public class TransientManyChildNodesTestSuite extends AbstractPerformanceTestSuite {
+public class TransientChildNodesTestSuite extends AbstractPerformanceTestSuite {
 
-    private static final int CHILD_COUNT = 10 * 1000;
-    private static final int ITERATIONS = 1000;
+    private static final int ITERATIONS = 100;
 
     private Session session;
     private Node node;
+
+    public TransientChildNodesTestSuite( SuiteConfiguration suiteConfiguration ) {
+        super(suiteConfiguration);
+    }
 
     @Override
     public void beforeSuite() throws RepositoryException {
         session = newSession();
         node = session.getRootNode().addNode("testnode", "nt:unstructured");
-        for (int i = 0; i < CHILD_COUNT; i++) {
+        for (int i = 0; i < suiteConfiguration.getNodeCount(); i++) {
             node.addNode("node" + i, "nt:unstructured");
         }
     }

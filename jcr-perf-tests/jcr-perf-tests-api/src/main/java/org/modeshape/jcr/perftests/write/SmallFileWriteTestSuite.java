@@ -22,30 +22,30 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import org.modeshape.jcr.perftests.AbstractPerformanceTestSuite;
+import org.modeshape.jcr.perftests.SuiteConfiguration;
 import org.modeshape.jcr.perftests.util.BinaryImpl;
 
 public class SmallFileWriteTestSuite extends AbstractPerformanceTestSuite {
 
-    private static final int FILE_COUNT = 100;
     private static final int FILE_SIZE_MB = 10;
 
     private Session session;
     private Node root;
 
-    @Override
-    public void beforeSuite() throws RepositoryException {
-        session = newSession();
+    public SmallFileWriteTestSuite( SuiteConfiguration suiteConfiguration ) {
+        super(suiteConfiguration);
     }
 
     @Override
-    public void beforeTest() throws RepositoryException {
+    public void beforeSuite() throws RepositoryException {
+        session = newSession();
         root = session.getRootNode().addNode("SmallFileWriteTestSuite", "nt:folder");
         session.save();
     }
 
     @Override
     public void runTest() throws Exception {
-        for (int i = 0; i < FILE_COUNT; i++) {
+        for (int i = 0; i < suiteConfiguration.getNodeCount(); i++) {
             Node file = root.addNode("file" + i, "nt:file");
             Node content = file.addNode("jcr:content", "nt:resource");
             content.setProperty("jcr:mimeType", "application/octet-stream");
@@ -56,9 +56,8 @@ public class SmallFileWriteTestSuite extends AbstractPerformanceTestSuite {
     }
 
     @Override
-    public void afterTest() throws RepositoryException {
+    protected void afterSuite() throws Exception {
         root.remove();
         session.save();
     }
-
 }

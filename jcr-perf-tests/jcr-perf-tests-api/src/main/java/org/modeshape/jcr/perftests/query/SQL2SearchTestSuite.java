@@ -20,8 +20,13 @@ import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
+import org.modeshape.jcr.perftests.SuiteConfiguration;
 
 public class SQL2SearchTestSuite extends SimpleSearchTestSuite {
+
+    public SQL2SearchTestSuite( SuiteConfiguration suiteConfiguration ) {
+        super(suiteConfiguration);
+    }
 
     @Override
     protected Query createQuery(QueryManager manager, int i)
@@ -30,7 +35,7 @@ public class SQL2SearchTestSuite extends SimpleSearchTestSuite {
     }
 
     @Override
-    public boolean isCompatibleWith( Repository repository ) {
+    public boolean isCompatibleWithCurrentRepository() {
         return true;
     }
 }

@@ -25,6 +25,7 @@ import javax.jcr.query.QueryManager;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
 import org.modeshape.jcr.perftests.AbstractPerformanceTestSuite;
+import org.modeshape.jcr.perftests.SuiteConfiguration;
 import java.util.Random;
 
 /**
@@ -34,25 +35,29 @@ import java.util.Random;
  */
 public class ThreeWayJoinTestSuite extends AbstractPerformanceTestSuite {
 
-    private static final int NODE_COUNT = 30;
-
     private final Random random = new Random();
 
     private Session session;
     private Node root;
+    private int nodeCount;
+
+    public ThreeWayJoinTestSuite( SuiteConfiguration suiteConfiguration ) {
+        super(suiteConfiguration);
+    }
 
     @Override
     public void beforeSuite() throws RepositoryException {
         session = newSession();
         root = session.getRootNode().addNode("testroot", "nt:unstructured");
+        nodeCount = suiteConfiguration.getNodeCount();
 
-        for (int i = 0; i < NODE_COUNT; i++) {
+        for (int i = 0; i < nodeCount; i++) {
             Node foo = root.addNode("node" + i, "nt:unstructured");
             foo.setProperty("foo", i);
-            for (int j = 0; j < NODE_COUNT; j++) {
+            for (int j = 0; j < nodeCount; j++) {
                 Node bar = foo.addNode("node" + j, "nt:unstructured");
                 bar.setProperty("bar", j);
-                for (int k = 0; k < NODE_COUNT; k++) {
+                for (int k = 0; k < nodeCount; k++) {
                     Node baz = bar.addNode("node" + k, "nt:unstructured");
                     baz.setProperty("baz", k);
                 }
@@ -63,7 +68,7 @@ public class ThreeWayJoinTestSuite extends AbstractPerformanceTestSuite {
 
     @Override
     public void runTest() throws Exception {
-        int randFooValue = random.nextInt(NODE_COUNT);
+        int randFooValue = random.nextInt(nodeCount);
         String query =
                 "SELECT a.foo AS a, b.bar AS b, c.baz AS c"
                         + " FROM [nt:unstructured] AS a"
@@ -73,7 +78,7 @@ public class ThreeWayJoinTestSuite extends AbstractPerformanceTestSuite {
 
         QueryManager manager = session.getWorkspace().getQueryManager();
         RowIterator iterator = manager.createQuery(query, Query.JCR_SQL2).execute().getRows();
-        assert iterator.getSize() == NODE_COUNT * NODE_COUNT * NODE_COUNT;
+        assert iterator.getSize() == nodeCount * nodeCount * nodeCount;
         while (iterator.hasNext()) {
             Row row = iterator.nextRow();
             long a = row.getValue("a").getLong();
@@ -93,8 +98,8 @@ public class ThreeWayJoinTestSuite extends AbstractPerformanceTestSuite {
     }
 
     @Override
-    public boolean isCompatibleWith( Repository repository ) {
-        String joins = getRepository().getDescriptor(Repository.QUERY_JOINS);
+    public boolean isCompatibleWithCurrentRepository() {
+        String joins = suiteConfiguration.getRepository().getDescriptor(Repository.QUERY_JOINS);
         return joins != null && joins.equals(Repository.QUERY_JOINS_NONE);
     }
 }

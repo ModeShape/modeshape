@@ -12,9 +12,11 @@
     <artifactId>jcr-perf-tests-api</artifactId>
 
     <properties>
-        <tests.exclude/>
+        <tests.exclude></tests.exclude>
+        <tests.include></tests.include>
         <repeat.count>1</repeat.count>
         <scan.subPackages>query,read,write</scan.subPackages>
+        <testsuite.config.nodeCount>10</testsuite.config.nodeCount>
     </properties>
 
     <build>

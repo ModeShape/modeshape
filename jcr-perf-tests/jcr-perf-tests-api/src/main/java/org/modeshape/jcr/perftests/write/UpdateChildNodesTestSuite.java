@@ -20,23 +20,26 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import org.modeshape.jcr.perftests.AbstractPerformanceTestSuite;
+import org.modeshape.jcr.perftests.SuiteConfiguration;
 
 /**
  * Test for measuring the performance of adding one extra child node to 
- * node with {@value #CHILD_COUNT} existing child nodes.
+ * node with existing child nodes.
  */
-public class UpdateManyChildNodesTestSuite extends AbstractPerformanceTestSuite {
-
-    private static final int CHILD_COUNT = 10 * 1000;
+public class UpdateChildNodesTestSuite extends AbstractPerformanceTestSuite {
 
     private Session session;
     private Node node;
+
+    public UpdateChildNodesTestSuite( SuiteConfiguration suiteConfiguration ) {
+        super(suiteConfiguration);
+    }
 
     @Override
     public void beforeSuite() throws RepositoryException {
         session = newSession();
         node = session.getRootNode().addNode("testnode", "nt:unstructured");
-        for (int i = 0; i < CHILD_COUNT; i++) {
+        for (int i = 0; i < suiteConfiguration.getNodeCount(); i++) {
             node.addNode("node" + i, "nt:unstructured");
         }
     }
@@ -48,14 +51,8 @@ public class UpdateManyChildNodesTestSuite extends AbstractPerformanceTestSuite 
     }
 
     @Override
-    public void afterTest() throws RepositoryException {
-        node.getNode("onemore").remove();
-        session.save();
-    }
-
-    @Override
     public void afterSuite() throws RepositoryException {
+        session.getRootNode().getNode("testnode").remove();
         session.save();
-        session.logout();
     }
 }

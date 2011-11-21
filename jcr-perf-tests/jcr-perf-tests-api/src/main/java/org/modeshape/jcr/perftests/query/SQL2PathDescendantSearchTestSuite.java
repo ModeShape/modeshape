@@ -20,11 +20,16 @@ import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
+import org.modeshape.jcr.perftests.SuiteConfiguration;
 
 /**
  * SQL-2 version of the sub-tree performance test.
  */
 public class SQL2PathDescendantSearchTestSuite extends PathDescendantSearchTestSuite {
+
+    public SQL2PathDescendantSearchTestSuite( SuiteConfiguration suiteConfiguration ) {
+        super(suiteConfiguration);
+    }
 
     @Override
     protected Query createQuery(QueryManager manager, int i)
@@ -34,7 +39,7 @@ public class SQL2PathDescendantSearchTestSuite extends PathDescendantSearchTestS
     }
 
     @Override
-    public boolean isCompatibleWith( Repository repository ) {
+    public boolean isCompatibleWithCurrentRepository() {
         return true;
     }
 }

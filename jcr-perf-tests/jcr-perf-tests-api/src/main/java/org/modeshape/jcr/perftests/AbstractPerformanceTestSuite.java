@@ -16,37 +16,41 @@
  */
 package org.modeshape.jcr.perftests;
 
-import javax.jcr.Credentials;
-import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
 
 /**
  * Abstract base class for individual performance benchmarks.
  */
 public abstract class AbstractPerformanceTestSuite {
 
-    private Repository repository;
-    private Credentials credentials;
+    protected SuiteConfiguration suiteConfiguration;
+
     private List<Session> sessions;
     private ExecutorService execService;
 
     private volatile boolean running;
 
+    public AbstractPerformanceTestSuite(SuiteConfiguration suiteConfiguration) {
+        this.suiteConfiguration = suiteConfiguration;
+    }
+
     /**
      * Prepares this performance benchmark.
      *
-     * @param repository the repository to use
-     * @param credentials credentials of a user with write access
      * @throws Exception if the benchmark can not be prepared
      */
-    public void setUp(Repository repository, Credentials credentials)
+    public final void setUp()
             throws Exception {
-        this.repository = repository;
-        this.credentials = credentials;
         this.sessions = new LinkedList<Session>();
         this.execService = Executors.newCachedThreadPool();
         this.running = true;
@@ -60,15 +64,10 @@ public abstract class AbstractPerformanceTestSuite {
      * @return number of milliseconds spent in this iteration
      * @throws Exception if an error occurs
      */
-    public long run() throws Exception {
-        beforeTest();
-        try {
-            long start = System.nanoTime();
-            runTest();
-            return System.nanoTime() - start;
-        } finally {
-            afterTest();
-        }
+    public final long run() throws Exception {
+        long start = System.nanoTime();
+        runTest();
+        return System.nanoTime() - start;
     }
 
     /**
@@ -76,7 +75,7 @@ public abstract class AbstractPerformanceTestSuite {
      *
      * @throws Exception if the benchmark can not be cleaned up
      */
-    public void tearDown() throws Exception {
+    public final void tearDown() throws Exception {
         running = false;
         execService.awaitTermination(10, TimeUnit.SECONDS);
         execService.shutdown();
@@ -86,8 +85,11 @@ public abstract class AbstractPerformanceTestSuite {
 
         this.execService = null;
         this.sessions = null;
-        this.credentials = null;
-        this.repository = null;
+        this.suiteConfiguration = null;
+    }
+
+    public boolean isCompatibleWithCurrentRepository() {
+        return true;
     }
 
     private void closeSessions() {
@@ -98,30 +100,21 @@ public abstract class AbstractPerformanceTestSuite {
         }
     }
 
-    protected void failOnRepositoryVersions(String... versions)
-            throws RepositoryException {
-        String repositoryVersion =
-                repository.getDescriptor(Repository.REP_VERSION_DESC);
-        for (String version : versions) {
-            if (repositoryVersion.startsWith(version)) {
-                throw new RepositoryException(
-                        "Unable to run " + getClass().getName()
-                        + " on repository version " + version);
-            }
-        }
-    }
-
-    protected Repository getRepository() {
-        return repository;
-    }
-
-    protected Credentials getCredentials() {
-        return credentials;
-    }
+//    protected void failOnRepositoryVersions( String... versions )
+//            throws RepositoryException {
+//        String repositoryVersion = repository.getDescriptor(Repository.REP_VERSION_DESC);
+//        for (String version : versions) {
+//            if (repositoryVersion.startsWith(version)) {
+//                throw new RepositoryException(
+//                        "Unable to run " + getClass().getName()
+//                                + " on repository version " + version);
+//            }
+//        }
+//    }
 
     protected Session newSession() {
         try {
-            Session session = repository.login(credentials);
+            Session session = suiteConfiguration.getRepository().login(suiteConfiguration.getCredentials());
             sessions.add(session);
             return session;
         } catch (RepositoryException e) {
@@ -135,11 +128,11 @@ public abstract class AbstractPerformanceTestSuite {
      *
      * @param job background job
      */
-    protected void addBackgroundJob(final Callable<?> job) {
+    protected void addBackgroundJob( final Callable<?> job ) {
         execService.submit(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
-                while(running) {
+                while (running) {
                     job.call();
                 }
                 return null;
@@ -149,19 +142,9 @@ public abstract class AbstractPerformanceTestSuite {
 
     protected abstract void runTest() throws Exception;
 
-    public boolean isCompatibleWith( Repository repository ) {
-        return true;
+    protected void beforeSuite() throws Exception {
     }
 
-    public void beforeSuite() throws Exception {
-    }
-
-    public void afterSuite() throws Exception {
-    }
-
-    public void beforeTest() throws Exception {
-    }
-
-    public void afterTest() throws Exception {
+    protected void afterSuite() throws Exception {
     }
 }

@@ -19,6 +19,7 @@ package org.modeshape.jcr.perftests.read;
 import javax.jcr.Node;
 import javax.jcr.Session;
 import org.modeshape.jcr.perftests.AbstractPerformanceTestSuite;
+import org.modeshape.jcr.perftests.SuiteConfiguration;
 
 /**
  * <code>ReadPropertyTestSuite</code> implements a performance test, which reads
@@ -27,10 +28,14 @@ import org.modeshape.jcr.perftests.AbstractPerformanceTestSuite;
  */
 public class ReadPropertyTestSuite extends AbstractPerformanceTestSuite {
 
-    public static final int PROP_COUNT = 100000;
-    private Session session;
+    private static final int PROP_COUNT = 1000;
 
+    private Session session;
     private Node root;
+
+    public ReadPropertyTestSuite( SuiteConfiguration suiteConfiguration ) {
+        super(suiteConfiguration);
+    }
 
     @Override
     public void beforeSuite() throws Exception {

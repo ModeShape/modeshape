@@ -22,26 +22,33 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import org.modeshape.jcr.perftests.AbstractPerformanceTestSuite;
+import org.modeshape.jcr.perftests.SuiteConfiguration;
 import org.modeshape.jcr.perftests.util.BinaryImpl;
 
 public class BigFileWriteTestSuite extends AbstractPerformanceTestSuite {
 
     private static final int FILE_SIZE_MB = 100;
-    private static final int FILE_COUNT = 30;
 
     private Session session;
-    private Node file;
+    private Node root;
+    private int fileCount;
+
+    public BigFileWriteTestSuite( SuiteConfiguration suiteConfiguration ) {
+        super(suiteConfiguration);
+    }
 
     @Override
     public void beforeSuite() throws RepositoryException {
-//        failOnRepositoryVersions("1.4", "1.5", "1.6");
+        //        failOnRepositoryVersions("1.4", "1.5", "1.6");
         session = newSession();
+        root = session.getRootNode().addNode("RootFolder", "nt:folder");
+        session.save();
     }
 
     @Override
     public void runTest() throws RepositoryException {
-        for (int i = 0; i < FILE_COUNT; i++) {
-            file = session.getRootNode().addNode("BigFileWriteTestSuite" + i, "nt:file");
+        for (int i = 0; i < suiteConfiguration.getNodeCount(); i++) {
+            Node file = root.addNode("BigFileWriteTestSuite" + i, "nt:file");
             Node content = file.addNode("jcr:content", "nt:resource");
             content.setProperty("jcr:mimeType", "application/octet-stream");
             content.setProperty("jcr:lastModified", Calendar.getInstance());
@@ -51,8 +58,8 @@ public class BigFileWriteTestSuite extends AbstractPerformanceTestSuite {
     }
 
     @Override
-    public void afterTest() throws RepositoryException {
-        file.remove();
+    protected void afterSuite() throws Exception {
+        root.remove();
         session.save();
     }
 }

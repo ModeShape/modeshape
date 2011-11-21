@@ -27,6 +27,7 @@ import javax.jcr.query.QueryManager;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
 import org.modeshape.jcr.perftests.AbstractPerformanceTestSuite;
+import org.modeshape.jcr.perftests.SuiteConfiguration;
 
 /**
  * Performance test for a two-way join that selects 300 pairs from
@@ -35,22 +36,26 @@ import org.modeshape.jcr.perftests.AbstractPerformanceTestSuite;
  */
 public class TwoWayJoinTestSuite extends AbstractPerformanceTestSuite {
 
-    private static final int NODE_COUNT = 300;
-
     private final Random random = new Random();
 
     private Session session;
     private Node root;
+    private int nodeCount;
+
+    public TwoWayJoinTestSuite( SuiteConfiguration suiteConfiguration ) {
+        super(suiteConfiguration);
+    }
 
     @Override
     public void beforeSuite() throws RepositoryException {
         session = newSession();
         root = session.getRootNode().addNode("testroot", "nt:unstructured");
+        nodeCount = suiteConfiguration.getNodeCount();
 
-        for (int i = 0; i < NODE_COUNT; i++) {
+        for (int i = 0; i < nodeCount; i++) {
             Node node = root.addNode("node" + i, "nt:unstructured");
             node.setProperty("foo", i);
-            for (int j = 0; j < NODE_COUNT; j++) {
+            for (int j = 0; j < nodeCount; j++) {
                 Node child = node.addNode("node" + j, "nt:unstructured");
                 child.setProperty("bar", j);
             }
@@ -60,20 +65,20 @@ public class TwoWayJoinTestSuite extends AbstractPerformanceTestSuite {
 
     @Override
     public void runTest() throws Exception {
-        int x = random.nextInt(NODE_COUNT);
+        int fooValue = random.nextInt(nodeCount);
         String query = "SELECT a.foo AS a, b.bar AS b"
                 + " FROM [nt:unstructured] AS a"
                 + " INNER JOIN [nt:unstructured] AS b ON a.foo = b.bar"
-                + " WHERE a.foo = " + x;
+                + " WHERE a.foo = " + fooValue;
 
         QueryManager manager = session.getWorkspace().getQueryManager();
         RowIterator iterator = manager.createQuery(query, Query.JCR_SQL2).execute().getRows();
-        assert iterator.getSize() == NODE_COUNT;
+        assert iterator.getSize() == nodeCount;
         while (iterator.hasNext()) {
             Row row = iterator.nextRow();
             long a = row.getValue("a").getLong();
             long b = row.getValue("b").getLong();
-            assert a == x;
+            assert a == fooValue;
             assert a == b;
         }
     }
@@ -85,8 +90,8 @@ public class TwoWayJoinTestSuite extends AbstractPerformanceTestSuite {
     }
 
     @Override
-    public boolean isCompatibleWith( Repository repository ) {
-        String joins = getRepository().getDescriptor(Repository.QUERY_JOINS);
+    public boolean isCompatibleWithCurrentRepository() {
+        String joins = suiteConfiguration.getRepository().getDescriptor(Repository.QUERY_JOINS);
         return joins != null && joins.equals(Repository.QUERY_JOINS_NONE);
     }
 }

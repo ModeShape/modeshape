@@ -22,13 +22,11 @@
             <version>1.0.0-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jcr</artifactId>
             <version>${modeshape.version}</version>
         </dependency>
-
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -38,4 +36,15 @@
             <artifactId>slf4j-log4j12</artifactId>
         </dependency>
     </dependencies>
+
+    <profiles>
+
+        <!--Runs the perf tests against modeshape 3.x-->
+        <profile>
+            <id>modeshape-3.x</id>
+            <properties>
+                <modeshape.version>3.0-SNAPSHOT</modeshape.version>
+            </properties>
+        </profile>
+    </profiles>
 </project>

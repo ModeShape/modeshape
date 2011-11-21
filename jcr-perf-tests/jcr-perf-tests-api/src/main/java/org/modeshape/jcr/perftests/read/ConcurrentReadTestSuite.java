@@ -19,6 +19,7 @@ package org.modeshape.jcr.perftests.read;
 import javax.jcr.Node;
 import javax.jcr.Session;
 import org.modeshape.jcr.perftests.AbstractPerformanceTestSuite;
+import org.modeshape.jcr.perftests.SuiteConfiguration;
 import java.util.Random;
 import java.util.concurrent.Callable;
 
@@ -28,19 +29,25 @@ import java.util.concurrent.Callable;
  */
 public class ConcurrentReadTestSuite extends AbstractPerformanceTestSuite {
 
-    protected static final int NODE_COUNT = 100;
     private static final int READER_COUNT = 20;
 
-    private Session session;
+    protected int nodeCount;
 
-    protected Node root;
+    private Session session;
+    private Node root;
+
+    public ConcurrentReadTestSuite( SuiteConfiguration suiteConfiguration ) {
+        super(suiteConfiguration);
+    }
 
     public void beforeSuite() throws Exception {
         session = newSession();
         root = session.getRootNode().addNode("testroot", "nt:unstructured");
-        for (int i = 0; i < NODE_COUNT; i++) {
+        nodeCount = suiteConfiguration.getNodeCount();
+
+        for (int i = 0; i < nodeCount; i++) {
             Node node = root.addNode("node" + i, "nt:unstructured");
-            for (int j = 0; j < NODE_COUNT; j++) {
+            for (int j = 0; j < nodeCount; j++) {
                 node.addNode("node" + j, "nt:unstructured");
             }
             session.save();
@@ -57,8 +64,8 @@ public class ConcurrentReadTestSuite extends AbstractPerformanceTestSuite {
         private final Random random = new Random();
 
         public Void call() throws Exception {
-            int i = random.nextInt(NODE_COUNT);
-            int j = random.nextInt(NODE_COUNT);
+            int i = random.nextInt(nodeCount);
+            int j = random.nextInt(nodeCount);
             assert session.getRootNode().getNode("testroot/node" + i + "/node" + j) != null;
             return null;
         }
