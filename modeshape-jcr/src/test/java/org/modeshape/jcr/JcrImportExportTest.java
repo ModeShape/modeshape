@@ -60,9 +60,7 @@ import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.jcr.JcrRepository.Option;
 
-/**
- * 
- */
+@Migrated
 public class JcrImportExportTest {
 
     private JcrConfiguration configuration;

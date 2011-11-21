@@ -286,12 +286,38 @@ public abstract class AbstractNodeCacheTest extends AbstractSchematicDbTest {
             return node(path(path));
         }
 
+        public CachedNode node( NodeKey key,
+                                String path ) {
+            return node(key, path(path));
+        }
+
+        public CachedNode node( NodeKey key,
+                                Path path ) {
+            CachedNode byKey = node(key);
+            CachedNode byPath = node(path);
+            assertThat(byKey, is(byPath));
+            return byKey;
+        }
+
         public CachedNode node( NodeKey key ) {
             CachedNode node = cache.getNode(key);
             if (node == null) {
                 throw new NodeNotFoundException(key);
             }
             return node;
+        }
+
+        public MutableCachedNode mutableNode( NodeKey key,
+                                              String path ) {
+            return mutableNode(key, path(path));
+        }
+
+        public MutableCachedNode mutableNode( NodeKey key,
+                                              Path path ) {
+            CachedNode byKey = node(key);
+            CachedNode byPath = node(path);
+            assertThat(byKey, is(byPath));
+            return mutableNode(byKey);
         }
 
         public MutableCachedNode mutableNode( CachedNode node ) {

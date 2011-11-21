@@ -104,6 +104,7 @@ class RepositoryLockManager implements ChangeSetListener {
         Path path = node.getPath(cache);
         for (ModeShapeLock lock : locksByNodeKey.values()) {
             CachedNode lockedNode = cache.getNode(lock.getLockedNodeKey());
+            if (lockedNode == null) continue;
             Path lockedPath = lockedNode.getPath(cache);
             if (lockedPath.isAtOrBelow(path)) return lockedNode;
         }
@@ -163,14 +164,6 @@ class RepositoryLockManager implements ChangeSetListener {
         String token = generateLockToken();
         ModeShapeLock lock = new ModeShapeLock(nodeKey, lockKey, session.workspaceName(), owner, token, isDeep, isSessionScoped);
 
-        ModeShapeLock existing = locksByNodeKey.putIfAbsent(nodeKey, lock);
-        if (existing != null) {
-            NodeCache cache = session.cache();
-            CachedNode locked = cache.getNode(existing.getLockedNodeKey());
-            String lockedPath = session.stringFactory().create(locked.getPath(cache));
-            throw new LockException(JcrI18n.alreadyLocked.text(lockedPath));
-        }
-
         if (isDeep) {
             NodeCache cache = session.cache();
             CachedNode locked = findLockedNodeAtOrBelow(node, cache);
@@ -179,6 +172,14 @@ class RepositoryLockManager implements ChangeSetListener {
                 String descendantPath = session.stringFactory().create(locked.getPath(cache));
                 throw new LockException(JcrI18n.descendantAlreadyLocked.text(nodePath, descendantPath));
             }
+        }
+
+        ModeShapeLock existing = locksByNodeKey.putIfAbsent(nodeKey, lock);
+        if (existing != null) {
+            NodeCache cache = session.cache();
+            CachedNode locked = cache.getNode(existing.getLockedNodeKey());
+            String lockedPath = session.stringFactory().create(locked.getPath(cache));
+            throw new LockException(JcrI18n.alreadyLocked.text(lockedPath));
         }
 
         try {
@@ -197,7 +198,7 @@ class RepositoryLockManager implements ChangeSetListener {
             lockedNode.lock(isSessionScoped);
 
             // Now save both sessions. This will fail with a LockFailureException if the locking failed ...
-            lockingSession.save(systemSession);
+            lockingSession.save(systemSession, null);
         } catch (LockFailureException e) {
             // Someone must have snuck in and locked the node, and we just didn't receive notification of it yet ...
             String location = nodeKey.toString();
@@ -260,6 +261,7 @@ class RepositoryLockManager implements ChangeSetListener {
 
     private void unlock( JcrSession session,
                          Iterable<ModeShapeLock> locks ) {
+        if (locks == null) return;
 
         // Create a system session to remove the locks ...
         final ExecutionContext context = session.context();
@@ -277,14 +279,14 @@ class RepositoryLockManager implements ChangeSetListener {
         }
 
         // Now save the two sessions ...
-        lockingSession.save(systemSession);
+        lockingSession.save(systemSession, null);
     }
 
     /**
      * Unlocks all locks corresponding to the tokens held by the supplied session.
      * 
      * @param session the session on behalf of which the lock operation is being performed
-     * @throws RepositoryException if there is a problem cleaning the locks
+     * @throws RepositoryException if the session is not live
      */
     void cleanLocks( JcrSession session ) throws RepositoryException {
         Set<String> lockTokens = session.lockManager().lockTokens();
@@ -295,7 +297,7 @@ class RepositoryLockManager implements ChangeSetListener {
                 locks.add(lock);
             }
         }
-        unlock(session, locks);
+        if (locks != null) unlock(session, locks);
     }
 
     @Override
@@ -452,6 +454,10 @@ class RepositoryLockManager implements ChangeSetListener {
                     return lockManager.hasLockToken(token) ? token : null;
                 }
 
+                protected final String lockToken() {
+                    return ModeShapeLock.this.getLockToken();
+                }
+
                 @Override
                 public Node getNode() {
                     return node;
@@ -474,7 +480,7 @@ class RepositoryLockManager implements ChangeSetListener {
 
                 @Override
                 public void refresh() throws LockException {
-                    String token = getLockToken();
+                    String token = lockToken();
                     if (!lockManager.hasLockToken(token)) {
                         String location = null;
                         try {
@@ -493,10 +499,16 @@ class RepositoryLockManager implements ChangeSetListener {
 
                 @Override
                 public boolean isLockOwningSession() {
-                    String token = getLockToken();
+                    String token = lockToken();
                     return lockManager.hasLockToken(token);
                 }
             };
+        }
+
+        @Override
+        public String toString() {
+            return "Lock " + lockKey + " for " + lockedNodeKey + " in '" + workspaceName + "' (" + (deep ? "deep," : "shallow;")
+                   + (sessionScoped ? "session;" : "global;") + "owner='" + lockOwner + "';token='" + lockToken + "';";
         }
     }
 }

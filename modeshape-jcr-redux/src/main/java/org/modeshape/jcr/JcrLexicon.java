@@ -69,7 +69,7 @@ public class JcrLexicon {
     public static final Name PRIMARY_ITEM_NAME = new BasicName(Namespace.URI, "primaryItemName");
     public static final Name PROPERTY_DEFINITION = new BasicName(Namespace.URI, "propertyDefinition");
     public static final Name PROTECTED = new BasicName(Namespace.URI, "protected");
-    public static final Name QUERY_OPERATORS = new BasicName(Namespace.URI, "queryOperators");
+    public static final Name AVAILABLE_QUERY_OPERATORS = new BasicName(Namespace.URI, "availableQueryOperators");
     public static final Name REQUIRED_PRIMARY_TYPES = new BasicName(Namespace.URI, "requiredPrimaryTypes");
     public static final Name REQUIRED_TYPE = new BasicName(Namespace.URI, "requiredType");
     public static final Name SAME_NAME_SIBLINGS = new BasicName(Namespace.URI, "sameNameSiblings");

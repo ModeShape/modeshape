@@ -46,6 +46,7 @@ import org.modeshape.jcr.value.IoException;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Path;
+import org.modeshape.jcr.value.Path.Segment;
 import org.modeshape.jcr.value.PropertyType;
 import org.modeshape.jcr.value.Reference;
 import org.modeshape.jcr.value.ValueFactory;
@@ -164,6 +165,21 @@ public class StringValueFactory extends AbstractValueFactory<String> {
     @Override
     public String create( Path value ) {
         if (value == null) return null;
+        if (value.isIdentifier()) {
+            // Get the identifier segment ...
+            Segment segment = value.getLastSegment();
+            assert segment.isIdentifier();
+            try {
+                // The local part of the segment's name should be the identifier ...
+                return segment.getName().getLocalName();
+            } catch (IllegalArgumentException err) {
+                throw new ValueFormatException(value, PropertyType.UUID,
+                                               GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                  Path.class.getSimpleName(),
+                                                                                  value));
+            }
+        }
+
         if (this.namespaceRegistry != null) {
             return value.getString(this.namespaceRegistry, getEncoder());
         }
@@ -173,6 +189,17 @@ public class StringValueFactory extends AbstractValueFactory<String> {
     @Override
     public String create( Path.Segment value ) {
         if (value == null) return null;
+        if (value.isIdentifier()) {
+            try {
+                // The local part of the segment's name should be the identifier, though it may not be a UUID ...
+                return value.getName().getLocalName();
+            } catch (IllegalArgumentException err) {
+                throw new ValueFormatException(value, PropertyType.UUID,
+                                               GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                  Path.Segment.class.getSimpleName(),
+                                                                                  value));
+            }
+        }
         if (this.namespaceRegistry != null) {
             return value.getString(this.namespaceRegistry, getEncoder());
         }

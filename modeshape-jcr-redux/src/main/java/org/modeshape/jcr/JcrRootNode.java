@@ -28,6 +28,7 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.value.Path;
 
 /**
  * The {@link Node} implementation for the root node.
@@ -51,6 +52,11 @@ final class JcrRootNode extends AbstractJcrNode {
             rootNodeDefnId = session.workspace().nodeTypeManager().getRootNodeDefinition().getId();
         }
         return rootNodeDefnId;
+    }
+
+    @Override
+    public JcrNodeDefinition getDefinition() throws RepositoryException {
+        return session.workspace().nodeTypeManager().getRootNodeDefinition();
     }
 
     @Override
@@ -84,7 +90,7 @@ final class JcrRootNode extends AbstractJcrNode {
     }
 
     @Override
-    protected void doRemove() throws ConstraintViolationException, RepositoryException {
+    protected void doRemove( Path path ) throws ConstraintViolationException, RepositoryException {
         String msg = JcrI18n.unableToRemoveRootNode.text(workspaceName());
         throw new ConstraintViolationException(msg);
     }

@@ -50,6 +50,7 @@ import org.modeshape.common.FixFor;
 /**
  * Additional ModeShape tests that check for JCR compliance.
  */
+@Migrated
 public class ModeShapeTckTest extends AbstractJCRTest {
 
     Session session;
@@ -707,7 +708,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         Version version = checkin(copyNode);
         Version version2 = checkin(versionNode);
 
-        // printSubgraph(session.getRootNode());
+        printSubgraph(version);
 
         assertThat(version.getProperty("jcr:frozenNode/versionNode/jcr:primaryType").getString(), is("nt:versionedChild"));
         assertThat(version.getProperty("jcr:frozenNode/copyNode/abortNode/copyProp").getString(), is("copyPropValue"));
@@ -878,6 +879,9 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         belowCopyNode.setProperty("computeProp", "computePropValueNew");
         session.save();
         checkin(copyNode);
+
+        printSubgraph(copyNode);
+        printVersionHistory(copyNode);
 
         restore(copyNode, version, false);
 

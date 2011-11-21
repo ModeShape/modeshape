@@ -47,6 +47,7 @@ import org.modeshape.graph.property.basic.BasicName;
  * BDD test cases for property and child node definition inheritance. Could be part of RepositoryNodeTypeManagerTest, but split
  * off to isolate tests for this behavior vs. projection/inference and registration/unregistration behavior.
  */
+@Migrated
 public class ItemDefinitionTest extends AbstractSessionTest {
 
     private static final Name NODE_TYPE_A = new BasicName(TestLexicon.Namespace.URI, "nodeA");

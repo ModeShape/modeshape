@@ -48,7 +48,10 @@ import javax.jcr.nodetype.NodeTypeDefinition;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.query.InvalidQueryException;
 import org.modeshape.common.annotation.GuardedBy;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.common.collection.HashMultimap;
+import org.modeshape.common.collection.Multimap;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
@@ -101,6 +104,7 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
     private volatile int nodeTypesVersion = 1;
     private volatile JcrNodeDefinition ntUnstructuredSnsChildDefinition;
     private volatile JcrNodeDefinition ntUnstructuredSingleChildDefinition;
+    private volatile Capabilities capabilities = new Capabilities();
 
     // TODO: Query
 
@@ -158,6 +162,15 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
 
     protected final ValueFactory<String> strings() {
         return this.context.getValueFactories().getStringFactory();
+    }
+
+    /**
+     * Get the capabilities cache for the different node types.
+     * 
+     * @return the immutable capabilities cache; never null
+     */
+    public Capabilities getCapabilities() {
+        return capabilities;
     }
 
     /**
@@ -1400,7 +1413,7 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
             // this.schemata = null;
 
             // Remove the node types from persistent storage ...
-            SessionCache system = repository.createSystemSession(context, true);
+            SessionCache system = repository.createSystemSession(context, false);
             for (JcrNodeType nodeType : removedNodeTypes) {
                 for (JcrPropertyDefinition propDefn : nodeType.getDeclaredPropertyDefinitions()) {
                     // unregister the definition ...
@@ -1670,6 +1683,9 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
 
                 if (system != null) system.save();
                 ++nodeTypesVersion;
+
+                // Update the capabilities cache ...
+                this.capabilities = new Capabilities(nodeTypes.values());
             }
         } finally {
             nodeTypeManagerLock.writeLock().unlock();
@@ -1720,13 +1736,13 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
         boolean queryOrderable = propDefn.isQueryOrderable();
 
         Value[] defaultValues = propDefn.getDefaultValues();
+        JcrValue[] jcrDefaultValues = null;
         if (defaultValues != null) {
+            jcrDefaultValues = new JcrValue[defaultValues.length];
             for (int i = 0; i != defaultValues.length; ++i) {
                 Value value = defaultValues[i];
-                defaultValues[i] = new JcrValue(this.context.getValueFactories(), value);
+                jcrDefaultValues[i] = new JcrValue(this.context.getValueFactories(), value);
             }
-        } else {
-            defaultValues = new Value[0];
         }
 
         String[] valueConstraints = propDefn.getValueConstraints();
@@ -1734,7 +1750,7 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
         if (valueConstraints == null) valueConstraints = new String[0];
         NodeKey prototypeKey = repository.repositoryCache().getSystemKey();
         return new JcrPropertyDefinition(this.context, null, prototypeKey, propertyName, onParentVersionBehavior, autoCreated,
-                                         mandatory, isProtected, defaultValues, requiredType, valueConstraints, multiple,
+                                         mandatory, isProtected, jcrDefaultValues, requiredType, valueConstraints, multiple,
                                          fullTextSearchable, queryOrderable, queryOperators);
     }
 
@@ -2028,8 +2044,12 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
         if (node.isAutoCreated() && !node.isProtected() && node.defaultPrimaryTypeName() == null) {
             throw new InvalidNodeTypeDefinitionException(JcrI18n.autocreatedNodesNeedDefaults.text(node.getName()));
         }
-        if (node.isMandatory() && JcrNodeType.RESIDUAL_ITEM_NAME.equals(node.getName())) {
-            throw new InvalidNodeTypeDefinitionException(JcrI18n.residualDefinitionsCannotBeMandatory.text("child nodes"));
+        boolean residual = JcrNodeType.RESIDUAL_ITEM_NAME.equals(node.getName());
+        if (node.isMandatory() && residual) {
+            throw new InvalidNodeTypeDefinitionException(JcrI18n.residualNodeDefinitionsCannotBeMandatory.text(node.getName()));
+        }
+        if (node.isAutoCreated() && residual) {
+            throw new InvalidNodeTypeDefinitionException(JcrI18n.residualNodeDefinitionsCannotBeAutoCreated.text(node.getName()));
         }
 
         Name nodeName = context.getValueFactories().getNameFactory().create(node.getName());
@@ -2116,8 +2136,14 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
         assert supertypes != null;
         assert pendingTypes != null;
 
-        if (prop.isMandatory() && !prop.isProtected() && JcrNodeType.RESIDUAL_ITEM_NAME.equals(prop.getName())) {
-            throw new InvalidNodeTypeDefinitionException(JcrI18n.residualDefinitionsCannotBeMandatory.text("properties"));
+        boolean residual = JcrNodeType.RESIDUAL_ITEM_NAME.equals(prop.getName());
+        if (prop.isMandatory() && !prop.isProtected() && residual) {
+            throw new InvalidNodeTypeDefinitionException(
+                                                         JcrI18n.residualPropertyDefinitionsCannotBeMandatory.text(prop.getName()));
+        }
+        if (prop.isAutoCreated() && residual) {
+            throw new InvalidNodeTypeDefinitionException(
+                                                         JcrI18n.residualPropertyDefinitionsCannotBeAutoCreated.text(prop.getName()));
         }
 
         Value[] defaultValues = prop.getDefaultValues();
@@ -2332,5 +2358,296 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
             this.nodeTypeManagerLock.writeLock().unlock();
         }
         return true;
+    }
+
+    @Immutable
+    public static final class Capabilities {
+        /**
+         * The set of node type names that require no extra work during pre-save operations, as long as nodes that have this
+         * primary type do not have any mixins. Note that this contains all node types not in any of the other sets.
+         */
+        private static final Set<Name> fullyDefinedNodeTypes = new HashSet<Name>();
+
+        /**
+         * The set of names for the node types that are 'mix:created'. See {@link #isCreated(Name, Set)}
+         */
+        private final Set<Name> createdNodeTypeNames = new HashSet<Name>();
+        /**
+         * The set of names for the node types that are 'mix:lastModified'. See {@link #isLastModified(Name, Set)}
+         */
+        private final Set<Name> lastModifiedNodeTypeNames = new HashSet<Name>();
+        /**
+         * The set of names for the node types that are 'mix:etag'. See {@link #isETag(Name, Set)}
+         */
+        private final Set<Name> etagNodeTypeNames = new HashSet<Name>();
+        /**
+         * The set of names for the node types that are 'mix:versionable'. See {@link #isVersionable(Name, Set)}
+         */
+        private final Set<Name> versionableNodeTypeNames = new HashSet<Name>();
+        /**
+         * The map of mandatory (and perhaps auto-created) property definitions for a node type keyed by the name of the node
+         * type. See {@link #hasMandatoryPropertyDefinitions}
+         */
+        private final Multimap<Name, JcrPropertyDefinition> mandatoryPropertiesNodeTypes = HashMultimap.create();
+        /**
+         * The map of mandatory (and perhaps auto-created) child node definitions for a node type keyed by the name of the node
+         * type. See {@link #hasMandatoryChildNodeDefinitions}
+         */
+        private final Multimap<Name, JcrNodeDefinition> mandatoryChildrenNodeTypes = HashMultimap.create();
+
+        /**
+         * The map of auto-created property definitions for a node type keyed by the name of the node type. See
+         * {@link #hasMandatoryPropertyDefinitions}
+         */
+        private final Multimap<Name, JcrPropertyDefinition> autoCreatedPropertiesNodeTypes = HashMultimap.create();
+
+        /**
+         * The map of auto-created child node definitions for a node type keyed by the name of the node type. See
+         * {@link #hasMandatoryChildNodeDefinitions}
+         */
+        private final Multimap<Name, JcrNodeDefinition> autoCreatedChildrenNodeTypes = HashMultimap.create();
+
+        protected Capabilities() {
+        }
+
+        protected Capabilities( Iterable<JcrNodeType> nodeTypes ) {
+            for (JcrNodeType nodeType : nodeTypes) {
+                Name name = nodeType.getInternalName();
+                boolean fullyDefined = true;
+                if (nodeType.isNodeType(JcrMixLexicon.CREATED)) {
+                    createdNodeTypeNames.add(name);
+                    fullyDefined = false;
+                }
+                if (nodeType.isNodeType(JcrMixLexicon.LAST_MODIFIED)) {
+                    lastModifiedNodeTypeNames.add(name);
+                    fullyDefined = false;
+                }
+                if (nodeType.isNodeType(JcrMixLexicon.ETAG)) {
+                    etagNodeTypeNames.add(name);
+                    fullyDefined = false;
+                }
+                if (nodeType.isNodeType(JcrMixLexicon.VERSIONABLE)) {
+                    versionableNodeTypeNames.add(name);
+                    fullyDefined = false;
+                }
+                for (JcrPropertyDefinition propDefn : nodeType.allPropertyDefinitions()) {
+                    if (propDefn.isMandatory() && !propDefn.isProtected()) {
+                        mandatoryPropertiesNodeTypes.put(name, propDefn);
+                        fullyDefined = false;
+                    }
+                    if (propDefn.isAutoCreated() && !propDefn.isProtected()) {
+                        autoCreatedPropertiesNodeTypes.put(name, propDefn);
+                        // This isn't used in the pre-save operations, since auto-created items should be set on node creation
+                        // fullDefined = false;
+                    }
+                }
+                for (JcrNodeDefinition childDefn : nodeType.allChildNodeDefinitions()) {
+                    if (childDefn.isMandatory() && !childDefn.isProtected()) {
+                        mandatoryChildrenNodeTypes.put(name, childDefn);
+                        fullyDefined = false;
+                    }
+                    if (childDefn.isAutoCreated() && !childDefn.isProtected()) {
+                        autoCreatedChildrenNodeTypes.put(name, childDefn);
+                        // This isn't used in the pre-save operations, since auto-created items should be set on node creation
+                        // fullDefined = false;
+                    }
+                }
+
+                if (fullyDefined) {
+                    fullyDefinedNodeTypes.add(name);
+                }
+            }
+        }
+
+        /**
+         * Determine if the named node type does not appear in any of the other sets. Such node types are fully-defined, in that
+         * nodes using them require no additional processing prior to save.
+         * <p>
+         * Note that this method's signature is different from the other methods. This is because a node's primary type and mixin
+         * types must all be fully-defined types.
+         * </p>
+         * 
+         * @param primaryTypeName the name of the primary node type; may not be null
+         * @param mixinTypeNames the set of mixin type names; never null but possibly empty
+         * @return true if the named node type is fully-defined, or false otherwise
+         */
+        public boolean isFullyDefinedType( Name primaryTypeName,
+                                           Set<Name> mixinTypeNames ) {
+            if (!fullyDefinedNodeTypes.contains(primaryTypeName)) return false;
+            if (!mixinTypeNames.isEmpty()) {
+                for (Name nodeTypeName : mixinTypeNames) {
+                    if (!fullyDefinedNodeTypes.contains(nodeTypeName)) return false;
+                }
+            }
+            return true;
+        }
+
+        /**
+         * Determine if at last one of the named primary node type or mixin types is or subtypes the 'mix:created' mixin type.
+         * 
+         * @param primaryType the primary type name; may not be null
+         * @param mixinTypes the mixin type names; may not be null but may be empty
+         * @return true if any of the named node types is a created type, or false if there are none
+         */
+        public boolean isCreated( Name primaryType,
+                                  Set<Name> mixinTypes ) {
+            if (createdNodeTypeNames.contains(primaryType)) return true;
+            for (Name mixinType : mixinTypes) {
+                if (createdNodeTypeNames.contains(mixinType)) return true;
+            }
+            return false;
+        }
+
+        /**
+         * Determine if at last one of the named primary node type or mixin types is or subtypes the 'mix:lastModified' mixin
+         * type.
+         * 
+         * @param primaryType the primary type name; may not be null
+         * @param mixinTypes the mixin type names; may not be null but may be empty
+         * @return true if any of the named node types is a last-modified type, or false if there are none
+         */
+        public boolean isLastModified( Name primaryType,
+                                       Set<Name> mixinTypes ) {
+            if (lastModifiedNodeTypeNames.contains(primaryType)) return true;
+            for (Name mixinType : mixinTypes) {
+                if (lastModifiedNodeTypeNames.contains(mixinType)) return true;
+            }
+            return false;
+        }
+
+        /**
+         * Determine if at last one of the named primary node type or mixin types is or subtypes the 'mix:etag' mixin type.
+         * 
+         * @param primaryType the primary type name; may not be null
+         * @param mixinTypes the mixin type names; may not be null but may be empty
+         * @return true if any of the named node types has an ETag, or false if there are none
+         */
+        public boolean isETag( Name primaryType,
+                               Set<Name> mixinTypes ) {
+            if (etagNodeTypeNames.contains(primaryType)) return true;
+            for (Name mixinType : mixinTypes) {
+                if (etagNodeTypeNames.contains(mixinType)) return true;
+            }
+            return false;
+        }
+
+        /**
+         * Determine if at last one of the named primary node type or mixin types is or subtypes the 'mix:versionable' mixin type.
+         * 
+         * @param primaryType the primary type name; may be null
+         * @param mixinTypes the mixin type names; may not be null but may be empty
+         * @return true if any of the named node types is versionable, or false if there are none
+         */
+        public boolean isVersionable( Name primaryType,
+                                      Set<Name> mixinTypes ) {
+            if (primaryType != null && versionableNodeTypeNames.contains(primaryType)) return true;
+            for (Name mixinType : mixinTypes) {
+                if (versionableNodeTypeNames.contains(mixinType)) return true;
+            }
+            return false;
+        }
+
+        /**
+         * Determine if the named primary node type or mixin types has at least one mandatory property definitions declared on it
+         * or any of its supertypes.
+         * 
+         * @param primaryType the primary type name; may not be null
+         * @param mixinTypes the mixin type names; may not be null but may be empty
+         * @return true if any of the named node types has one or more mandatory property definitions, or false if there are none
+         */
+        public boolean hasMandatoryPropertyDefinitions( Name primaryType,
+                                                        Set<Name> mixinTypes ) {
+            if (mandatoryPropertiesNodeTypes.containsKey(primaryType)) return true;
+            for (Name mixinType : mixinTypes) {
+                if (mandatoryPropertiesNodeTypes.containsKey(mixinType)) return true;
+            }
+            return false;
+        }
+
+        /**
+         * Determine if the named primary node type or mixin types has at least one mandatory child node definitions declared on
+         * it or any of its supertypes.
+         * 
+         * @param primaryType the primary type name; may not be null
+         * @param mixinTypes the mixin type names; may not be null but may be empty
+         * @return true if any of the the named node types has one or more mandatory child node definitions, or false if there are
+         *         none
+         */
+        public boolean hasMandatoryChildNodeDefinitions( Name primaryType,
+                                                         Set<Name> mixinTypes ) {
+            if (mandatoryChildrenNodeTypes.containsKey(primaryType)) return true;
+            for (Name mixinType : mixinTypes) {
+                if (mandatoryChildrenNodeTypes.containsKey(mixinType)) return true;
+            }
+            return false;
+        }
+
+        /**
+         * Get the mandatory property definitions for a node with the named primary type and mixin types. Note that the
+         * {@link #hasMandatoryPropertyDefinitions(Name, Set)} method should first be called with the primary type and mixin
+         * types; if that method returns <code>true</code>, then this method will never return an empty collection.
+         * 
+         * @param primaryType the primary type name; may not be null
+         * @param mixinTypes the mixin type names; may not be null but may be empty
+         * @return the collection of mandatory property definitions; never null but possibly empty
+         */
+        public Collection<JcrPropertyDefinition> getMandatoryPropertyDefinitions( Name primaryType,
+                                                                                  Set<Name> mixinTypes ) {
+            if (mixinTypes.isEmpty()) {
+                return mandatoryPropertiesNodeTypes.get(primaryType);
+            }
+            Set<JcrPropertyDefinition> defn = new HashSet<JcrPropertyDefinition>();
+            defn.addAll(mandatoryPropertiesNodeTypes.get(primaryType));
+            for (Name mixinType : mixinTypes) {
+                defn.addAll(mandatoryPropertiesNodeTypes.get(mixinType));
+            }
+            return defn;
+        }
+
+        /**
+         * Get the mandatory child node definitions for a node with the named primary type and mixin types. Note that the
+         * {@link #hasMandatoryChildNodeDefinitions(Name, Set)} method should first be called with the primary type and mixin
+         * types; if that method returns <code>true</code>, then this method will never return an empty collection.
+         * 
+         * @param primaryType the primary type name; may not be null
+         * @param mixinTypes the mixin type names; may not be null but may be empty
+         * @return the collection of mandatory child node definitions; never null but possibly empty
+         */
+        public Collection<JcrNodeDefinition> getMandatoryChildNodeDefinitions( Name primaryType,
+                                                                               Set<Name> mixinTypes ) {
+            if (mixinTypes.isEmpty()) {
+                return mandatoryChildrenNodeTypes.get(primaryType);
+            }
+            Set<JcrNodeDefinition> defn = new HashSet<JcrNodeDefinition>();
+            defn.addAll(mandatoryChildrenNodeTypes.get(primaryType));
+            for (Name mixinType : mixinTypes) {
+                defn.addAll(mandatoryChildrenNodeTypes.get(mixinType));
+            }
+            return defn;
+        }
+
+        /**
+         * Get the auto-created property definitions for the named node type. This method is used when
+         * {@link AbstractJcrNode#addChildNode(Name, Name, NodeKey) creating nodes}, which only needs the auto-created properties
+         * for the primary type. It's also used when {@link AbstractJcrNode#addMixin(String) adding a mixin}.
+         * 
+         * @param nodeType the node type name; may not be null
+         * @return the collection of auto-created property definitions; never null but possibly empty
+         */
+        public Collection<JcrPropertyDefinition> getAutoCreatedPropertyDefinitions( Name nodeType ) {
+            return autoCreatedPropertiesNodeTypes.get(nodeType);
+        }
+
+        /**
+         * Get the auto-created child node definitions for the named node type. This method is used when
+         * {@link AbstractJcrNode#addChildNode(Name, Name, NodeKey) creating nodes}, which only needs the auto-created properties
+         * for the primary type. It's also used when {@link AbstractJcrNode#addMixin(String) adding a mixin}.
+         * 
+         * @param nodeType the node type name; may not be null
+         * @return the collection of auto-created child node definitions; never null but possibly empty
+         */
+        public Collection<JcrNodeDefinition> getAutoCreatedChildNodeDefinitions( Name nodeType ) {
+            return autoCreatedChildrenNodeTypes.get(nodeType);
+        }
     }
 }

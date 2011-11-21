@@ -54,13 +54,11 @@ import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.core.ExecutionContext;
-import org.modeshape.jcr.value.DateTime;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PathFactory;
-import org.modeshape.jcr.value.PropertyFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -112,7 +110,6 @@ class JcrContentHandler extends DefaultHandler {
     protected final List<AbstractJcrNode> nodesForPostProcessing = new LinkedList<AbstractJcrNode>();
 
     private SessionCache cache;
-    private SessionCache systemCache;
 
     private final boolean saveWhenCompleted;
 
@@ -140,7 +137,6 @@ class JcrContentHandler extends DefaultHandler {
         this.saveWhenCompleted = saveWhenCompleted;
 
         this.cache = session.cache();
-        this.systemCache = session.spawnSessionCache(false);
 
         this.currentNode = parent;
 
@@ -201,11 +197,6 @@ class JcrContentHandler extends DefaultHandler {
 
     protected void postProcessNodes() throws SAXException {
         try {
-            JcrVersionManager versions = session.workspace().getVersionManager();
-            DateTime now = context.getValueFactories().getDateFactory().create();
-            PropertyFactory propFactory = session.propertyFactory();
-            SystemContent systemChanges = new SystemContent(systemCache);
-
             for (AbstractJcrNode node : nodesForPostProcessing) {
                 MutableCachedNode mutable = node.mutable();
 
@@ -219,33 +210,10 @@ class JcrContentHandler extends DefaultHandler {
 
                     // Does the versionable node already have a base version?
                     Property baseVersionRef = node.getProperty(JcrLexicon.BASE_VERSION);
-                    NodeKey baseVersionKey = null;
                     if (baseVersionRef != null) {
-                        baseVersionKey = new NodeKey(stringFactory.create(baseVersionRef.getString()));
-                    } else {
-                        baseVersionKey = systemChanges.systemKey().withRandomId();
+                        NodeKey baseVersionKey = new NodeKey(stringFactory.create(baseVersionRef.getString()));
+                        session.setDesiredBaseVersionKey(node.key(), baseVersionKey);
                     }
-
-                    // We need to initialize the version history for each versionable node ...
-                    NodeKey key = node.key();
-                    NodeKey historyKey = systemChanges.versionHistoryNodeKeyFor(key);
-                    Name primaryTypeName = node.getPrimaryTypeName();
-                    Set<Name> mixinTypeNames = node.getMixinTypeNames();
-                    Path versionHistoryPath = versions.versionHistoryPathFor(key);
-                    systemChanges.initializeVersionStorage(node.key(),
-                                                           historyKey,
-                                                           baseVersionKey,
-                                                           primaryTypeName,
-                                                           mixinTypeNames,
-                                                           versionHistoryPath,
-                                                           null,
-                                                           now);
-
-                    // Now update the node as if it's checked in ...
-                    mutable.setProperty(cache, propFactory.create(JcrLexicon.IS_CHECKED_OUT, Boolean.FALSE));
-                    mutable.setProperty(cache, propFactory.create(JcrLexicon.VERSION_HISTORY, historyKey.toString()));
-                    mutable.setProperty(cache, propFactory.create(JcrLexicon.BASE_VERSION, baseVersionKey.toString()));
-                    mutable.setProperty(cache, propFactory.create(JcrLexicon.PREDECESSORS, new Object[] {}));
                 }
 
                 // ---------------
@@ -354,9 +322,11 @@ class JcrContentHandler extends DefaultHandler {
         postProcessNodes();
         validateReferenceConstraints();
         if (saveWhenCompleted) {
-            session.cache().save(systemCache);
-        } else {
-            systemCache.save();
+            try {
+                session.save();
+            } catch (RepositoryException e) {
+                throw new SAXException(e);
+            }
         }
         super.endDocument();
     }
@@ -664,7 +634,7 @@ class JcrContentHandler extends DefaultHandler {
                 List<Value> rawUuid = properties.get(JcrLexicon.UUID);
                 if (rawUuid != null) {
                     assert rawUuid.size() == 1;
-                    key = new NodeKey(rawUuid.get(0).getString());
+                    key = parent.key().withId(rawUuid.get(0).getString());
 
                     try {
                         // Deal with any existing node ...
@@ -1074,6 +1044,8 @@ class JcrContentHandler extends DefaultHandler {
                                 int start,
                                 int length ) throws SAXException {
             String value = new String(ch, start, length);
+            value = value.trim();
+            if (value.length() == 0) return;
             // Create a 'jcr:xmltext' child node with a single 'jcr:xmlcharacters' property ...
             current = nodeHandlerFactory.createFor(JcrLexicon.XMLTEXT, current, uuidBehavior);
             current.addPropertyValue(JcrLexicon.PRIMARY_TYPE,

@@ -28,6 +28,7 @@ import org.modeshape.common.annotation.Immutable;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
+import org.modeshape.jcr.value.Path.Segment;
 import org.modeshape.jcr.value.Property;
 
 /**
@@ -73,6 +74,12 @@ public final class NoOpChanges implements Changes {
     public void nodeRemoved( NodeKey key,
                              NodeKey parentKey,
                              Path path ) {
+    }
+
+    @Override
+    public void nodeRenamed( NodeKey key,
+                             Path path,
+                             Segment oldName ) {
     }
 
     @Override

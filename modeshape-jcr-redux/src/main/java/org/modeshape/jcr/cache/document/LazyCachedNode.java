@@ -139,9 +139,10 @@ public class LazyCachedNode implements CachedNode {
             CachedNode parent = parent(cache);
             if (parent == null) {
                 // This should be the root node ...
-                return cache.childReferenceForRoot();
+                parentReferenceToSelf = cache.childReferenceForRoot();
+            } else {
+                parentReferenceToSelf = parent.getChildReferences(cache).getChild(key);
             }
-            parentReferenceToSelf = parent.getChildReferences(cache).getChild(key);
         }
         return parentReferenceToSelf;
     }
@@ -166,6 +167,10 @@ public class LazyCachedNode implements CachedNode {
     @Override
     public Segment getSegment( NodeCache cache ) {
         return parentReferenceToSelf(workspaceCache(cache)).getSegment();
+    }
+
+    protected Segment getSegment( WorkspaceCache cache ) {
+        return parentReferenceToSelf(cache).getSegment();
     }
 
     @Override

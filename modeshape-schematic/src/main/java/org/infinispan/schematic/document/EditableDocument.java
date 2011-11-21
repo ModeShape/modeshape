@@ -205,6 +205,17 @@ public interface EditableDocument extends Document {
                             Array array );
 
     /**
+     * Set the value for the field with the given name to be the supplied array.
+     * 
+     * @param name The name of the field
+     * @param values the (valid) values for the array
+     * @return The editable array that was just set as the value for the named field; never null and may or may not be the same
+     *         instance as the supplied <code>array</code>.
+     */
+    EditableArray setArray( String name,
+                            Object... values );
+
+    /**
      * Get the existing array value in this document for the given field name.
      * 
      * @param name The name of the pair

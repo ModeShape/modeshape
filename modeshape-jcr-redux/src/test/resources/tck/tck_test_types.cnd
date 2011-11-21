@@ -1,0 +1,54 @@
+/*
+ * Extra Node Types for JR TCK Test
+ */
+ 
+<nt  = "http://www.jcp.org/jcr/nt/1.0">
+<mix = "http://www.jcp.org/jcr/mix/1.0">
+<modetest = "http://www.modeshape.org/test/1.0">
+
+[modetest:noSameNameSibs]
++ * (nt:base) = nt:unstructured
+
+[modetest:referenceableUnstructured] > nt:unstructured, mix:referenceable orderable
+
+[modetest:nodeWithMandatoryProperty] > nt:unstructured, mix:referenceable
+- modetest:mandatoryString (*) mandatory copy
+
+[modetest:nodeWithMandatoryChild] > nt:unstructured, mix:referenceable
++ modetest:mandatoryChild (nt:base) = nt:unstructured mandatory version
+
+[modetest:nodeWithAutocreatedChild] > nt:unstructured
++ modetest:autocreatedChild (nt:base) = nt:unstructured autocreated mandatory
+
+[modetest:unorderableUnstructured] 
+- * (*) copy
+- * (*) multiple copy
++ * (nt:base) = modetest:unorderableUnstructured version
+
+[modetest:setPropertyAssumeTypeTest] 
+- prop1 (PATH) copy
+- * (*) copy
+- * (*) multiple copy
+
+[modetest:versionableUnstructured] > nt:unstructured, mix:versionable
+
+[modetest:versionTest]
+- abortProp (STRING) abort
+- computeProp (STRING) compute
+- copyProp (STRING) copy
+- ignoreProp (STRING) ignore
+- initializeProp (STRING) = 'Default' initialize
+- versionProp (STRING) version
++ abortNode (nt:base) = nt:unstructured abort
++ copyNode (nt:base) = nt:unstructured copy
++ ignoreNode (nt:base) = nt:unstructured ignore
++ versionNode (nt:base) = nt:unstructured version
+
+[modetest:queryable] > nt:unstructured
+- selectableProp1 (STRING)
+- selectableProp2 (STRING)
+- selectableMultiProp1 (STRING) multiple
+- dateProp (DATE)
+- doubleProp (DOUBLE)
+- longProp (LONG)
+- uriProp (URI)

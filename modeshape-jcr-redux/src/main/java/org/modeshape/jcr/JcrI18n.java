@@ -32,8 +32,6 @@ import org.modeshape.common.i18n.I18n;
 @Immutable
 public final class JcrI18n {
 
-    public static I18n description;
-
     public static I18n initializing;
 
     public static I18n engineStarting;
@@ -214,7 +212,10 @@ public final class JcrI18n {
     public static I18n ambiguousPrimaryItemName;
     public static I18n invalidPrimaryItemName;
     public static I18n autocreatedNodesNeedDefaults;
-    public static I18n residualDefinitionsCannotBeMandatory;
+    public static I18n residualPropertyDefinitionsCannotBeMandatory;
+    public static I18n residualPropertyDefinitionsCannotBeAutoCreated;
+    public static I18n residualNodeDefinitionsCannotBeMandatory;
+    public static I18n residualNodeDefinitionsCannotBeAutoCreated;
     public static I18n cannotOverrideProtectedDefinition;
     public static I18n cannotMakeMandatoryDefinitionOptional;
     public static I18n constraintsChangedInSubtype;
@@ -228,7 +229,8 @@ public final class JcrI18n {
     public static I18n noChildNodeDefinition;
     public static I18n noPropertyDefinition;
     public static I18n noSnsDefinition;
-    public static I18n missingMandatoryItem;
+    public static I18n missingMandatoryProperty;
+    public static I18n missingMandatoryChild;
     public static I18n valueViolatesConstraintsOnDefinition;
     public static I18n valuesViolateConstraintsOnDefinition;
     public static I18n referenceValueViolatesConstraintsOnDefinition;
@@ -266,8 +268,8 @@ public final class JcrI18n {
     public static I18n problemRefreshingNodeTypesFromSystem;
     public static I18n errorRefreshingNodeTypes;
 
-    public static I18n errorsParsingCnd;
-    public static I18n errorsParsingCndFromStream;
+    public static I18n errorsParsingNodeTypeDefinitions;
+    public static I18n errorsParsingStreamOfNodeTypeDefinitions;
 
     // Lock messages
     public static I18n nodeNotLockable;
@@ -307,6 +309,8 @@ public final class JcrI18n {
     public static I18n versionNotInMergeFailed;
     public static I18n unrootedVersionsInRestore;
     public static I18n errorDuringCheckinNode;
+    public static I18n noVersionHistoryForTransientVersionableNodes;
+    public static I18n versionHistoryForNewlyVersionableNodesNotAvailableUntilSave;
 
     public static I18n creatingWorkspacesIsNotAllowedInRepository;
     public static I18n workspaceHasBeenDeleted;
@@ -331,6 +335,7 @@ public final class JcrI18n {
     public static I18n storageRelatedConfigurationChangesWillTakeEffectAfterShutdown;
 
     public static I18n failedWhileRollingBackDestroyToRuntimeError;
+    public static I18n unexpectedException;
 
     static {
         try {

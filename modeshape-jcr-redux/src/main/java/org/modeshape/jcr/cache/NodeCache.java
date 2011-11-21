@@ -23,7 +23,6 @@
  */
 package org.modeshape.jcr.cache;
 
-
 /**
  * 
  */

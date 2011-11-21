@@ -34,6 +34,7 @@ import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.SessionCache;
+import org.modeshape.jcr.value.Path;
 
 /**
  * A concrete {@link Node JCR Node} implementation.
@@ -82,7 +83,7 @@ class JcrNode extends AbstractJcrNode {
     }
 
     @Override
-    protected void doRemove()
+    protected void doRemove( Path path )
         throws VersionException, LockException, ConstraintViolationException, AccessDeniedException, RepositoryException {
 
         SessionCache cache = sessionCache();

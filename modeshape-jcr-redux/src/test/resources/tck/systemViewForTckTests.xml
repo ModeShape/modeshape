@@ -1,0 +1,657 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sv:node xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:nt="http://www.jcp.org/jcr/nt/1.0" xmlns:modetest="http://www.modeshape.org/test/1.0"
+  xmlns:sv="http://www.jcp.org/jcr/sv/1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:mix="http://www.jcp.org/jcr/mix/1.0"
+  xmlns:modeint="http://www.modeshape.org/internal/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:mode="http://www.modeshape.org/1.0"
+  sv:name="jcr:root">
+  <sv:property sv:name="jcr:primaryType" sv:type="Name">
+    <sv:value>mode:root</sv:value>
+  </sv:property>
+  <sv:property sv:name="jcr:uuid" sv:type="String">
+    <sv:value>43da0a5a-65bf-401b-8ba5-7356234515db</sv:value>
+  </sv:property>
+  <sv:node sv:name="testroot">
+    <sv:property sv:name="jcr:primaryType" sv:type="Name">
+      <sv:value>nt:unstructured</sv:value>
+    </sv:property>
+    <sv:property sv:name="jcr:mixinTypes" sv:type="Name" sv:multiple="true">
+      <sv:value>mix:referenceable</sv:value>
+    </sv:property>
+    <sv:property sv:name="jcr:uuid" sv:type="String">
+      <sv:value>33c268bf-6772-4286-aa52-1d55071c7cc4</sv:value>
+    </sv:property>
+    <sv:node sv:name="workarea">
+      <sv:property sv:name="jcr:primaryType" sv:type="Name">
+        <sv:value>nt:unstructured</sv:value>
+      </sv:property>
+      <sv:property sv:name="jcr:mixinTypes" sv:type="Name" sv:multiple="true">
+        <sv:value>mix:referenceable</sv:value>
+      </sv:property>
+      <sv:property sv:name="jcr:uuid" sv:type="String">
+        <sv:value>bc6b528e-4492-41c8-bb8c-861317468e0b</sv:value>
+      </sv:property>
+      <sv:node sv:name="serializationNode">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>nt:unstructured</sv:value>
+        </sv:property>
+      </sv:node>
+      <sv:node sv:name="node1">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>nt:unstructured</sv:value>
+        </sv:property>
+        <sv:property sv:name="prop1" sv:type="String">
+          <sv:value>&lt;foo&amp;foo&gt;</sv:value>
+        </sv:property>
+        <sv:node sv:name="jcr:xmltext">
+          <sv:property sv:name="jcr:primaryType" sv:type="Name">
+            <sv:value>nt:unstructured</sv:value>
+          </sv:property>
+          <sv:property sv:name="jcr:xmlcharacters" sv:type="String">
+            <sv:value>This is my &quot;XML&quot; text!</sv:value>
+          </sv:property>
+        </sv:node>
+      </sv:node>
+      <sv:node sv:name="node2 has a multi-word name">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>nt:unstructured</sv:value>
+        </sv:property>
+        <sv:property sv:name="multi-valued-property" sv:type="String">
+          <sv:value>bar baz blah</sv:value>
+        </sv:property>
+        <sv:node sv:name="jcr:xmltext">
+          <sv:property sv:name="jcr:primaryType" sv:type="Name">
+            <sv:value>nt:unstructured</sv:value>
+          </sv:property>
+          <sv:property sv:name="jcr:xmlcharacters" sv:type="String">
+            <sv:value>This is my &quot;XML&quot; text!</sv:value>
+          </sv:property>
+        </sv:node>
+        <sv:node sv:name="jcr:xmltext">
+          <sv:property sv:name="jcr:primaryType" sv:type="Name">
+            <sv:value>nt:unstructured</sv:value>
+          </sv:property>
+          <sv:property sv:name="jcr:xmlcharacters" sv:type="String">
+            <sv:value>This is my &quot;other&quot; text!</sv:value>
+          </sv:property>
+        </sv:node>
+      </sv:node>
+      <sv:node sv:name="node3">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>nt:unstructured</sv:value>
+        </sv:property>
+      </sv:node>
+      <sv:node sv:name="node4">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>nt:unstructured</sv:value>
+        </sv:property>
+        <sv:property sv:name="multi-line-property" sv:type="String">
+          <sv:value>Line 1
+Line 2</sv:value>
+        </sv:property>
+      </sv:node>
+      <sv:node sv:name="node1">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>nt:unstructured</sv:value>
+        </sv:property>
+        <sv:property sv:name="prop1" sv:type="String">
+          <sv:value>&lt;foo&amp;foo&gt;</sv:value>
+        </sv:property>
+        <sv:node sv:name="jcr:xmltext">
+          <sv:property sv:name="jcr:primaryType" sv:type="Name">
+            <sv:value>nt:unstructured</sv:value>
+          </sv:property>
+          <sv:property sv:name="jcr:xmlcharacters" sv:type="String">
+            <sv:value>This is the text for node1[2]!</sv:value>
+          </sv:property>
+        </sv:node>
+      </sv:node>
+      <sv:node sv:name="node1">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>nt:unstructured</sv:value>
+        </sv:property>
+        <sv:property sv:name="prop1" sv:type="String">
+          <sv:value>prop1 value for node1[3]</sv:value>
+        </sv:property>
+        <sv:node sv:name="jcr:xmltext">
+          <sv:property sv:name="jcr:primaryType" sv:type="Name">
+            <sv:value>nt:unstructured</sv:value>
+          </sv:property>
+          <sv:property sv:name="jcr:xmlcharacters" sv:type="String">
+            <sv:value>This is the text for node1[3]!</sv:value>
+          </sv:property>
+        </sv:node>
+      </sv:node>
+      <sv:node sv:name="nodeForOrderBy">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>nt:unstructured</sv:value>
+        </sv:property>
+        <sv:property sv:name="prop1" sv:type="String">
+          <sv:value>propValue3</sv:value>
+        </sv:property>
+      </sv:node>
+      <sv:node sv:name="anotherNodeForOrderBy">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>nt:unstructured</sv:value>
+        </sv:property>
+        <sv:property sv:name="prop1" sv:type="String">
+          <sv:value>propValue1</sv:value>
+        </sv:property>
+        <sv:node sv:name="aNestedNodeForOrderBy">
+          <sv:property sv:name="jcr:primaryType" sv:type="Name">
+            <sv:value>nt:unstructured</sv:value>
+          </sv:property>
+          <sv:property sv:name="prop1" sv:type="String">
+            <sv:value>propValue2</sv:value>
+          </sv:property>
+        </sv:node>
+      </sv:node>
+    </sv:node>
+    <sv:node sv:name="saveTestArea">
+      <sv:property sv:name="jcr:primaryType" sv:type="Name">
+        <sv:value>nt:unstructured</sv:value>
+      </sv:property>
+      <sv:property sv:name="prop1" sv:type="String">
+        <sv:value>&lt;foo&amp;foo&gt;</sv:value>
+      </sv:property>
+    </sv:node>
+    <sv:node sv:name="someQueryableNodeA">
+      <sv:property sv:name="jcr:primaryType" sv:type="Name">
+        <sv:value>modetest:queryable</sv:value>
+      </sv:property>
+      <sv:property sv:name="selectableProp1" sv:type="String">
+        <sv:value>This is the first property</sv:value>
+      </sv:property>
+    </sv:node>
+    <sv:node sv:name="someQueryableNodeB">
+      <sv:property sv:name="jcr:primaryType" sv:type="Name">
+        <sv:value>modetest:queryable</sv:value>
+      </sv:property>
+      <sv:property sv:name="selectableProp1" sv:type="String">
+        <sv:value>This is the second property</sv:value>
+      </sv:property>
+    </sv:node>
+    <sv:node sv:name="someQueryableNodeC">
+      <sv:property sv:name="jcr:primaryType" sv:type="Name">
+        <sv:value>modetest:queryable</sv:value>
+      </sv:property>
+      <sv:property sv:name="selectableProp1" sv:type="String">
+        <sv:value>This is the third property</sv:value>
+      </sv:property>
+    </sv:node>
+    <sv:node sv:name="someQueryableNodeD">
+      <sv:property sv:name="jcr:primaryType" sv:type="Name">
+        <sv:value>modetest:queryable</sv:value>
+      </sv:property>
+      <sv:property sv:name="selectableProp1" sv:type="String">
+        <sv:value>This is the fourth property</sv:value>
+      </sv:property>
+      <sv:node sv:name="someNestedQueryableNodeA">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>modetest:queryable</sv:value>
+        </sv:property>
+        <sv:property sv:name="selectableProp1" sv:type="String">
+          <sv:value>This is the first nested property</sv:value>
+        </sv:property>
+      </sv:node>
+      <sv:node sv:name="someNestedQueryableNodeB">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>modetest:queryable</sv:value>
+        </sv:property>
+        <sv:property sv:name="selectableProp1" sv:type="String">
+          <sv:value>This is the second nested property</sv:value>
+        </sv:property>
+      </sv:node>
+      <sv:node sv:name="someNestedQueryableNodeC">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>modetest:queryable</sv:value>
+        </sv:property>
+        <sv:property sv:name="selectableProp1" sv:type="String">
+          <sv:value>This is the third nested property</sv:value>
+        </sv:property>
+      </sv:node>
+      <sv:node sv:name="someNestedQueryableNodeD">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>modetest:queryable</sv:value>
+        </sv:property>
+        <sv:property sv:name="selectableProp1" sv:type="String">
+          <sv:value>This is the fourth nested property</sv:value>
+        </sv:property>
+        <sv:node sv:name="someDeepNestedQueryableNodeA">
+          <sv:property sv:name="jcr:primaryType" sv:type="Name">
+            <sv:value>modetest:queryable</sv:value>
+          </sv:property>
+          <sv:property sv:name="selectableProp1" sv:type="String">
+            <sv:value>This is the first deep nested property</sv:value>
+          </sv:property>
+        </sv:node>
+        <sv:node sv:name="someDeepNestedQueryableNodeB">
+          <sv:property sv:name="jcr:primaryType" sv:type="Name">
+            <sv:value>modetest:queryable</sv:value>
+          </sv:property>
+          <sv:property sv:name="selectableProp1" sv:type="String">
+            <sv:value>This is the second deep nested property</sv:value>
+          </sv:property>
+        </sv:node>
+        <sv:node sv:name="someDeepNestedQueryableNodeC">
+          <sv:property sv:name="jcr:primaryType" sv:type="Name">
+            <sv:value>modetest:queryable</sv:value>
+          </sv:property>
+          <sv:property sv:name="selectableProp1" sv:type="String">
+            <sv:value>This is the third deep nested property</sv:value>
+          </sv:property>
+        </sv:node>
+        <sv:node sv:name="someDeepNestedQueryableNodeD">
+          <sv:property sv:name="jcr:primaryType" sv:type="Name">
+            <sv:value>modetest:queryable</sv:value>
+          </sv:property>
+          <sv:property sv:name="selectableProp1" sv:type="String">
+            <sv:value>This is the fourth deep nested property</sv:value>
+          </sv:property>
+        </sv:node>
+      </sv:node>
+    </sv:node>
+    <sv:node sv:name="sqlJoinTest">
+      <sv:property sv:name="jcr:primaryType" sv:type="Name">
+        <sv:value>nt:unstructured</sv:value>
+      </sv:property>
+      <sv:node sv:name="someQueryableNodeA">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>modetest:queryable</sv:value>
+        </sv:property>
+        <sv:property sv:name="selectableProp1" sv:type="String">
+          <sv:value>This is the first property</sv:value>
+        </sv:property>
+      </sv:node>
+      <sv:node sv:name="someQueryableNodeB">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>modetest:queryable</sv:value>
+        </sv:property>
+        <sv:property sv:name="selectableProp1" sv:type="String">
+          <sv:value>This is the second property</sv:value>
+        </sv:property>
+      </sv:node>
+      <sv:node sv:name="someQueryableNodeC">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>modetest:queryable</sv:value>
+        </sv:property>
+        <sv:property sv:name="selectableProp1" sv:type="String">
+          <sv:value>This is the third property</sv:value>
+        </sv:property>
+      </sv:node>
+      <sv:node sv:name="someQueryableNodeD">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>modetest:queryable</sv:value>
+        </sv:property>
+        <sv:property sv:name="selectableProp1" sv:type="String">
+          <sv:value>This is the fourth property</sv:value>
+        </sv:property>
+        <sv:node sv:name="someNestedQueryableNodeA">
+          <sv:property sv:name="jcr:primaryType" sv:type="Name">
+            <sv:value>modetest:queryable</sv:value>
+          </sv:property>
+          <sv:property sv:name="selectableProp1" sv:type="String">
+            <sv:value>This is the first nested property</sv:value>
+          </sv:property>
+        </sv:node>
+        <sv:node sv:name="someNestedQueryableNodeB">
+          <sv:property sv:name="jcr:primaryType" sv:type="Name">
+            <sv:value>modetest:queryable</sv:value>
+          </sv:property>
+          <sv:property sv:name="selectableProp1" sv:type="String">
+            <sv:value>This is the second nested property</sv:value>
+          </sv:property>
+        </sv:node>
+        <sv:node sv:name="someNestedQueryableNodeC">
+          <sv:property sv:name="jcr:primaryType" sv:type="Name">
+            <sv:value>modetest:queryable</sv:value>
+          </sv:property>
+          <sv:property sv:name="selectableProp1" sv:type="String">
+            <sv:value>This is the third nested property</sv:value>
+          </sv:property>
+        </sv:node>
+        <sv:node sv:name="someNestedQueryableNodeD">
+          <sv:property sv:name="jcr:primaryType" sv:type="Name">
+            <sv:value>modetest:queryable</sv:value>
+          </sv:property>
+          <sv:property sv:name="selectableProp1" sv:type="String">
+            <sv:value>This is the fourth nested property</sv:value>
+          </sv:property>
+          <sv:node sv:name="someDeepNestedQueryableNodeA">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+              <sv:value>modetest:queryable</sv:value>
+            </sv:property>
+            <sv:property sv:name="selectableProp1" sv:type="String">
+              <sv:value>This is the first deep nested property</sv:value>
+            </sv:property>
+          </sv:node>
+          <sv:node sv:name="someDeepNestedQueryableNodeB">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+              <sv:value>modetest:queryable</sv:value>
+            </sv:property>
+            <sv:property sv:name="selectableProp1" sv:type="String">
+              <sv:value>This is the second deep nested property</sv:value>
+            </sv:property>
+          </sv:node>
+          <sv:node sv:name="someDeepNestedQueryableNodeC">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+              <sv:value>modetest:queryable</sv:value>
+            </sv:property>
+            <sv:property sv:name="selectableProp1" sv:type="String">
+              <sv:value>This is the third deep nested property</sv:value>
+            </sv:property>
+          </sv:node>
+          <sv:node sv:name="someDeepNestedQueryableNodeD">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+              <sv:value>modetest:queryable</sv:value>
+            </sv:property>
+            <sv:property sv:name="selectableProp1" sv:type="String">
+              <sv:value>This is the fourth deep nested property</sv:value>
+            </sv:property>
+          </sv:node>
+        </sv:node>
+      </sv:node>
+    </sv:node>
+    <sv:node sv:name="sqlOrderByTest">
+      <sv:property sv:name="jcr:primaryType" sv:type="Name">
+        <sv:value>nt:unstructured</sv:value>
+      </sv:property>
+      <sv:node sv:name="someQueryableNodeA">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>modetest:queryable</sv:value>
+        </sv:property>
+        <sv:property sv:name="selectableProp1" sv:type="String">
+          <sv:value>This is the first property</sv:value>
+        </sv:property>
+      </sv:node>
+      <sv:node sv:name="someQueryableNodeB">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>modetest:queryable</sv:value>
+        </sv:property>
+        <sv:property sv:name="selectableProp1" sv:type="String">
+          <sv:value>This is the second property</sv:value>
+        </sv:property>
+      </sv:node>
+      <sv:node sv:name="someQueryableNodeC">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>modetest:queryable</sv:value>
+        </sv:property>
+        <sv:property sv:name="selectableProp1" sv:type="String">
+          <sv:value>This is the third property</sv:value>
+        </sv:property>
+      </sv:node>
+      <sv:node sv:name="someQueryableNodeD">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>modetest:queryable</sv:value>
+        </sv:property>
+        <sv:property sv:name="selectableProp1" sv:type="String">
+          <sv:value>This is the fourth property</sv:value>
+        </sv:property>
+        <sv:node sv:name="someNestedQueryableNodeA">
+          <sv:property sv:name="jcr:primaryType" sv:type="Name">
+            <sv:value>modetest:queryable</sv:value>
+          </sv:property>
+          <sv:property sv:name="selectableProp1" sv:type="String">
+            <sv:value>This is the first nested property</sv:value>
+          </sv:property>
+        </sv:node>
+        <sv:node sv:name="someNestedQueryableNodeB">
+          <sv:property sv:name="jcr:primaryType" sv:type="Name">
+            <sv:value>modetest:queryable</sv:value>
+          </sv:property>
+          <sv:property sv:name="selectableProp1" sv:type="String">
+            <sv:value>This is the second nested property</sv:value>
+          </sv:property>
+        </sv:node>
+        <sv:node sv:name="someNestedQueryableNodeC">
+          <sv:property sv:name="jcr:primaryType" sv:type="Name">
+            <sv:value>modetest:queryable</sv:value>
+          </sv:property>
+          <sv:property sv:name="selectableProp1" sv:type="String">
+            <sv:value>This is the third nested property</sv:value>
+          </sv:property>
+        </sv:node>
+        <sv:node sv:name="someNestedQueryableNodeD">
+          <sv:property sv:name="jcr:primaryType" sv:type="Name">
+            <sv:value>modetest:queryable</sv:value>
+          </sv:property>
+          <sv:property sv:name="selectableProp1" sv:type="String">
+            <sv:value>This is the fourth nested property</sv:value>
+          </sv:property>
+          <sv:node sv:name="someDeepNestedQueryableNodeA">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+              <sv:value>modetest:queryable</sv:value>
+            </sv:property>
+            <sv:property sv:name="selectableProp1" sv:type="String">
+              <sv:value>This is the first deep nested property</sv:value>
+            </sv:property>
+          </sv:node>
+          <sv:node sv:name="someDeepNestedQueryableNodeB">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+              <sv:value>modetest:queryable</sv:value>
+            </sv:property>
+            <sv:property sv:name="selectableProp1" sv:type="String">
+              <sv:value>This is the second deep nested property</sv:value>
+            </sv:property>
+          </sv:node>
+          <sv:node sv:name="someDeepNestedQueryableNodeC">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+              <sv:value>modetest:queryable</sv:value>
+            </sv:property>
+            <sv:property sv:name="selectableProp1" sv:type="String">
+              <sv:value>This is the third deep nested property</sv:value>
+            </sv:property>
+          </sv:node>
+          <sv:node sv:name="someDeepNestedQueryableNodeD">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+              <sv:value>modetest:queryable</sv:value>
+            </sv:property>
+            <sv:property sv:name="selectableProp1" sv:type="String">
+              <sv:value>This is the fourth deep nested property</sv:value>
+            </sv:property>
+          </sv:node>
+        </sv:node>
+      </sv:node>
+    </sv:node>
+    <sv:node sv:name="xpath">
+      <sv:property sv:name="jcr:primaryType" sv:type="Name">
+        <sv:value>nt:unstructured</sv:value>
+      </sv:property>
+      <sv:node sv:name="someQueryableNodeA">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>modetest:queryable</sv:value>
+        </sv:property>
+        <sv:property sv:name="selectableProp1" sv:type="String">
+          <sv:value>This is the first property</sv:value>
+        </sv:property>
+      </sv:node>
+      <sv:node sv:name="someQueryableNodeB">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>modetest:queryable</sv:value>
+        </sv:property>
+        <sv:property sv:name="selectableProp1" sv:type="String">
+          <sv:value>This is the second property</sv:value>
+        </sv:property>
+      </sv:node>
+      <sv:node sv:name="someQueryableNodeC">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>modetest:queryable</sv:value>
+        </sv:property>
+        <sv:property sv:name="selectableProp1" sv:type="String">
+          <sv:value>This is the third property</sv:value>
+        </sv:property>
+      </sv:node>
+      <sv:node sv:name="someQueryableNodeD">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>modetest:queryable</sv:value>
+        </sv:property>
+        <sv:property sv:name="selectableProp1" sv:type="String">
+          <sv:value>This is the fourth property</sv:value>
+        </sv:property>
+        <sv:node sv:name="someNestedQueryableNodeA">
+          <sv:property sv:name="jcr:primaryType" sv:type="Name">
+            <sv:value>modetest:queryable</sv:value>
+          </sv:property>
+          <sv:property sv:name="selectableProp1" sv:type="String">
+            <sv:value>This is the first nested property</sv:value>
+          </sv:property>
+        </sv:node>
+        <sv:node sv:name="someNestedQueryableNodeB">
+          <sv:property sv:name="jcr:primaryType" sv:type="Name">
+            <sv:value>modetest:queryable</sv:value>
+          </sv:property>
+          <sv:property sv:name="selectableProp1" sv:type="String">
+            <sv:value>This is the second nested property</sv:value>
+          </sv:property>
+        </sv:node>
+        <sv:node sv:name="someNestedQueryableNodeC">
+          <sv:property sv:name="jcr:primaryType" sv:type="Name">
+            <sv:value>modetest:queryable</sv:value>
+          </sv:property>
+          <sv:property sv:name="selectableProp1" sv:type="String">
+            <sv:value>This is the third nested property</sv:value>
+          </sv:property>
+        </sv:node>
+        <sv:node sv:name="someNestedQueryableNodeD">
+          <sv:property sv:name="jcr:primaryType" sv:type="Name">
+            <sv:value>modetest:queryable</sv:value>
+          </sv:property>
+          <sv:property sv:name="selectableProp1" sv:type="String">
+            <sv:value>This is the fourth nested property</sv:value>
+          </sv:property>
+          <sv:node sv:name="someDeepNestedQueryableNodeA">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+              <sv:value>modetest:queryable</sv:value>
+            </sv:property>
+            <sv:property sv:name="selectableProp1" sv:type="String">
+              <sv:value>This is the first deep nested property</sv:value>
+            </sv:property>
+          </sv:node>
+          <sv:node sv:name="someDeepNestedQueryableNodeB">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+              <sv:value>modetest:queryable</sv:value>
+            </sv:property>
+            <sv:property sv:name="selectableProp1" sv:type="String">
+              <sv:value>This is the second deep nested property</sv:value>
+            </sv:property>
+          </sv:node>
+          <sv:node sv:name="someDeepNestedQueryableNodeC">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+              <sv:value>modetest:queryable</sv:value>
+            </sv:property>
+            <sv:property sv:name="selectableProp1" sv:type="String">
+              <sv:value>This is the third deep nested property</sv:value>
+            </sv:property>
+          </sv:node>
+          <sv:node sv:name="someDeepNestedQueryableNodeD">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+              <sv:value>modetest:queryable</sv:value>
+            </sv:property>
+            <sv:property sv:name="selectableProp1" sv:type="String">
+              <sv:value>This is the fourth deep nested property</sv:value>
+            </sv:property>
+          </sv:node>
+        </sv:node>
+      </sv:node>
+    </sv:node>
+    <sv:node sv:name="sqlPathTest">
+      <sv:property sv:name="jcr:primaryType" sv:type="Name">
+        <sv:value>nt:unstructured</sv:value>
+      </sv:property>
+      <sv:node sv:name="someQueryableNodeA">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>modetest:queryable</sv:value>
+        </sv:property>
+        <sv:property sv:name="selectableProp1" sv:type="String">
+          <sv:value>This is the first property</sv:value>
+        </sv:property>
+      </sv:node>
+      <sv:node sv:name="someQueryableNodeB">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>modetest:queryable</sv:value>
+        </sv:property>
+        <sv:property sv:name="selectableProp1" sv:type="String">
+          <sv:value>This is the second property</sv:value>
+        </sv:property>
+      </sv:node>
+      <sv:node sv:name="someQueryableNodeC">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>modetest:queryable</sv:value>
+        </sv:property>
+        <sv:property sv:name="selectableProp1" sv:type="String">
+          <sv:value>This is the third property</sv:value>
+        </sv:property>
+      </sv:node>
+      <sv:node sv:name="someQueryableNodeD">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>modetest:queryable</sv:value>
+        </sv:property>
+        <sv:property sv:name="selectableProp1" sv:type="String">
+          <sv:value>This is the fourth property</sv:value>
+        </sv:property>
+        <sv:node sv:name="someNestedQueryableNodeA">
+          <sv:property sv:name="jcr:primaryType" sv:type="Name">
+            <sv:value>modetest:queryable</sv:value>
+          </sv:property>
+          <sv:property sv:name="selectableProp1" sv:type="String">
+            <sv:value>This is the first nested property</sv:value>
+          </sv:property>
+        </sv:node>
+        <sv:node sv:name="someNestedQueryableNodeB">
+          <sv:property sv:name="jcr:primaryType" sv:type="Name">
+            <sv:value>modetest:queryable</sv:value>
+          </sv:property>
+          <sv:property sv:name="selectableProp1" sv:type="String">
+            <sv:value>This is the second nested property</sv:value>
+          </sv:property>
+        </sv:node>
+        <sv:node sv:name="someNestedQueryableNodeC">
+          <sv:property sv:name="jcr:primaryType" sv:type="Name">
+            <sv:value>modetest:queryable</sv:value>
+          </sv:property>
+          <sv:property sv:name="selectableProp1" sv:type="String">
+            <sv:value>This is the third nested property</sv:value>
+          </sv:property>
+        </sv:node>
+        <sv:node sv:name="someNestedQueryableNodeD">
+          <sv:property sv:name="jcr:primaryType" sv:type="Name">
+            <sv:value>modetest:queryable</sv:value>
+          </sv:property>
+          <sv:property sv:name="selectableProp1" sv:type="String">
+            <sv:value>This is the fourth nested property</sv:value>
+          </sv:property>
+          <sv:node sv:name="someDeepNestedQueryableNodeA">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+              <sv:value>modetest:queryable</sv:value>
+            </sv:property>
+            <sv:property sv:name="selectableProp1" sv:type="String">
+              <sv:value>This is the first deep nested property</sv:value>
+            </sv:property>
+          </sv:node>
+          <sv:node sv:name="someDeepNestedQueryableNodeB">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+              <sv:value>modetest:queryable</sv:value>
+            </sv:property>
+            <sv:property sv:name="selectableProp1" sv:type="String">
+              <sv:value>This is the second deep nested property</sv:value>
+            </sv:property>
+          </sv:node>
+          <sv:node sv:name="someDeepNestedQueryableNodeC">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+              <sv:value>modetest:queryable</sv:value>
+            </sv:property>
+            <sv:property sv:name="selectableProp1" sv:type="String">
+              <sv:value>This is the third deep nested property</sv:value>
+            </sv:property>
+          </sv:node>
+          <sv:node sv:name="someDeepNestedQueryableNodeD">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+              <sv:value>modetest:queryable</sv:value>
+            </sv:property>
+            <sv:property sv:name="selectableProp1" sv:type="String">
+              <sv:value>This is the fourth deep nested property</sv:value>
+            </sv:property>
+          </sv:node>
+        </sv:node>
+      </sv:node>
+    </sv:node>
+  </sv:node>
+</sv:node>

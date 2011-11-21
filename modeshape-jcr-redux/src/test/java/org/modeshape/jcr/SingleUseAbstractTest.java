@@ -59,7 +59,7 @@ public abstract class SingleUseAbstractTest {
 
         // Configuration c = new Configuration();
         // cm = TestCacheManagerFactory.createCacheManager(c, true);
-        config = new RepositoryConfiguration(REPO_NAME, cm);
+        config = createRepositoryConfiguration(REPO_NAME, cm);
         repository = new JcrRepository(config);
         repository.start();
         session = repository.login();
@@ -78,6 +78,11 @@ public abstract class SingleUseAbstractTest {
                 cm = null;
             }
         }
+    }
+
+    protected RepositoryConfiguration createRepositoryConfiguration( String repositoryName,
+                                                                     CacheContainer cacheContainer ) {
+        return new RepositoryConfiguration(repositoryName, cacheContainer);
     }
 
     protected void predefineWorkspace( String workspaceName ) {

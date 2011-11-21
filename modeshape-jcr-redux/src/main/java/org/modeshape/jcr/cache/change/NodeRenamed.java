@@ -21,26 +21,38 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.store;
+package org.modeshape.jcr.cache.change;
 
-import java.io.File;
-import org.infinispan.loaders.CacheLoaderConfig;
-import org.infinispan.loaders.bdbje.BdbjeCacheStoreConfig;
-import org.modeshape.common.util.FileUtil;
+import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.value.Path;
+import org.modeshape.jcr.value.Path.Segment;
 
-public class BerkleyDbCacheStorePerformanceTest extends InMemoryPerformanceTest {
+/**
+ * 
+ */
+public class NodeRenamed extends AbstractNodeChange {
 
-    private final File dbDir = new File("target/database");
+    private final Segment oldSegment;
 
-    @Override
-    protected void cleanUpFileSystem() {
-        FileUtil.delete(dbDir);
+    public NodeRenamed( NodeKey key,
+                        Path newPath,
+                        Segment oldSegment ) {
+        super(key, newPath);
+        this.oldSegment = oldSegment;
+        assert !this.oldSegment.equals(newPath.getLastSegment());
+    }
+
+    /**
+     * Get the old segment for the node.
+     * 
+     * @return the old segment; never null
+     */
+    public Segment getOldSegment() {
+        return oldSegment;
     }
 
     @Override
-    protected CacheLoaderConfig getCacheLoaderConfiguration() {
-        BdbjeCacheStoreConfig config = new BdbjeCacheStoreConfig();
-        config.setLocation(dbDir.getAbsolutePath());
-        return config;
+    public String toString() {
+        return "Renamed node '" + this.getKey() + "' to \"" + path + "\" (was '" + oldSegment + "')";
     }
 }

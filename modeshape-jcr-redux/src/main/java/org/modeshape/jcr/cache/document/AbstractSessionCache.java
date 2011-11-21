@@ -24,13 +24,15 @@
 package org.modeshape.jcr.cache.document;
 
 import java.util.UUID;
-import org.modeshape.jcr.cache.SessionCacheMonitor;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.SessionCache;
+import org.modeshape.jcr.cache.SessionCacheMonitor;
 import org.modeshape.jcr.core.ExecutionContext;
+import org.modeshape.jcr.value.DateTime;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PathFactory;
@@ -40,6 +42,27 @@ import org.modeshape.jcr.value.ValueFactories;
  * 
  */
 public abstract class AbstractSessionCache implements SessionCache, DocumentCache {
+
+    @Immutable
+    protected static final class BasicSaveContext implements SaveContext {
+        private final DateTime now;
+        private final String userId;
+
+        protected BasicSaveContext( ExecutionContext context ) {
+            this.now = context.getValueFactories().getDateFactory().create();
+            this.userId = context.getSecurityContext().getUserName();
+        }
+
+        @Override
+        public DateTime getTime() {
+            return now;
+        }
+
+        @Override
+        public String getUserId() {
+            return userId;
+        }
+    }
 
     protected final WorkspaceCache workspaceCache;
     private final ExecutionContext context;

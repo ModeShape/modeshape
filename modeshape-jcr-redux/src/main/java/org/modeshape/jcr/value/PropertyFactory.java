@@ -32,17 +32,35 @@ import org.modeshape.common.annotation.ThreadSafe;
 @ThreadSafe
 public interface PropertyFactory {
     /**
-     * Create a property with the supplied name and values
+     * Create an empty multi-valued property with the supplied name.
+     * 
+     * @param name the property name; may not be null
+     * @return the resulting property
+     */
+    Property create( Name name );
+
+    /**
+     * Create a single-valued property with the supplied name and values
+     * 
+     * @param name the property name; may not be null
+     * @param value the value
+     * @return the resulting property
+     */
+    Property create( Name name,
+                     Object value );
+
+    /**
+     * Create a multi-valued property with the supplied name and values
      * 
      * @param name the property name; may not be null
      * @param values the values
      * @return the resulting property
      */
     Property create( Name name,
-                     Object... values );
+                     Object[] values );
 
     /**
-     * Create a property with the supplied name and values
+     * Create a multi-valued property with the supplied name and values
      * 
      * @param name the property name; may not be null
      * @param values the values
@@ -52,7 +70,7 @@ public interface PropertyFactory {
                      Iterable<?> values );
 
     /**
-     * Create a property with the supplied name and values
+     * Create a multi-valued property with the supplied name and values
      * 
      * @param name the property name; may not be null
      * @param values the values
@@ -62,19 +80,31 @@ public interface PropertyFactory {
                      Iterator<?> values );
 
     /**
-     * Create a property with the supplied name and values
+     * Create a single-valued property with the supplied name and values
      * 
      * @param name the property name; may not be null
      * @param desiredType the type that the objects should be converted to; if null, they will be used as is
-     * @param values the values
+     * @param firstValue the first value; may not be null
      * @return the resulting property
      */
     Property create( Name name,
                      PropertyType desiredType,
-                     Object... values );
+                     Object firstValue );
 
     /**
-     * Create a property with the supplied name and values
+     * Create a multi-valued property with the supplied name and values
+     * 
+     * @param name the property name; may not be null
+     * @param desiredType the type that the objects should be converted to; if null, they will be used as is
+     * @param values the values; may not be null but may be empty
+     * @return the resulting property
+     */
+    Property create( Name name,
+                     PropertyType desiredType,
+                     Object[] values );
+
+    /**
+     * Create a multi-valued property with the supplied name and values
      * 
      * @param name the property name; may not be null
      * @param desiredType the type that the objects should be converted to; if null, they will be used as is
@@ -86,7 +116,7 @@ public interface PropertyFactory {
                      Iterable<?> values );
 
     /**
-     * Create a property with the supplied name and values
+     * Create a multi-valued property with the supplied name and values
      * 
      * @param name the property name; may not be null
      * @param desiredType the type that the objects should be converted to; if null, they will be used as is
@@ -98,8 +128,8 @@ public interface PropertyFactory {
                      Iterator<?> values );
 
     /**
-     * Create a property with the supplied name and {@link Path} value. This method is provided because Path implements
-     * Iterable&lt;Segment>.
+     * Create a single-valued property with the supplied name and {@link Path} value. This method is provided because Path
+     * implements Iterable&lt;Segment>.
      * 
      * @param name the property name; may not be null
      * @param value the path value

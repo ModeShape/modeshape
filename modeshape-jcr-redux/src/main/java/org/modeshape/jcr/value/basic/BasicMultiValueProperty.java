@@ -52,7 +52,6 @@ public class BasicMultiValueProperty extends BasicProperty {
                                     List<Object> values ) {
         super(name);
         CheckArg.isNotNull(values, "values");
-        CheckArg.hasSizeOfAtLeast(values, 2, "values");
         this.values = values;
     }
 

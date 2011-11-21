@@ -27,12 +27,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.AccessControlException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.Credentials;
 import javax.jcr.InvalidItemStateException;
@@ -58,11 +60,14 @@ import javax.jcr.retention.RetentionManager;
 import javax.jcr.security.AccessControlManager;
 import javax.jcr.version.VersionException;
 import org.infinispan.schematic.SchematicEntry;
+import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.Logger;
 import org.modeshape.jcr.AbstractJcrNode.Type;
 import org.modeshape.jcr.JcrContentHandler.EnclosingSAXException;
 import org.modeshape.jcr.JcrNamespaceRegistry.Behavior;
 import org.modeshape.jcr.JcrRepository.RunningState;
+import org.modeshape.jcr.RepositoryNodeTypeManager.Capabilities;
 import org.modeshape.jcr.RepositoryStatistics.DurationMetric;
 import org.modeshape.jcr.RepositoryStatistics.ValueMetric;
 import org.modeshape.jcr.cache.CachedNode;
@@ -72,7 +77,9 @@ import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.NodeNotFoundException;
 import org.modeshape.jcr.cache.SessionCache;
+import org.modeshape.jcr.cache.SessionCache.SaveContext;
 import org.modeshape.jcr.cache.WorkspaceNotFoundException;
+import org.modeshape.jcr.cache.WrappedException;
 import org.modeshape.jcr.core.ExecutionContext;
 import org.modeshape.jcr.core.SecurityContext;
 import org.modeshape.jcr.security.AuthorizationProvider;
@@ -84,6 +91,8 @@ import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
 import org.modeshape.jcr.value.PathFactory;
 import org.modeshape.jcr.value.PropertyFactory;
+import org.modeshape.jcr.value.Reference;
+import org.modeshape.jcr.value.ReferenceFactory;
 import org.modeshape.jcr.value.UuidFactory;
 import org.modeshape.jcr.value.basic.LocalNamespaceRegistry;
 import org.xml.sax.ContentHandler;
@@ -105,13 +114,11 @@ public class JcrSession implements Session {
     private final SessionCache cache;
     private final JcrValueFactory valueFactory;
     private final JcrRootNode rootNode;
-    private final String workspaceName;
     private final ConcurrentMap<NodeKey, AbstractJcrNode> jcrNodes = new ConcurrentHashMap<NodeKey, AbstractJcrNode>();
     private final Map<String, Object> sessionAttributes;
     private final JcrWorkspace workspace;
-    private final String systemWorkspaceKey;
-    private final NamespaceRegistry globalNamespaceRegistry;
     private final JcrNamespaceRegistry sessionRegistry;
+    private final AtomicReference<Map<NodeKey, NodeKey>> baseVersionKeys = new AtomicReference<Map<NodeKey, NodeKey>>();
     private volatile boolean isLive = true;
     private final long nanosCreated;
 
@@ -121,13 +128,12 @@ public class JcrSession implements Session {
                           Map<String, Object> sessionAttributes,
                           boolean readOnly ) {
         this.repository = repository;
-        this.workspaceName = workspaceName;
 
         // Create an execution context for this session that uses a local namespace registry ...
-        this.globalNamespaceRegistry = context.getNamespaceRegistry(); // thread-safe!
-        LocalNamespaceRegistry localRegistry = new LocalNamespaceRegistry(this.globalNamespaceRegistry); // not-thread-safe!
+        final NamespaceRegistry globalNamespaceRegistry = context.getNamespaceRegistry(); // thread-safe!
+        final LocalNamespaceRegistry localRegistry = new LocalNamespaceRegistry(globalNamespaceRegistry); // not-thread-safe!
         this.context = context.with(localRegistry);
-        this.sessionRegistry = new JcrNamespaceRegistry(Behavior.SESSION, localRegistry, this.globalNamespaceRegistry, this);
+        this.sessionRegistry = new JcrNamespaceRegistry(Behavior.SESSION, localRegistry, globalNamespaceRegistry, this);
 
         // Create the session cache ...
         this.cache = repository.repositoryCache().createSession(context, workspaceName, readOnly);
@@ -139,8 +145,7 @@ public class JcrSession implements Session {
         } else {
             this.sessionAttributes = Collections.unmodifiableMap(sessionAttributes);
         }
-        this.workspace = new JcrWorkspace(this);
-        this.systemWorkspaceKey = repository.systemWorkspaceKey();
+        this.workspace = new JcrWorkspace(this, workspaceName);
 
         // Pre-cache all of the namespaces to be a snapshot of what's in the global registry at this time.
         // This behavior is specified in Section 3.5.2 of the JCR 2.0 specification.
@@ -155,17 +160,14 @@ public class JcrSession implements Session {
                           boolean readOnly ) {
         // Most of the components can be reused from the original session ...
         this.repository = original.repository;
-        this.workspaceName = original.workspaceName;
-        this.globalNamespaceRegistry = original.globalNamespaceRegistry;
         this.context = original.context;
         this.sessionRegistry = original.sessionRegistry;
         this.valueFactory = original.valueFactory;
         this.sessionAttributes = original.sessionAttributes;
         this.workspace = original.workspace;
-        this.systemWorkspaceKey = original.systemWorkspaceKey;
 
         // Create a new session cache and root node ...
-        this.cache = repository.repositoryCache().createSession(context, workspaceName, readOnly);
+        this.cache = repository.repositoryCache().createSession(context, this.workspace.getName(), readOnly);
         this.rootNode = new JcrRootNode(this, this.cache.getRootKey());
         this.jcrNodes.put(this.rootNode.key(), this.rootNode);
 
@@ -194,10 +196,16 @@ public class JcrSession implements Session {
         }
 
         isLive = false;
+
         // TODO: Observation
         // this.workspace().observationManager().removeAllEventListeners();
-        // TODO: Locks
-        // this.lockManager().cleanLocks();
+
+        try {
+            lockManager().cleanLocks();
+        } catch (RepositoryException e) {
+            // This can only happen if the session is not live, which is checked above ...
+            Logger.getLogger(getClass()).error(e, JcrI18n.unexpectedException, e.getMessage());
+        }
         if (removeFromActiveSession) this.repository.runningState().removeSession(this);
         this.context.getSecurityContext().logout();
     }
@@ -210,8 +218,8 @@ public class JcrSession implements Session {
         return entry;
     }
 
-    String workspaceName() {
-        return workspaceName;
+    final String workspaceName() {
+        return workspace.getName();
     }
 
     final String sessionId() {
@@ -249,6 +257,10 @@ public class JcrSession implements Session {
         return context.getPropertyFactory();
     }
 
+    final ReferenceFactory referenceFactory() {
+        return context.getValueFactories().getReferenceFactory();
+    }
+
     final UuidFactory uuidFactory() {
         return context.getValueFactories().getUuidFactory();
     }
@@ -281,13 +293,22 @@ public class JcrSession implements Session {
         return this.repository().nodeTypeManager().nodeTypesVersion();
     }
 
-    final JcrLockManager lockManager() throws RepositoryException {
-        return workspace().getLockManager();
+    final JcrVersionManager versionManager() {
+        return this.workspace.versionManager();
+    }
+
+    final JcrLockManager lockManager() {
+        return workspace().lockManager();
     }
 
     final void signalNamespaceChanges( boolean global ) {
         nodeTypeManager().signalNamespaceChanges();
         if (global) repository.nodeTypeManager().signalNamespaceChanges();
+    }
+
+    final void setDesiredBaseVersionKey( NodeKey nodeKey,
+                                         NodeKey baseVersionKey ) {
+        baseVersionKeys.get().put(nodeKey, baseVersionKey);
     }
 
     final JcrSession spawnSession( boolean readOnly ) {
@@ -301,6 +322,14 @@ public class JcrSession implements Session {
 
     final SessionCache spawnSessionCache( boolean readOnly ) {
         return repository().repositoryCache().createSession(context(), workspaceName(), readOnly);
+    }
+
+    protected final String readableLocation( CachedNode node ) {
+        try {
+            return stringFactory().create(node.getPath(cache));
+        } catch (Throwable t) {
+            return node.getKey().toString();
+        }
     }
 
     /**
@@ -352,7 +381,7 @@ public class JcrSession implements Session {
             expectedType = Type.typeForPrimaryType(primaryType);
             if (expectedType == null) {
                 // If this node from the system workspace, then the default is Type.SYSTEM rather than Type.NODE ...
-                if (this.systemWorkspaceKey.equals(nodeKey.getWorkspaceKey())) {
+                if (repository().systemWorkspaceKey().equals(nodeKey.getWorkspaceKey())) {
                     expectedType = Type.SYSTEM;
                 } else {
                     expectedType = Type.NODE;
@@ -437,7 +466,7 @@ public class JcrSession implements Session {
         if (absolutePath.isRoot()) return getRootNode();
         if (absolutePath.isIdentifier()) {
             // Look up the node by identifier ...
-            NodeKey key = new NodeKey(stringFactory().create(absolutePath));
+            NodeKey key = rootNode.key().withId(stringFactory().create(absolutePath));
             return node(key, null);
         }
         CachedNode node = getRootNode().node();
@@ -496,6 +525,10 @@ public class JcrSession implements Session {
         return context.getSecurityContext().getUserName();
     }
 
+    public boolean isAnonymous() {
+        return context.getSecurityContext().isAnonymous();
+    }
+
     @Override
     public String[] getAttributeNames() {
         Set<String> names = sessionAttributes.keySet();
@@ -522,7 +555,7 @@ public class JcrSession implements Session {
     @Override
     public Session impersonate( Credentials credentials ) throws LoginException, RepositoryException {
         checkLive();
-        return repository.login(credentials, workspaceName);
+        return repository.login(credentials, workspaceName());
     }
 
     @Deprecated
@@ -588,7 +621,11 @@ public class JcrSession implements Session {
         } catch (PathNotFoundException e) {
             // Must not be any child by that name, so now look for a property on the parent node ...
             AbstractJcrNode parent = node(path.getParent());
-            return parent.getProperty(path.getLastSegment().getName());
+            AbstractJcrProperty prop = parent.getProperty(path.getLastSegment().getName());
+            if (prop != null) return prop;
+            // Failed to find any item ...
+            String pathStr = stringFactory().create(path);
+            throw new PathNotFoundException(JcrI18n.itemNotFoundAtPath.text(pathStr, workspaceName()));
         }
     }
 
@@ -733,10 +770,15 @@ public class JcrSession implements Session {
         }
 
         try {
-            // Create a session to perform the move ...
             MutableCachedNode mutableSrcParent = srcParent.mutable();
             MutableCachedNode mutableDestParent = destParentNode.mutable();
-            mutableSrcParent.moveChild(cache, srcNode.key(), mutableDestParent, destPath.getLastSegment().getName());
+            if (mutableSrcParent.equals(mutableDestParent)) {
+                // It's just a rename ...
+                mutableSrcParent.renameChild(cache, srcNode.key(), destPath.getLastSegment().getName());
+            } else {
+                // It is a move from one parent to another ...
+                mutableSrcParent.moveChild(cache, srcNode.key(), mutableDestParent, destPath.getLastSegment().getName());
+            }
         } catch (NodeNotFoundException e) {
             // Not expected ...
             String msg = JcrI18n.nodeNotFound.text(stringFactory().create(srcPath.getParent()), workspaceName());
@@ -749,7 +791,19 @@ public class JcrSession implements Session {
         throws AccessDeniedException, ItemExistsException, ReferentialIntegrityException, ConstraintViolationException,
         InvalidItemStateException, VersionException, LockException, NoSuchNodeTypeException, RepositoryException {
         checkLive();
-        cache().save();
+
+        // Perform the save, using 'JcrPreSave' operations ...
+        SessionCache systemCache = createSystemCache(false);
+        SystemContent systemContent = new SystemContent(systemCache);
+        Map<NodeKey, NodeKey> baseVersionKeys = this.baseVersionKeys.get();
+        try {
+            cache().save(systemContent.cache(), new JcrPreSave(systemContent, baseVersionKeys));
+            this.baseVersionKeys.set(null);
+        } catch (WrappedException e) {
+            Throwable cause = e.getCause();
+            throw (cause instanceof RepositoryException) ? (RepositoryException)cause : new RepositoryException(e.getCause());
+        }
+
         // Record the save operation ...
         repository().statistics().increment(ValueMetric.SESSION_SAVES);
     }
@@ -762,7 +816,18 @@ public class JcrSession implements Session {
      * @see AbstractJcrNode#save()
      */
     void save( AbstractJcrNode node ) throws RepositoryException {
-        cache().save(node.node());
+
+        // Perform the save, using 'JcrPreSave' operations ...
+        SessionCache systemCache = createSystemCache(false);
+        SystemContent systemContent = new SystemContent(systemCache);
+        Map<NodeKey, NodeKey> baseVersionKeys = this.baseVersionKeys.get();
+        try {
+            cache().save(node.node(), systemContent.cache(), new JcrPreSave(systemContent, baseVersionKeys));
+        } catch (WrappedException e) {
+            Throwable cause = e.getCause();
+            throw (cause instanceof RepositoryException) ? (RepositoryException)cause : new RepositoryException(e.getCause());
+        }
+
         // Record the save operation ...
         repository().statistics().increment(ValueMetric.SESSION_SAVES);
     }
@@ -854,6 +919,7 @@ public class JcrSession implements Session {
     public void checkPermission( String path,
                                  String actions ) {
         CheckArg.isNotEmpty(path, "path");
+        CheckArg.isNotEmpty(actions, "actions");
         try {
             this.checkPermission(absolutePathFor(path), actions.split(","));
         } catch (RepositoryException e) {
@@ -962,6 +1028,9 @@ public class JcrSession implements Session {
 
         boolean retainLifecycleInfo = getRepository().getDescriptorValue(Repository.OPTION_LIFECYCLE_SUPPORTED).getBoolean();
         boolean retainRetentionInfo = getRepository().getDescriptorValue(Repository.OPTION_RETENTION_SUPPORTED).getBoolean();
+
+        // Since we're importing into this session, we need to capture any base version information in the imported file ...
+        baseVersionKeys.compareAndSet(null, new ConcurrentHashMap<NodeKey, NodeKey>());
         return new JcrContentHandler(this, parent, uuidBehavior, false, retainRetentionInfo, retainLifecycleInfo);
     }
 
@@ -1095,15 +1164,8 @@ public class JcrSession implements Session {
     @Override
     public void addLockToken( String lockToken ) {
         CheckArg.isNotNull(lockToken, "lockToken");
-        JcrLockManager lockManager = null;
         try {
-            lockManager = lockManager();
-        } catch (RepositoryException le) {
-            // basically means this session is not live ...
-            return;
-        }
-        try {
-            lockManager.addLockToken(lockToken);
+            lockManager().addLockToken(lockToken);
         } catch (LockException le) {
             // For backwards compatibility (and API compatibility), the LockExceptions from the LockManager need to get swallowed
         }
@@ -1111,29 +1173,16 @@ public class JcrSession implements Session {
 
     @Override
     public String[] getLockTokens() {
-        JcrLockManager lockManager = null;
-        try {
-            lockManager = lockManager();
-        } catch (RepositoryException le) {
-            // basically means this session is not live ...
-            return new String[] {};
-        }
-        return lockManager.getLockTokens();
+        if (!isLive()) return new String[] {};
+        return lockManager().getLockTokens();
     }
 
     @Override
     public void removeLockToken( String lockToken ) {
         CheckArg.isNotNull(lockToken, "lockToken");
-        JcrLockManager lockManager = null;
-        try {
-            lockManager = lockManager();
-        } catch (RepositoryException le) {
-            // basically means this session is not live ...
-            return;
-        }
         // A LockException is thrown if the lock associated with the specified lock token is session-scoped.
         try {
-            lockManager.removeLockToken(lockToken);
+            lockManager().removeLockToken(lockToken);
         } catch (LockException le) {
             // For backwards compatibility (and API compatibility), the LockExceptions from the LockManager need to get swallowed
         }
@@ -1202,5 +1251,209 @@ public class JcrSession implements Session {
     @Override
     public String toString() {
         return cache.toString();
+    }
+
+    /**
+     * Define the operations that are to be performed on all the nodes that were created or modified within this session. This
+     * class was designed to be as efficient as possible for most nodes, since most nodes do not need any additional processing.
+     */
+    protected final class JcrPreSave implements SessionCache.PreSave {
+        private final SessionCache cache;
+        private final RepositoryNodeTypeManager nodeTypeMgr;
+        private final Capabilities nodeTypeCapabilities;
+        private final SystemContent systemContent;
+        private final Map<NodeKey, NodeKey> baseVersionKeys;
+        private boolean initialized = false;
+        private PropertyFactory propertyFactory;
+        private ReferenceFactory referenceFactory;
+        private JcrVersionManager versionManager;
+
+        protected JcrPreSave( SystemContent content,
+                              Map<NodeKey, NodeKey> baseVersionKeys ) {
+            assert content != null;
+            this.cache = cache();
+            this.systemContent = content;
+            this.baseVersionKeys = baseVersionKeys;
+            // Get the capabilities cache. This is immutable, so we'll use it for the entire pre-save operation ...
+            this.nodeTypeMgr = repository().nodeTypeManager();
+            this.nodeTypeCapabilities = nodeTypeMgr.getCapabilities();
+        }
+
+        @Override
+        public void process( MutableCachedNode node,
+                             SaveContext context ) throws Exception {
+            // Most nodes do not need any extra processing, so the first thing to do is figure out whether this
+            // node has a primary type or mixin types that need extra processing. Unfortunately, this means we always have
+            // to get the primary type and mixin types.
+            final Name primaryType = node.getPrimaryType(cache);
+            final Set<Name> mixinTypes = node.getMixinTypes(cache);
+
+            if (nodeTypeCapabilities.isFullyDefinedType(primaryType, mixinTypes)) {
+                // There is nothing to do for this node ...
+                return;
+            }
+
+            if (!initialized) {
+                // We're gonna need a few more objects, so create them now ...
+                initialized = true;
+                versionManager = versionManager();
+                propertyFactory = propertyFactory();
+                referenceFactory = referenceFactory();
+            }
+
+            AbstractJcrNode jcrNode = null;
+
+            // -----------
+            // mix:created
+            // -----------
+            boolean initializeVersionHistory = false;
+            if (node.isNew()) {
+                if (nodeTypeCapabilities.isCreated(primaryType, mixinTypes)) {
+                    // Set the created by and time information ...
+                    node.setProperty(cache, propertyFactory.create(JcrLexicon.CREATED, context.getTime()));
+                    node.setProperty(cache, propertyFactory.create(JcrLexicon.CREATED_BY, context.getUserId()));
+                }
+                initializeVersionHistory = nodeTypeCapabilities.isVersionable(primaryType, mixinTypes);
+            } else {
+                // Changed nodes can only be made versionable if the primary type or mixins changed ...
+                if (node.hasChangedPrimaryType() || !node.getAddedMixins(cache).isEmpty()) {
+                    initializeVersionHistory = nodeTypeCapabilities.isVersionable(primaryType, mixinTypes);
+                }
+            }
+
+            // ----------------
+            // mix:lastModified
+            // ----------------
+            if (nodeTypeCapabilities.isLastModified(primaryType, mixinTypes)) {
+                // Set the last modified by and time information ...
+                node.setProperty(cache, propertyFactory.create(JcrLexicon.LAST_MODIFIED, context.getTime()));
+                node.setProperty(cache, propertyFactory.create(JcrLexicon.LAST_MODIFIED_BY, context.getUserId()));
+            }
+
+            // ---------------
+            // mix:versionable
+            // ---------------
+            if (initializeVersionHistory) {
+                // See if there is a version history for the node ...
+                NodeKey versionableKey = node.getKey();
+                if (!systemContent.hasVersionHistory(versionableKey)) {
+                    // Initialize the version history ...
+                    NodeKey historyKey = systemContent.versionHistoryNodeKeyFor(versionableKey);
+                    NodeKey baseVersionKey = baseVersionKeys == null ? null : baseVersionKeys.get(versionableKey);
+                    if (baseVersionKey == null) baseVersionKey = historyKey.withRandomId();
+                    Path versionHistoryPath = versionManager.versionHistoryPathFor(versionableKey);
+                    systemContent.initializeVersionStorage(versionableKey,
+                                                           historyKey,
+                                                           baseVersionKey,
+                                                           primaryType,
+                                                           mixinTypes,
+                                                           versionHistoryPath,
+                                                           null,
+                                                           context.getTime());
+
+                    // Now update the node as if it's checked in ...
+                    Reference historyRef = referenceFactory.create(historyKey);
+                    Reference baseVersionRef = referenceFactory.create(baseVersionKey);
+                    node.setProperty(cache, propertyFactory.create(JcrLexicon.IS_CHECKED_OUT, Boolean.TRUE));
+                    node.setProperty(cache, propertyFactory.create(JcrLexicon.VERSION_HISTORY, historyRef));
+                    node.setProperty(cache, propertyFactory.create(JcrLexicon.BASE_VERSION, baseVersionRef));
+                    node.setProperty(cache, propertyFactory.create(JcrLexicon.PREDECESSORS, new Object[] {}));
+                }
+            }
+
+            // --------------------
+            // Mandatory properties
+            // --------------------
+            // Some of the version history properties are mandatory, so we need to initialize the version history first ...
+            Collection<JcrPropertyDefinition> mandatoryPropDefns = null;
+            mandatoryPropDefns = nodeTypeCapabilities.getMandatoryPropertyDefinitions(primaryType, mixinTypes);
+            if (!mandatoryPropDefns.isEmpty()) {
+                // There is at least one mandatory property on this node, so go through all of the mandatory property
+                // definitions and see if any do not correspond to existing properties ...
+                for (JcrPropertyDefinition defn : mandatoryPropDefns) {
+                    Name propName = defn.getInternalName();
+                    if (!node.hasProperty(propName, cache)) {
+                        // There is no mandatory property ...
+                        if (defn.hasDefaultValues()) {
+                            // This may or may not be auto-created; we don't care ...
+                            if (jcrNode == null) jcrNode = node(node, (Type)null);
+                            JcrValue[] defaultValues = defn.getDefaultValues();
+                            if (defn.isMultiple()) {
+                                jcrNode.setProperty(propName, defaultValues, defn.getRequiredType(), false);
+                            } else {
+                                jcrNode.setProperty(propName, defaultValues[0], false);
+                            }
+                        } else {
+                            // There is no default for this mandatory property, so this is a constraint violation ...
+                            String pName = defn.getName();
+                            String typeName = defn.getDeclaringNodeType().getName();
+                            String loc = readableLocation(node);
+                            throw new ConstraintViolationException(JcrI18n.missingMandatoryProperty.text(pName, typeName, loc));
+                        }
+                    } else {
+                        // There is a property with the same name as the mandatory property, so verify that the
+                        // existing property does indeed use this property definition. Use the JCR property
+                        // since it may already cache the property definition ID or will know how to find it ...
+                        if (jcrNode == null) jcrNode = node(node, (Type)null);
+                        AbstractJcrProperty jcrProperty = jcrNode.getProperty(propName);
+                        PropertyDefinitionId defnId = jcrProperty.propertyDefinitionId();
+                        if (defn.getId().equals(defnId)) {
+                            // This existing property does use the auto-created definition ...
+                            continue;
+                        }
+                        // The existing property does not use the property definition, but we can't auto-create the property
+                        // because there is already an existing one with the same name. First see if we can forcibly
+                        // recompute the property definition ...
+                        jcrProperty.releasePropertyDefinitionId();
+                        defnId = jcrProperty.propertyDefinitionId();
+                        if (defn.getId().equals(defnId)) {
+                            // This existing property does use the auto-created definition ...
+                            continue;
+                        }
+
+                        // Still didn't match, so this is a constraint violation of the existing property ...
+                        String pName = defn.getName();
+                        String typeName = defn.getDeclaringNodeType().getName();
+                        String loc = readableLocation(node);
+                        I18n msg = JcrI18n.propertyNoLongerSatisfiesConstraints;
+                        throw new ConstraintViolationException(msg.text(pName, loc, defn.getName(), typeName));
+                    }
+                }
+            }
+
+            // ---------------------
+            // Mandatory child nodes
+            // ---------------------
+            Collection<JcrNodeDefinition> mandatoryChildDefns = null;
+            mandatoryChildDefns = nodeTypeCapabilities.getMandatoryChildNodeDefinitions(primaryType, mixinTypes);
+            if (!mandatoryChildDefns.isEmpty()) {
+                // There is at least one auto-created child node definition on this node, so figure out if they are all
+                // covered by existing children ...
+                for (JcrNodeDefinition defn : mandatoryChildDefns) {
+                    Name propName = defn.getInternalName();
+                }
+            }
+
+            // --------
+            // mix:etag
+            // --------
+            // The 'jcr:etag' property may depend on auto-created properties, so do this last ...
+            if (nodeTypeCapabilities.isETag(primaryType, mixinTypes)) {
+                // Per section 3.7.12 of JCR 2, the 'jcr:etag' property should be changed whenever BINARY properties
+                // are added, removed, or changed. So, go through the properties (in sorted-name order so it is repeatable)
+                // and create this value by simply concatenating the SHA-1 hash of each BINARY value ...
+                String etagValue = node.getEtag(cache);
+                node.setProperty(cache, propertyFactory.create(JcrLexicon.ETAG, etagValue));
+            }
+
+        }
+
+        protected void addBinaryHash( JcrValue value,
+                                      StringBuilder sb ) throws RepositoryException {
+            org.modeshape.jcr.value.Binary binary = value.getBinary();
+            String hash = new String(binary.getHash()); // doesn't matter what charset, as long as its always the
+            // same
+            sb.append(hash);
+        }
     }
 }

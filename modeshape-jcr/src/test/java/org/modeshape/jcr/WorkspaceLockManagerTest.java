@@ -26,11 +26,12 @@ import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.request.LockBranchRequest;
+import org.modeshape.graph.request.LockBranchRequest.LockScope;
 import org.modeshape.graph.request.Request;
 import org.modeshape.graph.request.UnlockBranchRequest;
-import org.modeshape.graph.request.LockBranchRequest.LockScope;
 import org.modeshape.jcr.WorkspaceLockManager.ModeShapeLock;
 
+@Migrated
 public class WorkspaceLockManagerTest {
 
     protected JcrGraph graph;
@@ -101,8 +102,9 @@ public class WorkspaceLockManagerTest {
         });
 
         // Stub out the repository, since we only need a few methods ...
-        Path nodeTypesPath = context.getValueFactories().getPathFactory().createAbsolutePath(JcrLexicon.SYSTEM,
-                                                                                             JcrLexicon.NODE_TYPES);
+        Path nodeTypesPath = context.getValueFactories()
+                                    .getPathFactory()
+                                    .createAbsolutePath(JcrLexicon.SYSTEM, JcrLexicon.NODE_TYPES);
         repoTypeManager = new RepositoryNodeTypeManager(repository, nodeTypesPath, true, true);
 
         when(repository.getRepositoryTypeManager()).thenReturn(repoTypeManager);

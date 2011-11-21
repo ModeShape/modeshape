@@ -193,15 +193,19 @@ public class ImmutableChildReferences {
                                         Context context ) {
             Changes changes = null;
             Iterator<ChildInsertions> insertions = null;
+            boolean includeRenames = false;
             if (context == null) {
                 context = new SingleNameContext();
             } else {
                 changes = context.changes(); // may still be null
-                if (changes != null) insertions = changes.insertions(name);
+                if (changes != null) {
+                    insertions = changes.insertions(name);
+                    includeRenames = changes.isRenamed(name);
+                }
             }
 
             List<ChildReference> childrenWithSameName = this.childReferences.get(name);
-            if (childrenWithSameName.isEmpty()) {
+            if (childrenWithSameName.isEmpty() && !includeRenames) {
                 // This segment contains no nodes with the supplied name ...
                 if (insertions == null) {
                     // and no nodes with this name were inserted ...
@@ -221,7 +225,7 @@ public class ImmutableChildReferences {
             }
 
             // This collection contains at least one node with the same name ...
-            if (insertions != null) {
+            if (insertions != null || includeRenames) {
                 // The logic for this would involve iteration to find the indexes, so we may as well just iterate ...
                 Iterator<ChildReference> iter = iterator(context, name);
                 while (iter.hasNext()) {
@@ -233,7 +237,10 @@ public class ImmutableChildReferences {
 
             // We have at least one SNS in this list (and still potentially some removals) ...
             for (ChildReference childWithSameName : childrenWithSameName) {
-                if (changes != null && changes.isRemoved(childWithSameName)) continue;
+                if (changes != null) {
+                    if (changes.isRemoved(childWithSameName)) continue;
+                    if (changes.isRenamed(childWithSameName)) continue;
+                }
                 int index = context.consume(childWithSameName.getName(), childWithSameName.getKey());
                 if (index == snsIndex) return childWithSameName.with(index);
             }
@@ -273,10 +280,18 @@ public class ImmutableChildReferences {
                             // The node was removed ...
                             return null;
                         }
+                        boolean renamed = false;
+                        if (changes.isRenamed(ref)) {
+                            // The node was renamed, so get the new name ...
+                            Name newName = changes.renamed(key);
+                            ref = ref.with(newName, 1);
+                            renamed = true;
+                        }
                         Iterator<ChildInsertions> insertions = changes.insertions(ref.getName());
-                        if (insertions != null) {
-                            // We're looking for a node that was not inserted but has the same name as those that are.
-                            // As painful as it is, the easiest and most-efficient way to get this is to iterate ...
+                        if (insertions != null || renamed) {
+                            // We're looking for a node that was not inserted but has the same name as those that are
+                            // (perhaps have renaming). As painful as it is, the easiest and most-efficient way to get
+                            // this is to iterate ...
                             Iterator<ChildReference> iter = iterator(context, ref.getName());
                             while (iter.hasNext()) {
                                 ChildReference child = iter.next();

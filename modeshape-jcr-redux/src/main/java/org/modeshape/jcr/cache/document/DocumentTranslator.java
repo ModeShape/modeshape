@@ -359,13 +359,13 @@ public class DocumentTranslator {
         }
     }
 
-    public void removeProperty( EditableDocument document,
-                                Name propertyName ) {
+    public Property removeProperty( EditableDocument document,
+                                    Name propertyName ) {
         // Get the properties container if it exists ...
         EditableDocument properties = document.getDocument(PROPERTIES);
         if (properties == null) {
             // Doesn't contain the property ...
-            return;
+            return null;
         }
 
         // Get the namespace container for the property name's namespace ...
@@ -373,17 +373,18 @@ public class DocumentTranslator {
         EditableDocument urlProps = properties.getDocument(namespaceUri);
         if (urlProps == null) {
             // Doesn't contain the property ...
-            return;
+            return null;
         }
 
         // Now remove the property ...
         String localName = propertyName.getLocalName();
-        urlProps.remove(localName);
+        Object fieldValue = urlProps.remove(localName);
 
         // Now remove the namespace if empty ...
         if (urlProps.isEmpty()) {
             properties.remove(namespaceUri);
         }
+        return fieldValue == null ? null : propertyFor(propertyName, fieldValue);
     }
 
     public void addPropertyValues( EditableDocument document,
@@ -598,10 +599,13 @@ public class DocumentTranslator {
         String lastDocKey = null;
         if (changedChildren != null && !changedChildren.isEmpty()) {
             Map<NodeKey, Insertions> insertionsByBeforeKey = changedChildren.getInsertionsByBeforeKey();
+
+            // Handle removals and renames ...
             Set<NodeKey> removals = changedChildren.getRemovals();
+            Map<NodeKey, Name> newNames = changedChildren.getNewNames();
             while (doc != null) {
                 // Change the existing children ...
-                long blockCount = insertChildren(doc, insertionsByBeforeKey, removals);
+                long blockCount = insertChildren(doc, insertionsByBeforeKey, removals, newNames);
                 newTotalSize += blockCount;
 
                 // Look at the 'childrenInfo' document for info about the next block of children ...
@@ -674,7 +678,8 @@ public class DocumentTranslator {
 
     protected long insertChildren( EditableDocument document,
                                    Map<NodeKey, Insertions> insertionsByBeforeKey,
-                                   Set<NodeKey> removals ) {
+                                   Set<NodeKey> removals,
+                                   Map<NodeKey, Name> newNames ) {
         List<?> children = document.getArray(CHILDREN);
         assert children != null;
         EditableArray newChildren = Schematic.newArray(children.size());
@@ -693,6 +698,12 @@ public class DocumentTranslator {
                 // The node is removed ...
             } else {
                 // The node remains ...
+                Name newName = newNames.get(childKey);
+                if (newName != null) {
+                    // But has been renamed ...
+                    ChildReference newRef = ref.with(newName, 1);
+                    value = fromChildReference(newRef);
+                }
                 newChildren.add(value);
             }
         }

@@ -63,12 +63,15 @@ public class ReadOnlySessionCache extends AbstractSessionCache {
     }
 
     @Override
-    public void save( CachedNode node ) {
+    public void save( SessionCache otherSession,
+                      PreSave preSaveOperation ) {
         // do nothing
     }
 
     @Override
-    public void save( SessionCache otherSession ) {
+    public void save( CachedNode node,
+                      SessionCache otherSession,
+                      PreSave preSaveOperation ) {
         // do nothing
     }
 
@@ -80,6 +83,11 @@ public class ReadOnlySessionCache extends AbstractSessionCache {
     @Override
     public void destroy( NodeKey key ) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isDestroyed( NodeKey key ) {
+        return false;
     }
 
     @Override

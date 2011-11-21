@@ -33,6 +33,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.modeshape.graph.property.Path;
 
+@Migrated
 public class AbstractJcrItemTest {
 
     private AbstractJcrItem item;

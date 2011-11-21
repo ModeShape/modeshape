@@ -65,6 +65,15 @@ class JcrLockManager implements LockManager {
         return lockTokens.containsKey(token);
     }
 
+    /**
+     * Unlocks all locks corresponding to the tokens held by the supplied session.
+     * 
+     * @throws RepositoryException if the session is not live
+     */
+    final void cleanLocks() throws RepositoryException {
+        lockManager.cleanLocks(session);
+    }
+
     @Override
     public void addLockToken( String lockToken ) throws LockException {
         CheckArg.isNotNull(lockToken, "lockToken");
@@ -146,16 +155,26 @@ class JcrLockManager implements LockManager {
         throw new LockException(JcrI18n.notLocked.text(node.getPath()));
     }
 
+    public Lock getLockIfExists( AbstractJcrNode node ) throws AccessDeniedException, RepositoryException {
+        ModeShapeLock lock = getLowestLockAlongPath(node);
+        return lock == null ? null : lock.lockFor(session);
+    }
+
     public ModeShapeLock getLowestLockAlongPath( final AbstractJcrNode node )
         throws PathNotFoundException, AccessDeniedException, RepositoryException {
         session.checkLive();
 
         SessionCache sessionCache = session.cache();
         NodeCache cache = sessionCache;
-        NodeKey key = node.key();
+        NodeKey nodeKey = node.key();
+        NodeKey key = nodeKey;
         while (key != null) {
             ModeShapeLock lock = lockManager.findLockFor(key);
-            if (lock != null) return lock;
+            if (lock != null && (lock.isDeep() || nodeKey.equals(lock.getLockedNodeKey()))) {
+                // There is a lock that applies to 'node', either because the lock is actually on 'node' or because
+                // an ancestor node is locked with a deep lock...
+                return lock;
+            }
             // Otherwise, get the parent, but use the cache directly ...
             CachedNode cachedNode = cache.getNode(key);
             if (cachedNode == null) {
@@ -177,6 +196,12 @@ class JcrLockManager implements LockManager {
         return lockManager.findLockFor(node.key()) != null;
     }
 
+    /**
+     * Determine if this lock manager holds a lock on the supplied node.
+     * 
+     * @param node the node; may not be null
+     * @return true if this lock maanger does hold a lock on the node, or false otherwise
+     */
     public boolean holdsLock( AbstractJcrNode node ) {
         return lockManager.findLockFor(node.key()) != null;
     }
@@ -192,23 +217,40 @@ class JcrLockManager implements LockManager {
         return lock(node, isDeep, isSessionScoped, timeoutHint, ownerInfo);
     }
 
+    /**
+     * Attempt to obtain a lock on the supplied node.
+     * 
+     * @param node the node; may not be null
+     * @param isDeep true if the lock should be a deep lock
+     * @param isSessionScoped true if the lock should be scoped to the session
+     * @param timeoutHint desired lock timeout in seconds (servers are free to ignore this value); specify {@link Long#MAX_VALUE}
+     *        for no timeout.
+     * @param ownerInfo a string containing owner information supplied by the client, and recorded on the lock; if null, then the
+     *        session's user ID will be used
+     * @return the lock; never null
+     * @throws AccessDeniedException if the caller does not have privilege to lock the node
+     * @throws InvalidItemStateException if the node has been modified and cannot be locked
+     * @throws LockException if the lock could not be obtained
+     * @throws RepositoryException if an error occurs updating the graph state
+     */
     public Lock lock( AbstractJcrNode node,
                       boolean isDeep,
                       boolean isSessionScoped,
                       long timeoutHint,
                       String ownerInfo )
-        throws LockException, PathNotFoundException, AccessDeniedException, InvalidItemStateException, RepositoryException {
+        throws LockException, AccessDeniedException, InvalidItemStateException, RepositoryException {
         if (!node.isLockable()) {
-            throw new LockException(JcrI18n.nodeNotLockable.text(node.getPath()));
+            throw new LockException(JcrI18n.nodeNotLockable.text(node.location()));
         }
 
         if (node.isModified()) {
-            throw new InvalidItemStateException(JcrI18n.changedNodeCannotBeLocked.text(node.getPath()));
+            throw new InvalidItemStateException(JcrI18n.changedNodeCannotBeLocked.text(node.location()));
         }
 
         // Try to obtain the lock ...
         ModeShapeLock lock = lockManager.lock(session, node.node(), isDeep, isSessionScoped, timeoutHint, ownerInfo);
-        lockTokens.put(lock.getLockToken(), null);
+        String token = lock.getLockToken();
+        lockTokens.put(token, token);
         return lock.lockFor(session);
     }
 

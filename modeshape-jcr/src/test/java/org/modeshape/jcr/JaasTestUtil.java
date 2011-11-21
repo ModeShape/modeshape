@@ -29,6 +29,7 @@ import org.picketbox.factories.SecurityFactory;
 /**
  * A simple utility for test cases to initialize the PicketBox JAAS implementation.
  */
+@Migrated
 public class JaasTestUtil {
 
     public static void initJaas( String picketBoxConfigurationFile ) {

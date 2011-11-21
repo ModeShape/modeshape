@@ -29,6 +29,7 @@ import org.modeshape.graph.property.basic.BasicName;
 /**
  * Namespace and names for ModeShape testing.
  */
+@Migrated
 public class TestLexicon {
 
     public static class Namespace {

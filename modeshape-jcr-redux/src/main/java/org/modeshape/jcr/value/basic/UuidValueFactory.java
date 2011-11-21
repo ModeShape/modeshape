@@ -39,7 +39,6 @@ import org.modeshape.jcr.value.DateTime;
 import org.modeshape.jcr.value.IoException;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
-import org.modeshape.jcr.value.Path.Segment;
 import org.modeshape.jcr.value.PropertyType;
 import org.modeshape.jcr.value.Reference;
 import org.modeshape.jcr.value.UuidFactory;
@@ -160,21 +159,6 @@ public class UuidValueFactory extends AbstractValueFactory<UUID> implements Uuid
 
     @Override
     public UUID create( Path value ) {
-        if (value.isIdentifier()) {
-            // Get the identifier segment ...
-            Segment segment = value.getLastSegment();
-            assert segment.isIdentifier();
-            try {
-                // The local part of the segment's name should be the identifier, though it may not be a UUID ...
-                String id = segment.getName().getLocalName();
-                return UUID.fromString(id);
-            } catch (IllegalArgumentException err) {
-                throw new ValueFormatException(value, PropertyType.UUID,
-                                               GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                  Path.class.getSimpleName(),
-                                                                                  value));
-            }
-        }
         throw new ValueFormatException(value, PropertyType.UUID, GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
                                                                                                     Path.class.getSimpleName(),
                                                                                                     value));
@@ -182,18 +166,6 @@ public class UuidValueFactory extends AbstractValueFactory<UUID> implements Uuid
 
     @Override
     public UUID create( Path.Segment value ) {
-        if (value.isIdentifier()) {
-            try {
-                // The local part of the segment's name should be the identifier, though it may not be a UUID ...
-                String id = value.getName().getLocalName();
-                return UUID.fromString(id);
-            } catch (IllegalArgumentException err) {
-                throw new ValueFormatException(value, PropertyType.UUID,
-                                               GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                  Path.Segment.class.getSimpleName(),
-                                                                                  value));
-            }
-        }
         throw new ValueFormatException(value, PropertyType.UUID,
                                        GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
                                                                           Path.Segment.class.getSimpleName(),

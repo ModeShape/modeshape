@@ -24,6 +24,7 @@
 package org.modeshape.jcr.cache.document;
 
 import org.modeshape.jcr.cache.NodeCache;
+import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.change.PrintingChangeSetListener;
 import org.modeshape.jcr.core.ExecutionContext;
@@ -66,4 +67,13 @@ public abstract class AbstractSessionCacheTest extends AbstractNodeCacheTest {
         super.print(onOrOff);
         listener.print = onOrOff;
     }
+
+    protected NodeKey newKey() {
+        return session1.createNodeKey();
+    }
+
+    protected NodeKey newKey( String identifier ) {
+        return session1.createNodeKeyWithIdentifier(identifier);
+    }
+
 }

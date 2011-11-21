@@ -58,7 +58,12 @@ public class AnonymousProvider implements AuthenticationProvider {
                                           String workspaceName,
                                           ExecutionContext repositoryContext,
                                           Map<String, Object> sessionAttributes ) {
-        if (credentials == null || credentials instanceof AnonymousCredentials) {
+        if (credentials == null) {
+            return repositoryContext.with(anonymousContext);
+        }
+        if (credentials instanceof AnonymousCredentials) {
+            AnonymousCredentials creds = (AnonymousCredentials)credentials;
+            sessionAttributes.putAll(creds.getAttributes());
             return repositoryContext.with(anonymousContext);
         }
         return null;

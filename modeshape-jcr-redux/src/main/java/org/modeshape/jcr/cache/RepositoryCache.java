@@ -208,13 +208,7 @@ public class RepositoryCache implements Observable {
             String workspaceKey = changeSet.getWorkspaceKey();
             if (workspaceKey != null) {
                 for (WorkspaceCache cache : workspaces()) {
-                    // Only need to notify the workspaces other than the changeSet's workspace (which was notified directly by
-                    // the session) ...
-                    if (!workspaceKey.equals(cache.getWorkspaceKey())) {
-                        cache.notify(changeSet);
-                        // Skip this, since it was already notified ...
-                        continue;
-                    }
+                    cache.notify(changeSet);
                 }
             } else {
                 // Look for changes to the workspaces ...
@@ -292,7 +286,7 @@ public class RepositoryCache implements Observable {
             translator.setProperty(rootDoc, context.getPropertyFactory().create(JcrLexicon.UUID, rootKey.toString()));
 
             database.putIfAbsent(rootKey.toString(), rootDoc, null);
-            cache = new WorkspaceCache(context, this.name, name, database, largeValueSizeInBytes.get(), rootKey, changeListener);
+            cache = new WorkspaceCache(context, getKey(), name, database, largeValueSizeInBytes.get(), rootKey, changeListener);
             WorkspaceCache existing = workspaceCachesByName.putIfAbsent(name, cache);
             if (existing != null) {
                 // Some other thread snuck in and created the cache for this workspace, so use it instead ...
@@ -352,7 +346,7 @@ public class RepositoryCache implements Observable {
             String userId = context.getSecurityContext().getUserName();
             Map<String, String> userData = context.getData();
             DateTime timestamp = context.getValueFactories().getDateFactory().create();
-            RecordingChanges changes = new RecordingChanges(context.getId(), this.getName());
+            RecordingChanges changes = new RecordingChanges(context.getId(), this.getKey());
             changes.workspaceAdded(name);
             changes.freeze(userId, userData, timestamp);
             this.changeListener.notify(changes);
@@ -393,7 +387,7 @@ public class RepositoryCache implements Observable {
             String userId = context.getSecurityContext().getUserName();
             Map<String, String> userData = context.getData();
             DateTime timestamp = context.getValueFactories().getDateFactory().create();
-            RecordingChanges changes = new RecordingChanges(context.getId(), this.getName());
+            RecordingChanges changes = new RecordingChanges(context.getId(), this.getKey());
             changes.workspaceRemoved(name);
             changes.freeze(userId, userData, timestamp);
             this.changeListener.notify(changes);

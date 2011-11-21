@@ -251,6 +251,22 @@ public interface ChildReferences extends Iterable<ChildReference> {
         boolean isRemoved( ChildReference ref );
 
         /**
+         * Determine whether the supplied child reference was renamed.
+         * 
+         * @param ref the reference; may not be null
+         * @return true if the child reference was renamed, or false otherwise
+         */
+        boolean isRenamed( ChildReference ref );
+
+        /**
+         * Determine whether any of the child references were renamed to the supplied name.
+         * 
+         * @param newName the new name; may not be null
+         * @return true if at least one child reference was renamed to the supplied name, or false otherwise
+         */
+        boolean isRenamed( Name newName );
+
+        /**
          * Return the new name for the child node with the supplied key.
          * 
          * @param key the child node's key; may not be null
@@ -375,6 +391,16 @@ public interface ChildReferences extends Iterable<ChildReference> {
 
         @Override
         public boolean isRemoved( ChildReference key ) {
+            return false;
+        }
+
+        @Override
+        public boolean isRenamed( ChildReference ref ) {
+            return false;
+        }
+
+        @Override
+        public boolean isRenamed( Name newName ) {
             return false;
         }
     }

@@ -44,6 +44,7 @@ import org.modeshape.jcr.nodetype.InvalidNodeTypeDefinitionException;
 import org.modeshape.jcr.nodetype.NodeTypeExistsException;
 import org.modeshape.jcr.nodetype.NodeTypeTemplate;
 
+@Migrated
 public class TypeRegistrationTest extends AbstractSessionTest {
 
     private static final String TEST_TYPE_NAME = "mode:testNode";

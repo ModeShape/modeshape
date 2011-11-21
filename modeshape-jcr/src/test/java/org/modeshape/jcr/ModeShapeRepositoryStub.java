@@ -23,6 +23,7 @@
  */
 package org.modeshape.jcr;
 
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.security.Principal;
 import java.util.Properties;
@@ -37,6 +38,7 @@ import org.modeshape.graph.property.Path;
 /**
  * Concrete implementation of {@link RepositoryStub} based on ModeShape-specific configuration.
  */
+@Migrated
 public class ModeShapeRepositoryStub extends RepositoryStub {
 
     public static final String MODE_SHAPE_SKIP_IMPORT = "javax.jcr.tck.modeSkipImport";
@@ -113,6 +115,11 @@ public class ModeShapeRepositoryStub extends RepositoryStub {
 
                 InputStream xmlStream = getClass().getResourceAsStream("/tck/repositoryForTckTests.xml");
                 graph.importXmlFrom(xmlStream).into(destinationPath);
+
+                Session session = repository.login();
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                session.exportDocumentView("/", baos, false, false);
+                System.out.println(new String(baos.toByteArray()));
 
                 graph.createWorkspace().named("otherWorkspace");
                 graph.useWorkspace("otherWorkspace");

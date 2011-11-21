@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:nt="http://www.jcp.org/jcr/nt/1.0" xmlns:modetest="http://www.modeshape.org/test/1.0"
+  xmlns:sv="http://www.jcp.org/jcr/sv/1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:mix="http://www.jcp.org/jcr/mix/1.0"
+  xmlns:modeint="http://www.modeshape.org/internal/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:mode="http://www.modeshape.org/1.0"
+  jcr:primaryType="mode:root" jcr:uuid="d4a973a3-80df-4faf-90fa-5b4d96499bf7">
+  <testroot jcr:primaryType="nt:unstructured" jcr:mixinTypes="mix:referenceable" jcr:uuid="f9ba1651-0200-47f3-b1b4-9d78dda2235b">
+    <workarea jcr:primaryType="nt:unstructured" jcr:mixinTypes="mix:referenceable" jcr:uuid="13687c30-c5db-4f95-b4c7-4cdb11c22d24">
+      <serializationNode jcr:primaryType="nt:unstructured"></serializationNode>
+      <node1 jcr:primaryType="nt:unstructured" prop1="&lt;foo&amp;foo&gt;">This is my &quot;XML&quot; text!</node1>
+      <node2_x0020_has_x0020_a_x0020_multi-word_x0020_name jcr:primaryType="nt:unstructured"
+        multi-valued-property="bar_x0020_baz_x0020_blah">This is my &quot;XML&quot; text!This is my &quot;other&quot; text!
+      </node2_x0020_has_x0020_a_x0020_multi-word_x0020_name>
+      <node3 jcr:primaryType="nt:unstructured"></node3>
+      <node4 jcr:primaryType="nt:unstructured" multi-line-property="Line_x0009_1_x000a_Line_x0020_2"></node4>
+      <node1 jcr:primaryType="nt:unstructured" prop1="&lt;foo&amp;foo&gt;">This is the text for node1[2]!</node1>
+      <node1 jcr:primaryType="nt:unstructured" prop1="prop1_x0020_value_x0020_for_x0020_node1[3]">This is the text for node1[3]!</node1>
+      <nodeForOrderBy jcr:primaryType="nt:unstructured" prop1="propValue3"></nodeForOrderBy>
+      <anotherNodeForOrderBy jcr:primaryType="nt:unstructured" prop1="propValue1">
+        <aNestedNodeForOrderBy jcr:primaryType="nt:unstructured" prop1="propValue2"></aNestedNodeForOrderBy>
+      </anotherNodeForOrderBy>
+    </workarea>
+    <saveTestArea jcr:primaryType="nt:unstructured" prop1="&lt;foo&amp;foo&gt;"></saveTestArea>
+    <someQueryableNodeA jcr:primaryType="modetest:queryable" selectableProp1="This_x0020_is_x0020_the_x0020_first_x0020_property"></someQueryableNodeA>
+    <someQueryableNodeB jcr:primaryType="modetest:queryable" selectableProp1="This_x0020_is_x0020_the_x0020_second_x0020_property"></someQueryableNodeB>
+    <someQueryableNodeC jcr:primaryType="modetest:queryable" selectableProp1="This_x0020_is_x0020_the_x0020_third_x0020_property"></someQueryableNodeC>
+    <someQueryableNodeD jcr:primaryType="modetest:queryable" selectableProp1="This_x0020_is_x0020_the_x0020_fourth_x0020_property">
+      <someNestedQueryableNodeA jcr:primaryType="modetest:queryable"
+        selectableProp1="This_x0020_is_x0020_the_x0020_first_x0020_nested_x0020_property"></someNestedQueryableNodeA>
+      <someNestedQueryableNodeB jcr:primaryType="modetest:queryable"
+        selectableProp1="This_x0020_is_x0020_the_x0020_second_x0020_nested_x0020_property"></someNestedQueryableNodeB>
+      <someNestedQueryableNodeC jcr:primaryType="modetest:queryable"
+        selectableProp1="This_x0020_is_x0020_the_x0020_third_x0020_nested_x0020_property"></someNestedQueryableNodeC>
+      <someNestedQueryableNodeD jcr:primaryType="modetest:queryable"
+        selectableProp1="This_x0020_is_x0020_the_x0020_fourth_x0020_nested_x0020_property">
+        <someDeepNestedQueryableNodeA jcr:primaryType="modetest:queryable"
+          selectableProp1="This_x0020_is_x0020_the_x0020_first_x0020_deep_x0020_nested_x0020_property"></someDeepNestedQueryableNodeA>
+        <someDeepNestedQueryableNodeB jcr:primaryType="modetest:queryable"
+          selectableProp1="This_x0020_is_x0020_the_x0020_second_x0020_deep_x0020_nested_x0020_property"></someDeepNestedQueryableNodeB>
+        <someDeepNestedQueryableNodeC jcr:primaryType="modetest:queryable"
+          selectableProp1="This_x0020_is_x0020_the_x0020_third_x0020_deep_x0020_nested_x0020_property"></someDeepNestedQueryableNodeC>
+        <someDeepNestedQueryableNodeD jcr:primaryType="modetest:queryable"
+          selectableProp1="This_x0020_is_x0020_the_x0020_fourth_x0020_deep_x0020_nested_x0020_property"></someDeepNestedQueryableNodeD>
+      </someNestedQueryableNodeD>
+    </someQueryableNodeD>
+    <sqlJoinTest jcr:primaryType="nt:unstructured">
+      <someQueryableNodeA jcr:primaryType="modetest:queryable" selectableProp1="This_x0020_is_x0020_the_x0020_first_x0020_property"></someQueryableNodeA>
+      <someQueryableNodeB jcr:primaryType="modetest:queryable" selectableProp1="This_x0020_is_x0020_the_x0020_second_x0020_property"></someQueryableNodeB>
+      <someQueryableNodeC jcr:primaryType="modetest:queryable" selectableProp1="This_x0020_is_x0020_the_x0020_third_x0020_property"></someQueryableNodeC>
+      <someQueryableNodeD jcr:primaryType="modetest:queryable" selectableProp1="This_x0020_is_x0020_the_x0020_fourth_x0020_property">
+        <someNestedQueryableNodeA jcr:primaryType="modetest:queryable"
+          selectableProp1="This_x0020_is_x0020_the_x0020_first_x0020_nested_x0020_property"></someNestedQueryableNodeA>
+        <someNestedQueryableNodeB jcr:primaryType="modetest:queryable"
+          selectableProp1="This_x0020_is_x0020_the_x0020_second_x0020_nested_x0020_property"></someNestedQueryableNodeB>
+        <someNestedQueryableNodeC jcr:primaryType="modetest:queryable"
+          selectableProp1="This_x0020_is_x0020_the_x0020_third_x0020_nested_x0020_property"></someNestedQueryableNodeC>
+        <someNestedQueryableNodeD jcr:primaryType="modetest:queryable"
+          selectableProp1="This_x0020_is_x0020_the_x0020_fourth_x0020_nested_x0020_property">
+          <someDeepNestedQueryableNodeA jcr:primaryType="modetest:queryable"
+            selectableProp1="This_x0020_is_x0020_the_x0020_first_x0020_deep_x0020_nested_x0020_property"></someDeepNestedQueryableNodeA>
+          <someDeepNestedQueryableNodeB jcr:primaryType="modetest:queryable"
+            selectableProp1="This_x0020_is_x0020_the_x0020_second_x0020_deep_x0020_nested_x0020_property"></someDeepNestedQueryableNodeB>
+          <someDeepNestedQueryableNodeC jcr:primaryType="modetest:queryable"
+            selectableProp1="This_x0020_is_x0020_the_x0020_third_x0020_deep_x0020_nested_x0020_property"></someDeepNestedQueryableNodeC>
+          <someDeepNestedQueryableNodeD jcr:primaryType="modetest:queryable"
+            selectableProp1="This_x0020_is_x0020_the_x0020_fourth_x0020_deep_x0020_nested_x0020_property"></someDeepNestedQueryableNodeD>
+        </someNestedQueryableNodeD>
+      </someQueryableNodeD>
+    </sqlJoinTest>
+    <sqlOrderByTest jcr:primaryType="nt:unstructured">
+      <someQueryableNodeA jcr:primaryType="modetest:queryable" selectableProp1="This_x0020_is_x0020_the_x0020_first_x0020_property"></someQueryableNodeA>
+      <someQueryableNodeB jcr:primaryType="modetest:queryable" selectableProp1="This_x0020_is_x0020_the_x0020_second_x0020_property"></someQueryableNodeB>
+      <someQueryableNodeC jcr:primaryType="modetest:queryable" selectableProp1="This_x0020_is_x0020_the_x0020_third_x0020_property"></someQueryableNodeC>
+      <someQueryableNodeD jcr:primaryType="modetest:queryable" selectableProp1="This_x0020_is_x0020_the_x0020_fourth_x0020_property">
+        <someNestedQueryableNodeA jcr:primaryType="modetest:queryable"
+          selectableProp1="This_x0020_is_x0020_the_x0020_first_x0020_nested_x0020_property"></someNestedQueryableNodeA>
+        <someNestedQueryableNodeB jcr:primaryType="modetest:queryable"
+          selectableProp1="This_x0020_is_x0020_the_x0020_second_x0020_nested_x0020_property"></someNestedQueryableNodeB>
+        <someNestedQueryableNodeC jcr:primaryType="modetest:queryable"
+          selectableProp1="This_x0020_is_x0020_the_x0020_third_x0020_nested_x0020_property"></someNestedQueryableNodeC>
+        <someNestedQueryableNodeD jcr:primaryType="modetest:queryable"
+          selectableProp1="This_x0020_is_x0020_the_x0020_fourth_x0020_nested_x0020_property">
+          <someDeepNestedQueryableNodeA jcr:primaryType="modetest:queryable"
+            selectableProp1="This_x0020_is_x0020_the_x0020_first_x0020_deep_x0020_nested_x0020_property"></someDeepNestedQueryableNodeA>
+          <someDeepNestedQueryableNodeB jcr:primaryType="modetest:queryable"
+            selectableProp1="This_x0020_is_x0020_the_x0020_second_x0020_deep_x0020_nested_x0020_property"></someDeepNestedQueryableNodeB>
+          <someDeepNestedQueryableNodeC jcr:primaryType="modetest:queryable"
+            selectableProp1="This_x0020_is_x0020_the_x0020_third_x0020_deep_x0020_nested_x0020_property"></someDeepNestedQueryableNodeC>
+          <someDeepNestedQueryableNodeD jcr:primaryType="modetest:queryable"
+            selectableProp1="This_x0020_is_x0020_the_x0020_fourth_x0020_deep_x0020_nested_x0020_property"></someDeepNestedQueryableNodeD>
+        </someNestedQueryableNodeD>
+      </someQueryableNodeD>
+    </sqlOrderByTest>
+    <xpath jcr:primaryType="nt:unstructured">
+      <someQueryableNodeA jcr:primaryType="modetest:queryable" selectableProp1="This_x0020_is_x0020_the_x0020_first_x0020_property"></someQueryableNodeA>
+      <someQueryableNodeB jcr:primaryType="modetest:queryable" selectableProp1="This_x0020_is_x0020_the_x0020_second_x0020_property"></someQueryableNodeB>
+      <someQueryableNodeC jcr:primaryType="modetest:queryable" selectableProp1="This_x0020_is_x0020_the_x0020_third_x0020_property"></someQueryableNodeC>
+      <someQueryableNodeD jcr:primaryType="modetest:queryable" selectableProp1="This_x0020_is_x0020_the_x0020_fourth_x0020_property">
+        <someNestedQueryableNodeA jcr:primaryType="modetest:queryable"
+          selectableProp1="This_x0020_is_x0020_the_x0020_first_x0020_nested_x0020_property"></someNestedQueryableNodeA>
+        <someNestedQueryableNodeB jcr:primaryType="modetest:queryable"
+          selectableProp1="This_x0020_is_x0020_the_x0020_second_x0020_nested_x0020_property"></someNestedQueryableNodeB>
+        <someNestedQueryableNodeC jcr:primaryType="modetest:queryable"
+          selectableProp1="This_x0020_is_x0020_the_x0020_third_x0020_nested_x0020_property"></someNestedQueryableNodeC>
+        <someNestedQueryableNodeD jcr:primaryType="modetest:queryable"
+          selectableProp1="This_x0020_is_x0020_the_x0020_fourth_x0020_nested_x0020_property">
+          <someDeepNestedQueryableNodeA jcr:primaryType="modetest:queryable"
+            selectableProp1="This_x0020_is_x0020_the_x0020_first_x0020_deep_x0020_nested_x0020_property"></someDeepNestedQueryableNodeA>
+          <someDeepNestedQueryableNodeB jcr:primaryType="modetest:queryable"
+            selectableProp1="This_x0020_is_x0020_the_x0020_second_x0020_deep_x0020_nested_x0020_property"></someDeepNestedQueryableNodeB>
+          <someDeepNestedQueryableNodeC jcr:primaryType="modetest:queryable"
+            selectableProp1="This_x0020_is_x0020_the_x0020_third_x0020_deep_x0020_nested_x0020_property"></someDeepNestedQueryableNodeC>
+          <someDeepNestedQueryableNodeD jcr:primaryType="modetest:queryable"
+            selectableProp1="This_x0020_is_x0020_the_x0020_fourth_x0020_deep_x0020_nested_x0020_property"></someDeepNestedQueryableNodeD>
+        </someNestedQueryableNodeD>
+      </someQueryableNodeD>
+    </xpath>
+    <sqlPathTest jcr:primaryType="nt:unstructured">
+      <someQueryableNodeA jcr:primaryType="modetest:queryable" selectableProp1="This_x0020_is_x0020_the_x0020_first_x0020_property"></someQueryableNodeA>
+      <someQueryableNodeB jcr:primaryType="modetest:queryable" selectableProp1="This_x0020_is_x0020_the_x0020_second_x0020_property"></someQueryableNodeB>
+      <someQueryableNodeC jcr:primaryType="modetest:queryable" selectableProp1="This_x0020_is_x0020_the_x0020_third_x0020_property"></someQueryableNodeC>
+      <someQueryableNodeD jcr:primaryType="modetest:queryable" selectableProp1="This_x0020_is_x0020_the_x0020_fourth_x0020_property">
+        <someNestedQueryableNodeA jcr:primaryType="modetest:queryable"
+          selectableProp1="This_x0020_is_x0020_the_x0020_first_x0020_nested_x0020_property"></someNestedQueryableNodeA>
+        <someNestedQueryableNodeB jcr:primaryType="modetest:queryable"
+          selectableProp1="This_x0020_is_x0020_the_x0020_second_x0020_nested_x0020_property"></someNestedQueryableNodeB>
+        <someNestedQueryableNodeC jcr:primaryType="modetest:queryable"
+          selectableProp1="This_x0020_is_x0020_the_x0020_third_x0020_nested_x0020_property"></someNestedQueryableNodeC>
+        <someNestedQueryableNodeD jcr:primaryType="modetest:queryable"
+          selectableProp1="This_x0020_is_x0020_the_x0020_fourth_x0020_nested_x0020_property">
+          <someDeepNestedQueryableNodeA jcr:primaryType="modetest:queryable"
+            selectableProp1="This_x0020_is_x0020_the_x0020_first_x0020_deep_x0020_nested_x0020_property"></someDeepNestedQueryableNodeA>
+          <someDeepNestedQueryableNodeB jcr:primaryType="modetest:queryable"
+            selectableProp1="This_x0020_is_x0020_the_x0020_second_x0020_deep_x0020_nested_x0020_property"></someDeepNestedQueryableNodeB>
+          <someDeepNestedQueryableNodeC jcr:primaryType="modetest:queryable"
+            selectableProp1="This_x0020_is_x0020_the_x0020_third_x0020_deep_x0020_nested_x0020_property"></someDeepNestedQueryableNodeC>
+          <someDeepNestedQueryableNodeD jcr:primaryType="modetest:queryable"
+            selectableProp1="This_x0020_is_x0020_the_x0020_fourth_x0020_deep_x0020_nested_x0020_property"></someDeepNestedQueryableNodeD>
+        </someNestedQueryableNodeD>
+      </someQueryableNodeD>
+    </sqlPathTest>
+  </testroot>
+</jcr:root>

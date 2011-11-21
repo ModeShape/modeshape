@@ -26,10 +26,10 @@ package org.modeshape.jcr;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.jcr.PropertyType;
@@ -110,6 +110,10 @@ public class SystemContent {
 
     private final ExecutionContext context() {
         return system.getContext();
+    }
+
+    public final SessionCache cache() {
+        return system;
     }
 
     public NodeKey systemKey() {
@@ -379,10 +383,10 @@ public class SystemContent {
         for (String value : propertyDef.getAvailableQueryOperators()) {
             if (value != null) symbols.add(value);
         }
-        properties.add(propertyFactory.create(JcrLexicon.QUERY_OPERATORS, symbols));
+        properties.add(propertyFactory.create(JcrLexicon.AVAILABLE_QUERY_OPERATORS, symbols));
 
         Value[] defaultValues = propertyDef.getDefaultValues();
-        if (defaultValues.length > 0) {
+        if (defaultValues != null && defaultValues.length > 0) {
             String[] defaultsAsString = new String[defaultValues.length];
 
             for (int i = 0; i < defaultValues.length; i++) {
@@ -393,12 +397,12 @@ public class SystemContent {
                     throw new IllegalStateException(re);
                 }
             }
-            properties.add(propertyFactory.create(JcrLexicon.DEFAULT_VALUES, (Object[])defaultsAsString));
+            properties.add(propertyFactory.create(JcrLexicon.DEFAULT_VALUES, defaultsAsString));
         }
 
         String[] valueConstraints = propertyDef.getValueConstraints();
         if (valueConstraints.length > 0) {
-            properties.add(propertyFactory.create(JcrLexicon.VALUE_CONSTRAINTS, (Object[])valueConstraints));
+            properties.add(propertyFactory.create(JcrLexicon.VALUE_CONSTRAINTS, valueConstraints));
         }
 
         // Now either update the existing node or create a new node ..
@@ -450,7 +454,7 @@ public class SystemContent {
             props.add(propertyFactory.create(JcrLexicon.DEFAULT_PRIMARY_TYPE, childNodeDef.getDefaultPrimaryType().getName()));
         }
 
-        props.add(propertyFactory.create(JcrLexicon.REQUIRED_PRIMARY_TYPES, (Object[])childNodeDef.requiredPrimaryTypeNames()));
+        props.add(propertyFactory.create(JcrLexicon.REQUIRED_PRIMARY_TYPES, childNodeDef.requiredPrimaryTypeNames()));
         props.add(propertyFactory.create(JcrLexicon.SAME_NAME_SIBLINGS, childNodeDef.allowsSameNameSiblings()));
         props.add(propertyFactory.create(JcrLexicon.ON_PARENT_VERSION,
                                          OnParentVersionAction.nameFromValue(childNodeDef.getOnParentVersion())));
@@ -544,7 +548,7 @@ public class SystemContent {
         defn.setOnParentVersion(OnParentVersionAction.valueFromName(strings.create(first(propDefn, JcrLexicon.ON_PARENT_VERSION))));
         defn.setRequiredType(propertyType(first(propDefn, JcrLexicon.REQUIRED_TYPE)));
 
-        Property queryOps = propDefn.getProperty(JcrLexicon.QUERY_OPERATORS, system);
+        Property queryOps = propDefn.getProperty(JcrLexicon.AVAILABLE_QUERY_OPERATORS, system);
         if (queryOps != null && !queryOps.isEmpty()) {
             String[] queryOperators = new String[queryOps.size()];
             int i = 0;
@@ -639,7 +643,7 @@ public class SystemContent {
         for (ChildReference ref : namespaces.getChildReferences(system)) {
             CachedNode namespace = system.getNode(ref);
             String prefix = prefixFor(ref.getSegment());
-            String uri = strings.create(first(namespace, ModeShapeLexicon.NAMESPACE));
+            String uri = strings.create(first(namespace, ModeShapeLexicon.URI));
             results.add(new BasicNamespace(prefix, uri));
         }
         return results;
@@ -694,7 +698,7 @@ public class SystemContent {
             if (ref != null) {
                 // There's an existing node with the same prefix/name ...
                 CachedNode existingNode = system.getNode(ref);
-                String existingUri = strings.create(existingNode.getProperty(ModeShapeLexicon.NAMESPACE, system).getFirstValue());
+                String existingUri = strings.create(existingNode.getProperty(ModeShapeLexicon.URI, system).getFirstValue());
                 if (newUri.equals(existingUri)) {
                     // The URI also matches, so nothing to do ...
                     continue;
@@ -798,7 +802,7 @@ public class SystemContent {
         // Create a new namespace node that uses this URI ...
         MutableCachedNode mutableNamespaces = mutableNamespacesNode();
         List<Property> props = new ArrayList<Property>(2);
-        props.add(propertyFactory.create(ModeShapeLexicon.NAMESPACE, namespaceUri));
+        props.add(propertyFactory.create(ModeShapeLexicon.URI, namespaceUri));
         props.add(propertyFactory.create(ModeShapeLexicon.GENERATED, booleans.create(true)));
         MutableCachedNode newNsNode = mutableNamespaces.createChild(system, key, GENERATED_NAMESPACE_NODE_NAME, props);
         return prefixFor(newNsNode.getSegment(system));
@@ -952,6 +956,10 @@ public class SystemContent {
         return systemKey().withId(versionableNodeKey.getIdentifier());
     }
 
+    public boolean hasVersionHistory( NodeKey versionableNodeKey ) {
+        return cache().getNode(versionHistoryNodeKeyFor(versionableNodeKey)) != null;
+    }
+
     /**
      * Create and initialize the version history structure for a versionable node with the supplied UUID. This method assumes that
      * the version history node does not exist.
@@ -1030,7 +1038,7 @@ public class SystemContent {
         // Now create the version history node itself ...
         List<Property> historyProps = new ArrayList<Property>();
         historyProps.add(propertyFactory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION_HISTORY));
-        historyProps.add(propertyFactory.create(JcrLexicon.VERSIONABLE_UUID, versionableNodeKey.toString()));
+        historyProps.add(propertyFactory.create(JcrLexicon.VERSIONABLE_UUID, versionableNodeKey.getIdentifier()));
         historyProps.add(propertyFactory.create(JcrLexicon.UUID, versionHistoryKey.toString()));
         if (originalVersionKey != null) {
             historyProps.add(propertyFactory.create(JcrLexicon.COPIED_FROM, originalVersionKey.toString()));
@@ -1049,12 +1057,12 @@ public class SystemContent {
         rootProps.add(propertyFactory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION));
         rootProps.add(propertyFactory.create(JcrLexicon.CREATED, now));
         rootProps.add(propertyFactory.create(JcrLexicon.UUID, rootVersionKey.toString()));
-        MutableCachedNode rootVersion = historyParent.createChild(system, rootVersionKey, JcrLexicon.ROOT_VERSION, rootProps);
+        MutableCachedNode rootVersion = history.createChild(system, rootVersionKey, JcrLexicon.ROOT_VERSION, rootProps);
 
         // And create the 'nt:rootVersion/nt:frozenNode' child node ...
         List<Property> frozenProps = new ArrayList<Property>();
         frozenProps.add(propertyFactory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FROZEN_NODE));
-        frozenProps.add(propertyFactory.create(JcrLexicon.FROZEN_UUID, versionableNodeKey.toString()));
+        frozenProps.add(propertyFactory.create(JcrLexicon.FROZEN_UUID, versionableNodeKey.getIdentifier()));
         frozenProps.add(propertyFactory.create(JcrLexicon.FROZEN_PRIMARY_TYPE, primaryTypeName));
         if (mixinTypeNames != null && !mixinTypeNames.isEmpty()) {
             frozenProps.add(propertyFactory.create(JcrLexicon.FROZEN_MIXIN_TYPES, mixinTypeNames));
@@ -1071,20 +1079,30 @@ public class SystemContent {
      * <p>
      * Note that this method will initialize the version history for the node if the version history does not already exist.
      * </p>
+     * <p>
+     * The names of the different versions has changed since 2.x, and now follows the same convention and algorithm as used in the
+     * reference implementation. See {@link #nextNameForVersionNode(Property, ChildReferences)} for details.
+     * </p>
      * 
      * @param versionableNode the versionable node for which a new version is to be created in the node's version history; may not
      *        be null
      * @param cacheForVersionableNode the cache used to access the versionable node and any descendants; may not be null
      * @param versionHistoryPath the path of the version history node; may not be null
      * @param originalVersionKey the key of the original node from which the new versionable node was copied; may be null
+     * @param versionableProperties the versionable node's properties that should be record in the version history (on the frozen
+     *        node); may be null or empty
      * @param now the current date time; may not be null
+     * @param frozenNodeOutput the reference that should be set upon successful completion to the frozen node created under the
+     *        new version; may not be null
      * @return the version node in the version history; never null
      */
     public MutableCachedNode recordNewVersion( CachedNode versionableNode,
                                                SessionCache cacheForVersionableNode,
                                                Path versionHistoryPath,
                                                NodeKey originalVersionKey,
-                                               DateTime now ) {
+                                               Collection<Property> versionableProperties,
+                                               DateTime now,
+                                               AtomicReference<MutableCachedNode> frozenNodeOutput ) {
         assert versionHistoryPath != null;
         assert versionHistoryPath.size() == 6;
 
@@ -1122,29 +1140,20 @@ public class SystemContent {
         List<Property> props = new ArrayList<Property>();
         props.add(propertyFactory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION));
         props.add(propertyFactory.create(JcrLexicon.CREATED, now));
-        props.add(propertyFactory.create(JcrLexicon.UUID, versionKey.toString()));
+        props.add(propertyFactory.create(JcrLexicon.UUID, versionKey.getIdentifier()));
         MutableCachedNode versionNode = historyNode.createChild(system, versionKey, versionName, props);
 
         // Create a 'nt:frozenNode' node under the 'nt:version' node ...
         props = new ArrayList<Property>();
         props.add(propertyFactory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FROZEN_NODE));
-        props.add(propertyFactory.create(JcrLexicon.FROZEN_UUID, versionableNodeKey.toString()));
+        props.add(propertyFactory.create(JcrLexicon.FROZEN_UUID, versionableNodeKey.getIdentifier()));
         props.add(propertyFactory.create(JcrLexicon.FROZEN_PRIMARY_TYPE, primaryTypeName));
         props.add(propertyFactory.create(JcrLexicon.FROZEN_MIXIN_TYPES, mixinTypeNames));
-        Iterator<Property> propIter = versionableNode.getProperties(cacheForVersionableNode);
-        while (propIter.hasNext()) {
-            Property prop = propIter.next();
-            // We want to skip the actual primary type, mixin types, and uuid since those are handled above ...
-            Name name = prop.getName();
-            if (JcrLexicon.PRIMARY_TYPE.equals(name)) continue;
-            if (JcrLexicon.MIXIN_TYPES.equals(name)) continue;
-            if (JcrLexicon.UUID.equals(name)) continue;
-            // Otherwise, add in the property ...
-            props.add(prop);
-        }
+        if (versionableProperties != null) props.addAll(versionableProperties);
         NodeKey frozenNodeKey = systemKey().withRandomId();
         MutableCachedNode frozenNode = versionNode.createChild(system, frozenNodeKey, JcrLexicon.FROZEN_NODE, props);
         assert frozenNode != null;
+        frozenNodeOutput.set(frozenNode);
 
         // Now update the predecessor nodes to have the new version node be included as one of their successors ...
         Property successors = null;
@@ -1179,6 +1188,47 @@ public class SystemContent {
         return versionNode;
     }
 
+    /**
+     * Compute the name for the next version node in the given history. Note that the naming convention has changed since 2.x, and
+     * now follows the same convention and algorithm as used in the reference implementation. See
+     * org.apache.jackrabbit.core.version.InternalVersionManagerBase.calculateCheckinVersionName(...) for the original.
+     * <p>
+     * The basic rules are as follows:
+     * <ul>
+     * <li>first the predecessor version with the shortes name is searched.
+     * <li>if that predecessor version is the root version, the new version gets the name "{number of successors}+1" + ".0"
+     * <li>if that predecessor version has no successor, the last digit of it's version number is incremented.
+     * <li>if that predecessor version has successors but the incremented name does not exist, that name is used.
+     * <li>otherwise a ".0" is added to the name until a non conflicting name is found.
+     * <ul>
+     * Example Graph:
+     * 
+     * <pre>
+     * jcr:rootVersion
+     *  |     |
+     * 1.0   2.0
+     *  |
+     * 1.1
+     *  |
+     * 1.2 ---\  ------\
+     *  |      \        \
+     * 1.3   1.2.0   1.2.0.0
+     *  |      |
+     * 1.4   1.2.1 ----\
+     *  |      |        \
+     * 1.5   1.2.2   1.2.1.0
+     *  |      |        |
+     * 1.6     |     1.2.1.1
+     *  |------/
+     * 1.7
+     * </pre>
+     * 
+     * </p>
+     * 
+     * @param predecessors the 'jcr:predecessors' property; may not be null
+     * @param historyChildren the child references under the version history for the node
+     * @return the next name
+     */
     protected Name nextNameForVersionNode( Property predecessors,
                                            ChildReferences historyChildren ) {
         String proposedName = null;
@@ -1197,6 +1247,9 @@ public class SystemContent {
         }
         if (proposedName == null) {
             proposedName = "1.0";
+            Name versionName = names.create(proposedName);
+            if (historyChildren.getChild(versionName) == null) return versionName;
+            // Otherwise use the root version ...
             versionNode = system.getNode(historyChildren.getChild(JcrLexicon.ROOT_VERSION));
         }
         assert versionNode != null;
@@ -1204,7 +1257,8 @@ public class SystemContent {
         // Now make sure the name is not used ...
         int index = proposedName.lastIndexOf('.');
         if (index > 0) {
-            Name versionName = names.create(proposedName.substring(0, index + 1)); // includes the trailing '.'
+            proposedName = proposedName.substring(0, index + 1) + (Integer.parseInt(proposedName.substring(index + 1)) + 1);
+            Name versionName = names.create(proposedName); // excludes the trailing '.'
             while (historyChildren.getChild(versionName) != null) {
                 proposedName = proposedName + ".0";
                 versionName = names.create(proposedName);

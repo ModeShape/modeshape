@@ -57,12 +57,14 @@ import org.modeshape.jcr.cache.CachedNode.ReferenceType;
 import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.ChildReferences;
 import org.modeshape.jcr.cache.LockFailureException;
+import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.NodeNotFoundException;
 import org.modeshape.jcr.cache.ReferentialIntegrityException;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.SessionCacheMonitor;
+import org.modeshape.jcr.cache.WrappedException;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.RecordingChanges;
 import org.modeshape.jcr.cache.document.SessionNode.ChangedAdditionalParents;
@@ -207,6 +209,10 @@ public class WritableSessionCache extends AbstractSessionCache {
      */
     @Override
     public void save() {
+        save((PreSave)null);
+    }
+
+    protected void save( PreSave preSaveOperation ) {
         if (!this.hasChanges()) return;
 
         Logger logger = Logger.getLogger(getClass());
@@ -218,6 +224,15 @@ public class WritableSessionCache extends AbstractSessionCache {
         Lock lock = this.lock.writeLock();
         try {
             lock.lock();
+
+            // Before we start the transaction, apply the pre-save operations to the new and changed nodes ...
+            if (preSaveOperation != null) {
+                SaveContext saveContext = new BasicSaveContext(context());
+                for (MutableCachedNode node : this.changedNodes.values()) {
+                    if (node == REMOVED) continue;
+                    preSaveOperation.process(node, saveContext);
+                }
+            }
 
             try {
                 // Try to begin a transaction, if there is a transaction manager ...
@@ -265,7 +280,8 @@ public class WritableSessionCache extends AbstractSessionCache {
             // The changes have been made, so create a new map (we're using the keys from the current map) ...
             this.changedNodes = new HashMap<NodeKey, SessionNode>();
             this.changedNodesInOrder.clear();
-
+        } catch (Exception e) {
+            throw new WrappedException(e);
         } finally {
             lock.unlock();
         }
@@ -274,7 +290,7 @@ public class WritableSessionCache extends AbstractSessionCache {
             logger.debug("Completing SessionCache.save()");
         }
 
-        if (events != null) {
+        if (events != null && events.size() != 0) {
             // Then there were changes made, so first record metrics for the changes ...
             recordMetrics(events);
 
@@ -284,114 +300,8 @@ public class WritableSessionCache extends AbstractSessionCache {
     }
 
     @Override
-    public void save( CachedNode node ) {
-        if (!this.hasChanges()) return;
-
-        Path topPath = node.getPath(this);
-
-        Logger logger = Logger.getLogger(getClass());
-        if (logger.isDebugEnabled()) {
-            String pathStr = topPath.getString(context().getNamespaceRegistry());
-            logger.debug("Beginning SessionCache.save(Path) with subset of changes below '{0}': \n{1}", pathStr, this);
-        }
-
-        ChangeSet events = null;
-        Lock lock = this.lock.writeLock();
-        try {
-            lock.lock();
-
-            // Figure out which changed nodes are at or below the specified path ...
-            List<NodeKey> savedNodesInOrder = new LinkedList<NodeKey>();
-            for (NodeKey key : this.changedNodesInOrder) {
-                Path path = getNode(key).getPath(this);
-                if (topPath.isAtOrAbove(path)) savedNodesInOrder.add(key);
-            }
-
-            try {
-                // Try to begin a transaction, if there is a transaction manager ...
-                boolean closeTxn = false;
-                if (tm != null) {
-                    // Start a transaction ...
-                    tm.begin();
-                    closeTxn = true;
-                }
-
-                try {
-                    // Now persist the changes ...
-                    events = persistChanges(savedNodesInOrder);
-                } catch (RuntimeException e) {
-                    // Some error occurred (likely within our code) ...
-                    if (tm != null) tm.rollback();
-                    throw e;
-                }
-
-                if (closeTxn) {
-                    assert tm != null;
-                    // Commit the transaction ...
-                    tm.commit();
-                }
-
-            } catch (NotSupportedException err) {
-                // No nested transactions are supported ...
-            } catch (SecurityException err) {
-                // No privilege to commit ...
-                throw new SystemFailureException(err);
-            } catch (IllegalStateException err) {
-                // Not associated with a txn??
-                throw new SystemFailureException(err);
-            } catch (RollbackException err) {
-                // Couldn't be committed, but the txn is already rolled back ...
-            } catch (HeuristicMixedException err) {
-            } catch (HeuristicRollbackException err) {
-                // Rollback has occurred ...
-                return;
-            } catch (SystemException err) {
-                // System failed unexpectedly ...
-                throw new SystemFailureException(err);
-            }
-
-            // The changes have been made, so create a new map (we're using the keys from the current map) ...
-            for (NodeKey savedNode : savedNodesInOrder) {
-                this.changedNodes.remove(savedNode);
-                this.changedNodesInOrder.remove(savedNode);
-            }
-
-        } finally {
-            lock.unlock();
-        }
-
-        if (logger.isDebugEnabled()) {
-            logger.debug("Completing SessionCache.save()");
-        }
-
-        if (events != null) {
-            // Then there were changes made, so first record metrics for the changes ...
-            recordMetrics(events);
-
-            // and now notify the workspace (outside of the lock, but still before the save returns) ...
-            workspaceCache.changed(events);
-        }
-    }
-
-    /**
-     * This method saves the changes made by both sessions within a single transaction. <b>Note that this must be used with
-     * caution, as this method attempts to get write locks on both sessions, meaning they <i>cannot<i> be concurrently used
-     * elsewhere (otherwise deadlocks might occur).</b>
-     * 
-     * @param other the other session
-     * @throws LockFailureException if a requested lock could not be made
-     */
-    @Override
-    public void save( SessionCache other ) {
-        if (!other.hasChanges() || !(other instanceof WritableSessionCache)) {
-            save();
-            return;
-        }
-        if (!this.hasChanges()) {
-            other.save();
-            return;
-        }
-
+    public void save( SessionCache other,
+                      PreSave preSaveOperation ) {
         // Try getting locks on both sessions ...
         WritableSessionCache that = (WritableSessionCache)other;
         Lock thisLock = this.lock.writeLock();
@@ -404,6 +314,15 @@ public class WritableSessionCache extends AbstractSessionCache {
             thatLock.lock();
 
             try {
+                // Before we start the transaction, apply the pre-save operations to the new and changed nodes ...
+                if (preSaveOperation != null) {
+                    SaveContext saveContext = new BasicSaveContext(context());
+                    for (MutableCachedNode node : this.changedNodes.values()) {
+                        if (node == REMOVED) continue;
+                        preSaveOperation.process(node, saveContext);
+                    }
+                }
+
                 // Try to begin a transaction, if there is a transaction manager ...
                 boolean closeTxn = false;
                 if (tm != null) {
@@ -450,22 +369,159 @@ public class WritableSessionCache extends AbstractSessionCache {
             // The changes have been made, so create a new map (we're using the keys from the current map) ...
             this.changedNodes = new HashMap<NodeKey, SessionNode>();
             this.changedNodesInOrder.clear();
+
             // And in the referenced session ...
             that.changedNodes = new HashMap<NodeKey, SessionNode>();
             that.changedNodesInOrder.clear();
 
+        } catch (Exception e) {
+            throw new WrappedException(e);
         } finally {
             try {
-                thisLock.unlock();
-            } finally {
                 thatLock.unlock();
+            } finally {
+                thisLock.unlock();
             }
         }
 
         // TODO: Events ... these events should be combined, but cannot each ChangeSet only has a single workspace
 
         // Notify the workspaces of the changes made. This is done outside of our lock but still before the save returns ...
-        if (events1 != null) {
+        if (events1 != null && events1.size() != 0) {
+            // Then there were changes made, so first record metrics for the changes ...
+            recordMetrics(events1);
+            // and now notify the workspace (outside of the lock, but still before the save returns) ...
+            workspaceCache.changed(events1);
+        }
+        if (events2 != null) {
+            // Then there were changes made, so first record metrics for the changes ...
+            recordMetrics(events2);
+            // and now notify the workspace (outside of the lock, but still before the save returns) ...
+            workspaceCache.changed(events2);
+        }
+    }
+
+    /**
+     * This method saves the changes made by both sessions within a single transaction. <b>Note that this must be used with
+     * caution, as this method attempts to get write locks on both sessions, meaning they <i>cannot<i> be concurrently used
+     * elsewhere (otherwise deadlocks might occur).</b>
+     * 
+     * @param other the other session
+     * @throws LockFailureException if a requested lock could not be made
+     */
+    @Override
+    public void save( CachedNode node,
+                      SessionCache other,
+                      PreSave preSaveOperation ) {
+        Path topPath = node.getPath(this);
+
+        Logger logger = Logger.getLogger(getClass());
+        if (logger.isDebugEnabled()) {
+            String pathStr = topPath.getString(context().getNamespaceRegistry());
+            logger.debug("Beginning SessionCache.save(Path) with subset of changes below '{0}': \n{1}", pathStr, this);
+        }
+
+        // Try getting locks on both sessions ...
+        WritableSessionCache that = (WritableSessionCache)other;
+        Lock thisLock = this.lock.writeLock();
+        Lock thatLock = that.lock.writeLock();
+
+        ChangeSet events1 = null;
+        ChangeSet events2 = null;
+        try {
+            thisLock.lock();
+            thatLock.lock();
+
+            // Before we start the transaction, apply the pre-save operations to the new and changed nodes below the path ...
+            List<NodeKey> savedNodesInOrder = new LinkedList<NodeKey>();
+            if (preSaveOperation != null) {
+                SaveContext saveContext = new BasicSaveContext(context());
+                for (NodeKey key : this.changedNodesInOrder) {
+                    MutableCachedNode changedNode = this.changedNodes.get(key);
+                    if (changedNode == REMOVED) continue;
+                    Path path = changedNode.getPath(this);
+                    if (topPath.isAtOrAbove(path)) {
+                        preSaveOperation.process(changedNode, saveContext);
+                        savedNodesInOrder.add(key);
+                    }
+                }
+            } else {
+                for (NodeKey key : this.changedNodesInOrder) {
+                    MutableCachedNode changedNode = this.changedNodes.get(key);
+                    if (changedNode == REMOVED) continue;
+                    Path path = changedNode.getPath(this);
+                    if (topPath.isAtOrAbove(path)) savedNodesInOrder.add(key);
+                }
+            }
+
+            try {
+                // Try to begin a transaction, if there is a transaction manager ...
+                boolean closeTxn = false;
+                if (tm != null) {
+                    // Start a transaction ...
+                    tm.begin();
+                    closeTxn = true;
+                }
+
+                try {
+                    // Now persist the changes ...
+                    events1 = persistChanges(savedNodesInOrder);
+                    events2 = that.persistChanges(that.changedNodesInOrder);
+                } catch (RuntimeException e) {
+                    // Some error occurred (likely within our code) ...
+                    if (tm != null) tm.rollback();
+                    throw e;
+                }
+
+                if (closeTxn) {
+                    assert tm != null;
+                    // Commit the transaction ...
+                    tm.commit();
+                }
+
+            } catch (NotSupportedException err) {
+                // No nested transactions are supported ...
+            } catch (SecurityException err) {
+                // No privilege to commit ...
+                throw new SystemFailureException(err);
+            } catch (IllegalStateException err) {
+                // Not associated with a txn??
+                throw new SystemFailureException(err);
+            } catch (RollbackException err) {
+                // Couldn't be committed, but the txn is already rolled back ...
+            } catch (HeuristicMixedException err) {
+            } catch (HeuristicRollbackException err) {
+                // Rollback has occurred ...
+                return;
+            } catch (SystemException err) {
+                // System failed unexpectedly ...
+                throw new SystemFailureException(err);
+            }
+
+            // The changes have been made, so create a new map (we're using the keys from the current map) ...
+            for (NodeKey savedNode : savedNodesInOrder) {
+                this.changedNodes.remove(savedNode);
+                this.changedNodesInOrder.remove(savedNode);
+            }
+
+            // And in the referenced session ...
+            that.changedNodes = new HashMap<NodeKey, SessionNode>();
+            that.changedNodesInOrder.clear();
+
+        } catch (Exception e) {
+            throw new WrappedException(e);
+        } finally {
+            try {
+                thatLock.unlock();
+            } finally {
+                thisLock.unlock();
+            }
+        }
+
+        // TODO: Events ... these events should be combined, but cannot each ChangeSet only has a single workspace
+
+        // Notify the workspaces of the changes made. This is done outside of our lock but still before the save returns ...
+        if (events1 != null && events1.size() != 0) {
             // Then there were changes made, so first record metrics for the changes ...
             recordMetrics(events1);
             // and now notify the workspace (outside of the lock, but still before the save returns) ...
@@ -578,8 +634,18 @@ public class WritableSessionCache extends AbstractSessionCache {
                     // Deal with mixin changes here (since for new nodes they're put into the properties) ...
                     MixinChanges mixinChanges = node.mixinChanges(false);
                     if (mixinChanges != null && !mixinChanges.isEmpty()) {
+                        Property oldProperty = translator.getProperty(doc, JcrLexicon.MIXIN_TYPES);
                         translator.addPropertyValues(doc, JcrLexicon.MIXIN_TYPES, true, mixinChanges.getAdded());
                         translator.removePropertyValues(doc, JcrLexicon.MIXIN_TYPES, mixinChanges.getRemoved());
+                        // the property was changed ...
+                        Property newProperty = translator.getProperty(doc, JcrLexicon.MIXIN_TYPES);
+                        if (oldProperty == null) {
+                            changes.propertyAdded(key, newPath, newProperty);
+                        } else if (newProperty == null) {
+                            changes.propertyRemoved(key, newPath, oldProperty);
+                        } else {
+                            changes.propertyChanged(key, newPath, newProperty, oldProperty);
+                        }
                     }
                 }
 
@@ -602,6 +668,22 @@ public class WritableSessionCache extends AbstractSessionCache {
                     }
                 }
 
+                // Save the removed properties ...
+                Set<Name> removedProperties = node.removedProperties();
+                if (!removedProperties.isEmpty()) {
+                    assert !node.isNew();
+                    if (persisted == null) {
+                        persisted = workspaceCache.getNode(key);
+                    }
+                    for (Name name : removedProperties) {
+                        Property oldProperty = translator.removeProperty(doc, name);
+                        if (oldProperty != null) {
+                            // the property was removed ...
+                            changes.propertyRemoved(key, newPath, oldProperty);
+                        }
+                    }
+                }
+
                 // Save the changes to the properties ...
                 if (!node.changedProperties().isEmpty()) {
                     if (!node.isNew() && persisted == null) {
@@ -612,21 +694,13 @@ public class WritableSessionCache extends AbstractSessionCache {
                         Property prop = propEntry.getValue();
                         // Get the old property ...
                         Property oldProperty = persisted != null ? persisted.getProperty(name, workspaceCache) : null;
-                        if (prop == null) {
-                            if (oldProperty != null) {
-                                // the property was removed ...
-                                translator.removeProperty(doc, name);
-                                changes.propertyRemoved(key, newPath, oldProperty);
-                            }
+                        translator.setProperty(doc, prop);
+                        if (oldProperty == null) {
+                            // the property was created ...
+                            changes.propertyAdded(key, newPath, prop);
                         } else {
-                            translator.setProperty(doc, prop);
-                            if (oldProperty == null) {
-                                // the property was created ...
-                                changes.propertyAdded(key, newPath, prop);
-                            } else {
-                                // the property was changed ...
-                                changes.propertyChanged(key, newPath, prop, oldProperty);
-                            }
+                            // the property was changed ...
+                            changes.propertyChanged(key, newPath, prop, oldProperty);
                         }
                     }
                 }
@@ -649,21 +723,25 @@ public class WritableSessionCache extends AbstractSessionCache {
                             if (persistent != null) workspacePaths.getPath(persistent);
                         }
                     }
+
                     // Now change the children ...
                     translator.changeChildren(key, doc, changedChildren, appended);
 
                     // Generate events for renames, as this is only captured in the parent node ...
-                    for (Map.Entry<NodeKey, Name> renameEntry : changedChildren.getNewNames().entrySet()) {
-                        NodeKey renamedKey = renameEntry.getKey();
-                        CachedNode oldRenamedNode = workspaceCache.getNode(renamedKey);
-                        if (oldRenamedNode == null) {
-                            // The node was created in this session, so we can ignore this ...
-                            continue;
+                    Map<NodeKey, Name> newNames = changedChildren.getNewNames();
+                    if (!newNames.isEmpty()) {
+                        for (Map.Entry<NodeKey, Name> renameEntry : newNames.entrySet()) {
+                            NodeKey renamedKey = renameEntry.getKey();
+                            CachedNode oldRenamedNode = workspaceCache.getNode(renamedKey);
+                            if (oldRenamedNode == null) {
+                                // The node was created in this session, so we can ignore this ...
+                                continue;
+                            }
+                            CachedNode renamedNode = getNode(renamedKey);
+                            Path renamedFromPath = workspacePaths.getPath(oldRenamedNode);
+                            Path renamedToPath = sessionPaths.getPath(renamedNode);
+                            changes.nodeRenamed(renamedKey, renamedToPath, renamedFromPath.getLastSegment());
                         }
-                        CachedNode renamedNode = getNode(renamedKey);
-                        Path renamedToPath = sessionPaths.getPath(renamedNode);
-                        Path renamedFromPath = workspacePaths.getPath(oldRenamedNode);
-                        changes.nodeMoved(renamedKey, key, key, renamedToPath, renamedFromPath);
                     }
                 }
 
@@ -718,6 +796,10 @@ public class WritableSessionCache extends AbstractSessionCache {
                 paths.put(key, path); // even if null
             }
             return path;
+        }
+
+        public boolean removePath( NodeKey key ) {
+            return paths.remove(key) != null;
         }
     }
 
@@ -803,6 +885,11 @@ public class WritableSessionCache extends AbstractSessionCache {
         } finally {
             lock.unlock();
         }
+    }
+
+    @Override
+    public boolean isDestroyed( NodeKey key ) {
+        return changedNodes.get(key) == REMOVED;
     }
 
     @Override

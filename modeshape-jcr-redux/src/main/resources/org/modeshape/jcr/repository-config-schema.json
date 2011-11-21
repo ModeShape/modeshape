@@ -42,6 +42,11 @@
                 "cacheConfiguration" : {
                     "type" : "string",
                     "description" : "The name of the Infinispan configuration file. If a file could not be found (on the thread context classloader, on the application's classpath, or on the system classpath), then the name is used to look in JNDI for an Infinispan CacheContainer instance. If no such container is found, then a default Infinispan configuration (a basic, local mode, non-clustered cache) will be used."
+                },
+                "transactionManagerLookup" : {
+                    "type" : "string",
+                    "default" : "org.infinispan.transaction.lookup.GenericTransactionManagerLookup",
+                    "description" : "The name of the Infinispan class that should be used to find the JTA transaction manager instance. It defaults to 'org.infinispan.transaction.lookup.GenericTransactionManagerLookup'"
                 }
             }
         },

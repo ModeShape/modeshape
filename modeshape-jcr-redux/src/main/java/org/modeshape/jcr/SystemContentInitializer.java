@@ -29,11 +29,14 @@ import org.modeshape.jcr.cache.RepositoryCache.ContentInitializer;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
+import org.modeshape.jcr.value.PropertyFactory;
 
 /**
  * The {@link ContentInitializer} implementation that populates the "/jcr:system" content for a new repository.
  */
 class SystemContentInitializer implements ContentInitializer {
+
+    private PropertyFactory propFactory;
 
     public SystemContentInitializer() {
     }
@@ -41,6 +44,7 @@ class SystemContentInitializer implements ContentInitializer {
     @Override
     public void initialize( SessionCache session,
                             MutableCachedNode parent ) {
+        this.propFactory = session.getContext().getPropertyFactory();
         MutableCachedNode system = null;
         MutableCachedNode namespaces = null;
 
@@ -75,17 +79,7 @@ class SystemContentInitializer implements ContentInitializer {
                                             Name primaryType,
                                             Property... properties ) {
         NodeKey key = session.getRootKey().withId(id);
-        return parent.createChild(session,
-                                  key,
-                                  name,
-                                  property(session, JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.NODE_TYPES),
-                                  properties);
-    }
-
-    protected Property property( SessionCache session,
-                                 Name name,
-                                 Object... values ) {
-        return session.getContext().getPropertyFactory().create(name, values);
+        return parent.createChild(session, key, name, propFactory.create(JcrLexicon.PRIMARY_TYPE, primaryType), properties);
     }
 
     protected MutableCachedNode createNamespace( SessionCache session,
@@ -98,7 +92,7 @@ class SystemContentInitializer implements ContentInitializer {
                           "mode:namespaces-" + uri,
                           nodeName,
                           ModeShapeLexicon.NAMESPACE,
-                          property(session, ModeShapeLexicon.NAMESPACE, uri),
-                          property(session, ModeShapeLexicon.GENERATED, Boolean.FALSE));
+                          propFactory.create(ModeShapeLexicon.URI, uri),
+                          propFactory.create(ModeShapeLexicon.GENERATED, Boolean.FALSE));
     }
 }

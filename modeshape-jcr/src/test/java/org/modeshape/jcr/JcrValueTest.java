@@ -41,9 +41,7 @@ import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.basic.StandardValueFactories;
 
-/**
- * @author jverhaeg
- */
+@Migrated
 public class JcrValueTest {
 
     private ValueFactories factories;

@@ -46,7 +46,9 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import javax.jcr.AccessDeniedException;
 import javax.jcr.Credentials;
+import javax.jcr.LoginException;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
@@ -73,9 +75,6 @@ import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.NamedThreadFactory;
 import org.modeshape.jcr.JcrEngine.State;
-import org.modeshape.jcr.JcrRepository.ConfigurationChange;
-import org.modeshape.jcr.JcrRepository.RunningState;
-import org.modeshape.jcr.JcrRepository.SessionMonitor;
 import org.modeshape.jcr.RepositoryConfiguration.AnonymousSecurity;
 import org.modeshape.jcr.RepositoryConfiguration.Component;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
@@ -545,6 +544,13 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         // We have successfully authenticated ...
         boolean readOnly = false; // assume not
         JcrSession session = new JcrSession(this, workspaceName, sessionContext, attributes, readOnly);
+
+        // Need to make sure that the user has access to this session
+        try {
+            session.checkPermission(workspaceName, null, ModeShapePermissions.READ);
+        } catch (AccessDeniedException ace) {
+            throw new LoginException(JcrI18n.loginFailed.text(repoName, workspaceName), ace);
+        }
 
         running.addSession(session);
         return session;

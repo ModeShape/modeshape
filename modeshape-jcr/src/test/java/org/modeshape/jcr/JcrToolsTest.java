@@ -40,9 +40,7 @@ import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 
-/**
- *
- */
+@Migrated
 public class JcrToolsTest {
     private JcrEngine engine;
     private Session session;

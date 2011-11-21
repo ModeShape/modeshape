@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<nodeTypes xmlns:fn="http://www.w3.org/2005/xpath-functions" xmlns:fn_old="http://www.w3.org/2004/10/xpath-functions"
+  xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:mgnl="http://www.magnolia.info/jcr/mgnl" xmlns:mix="http://www.jcp.org/jcr/mix/1.0"
+  xmlns:nt="http://www.jcp.org/jcr/nt/1.0" xmlns:rep="internal" xmlns:sv="http://www.jcp.org/jcr/sv/1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <nodeType hasOrderableChildNodes="true" isMixin="false" name="mgnl:metaData" primaryItemName="">
+    <supertypes>
+      <supertype>mix:referenceable</supertype>
+      <supertype>nt:hierarchyNode</supertype>
+    </supertypes>
+    <propertyDefinition autoCreated="false" mandatory="false" multiple="false" name="*" onParentVersion="COPY"
+      protected="false" requiredType="undefined" />
+  </nodeType>
+  <nodeType hasOrderableChildNodes="true" isMixin="false" name="mgnl:content" primaryItemName="">
+    <supertypes>
+      <supertype>mix:referenceable</supertype>
+      <supertype>nt:hierarchyNode</supertype>
+    </supertypes>
+    <propertyDefinition autoCreated="false" mandatory="false" multiple="true" name="*" onParentVersion="COPY"
+      protected="false" requiredType="undefined" />
+    <propertyDefinition autoCreated="false" mandatory="false" multiple="false" name="*" onParentVersion="COPY"
+      protected="false" requiredType="undefined" />
+    <childNodeDefinition autoCreated="false" defaultPrimaryType="" mandatory="false" name="*" onParentVersion="COPY"
+      protected="false" sameNameSiblings="true">
+      <requiredPrimaryTypes>
+        <requiredPrimaryType>nt:base</requiredPrimaryType>
+      </requiredPrimaryTypes>
+    </childNodeDefinition>
+    <childNodeDefinition autoCreated="true" defaultPrimaryType="mgnl:metaData" mandatory="true" name="MetaData"
+      onParentVersion="COPY" protected="false" sameNameSiblings="false">
+      <requiredPrimaryTypes>
+        <requiredPrimaryType>mgnl:metaData</requiredPrimaryType>
+      </requiredPrimaryTypes>
+    </childNodeDefinition>
+  </nodeType>
+  <nodeType hasOrderableChildNodes="true" isMixin="false" name="mgnl:group" primaryItemName="">
+    <supertypes>
+      <supertype>mgnl:content</supertype>
+    </supertypes>
+  </nodeType>
+  <nodeType hasOrderableChildNodes="true" isMixin="false" name="mgnl:folder" primaryItemName="">
+    <supertypes>
+      <supertype>mix:referenceable</supertype>
+      <supertype>nt:folder</supertype>
+    </supertypes>
+    <propertyDefinition autoCreated="false" mandatory="false" multiple="true" name="*" onParentVersion="COPY"
+      protected="false" requiredType="undefined" />
+    <propertyDefinition autoCreated="false" mandatory="false" multiple="false" name="*" onParentVersion="COPY"
+      protected="false" requiredType="undefined" />
+    <childNodeDefinition autoCreated="false" defaultPrimaryType="" mandatory="false" name="*" onParentVersion="COPY"
+      protected="false" sameNameSiblings="true">
+      <requiredPrimaryTypes>
+        <requiredPrimaryType>nt:base</requiredPrimaryType>
+      </requiredPrimaryTypes>
+    </childNodeDefinition>
+    <childNodeDefinition autoCreated="true" defaultPrimaryType="mgnl:metaData" mandatory="true" name="MetaData"
+      onParentVersion="COPY" protected="false" sameNameSiblings="false">
+      <requiredPrimaryTypes>
+        <requiredPrimaryType>mgnl:metaData</requiredPrimaryType>
+      </requiredPrimaryTypes>
+    </childNodeDefinition>
+  </nodeType>
+  <nodeType hasOrderableChildNodes="true" isMixin="false" name="mgnl:user" primaryItemName="">
+    <supertypes>
+      <supertype>mgnl:content</supertype>
+    </supertypes>
+  </nodeType>
+  <nodeType hasOrderableChildNodes="false" isMixin="false" name="mgnl:resource" primaryItemName="">
+    <supertypes>
+      <supertype>nt:resource</supertype>
+    </supertypes>
+    <propertyDefinition autoCreated="false" mandatory="false" multiple="false" name="*" onParentVersion="COPY"
+      protected="false" requiredType="undefined" />
+  </nodeType>
+  <nodeType hasOrderableChildNodes="true" isMixin="false" name="mgnl:contentNode" primaryItemName="">
+    <supertypes>
+      <supertype>mix:referenceable</supertype>
+      <supertype>nt:hierarchyNode</supertype>
+    </supertypes>
+    <propertyDefinition autoCreated="false" mandatory="false" multiple="true" name="*" onParentVersion="COPY"
+      protected="false" requiredType="undefined" />
+    <propertyDefinition autoCreated="false" mandatory="false" multiple="false" name="*" onParentVersion="COPY"
+      protected="false" requiredType="undefined" />
+    <childNodeDefinition autoCreated="false" defaultPrimaryType="" mandatory="false" name="*" onParentVersion="COPY"
+      protected="false" sameNameSiblings="true">
+      <requiredPrimaryTypes>
+        <requiredPrimaryType>nt:base</requiredPrimaryType>
+      </requiredPrimaryTypes>
+    </childNodeDefinition>
+    <childNodeDefinition autoCreated="true" defaultPrimaryType="mgnl:metaData" mandatory="true" name="MetaData"
+      onParentVersion="COPY" protected="false" sameNameSiblings="false">
+      <requiredPrimaryTypes>
+        <requiredPrimaryType>mgnl:metaData</requiredPrimaryType>
+      </requiredPrimaryTypes>
+    </childNodeDefinition>
+  </nodeType>
+  <nodeType hasOrderableChildNodes="true" isMixin="false" name="mgnl:role" primaryItemName="">
+    <supertypes>
+      <supertype>mgnl:content</supertype>
+    </supertypes>
+  </nodeType>
+  <nodeType hasOrderableChildNodes="true" isMixin="false" name="mgnl:reserve" primaryItemName="">
+    <supertypes>
+      <supertype>nt:hierarchyNode</supertype>
+    </supertypes>
+    <propertyDefinition autoCreated="false" mandatory="false" multiple="false" name="*" onParentVersion="COPY"
+      protected="false" requiredType="undefined" />
+    <childNodeDefinition autoCreated="false" defaultPrimaryType="" mandatory="false" name="*" onParentVersion="COPY"
+      protected="false" sameNameSiblings="true">
+      <requiredPrimaryTypes>
+        <requiredPrimaryType>nt:base</requiredPrimaryType>
+      </requiredPrimaryTypes>
+    </childNodeDefinition>
+  </nodeType>
+</nodeTypes>
