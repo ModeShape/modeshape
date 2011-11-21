@@ -29,7 +29,7 @@ import java.util.Calendar;
 
 public class BigFileReadTestSuite extends AbstractPerformanceTestSuite {
 
-    private static final int FILE_SIZE_MB = 100;
+    private static final int FILE_SIZE_MB = 100 * 1024 * 1024;
 
     private Session session;
     private Node root;
@@ -51,7 +51,7 @@ public class BigFileReadTestSuite extends AbstractPerformanceTestSuite {
             Node content = file.addNode("jcr:content", "nt:resource");
             content.setProperty("jcr:mimeType", "application/octet-stream");
             content.setProperty("jcr:lastModified", Calendar.getInstance());
-            content.setProperty("jcr:data", new BinaryImpl(FILE_SIZE_MB * 1024 * 1024));
+            content.setProperty("jcr:data", new BinaryImpl(FILE_SIZE_MB));
         }
         session.save();
     }
@@ -62,9 +62,9 @@ public class BigFileReadTestSuite extends AbstractPerformanceTestSuite {
             Node file = root.getNode("file" + i);
             Node content = file.getNode("jcr:content");
             InputStream stream = content.getProperty("jcr:data").getBinary().getStream();
-            OutputStream byteArrayOutput = new ByteArrayOutputStream(FILE_SIZE_MB * 1024 * 1024);
+            OutputStream byteArrayOutput = new ByteArrayOutputStream(FILE_SIZE_MB);
             try {
-                byte[] buff = new byte[100];
+                byte[] buff = new byte[1000];
                 while (stream.read(buff) != -1) {
                     byteArrayOutput.write(buff);
                 }

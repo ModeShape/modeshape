@@ -54,8 +54,25 @@
         </dependencies>
     </dependencyManagement>
 
+
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+                <filtering>true</filtering>
+            </testResource>
+        </testResources>
+    </build>
+
     <modules>
         <module>jcr-perf-tests-api</module>
         <module>modeshape-repo-perf-tests</module>
+        <module>jackrabbit-repo-perf-tests</module>
     </modules>
 </project>

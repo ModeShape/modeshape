@@ -1,0 +1,52 @@
+<!DOCTYPE Repository
+        PUBLIC "-//The Apache Software Foundation//DTD Jackrabbit 1.5//EN"
+        "http://jackrabbit.apache.org/dtd/repository-1.5.dtd">
+<Repository>
+    <FileSystem class="org.apache.jackrabbit.core.fs.mem.MemoryFileSystem"/>
+    <Security appName="JUnitTesting">
+        <!--<AccessManager class="org.apache.jackrabbit.core.security.DefaultAccessManager"/>-->
+        <LoginModule class="org.apache.jackrabbit.core.security.simple.SimpleLoginModule"/>
+    </Security>
+    <Workspaces rootPath="${project.build.testOutputDirectory}/workspaces" defaultWorkspace="default"/>
+    <!--<Workspace name="default">-->
+    <!--<FileSystem class="org.apache.jackrabbit.core.fs.mem.MemoryFileSystem"/>-->
+
+    <!--<PersistenceManager class="org.apache.jackrabbit.core.persistence.mem.InMemPersistenceManager">-->
+    <!--<param name="persistent" value="false"/>-->
+    <!--</PersistenceManager>-->
+    <!--&lt;!&ndash;-->
+    <!--Search index and the file system it uses.-->
+    <!--class: FQN of class implementing the QueryHandler interface-->
+    <!--&ndash;&gt;-->
+    <!--<SearchIndex class="org.apache.jackrabbit.core.query.lucene.SearchIndex">-->
+    <!--<param name="path" value="${wsp.home}/index"/>         -->
+    <!--</SearchIndex>-->
+    <!--</Workspace>  -->
+
+    <Workspace name="default">
+
+        <FileSystem class="org.apache.jackrabbit.core.fs.mem.MemoryFileSystem"/>
+
+        <PersistenceManager
+                class="org.apache.jackrabbit.core.persistence.bundle.BundleFsPersistenceManager">
+            <param name="blobFSBlockSize" value="1"/>
+            <!-- store in memory -->
+        </PersistenceManager>
+
+        <SearchIndex class="org.apache.jackrabbit.core.query.lucene.SearchIndex">
+            <param name="directoryManagerClass"
+                   value="org.apache.jackrabbit.core.query.lucene.directory.RAMDirectoryManager"/>
+
+            <FileSystem class="org.apache.jackrabbit.core.fs.mem.MemoryFileSystem"/>
+        </SearchIndex>
+    </Workspace>
+
+    <Versioning rootPath="${project.build.testOutputDirectory}/versions">
+        <FileSystem class="org.apache.jackrabbit.core.fs.mem.MemoryFileSystem"/>
+        <PersistenceManager
+                class="org.apache.jackrabbit.core.persistence.bundle.BundleFsPersistenceManager">
+            <param name="blobFSBlockSize" value="1"/>
+            <!-- store in memory -->
+        </PersistenceManager>
+    </Versioning>
+</Repository>

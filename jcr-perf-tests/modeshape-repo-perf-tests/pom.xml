@@ -38,7 +38,6 @@
     </dependencies>
 
     <profiles>
-
         <!--Runs the perf tests against modeshape 3.x-->
         <profile>
             <id>modeshape-3.x</id>
