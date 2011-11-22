@@ -32,6 +32,7 @@ import java.util.Set;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
+import javax.jcr.Property;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
@@ -314,8 +315,9 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
             this.numRows = numRows;
             this.selectorNames = new HashSet<String>(columns.getSelectorNames());
             int i = 0;
-            locationIndexes = new int[selectorNames.size()];
-            for (String selectorName : selectorNames) {
+            List<String> columnSelectorNames = columns.getSelectorNames();
+            locationIndexes = new int[columnSelectorNames.size()];
+            for (String selectorName : columnSelectorNames) {
                 locationIndexes[i++] = columns.getLocationIndex(selectorName);
             }
         }
@@ -410,6 +412,10 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
                 nodes[index++] = node;
             }
             return new MultiSelectorQueryResultRow(this, nodes, locationIndexes, tuple);
+        }
+
+        protected String getPropertyNameForColumnName( String columnName ) {
+            return columns.getPropertyNameForColumnName(columnName);
         }
 
         /**
@@ -529,35 +535,48 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
          * @see javax.jcr.query.Row#getValue(java.lang.String)
          */
         public Value getValue( String columnName ) throws ItemNotFoundException, RepositoryException {
-            if (PSEUDO_COLUMNS.contains(columnName)) {
-                if (JCR_PATH_COLUMN_NAME.equals(columnName)) {
+            // Get the property name for the column. Note that if the column is aliased, the property name will be different;
+            // otherwise, the property name will be the same as the column name ...
+            String propertyName = iterator.getPropertyNameForColumnName(columnName);
+            if (PSEUDO_COLUMNS.contains(propertyName)) {
+                if (JCR_PATH_COLUMN_NAME.equals(propertyName)) {
                     Location location = (Location)tuple[iterator.locationIndex];
                     return iterator.jcrPath(location.getPath());
                 }
-                if (JCR_NAME_COLUMN_NAME.equals(columnName)) {
+                if (JCR_NAME_COLUMN_NAME.equals(propertyName)) {
                     Location location = (Location)tuple[iterator.locationIndex];
                     Path path = location.getPath();
                     if (path.isRoot()) return iterator.jcrName();
                     return iterator.jcrName(path.getLastSegment().getName());
                 }
-                if (MODE_LOCALNAME_COLUMN_NAME.equals(columnName)) {
+                if (MODE_LOCALNAME_COLUMN_NAME.equals(propertyName)) {
                     Location location = (Location)tuple[iterator.locationIndex];
                     Path path = location.getPath();
                     if (path.isRoot()) return iterator.jcrString("");
                     return iterator.jcrString(path.getLastSegment().getName().getLocalName());
                 }
-                if (MODE_DEPTH_COLUMN_NAME.equals(columnName)) {
+                if (MODE_DEPTH_COLUMN_NAME.equals(propertyName)) {
                     Location location = (Location)tuple[iterator.locationIndex];
                     Path path = location.getPath();
                     Long depth = new Long(path.size());
                     return iterator.jcrLong(depth);
                 }
-                if (JCR_SCORE_COLUMN_NAME.equals(columnName)) {
+                if (JCR_SCORE_COLUMN_NAME.equals(propertyName)) {
                     Float score = iterator.scoreIndex == -1 ? 0.0f : (Float)tuple[iterator.scoreIndex];
                     return iterator.jcrDouble(score);
                 }
             }
-            return node.hasProperty(columnName) ? node.getProperty(columnName).getValue() : null;
+            // Get the property's value ...
+            if (!node.hasProperty(propertyName)) return null;
+            Property property = node.getProperty(propertyName);
+            Value value = null;
+            if (property.isMultiple()) {
+                // Use only the first value of a multi-valued property ...
+                value = property.getValues()[0];
+            } else {
+                value = property.getValue();
+            }
+            return value;
         }
 
         /**
@@ -651,37 +670,50 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
             }
             Node node = nodes[nodeIndex];
             if (node == null) return null;
-            if (PSEUDO_COLUMNS.contains(columnName)) {
+            // Get the property name for the column. Note that if the column is aliased, the property name will be different;
+            // otherwise, the property name will be the same as the column name ...
+            String propertyName = iterator.getPropertyNameForColumnName(columnName);
+            if (PSEUDO_COLUMNS.contains(propertyName)) {
                 int locationIndex = iterator.columns.getLocationIndexForColumn(columnName);
-                if (JCR_PATH_COLUMN_NAME.equals(columnName)) {
+                if (JCR_PATH_COLUMN_NAME.equals(propertyName)) {
                     Location location = (Location)tuple[locationIndex];
                     return iterator.jcrPath(location.getPath());
                 }
-                if (JCR_NAME_COLUMN_NAME.equals(columnName)) {
+                if (JCR_NAME_COLUMN_NAME.equals(propertyName)) {
                     Location location = (Location)tuple[locationIndex];
                     Path path = location.getPath();
                     if (path.isRoot()) return iterator.jcrName();
                     return iterator.jcrName(path.getLastSegment().getName());
                 }
-                if (MODE_LOCALNAME_COLUMN_NAME.equals(columnName)) {
+                if (MODE_LOCALNAME_COLUMN_NAME.equals(propertyName)) {
                     Location location = (Location)tuple[locationIndex];
                     Path path = location.getPath();
                     if (path.isRoot()) return iterator.jcrString("");
                     return iterator.jcrString(path.getLastSegment().getName().getLocalName());
                 }
-                if (MODE_DEPTH_COLUMN_NAME.equals(columnName)) {
+                if (MODE_DEPTH_COLUMN_NAME.equals(propertyName)) {
                     Location location = (Location)tuple[locationIndex];
                     Path path = location.getPath();
                     Long depth = new Long(path.size());
                     return iterator.jcrLong(depth);
                 }
-                if (JCR_SCORE_COLUMN_NAME.equals(columnName)) {
+                if (JCR_SCORE_COLUMN_NAME.equals(propertyName)) {
                     int scoreIndex = iterator.columns.getFullTextSearchScoreIndexFor(columnName);
                     Float score = scoreIndex == -1 ? 0.0f : (Float)tuple[scoreIndex];
                     return iterator.jcrDouble(score);
                 }
             }
-            return node.hasProperty(columnName) ? node.getProperty(columnName).getValue() : null;
+            // Get the property's value ...
+            if (!node.hasProperty(propertyName)) return null;
+            Property property = node.getProperty(propertyName);
+            Value value = null;
+            if (property.isMultiple()) {
+                // Use only the first value of a multi-valued property ...
+                value = property.getValues()[0];
+            } else {
+                value = property.getValue();
+            }
+            return value;
         }
 
         /**

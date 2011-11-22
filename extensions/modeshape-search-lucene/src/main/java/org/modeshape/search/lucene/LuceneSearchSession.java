@@ -1636,8 +1636,16 @@ public class LuceneSearchSession implements WorkspaceSession {
             this.recordScore = this.columns.hasFullTextSearchScores();
             this.scoreIndex = this.recordScore ? this.columns.getFullTextSearchScoreIndexFor(selectorName) : -1;
 
-            // Create the set of field names that we need to load from the document ...
-            final Set<String> fieldNames = new HashSet<String>(this.columns.getColumnNames());
+            // Create the set of field names that we need to load from the document.
+            // Note that these field names are really the property names, which will NOT be the same as the column name
+            // for any column that is aliased ...
+            List<String> columnNames = this.columns.getColumnNames();
+            final Set<String> fieldNames = new HashSet<String>(columnNames.size() + 2);
+            for (String columnName : columnNames) {
+                int index = this.columns.getColumnIndexForName(columnName);
+                String propertyName = this.columns.getPropertyNameForColumn(index);
+                fieldNames.add(propertyName);
+            }
             fieldNames.add(ContentIndex.LOCATION_ID_PROPERTIES); // add the UUID, which we'll put into the Location ...
             fieldNames.add(ContentIndex.PATH); // add the UUID, which we'll put into the Location ...
             this.fieldSelector = new FieldSelector() {
@@ -1724,6 +1732,8 @@ public class LuceneSearchSession implements WorkspaceSession {
             // Read the column values ...
             for (String columnName : columns.getColumnNames()) {
                 int index = columns.getColumnIndexForName(columnName);
+                // The column may be aliased, so we should get the property name for the column ...
+                columnName = columns.getPropertyNameForColumn(index);
                 // We just need to retrieve the first value if there is more than one ...
                 Object value = document.get(columnName);
                 if (value == null) {
