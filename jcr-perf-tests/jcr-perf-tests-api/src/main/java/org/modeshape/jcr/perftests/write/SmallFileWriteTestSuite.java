@@ -56,6 +56,13 @@ public class SmallFileWriteTestSuite extends AbstractPerformanceTestSuite {
     }
 
     @Override
+    protected void afterTestRun() throws Exception {
+        for (int i = 0; i < suiteConfiguration.getNodeCount(); i++) {
+            root.getNode("file" + i).remove();
+        }
+    }
+
+    @Override
     protected void afterSuite() throws Exception {
         root.remove();
         session.save();

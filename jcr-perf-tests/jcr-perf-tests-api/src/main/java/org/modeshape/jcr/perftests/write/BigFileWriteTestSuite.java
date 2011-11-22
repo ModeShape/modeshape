@@ -16,22 +16,21 @@
  */
 package org.modeshape.jcr.perftests.write;
 
-import java.util.Calendar;
-
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import org.modeshape.jcr.perftests.AbstractPerformanceTestSuite;
 import org.modeshape.jcr.perftests.SuiteConfiguration;
 import org.modeshape.jcr.perftests.util.BinaryImpl;
+import java.util.Calendar;
 
 public class BigFileWriteTestSuite extends AbstractPerformanceTestSuite {
 
-    private static final int FILE_SIZE_MB = 100;
+    private static final int FILE_SIZE_MB = 100 * 1024 * 1024;
 
     private Session session;
     private Node root;
-    private int fileCount;
+    private int fileCount = 2;
 
     public BigFileWriteTestSuite( SuiteConfiguration suiteConfiguration ) {
         super(suiteConfiguration);
@@ -39,7 +38,6 @@ public class BigFileWriteTestSuite extends AbstractPerformanceTestSuite {
 
     @Override
     public void beforeSuite() throws RepositoryException {
-        //        failOnRepositoryVersions("1.4", "1.5", "1.6");
         session = newSession();
         root = session.getRootNode().addNode("RootFolder", "nt:folder");
         session.save();
@@ -47,14 +45,22 @@ public class BigFileWriteTestSuite extends AbstractPerformanceTestSuite {
 
     @Override
     public void runTest() throws RepositoryException {
-        for (int i = 0; i < suiteConfiguration.getNodeCount(); i++) {
+        for (int i = 0; i < fileCount; i++) {
             Node file = root.addNode("BigFileWriteTestSuite" + i, "nt:file");
             Node content = file.addNode("jcr:content", "nt:resource");
             content.setProperty("jcr:mimeType", "application/octet-stream");
             content.setProperty("jcr:lastModified", Calendar.getInstance());
-            content.setProperty("jcr:data", new BinaryImpl(FILE_SIZE_MB * 1024 * 1024));
+            content.setProperty("jcr:data", new BinaryImpl(FILE_SIZE_MB ));
             session.save();
         }
+    }
+
+    @Override
+    protected void afterTestRun() throws Exception {
+        for (int i = 0; i < fileCount; i++) {
+            root.getNode("BigFileWriteTestSuite" + i).remove();
+        }
+        session.save();
     }
 
     @Override

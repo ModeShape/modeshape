@@ -6,6 +6,9 @@ import java.io.IOException;
 import java.util.Properties;
 
 /**
+ * Holder for the properties used to configure a test suite. Some of the configuration properties can be loaded from a config
+ * file (e.g. testsuite.properties)
+ *
  * @author Horia Chiorean
  */
 public final class SuiteConfiguration {

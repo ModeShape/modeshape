@@ -36,14 +36,4 @@
             <artifactId>slf4j-log4j12</artifactId>
         </dependency>
     </dependencies>
-
-    <profiles>
-        <!--Runs the perf tests against modeshape 3.x-->
-        <profile>
-            <id>modeshape-3.x</id>
-            <properties>
-                <modeshape.version>3.0-SNAPSHOT</modeshape.version>
-            </properties>
-        </profile>
-    </profiles>
 </project>

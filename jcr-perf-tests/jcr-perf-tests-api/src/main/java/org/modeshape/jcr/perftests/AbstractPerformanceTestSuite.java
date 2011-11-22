@@ -1,25 +1,7 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package org.modeshape.jcr.perftests;
 
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -29,15 +11,19 @@ import java.util.concurrent.TimeUnit;
 
 
 /**
- * Abstract base class for individual performance benchmarks.
+ * Abstract base class for individual performance benchmarks.To create a new performance test suite, you should subclass this.
+ *
+ * @author Horia Chiorean
  */
 public abstract class AbstractPerformanceTestSuite {
 
     protected SuiteConfiguration suiteConfiguration;
 
+    //holder for a list of active session created by this suite
     private List<Session> sessions;
     private ExecutorService execService;
 
+    //flag used to signal to signal to the different (potential) threads created by the suite that the suite is active
     private volatile boolean running;
 
     public AbstractPerformanceTestSuite(SuiteConfiguration suiteConfiguration) {
@@ -65,9 +51,14 @@ public abstract class AbstractPerformanceTestSuite {
      * @throws Exception if an error occurs
      */
     public final long run() throws Exception {
-        long start = System.nanoTime();
-        runTest();
-        return System.nanoTime() - start;
+        beforeTestRun();
+        try {
+            long start = System.nanoTime();
+            runTest();
+            return System.nanoTime() - start;
+        } finally {
+            afterTestRun();
+        }
     }
 
     /**
@@ -88,6 +79,10 @@ public abstract class AbstractPerformanceTestSuite {
         this.suiteConfiguration = null;
     }
 
+    /**
+     * Indicates if the test suite is compatible with the repository from the <code>SuiteConfiguration</code> object.
+     * @return true of false depending on the operation(s) performed by the suite.
+     */
     public boolean isCompatibleWithCurrentRepository() {
         return true;
     }
@@ -99,18 +94,6 @@ public abstract class AbstractPerformanceTestSuite {
             }
         }
     }
-
-//    protected void failOnRepositoryVersions( String... versions )
-//            throws RepositoryException {
-//        String repositoryVersion = repository.getDescriptor(Repository.REP_VERSION_DESC);
-//        for (String version : versions) {
-//            if (repositoryVersion.startsWith(version)) {
-//                throw new RepositoryException(
-//                        "Unable to run " + getClass().getName()
-//                                + " on repository version " + version);
-//            }
-//        }
-//    }
 
     protected Session newSession() {
         try {
@@ -142,9 +125,11 @@ public abstract class AbstractPerformanceTestSuite {
 
     protected abstract void runTest() throws Exception;
 
-    protected void beforeSuite() throws Exception {
-    }
+    protected void afterTestRun() throws Exception {}
 
-    protected void afterSuite() throws Exception {
-    }
+    protected void beforeTestRun() throws Exception {}
+
+    protected void beforeSuite() throws Exception {}
+
+    protected void afterSuite() throws Exception {}
 }

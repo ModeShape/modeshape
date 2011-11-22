@@ -100,6 +100,6 @@ public class ThreeWayJoinTestSuite extends AbstractPerformanceTestSuite {
     @Override
     public boolean isCompatibleWithCurrentRepository() {
         String joins = suiteConfiguration.getRepository().getDescriptor(Repository.QUERY_JOINS);
-        return joins != null && joins.equals(Repository.QUERY_JOINS_NONE);
+        return joins != null && !joins.equals(Repository.QUERY_JOINS_NONE);
     }
 }

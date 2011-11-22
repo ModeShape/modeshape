@@ -21,10 +21,8 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import org.modeshape.jcr.perftests.AbstractPerformanceTestSuite;
 import org.modeshape.jcr.perftests.SuiteConfiguration;
+import org.modeshape.jcr.perftests.util.BinaryHelper;
 import org.modeshape.jcr.perftests.util.BinaryImpl;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.Calendar;
 
 public class BigFileReadTestSuite extends AbstractPerformanceTestSuite {
@@ -41,10 +39,9 @@ public class BigFileReadTestSuite extends AbstractPerformanceTestSuite {
 
     @Override
     public void beforeSuite() throws RepositoryException {
-        //failOnRepositoryVersions("1.4", "1.5", "1.6");
         session = newSession();
         root = session.getRootNode().addNode("BigFileReadTestSuite", "nt:folder");
-        nodeCount = suiteConfiguration.getNodeCount();
+        nodeCount = 2;
 
         for (int i = 0; i < nodeCount; i++) {
             Node file = root.addNode("file" + i, "nt:file");
@@ -61,17 +58,7 @@ public class BigFileReadTestSuite extends AbstractPerformanceTestSuite {
         for (int i = 0; i < nodeCount; i++) {
             Node file = root.getNode("file" + i);
             Node content = file.getNode("jcr:content");
-            InputStream stream = content.getProperty("jcr:data").getBinary().getStream();
-            OutputStream byteArrayOutput = new ByteArrayOutputStream(FILE_SIZE_MB);
-            try {
-                byte[] buff = new byte[1000];
-                while (stream.read(buff) != -1) {
-                    byteArrayOutput.write(buff);
-                }
-            } finally {
-                stream.close();
-                byteArrayOutput.close();
-            }
+            BinaryHelper.assertExpectedSize(content.getProperty("jcr:data").getBinary(), FILE_SIZE_MB);
         }
     }
 

@@ -16,7 +16,6 @@
  */
 package org.modeshape.jcr.perftests.query;
 
-import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;

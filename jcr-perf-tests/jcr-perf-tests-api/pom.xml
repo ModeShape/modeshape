@@ -13,8 +13,9 @@
 
     <properties>
         <tests.exclude></tests.exclude>
-        <tests.include>BigFileReadTestSuite</tests.include>
-        <repeat.count>1</repeat.count>
+        <!--By default, all are included-->
+        <tests.include>ThreeWayJoinTestSuite</tests.include>
+        <repeat.count>5</repeat.count>
         <scan.subPackages>query,read,write</scan.subPackages>
         <testsuite.config.nodeCount>10</testsuite.config.nodeCount>
     </properties>
@@ -28,7 +29,7 @@
          <dependency>
             <groupId>org.reflections</groupId>
             <artifactId>reflections</artifactId>
-            <version>0.9.6</version>
+            <version>0.9.5</version>
         </dependency>
 
         <dependency>

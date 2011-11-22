@@ -9,12 +9,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * Test which runs the performance suite against a Jackrabbit in memory repo.
+ *
  * @author Horia Chiorean
  */
 public class JRPerformanceTest {
 
     @Test
-    public void testPerformance() throws Exception {
+    public void testJackrabbitInMemoryRepo() throws Exception {
         Map<String, URL> parameters = new HashMap<String, URL>();
         parameters.put(JcrUtils.REPOSITORY_URI, getClass().getClassLoader().getResource("./"));
         new PerformanceTestSuiteRunner().runPerformanceTests(parameters, new SimpleCredentials("test", "test".toCharArray()));

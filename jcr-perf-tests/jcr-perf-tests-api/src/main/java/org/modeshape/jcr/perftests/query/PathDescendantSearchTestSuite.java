@@ -65,10 +65,6 @@ public class PathDescendantSearchTestSuite extends AbstractPerformanceTestSuite 
 
     @Override
     public void afterSuite() throws RepositoryException {
-//        for (int i = 0; i < NODE_COUNT; i++) {
-//            root.getNode("node" + i).remove();
-//            session.save();
-//        }
         root.remove();
         session.save();
         session.logout();
@@ -77,11 +73,5 @@ public class PathDescendantSearchTestSuite extends AbstractPerformanceTestSuite 
     protected Query createQuery( QueryManager manager, int i )
             throws RepositoryException {
         return manager.createQuery("/jcr:root/testroot//element(*,nt:base)[@testcount=" + i + "]", Query.XPATH);
-    }
-
-    @Override
-    public boolean isCompatibleWithCurrentRepository() {
-        String xpathSupported = suiteConfiguration.getRepository().getDescriptor(Repository.OPTION_QUERY_SQL_SUPPORTED);
-        return xpathSupported != null && xpathSupported.equalsIgnoreCase(Boolean.TRUE.toString());
     }
 }

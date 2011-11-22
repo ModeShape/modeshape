@@ -32,11 +32,6 @@ public class SimpleSearchTestSuite extends AbstractPerformanceTestSuite {
         super(suiteConfiguration);
     }
 
-    protected Query createQuery( QueryManager manager, int i )
-            throws RepositoryException {
-        return manager.createQuery("//*[@testcount=" + i + "]", Query.XPATH);
-    }
-
     @Override
     public void beforeSuite() throws RepositoryException {
         session = newSession();
@@ -72,9 +67,8 @@ public class SimpleSearchTestSuite extends AbstractPerformanceTestSuite {
         session.logout();
     }
 
-    @Override
-    public boolean isCompatibleWithCurrentRepository() {
-        String xpathSupported = suiteConfiguration.getRepository().getDescriptor(Repository.OPTION_QUERY_SQL_SUPPORTED);
-        return xpathSupported != null && xpathSupported.equalsIgnoreCase(Boolean.TRUE.toString());
+    protected Query createQuery( QueryManager manager, int i )
+            throws RepositoryException {
+        return manager.createQuery("//*[@testcount=" + i + "]", Query.XPATH);
     }
 }

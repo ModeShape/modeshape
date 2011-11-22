@@ -51,6 +51,12 @@ public class UpdateChildNodesTestSuite extends AbstractPerformanceTestSuite {
     }
 
     @Override
+    protected void afterTestRun() throws Exception {
+        node.getNode("onemore").remove();
+        session.save();
+    }
+
+    @Override
     public void afterSuite() throws RepositoryException {
         session.getRootNode().getNode("testnode").remove();
         session.save();

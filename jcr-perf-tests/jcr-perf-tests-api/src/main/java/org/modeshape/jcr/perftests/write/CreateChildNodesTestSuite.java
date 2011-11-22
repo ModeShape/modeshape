@@ -28,6 +28,7 @@ import org.modeshape.jcr.perftests.SuiteConfiguration;
 public class CreateChildNodesTestSuite extends AbstractPerformanceTestSuite {
 
     private Session session;
+    private Node root;
 
     public CreateChildNodesTestSuite( SuiteConfiguration suiteConfiguration ) {
         super(suiteConfiguration);
@@ -36,20 +37,28 @@ public class CreateChildNodesTestSuite extends AbstractPerformanceTestSuite {
     @Override
     public void beforeSuite() throws RepositoryException {
         session = newSession();
+        root = session.getRootNode().addNode("testnode", "nt:unstructured");
     }
 
     @Override
     public void runTest() throws Exception {
-        Node node = session.getRootNode().addNode("testnode", "nt:unstructured");
         for (int i = 0; i < suiteConfiguration.getNodeCount(); i++) {
-            node.addNode("node" + i, "nt:unstructured");
+            root.addNode("node" + i, "nt:unstructured");
+        }
+        session.save();
+    }
+
+    @Override
+    protected void afterTestRun() throws Exception {
+        for (int i = 0; i < suiteConfiguration.getNodeCount(); i++) {
+            root.getNode("node" + i).remove();
         }
         session.save();
     }
 
     @Override
     protected void afterSuite() throws Exception {
-        session.getRootNode().getNode("testnode").remove();
+        root.remove();
         session.save();
     }
 }

@@ -10,11 +10,14 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * Class which holds the performance statistics for the operations ran agains repositories by <code>PerformanceTestSuiteRunner</code>
+ *
  * @author Horia Chiorean
  */
-public class PerformanceStatistics {
+public final class PerformanceStatistics {
     private static final Logger LOGGER = LoggerFactory.getLogger(PerformanceTestSuiteRunner.class);
 
+    //map [repository name -> [operation name, [operation duration 1(ms), operation duration 2(ms)]]
     private Map<String, Map<String, List<Long>>> reposPerformanceMap = new HashMap<String, Map<String, List<Long>>>();
 
     void recordStatisticForRepository(Repository repository, String operationName, long duration) {

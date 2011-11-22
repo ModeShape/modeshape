@@ -47,7 +47,7 @@ public class PathBasedQueryTestSuite extends AbstractPerformanceTestSuite {
         session = newSession();
         root = session.getRootNode().addNode(getClass().getSimpleName(), "nt:unstructured");
         nodeCount = suiteConfiguration.getNodeCount();
-        int count = 1;
+        int count = 0;
         for (int i = 0; i < nodeCount; i++) {
             Node n = root.addNode("node-" + i);
             for (int j = 0; j < nodeCount; j++) {
@@ -60,7 +60,7 @@ public class PathBasedQueryTestSuite extends AbstractPerformanceTestSuite {
     @Override
     public void runTest() throws Exception {
         QueryManager qm = session.getWorkspace().getQueryManager();
-        Query q = qm.createQuery("/jcr:root" + root.getPath() + "/*/*[@count = " + (nodeCount * nodeCount)  +"]", Query.XPATH);
+        Query q = qm.createQuery("/jcr:root" + root.getPath() + "/*/*[@count = " + (nodeCount * nodeCount - 1)  +"]", Query.XPATH);
         for (int i = 0; i < nodeCount; i++) {
             Node result = q.execute().getNodes().nextNode();
             assert result != null;
@@ -77,7 +77,6 @@ public class PathBasedQueryTestSuite extends AbstractPerformanceTestSuite {
     public void afterSuite() throws Exception {
         root.remove();
         session.save();
-        session.logout();
     }
 
     @Override

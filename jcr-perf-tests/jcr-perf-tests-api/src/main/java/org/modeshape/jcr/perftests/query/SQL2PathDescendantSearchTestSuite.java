@@ -16,7 +16,6 @@
  */
 package org.modeshape.jcr.perftests.query;
 
-import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
@@ -32,14 +31,14 @@ public class SQL2PathDescendantSearchTestSuite extends PathDescendantSearchTestS
     }
 
     @Override
+    public boolean isCompatibleWithCurrentRepository() {
+        return true;
+    }
+
+    @Override
     protected Query createQuery(QueryManager manager, int i)
             throws RepositoryException {
         return manager.createQuery(
                 "SELECT * FROM [nt:base] AS n WHERE ISDESCENDANTNODE(n, '/testroot') AND testcount=" + i, Query.JCR_SQL2);
-    }
-
-    @Override
-    public boolean isCompatibleWithCurrentRepository() {
-        return true;
     }
 }

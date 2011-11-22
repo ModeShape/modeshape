@@ -56,7 +56,7 @@ public class ReadPropertyTestSuite extends AbstractPerformanceTestSuite {
             String expectedValue = "value" + i;
             String propName = "property" + i;
             assert expectedValue.equals(root.getProperty(propName).getString());
-            assert root.hasProperty("does-not-exist");
+            assert !root.hasProperty("does-not-exist");
         }
     }
 

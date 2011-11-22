@@ -24,12 +24,13 @@ import java.util.Random;
 import java.util.concurrent.Callable;
 
 /**
- * Test case that traverses 10k unstructured nodes (100x100) while
- * 50 concurrent readers randomly access nodes from within this tree.
+ * Test case that traverses a set of  unstructured nodes while
+ * a number of concurrent readers randomly access nodes from within this tree.
  */
 public class ConcurrentReadTestSuite extends AbstractPerformanceTestSuite {
 
-    private static final int READER_COUNT = 20;
+    private static final int CONCURRENT_READER_COUNT = 20;
+    public static final int READERS_COUNT = 1000;
 
     protected int nodeCount;
 
@@ -53,7 +54,7 @@ public class ConcurrentReadTestSuite extends AbstractPerformanceTestSuite {
             session.save();
         }
 
-        for (int i = 0; i < READER_COUNT; i++) {
+        for (int i = 0; i < CONCURRENT_READER_COUNT; i++) {
             addBackgroundJob(new Reader());
         }
     }
@@ -73,18 +74,13 @@ public class ConcurrentReadTestSuite extends AbstractPerformanceTestSuite {
 
     public void runTest() throws Exception {
         Reader reader = new Reader();
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < READERS_COUNT; i++) {
             reader.call();
         }
     }
 
     public void afterSuite() throws Exception {
-//        for (int i = 0; i < NODE_COUNT; i++) {
-//            root.getNode("node" + i).remove();
-//            session.save();
-//        }
         root.remove();
         session.save();
     }
-
 }
