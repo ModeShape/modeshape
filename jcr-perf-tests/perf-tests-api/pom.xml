@@ -15,7 +15,7 @@
     <properties>
         <tests.exclude></tests.exclude>
         <!--By default, all are included-->
-        <tests.include>ThreeWayJoinTestSuite</tests.include>
+        <tests.include></tests.include>
         <repeat.count>5</repeat.count>
         <scan.subPackages>query,read,write</scan.subPackages>
         <testsuite.config.nodeCount>10</testsuite.config.nodeCount>

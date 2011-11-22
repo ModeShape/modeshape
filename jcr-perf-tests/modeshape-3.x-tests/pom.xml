@@ -25,7 +25,7 @@
         </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-jcr</artifactId>
+            <artifactId>modeshape-jcr-redux</artifactId>
             <version>${modeshape.version}</version>
         </dependency>
         <dependency>

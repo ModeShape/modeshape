@@ -17,7 +17,7 @@ import java.util.Map;
  *
  * @author Horia Chiorean
  */
-public class ModeShapePerformanceTest {
+public class ModeShape2xPerformanceTest {
 
     @Test
     public void testModeShapeInMemory() throws Exception {
