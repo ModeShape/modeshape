@@ -76,8 +76,9 @@
     </build>
 
     <modules>
-        <module>jcr-perf-tests-api</module>
-        <module>modeshape-repo-perf-tests</module>
-        <module>jackrabbit-repo-perf-tests</module>
+        <module>perf-tests-api</module>
+        <module>modeshape-2.x-tests</module>
+        <module>jackrabbit-tests</module>
+        <module>modeshape-3.x-tests</module>
     </modules>
 </project>

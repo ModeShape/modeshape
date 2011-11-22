@@ -9,23 +9,24 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>jackrabbit-repo-perf-tests</artifactId>
+    <artifactId>modeshape-3.x-tests</artifactId>
+    <description>ModeShape 3.x repository performance tests</description>
 
     <properties>
-        <jackrabbit.version>2.3.2</jackrabbit.version>
+        <modeshape.version>3.0-SNAPSHOT</modeshape.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.modeshape</groupId>
-            <artifactId>jcr-perf-tests-api</artifactId>
+            <artifactId>perf-tests-api</artifactId>
             <version>1.0.0-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.jackrabbit</groupId>
-            <artifactId>jackrabbit-core</artifactId>
-            <version>${jackrabbit.version}</version>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jcr</artifactId>
+            <version>${modeshape.version}</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
