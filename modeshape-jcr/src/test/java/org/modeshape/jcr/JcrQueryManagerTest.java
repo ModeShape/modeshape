@@ -161,11 +161,20 @@ public class JcrQueryManagerTest {
                 Node a = other.addNode("NodeA", "nt:unstructured");
                 a.setProperty("something", "value3 quick brown fox");
                 a.setProperty("somethingElse", "value2");
-                other.addNode("NodeA", "nt:unstructured").setProperty("something", "value2 quick brown cat");
-                other.addNode("NodeA", "nt:unstructured").setProperty("something", new String[] {"black dog", "white dog"});
+                a.setProperty("propA", "value1");
+                Node other2 = other.addNode("NodeA", "nt:unstructured");
+                other2.setProperty("something", "value2 quick brown cat");
+                other2.setProperty("propB", "value1");
+                other2.setProperty("propC", "value2");
+                Node other3 = other.addNode("NodeA", "nt:unstructured");
+                other3.setProperty("something", new String[] {"black dog", "white dog"});
+                other3.setProperty("propB", "value1");
+                other3.setProperty("propC", "value3");
                 Node c = other.addNode("NodeC", "notion:typed");
                 c.setProperty("notion:booleanProperty", true);
                 c.setProperty("notion:booleanProperty2", false);
+                c.setProperty("propD", "value4");
+                c.setProperty("propC", "value1");
                 session.getRootNode().addNode("NodeB", "nt:unstructured").setProperty("myUrl", "http://www.acme.com/foo/bar");
                 session.save();
 
@@ -567,13 +576,83 @@ public class JcrQueryManagerTest {
         assertResultsHaveColumns(result, minimumColumnNames());
     }
 
+    @FixFor( "MODE-1309" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryUsingResidualPropertiesForJoinCriteria() throws RepositoryException {
+        String sql = "SELECT x.propA AS pa, y.propB as pb FROM [nt:unstructured] AS x INNER JOIN [nt:unstructured] AS y ON x.propA = y.propB WHERE x.propA = 'value1'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        // print = true;
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 2);
+        assertResultsHaveColumns(result, "pa", "pb");
+        RowIterator rows = result.getRows();
+        Row row1 = rows.nextRow();
+        Set<String> expectedPaths = new HashSet<String>();
+        expectedPaths.add("/Other/NodeA[2]");
+        expectedPaths.add("/Other/NodeA[3]");
+        assertThat(row1.getValue("pa").getString(), is("value1")); // same value from either row
+        assertThat(row1.getValue("pb").getString(), is("value1")); // same value from either row
+        assertThat(row1.getNode("x").getPath(), is("/Other/NodeA"));
+        assertThat(expectedPaths.remove(row1.getNode("y").getPath()), is(true));
+        Row row2 = rows.nextRow();
+        assertThat(row2.getValue("pa").getString(), is("value1")); // same value from either row
+        assertThat(row2.getValue("pb").getString(), is("value1")); // same value from either row
+        assertThat(row2.getNode("x").getPath(), is("/Other/NodeA"));
+        assertThat(expectedPaths.remove(row2.getNode("y").getPath()), is(true));
+    }
+
+    @FixFor( "MODE-1309" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QuerySelectingResidualProperty() throws RepositoryException {
+        String sql = "SELECT a.propB FROM [nt:unstructured] AS a WHERE a.propB = 'value1'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 2);
+        assertResultsHaveColumns(result, "propB");
+        Row row1 = result.getRows().nextRow();
+        assertThat(row1.getValue("propB").getString(), is("value1")); // same value from either row
+    }
+
+    @FixFor( "MODE-1309" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QuerySelectingResidualPropertyWithAlias() throws RepositoryException {
+        String sql = "SELECT a.propB AS foo FROM [nt:unstructured] AS a WHERE a.propB = 'value1'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 2);
+        assertResultsHaveColumns(result, "foo");
+        Row row1 = result.getRows().nextRow();
+        assertThat(row1.getValue("foo").getString(), is("value1")); // same value from either row
+    }
+
+    @FixFor( "MODE-1309" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QuerySelectingResidualPropertyWithAliasUsingAliasInConstraint()
+        throws RepositoryException {
+        String sql = "SELECT a.propB AS foo FROM [nt:unstructured] AS a WHERE a.foo = 'value1'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 2);
+        assertResultsHaveColumns(result, "foo");
+        Row row1 = result.getRows().nextRow();
+        assertThat(row1.getValue("foo").getString(), is("value1")); // same value from either row
+    }
+
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllUnstructuredNodesWithCriteriaOnMultiValuedProperty()
         throws RepositoryException {
         String sql = "SELECT * FROM [nt:unstructured] WHERE something = 'white dog' and something = 'black dog'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
-        print = true;
+        // print = true;
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 1);
@@ -586,7 +665,7 @@ public class JcrQueryManagerTest {
         String sql = "SELECT * FROM [nt:unstructured] WHERE something LIKE 'white%' and something LIKE 'black%'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
-        print = true;
+        // print = true;
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 1);

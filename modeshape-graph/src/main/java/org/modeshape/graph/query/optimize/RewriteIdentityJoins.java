@@ -36,9 +36,9 @@ import org.modeshape.graph.query.model.JoinCondition;
 import org.modeshape.graph.query.model.SameNodeJoinCondition;
 import org.modeshape.graph.query.model.SelectorName;
 import org.modeshape.graph.query.plan.PlanNode;
-import org.modeshape.graph.query.plan.PlanUtil;
 import org.modeshape.graph.query.plan.PlanNode.Property;
 import org.modeshape.graph.query.plan.PlanNode.Type;
+import org.modeshape.graph.query.plan.PlanUtil;
 import org.modeshape.graph.query.validate.Schemata;
 import org.modeshape.graph.query.validate.Schemata.Table;
 
@@ -121,20 +121,24 @@ public class RewriteIdentityJoins implements OptimizerRule {
                 String rightColumnName = equiJoin.property2Name();
                 Schemata.Column leftColumn = table.getColumn(leftColumnName);
                 Schemata.Column rightColumn = table.getColumn(rightColumnName);
-                if (leftColumn == null) {
-                    context.getProblems().addError(GraphI18n.columnDoesNotExistOnTable, leftColumnName, leftTableName);
-                    continue;
-                }
-                if (rightColumn == null) {
-                    context.getProblems().addError(GraphI18n.columnDoesNotExistOnTable, rightColumnName, leftTableName);
-                    continue;
-                }
-                // Are the join columns (on both sides) keys?
-                if (table.hasKey(leftColumn) && (rightColumn == leftColumn || table.hasKey(rightColumn))) {
-                    // It meets all the criteria, so rewrite this join node ...
-                    if (rewrittenSelectors == null) rewrittenSelectors = new HashMap<SelectorName, SelectorName>();
-                    rewriteJoinNode(context, joinNode, rewrittenSelectors);
-                    ++rewrittenJoins;
+                if (leftColumn != null && rightColumn != null) {
+                    // Are the join columns (on both sides) keys?
+                    if (table.hasKey(leftColumn) && (rightColumn == leftColumn || table.hasKey(rightColumn))) {
+                        // It meets all the criteria, so rewrite this join node ...
+                        if (rewrittenSelectors == null) rewrittenSelectors = new HashMap<SelectorName, SelectorName>();
+                        rewriteJoinNode(context, joinNode, rewrittenSelectors);
+                        ++rewrittenJoins;
+                    }
+                } else {
+                    // one or both of the columns must be residual properties ...
+                    // if (leftColumn == null) {
+                    // context.getProblems().addError(GraphI18n.columnDoesNotExistOnTable, leftColumnName, leftTableName);
+                    // continue;
+                    // }
+                    // if (rightColumn == null) {
+                    // context.getProblems().addError(GraphI18n.columnDoesNotExistOnTable, rightColumnName, leftTableName);
+                    // continue;
+                    // }
                 }
             } else if (condition instanceof SameNodeJoinCondition) {
                 SameNodeJoinCondition sameNodeCondition = (SameNodeJoinCondition)condition;

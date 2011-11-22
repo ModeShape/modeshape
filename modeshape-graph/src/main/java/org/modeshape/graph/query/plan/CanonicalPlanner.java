@@ -54,9 +54,9 @@ import org.modeshape.graph.query.model.Visitors.WalkAllVisitor;
 import org.modeshape.graph.query.plan.PlanNode.Property;
 import org.modeshape.graph.query.plan.PlanNode.Type;
 import org.modeshape.graph.query.validate.Schemata;
-import org.modeshape.graph.query.validate.Validator;
 import org.modeshape.graph.query.validate.Schemata.Table;
 import org.modeshape.graph.query.validate.Schemata.View;
+import org.modeshape.graph.query.validate.Validator;
 
 /**
  * The planner that produces a canonical query plan given a {@link QueryCommand query command}.
@@ -130,7 +130,7 @@ public class CanonicalPlanner implements Planner {
 
         // Attach criteria (on top) ...
         Map<String, Subquery> subqueriesByVariableName = new HashMap<String, Subquery>();
-        plan = attachCriteria(context, plan, query.constraint(), subqueriesByVariableName);
+        plan = attachCriteria(context, plan, query.constraint(), query.columns(), subqueriesByVariableName);
 
         // Attach groupbys (on top) ...
         // plan = attachGrouping(context,plan,query.getGroupBy());
@@ -284,12 +284,14 @@ public class CanonicalPlanner implements Planner {
      * @param context the context in which the query is being planned
      * @param plan the existing plan, which joins all source groups
      * @param constraint the criteria or constraint from the query
+     * @param columns the columns in the select (that may have aliases)
      * @param subqueriesByVariableName the subqueries by variable name
      * @return the updated plan, or the existing plan if there were no constraints; never null
      */
     protected PlanNode attachCriteria( final QueryContext context,
                                        PlanNode plan,
                                        Constraint constraint,
+                                       List<? extends Column> columns,
                                        Map<String, Subquery> subqueriesByVariableName ) {
         if (constraint == null) return plan;
         context.getHints().hasCriteria = true;
@@ -299,6 +301,14 @@ public class CanonicalPlanner implements Planner {
         separateAndConstraints(constraint, andableConstraints);
         assert !andableConstraints.isEmpty();
 
+        // Build up the map of aliases for the properties used in the criteria ...
+        Map<String, String> propertyNameByAlias = new HashMap<String, String>();
+        for (Column column : columns) {
+            if (!column.columnName().equals(column.propertyName())) {
+                propertyNameByAlias.put(column.columnName(), column.propertyName());
+            }
+        }
+
         // For each of these constraints, create a criteria (SELECT) node above the supplied (JOIN or SOURCE) node.
         // Do this in reverse order so that the top-most SELECT node corresponds to the first constraint.
         while (!andableConstraints.isEmpty()) {
@@ -306,6 +316,9 @@ public class CanonicalPlanner implements Planner {
 
             // Replace any subqueries with bind variables ...
             criteria = PlanUtil.replaceSubqueriesWithBindVariables(context, criteria, subqueriesByVariableName);
+
+            // Replace any use of aliases with the actual properties ...
+            criteria = PlanUtil.replaceAliasesWithProperties(context, criteria, propertyNameByAlias);
 
             // Create the select node ...
             PlanNode criteriaNode = new PlanNode(Type.SELECT);
