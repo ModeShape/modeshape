@@ -282,6 +282,14 @@ public interface QueryResults extends Serializable {
         public String getPropertyNameForColumn( int columnIndex );
 
         /**
+         * Get the name of the property that corresponds to the named column in each tuple.
+         * 
+         * @param columnName the column name
+         * @return the property name, or the supplied column name if there is no property for it
+         */
+        public String getPropertyNameForColumnName( String columnName );
+
+        /**
          * Get the index of the column given the column name.
          * 
          * @param columnName the column name

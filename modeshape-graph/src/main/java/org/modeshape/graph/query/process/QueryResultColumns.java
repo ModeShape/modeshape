@@ -82,6 +82,7 @@ public class QueryResultColumns implements Columns {
     private final Map<Integer, Integer> locationIndexByColumnIndex;
     private final Map<String, Map<String, Integer>> columnIndexByPropertyNameBySelectorName;
     private final Map<String, Integer> fullTextSearchScoreIndexBySelectorName;
+    private final Map<String, String> propertyNameByColumnName;
 
     /**
      * Create a new definition for the query results given the supplied columns.
@@ -121,6 +122,7 @@ public class QueryResultColumns implements Columns {
         this.locationIndexByColumnName = new HashMap<String, Integer>();
         this.selectorNameByColumnName = new HashMap<String, String>();
         this.columnIndexByPropertyNameBySelectorName = new HashMap<String, Map<String, Integer>>();
+        this.propertyNameByColumnName = new HashMap<String, String>();
         List<String> selectorNames = new ArrayList<String>(columnCount);
         List<String> names = new ArrayList<String>(columnCount);
         Set<Column> sameNameColumns = findColumnsWithSameNames(this.columns);
@@ -135,6 +137,7 @@ public class QueryResultColumns implements Columns {
             }
             String columnName = columnNameFor(column, names, sameNameColumns);
             assert columnName != null;
+            propertyNameByColumnName.put(columnName, column.propertyName());
             selectorNameByColumnName.put(columnName, selectorName);
             columnIndexByColumnName.put(columnName, new Integer(i));
             locationIndexByColumnIndex.put(new Integer(i), selectorIndex);
@@ -156,9 +159,10 @@ public class QueryResultColumns implements Columns {
         this.columnNames = Collections.unmodifiableList(names);
         if (includeFullTextSearchScores) {
             this.fullTextSearchScoreIndexBySelectorName = new HashMap<String, Integer>();
-            int index = columnNames.size() + selectorNames.size();
+            int numSelectors = selectorNames.size();
             for (String selectorName : selectorNames) {
-                fullTextSearchScoreIndexBySelectorName.put(selectorName, new Integer(index++));
+                int index = locationIndexBySelectorName.get(selectorName).intValue() + numSelectors;
+                fullTextSearchScoreIndexBySelectorName.put(selectorName, new Integer(index));
             }
             this.tupleSize = columnNames.size() + selectorNames.size() + selectorNames.size();
         } else {
@@ -176,6 +180,7 @@ public class QueryResultColumns implements Columns {
         this.locationIndexByColumnIndex = new HashMap<Integer, Integer>();
         this.locationIndexByColumnName = new HashMap<String, Integer>();
         this.columnIndexByPropertyNameBySelectorName = new HashMap<String, Map<String, Integer>>();
+        this.propertyNameByColumnName = new HashMap<String, String>();
         this.selectorNameByColumnName = new HashMap<String, String>();
         this.selectorNames = new ArrayList<String>(columns.size());
         List<String> types = new ArrayList<String>(columns.size());
@@ -188,6 +193,7 @@ public class QueryResultColumns implements Columns {
             if (!selectorNames.contains(selectorName)) selectorNames.add(selectorName);
             String columnName = columnNameFor(column, names, sameNameColumns);
             assert columnName != null;
+            propertyNameByColumnName.put(columnName, column.propertyName());
             selectorNameByColumnName.put(columnName, selectorName);
             Integer columnIndex = wrappedAround.columnIndexForName(columnName);
             if (columnIndex == null) {
@@ -222,9 +228,9 @@ public class QueryResultColumns implements Columns {
         this.columnTypes = Collections.unmodifiableList(types);
         if (wrappedAround.fullTextSearchScoreIndexBySelectorName != null) {
             this.fullTextSearchScoreIndexBySelectorName = new HashMap<String, Integer>();
-            int index = columnNames.size() + selectorNames.size();
             for (String selectorName : selectorNames) {
-                fullTextSearchScoreIndexBySelectorName.put(selectorName, new Integer(index++));
+                Integer selectorIndex = new Integer(wrappedAround.getFullTextSearchScoreIndexFor(selectorName));
+                fullTextSearchScoreIndexBySelectorName.put(selectorName, selectorIndex);
             }
             this.tupleSize = columnNames.size() + selectorNames.size() + selectorNames.size();
         } else {
@@ -446,6 +452,12 @@ public class QueryResultColumns implements Columns {
      */
     public String getPropertyNameForColumn( int columnIndex ) {
         return columns.get(columnIndex).propertyName();
+    }
+
+    @Override
+    public String getPropertyNameForColumnName( String columnName ) {
+        String result = propertyNameByColumnName.get(columnName);
+        return result != null ? result : columnName;
     }
 
     /**

@@ -1169,6 +1169,136 @@ public class PlanUtil {
         }
     }
 
+    public static Constraint replaceAliasesWithProperties( QueryContext context,
+                                                           Constraint constraint,
+                                                           Map<String, String> propertyByAlias ) {
+        if (propertyByAlias.isEmpty()) return constraint;
+        if (constraint instanceof And) {
+            And and = (And)constraint;
+            Constraint left = replaceAliasesWithProperties(context, and.left(), propertyByAlias);
+            Constraint right = replaceAliasesWithProperties(context, and.right(), propertyByAlias);
+            if (left == and.left() && right == and.right()) return and;
+            return new And(left, right);
+        }
+        if (constraint instanceof Or) {
+            Or or = (Or)constraint;
+            Constraint left = replaceAliasesWithProperties(context, or.left(), propertyByAlias);
+            Constraint right = replaceAliasesWithProperties(context, or.right(), propertyByAlias);
+            if (left == or.left() && right == or.right()) return or;
+            return new Or(left, right);
+        }
+        if (constraint instanceof Not) {
+            Not not = (Not)constraint;
+            Constraint wrapped = replaceAliasesWithProperties(context, not.constraint(), propertyByAlias);
+            if (wrapped == not.constraint()) return not;
+            return new Not(wrapped);
+        }
+        if (constraint instanceof SameNode) {
+            return constraint;
+        }
+        if (constraint instanceof ChildNode) {
+            return constraint;
+        }
+        if (constraint instanceof DescendantNode) {
+            return constraint;
+        }
+        if (constraint instanceof PropertyExistence) {
+            return constraint;
+        }
+        if (constraint instanceof FullTextSearch) {
+            return constraint;
+        }
+        if (constraint instanceof Between) {
+            Between between = (Between)constraint;
+            DynamicOperand lhs = replaceAliasesWithProperties(context, between.operand(), propertyByAlias);
+            StaticOperand lower = between.lowerBound(); // Current only a literal; therefore, no alias
+            StaticOperand upper = between.upperBound(); // Current only a literal; therefore, no alias
+            if (lower == between.operand()) return between;
+            return new Between(lhs, lower, upper, between.isLowerBoundIncluded(), between.isUpperBoundIncluded());
+        }
+        if (constraint instanceof Comparison) {
+            Comparison comparison = (Comparison)constraint;
+            DynamicOperand lhs = replaceAliasesWithProperties(context, comparison.operand1(), propertyByAlias);
+            if (lhs == comparison.operand1()) return comparison;
+            return new Comparison(lhs, comparison.operator(), comparison.operand2());
+        }
+        if (constraint instanceof SetCriteria) {
+            SetCriteria criteria = (SetCriteria)constraint;
+            DynamicOperand lhs = replaceAliasesWithProperties(context, criteria.leftOperand(), propertyByAlias);
+            if (lhs == criteria.leftOperand()) return criteria;
+            return new SetCriteria(lhs, criteria.rightOperands());
+        }
+        return constraint;
+    }
+
+    protected static PropertyValue replaceAliasesWithProperties( QueryContext context,
+                                                                 PropertyValue value,
+                                                                 Map<String, String> propertyByAlias ) {
+        String original = value.propertyName();
+        String propName = propertyByAlias.get(original);
+        return propName != null ? new PropertyValue(value.selectorName(), propName) : value;
+    }
+
+    public static DynamicOperand replaceAliasesWithProperties( QueryContext context,
+                                                               DynamicOperand operand,
+                                                               Map<String, String> propertyByAlias ) {
+        if (operand instanceof ArithmeticOperand) {
+            ArithmeticOperand arith = (ArithmeticOperand)operand;
+            DynamicOperand newLeft = replaceAliasesWithProperties(context, arith.left(), propertyByAlias);
+            DynamicOperand newRight = replaceAliasesWithProperties(context, arith.right(), propertyByAlias);
+            if (newLeft == arith.left() && newRight == arith.right()) return arith;
+            return new ArithmeticOperand(newLeft, arith.operator(), newRight);
+        }
+        if (operand instanceof FullTextSearchScore) {
+            return operand;
+        }
+        if (operand instanceof Length) {
+            Length operation = (Length)operand;
+            PropertyValue value = operation.propertyValue();
+            PropertyValue newValue = replaceAliasesWithProperties(context, value, propertyByAlias);
+            if (newValue == value) return operation;
+            return new Length(newValue);
+        }
+        if (operand instanceof LowerCase) {
+            LowerCase operation = (LowerCase)operand;
+            DynamicOperand oldOperand = operation.operand();
+            DynamicOperand newOperand = replaceAliasesWithProperties(context, oldOperand, propertyByAlias);
+            if (oldOperand == newOperand) return operation;
+            return new LowerCase(newOperand);
+        }
+        if (operand instanceof UpperCase) {
+            UpperCase operation = (UpperCase)operand;
+            DynamicOperand oldOperand = operation.operand();
+            DynamicOperand newOperand = replaceAliasesWithProperties(context, oldOperand, propertyByAlias);
+            if (oldOperand == newOperand) return operation;
+            return new UpperCase(newOperand);
+        }
+        if (operand instanceof NodeName) {
+            return operand;
+        }
+        if (operand instanceof NodeLocalName) {
+            return operand;
+        }
+        if (operand instanceof PropertyValue) {
+            PropertyValue value = (PropertyValue)operand;
+            return replaceAliasesWithProperties(context, value, propertyByAlias);
+        }
+        if (operand instanceof ReferenceValue) {
+            ReferenceValue value = (ReferenceValue)operand;
+            String original = value.propertyName();
+            String propName = propertyByAlias.get(original);
+            if (propName == null) return value;
+            return new ReferenceValue(value.selectorName(), propName);
+        }
+        if (operand instanceof NodeDepth) {
+            return operand;
+        }
+        if (operand instanceof NodePath) {
+            return operand;
+        }
+        return operand;
+    }
+
     public static Constraint replaceSubqueriesWithBindVariables( QueryContext context,
                                                                  Constraint constraint,
                                                                  Map<String, Subquery> subqueriesByVariableName ) {
