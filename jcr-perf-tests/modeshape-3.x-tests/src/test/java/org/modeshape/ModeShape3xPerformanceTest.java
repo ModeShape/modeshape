@@ -24,7 +24,7 @@ public class ModeShape3xPerformanceTest {
         Map<String, URL> parameters = new HashMap<String, URL>();
         parameters.put(JcrRepositoryFactory.URL, getClass().getClassLoader().getResource("configRepository.json"));
         //TODO author=Horia Chiorean date=11/22/11 description=for some reason, modeshape crashes in the join tests & binary incompatibility
-        RunnerConfiguration runnerConfig = new RunnerConfiguration().addExcludeTests(
+        RunnerConfiguration runnerConfig = new RunnerConfiguration().addTestsToExclude(
                 TwoWayJoinTestSuite.class.getSimpleName(),
                 ThreeWayJoinTestSuite.class.getSimpleName(),
                 BigFileReadTestSuite.class.getSimpleName(),

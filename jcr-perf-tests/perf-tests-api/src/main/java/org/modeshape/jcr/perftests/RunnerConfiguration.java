@@ -44,22 +44,22 @@ public final class RunnerConfiguration {
     /**
      * Adds regexp patterns to exclude from running
      */
-    public RunnerConfiguration addExcludeTests( String... excludeTestsRegExp ) {
+    public RunnerConfiguration addTestsToExclude( String... excludeTestsRegExp ) {
         this.excludeTestsRegExp.addAll(Arrays.asList(excludeTestsRegExp));
         return this;
     }
 
-    public RunnerConfiguration addIncludeTests( String... includeTestsRegExp ) {
+    public RunnerConfiguration addTestsToInclude( String... includeTestsRegExp ) {
         this.includeTestsRegExp.addAll(Arrays.asList(includeTestsRegExp));
         return this;
     }
 
-    public RunnerConfiguration addScanSubPackages( String... scanSubPackages ) {
+    public RunnerConfiguration addSubPackagesToScan( String... scanSubPackages ) {
         this.scanSubPackages.addAll(Arrays.asList(scanSubPackages));
         return this;
     }
 
-    public RunnerConfiguration withRepeatCount( int repeatCount ) {
+    public RunnerConfiguration setRepeatCount( int repeatCount ) {
         this.repeatCount = repeatCount;
         return this;
     }
