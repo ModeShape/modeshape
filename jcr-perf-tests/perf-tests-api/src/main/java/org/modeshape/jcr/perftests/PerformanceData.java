@@ -10,33 +10,37 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Class which holds the performance statistics for the operations ran against repositories by <code>PerformanceTestSuiteRunner</code>
+ * Class which holds the performance statistics for the test ran against repositories by <code>PerformanceTestSuiteRunner</code>
  *
  * @author Horia Chiorean
  */
-public final class PerformanceData {
+final class PerformanceData {
     private static final Logger LOGGER = LoggerFactory.getLogger(PerformanceTestSuiteRunner.class);
 
-    //map [repository name -> [operation name, [operation duration 1(ms), operation duration 2(ms)]]
-    private Map<String, Map<String, List<Long>>> reposPerformanceMap = new HashMap<String, Map<String, List<Long>>>();
-    private TimeUnit duration = TimeUnit.MILLISECONDS;
+    //map [repository name -> [test name, [test duration 1(ms), test duration 2(ms)]]
+    private Map<String, Map<String, List<Long>>> reposPerformanceMap = new TreeMap<String, Map<String, List<Long>>>();
+    private TimeUnit duration;
 
-    void record( Repository repository, String operationName, long duration ) {
-        duration = this.duration.convert(duration, TimeUnit.NANOSECONDS);
+    PerformanceData( TimeUnit duration ) {
+        this.duration = duration;
+    }
+
+    void record( Repository repository, String testName, long durationNanos ) {
+        long convertedDuration = this.duration.convert(durationNanos, TimeUnit.NANOSECONDS);
         String repoName = repository.getClass().getSimpleName();
-        LOGGER.info("Recording statistic: repo {} operation {} duration(ms) {}", new Object[] {repoName, operationName, duration});
+        LOGGER.info("Recording statistic: repo {} test {} duration(ms) {}", new Object[] {repoName, testName, convertedDuration});
 
         if (!reposPerformanceMap.containsKey(repoName)) {
-            reposPerformanceMap.put(repoName, new HashMap<String, List<Long>>());
+            reposPerformanceMap.put(repoName, new TreeMap<String, List<Long>>());
         }
         Map<String, List<Long>> repoPerformanceMap = reposPerformanceMap.get(repoName);
-        List<Long> existingDataForOperation = repoPerformanceMap.get(operationName);
-        if (existingDataForOperation != null) {
-            existingDataForOperation.add(duration);
+        List<Long> testData = repoPerformanceMap.get(testName);
+        if (testData != null) {
+            testData.add(convertedDuration);
         } else {
-            existingDataForOperation = new ArrayList<Long>();
-            existingDataForOperation.add(duration);
-            repoPerformanceMap.put(operationName, existingDataForOperation);
+            testData = new ArrayList<Long>();
+            testData.add(convertedDuration);
+            repoPerformanceMap.put(testName, testData);
         }
     }
 
@@ -65,16 +69,16 @@ public final class PerformanceData {
     }
 
     private void print5NrSummaryForRepo( PrintStream ps, String repoName ) {
-        Map<String, List<Long>> operationsMap = reposPerformanceMap.get(repoName);
-        for (String operationName : operationsMap.keySet()) {
-            double[] fiveNrSummary = StatisticsCalculator.calculate5NrSummary(operationsMap.get(operationName));
-            ps.printf(repoName + "#" + operationName +" [%.0f; %.2f; %.2f; %.2f; %.0f]%n", fiveNrSummary[0],
+        Map<String, List<Long>> testData = reposPerformanceMap.get(repoName);
+        for (String testName : testData.keySet()) {
+            double[] fiveNrSummary = StatisticsCalculator.calculate5NrSummary(testData.get(testName));
+            ps.printf(repoName + "#" + testName +" [%.0f; %.2f; %.2f; %.2f; %.0f]%n", fiveNrSummary[0],
                     fiveNrSummary[1], fiveNrSummary[2], fiveNrSummary[3], fiveNrSummary[4]);
         }
     }
 
     private void printHeader( PrintStream ps ) {
-        ps.printf("Operation(%s) [Minimum, 1st Quartile, Median, 3rd Quartile, Maximum]%n", duration.toString());
+        ps.printf("Test(%s) [Minimum, 1st Quartile, Median, 3rd Quartile, Maximum]%n", duration.toString());
         ps.println("-----------------------------------------------------------------------");
     }
 }

@@ -13,7 +13,7 @@
     <description>ModeShape 2.x repository performance tests</description>
 
     <properties>
-        <modeshape.version>2.6.0.Final</modeshape.version>
+        <modeshape.version>2.7-SNAPSHOT</modeshape.version>
     </properties>
 
     <dependencies>

@@ -46,15 +46,12 @@ public abstract class AbstractPerformanceTestSuite {
     /**
      * Executes a single iteration of this test.
      *
-     * @return number of milliseconds spent in this iteration
      * @throws Exception if an error occurs
      */
-    public final long run() throws Exception {
+    public final void run() throws Exception {
         beforeTestRun();
         try {
-            long start = System.nanoTime();
             runTest();
-            return System.nanoTime() - start;
         } finally {
             afterTestRun();
         }
