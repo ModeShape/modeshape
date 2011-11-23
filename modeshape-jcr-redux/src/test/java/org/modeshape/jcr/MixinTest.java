@@ -26,27 +26,24 @@ package org.modeshape.jcr;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
-import java.util.Arrays;
-import java.util.List;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.PropertyType;
+import javax.jcr.RepositoryException;
+import javax.jcr.Value;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
+import javax.jcr.nodetype.NodeDefinitionTemplate;
 import javax.jcr.nodetype.NodeTypeDefinition;
+import javax.jcr.nodetype.NodeTypeManager;
+import javax.jcr.nodetype.NodeTypeTemplate;
+import javax.jcr.nodetype.PropertyDefinitionTemplate;
 import javax.jcr.version.OnParentVersionAction;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.modeshape.graph.JcrNtLexicon;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.basic.BasicName;
-import org.modeshape.jcr.nodetype.NodeDefinitionTemplate;
-import org.modeshape.jcr.nodetype.NodeTypeTemplate;
-import org.modeshape.jcr.nodetype.PropertyDefinitionTemplate;
 
-@Migrated
-public class MixinTest extends AbstractSessionTest {
+public class MixinTest extends SingleUseAbstractTest {
 
     /*
      * Declares the following node types:
@@ -58,23 +55,25 @@ public class MixinTest extends AbstractSessionTest {
      * mixinTypeC with child node nodeA and property propertyB
      * primaryTypeA with child node nodeA and property propertyA
      */
-    static final Name MIXIN_TYPE_A = new BasicName("", "mixinTypeA");
-    static final Name MIXIN_TYPE_B = new BasicName("", "mixinTypeB");
-    static final Name MIXIN_TYPE_C = new BasicName("", "mixinTypeC");
-    static final Name MIXIN_TYPE_WITH_AUTO_PROP = new BasicName("", "mixinTypeWithAutoCreatedProperty");
-    static final Name MIXIN_TYPE_WITH_AUTO_CHILD = new BasicName("", "mixinTypeWithAutoCreatedChildNode");
-    static final Name PRIMARY_TYPE_A = new BasicName("", "primaryTypeA");
+    static final String MIXIN_TYPE_A = "mixinTypeA";
+    static final String MIXIN_TYPE_B = "mixinTypeB";
+    static final String MIXIN_TYPE_C = "mixinTypeC";
+    static final String BASE_PRIMARY_TYPE = "baseType";
+    static final String MIXIN_TYPE_WITH_AUTO_PROP = "mixinTypeWithAutoCreatedProperty";
+    static final String MIXIN_TYPE_WITH_AUTO_CHILD = "mixinTypeWithAutoCreatedChildNode";
+    static final String PRIMARY_TYPE_A = "primaryTypeA";
 
-    static final Name PROPERTY_A = new BasicName("", "propertyA");
-    static final Name PROPERTY_B = new BasicName("", "propertyB");
+    static final String PROPERTY_A = "propertyA";
+    static final String PROPERTY_B = "propertyB";
 
-    static final Name CHILD_NODE_A = new BasicName("", "nodeA");
-    static final Name CHILD_NODE_B = new BasicName("", "nodeB");
+    static final String CHILD_NODE_A = "nodeA";
+    static final String CHILD_NODE_B = "nodeB";
 
     @Override
     @Before
     public void beforeEach() throws Exception {
         super.beforeEach();
+        session.getWorkspace().getNodeTypeManager().registerNodeTypes(getTestTypes(), true);
     }
 
     @After
@@ -86,8 +85,8 @@ public class MixinTest extends AbstractSessionTest {
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowNullMixinTypeName() throws Exception {
-        graph.create("/a").and();
-        graph.set("jcr:primaryType").on("/a").to(PRIMARY_TYPE_A);
+        session.getRootNode().addNode("a", PRIMARY_TYPE_A);
+        session.save();
 
         Node rootNode = session.getRootNode();
         Node nodeA = rootNode.getNode("a");
@@ -97,8 +96,8 @@ public class MixinTest extends AbstractSessionTest {
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowEmptyMixinTypeName() throws Exception {
-        graph.create("/a").and();
-        graph.set("jcr:primaryType").on("/a").to(PRIMARY_TYPE_A);
+        session.getRootNode().addNode("a", PRIMARY_TYPE_A);
+        session.save();
 
         Node rootNode = session.getRootNode();
         Node nodeA = rootNode.getNode("a");
@@ -108,8 +107,8 @@ public class MixinTest extends AbstractSessionTest {
 
     @Test( expected = NoSuchNodeTypeException.class )
     public void shouldNotAllowInvalidMixinTypeName() throws Exception {
-        graph.create("/a").and();
-        graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(PRIMARY_TYPE_A);
+        session.getRootNode().addNode("a", PRIMARY_TYPE_A);
+        session.save();
 
         Node rootNode = session.getRootNode();
         Node nodeA = rootNode.getNode("a");
@@ -120,59 +119,56 @@ public class MixinTest extends AbstractSessionTest {
     @Test
     public void shouldNotAllowAddingMixinToProtectedNodes() throws Exception {
         Node rootNode = session.getRootNode();
-        Node systemNode = rootNode.getNode(JcrLexicon.SYSTEM.getString(registry));
+        Node systemNode = rootNode.getNode("jcr:system");
 
         assertThat(systemNode.getDefinition().isProtected(), is(true));
-        assertThat(systemNode.canAddMixin(JcrMixLexicon.VERSIONABLE.getString(registry)), is(false));
+        assertThat(systemNode.canAddMixin("mix:versionable"), is(false));
     }
 
     @Test
     public void shouldAllowAddingMixinIfNoConflict() throws Exception {
-        graph.create("/a").and();
-        graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(PRIMARY_TYPE_A);
-        graph.set(JcrLexicon.MIXIN_TYPES.getString(registry)).on("/a").to(JcrMixLexicon.REFERENCEABLE.getString(registry));
+        session.getRootNode().addNode("a", PRIMARY_TYPE_A).addMixin("mix:referenceable");
+        session.save();
 
         Node rootNode = session.getRootNode();
         Node nodeA = rootNode.getNode("a");
 
-        assertThat(nodeA.canAddMixin(MIXIN_TYPE_B.getString(registry)), is(true));
+        assertThat(nodeA.canAddMixin(MIXIN_TYPE_B), is(true));
     }
 
     @Test
     public void shouldAllowAddingMixinIfPrimaryTypeConflicts() throws Exception {
-        graph.create("/a").and();
-        graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(PRIMARY_TYPE_A);
-        graph.set(JcrLexicon.MIXIN_TYPES.getString(registry)).on("/a").to(JcrMixLexicon.REFERENCEABLE.getString(registry));
+        session.getRootNode().addNode("a", PRIMARY_TYPE_A).addMixin("mix:referenceable");
+        session.save();
 
         Node rootNode = session.getRootNode();
         Node nodeA = rootNode.getNode("a");
 
-        assertThat(nodeA.canAddMixin(MIXIN_TYPE_C.getString(registry)), is(true));
+        assertThat(nodeA.canAddMixin(MIXIN_TYPE_C), is(true));
     }
 
     @Test
     public void shouldAllowAddingMixinIfMixinTypeConflicts() throws Exception {
-        graph.create("/a").and();
-        graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(JcrNtLexicon.BASE.getString(registry));
-        graph.set(JcrLexicon.MIXIN_TYPES.getString(registry)).on("/a").to(MIXIN_TYPE_B);
+        session.getRootNode().addNode("a", PRIMARY_TYPE_A).addMixin(MIXIN_TYPE_B);
+        session.save();
 
         Node rootNode = session.getRootNode();
         Node nodeA = rootNode.getNode("a");
 
-        assertThat(nodeA.canAddMixin(MIXIN_TYPE_C.getString(registry)), is(true));
+        assertThat(nodeA.canAddMixin(MIXIN_TYPE_C), is(true));
     }
 
     @Test
     public void shouldAutoCreateAutoCreatedPropertiesOnAddition() throws Exception {
-        graph.create("/a").and();
-        graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(JcrNtLexicon.BASE.getString(registry));
+        session.getRootNode().addNode("a");
+        session.save();
 
         Node rootNode = session.getRootNode();
         Node nodeA = rootNode.getNode("a");
 
-        assertThat(nodeA.canAddMixin(MIXIN_TYPE_WITH_AUTO_PROP.getString(registry)), is(true));
-        nodeA.addMixin(MIXIN_TYPE_WITH_AUTO_PROP.getString(registry));
-        Property prop = nodeA.getProperty(PROPERTY_B.getString(registry));
+        assertThat(nodeA.canAddMixin(MIXIN_TYPE_WITH_AUTO_PROP), is(true));
+        nodeA.addMixin(MIXIN_TYPE_WITH_AUTO_PROP);
+        Property prop = nodeA.getProperty(PROPERTY_B);
 
         assertThat(prop, is(notNullValue()));
         assertThat(prop.getLong(), is(10L));
@@ -180,106 +176,101 @@ public class MixinTest extends AbstractSessionTest {
 
     @Test
     public void shouldAutoCreateAutoCreatedChildNodesOnAddition() throws Exception {
-        graph.create("/a").and();
-        graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(JcrNtLexicon.BASE.getString(registry));
+        session.getRootNode().addNode("a");
+        session.save();
 
         Node rootNode = session.getRootNode();
         Node nodeA = rootNode.getNode("a");
 
-        assertThat(nodeA.canAddMixin(MIXIN_TYPE_WITH_AUTO_CHILD.getString(registry)), is(true));
-        nodeA.addMixin(MIXIN_TYPE_WITH_AUTO_CHILD.getString(registry));
-        Node childNode = nodeA.getNode(CHILD_NODE_B.getString(registry));
+        assertThat(nodeA.canAddMixin(MIXIN_TYPE_WITH_AUTO_CHILD), is(true));
+        nodeA.addMixin(MIXIN_TYPE_WITH_AUTO_CHILD);
+        Node childNode = nodeA.getNode(CHILD_NODE_B);
 
         assertThat(childNode, is(notNullValue()));
-        assertThat(childNode.getPrimaryNodeType().getName(), is(JcrNtLexicon.UNSTRUCTURED.getString(registry)));
+        assertThat(childNode.getPrimaryNodeType().getName(), is("nt:unstructured"));
     }
 
     @Test( expected = ConstraintViolationException.class )
     public void shouldNotAllowAdditionIfResidualPropertyConflicts() throws Exception {
-        graph.create("/a").and();
-        graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(JcrNtLexicon.UNSTRUCTURED.getString(registry));
+        session.getRootNode().addNode("a", "nt:unstructured");
+        session.save();
 
         Node rootNode = session.getRootNode();
         Node nodeA = rootNode.getNode("a");
-        nodeA.setProperty(PROPERTY_B.getString(registry), "Not a boolean");
+        nodeA.setProperty(PROPERTY_B, "Not a boolean");
 
-        assertThat(nodeA.canAddMixin(MIXIN_TYPE_WITH_AUTO_PROP.getString(registry)), is(false));
-        nodeA.addMixin(MIXIN_TYPE_WITH_AUTO_PROP.getString(registry));
+        assertThat(nodeA.canAddMixin(MIXIN_TYPE_WITH_AUTO_PROP), is(false));
+        nodeA.addMixin(MIXIN_TYPE_WITH_AUTO_PROP);
     }
 
     @Test
     public void shouldAllowAdditionIfResidualPropertyDoesNotConflict() throws Exception {
-        graph.create("/a").and();
-        graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(JcrNtLexicon.UNSTRUCTURED.getString(registry));
+        session.getRootNode().addNode("a", "nt:unstructured");
+        session.save();
 
         Node rootNode = session.getRootNode();
         Node nodeA = rootNode.getNode("a");
-        nodeA.setProperty(PROPERTY_B.getString(registry), 10L);
+        nodeA.setProperty(PROPERTY_B, 10L);
 
-        assertThat(nodeA.canAddMixin(MIXIN_TYPE_WITH_AUTO_PROP.getString(registry)), is(true));
-        nodeA.addMixin(MIXIN_TYPE_WITH_AUTO_PROP.getString(registry));
+        assertThat(nodeA.canAddMixin(MIXIN_TYPE_WITH_AUTO_PROP), is(true));
+        nodeA.addMixin(MIXIN_TYPE_WITH_AUTO_PROP);
     }
 
     @Test( expected = ConstraintViolationException.class )
     public void shouldNotAllowAdditionIfResidualChildNodeConflicts() throws Exception {
-        graph.create("/a").and().create("/a/" + CHILD_NODE_B).and();
-        graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(JcrNtLexicon.UNSTRUCTURED.getString(registry));
-        graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a/" + CHILD_NODE_B).to(JcrNtLexicon.BASE.getString(registry));
+        session.getRootNode().addNode("a", "nt:unstructured").addNode(CHILD_NODE_B, "nt:base");
+        session.save();
 
         Node rootNode = session.getRootNode();
         Node nodeA = rootNode.getNode("a");
 
-        assertThat(nodeA.canAddMixin(MIXIN_TYPE_WITH_AUTO_CHILD.getString(registry)), is(false));
-        nodeA.addMixin(MIXIN_TYPE_WITH_AUTO_CHILD.getString(registry));
+        assertThat(nodeA.canAddMixin(MIXIN_TYPE_WITH_AUTO_CHILD), is(false));
+        nodeA.addMixin(MIXIN_TYPE_WITH_AUTO_CHILD);
     }
 
     @Test
     public void shouldAllowAdditionIfResidualChildNodeDoesNotConflict() throws Exception {
-        graph.create("/a").and().create("/a/" + CHILD_NODE_B).and();
-        graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(JcrNtLexicon.UNSTRUCTURED.getString(registry));
-        graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry))
-             .on("/a/" + CHILD_NODE_B)
-             .to(JcrNtLexicon.UNSTRUCTURED.getString(registry));
+        session.getRootNode().addNode("a", "nt:unstructured").addNode(CHILD_NODE_B, "nt:unstructured");
+        session.save();
 
         Node rootNode = session.getRootNode();
         Node nodeA = rootNode.getNode("a");
 
-        assertThat(nodeA.canAddMixin(MIXIN_TYPE_WITH_AUTO_CHILD.getString(registry)), is(true));
-        nodeA.addMixin(MIXIN_TYPE_WITH_AUTO_CHILD.getString(registry));
+        assertThat(nodeA.canAddMixin(MIXIN_TYPE_WITH_AUTO_CHILD), is(true));
+        nodeA.addMixin(MIXIN_TYPE_WITH_AUTO_CHILD);
         session.save();
 
         Node newRootNode = session.getRootNode();
         Node newNodeA = newRootNode.getNode("a");
 
-        Node newNodeB = newNodeA.getNode(CHILD_NODE_B.getString(registry));
+        Node newNodeB = newNodeA.getNode(CHILD_NODE_B);
 
-        assertThat(newNodeA.isNodeType(MIXIN_TYPE_WITH_AUTO_CHILD.getLocalName()), is(true));
+        assertThat(newNodeA.isNodeType(MIXIN_TYPE_WITH_AUTO_CHILD), is(true));
         assertThat(newNodeB.isNodeType("nt:unstructured"), is(true));
         assertThat(newNodeB, is(notNullValue()));
 
         // Uncomment this to see the problem with the session cache not refreshing the immutable info for /a after a save
-        // assertThat(newNodeB.getDefinition().getDeclaringNodeType().getName(), is(MIXIN_TYPE_B.getString(registry)));
+        // assertThat(newNodeB.getDefinition().getDeclaringNodeType().getName(), is(MIXIN_TYPE_B));
 
     }
 
     @Test
     public void shouldAllowSettingNewPropertyAfterAddingMixin() throws Exception {
-        graph.create("/a").and();
-        graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(PRIMARY_TYPE_A);
-        graph.set(JcrLexicon.MIXIN_TYPES.getString(registry)).on("/a").to(JcrMixLexicon.REFERENCEABLE.getString(registry));
+        session.getRootNode().addNode("a", PRIMARY_TYPE_A).addMixin("mix:referenceable");
+        session.save();
 
         Node rootNode = session.getRootNode();
         Node nodeA = rootNode.getNode("a");
 
-        assertThat(nodeA.canAddMixin(MIXIN_TYPE_B.getString(registry)), is(true));
-        nodeA.addMixin(MIXIN_TYPE_B.getString(registry));
+        assertThat(nodeA.canAddMixin(MIXIN_TYPE_B), is(true));
+        nodeA.addMixin(MIXIN_TYPE_B);
 
-        nodeA.setProperty(PROPERTY_B.getString(registry), "some string");
+        nodeA.setProperty(PROPERTY_B, "some string");
         session.save();
 
         rootNode = session.getRootNode();
         nodeA = rootNode.getNode("a");
-        Property propB = nodeA.getProperty(PROPERTY_B.getString(registry));
+        Property propB = nodeA.getProperty(PROPERTY_B);
 
         assertThat(propB, is(notNullValue()));
         assertThat(propB.getValue().getString(), is("some string"));
@@ -287,36 +278,36 @@ public class MixinTest extends AbstractSessionTest {
 
     @Test
     public void shouldAllowAddingNewChildNodeAfterAddingMixin() throws Exception {
-        graph.create("/a").and();
-        graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(PRIMARY_TYPE_A);
-        graph.set(JcrLexicon.MIXIN_TYPES.getString(registry)).on("/a").to(JcrMixLexicon.REFERENCEABLE.getString(registry));
+        session.getRootNode().addNode("a", PRIMARY_TYPE_A).addMixin("mix:referenceable");
+        session.save();
 
         Node rootNode = session.getRootNode();
         Node nodeA = rootNode.getNode("a");
 
-        assertThat(nodeA.canAddMixin(MIXIN_TYPE_B.getString(registry)), is(true));
-        nodeA.addMixin(MIXIN_TYPE_B.getString(registry));
+        assertThat(nodeA.canAddMixin(MIXIN_TYPE_B), is(true));
+        nodeA.addMixin(MIXIN_TYPE_B);
 
-        nodeA.addNode(CHILD_NODE_B.getString(registry));
+        nodeA.addNode(CHILD_NODE_B);
         session.save();
 
         Node newRootNode = session.getRootNode();
         Node newNodeA = newRootNode.getNode("a");
-        Node newNodeB = newNodeA.getNode(CHILD_NODE_B.getString(registry));
+        Node newNodeB = newNodeA.getNode(CHILD_NODE_B);
 
         assertThat(newNodeB, is(notNullValue()));
-        assertThat(newNodeB.getDefinition().getDeclaringNodeType().getName(), is(MIXIN_TYPE_B.getString(registry)));
+        assertThat(newNodeB.getDefinition().getDeclaringNodeType().getName(), is(MIXIN_TYPE_B));
     }
 
     @Test
     public void shouldAllowRemovalIfNoConflict() throws Exception {
-        graph.create("/a").and().create("/a/nodeB");
-        graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(JcrNtLexicon.UNSTRUCTURED);
-        graph.set(JcrLexicon.MIXIN_TYPES.getString(registry)).on("/a").to(MIXIN_TYPE_B);
+        Node a = session.getRootNode().addNode("a");
+        a.addMixin(MIXIN_TYPE_B);
+        a.addNode("nodeB");
+        session.save();
 
         Node rootNode = session.getRootNode();
         Node nodeA = rootNode.getNode("a");
-        nodeA.removeMixin(MIXIN_TYPE_B.getString(registry));
+        nodeA.removeMixin(MIXIN_TYPE_B);
         session.save();
 
         rootNode = session.getRootNode();
@@ -327,14 +318,14 @@ public class MixinTest extends AbstractSessionTest {
 
     @Test
     public void shouldAllowRemovalIfExistingPropertyWouldHaveDefinition() throws Exception {
-        graph.create("/a").and().create("/a");
-        graph.set(PROPERTY_B).on("/a").to("true");
-        graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(JcrNtLexicon.UNSTRUCTURED);
-        graph.set(JcrLexicon.MIXIN_TYPES.getString(registry)).on("/a").to(MIXIN_TYPE_B);
+        Node a = session.getRootNode().addNode("a", "nt:unstructured");
+        a.addMixin(MIXIN_TYPE_B);
+        a.setProperty(PROPERTY_B, true);
+        session.save();
 
         Node rootNode = session.getRootNode();
         Node nodeA = rootNode.getNode("a");
-        nodeA.removeMixin(MIXIN_TYPE_B.getString(registry));
+        nodeA.removeMixin(MIXIN_TYPE_B);
         session.save();
 
         rootNode = session.getRootNode();
@@ -345,98 +336,99 @@ public class MixinTest extends AbstractSessionTest {
 
     @Test( expected = ConstraintViolationException.class )
     public void shouldNotAllowRemovalIfExistingPropertyWouldHaveNoDefinition() throws Exception {
-        graph.create("/a").and().create("/a");
-        graph.set(PROPERTY_B).on("/a").to("true");
-        graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(PRIMARY_TYPE_A);
-        graph.set(JcrLexicon.MIXIN_TYPES.getString(registry)).on("/a").to(MIXIN_TYPE_B);
+        Node a = session.getRootNode().addNode("a", BASE_PRIMARY_TYPE);
+        a.addMixin(MIXIN_TYPE_B);
+        a.setProperty(PROPERTY_B, "true");
+        session.save();
 
         Node rootNode = session.getRootNode();
         Node nodeA = rootNode.getNode("a");
-        nodeA.removeMixin(MIXIN_TYPE_B.getString(registry));
+        nodeA.removeMixin(MIXIN_TYPE_B);
         session.save();
-
-        rootNode = session.getRootNode();
-        nodeA = rootNode.getNode("a");
-
-        assertThat(nodeA.getMixinNodeTypes().length, is(0));
     }
 
     @Test
     public void shouldAllowRemovalIfExistingChildNodeWouldHaveDefinition() throws Exception {
-        graph.create("/a").and().create("/a/nodeB");
-        graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(JcrNtLexicon.UNSTRUCTURED);
-        graph.set(JcrLexicon.MIXIN_TYPES.getString(registry)).on("/a").to(MIXIN_TYPE_B);
+        Node a = session.getRootNode().addNode("a", "nt:unstructured");
+        a.addMixin(MIXIN_TYPE_B);
+        a.addNode("nodeB");
+        session.save();
 
         Node rootNode = session.getRootNode();
         Node nodeA = rootNode.getNode("a");
-        nodeA.removeMixin(MIXIN_TYPE_B.getString(registry));
+        nodeA.removeMixin(MIXIN_TYPE_B);
     }
 
     @Test( expected = ConstraintViolationException.class )
     public void shouldNotAllowRemovalIfExistingChildNodeWouldHaveNoDefinition() throws Exception {
-        graph.create("/a").and().create("/a/nodeB").and();
-        graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(PRIMARY_TYPE_A);
-        graph.set(JcrLexicon.MIXIN_TYPES.getString(registry)).on("/a").to(MIXIN_TYPE_B);
+        Node a = session.getRootNode().addNode("a", "baseType");
+        a.addMixin(MIXIN_TYPE_B);
+        a.addNode("nodeB");
+        session.save();
 
         Node rootNode = session.getRootNode();
         Node nodeA = rootNode.getNode("a");
-        nodeA.removeMixin(MIXIN_TYPE_B.getString(registry));
+        nodeA.removeMixin(MIXIN_TYPE_B);
     }
 
-    @SuppressWarnings( {"unchecked", "deprecation"} )
-    @Override
-    protected List<NodeTypeDefinition> getTestTypes() throws ConstraintViolationException {
-        NodeTypeTemplate mixinTypeA = new JcrNodeTypeTemplate(this.context);
+    @SuppressWarnings( {"unchecked"} )
+    protected NodeTypeDefinition[] getTestTypes() throws RepositoryException {
+        NodeTypeManager mgr = session.getWorkspace().getNodeTypeManager();
+
+        NodeTypeTemplate basePrimaryType = mgr.createNodeTypeTemplate();
+        basePrimaryType.setName("baseType");
+
+        NodeTypeTemplate mixinTypeA = mgr.createNodeTypeTemplate();
         mixinTypeA.setName("mixinTypeA");
         mixinTypeA.setMixin(true);
 
-        NodeDefinitionTemplate childNodeA = new JcrNodeDefinitionTemplate(this.context);
+        NodeDefinitionTemplate childNodeA = mgr.createNodeDefinitionTemplate();
         childNodeA.setName("nodeA");
         childNodeA.setOnParentVersion(OnParentVersionAction.IGNORE);
         mixinTypeA.getNodeDefinitionTemplates().add(childNodeA);
 
-        PropertyDefinitionTemplate propertyA = new JcrPropertyDefinitionTemplate(this.context);
+        PropertyDefinitionTemplate propertyA = mgr.createPropertyDefinitionTemplate();
         propertyA.setName("propertyA");
         propertyA.setOnParentVersion(OnParentVersionAction.IGNORE);
         propertyA.setRequiredType(PropertyType.STRING);
         mixinTypeA.getPropertyDefinitionTemplates().add(propertyA);
 
-        NodeTypeTemplate mixinTypeB = new JcrNodeTypeTemplate(this.context);
+        NodeTypeTemplate mixinTypeB = mgr.createNodeTypeTemplate();
         mixinTypeB.setName("mixinTypeB");
         mixinTypeB.setMixin(true);
 
-        NodeDefinitionTemplate childNodeB = new JcrNodeDefinitionTemplate(this.context);
+        NodeDefinitionTemplate childNodeB = mgr.createNodeDefinitionTemplate();
         childNodeB.setName("nodeB");
         childNodeB.setDefaultPrimaryTypeName("nt:base");
         childNodeB.setOnParentVersion(OnParentVersionAction.IGNORE);
         mixinTypeB.getNodeDefinitionTemplates().add(childNodeB);
 
-        PropertyDefinitionTemplate propertyB = new JcrPropertyDefinitionTemplate(this.context);
+        PropertyDefinitionTemplate propertyB = mgr.createPropertyDefinitionTemplate();
         propertyB.setName("propertyB");
         propertyB.setOnParentVersion(OnParentVersionAction.IGNORE);
         propertyB.setRequiredType(PropertyType.BINARY);
         mixinTypeB.getPropertyDefinitionTemplates().add(propertyB);
 
-        NodeTypeTemplate mixinTypeC = new JcrNodeTypeTemplate(this.context);
+        NodeTypeTemplate mixinTypeC = mgr.createNodeTypeTemplate();
         mixinTypeC.setName("mixinTypeC");
         mixinTypeC.setMixin(true);
 
-        childNodeA = new JcrNodeDefinitionTemplate(this.context);
+        childNodeA = mgr.createNodeDefinitionTemplate();
         childNodeA.setName("nodeA");
         childNodeA.setOnParentVersion(OnParentVersionAction.IGNORE);
         mixinTypeC.getNodeDefinitionTemplates().add(childNodeA);
 
-        propertyB = new JcrPropertyDefinitionTemplate(this.context);
+        propertyB = mgr.createPropertyDefinitionTemplate();
         propertyB.setName("propertyB");
         propertyB.setOnParentVersion(OnParentVersionAction.IGNORE);
         propertyB.setRequiredType(PropertyType.STRING);
         mixinTypeC.getPropertyDefinitionTemplates().add(propertyB);
 
-        NodeTypeTemplate mixinTypeWithAutoChild = new JcrNodeTypeTemplate(this.context);
+        NodeTypeTemplate mixinTypeWithAutoChild = mgr.createNodeTypeTemplate();
         mixinTypeWithAutoChild.setName("mixinTypeWithAutoCreatedChildNode");
         mixinTypeWithAutoChild.setMixin(true);
 
-        childNodeB = new JcrNodeDefinitionTemplate(this.context);
+        childNodeB = mgr.createNodeDefinitionTemplate();
         childNodeB.setName("nodeB");
         childNodeB.setOnParentVersion(OnParentVersionAction.IGNORE);
         childNodeB.setMandatory(true);
@@ -445,35 +437,35 @@ public class MixinTest extends AbstractSessionTest {
         childNodeB.setRequiredPrimaryTypeNames(new String[] {"nt:unstructured"});
         mixinTypeWithAutoChild.getNodeDefinitionTemplates().add(childNodeB);
 
-        NodeTypeTemplate mixinTypeWithAutoProperty = new JcrNodeTypeTemplate(this.context);
+        NodeTypeTemplate mixinTypeWithAutoProperty = mgr.createNodeTypeTemplate();
         mixinTypeWithAutoProperty.setName("mixinTypeWithAutoCreatedProperty");
         mixinTypeWithAutoProperty.setMixin(true);
 
-        propertyB = new JcrPropertyDefinitionTemplate(this.context);
+        propertyB = mgr.createPropertyDefinitionTemplate();
         propertyB.setName("propertyB");
         propertyB.setMandatory(true);
         propertyB.setAutoCreated(true);
         propertyB.setOnParentVersion(OnParentVersionAction.IGNORE);
         propertyB.setRequiredType(PropertyType.LONG);
-        propertyB.setDefaultValues(new String[] {"10"});
+        propertyB.setDefaultValues(new Value[] {session.getValueFactory().createValue("10")});
         mixinTypeWithAutoProperty.getPropertyDefinitionTemplates().add(propertyB);
 
-        NodeTypeTemplate primaryTypeA = new JcrNodeTypeTemplate(this.context);
+        NodeTypeTemplate primaryTypeA = mgr.createNodeTypeTemplate();
         primaryTypeA.setName("primaryTypeA");
 
-        childNodeA = new JcrNodeDefinitionTemplate(this.context);
+        childNodeA = mgr.createNodeDefinitionTemplate();
         childNodeA.setName("nodeA");
         childNodeA.setOnParentVersion(OnParentVersionAction.IGNORE);
         primaryTypeA.getNodeDefinitionTemplates().add(childNodeA);
 
-        propertyA = new JcrPropertyDefinitionTemplate(this.context);
+        propertyA = mgr.createPropertyDefinitionTemplate();
         propertyA.setName("propertyA");
         propertyA.setOnParentVersion(OnParentVersionAction.IGNORE);
         propertyA.setRequiredType(PropertyType.STRING);
         primaryTypeA.getPropertyDefinitionTemplates().add(propertyA);
 
-        return Arrays.asList(new NodeTypeDefinition[] {mixinTypeA, mixinTypeB, mixinTypeC, mixinTypeWithAutoChild,
-            mixinTypeWithAutoProperty, primaryTypeA,});
+        return new NodeTypeDefinition[] {basePrimaryType, mixinTypeA, mixinTypeB, mixinTypeC, mixinTypeWithAutoChild,
+            mixinTypeWithAutoProperty, primaryTypeA,};
     }
 
 }

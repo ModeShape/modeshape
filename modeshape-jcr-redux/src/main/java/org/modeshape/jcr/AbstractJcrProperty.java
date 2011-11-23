@@ -40,6 +40,7 @@ import javax.jcr.version.VersionException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.jcr.RepositoryNodeTypeManager.NodeTypes;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.SessionCache;
@@ -82,8 +83,9 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
         this.propertyType = propertyType;
     }
 
-    final void setPropertyDefinitionId( PropertyDefinitionId propDefnId ) {
-        this.cachedDefn = new CachedDefinition(propDefnId, node.session().nodeTypesVersion());
+    final void setPropertyDefinitionId( PropertyDefinitionId propDefnId,
+                                        int nodeTypesVersion ) {
+        this.cachedDefn = new CachedDefinition(propDefnId, nodeTypesVersion);
     }
 
     final void releasePropertyDefinitionId() {
@@ -101,11 +103,12 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
     final PropertyDefinitionId propertyDefinitionId()
         throws ItemNotFoundException, ConstraintViolationException, InvalidItemStateException {
         CachedDefinition defn = cachedDefn;
-        if (defn == null || node.session().nodeTypesVersion() > defn.nodeTypesVersion) {
+        NodeTypes nodeTypes = session.nodeTypes();
+        if (defn == null || nodeTypes.getVersion() > defn.nodeTypesVersion) {
             Name primaryType = node.getPrimaryTypeName();
             Set<Name> mixinTypes = node.getMixinTypeNames();
-            PropertyDefinitionId id = node.propertyDefinitionFor(property(), primaryType, mixinTypes).getId();
-            setPropertyDefinitionId(id);
+            PropertyDefinitionId id = node.propertyDefinitionFor(property(), primaryType, mixinTypes, nodeTypes).getId();
+            setPropertyDefinitionId(id, nodeTypes.getVersion());
             return id;
         }
         return defn.propDefnId;
@@ -122,15 +125,16 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
     final JcrPropertyDefinition propertyDefinition()
         throws ItemNotFoundException, ConstraintViolationException, InvalidItemStateException {
         CachedDefinition defn = cachedDefn;
-        if (defn == null || node.session().nodeTypesVersion() > defn.nodeTypesVersion) {
+        NodeTypes nodeTypes = session.nodeTypes();
+        if (defn == null || nodeTypes.getVersion() > defn.nodeTypesVersion) {
             Name primaryType = node.getPrimaryTypeName();
             Set<Name> mixinTypes = node.getMixinTypeNames();
-            JcrPropertyDefinition propDefn = node.propertyDefinitionFor(property(), primaryType, mixinTypes);
+            JcrPropertyDefinition propDefn = node.propertyDefinitionFor(property(), primaryType, mixinTypes, nodeTypes);
             PropertyDefinitionId id = propDefn.getId();
-            setPropertyDefinitionId(id);
+            setPropertyDefinitionId(id, nodeTypes.getVersion());
             return propDefn;
         }
-        return session.repository().nodeTypeManager().getPropertyDefinition(defn.propDefnId);
+        return nodeTypes.getPropertyDefinition(defn.propDefnId);
     }
 
     final CachedNode cachedNode() throws ItemNotFoundException, InvalidItemStateException {

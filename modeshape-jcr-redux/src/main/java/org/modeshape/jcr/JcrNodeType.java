@@ -40,6 +40,7 @@ import javax.jcr.nodetype.NodeTypeIterator;
 import javax.jcr.nodetype.PropertyDefinition;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.jcr.RepositoryNodeTypeManager.NodeTypes;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.core.ExecutionContext;
 import org.modeshape.jcr.value.Name;
@@ -261,7 +262,7 @@ class JcrNodeType implements NodeType {
     public boolean canAddChildNode( String childNodeName ) {
         CheckArg.isNotNull(childNodeName, "childNodeName");
         Name childName = context.getValueFactories().getNameFactory().create(childNodeName);
-        return nodeTypeManager().findChildNodeDefinition(this.name, null, childName, null, 0, true) != null;
+        return nodeTypes().findChildNodeDefinition(this.name, null, childName, null, 0, true) != null;
     }
 
     @Override
@@ -273,19 +274,20 @@ class JcrNodeType implements NodeType {
         Name childName = context.getValueFactories().getNameFactory().create(childNodeName);
         Name childPrimaryTypeName = context.getValueFactories().getNameFactory().create(primaryNodeTypeName);
 
+        NodeTypes nodeTypes = nodeTypes();
         if (primaryNodeTypeName != null) {
-            JcrNodeType childType = this.nodeTypeManager().getNodeType(childPrimaryTypeName);
+            JcrNodeType childType = nodeTypes.getNodeType(childPrimaryTypeName);
             if (childType.isAbstract() || childType.isMixin()) return false;
         }
 
-        return nodeTypeManager().findChildNodeDefinition(this.name, null, childName, childPrimaryTypeName, 0, true) != null;
+        return nodeTypes.findChildNodeDefinition(this.name, null, childName, childPrimaryTypeName, 0, true) != null;
     }
 
     @Override
     public boolean canRemoveNode( String itemName ) {
         CheckArg.isNotNull(itemName, "itemName");
         Name childName = context.getValueFactories().getNameFactory().create(itemName);
-        return nodeTypeManager().canRemoveAllChildren(this.name, null, childName, true);
+        return nodeTypes().canRemoveAllChildren(this.name, null, childName, true);
     }
 
     /**
@@ -301,7 +303,7 @@ class JcrNodeType implements NodeType {
     public boolean canRemoveItem( String itemName ) {
         CheckArg.isNotNull(itemName, "itemName");
         Name childName = context.getValueFactories().getNameFactory().create(itemName);
-        return nodeTypeManager().canRemoveItem(this.name, null, childName, true);
+        return nodeTypes().canRemoveItem(this.name, null, childName, true);
     }
 
     /**
@@ -375,7 +377,7 @@ class JcrNodeType implements NodeType {
         Name name = context.getValueFactories().getNameFactory().create(propertyName);
 
         // Reuse the logic in RepositoryNodeTypeManager ...
-        return nodeTypeManager().findPropertyDefinition(session, this.name, null, name, value, false, true) != null;
+        return nodeTypes().findPropertyDefinition(session, this.name, null, name, value, false, true) != null;
     }
 
     public boolean canSetProperty( JcrSession session,
@@ -388,7 +390,7 @@ class JcrNodeType implements NodeType {
 
         Name name = context.getValueFactories().getNameFactory().create(propertyName);
         // Reuse the logic in RepositoryNodeTypeManager ...
-        return nodeTypeManager().findPropertyDefinition(session, this.name, null, name, values, true) != null;
+        return nodeTypes().findPropertyDefinition(session, this.name, null, name, values, true) != null;
     }
 
     @Override
@@ -397,7 +399,7 @@ class JcrNodeType implements NodeType {
         Name name = context.getValueFactories().getNameFactory().create(propertyName);
 
         // Reuse the logic in RepositoryNodeTypeManager ...
-        return nodeTypeManager().canRemoveProperty(this.name, null, name, true);
+        return nodeTypes().canRemoveProperty(this.name, null, name, true);
     }
 
     @Override
@@ -445,12 +447,12 @@ class JcrNodeType implements NodeType {
 
     @Override
     public NodeTypeIterator getSubtypes() {
-        return new JcrNodeTypeIterator(nodeTypeManager.subtypesFor(this));
+        return new JcrNodeTypeIterator(nodeTypes().subtypesFor(this));
     }
 
     @Override
     public NodeTypeIterator getDeclaredSubtypes() {
-        return new JcrNodeTypeIterator(nodeTypeManager.declaredSubtypesFor(this));
+        return new JcrNodeTypeIterator(nodeTypes().declaredSubtypesFor(this));
     }
 
     @Override
@@ -587,6 +589,10 @@ class JcrNodeType implements NodeType {
         return new JcrNodeType(this.key, context, this.nodeTypeManager, this.name, this.declaredSupertypes, this.primaryItemName,
                                this.childNodeDefinitions, this.propertyDefinitions, this.mixin, this.isAbstract, this.queryable,
                                this.orderableChildNodes);
+    }
+
+    final NodeTypes nodeTypes() {
+        return nodeTypeManager.getNodeTypes();
     }
 
     final RepositoryNodeTypeManager nodeTypeManager() {

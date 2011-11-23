@@ -35,6 +35,7 @@ import javax.jcr.RepositoryException;
 import org.junit.Test;
 import org.modeshape.jcr.api.RepositoryFactory;
 
+@Migrated
 public class JcrRepositoryFactoryTest {
 
     private String url;

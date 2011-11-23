@@ -41,6 +41,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.jcr.RepositoryNodeTypeManager.NodeTypes;
 import org.modeshape.jcr.core.ExecutionContext;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
@@ -68,6 +69,10 @@ public class TypeRegistrationTest extends SingleUseAbstractTest {
         registry = session.namespaces();
         nameFactory = session.nameFactory();
         repoTypeManager = session.repository().nodeTypeManager();
+    }
+
+    protected NodeTypes nodeTypes() {
+        return repoTypeManager.getNodeTypes();
     }
 
     protected Value[] valuesFrom( String... values ) throws RepositoryException {
@@ -134,7 +139,7 @@ public class TypeRegistrationTest extends SingleUseAbstractTest {
         JcrNodeType testNodeType = repoTypeManager.registerNodeType(ntTemplate);
 
         assertThat(testNodeType.getName(), is(TEST_TYPE_NAME));
-        JcrNodeType nodeTypeFromRepo = repoTypeManager.getNodeType(testTypeName);
+        JcrNodeType nodeTypeFromRepo = nodeTypes().getNodeType(testTypeName);
         assertThat(nodeTypeFromRepo, is(notNullValue()));
         assertThat(nodeTypeFromRepo.getName(), is(TEST_TYPE_NAME));
     }
@@ -154,7 +159,7 @@ public class TypeRegistrationTest extends SingleUseAbstractTest {
         JcrNodeType testNodeType = repoTypeManager.registerNodeType(ntTemplate);
 
         assertThat(testNodeType.getName(), is(TEST_TYPE_NAME));
-        JcrNodeType nodeTypeFromRepo = repoTypeManager.getNodeType(testTypeName);
+        JcrNodeType nodeTypeFromRepo = nodeTypes().getNodeType(testTypeName);
         assertThat(nodeTypeFromRepo, is(notNullValue()));
         assertThat(nodeTypeFromRepo.getName(), is(TEST_TYPE_NAME));
 
@@ -170,7 +175,7 @@ public class TypeRegistrationTest extends SingleUseAbstractTest {
         JcrNodeType testNodeType = repoTypeManager.registerNodeType(ntTemplate);
 
         assertThat(testNodeType.getName(), is(TEST_TYPE_NAME));
-        JcrNodeType nodeTypeFromRepo = repoTypeManager.getNodeType(testTypeName);
+        JcrNodeType nodeTypeFromRepo = nodeTypes().getNodeType(testTypeName);
         assertThat(nodeTypeFromRepo, is(notNullValue()));
         assertThat(nodeTypeFromRepo.getName(), is(TEST_TYPE_NAME));
 
@@ -790,10 +795,10 @@ public class TypeRegistrationTest extends SingleUseAbstractTest {
         }
 
         Name typeNameAsName = nameFactory.create(TEST_TYPE_NAME);
-        int nodeTypeCount = repoTypeManager.getAllNodeTypes().size();
+        int nodeTypeCount = nodeTypes().getAllNodeTypes().size();
         repoTypeManager.unregisterNodeType(Arrays.asList(new Name[] {typeNameAsName}));
-        assertThat(repoTypeManager.getAllNodeTypes().size(), is(nodeTypeCount - 1));
-        assertThat(repoTypeManager.getNodeType(typeNameAsName), is(nullValue()));
+        assertThat(nodeTypes().getAllNodeTypes().size(), is(nodeTypeCount - 1));
+        assertThat(nodeTypes().getNodeType(typeNameAsName), is(nullValue()));
     }
 
     @SuppressWarnings( "unchecked" )
@@ -820,11 +825,11 @@ public class TypeRegistrationTest extends SingleUseAbstractTest {
 
         Name typeNameAsName = nameFactory.create(TEST_TYPE_NAME);
         Name type2NameAsName = nameFactory.create(TEST_TYPE_NAME2);
-        int nodeTypeCount = repoTypeManager.getAllNodeTypes().size();
+        int nodeTypeCount = nodeTypes().getAllNodeTypes().size();
         repoTypeManager.unregisterNodeType(Arrays.asList(new Name[] {typeNameAsName, type2NameAsName}));
-        assertThat(repoTypeManager.getAllNodeTypes().size(), is(nodeTypeCount - 2));
-        assertThat(repoTypeManager.getNodeType(typeNameAsName), is(nullValue()));
-        assertThat(repoTypeManager.getNodeType(type2NameAsName), is(nullValue()));
+        assertThat(nodeTypes().getAllNodeTypes().size(), is(nodeTypeCount - 2));
+        assertThat(nodeTypes().getNodeType(typeNameAsName), is(nullValue()));
+        assertThat(nodeTypes().getNodeType(type2NameAsName), is(nullValue()));
 
     }
 
@@ -928,7 +933,7 @@ public class TypeRegistrationTest extends SingleUseAbstractTest {
                                             JcrNodeType nodeType ) {
         Name nodeTypeName = nameFactory.create(template.getName());
         if (nodeType == null) {
-            nodeType = repoTypeManager.getNodeType(nodeTypeName);
+            nodeType = nodeTypes().getNodeType(nodeTypeName);
             assertThat(nodeType.nodeTypeManager(), is(notNullValue()));
         }
 
