@@ -27,7 +27,7 @@ public final class PerformanceTestSuiteRunner {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PerformanceTestSuiteRunner.class);
 
-    private PerformanceStatistics perfStatistics;
+    private PerformanceData perfData;
     private RunnerConfiguration runnerConfig;
 
     /**
@@ -41,7 +41,7 @@ public final class PerformanceTestSuiteRunner {
      * Creates a new runner instance passing a custom config.
      */
     public PerformanceTestSuiteRunner( RunnerConfiguration runnerConfig ) {
-        perfStatistics = new PerformanceStatistics();
+        this.perfData = new PerformanceData();
         this.runnerConfig = runnerConfig;
     }
 
@@ -56,7 +56,7 @@ public final class PerformanceTestSuiteRunner {
         for (RepositoryFactory repositoryFactory : ServiceLoader.load(RepositoryFactory.class)) {
             Repository repository = initializeRepository(repositoryConfigParams, repositoryFactory, credentials);
             if (repository == null) {
-                return;
+                continue;
             }
 
             SuiteConfiguration suiteConfiguration = new SuiteConfiguration(repository, credentials, "testsuite.properties");
@@ -65,6 +65,7 @@ public final class PerformanceTestSuiteRunner {
                 runTestSuite(suiteConfiguration, testSuiteClass);
             }
         }
+        perfData.print5NrSummary();
     }
 
     private void runTestSuite( SuiteConfiguration suiteConfiguration, Class<? extends AbstractPerformanceTestSuite> testSuiteClass )
@@ -86,7 +87,7 @@ public final class PerformanceTestSuiteRunner {
         for (int i = 0; i < runnerConfig.repeatCount; i++) {
             LOGGER.info("run: {}", i);
             long duration = testSuite.run();
-            perfStatistics.recordStatisticForRepository(suiteConfiguration.getRepository(), testSuiteClass.getSimpleName(), duration);
+            perfData.record(suiteConfiguration.getRepository(), testSuiteClass.getSimpleName(), duration);
         }
         testSuite.tearDown();
     }
@@ -123,7 +124,7 @@ public final class PerformanceTestSuiteRunner {
         }
         repository.login(credentials).logout(); //obtain a session to try and trigger the repo initialization
         long initializationTime = System.nanoTime() - start;
-        perfStatistics.recordStatisticForRepository(repository, "initialization", initializationTime);
+        perfData.record(repository, "initialization", initializationTime);
         return repository;
     }
 

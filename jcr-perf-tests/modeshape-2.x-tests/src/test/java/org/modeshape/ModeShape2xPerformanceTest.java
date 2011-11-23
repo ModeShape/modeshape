@@ -7,6 +7,7 @@ import org.modeshape.jcr.perftests.RunnerConfiguration;
 import org.modeshape.jcr.perftests.query.ThreeWayJoinTestSuite;
 import org.modeshape.jcr.perftests.query.TwoWayJoinTestSuite;
 import org.modeshape.jcr.perftests.read.BigFileReadTestSuite;
+import org.modeshape.jcr.perftests.read.ConcurrentReadTestSuite;
 import org.modeshape.jcr.perftests.read.SmallFileReadTestSuite;
 import java.net.URL;
 import java.util.HashMap;
@@ -23,12 +24,13 @@ public class ModeShape2xPerformanceTest {
     public void testModeShapeInMemory() throws Exception {
         Map<String, URL> parameters = new HashMap<String, URL>();
         parameters.put(JcrRepositoryFactory.URL, getClass().getClassLoader().getResource("configRepository.xml"));
-        //TODO author=Horia Chiorean date=11/22/11 description=for some reason, modeshape crashes in the join tests & binary incompatibility
+        //TODO author=Horia Chiorean date=11/22/11 description=some tests excluded because of various problems
         RunnerConfiguration runnerConfig = new RunnerConfiguration().addTestsToExclude(
-                TwoWayJoinTestSuite.class.getSimpleName(),
-                ThreeWayJoinTestSuite.class.getSimpleName(),
-                BigFileReadTestSuite.class.getSimpleName(),
-                SmallFileReadTestSuite.class.getSimpleName());
+                ConcurrentReadTestSuite.class.getSimpleName(),//deadlock
+                ThreeWayJoinTestSuite.class.getSimpleName(), //MODE-1309
+                TwoWayJoinTestSuite.class.getSimpleName(), //MODE-1309
+                BigFileReadTestSuite.class.getSimpleName(), //binary incompatibility
+                SmallFileReadTestSuite.class.getSimpleName()); //binary incompatibility
         new PerformanceTestSuiteRunner(runnerConfig).runPerformanceTests(parameters, null);
     }
 }
