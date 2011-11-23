@@ -67,7 +67,7 @@ import org.modeshape.jcr.AbstractJcrNode.Type;
 import org.modeshape.jcr.JcrContentHandler.EnclosingSAXException;
 import org.modeshape.jcr.JcrNamespaceRegistry.Behavior;
 import org.modeshape.jcr.JcrRepository.RunningState;
-import org.modeshape.jcr.RepositoryNodeTypeManager.Capabilities;
+import org.modeshape.jcr.RepositoryNodeTypeManager.NodeTypes;
 import org.modeshape.jcr.RepositoryStatistics.DurationMetric;
 import org.modeshape.jcr.RepositoryStatistics.ValueMetric;
 import org.modeshape.jcr.cache.CachedNode;
@@ -289,8 +289,8 @@ public class JcrSession implements Session {
         return this.workspace.nodeTypeManager();
     }
 
-    final int nodeTypesVersion() {
-        return this.repository().nodeTypeManager().nodeTypesVersion();
+    final NodeTypes nodeTypes() {
+        return this.repository().nodeTypeManager().getNodeTypes();
     }
 
     final JcrVersionManager versionManager() {
@@ -1260,7 +1260,7 @@ public class JcrSession implements Session {
     protected final class JcrPreSave implements SessionCache.PreSave {
         private final SessionCache cache;
         private final RepositoryNodeTypeManager nodeTypeMgr;
-        private final Capabilities nodeTypeCapabilities;
+        private final NodeTypes nodeTypeCapabilities;
         private final SystemContent systemContent;
         private final Map<NodeKey, NodeKey> baseVersionKeys;
         private boolean initialized = false;
@@ -1276,7 +1276,7 @@ public class JcrSession implements Session {
             this.baseVersionKeys = baseVersionKeys;
             // Get the capabilities cache. This is immutable, so we'll use it for the entire pre-save operation ...
             this.nodeTypeMgr = repository().nodeTypeManager();
-            this.nodeTypeCapabilities = nodeTypeMgr.getCapabilities();
+            this.nodeTypeCapabilities = nodeTypeMgr.getNodeTypes();
         }
 
         @Override

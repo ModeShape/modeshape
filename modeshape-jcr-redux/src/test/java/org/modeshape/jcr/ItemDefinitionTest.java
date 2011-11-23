@@ -37,6 +37,7 @@ import javax.jcr.nodetype.NodeTypeDefinition;
 import javax.jcr.nodetype.NodeTypeTemplate;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.jcr.RepositoryNodeTypeManager.NodeTypes;
 import org.modeshape.jcr.core.ExecutionContext;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
@@ -64,40 +65,44 @@ public class ItemDefinitionTest extends SingleUseAbstractTest {
         session.getWorkspace().getNodeTypeManager().registerNodeTypes(getTestTypes(), true);
     }
 
+    protected NodeTypes nodeTypes() {
+        return repoTypeManager.getNodeTypes();
+    }
+
     @Test
     public void shouldNotFindInvalidPropertyDefinition() throws Exception {
         // This property name is not defined for any of our test types
         Name badName = nameFactory.create("undefinedName");
         JcrPropertyDefinition propDef;
 
-        propDef = repoTypeManager.findPropertyDefinition(session,
-                                                         NODE_TYPE_A,
-                                                         Collections.<Name>emptyList(),
-                                                         badName,
-                                                         null,
-                                                         true,
-                                                         true,
-                                                         true);
+        propDef = nodeTypes().findPropertyDefinition(session,
+                                                     NODE_TYPE_A,
+                                                     Collections.<Name>emptyList(),
+                                                     badName,
+                                                     null,
+                                                     true,
+                                                     true,
+                                                     true);
         assertThat(propDef, is(nullValue()));
 
-        propDef = repoTypeManager.findPropertyDefinition(session,
-                                                         NODE_TYPE_B,
-                                                         Collections.<Name>emptyList(),
-                                                         badName,
-                                                         null,
-                                                         true,
-                                                         true,
-                                                         true);
+        propDef = nodeTypes().findPropertyDefinition(session,
+                                                     NODE_TYPE_B,
+                                                     Collections.<Name>emptyList(),
+                                                     badName,
+                                                     null,
+                                                     true,
+                                                     true,
+                                                     true);
         assertThat(propDef, is(nullValue()));
 
-        propDef = repoTypeManager.findPropertyDefinition(session,
-                                                         NODE_TYPE_C,
-                                                         Collections.<Name>emptyList(),
-                                                         badName,
-                                                         null,
-                                                         true,
-                                                         true,
-                                                         true);
+        propDef = nodeTypes().findPropertyDefinition(session,
+                                                     NODE_TYPE_C,
+                                                     Collections.<Name>emptyList(),
+                                                     badName,
+                                                     null,
+                                                     true,
+                                                     true,
+                                                     true);
         assertThat(propDef, is(nullValue()));
     }
 
@@ -108,36 +113,36 @@ public class ItemDefinitionTest extends SingleUseAbstractTest {
 
         JcrPropertyDefinition propDef;
 
-        propDef = repoTypeManager.findPropertyDefinition(session,
-                                                         NODE_TYPE_A,
-                                                         Collections.<Name>emptyList(),
-                                                         SINGLE_PROP1,
-                                                         null,
-                                                         true,
-                                                         true,
-                                                         true);
+        propDef = nodeTypes().findPropertyDefinition(session,
+                                                     NODE_TYPE_A,
+                                                     Collections.<Name>emptyList(),
+                                                     SINGLE_PROP1,
+                                                     null,
+                                                     true,
+                                                     true,
+                                                     true);
         assertThat(propDef, is(notNullValue()));
         assertEquals(propDef.getRequiredType(), PropertyType.STRING);
 
-        propDef = repoTypeManager.findPropertyDefinition(session,
-                                                         NODE_TYPE_B,
-                                                         Collections.<Name>emptyList(),
-                                                         SINGLE_PROP1,
-                                                         null,
-                                                         true,
-                                                         true,
-                                                         true);
+        propDef = nodeTypes().findPropertyDefinition(session,
+                                                     NODE_TYPE_B,
+                                                     Collections.<Name>emptyList(),
+                                                     SINGLE_PROP1,
+                                                     null,
+                                                     true,
+                                                     true,
+                                                     true);
         assertThat(propDef, is(notNullValue()));
         assertEquals(propDef.getRequiredType(), PropertyType.DOUBLE);
 
-        propDef = repoTypeManager.findPropertyDefinition(session,
-                                                         NODE_TYPE_C,
-                                                         Collections.<Name>emptyList(),
-                                                         SINGLE_PROP1,
-                                                         null,
-                                                         true,
-                                                         true,
-                                                         true);
+        propDef = nodeTypes().findPropertyDefinition(session,
+                                                     NODE_TYPE_C,
+                                                     Collections.<Name>emptyList(),
+                                                     SINGLE_PROP1,
+                                                     null,
+                                                     true,
+                                                     true,
+                                                     true);
         assertThat(propDef, is(notNullValue()));
         assertEquals(propDef.getRequiredType(), PropertyType.LONG);
     }
@@ -155,35 +160,35 @@ public class ItemDefinitionTest extends SingleUseAbstractTest {
         JcrPropertyDefinition propDef;
 
         // Should prefer the double definition from NODE_TYPE_C since the value is of type double
-        propDef = repoTypeManager.findPropertyDefinition(session,
-                                                         NODE_TYPE_C,
-                                                         Collections.<Name>emptyList(),
-                                                         SINGLE_PROP2,
-                                                         doubleValue,
-                                                         true,
-                                                         true);
+        propDef = nodeTypes().findPropertyDefinition(session,
+                                                     NODE_TYPE_C,
+                                                     Collections.<Name>emptyList(),
+                                                     SINGLE_PROP2,
+                                                     doubleValue,
+                                                     true,
+                                                     true);
         assertThat(propDef, is(notNullValue()));
         assertEquals(propDef.getRequiredType(), PropertyType.DOUBLE);
 
         // Should prefer the long definition from NODE_TYPE_C since the value is of type long
-        propDef = repoTypeManager.findPropertyDefinition(session,
-                                                         NODE_TYPE_C,
-                                                         Collections.<Name>emptyList(),
-                                                         SINGLE_PROP2,
-                                                         longValue,
-                                                         true,
-                                                         true);
+        propDef = nodeTypes().findPropertyDefinition(session,
+                                                     NODE_TYPE_C,
+                                                     Collections.<Name>emptyList(),
+                                                     SINGLE_PROP2,
+                                                     longValue,
+                                                     true,
+                                                     true);
         assertThat(propDef, is(notNullValue()));
         assertEquals(propDef.getRequiredType(), PropertyType.LONG);
 
         // Should not allow a string though, since the NODE_TYPE_C definition narrows the acceptable types to double and long
-        propDef = repoTypeManager.findPropertyDefinition(session,
-                                                         NODE_TYPE_C,
-                                                         Collections.<Name>emptyList(),
-                                                         SINGLE_PROP2,
-                                                         stringValue,
-                                                         true,
-                                                         true);
+        propDef = nodeTypes().findPropertyDefinition(session,
+                                                     NODE_TYPE_C,
+                                                     Collections.<Name>emptyList(),
+                                                     SINGLE_PROP2,
+                                                     stringValue,
+                                                     true,
+                                                     true);
         assertThat(propDef, is(nullValue()));
 
     }

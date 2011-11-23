@@ -113,12 +113,12 @@ public class RepositoryNodeTypeManagerTest {
         NamespaceRegistry registry = context.getNamespaceRegistry();
 
         // There's no definition for this node or for a * child node that does not allow SNS
-        JcrNodeDefinition def = repoTypeManager.findChildNodeDefinition(JcrNtLexicon.NODE_TYPE,
-                                                                        null,
-                                                                        JcrLexicon.PROPERTY_DEFINITION,
-                                                                        JcrNtLexicon.PROPERTY_DEFINITION,
-                                                                        1,
-                                                                        false);
+        JcrNodeDefinition def = repoTypeManager.getNodeTypes().findChildNodeDefinition(JcrNtLexicon.NODE_TYPE,
+                                                                                       null,
+                                                                                       JcrLexicon.PROPERTY_DEFINITION,
+                                                                                       JcrNtLexicon.PROPERTY_DEFINITION,
+                                                                                       1,
+                                                                                       false);
 
         assertThat(def, is(notNullValue()));
         assertThat(def.getName(), is(JcrLexicon.PROPERTY_DEFINITION.getString(registry)));
@@ -137,7 +137,7 @@ public class RepositoryNodeTypeManagerTest {
         Node typesNode = systemNode.getNode(ModeShapeLexicon.NODE_TYPES.getString(registry));
         assertThat(typesNode, is(notNullValue()));
 
-        Collection<JcrNodeType> allNodeTypes = repoTypeManager.getAllNodeTypes();
+        Collection<JcrNodeType> allNodeTypes = repoTypeManager.getNodeTypes().getAllNodeTypes();
         assertThat(allNodeTypes.size(), greaterThan(0));
         for (JcrNodeType nodeType : allNodeTypes) {
             Node typeNode = typesNode.getNode(nodeType.getName());
