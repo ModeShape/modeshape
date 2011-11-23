@@ -176,6 +176,12 @@ public final class JcrI18n {
     public static I18n unableToSetFieldOnInstance;
     public static I18n missingComponentClassnameOrAlias;
 
+    public static I18n typeMissingWhenRegisteringEngineInJndi;
+    public static I18n repositoryNameProvidedWhenRegisteringEngineInJndi;
+    public static I18n repositoryNameNotProvidedWhenRegisteringRepositoryInJndi;
+    public static I18n invalidRepositoryNameWhenRegisteringRepositoryInJndi;
+    public static I18n emptyRepositoryNameProvidedWhenRegisteringRepositoryInJndi;
+
     // Used in AbstractJcrNode#getAncestor
     public static I18n noNegativeDepth;
     public static I18n tooDeep;
@@ -338,6 +344,9 @@ public final class JcrI18n {
     public static I18n storageRelatedConfigurationChangesWillTakeEffectAfterShutdown;
     public static I18n missingRepositoryNameInUrlContainingJndiLocationOfEngine;
     public static I18n errorShuttingDownJcrRepositoryFactory;
+    public static I18n repositoryNameDoesNotMatchConfigurationName;
+    public static I18n errorWhileShuttingDownRepositoryInJndi;
+    public static I18n errorWhileShuttingDownEngineInJndi;
 
     public static I18n failedWhileRollingBackDestroyToRuntimeError;
     public static I18n unexpectedException;

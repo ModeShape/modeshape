@@ -759,7 +759,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     public NodeIterator getNodes() throws RepositoryException {
         ChildReferences childReferences = node().getChildReferences(sessionCache());
         if (childReferences.isEmpty()) return JcrEmptyNodeIterator.INSTANCE;
-        return new JcrChildNodeIterator(session, childReferences);
+        return new JcrChildNodeIterator(new ChildNodeResolver(session), childReferences);
     }
 
     @Override
@@ -787,7 +787,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             NamespaceRegistry registry = session.namespaces();
             iter = node().getChildReferences(sessionCache()).iterator(patterns, registry);
         }
-        return new JcrChildNodeIterator(session, iter);
+        return new JcrChildNodeIterator(new ChildNodeResolver(session), iter);
     }
 
     protected static List<?> createPatternsFor( String[] namePatterns ) throws RepositoryException {
@@ -2155,7 +2155,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         }
 
         JcrNodeType mixinType = session().nodeTypeManager().getNodeType(mixinName);
-        if (isNodeType(mixinName)) return;
+        if (!isNodeType(mixinName)) return;
 
         // Get the information from the node ...
         Name removedMixinName = mixinType.getInternalName();
@@ -2258,6 +2258,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     @Override
     public boolean canAddMixin( String mixinName ) throws NoSuchNodeTypeException, RepositoryException {
+        CheckArg.isNotEmpty(mixinName, "mixinName");
 
         JcrNodeType mixinType = session().nodeTypeManager().getNodeType(mixinName);
         if (!mixinType.isMixin()) return false;
@@ -2400,7 +2401,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             Name parentPrimaryType = parent.getPrimaryType(cache);
             Set<Name> parentMixins = parent.getMixinTypes(cache);
             int numExistingSnsInParent = parent.getChildReferences(cache).getChildCount(nodeName);
-            boolean skipProtected = true;
+            boolean skipProtected = false;
             RepositoryNodeTypeManager nodeTypes = session.repository().nodeTypeManager();
             JcrNodeDefinition childDefn = nodeTypes.findChildNodeDefinition(parentPrimaryType,
                                                                             parentMixins,
@@ -2938,6 +2939,23 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             return this.getPath() + " {" + propertyBuff.toString() + "}";
         } catch (RepositoryException re) {
             return re.getMessage();
+        }
+    }
+
+    protected static final class ChildNodeResolver implements JcrChildNodeIterator.NodeResolver {
+        private final JcrSession session;
+
+        protected ChildNodeResolver( JcrSession session ) {
+            this.session = session;
+        }
+
+        @Override
+        public Node nodeFrom( ChildReference ref ) {
+            try {
+                return session.node(ref.getKey(), null);
+            } catch (RepositoryException e) {
+                return null;
+            }
         }
     }
 }
