@@ -1,6 +1,5 @@
 package com.modeshape.jcr.perftests;
 
-import org.junit.Assert;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.modeshape.jcr.perftests.StatisticsCalculator;
@@ -9,6 +8,8 @@ import java.util.Collections;
 import java.util.List;
 
 /**
+ * Unit test for the 5nr summary calculations.
+ *
  * @author Horia Chiorean
  */
 public class StatisticsCalculatorTest {
@@ -24,7 +25,6 @@ public class StatisticsCalculatorTest {
         assertFiveNrSummary(Arrays.asList(1l, 2l, 3l, 4l, 5l), new double[]{1, 1.5, 3, 4.5, 5});
         assertFiveNrSummary(Arrays.asList(1l, 2l, 3l, 4l, 5l, 6l), new double[]{1, 2, 3.5, 5, 6});
         assertFiveNrSummary(Arrays.asList(1l, 2l, 3l, 4l, 5l, 6l, 7l), new double[]{1, 2, 4, 6, 7});
-        assertFiveNrSummary(Arrays.asList(1l, 2l, 3l, 4l, 5l, 6l, 7l, 8l), new double[]{1, 2.5, 4.5, 6.5, 8});
         assertFiveNrSummary(Arrays.asList(1l, 2l, 3l, 4l, 5l, 6l, 7l, 8l), new double[]{1, 2.5, 4.5, 6.5, 8});
     }
 
