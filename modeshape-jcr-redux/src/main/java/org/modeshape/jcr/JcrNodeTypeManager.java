@@ -58,6 +58,7 @@ import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.JcrContentHandler.EnclosingSAXException;
+import org.modeshape.jcr.RepositoryNodeTypeManager.NodeTypes;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.core.ExecutionContext;
 import org.modeshape.jcr.value.Name;
@@ -107,16 +108,20 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         // this.schemata = null;
     }
 
+    final NodeTypes nodeTypes() {
+        return repositoryTypeManager.getNodeTypes();
+    }
+
     @Override
     public NodeTypeIterator getAllNodeTypes() throws RepositoryException {
         session.checkLive();
-        return new JcrNodeTypeIterator(repositoryTypeManager.getAllNodeTypes());
+        return new JcrNodeTypeIterator(nodeTypes().getAllNodeTypes());
     }
 
     @Override
     public NodeTypeIterator getMixinNodeTypes() throws RepositoryException {
         session.checkLive();
-        Collection<JcrNodeType> rawTypes = repositoryTypeManager.getMixinNodeTypes();
+        Collection<JcrNodeType> rawTypes = nodeTypes().getMixinNodeTypes();
         List<JcrNodeType> types = new ArrayList<JcrNodeType>(rawTypes.size());
 
         // Need to return a version of the node type with the current context
@@ -131,7 +136,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
     public JcrNodeType getNodeType( String nodeTypeName ) throws NoSuchNodeTypeException, RepositoryException {
         session.checkLive();
         Name ntName = context().getValueFactories().getNameFactory().create(nodeTypeName);
-        JcrNodeType type = repositoryTypeManager.getNodeType(ntName);
+        JcrNodeType type = nodeTypes().getNodeType(ntName);
         if (type != null) {
             type = type.with(context());
             return type;
@@ -144,10 +149,10 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      * 
      * @param nodeTypeName the name of the node type to be returned
      * @return the node type with the given name (if one exists)
-     * @see RepositoryNodeTypeManager#getNodeType(Name)
+     * @see NodeTypes#getNodeType(Name)
      */
     JcrNodeType getNodeType( Name nodeTypeName ) {
-        JcrNodeType nodeType = repositoryTypeManager.getNodeType(nodeTypeName);
+        JcrNodeType nodeType = nodeTypes().getNodeType(nodeTypeName);
 
         if (nodeType != null) {
             nodeType = nodeType.with(context());
@@ -175,18 +180,18 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      * 
      * @param nodeTypeName the name of the node type
      * @return true if the named node type does exist, or false otherwise
-     * @see RepositoryNodeTypeManager#hasNodeType(Name)
+     * @see NodeTypes#hasNodeType(Name)
      */
     @Override
     public boolean hasNodeType( String nodeTypeName ) {
         Name ntName = context().getValueFactories().getNameFactory().create(nodeTypeName);
-        return repositoryTypeManager.hasNodeType(ntName);
+        return nodeTypes().hasNodeType(ntName);
     }
 
     @Override
     public NodeTypeIterator getPrimaryNodeTypes() throws RepositoryException {
         session.checkLive();
-        Collection<JcrNodeType> rawTypes = repositoryTypeManager.getPrimaryNodeTypes();
+        Collection<JcrNodeType> rawTypes = nodeTypes().getPrimaryNodeTypes();
         List<JcrNodeType> types = new ArrayList<JcrNodeType>(rawTypes.size());
 
         // Need to return a version of the node type with the current context
@@ -205,7 +210,8 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      * @throws NoSuchNodeTypeException
      */
     JcrNodeDefinition getRootNodeDefinition() throws NoSuchNodeTypeException, RepositoryException {
-        for (NodeDefinition definition : repositoryTypeManager.getNodeType(ModeShapeLexicon.ROOT).getChildNodeDefinitions()) {
+        NodeTypes nodeTypes = nodeTypes();
+        for (NodeDefinition definition : nodeTypes.getNodeType(ModeShapeLexicon.ROOT).getChildNodeDefinitions()) {
             if (definition.getName().equals(JcrNodeType.RESIDUAL_ITEM_NAME)) return (JcrNodeDefinition)definition;
         }
 
@@ -221,7 +227,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      */
     JcrNodeDefinition getNodeDefinition( NodeDefinitionId definitionId ) {
         if (definitionId == null) return null;
-        return repositoryTypeManager.getChildNodeDefinition(definitionId);
+        return nodeTypes().getChildNodeDefinition(definitionId);
     }
 
     /**
@@ -232,7 +238,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      */
     JcrPropertyDefinition getPropertyDefinition( PropertyDefinitionId definitionId ) {
         if (definitionId == null) return null;
-        return repositoryTypeManager.getPropertyDefinition(definitionId);
+        return nodeTypes().getPropertyDefinition(definitionId);
     }
 
     /**
@@ -286,13 +292,13 @@ public class JcrNodeTypeManager implements NodeTypeManager {
                                                         Value value,
                                                         boolean checkMultiValuedDefinitions,
                                                         boolean skipProtected ) {
-        return repositoryTypeManager.findPropertyDefinition(session,
-                                                            primaryTypeName,
-                                                            mixinTypeNames,
-                                                            propertyName,
-                                                            value,
-                                                            checkMultiValuedDefinitions,
-                                                            skipProtected);
+        return nodeTypes().findPropertyDefinition(session,
+                                                  primaryTypeName,
+                                                  mixinTypeNames,
+                                                  propertyName,
+                                                  value,
+                                                  checkMultiValuedDefinitions,
+                                                  skipProtected);
     }
 
     final JcrPropertyDefinition findPropertyDefinition( Name primaryTypeName,
@@ -302,14 +308,14 @@ public class JcrNodeTypeManager implements NodeTypeManager {
                                                         boolean checkMultiValuedDefinitions,
                                                         boolean skipProtected,
                                                         boolean checkTypesAndConstraints ) {
-        return repositoryTypeManager.findPropertyDefinition(session,
-                                                            primaryTypeName,
-                                                            mixinTypeNames,
-                                                            propertyName,
-                                                            value,
-                                                            checkMultiValuedDefinitions,
-                                                            skipProtected,
-                                                            checkTypesAndConstraints);
+        return nodeTypes().findPropertyDefinition(session,
+                                                  primaryTypeName,
+                                                  mixinTypeNames,
+                                                  propertyName,
+                                                  value,
+                                                  checkMultiValuedDefinitions,
+                                                  skipProtected,
+                                                  checkTypesAndConstraints);
     }
 
     /**
@@ -360,12 +366,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
                                                         Name propertyName,
                                                         Value[] values,
                                                         boolean skipProtected ) {
-        return repositoryTypeManager.findPropertyDefinition(session,
-                                                            primaryTypeName,
-                                                            mixinTypeNames,
-                                                            propertyName,
-                                                            values,
-                                                            skipProtected);
+        return nodeTypes().findPropertyDefinition(session, primaryTypeName, mixinTypeNames, propertyName, values, skipProtected);
     }
 
     final JcrPropertyDefinition findPropertyDefinition( Name primaryTypeName,
@@ -374,13 +375,13 @@ public class JcrNodeTypeManager implements NodeTypeManager {
                                                         Value[] values,
                                                         boolean skipProtected,
                                                         boolean checkTypeAndConstraints ) {
-        return repositoryTypeManager.findPropertyDefinition(session,
-                                                            primaryTypeName,
-                                                            mixinTypeNames,
-                                                            propertyName,
-                                                            values,
-                                                            skipProtected,
-                                                            checkTypeAndConstraints);
+        return nodeTypes().findPropertyDefinition(session,
+                                                  primaryTypeName,
+                                                  mixinTypeNames,
+                                                  propertyName,
+                                                  values,
+                                                  skipProtected,
+                                                  checkTypeAndConstraints);
     }
 
     /**
@@ -400,10 +401,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
                                List<Name> mixinTypeNamesOfParent,
                                Name propertyName,
                                boolean skipProtected ) {
-        return repositoryTypeManager.canRemoveProperty(primaryTypeNameOfParent,
-                                                       mixinTypeNamesOfParent,
-                                                       propertyName,
-                                                       skipProtected);
+        return nodeTypes().canRemoveProperty(primaryTypeNameOfParent, mixinTypeNamesOfParent, propertyName, skipProtected);
     }
 
     /**
@@ -430,12 +428,12 @@ public class JcrNodeTypeManager implements NodeTypeManager {
                                                      Name childPrimaryNodeType,
                                                      int numberOfExistingChildrenWithSameName,
                                                      boolean skipProtected ) {
-        return repositoryTypeManager.findChildNodeDefinition(primaryTypeNameOfParent,
-                                                             mixinTypeNamesOfParent,
-                                                             childName,
-                                                             childPrimaryNodeType,
-                                                             numberOfExistingChildrenWithSameName,
-                                                             skipProtected);
+        return nodeTypes().findChildNodeDefinition(primaryTypeNameOfParent,
+                                                   mixinTypeNamesOfParent,
+                                                   childName,
+                                                   childPrimaryNodeType,
+                                                   numberOfExistingChildrenWithSameName,
+                                                   skipProtected);
     }
 
     /**
@@ -455,10 +453,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
                                         Collection<Name> mixinTypeNamesOfParent,
                                         Name childName,
                                         boolean skipProtected ) {
-        return repositoryTypeManager.canRemoveAllChildren(primaryTypeNameOfParent,
-                                                          mixinTypeNamesOfParent,
-                                                          childName,
-                                                          skipProtected);
+        return nodeTypes().canRemoveAllChildren(primaryTypeNameOfParent, mixinTypeNamesOfParent, childName, skipProtected);
     }
 
     /**

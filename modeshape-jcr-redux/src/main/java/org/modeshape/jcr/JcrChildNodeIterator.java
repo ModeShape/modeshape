@@ -28,7 +28,6 @@ import java.util.LinkedList;
 import java.util.List;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
-import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.cache.ChildReference;
@@ -41,23 +40,27 @@ import org.modeshape.jcr.cache.ChildReferences;
 @NotThreadSafe
 final class JcrChildNodeIterator implements NodeIterator {
 
-    private final JcrSession session;
+    protected static interface NodeResolver {
+        public Node nodeFrom( ChildReference ref );
+    }
+
+    private final NodeResolver resolver;
     private final Iterator<ChildReference> iterator;
     private Iterator<Node> nodeIterator;
     private int ndx;
     private long size;
 
-    JcrChildNodeIterator( JcrSession session,
+    JcrChildNodeIterator( NodeResolver resolver,
                           Iterator<ChildReference> iterator ) {
-        this.session = session;
+        this.resolver = resolver;
         this.iterator = iterator;
         this.size = -1L; // we'll calculate if needed
     }
 
-    JcrChildNodeIterator( JcrSession session,
+    JcrChildNodeIterator( NodeResolver resolver,
                           ChildReferences childReferences ) {
         assert size >= 0L;
-        this.session = session;
+        this.resolver = resolver;
         this.iterator = childReferences.iterator();
         this.size = childReferences.size();
     }
@@ -79,7 +82,7 @@ final class JcrChildNodeIterator implements NodeIterator {
         List<Node> remainingNodes = new LinkedList<Node>();
         size = ndx;
         while (iterator.hasNext()) {
-            Node node = nodeFrom(iterator.next());
+            Node node = resolver.nodeFrom(iterator.next());
             if (node != null) {
                 remainingNodes.add(node);
                 ++size;
@@ -87,14 +90,6 @@ final class JcrChildNodeIterator implements NodeIterator {
         }
         nodeIterator = remainingNodes.iterator();
         return size;
-    }
-
-    protected final Node nodeFrom( ChildReference ref ) {
-        try {
-            return session.node(ref.getKey(), null);
-        } catch (RepositoryException e) {
-            return null;
-        }
     }
 
     @Override
@@ -114,7 +109,7 @@ final class JcrChildNodeIterator implements NodeIterator {
         }
         Node child = null;
         do {
-            child = nodeFrom(iterator.next());
+            child = resolver.nodeFrom(iterator.next());
         } while (child == null);
         ndx++;
         return child;

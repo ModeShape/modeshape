@@ -30,6 +30,7 @@ import java.util.Set;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
 import org.modeshape.common.annotation.Immutable;
+import org.modeshape.jcr.RepositoryNodeTypeManager.NodeTypes;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.core.ExecutionContext;
 import org.modeshape.jcr.value.Name;
@@ -125,9 +126,10 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
      */
     private void ensureRequiredPrimaryTypesLoaded() {
         if (requiredPrimaryTypesByName != null) return;
+        NodeTypes nodeTypes = nodeTypeManager.getNodeTypes();
         this.requiredPrimaryTypes = new JcrNodeType[requiredPrimaryTypeNames.length];
         for (int i = 0; i != requiredPrimaryTypeNames.length; ++i) {
-            this.requiredPrimaryTypes[i] = nodeTypeManager.getNodeType(requiredPrimaryTypeNames[i]);
+            this.requiredPrimaryTypes[i] = nodeTypes.getNodeType(requiredPrimaryTypeNames[i]);
         }
         Map<Name, JcrNodeType> requiredPrimaryTypesByName = new HashMap<Name, JcrNodeType>();
         for (JcrNodeType requiredPrimaryType : requiredPrimaryTypes) {
@@ -165,7 +167,7 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
             return null;
         }
 
-        return nodeTypeManager.getNodeType(defaultPrimaryTypeName);
+        return nodeTypeManager.getNodeTypes().getNodeType(defaultPrimaryTypeName);
     }
 
     @Override
@@ -175,7 +177,7 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
             // Per the JavaDoc, this method should never return null or an empty array; if there are no constraints,
             // then this method should include an array with 'nt:base' as the required primary type.
             NodeType[] result = new NodeType[1];
-            result[0] = nodeTypeManager.getNodeType(JcrNtLexicon.BASE);
+            result[0] = nodeTypeManager.getNodeTypes().getNodeType(JcrNtLexicon.BASE);
             return result;
         }
         // Make a copy so that the caller can't modify our content ...

@@ -34,6 +34,7 @@ import javax.jcr.nodetype.NodeTypeDefinition;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.jcr.RepositoryNodeTypeManager.NodeTypes;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.value.Name;
 
@@ -68,10 +69,11 @@ public class SystemContentTest {
 
     @Test
     public void shouldReadNodeTypeDefinitionsFromSystemCatalog() {
-        Set<Name> builtInNodeTypes = new HashSet<Name>(repository.nodeTypeManager().getAllNodeTypeNames());
+        NodeTypes nodeTypes = repository.nodeTypeManager().getNodeTypes();
+        Set<Name> builtInNodeTypes = new HashSet<Name>(nodeTypes.getAllNodeTypeNames());
         for (NodeTypeDefinition type : system.readAllNodeTypes()) {
             Name name = name(type.getName());
-            JcrNodeType actual = repository.nodeTypeManager().getNodeType(name);
+            JcrNodeType actual = nodeTypes.getNodeType(name);
             assertThat("Did not find actual node type for name \"" + type.getName() + "\"", actual, is(notNullValue()));
             assertThat(builtInNodeTypes.remove(name), is(true));
         }
@@ -80,7 +82,7 @@ public class SystemContentTest {
 
     @Test
     public void shouldStoreNodeTypeDefinitionsInSystemCatalog() {
-        Collection<JcrNodeType> nodeTypes = repository.nodeTypeManager().getAllNodeTypes();
+        Collection<JcrNodeType> nodeTypes = repository.nodeTypeManager().getNodeTypes().getAllNodeTypes();
         for (int i = 0; i != 3; ++i) {
             system.store(nodeTypes, true);
             assertThat(repository.nodeTypeManager().refreshFromSystem(), is(true));
