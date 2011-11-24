@@ -17,7 +17,8 @@
         <!--By default, all are included-->
         <tests.include></tests.include>
         <repeat.count>5</repeat.count>
-        <scan.subPackages>query,read,write</scan.subPackages>
+        <scan.subPackages>query,read,write,init</scan.subPackages>
+        <warmup.count>5</warmup.count>
         <testsuite.config.nodeCount>10</testsuite.config.nodeCount>
     </properties>
 

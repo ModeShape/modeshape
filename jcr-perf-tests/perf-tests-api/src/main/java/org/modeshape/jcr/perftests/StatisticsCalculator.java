@@ -41,13 +41,14 @@ public final class StatisticsCalculator {
      * Returns an array of values representing [Min, 1st Quartile, Median, 3rd Quartile, Maximum] values, from an list of provided
      * values.
      *
-     * @return the 5 nr summary values or <code>null</code> if the input is null or empty
+     * @return the 5 number summary values or <code>null</code> if the input is null or empty
      */
-    public static double[] calculate5NrSummary( List<Long> valuesList ) {
+    public static double[] calculate5NumberSummary( List<Long> valuesList ) {
         if (valuesList == null || valuesList.isEmpty()) {
             return null;
         }
-        long[] values = convertToAscArray(valuesList);
+        //sort the values in ascending order as an array
+        long[] values = sortAscending(valuesList);
         if (values.length == 1) {
             return new double[] {values[0], values[0], values[0], values[0], values[0]};
         }
@@ -73,7 +74,7 @@ public final class StatisticsCalculator {
         return result;
     }
 
-    private static long[] convertToAscArray( List<Long> valuesList ) {
+    private static long[] sortAscending( List<Long> valuesList ) {
         Collections.sort(valuesList);
         long[] values = new long[valuesList.size()];
         for (int i = 0; i < valuesList.size(); i++) {

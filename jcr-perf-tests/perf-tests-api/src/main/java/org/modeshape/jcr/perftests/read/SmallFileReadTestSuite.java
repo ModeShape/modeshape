@@ -26,6 +26,9 @@ import org.modeshape.jcr.perftests.util.BinaryImpl;
 import java.util.Calendar;
 
 
+/**
+ * Performance test which reads repeatedly several nodes which represent small files.
+ */
 public class SmallFileReadTestSuite extends AbstractPerformanceTestSuite {
 
     private static final int FILE_SIZE_MB = 10 * 1024;

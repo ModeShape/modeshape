@@ -23,6 +23,7 @@
  */
 package org.modeshape.jcr.perftests;
 
+import javax.jcr.Credentials;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import java.util.LinkedList;
@@ -41,11 +42,13 @@ public abstract class AbstractPerformanceTestSuite {
 
     protected SuiteConfiguration suiteConfiguration;
 
-    //holder for a list of active session created by this suite
+    /** holder for a list of active session created by this suite */
     private List<Session> sessions;
+
+    /** executor which is used to fire up async jobs */
     private ExecutorService execService;
 
-    //flag used to signal to signal to the different (potential) threads created by the suite that the suite is active
+    /** flag used to signal to signal to the different (potential) threads created by the suite that the suite is active */
     private volatile boolean running;
 
     public AbstractPerformanceTestSuite(SuiteConfiguration suiteConfiguration) {
@@ -113,14 +116,18 @@ public abstract class AbstractPerformanceTestSuite {
         }
     }
 
-    protected Session newSession() {
+    protected Session newSession(Credentials credentials) {
         try {
-            Session session = suiteConfiguration.getRepository().login(suiteConfiguration.getCredentials());
+            Session session = suiteConfiguration.getRepository().login(credentials);
             sessions.add(session);
             return session;
         } catch (RepositoryException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    protected Session newSession() {
+        return newSession(suiteConfiguration.getCredentials());
     }
 
     /**

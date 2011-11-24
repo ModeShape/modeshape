@@ -25,6 +25,9 @@ import org.modeshape.jcr.perftests.util.BinaryHelper;
 import org.modeshape.jcr.perftests.util.BinaryImpl;
 import java.util.Calendar;
 
+/**
+ * Performance test which reads repeatedly several nodes which represent large files.
+ */
 public class BigFileReadTestSuite extends AbstractPerformanceTestSuite {
 
     private static final int FILE_SIZE_MB = 100 * 1024 * 1024;

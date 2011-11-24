@@ -30,9 +30,8 @@ import org.modeshape.jcr.perftests.AbstractPerformanceTestSuite;
 import org.modeshape.jcr.perftests.SuiteConfiguration;
 
 /**
- * Performance test for a two-way join that selects 300 pairs from
- * a set of 90k nodes. The query is constructed in a way that should
- * allow a smart implementation to perform the join quite efficiently.
+ * Performance test for a  two-way join that selects <code>{@link TwoWayJoinTestSuite#nodeCount}</code> pairs from
+ * a set of <code>nodeCount * nodeCount</code> nodes.
  */
 public class TwoWayJoinTestSuite extends AbstractPerformanceTestSuite {
 

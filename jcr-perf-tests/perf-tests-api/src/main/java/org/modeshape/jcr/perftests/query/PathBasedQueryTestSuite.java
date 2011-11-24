@@ -29,8 +29,6 @@ import java.util.Random;
  * <code>PathBasedQueryTestSuite</code> implements a performance test executing a
  * query that has a path constraint with low selectivity, whereas the predicate
  * is very selective.
- *
- * //TODO author=Horia Chiorean date=11/17/11 description=Decide whether to keep xpath query or not
  */
 public class PathBasedQueryTestSuite extends AbstractPerformanceTestSuite {
 

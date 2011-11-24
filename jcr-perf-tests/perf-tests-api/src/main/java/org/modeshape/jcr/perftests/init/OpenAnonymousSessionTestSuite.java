@@ -21,26 +21,28 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape;
+package org.modeshape.jcr.perftests.init;
 
-import org.junit.Test;
-import org.modeshape.jcr.JcrRepositoryFactory;
-import org.modeshape.jcr.perftests.PerformanceTestSuiteRunner;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
+import org.modeshape.jcr.perftests.AbstractPerformanceTestSuite;
+import org.modeshape.jcr.perftests.SuiteConfiguration;
 
 /**
- *
- * Runs the performance tests against a Modeshape 3.x repo.
+ * Test which opens a {@link OpenAnonymousSessionTestSuite#SESSIONS_COUNT} number of anonymous sessions on a repository.
  *
  * @author Horia Chiorean
  */
-public class ModeShape3xPerformanceTest {
-     @Test
-    public void testModeShapeInMemory() throws Exception {
-        Map<String, URL> parameters = new HashMap<String, URL>();
-        parameters.put(JcrRepositoryFactory.URL, getClass().getClassLoader().getResource("configRepository.json"));
-        new PerformanceTestSuiteRunner().runPerformanceTests(parameters, null);
+public class OpenAnonymousSessionTestSuite extends AbstractPerformanceTestSuite {
+
+   private static final int SESSIONS_COUNT = 10;
+
+    public OpenAnonymousSessionTestSuite( SuiteConfiguration suiteConfiguration ) {
+        super(suiteConfiguration);
+    }
+
+    @Override
+    protected void runTest() throws Exception {
+        for (int i = 0; i < SESSIONS_COUNT; i++) {
+            newSession(null);
+        }
     }
 }

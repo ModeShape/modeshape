@@ -39,8 +39,8 @@ public class StatisticsCalculatorTest {
 
     @Test
     public void fiveNrSummaryTest() {
-        assertNull(StatisticsCalculator.calculate5NrSummary(null));
-        assertNull(StatisticsCalculator.calculate5NrSummary(Collections.<Long>emptyList()));
+        assertNull(StatisticsCalculator.calculate5NumberSummary(null));
+        assertNull(StatisticsCalculator.calculate5NumberSummary(Collections.<Long>emptyList()));
         assertFiveNrSummary(Arrays.asList(1l), new double[] {1, 1, 1, 1, 1});
         assertFiveNrSummary(Arrays.asList(1l, 2l), new double[]{1, 1, 1.5, 2, 2});
         assertFiveNrSummary(Arrays.asList(1l, 2l, 3l), new double[]{1, 1, 2, 3, 3});
@@ -52,13 +52,13 @@ public class StatisticsCalculatorTest {
     }
 
     private void assertFiveNrSummary(List<Long> input, double[] expectedOutput) {
-        double[] result = StatisticsCalculator.calculate5NrSummary(input);
+        double[] result = StatisticsCalculator.calculate5NumberSummary(input);
         assertEquals(5, result.length);
         assertArrayEquals(expectedOutput, result, 0);
 
         Collections.reverse(input);
 
-        result = StatisticsCalculator.calculate5NrSummary(input);
+        result = StatisticsCalculator.calculate5NumberSummary(input);
         assertEquals(5, result.length);
         assertArrayEquals(expectedOutput, result, 0);
     }

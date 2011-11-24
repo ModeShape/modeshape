@@ -51,8 +51,8 @@ public final class PerformanceTestSuiteRunner {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PerformanceTestSuiteRunner.class);
 
-    private PerformanceData perfData;
-    private RunnerConfiguration runnerConfig;
+    private final TestData testData;
+    private final RunnerConfiguration runnerConfig;
 
     /**
      * Creates a new default test runner instance, which loads its properties from a file called "runner.properties" in the classpath.
@@ -65,7 +65,7 @@ public final class PerformanceTestSuiteRunner {
      * Creates a new runner instance passing a custom config.
      */
     public PerformanceTestSuiteRunner( RunnerConfiguration runnerConfig ) {
-        this.perfData = new PerformanceData(TimeUnit.MILLISECONDS);
+        this.testData = new TestData();
         this.runnerConfig = runnerConfig;
     }
 
@@ -78,11 +78,10 @@ public final class PerformanceTestSuiteRunner {
      */
     public void runPerformanceTests( Map repositoryConfigParams, Credentials credentials ) throws Exception {
         for (RepositoryFactory repositoryFactory : ServiceLoader.load(RepositoryFactory.class)) {
-            Repository repository = repositoryFactory.getRepository(repositoryConfigParams);
+            Repository repository = initRepository(repositoryFactory, repositoryConfigParams, credentials);
             if (repository == null) {
                 continue;
             }
-            initializeRepository(repository, credentials);
 
             SuiteConfiguration suiteConfiguration = new SuiteConfiguration(repository, credentials, "testsuite.properties");
             Set<Class<? extends AbstractPerformanceTestSuite>> testSuites = loadPerformanceTestSuites();
@@ -90,7 +89,7 @@ public final class PerformanceTestSuiteRunner {
                 runTestSuite(suiteConfiguration, testSuiteClass);
             }
         }
-        perfData.print5NrSummary();
+        testData.print5NrSummary(TimeUnit.MILLISECONDS);
     }
 
     private void runTestSuite( SuiteConfiguration suiteConfiguration, Class<? extends AbstractPerformanceTestSuite> testSuiteClass )
@@ -101,21 +100,29 @@ public final class PerformanceTestSuiteRunner {
             return;
         }
 
+        String repoName = suiteConfiguration.getRepository().getClass().getSimpleName();
         if (!testSuite.isCompatibleWithCurrentRepository()) {
             LOGGER.warn("Test suite {} not compatible with {}", new Object[] {testSuite.getClass().getSimpleName(),
-                    suiteConfiguration.getRepository().getClass().getSimpleName()});
+                    repoName});
             return;
         }
 
-        LOGGER.info("Starting suite: {}", testSuiteClass.getSimpleName());
+        LOGGER.info("Starting suite: {}[warmup #:{}, repeat#{}]", new Object[]{
+                testSuiteClass.getSimpleName(), runnerConfig.warmupCount, runnerConfig.repeatCount});
         testSuite.setUp();
-        runAndRecord(new Callable<Void>() {
+        //warm up the suite
+        RecordableOperation<Void> testSuiteRun = new RecordableOperation<Void>(repoName, testSuiteClass.getSimpleName(), true,
+                runnerConfig.warmupCount) {
             @Override
             public Void call() throws Exception {
-                testSuite.run();
+                 testSuite.run();
                 return null;
             }
-        }, suiteConfiguration.getRepository(), testSuiteClass.getSimpleName());
+        };
+        testSuiteRun.run();
+
+        //run and record
+        testSuiteRun.setWarmup(false).setRepeatCount(runnerConfig.repeatCount).run();
         testSuite.tearDown();
     }
 
@@ -143,14 +150,20 @@ public final class PerformanceTestSuiteRunner {
         return false;
     }
 
-    private void initializeRepository(final Repository repository, final Credentials credentials ) throws Exception {
-        runAndRecord(new Callable<Void>() {
+    private Repository initRepository( final RepositoryFactory repositoryFactory, final Map repositoryConfigParams,
+                                       final Credentials credentials ) throws Exception {
+
+        return new RecordableOperation<Repository>(repositoryFactory.getClass().getSimpleName(), "Initialization", false, 1) {
             @Override
-            public Void call() throws Exception {
+            public Repository call() throws Exception {
+                Repository repository = repositoryFactory.getRepository(repositoryConfigParams);
+                if (repository == null) {
+                    return null;
+                }
                 repository.login(credentials).logout();
-                return null;
+                return repository;
             }
-        }, repository, "Initialization");
+        }.run();
     }
 
     private Set<Class<? extends AbstractPerformanceTestSuite>> loadPerformanceTestSuites() {
@@ -163,13 +176,54 @@ public final class PerformanceTestSuiteRunner {
         return reflections.getSubTypesOf(AbstractPerformanceTestSuite.class);
     }
 
-    private void runAndRecord( Callable<Void> operation, Repository repository, String testName ) throws Exception {
-        for (int i = 0; i < runnerConfig.repeatCount; i++) {
-            LOGGER.info("run: {}", i);
-            long start = System.nanoTime();
-            operation.call();
-            long duration = System.nanoTime() - start;
-            perfData.record(repository, testName, duration);
+
+    /**
+     * Class which represents a recordable operation, depending on whether the warmup parameters is true or not. In case of warmup,
+     * no data is recorded.
+     *
+     * @param <V> the result type of the operation
+     */
+    private abstract class RecordableOperation<V> implements Callable<V> {
+        private String repositoryName;
+        private String name;
+        private boolean warmup;
+        private int repeatCount;
+
+        RecordableOperation( String repositoryName, String name, boolean warmup, int repeatCount ) {
+            this.repositoryName = repositoryName;
+            this.name = name;
+            this.warmup = warmup;
+            this.repeatCount = repeatCount;
+        }
+
+        RecordableOperation setWarmup( boolean warmup ) {
+            this.warmup = warmup;
+            return this;
+        }
+
+        RecordableOperation setRepeatCount( int repeatCount ) {
+            this.repeatCount = repeatCount;
+            return this;
+        }
+
+        V run() throws Exception {
+            V result = null;
+            String operationName = repositoryName + "#" + name;
+            try {
+                for (int i = 0; i < repeatCount; i++) {
+                    long start = System.nanoTime();
+                    result = call();
+                    long duration = System.nanoTime() - start;
+                    if (!warmup) {
+                        testData.recordSuccess(operationName, duration);
+                    }
+                }
+            } catch (Throwable throwable) {
+                if (!warmup) {
+                    testData.recordFailure(operationName, throwable);
+                }
+            }
+            return result;
         }
     }
 }

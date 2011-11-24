@@ -29,9 +29,10 @@ import org.modeshape.jcr.perftests.SuiteConfiguration;
 import java.util.Random;
 
 /**
- * Performance test for a three-way join that selects 50 triples from
- * a set of 125k nodes. The query is constructed in a way that should
- * allow a smart implementation to perform the join quite efficiently.
+ * Performance test for a three-way join that selects <code>{@link ThreeWayJoinTestSuite#nodeCount}</code> triples from
+ * a set of <code>nodeCount * nodeCount * nodeCount</code> nodes.
+ * The query is constructed in a way that should allow a smart implementation to perform the join quite efficiently.
+ *
  */
 public class ThreeWayJoinTestSuite extends AbstractPerformanceTestSuite {
 

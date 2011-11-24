@@ -38,23 +38,27 @@ public final class SuiteConfiguration {
 
     private static final int DEFAULT_NODE_COUNT = 10;
 
-    private int nodeCount = DEFAULT_NODE_COUNT;
-    private Repository repository;
-    private Credentials credentials;
+    private final Repository repository;
+    private final Credentials credentials;
+    private final int nodeCount;
 
     SuiteConfiguration( Repository repository, Credentials credentials, String configFile ) throws IOException {
         this.repository = repository;
         this.credentials = credentials;
-        loadPropertiesFromFile(configFile);
-    }
-
-    void loadPropertiesFromFile(String configFile) throws IOException {
-        Properties suiteProperties = new Properties();
-        suiteProperties.load(getClass().getClassLoader().getResourceAsStream(configFile));
-        String nodeCount = suiteProperties.getProperty("testsuite.config.nodeCount");
+        Properties properties  = loadPropertiesFile(configFile);
+        String nodeCount = properties.getProperty("testsuite.config.nodeCount");
         if (nodeCount != null && !nodeCount.isEmpty()) {
             this.nodeCount = Integer.valueOf(nodeCount);
         }
+        else {
+            this.nodeCount = DEFAULT_NODE_COUNT;
+        }
+    }
+
+    private Properties loadPropertiesFile( String configFile ) throws IOException {
+        Properties suiteProperties = new Properties();
+        suiteProperties.load(getClass().getClassLoader().getResourceAsStream(configFile));
+        return suiteProperties;
     }
 
     public int getNodeCount() {

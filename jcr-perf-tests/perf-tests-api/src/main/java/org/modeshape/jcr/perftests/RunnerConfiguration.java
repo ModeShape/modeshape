@@ -39,13 +39,16 @@ import java.util.Properties;
  */
 public final class RunnerConfiguration {
     private static final Logger LOGGER = LoggerFactory.getLogger(RunnerConfiguration.class);
-    //default config file, loaded from classpath
+
+    /** default config file, loaded from classpath */
     private static final String DEFAULT_CONFIG_FILE = "runner.properties";
 
-    List<String> excludeTestsRegExp = new ArrayList<String>();
-    List<String> includeTestsRegExp = new ArrayList<String>();
-    List<String> scanSubPackages = new ArrayList<String>();
+    final List<String> excludeTestsRegExp = new ArrayList<String>();
+    final List<String> includeTestsRegExp = new ArrayList<String>();
+    final List<String> scanSubPackages = new ArrayList<String>();
+
     int repeatCount = 1;
+    int warmupCount = 1;
 
     RunnerConfiguration( String fileName ) {
         try {
@@ -87,11 +90,17 @@ public final class RunnerConfiguration {
         return this;
     }
 
+    public RunnerConfiguration setWarmupCount( int warmupCount ) {
+        this.warmupCount = warmupCount;
+        return this;
+    }
+
     private void initRunner( Properties configParams ) {
         parseMultiValuedString(configParams.getProperty("tests.exclude"), excludeTestsRegExp);
         parseMultiValuedString(configParams.getProperty("tests.include"), includeTestsRegExp);
         parseMultiValuedString(configParams.getProperty("scan.subPackages"), scanSubPackages);
         repeatCount = Integer.valueOf(configParams.getProperty("repeat.count"));
+        warmupCount = Integer.valueOf(configParams.getProperty("warmup.count"));
     }
 
     private void parseMultiValuedString( String multiValueString, List<String> collector ) {

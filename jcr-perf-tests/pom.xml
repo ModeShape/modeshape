@@ -77,8 +77,8 @@
 
     <modules>
         <module>perf-tests-api</module>
-        <module>modeshape-2.x-tests</module>
         <module>jackrabbit-tests</module>
-        <!--<module>modeshape-3.x-tests</module>-->
+        <module>modeshape-2.x-tests</module>
+        <module>modeshape-3.x-tests</module>
     </modules>
 </project>
