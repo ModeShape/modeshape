@@ -23,24 +23,39 @@
  */
 package org.modeshape;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.jcr.JcrRepositoryFactory;
 import org.modeshape.jcr.perftests.PerformanceTestSuiteRunner;
+import org.modeshape.jcr.perftests.report.TextFileReport;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- *
  * Runs the performance tests against a Modeshape 3.x repo.
  *
  * @author Horia Chiorean
  */
 public class ModeShape3xPerformanceTest {
-     @Test
+
+    private PerformanceTestSuiteRunner performanceTestSuiteRunner;
+
+    @Before
+    public void before() {
+        performanceTestSuiteRunner = new PerformanceTestSuiteRunner();
+    }
+
+    @Test
     public void testModeShapeInMemory() throws Exception {
         Map<String, URL> parameters = new HashMap<String, URL>();
         parameters.put(JcrRepositoryFactory.URL, getClass().getClassLoader().getResource("configRepository.json"));
-        new PerformanceTestSuiteRunner().runPerformanceTests(parameters, null);
+        performanceTestSuiteRunner.runPerformanceTests(parameters, null);
+    }
+
+    @After
+    public void after() throws Exception {
+        performanceTestSuiteRunner.generateTestReport(new TextFileReport());
     }
 }

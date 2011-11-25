@@ -25,8 +25,11 @@ package org.modeshape;
 
 import javax.jcr.SimpleCredentials;
 import org.apache.jackrabbit.commons.JcrUtils;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.jcr.perftests.PerformanceTestSuiteRunner;
+import org.modeshape.jcr.perftests.report.TextFileReport;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,10 +41,22 @@ import java.util.Map;
  */
 public class JRPerformanceTest {
 
+    private PerformanceTestSuiteRunner performanceTestSuiteRunner;
+
+    @Before
+    public void before() {
+        performanceTestSuiteRunner = new PerformanceTestSuiteRunner();
+    }
+
     @Test
     public void testJackrabbitInMemoryRepo() throws Exception {
         Map<String, URL> parameters = new HashMap<String, URL>();
         parameters.put(JcrUtils.REPOSITORY_URI, getClass().getClassLoader().getResource("./"));
-        new PerformanceTestSuiteRunner().runPerformanceTests(parameters, new SimpleCredentials("test", "test".toCharArray()));
+        performanceTestSuiteRunner.runPerformanceTests(parameters, new SimpleCredentials("test", "test".toCharArray()));
+    }
+
+    @After
+    public void after() throws Exception {
+        performanceTestSuiteRunner.generateTestReport(new TextFileReport());
     }
 }

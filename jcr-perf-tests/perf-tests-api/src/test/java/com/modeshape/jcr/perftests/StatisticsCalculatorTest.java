@@ -23,9 +23,10 @@
  */
 package com.modeshape.jcr.perftests;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 import org.junit.Test;
-import org.modeshape.jcr.perftests.StatisticsCalculator;
+import org.modeshape.jcr.perftests.StatisticalData;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -37,28 +38,33 @@ import java.util.List;
  */
 public class StatisticsCalculatorTest {
 
-    @Test
-    public void fiveNrSummaryTest() {
-        assertNull(StatisticsCalculator.calculate5NumberSummary(null));
-        assertNull(StatisticsCalculator.calculate5NumberSummary(Collections.<Long>emptyList()));
-        assertFiveNrSummary(Arrays.asList(1l), new double[] {1, 1, 1, 1, 1});
-        assertFiveNrSummary(Arrays.asList(1l, 2l), new double[]{1, 1, 1.5, 2, 2});
-        assertFiveNrSummary(Arrays.asList(1l, 2l, 3l), new double[]{1, 1, 2, 3, 3});
-        assertFiveNrSummary(Arrays.asList(1l, 2l, 3l, 4l), new double[]{1, 1.5, 2.5, 3.5, 4});
-        assertFiveNrSummary(Arrays.asList(1l, 2l, 3l, 4l, 5l), new double[]{1, 1.5, 3, 4.5, 5});
-        assertFiveNrSummary(Arrays.asList(1l, 2l, 3l, 4l, 5l, 6l), new double[]{1, 2, 3.5, 5, 6});
-        assertFiveNrSummary(Arrays.asList(1l, 2l, 3l, 4l, 5l, 6l, 7l), new double[]{1, 2, 4, 6, 7});
-        assertFiveNrSummary(Arrays.asList(1l, 2l, 3l, 4l, 5l, 6l, 7l, 8l), new double[]{1, 2.5, 4.5, 6.5, 8});
+    @Test( expected = IllegalArgumentException.class )
+    public void fiveNumberSummaryInvalidValues() {
+        new StatisticalData(Collections.<Number>emptyList());
+        new StatisticalData(new Double[0]);
     }
 
-    private void assertFiveNrSummary(List<Long> input, double[] expectedOutput) {
-        double[] result = StatisticsCalculator.calculate5NumberSummary(input);
+    @Test
+    public void fiveNumberSummary() {
+        assertFiveNrSummary(new double[] {1, Double.NaN, 1, Double.NaN, 1}, 1.0);
+        assertFiveNrSummary(new double[] {1, 1, 1.5, 2, 2}, 1.0, 2.0);
+        assertFiveNrSummary(new double[] {1, 1, 2, 3, 3}, 1.0, 2.0, 3.0);
+        assertFiveNrSummary(new double[] {1, 1.5, 2.5, 3.5, 4}, 1.0, 2.0, 3.0, 4.0);
+        assertFiveNrSummary(new double[] {1, 1.5, 3, 4.5, 5}, 1.0, 2.0, 3.0, 4.0, 5.0);
+        assertFiveNrSummary(new double[] {1, 2, 3.5, 5, 6}, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0);
+        assertFiveNrSummary(new double[] {1, 2, 4, 6, 7}, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0);
+        assertFiveNrSummary(new double[] {1, 2.5, 4.5, 6.5, 8}, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0);
+    }
+
+    private void assertFiveNrSummary( double[] expectedOutput, Double... input ) {
+        double[] result = new StatisticalData(input).fiveNumberSummary();
         assertEquals(5, result.length);
         assertArrayEquals(expectedOutput, result, 0);
 
-        Collections.reverse(input);
+        List<Double> valuesList = Arrays.asList(input);
+        Collections.reverse(valuesList);
 
-        result = StatisticsCalculator.calculate5NumberSummary(input);
+        result = new StatisticalData(valuesList.toArray(new Double[0])).fiveNumberSummary();
         assertEquals(5, result.length);
         assertArrayEquals(expectedOutput, result, 0);
     }

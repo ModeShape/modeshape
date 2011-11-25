@@ -23,14 +23,16 @@
  */
 package org.modeshape.jcr.perftests;
 
-import javax.jcr.*;
+import javax.jcr.Credentials;
+import javax.jcr.Repository;
+import javax.jcr.RepositoryFactory;
+import org.modeshape.jcr.perftests.report.TestReportGenerator;
 import org.reflections.Reflections;
 import org.reflections.util.ConfigurationBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -73,7 +75,7 @@ public final class PerformanceTestSuiteRunner {
      * Uses the given map of parameters together with the <code>ServiceLoader</code> mechanism to get all the <code>RepositoryFactory</code>
      * instances and the subsequent repositories against which the tests will be run.
      *
-     * @param repositoryConfigParams a map of config params {@see {@link RepositoryFactory#getRepository(java.util.Map)}}
+     * @param repositoryConfigParams a map of config params {@see {@link javax.jcr.RepositoryFactory#getRepository(java.util.Map)}}
      * @param credentials a set of credentials which may be needed by a certain repo to run. It can be null.
      */
     public void runPerformanceTests( Map repositoryConfigParams, Credentials credentials ) throws Exception {
@@ -89,7 +91,16 @@ public final class PerformanceTestSuiteRunner {
                 runTestSuite(suiteConfiguration, testSuiteClass);
             }
         }
-        testData.print5NrSummary(TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Generates a report for the test which have been run, based on the existing test data and the provided {@link TestReportGenerator}
+     *
+     * @param generator a <code>TestReportGenerator</code> instance.
+     * @throws Exception if anything fails during the report generation.
+     */
+    public void generateTestReport(TestReportGenerator generator) throws Exception {
+        generator.generateReport(testData);
     }
 
     private void runTestSuite( SuiteConfiguration suiteConfiguration, Class<? extends AbstractPerformanceTestSuite> testSuiteClass )

@@ -23,11 +23,15 @@
  */
 package org.modeshape;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.jcr.JcrRepositoryFactory;
 import org.modeshape.jcr.perftests.PerformanceTestSuiteRunner;
 import org.modeshape.jcr.perftests.RunnerConfiguration;
 import org.modeshape.jcr.perftests.read.ConcurrentReadTestSuite;
+import org.modeshape.jcr.perftests.report.BarChartReport;
+import org.modeshape.jcr.perftests.report.TextFileReport;
 import org.modeshape.jcr.perftests.write.ConcurrentReadWriteTestSuite;
 import java.net.URL;
 import java.util.HashMap;
@@ -40,14 +44,27 @@ import java.util.Map;
  */
 public class ModeShape2xPerformanceTest {
 
-    @Test
-    public void testModeShapeInMemory() throws Exception {
-        Map<String, URL> parameters = new HashMap<String, URL>();
-        parameters.put(JcrRepositoryFactory.URL, getClass().getClassLoader().getResource("configRepository.xml"));
+    private PerformanceTestSuiteRunner performanceTestSuiteRunner;
+
+    @Before
+    public void before() {
         //TODO author=Horia Chiorean date=11/22/11 description=some tests excluded because of various problems
         RunnerConfiguration runnerConfig = new RunnerConfiguration().addTestsToExclude(
                 ConcurrentReadTestSuite.class.getSimpleName(),//deadlock
                 ConcurrentReadWriteTestSuite.class.getSimpleName());//deadlock
-        new PerformanceTestSuiteRunner(runnerConfig).runPerformanceTests(parameters, null);
+        performanceTestSuiteRunner = new PerformanceTestSuiteRunner(runnerConfig);
+    }
+
+    @Test
+    public void testModeShapeInMemory() throws Exception {
+        Map<String, URL> parameters = new HashMap<String, URL>();
+        parameters.put(JcrRepositoryFactory.URL, getClass().getClassLoader().getResource("configRepository.xml"));
+        performanceTestSuiteRunner.runPerformanceTests(parameters, null);
+    }
+
+    @After
+    public void after() throws Exception {
+        performanceTestSuiteRunner.generateTestReport(new TextFileReport());
+        performanceTestSuiteRunner.generateTestReport(new BarChartReport());
     }
 }

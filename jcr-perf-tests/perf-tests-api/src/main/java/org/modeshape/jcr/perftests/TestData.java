@@ -25,28 +25,22 @@ package org.modeshape.jcr.perftests;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.PrintStream;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Class which holds the performance statistics for the test ran against repositories by <code>PerformanceTestSuiteRunner</code>
  *
  * @author Horia Chiorean
  */
-final class TestData {
+public final class TestData {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(TestData.class);
-    public static final String PERF_REPORT_FILENAME = "perf-report.txt";
 
     /** Map [test name, [test duration 1(ms), test duration 2(ms)]] */
     private Map<String, List<Long>> durationsMap = new TreeMap<String, List<Long>>();
 
     /** List of the names of the operations that have failed */
-    private Set<String> failedOperations = new TreeSet<String>();
+    private Set<String> failedTests = new TreeSet<String>();
 
     void recordSuccess( String operationName, long durationNanos ) {
         LOGGER.info("{} : {} (ns)", new Object[] {operationName, durationNanos});
@@ -62,59 +56,22 @@ final class TestData {
     }
 
     void recordFailure( String operationName, Throwable cause ) {
-        failedOperations.add(operationName);
+        failedTests.add(operationName);
         LOGGER.warn(operationName + " failure", cause);
     }
 
-    void print5NrSummary( TimeUnit timeUnit ) throws Exception {
-        File reportDir = new File(getClass().getClassLoader().getResource(".").toURI());
-        if (!reportDir.exists() || !reportDir.isDirectory()) {
-            throw new IllegalStateException("Cannot locate target folder for performance report");
-        }
-        File reportFile = new File(reportDir, PERF_REPORT_FILENAME);
-        PrintStream ps = new PrintStream(new FileOutputStream(reportFile, true));
-        printHeader(ps, timeUnit);
-
-        try {
-            print5NrSummaryForRepo(ps, timeUnit);
-            printFailures(ps);
-        } finally {
-            ps.close();
-        }
+    public Set<String> getSuccessfulTestNames() {
+        return Collections.unmodifiableSet(durationsMap.keySet());
     }
 
-    private void printFailures( PrintStream ps ) {
-        if (failedOperations.isEmpty()) {
-            return;
-        }
-        ps.println("-----------------------------------------------------------------------");
-        ps.println("Failures count:" + failedOperations.size());
-        ps.println(failedOperations.toString());
-        ps.println("See the log file for more information");
+    public Set<String> getFailedTestNames() {
+        return Collections.unmodifiableSet(failedTests);
     }
 
-    private void print5NrSummaryForRepo( PrintStream ps, TimeUnit timeUnit ) {
-        for (String testName : durationsMap.keySet()) {
-            List<Long> convertedDurations = convertDurations(timeUnit, testName);
-            double[] fiveNrSummary = StatisticsCalculator.calculate5NumberSummary(convertedDurations);
-            ps.printf(testName + " [%.0f; %.2f; %.2f; %.2f; %.0f]%n", fiveNrSummary[0],
-                    fiveNrSummary[1], fiveNrSummary[2], fiveNrSummary[3], fiveNrSummary[4]);
+    public List<Long> getTestDurationsNanos(String testName) {
+        if (!durationsMap.containsKey(testName)) {
+            Collections.emptyList();
         }
-    }
-
-    private List<Long> convertDurations( TimeUnit duration, String testName ) {
-        List<Long> durationsNanos = durationsMap.get(testName);
-        List<Long> convertedDurations = new ArrayList<Long>(durationsNanos.size());
-        for (long durationNano : durationsNanos) {
-            convertedDurations.add(duration.convert(durationNano, TimeUnit.NANOSECONDS));
-        }
-        return convertedDurations;
-    }
-
-    private void printHeader( PrintStream ps, TimeUnit timeUnit ) {
-        ps.println();
-        ps.println("Date: " + SimpleDateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM).format(new Date()));
-        ps.printf("Test [Minimum, 1st Quartile, Median, 3rd Quartile, Maximum] %s %n", timeUnit);
-        ps.println("-----------------------------------------------------------------------");
+        return Collections.unmodifiableList(durationsMap.get(testName));
     }
 }
