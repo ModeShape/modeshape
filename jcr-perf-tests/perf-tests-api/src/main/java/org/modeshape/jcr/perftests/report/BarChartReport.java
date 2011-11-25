@@ -44,7 +44,7 @@ import java.util.concurrent.TimeUnit;
 public final class BarChartReport extends TestReportGenerator {
 
     private static final Configuration FREEMARKER_CONFIG;
-    public static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("#.#####");
+    public static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("###.#");
 
     static {
         FREEMARKER_CONFIG = new Configuration();
@@ -59,7 +59,7 @@ public final class BarChartReport extends TestReportGenerator {
     }
 
     public BarChartReport() {
-        super("barchart.html", TimeUnit.SECONDS);
+        super("barchart.html", TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -77,33 +77,22 @@ public final class BarChartReport extends TestReportGenerator {
 
         for (String testName : passedTests) {
             List<Double> statisticData = getStatisticData(testData, testName);
-            Data yData = Data.newData(statisticData);
-            Data xData = DataUtil.scale(statisticData);
-            ScatterPlotData chartPlot = Plots.newScatterPlotData(yData, xData); //seems to be a bug in charts4j
-            chartPlot.setColor(Color.AQUA);
-            chartPlot.setLegend(testName + "(" + timeUnit.toString() + ")");
-
+            Data chartData = Data.newData(statisticData);
+            BarChartPlot chartPlot = Plots.newBarChartPlot(chartData, Color.AQUA, testName + "(" + timeUnit.toString() + ")");
+            chartPlot.setDataLine(1, Color.RED, Priority.NORMAL);
+            for (int i = 0; i < statisticData.size(); i++) {
+                chartPlot.addTextMarker(DECIMAL_FORMAT.format(statisticData.get(i)), Color.BLACK, 10, i);
+            }
             BarChart chart = GCharts.newBarChart(chartPlot);
             chart.setBarWidth(40);
-            chart.addXAxisLabels(AxisLabelsFactory.newAxisLabels("Min", "1st Quartile", "Median", "3rd Quartile", "Max", "Std Deviation"));
-            chart.addYAxisLabels(AxisLabelsFactory.newAxisLabels(createYAxisLabels(statisticData)));
-            chart.setSize(600, 300);
+            chart.addXAxisLabels(AxisLabelsFactory.newAxisLabels("Min", "1st Quartile", "Median", "3rd Quartile", "Max"));
+            chart.setSize(700, 300);
             reportData.put(testName, chart.toURLForHTML());
         }
 
         return reportData;
     }
 
-  private List<String> createYAxisLabels(List<Double> values) {
-        List<String> result = new ArrayList<String>(values.size());
-        for (Double value : values) {
-            if (value <= 0) {
-                continue;
-            }
-            result.add(DECIMAL_FORMAT.format(value));
-        }
-        return result;
-    }
 
     private List<Double> getStatisticData( TestData testData, String testName ) {
         List<Double> convertedDurations = DurationsConverter.convertFromNanos(testData.getTestDurationsNanos(testName), timeUnit);
@@ -111,8 +100,7 @@ public final class BarChartReport extends TestReportGenerator {
 
         List<Double> barData = new ArrayList<Double>();
         for (double fiveNumberSummaryData : statisticalData.fiveNumberSummary()) {
-            boolean isNan = Double.valueOf(fiveNumberSummaryData).isNaN();
-            barData.add(isNan ? 0 : fiveNumberSummaryData);
+            barData.add(fiveNumberSummaryData);
         }
         return barData;
     }
