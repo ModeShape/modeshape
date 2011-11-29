@@ -44,7 +44,7 @@
 			<plugin>
 				<groupId>org.codehaus.cargo</groupId>
 				<artifactId>cargo-maven2-plugin</artifactId>
-				<version>1.0.1-alpha-2</version>
+				<version>${maven.codehaus.cargo.plugin.version}</version>
 				<executions>
 					<execution>
 						<id>start-container</id>
@@ -62,7 +62,8 @@
 					</execution>
 				</executions>
 				<configuration>
-					<container>
+                    <skip>${skipTests}</skip>
+                    <container>
 						<containerId>${cargo.container}</containerId>
 						<systemProperties>
 							<java.io.tmpdir>${project.build.directory}/tmp</java.io.tmpdir>
