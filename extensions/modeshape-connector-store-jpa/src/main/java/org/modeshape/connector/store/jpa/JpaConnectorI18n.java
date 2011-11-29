@@ -149,6 +149,9 @@ public final class JpaConnectorI18n {
     public static I18n cacheProviderClassNamePropertyDescription;
     public static I18n cacheProviderClassNamePropertyLabel;
     public static I18n cacheProviderClassNamePropertyCategory;
+    public static I18n cacheManagerLookupPropertyDescription;
+    public static I18n cacheManagerLookupPropertyLabel;
+    public static I18n cacheManagerLookupPropertyCategory;
     public static I18n cacheConcurrencyStrategyPropertyDescription;
     public static I18n cacheConcurrencyStrategyPropertyLabel;
     public static I18n cacheConcurrencyStrategyPropertyCategory;

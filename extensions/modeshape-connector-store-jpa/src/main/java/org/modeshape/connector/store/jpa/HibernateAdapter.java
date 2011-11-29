@@ -89,10 +89,22 @@ public class HibernateAdapter implements JpaAdapter {
             }
         }
 
-        if (source.getCacheProviderClassName() != null) {
+        String cacheProviderClassName = source.getCacheProviderClassName();
+
+        if (cacheProviderClassName != null) {
 
             setProperty(jpaProperties, Environment.USE_QUERY_CACHE, "true");
-            setProperty(jpaProperties, Environment.CACHE_PROVIDER, source.getCacheProviderClassName());
+            if (cacheProviderClassName.endsWith("RegionFactory")) {
+                // This is Hibernate 3.3 or later ...
+                setProperty(jpaProperties, Environment.CACHE_REGION_FACTORY, cacheProviderClassName);
+                // Additional property for Infinispan when using JNDI ...
+                String cacheManager = source.getCacheManagerLookup();
+                if (cacheManager != null && cacheManager.trim().length() != 0) {
+                    setProperty(jpaProperties, "hibernate.cache.infinispan.cachemanager", cacheManager);
+                }
+            } else {
+                setProperty(jpaProperties, Environment.CACHE_PROVIDER, cacheProviderClassName);
+            }
 
             String cacheConcurrencyStrategy = source.getCacheConcurrencyStrategy();
             setProperty(jpaProperties,
@@ -151,22 +163,22 @@ public class HibernateAdapter implements JpaAdapter {
     @Override
     public String determineDialect( EntityManager entityManager ) {
         // We need the connection in order to determine the dialect ...
-        SessionFactoryImplementor sessionFactory = (SessionFactoryImplementor)entityManager.unwrap(Session.class).getSessionFactory();
+        SessionFactoryImplementor sessionFactory = (SessionFactoryImplementor)entityManager.unwrap(Session.class)
+                                                                                           .getSessionFactory();
         return sessionFactory.getDialect().toString();
     }
 
     @Override
     public EntityManagerFactory getEntityManagerFactory( JpaSource source ) {
-        return new Ejb3Configuration()
-            .addAnnotatedClass(StoreOptionEntity.class)
-            .addAnnotatedClass(NamespaceEntity.class)
-            .addAnnotatedClass(WorkspaceEntity.class)
-            .addAnnotatedClass(LargeValueEntity.class)
-            .addAnnotatedClass(NodeEntity.class)
-            .addAnnotatedClass(SubgraphNodeEntity.class)
-            .addAnnotatedClass(SubgraphQueryEntity.class)
-            .addProperties(getProperties(source))
-            .buildEntityManagerFactory();
+        return new Ejb3Configuration().addAnnotatedClass(StoreOptionEntity.class)
+                                      .addAnnotatedClass(NamespaceEntity.class)
+                                      .addAnnotatedClass(WorkspaceEntity.class)
+                                      .addAnnotatedClass(LargeValueEntity.class)
+                                      .addAnnotatedClass(NodeEntity.class)
+                                      .addAnnotatedClass(SubgraphNodeEntity.class)
+                                      .addAnnotatedClass(SubgraphQueryEntity.class)
+                                      .addProperties(getProperties(source))
+                                      .buildEntityManagerFactory();
 
         // return Persistence.createEntityManagerFactory(persistenceUnitName, getProperties(source));
     }
