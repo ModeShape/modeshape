@@ -56,7 +56,7 @@
 			<plugin>
 				<groupId>org.codehaus.cargo</groupId>
 				<artifactId>cargo-maven2-plugin</artifactId>
-				<version>1.0.1-alpha-2</version>
+				<version>${maven.codehaus.cargo.plugin.version}</version>
 				<executions>
 					<execution>
 						<id>start-container</id>
@@ -74,6 +74,7 @@
 					</execution>
 				</executions>
 				<configuration>
+                    <skip>${skipTests}</skip>
 					<container>
 						<containerId>${cargo.container}</containerId>
 						<systemProperties>
@@ -85,7 +86,7 @@
 							<cargo.jvmargs>-XX:PermSize=128m -XX:MaxPermSize=512 -XX:+UseConcMarkSweepGC -XX:+CMSPermGenSweepingEnabled -XX:+CMSClassUnloadingEnabled</cargo.jvmargs>
 							<cargo.logging>low</cargo.logging>
 							<cargo.servlet.users>dnauser:password:connect,readwrite|unauthorized:password:bogus</cargo.servlet.users>
-                                                        <cargo.servlet.port>8090</cargo.servlet.port>
+                            <cargo.servlet.port>8090</cargo.servlet.port>
 						</properties>
 						<home>${project.build.directory}/cargo</home>
 					</configuration>

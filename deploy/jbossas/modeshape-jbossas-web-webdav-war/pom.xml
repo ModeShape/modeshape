@@ -84,6 +84,7 @@
 					</execution>
 				</executions>
 				<configuration>
+                    <skip>${skipTests}</skip>
 					<container>
 						<containerId>${cargo.container}</containerId>
 						<systemProperties>
@@ -95,7 +96,6 @@
 							<cargo.logging>low</cargo.logging>
 							<cargo.servlet.users>dnauser:password:connect,readwrite|unauthorized:password:bogus</cargo.servlet.users>
 							<cargo.jvmargs>-XX:PermSize=128m -XX:MaxPermSize=512 -XX:+UseConcMarkSweepGC -XX:+CMSPermGenSweepingEnabled -XX:+CMSClassUnloadingEnabled</cargo.jvmargs>
-							<cargo.logging>low</cargo.logging>
 							<cargo.servlet.port>8090</cargo.servlet.port>
 						</properties>
 						<home>${project.build.directory}/cargo</home>
