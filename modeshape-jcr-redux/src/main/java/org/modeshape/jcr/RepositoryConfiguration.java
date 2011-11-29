@@ -47,6 +47,7 @@ import org.infinispan.config.FluentConfiguration;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.schematic.SchemaLibrary;
+import org.infinispan.schematic.SchemaLibrary.Problem;
 import org.infinispan.schematic.SchemaLibrary.Results;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.Array;
@@ -67,6 +68,7 @@ import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.util.Logger;
+import org.modeshape.common.util.ObjectUtil;
 import org.modeshape.jcr.security.AnonymousProvider;
 import org.modeshape.jcr.security.JaasProvider;
 
@@ -125,97 +127,15 @@ public class RepositoryConfiguration {
     public static final String JSON_SCHEMA_URI = "http://modeshape.org/3.0/repository-config#";
     public static final String JSON_SCHEMA_RESOURCE_PATH = "org/modeshape/jcr/repository-config-schema.json";
 
-    static {
-        String jaasProvider = "org.modeshape.jcr.security.JaasProvider";
-        String servletProvider = "org.modeshape.jcr.security.ServletProvider";
-
-        Map<String, String> aliases = new HashMap<String, String>();
-        aliases.put("jaas", jaasProvider);
-        aliases.put("jaasprovider", jaasProvider);
-        aliases.put("servlet", servletProvider);
-        aliases.put("servlets", servletProvider);
-        aliases.put("servletprovider", servletProvider);
-        PROVIDER_ALIASES = Collections.unmodifiableMap(aliases);
-
-        String cndSequencer = "org.modeshape.sequencer.cnd.CndSequencer";
-        String classfileSequencer = "org.modeshape.sequencer.classfile.ClassFileSequencer";
-        String ddlSequencer = "org.modeshape.sequencer.ddl.DdlSequencer";
-        String imageSequencer = "org.modeshape.sequencer.image.ImageMetadataSequencer";
-        String javaSequencer = "org.modeshape.sequencer.java.JavaMetadataSequencer";
-        String modelSequencer = "org.modeshape.sequencer.teiid.ModelSequencer";
-        String vdbSequencer = "org.modeshape.sequencer.teiid.VdbSequencer";
-        String msofficeSequencer = "org.modeshape.sequencer.msoffice.MSOfficeMetadataSequencer";
-        String wsdlSequencer = "org.modeshape.sequencer.wsdl.WsdlSequencer";
-        String xsdSequencer = "org.modeshape.sequencer.xsd.XsdSequencer";
-        String xmlSequencer = "org.modeshape.sequencer.xml.XmlSequencer";
-        String zipSequencer = "org.modeshape.sequencer.zip.ZipSequencer";
-
-        aliases = new HashMap<String, String>();
-        aliases.put("cnd", cndSequencer);
-        aliases.put("cndsequencer", cndSequencer);
-        aliases.put("class", classfileSequencer);
-        aliases.put("classfile", classfileSequencer);
-        aliases.put("classsequencer", classfileSequencer);
-        aliases.put("classfilesequencer", classfileSequencer);
-        aliases.put("ddl", ddlSequencer);
-        aliases.put("ddlsequencer", ddlSequencer);
-        aliases.put("image", imageSequencer);
-        aliases.put("imagesequencer", imageSequencer);
-        aliases.put("java", javaSequencer);
-        aliases.put("javasource", javaSequencer);
-        aliases.put("javasequencer", javaSequencer);
-        aliases.put("javasourcesequencer", javaSequencer);
-        aliases.put("model", modelSequencer);
-        aliases.put("modelsequencer", modelSequencer);
-        aliases.put("vdb", vdbSequencer);
-        aliases.put("vdbsequencer", vdbSequencer);
-        aliases.put("msoffice", msofficeSequencer);
-        aliases.put("msofficesequencer", msofficeSequencer);
-        aliases.put("wsdl", wsdlSequencer);
-        aliases.put("wsdlsequencer", wsdlSequencer);
-        aliases.put("xsd", xsdSequencer);
-        aliases.put("xsdsequencer", xsdSequencer);
-        aliases.put("xml", xmlSequencer);
-        aliases.put("xmlsequencer", xmlSequencer);
-        aliases.put("zip", zipSequencer);
-        aliases.put("zipsequencer", zipSequencer);
-
-        SEQUENCER_ALIASES = Collections.unmodifiableMap(aliases);
-
-        String tikaExtractor = "org.modeshape.extractor.tika.TikaTextExtractor";
-        String vdbExtractor = "org.modeshape.extractor.teiid.TeiidVdbTextExtractor";
-
-        aliases = new HashMap<String, String>();
-        aliases.put("tika", tikaExtractor);
-        aliases.put("tikaextractor", tikaExtractor);
-        aliases.put("tikatextextractor", tikaExtractor);
-        aliases.put("vdb", vdbExtractor);
-        aliases.put("vdbextractor", vdbExtractor);
-        aliases.put("vdbtextextractor", vdbExtractor);
-        EXTRACTOR_ALIASES = Collections.unmodifiableMap(aliases);
-
-        SCHEMA_LIBRARY = Schematic.createSchemaLibrary("ModeShape Repository Configuration Schemas");
-        FileLookup factory = FileLookupFactory.newInstance();
-        InputStream configStream = factory.lookupFile(JSON_SCHEMA_RESOURCE_PATH, RepositoryConfiguration.class.getClassLoader());
-        if (configStream == null) {
-            Logger.getLogger(RepositoryConfiguration.class).error(JcrI18n.unableToFindRepositoryConfigurationSchema,
-                                                                  JSON_SCHEMA_RESOURCE_PATH);
-        }
-        try {
-            Document configDoc = Json.read(configStream);
-            SCHEMA_LIBRARY.put(JSON_SCHEMA_URI, configDoc);
-        } catch (IOException e) {
-            Logger.getLogger(RepositoryConfiguration.class).error(e,
-                                                                  JcrI18n.unableToLoadRepositoryConfigurationSchema,
-                                                                  JSON_SCHEMA_RESOURCE_PATH);
-        }
-    }
-
     public static class FieldName {
         /**
          * The name for the field specifying the repository's name.
          */
         public static final String NAME = "name";
+        /**
+         * The name for the field specifying a description.
+         */
+        public static final String DESCRIPTION = "description";
 
         /**
          * The name for the optional field specifying where in JNDI this repository should be registered.
@@ -331,6 +251,7 @@ public class RepositoryConfiguration {
         public static final String PROVIDERS = "providers";
         public static final String TYPE = "type";
         public static final String CLASSNAME = "classname";
+        public static final String CLASSPATH = "classpath";
         public static final String QUERY = "query";
         public static final String QUERY_ENABLED = "enabled";
         public static final String INDEX_LOCATION = "indexLocation";
@@ -339,6 +260,14 @@ public class RepositoryConfiguration {
         public static final String EXTRACTORS = "extractors";
         public static final String SEQUENCING = "sequencing";
         public static final String SEQUENCERS = "sequencers";
+        public static final String PATH_EXPRESSION = "pathExpression";
+        public static final String PATH_EXPRESSIONS = "pathExpressions";
+        /**
+         * The name for the field (under "sequencing" and "query") specifying the thread pool that should be used for sequencing.
+         * By default, all repository instances will use the same thread pool within the engine. To use a dedicated thread pool
+         * for a single repository, simply use a name that is unique from all other repositories.
+         */
+        public static final String THREAD_POOL = "threadPool";
         public static final String REMOVE_DERIVED_CONTENT_WITH_ORIGINAL = "removeDerivedContentWithOriginal";
 
     }
@@ -389,6 +318,108 @@ public class RepositoryConfiguration {
 
         public static final boolean REMOVE_DERIVED_CONTENT_WITH_ORIGINAL = true;
 
+        /**
+         * The default value of the {@link FieldName#THREAD_POOL} field is '{@value} '.
+         */
+        public static final String THREAD_POOL = "modeshape-workers";
+    }
+
+    /**
+     * The set of field names that should be skipped when {@link Component#createInstance(Class, ClassLoader) instantiating a
+     * component}.
+     */
+    protected static final Set<String> COMPONENT_SKIP_PROPERTIES;
+
+    static {
+        Set<String> skipProps = new HashSet<String>();
+        skipProps.add(FieldName.CLASSNAME);
+        skipProps.add(FieldName.CLASSPATH);
+        skipProps.add(FieldName.TYPE);
+        COMPONENT_SKIP_PROPERTIES = Collections.unmodifiableSet(skipProps);
+
+        String jaasProvider = "org.modeshape.jcr.security.JaasProvider";
+        String servletProvider = "org.modeshape.jcr.security.ServletProvider";
+
+        Map<String, String> aliases = new HashMap<String, String>();
+        aliases.put("jaas", jaasProvider);
+        aliases.put("jaasprovider", jaasProvider);
+        aliases.put("servlet", servletProvider);
+        aliases.put("servlets", servletProvider);
+        aliases.put("servletprovider", servletProvider);
+        PROVIDER_ALIASES = Collections.unmodifiableMap(aliases);
+
+        String cndSequencer = "org.modeshape.sequencer.cnd.CndSequencer";
+        String classfileSequencer = "org.modeshape.sequencer.classfile.ClassFileSequencer";
+        String ddlSequencer = "org.modeshape.sequencer.ddl.DdlSequencer";
+        String imageSequencer = "org.modeshape.sequencer.image.ImageMetadataSequencer";
+        String javaSequencer = "org.modeshape.sequencer.java.JavaMetadataSequencer";
+        String modelSequencer = "org.modeshape.sequencer.teiid.ModelSequencer";
+        String vdbSequencer = "org.modeshape.sequencer.teiid.VdbSequencer";
+        String msofficeSequencer = "org.modeshape.sequencer.msoffice.MSOfficeMetadataSequencer";
+        String wsdlSequencer = "org.modeshape.sequencer.wsdl.WsdlSequencer";
+        String xsdSequencer = "org.modeshape.sequencer.xsd.XsdSequencer";
+        String xmlSequencer = "org.modeshape.sequencer.xml.XmlSequencer";
+        String zipSequencer = "org.modeshape.sequencer.zip.ZipSequencer";
+
+        aliases = new HashMap<String, String>();
+        aliases.put("cnd", cndSequencer);
+        aliases.put("cndsequencer", cndSequencer);
+        aliases.put("class", classfileSequencer);
+        aliases.put("classfile", classfileSequencer);
+        aliases.put("classsequencer", classfileSequencer);
+        aliases.put("classfilesequencer", classfileSequencer);
+        aliases.put("ddl", ddlSequencer);
+        aliases.put("ddlsequencer", ddlSequencer);
+        aliases.put("image", imageSequencer);
+        aliases.put("imagesequencer", imageSequencer);
+        aliases.put("java", javaSequencer);
+        aliases.put("javasource", javaSequencer);
+        aliases.put("javasequencer", javaSequencer);
+        aliases.put("javasourcesequencer", javaSequencer);
+        aliases.put("model", modelSequencer);
+        aliases.put("modelsequencer", modelSequencer);
+        aliases.put("vdb", vdbSequencer);
+        aliases.put("vdbsequencer", vdbSequencer);
+        aliases.put("msoffice", msofficeSequencer);
+        aliases.put("msofficesequencer", msofficeSequencer);
+        aliases.put("wsdl", wsdlSequencer);
+        aliases.put("wsdlsequencer", wsdlSequencer);
+        aliases.put("xsd", xsdSequencer);
+        aliases.put("xsdsequencer", xsdSequencer);
+        aliases.put("xml", xmlSequencer);
+        aliases.put("xmlsequencer", xmlSequencer);
+        aliases.put("zip", zipSequencer);
+        aliases.put("zipsequencer", zipSequencer);
+
+        SEQUENCER_ALIASES = Collections.unmodifiableMap(aliases);
+
+        String tikaExtractor = "org.modeshape.extractor.tika.TikaTextExtractor";
+        String vdbExtractor = "org.modeshape.extractor.teiid.TeiidVdbTextExtractor";
+
+        aliases = new HashMap<String, String>();
+        aliases.put("tika", tikaExtractor);
+        aliases.put("tikaextractor", tikaExtractor);
+        aliases.put("tikatextextractor", tikaExtractor);
+        aliases.put("vdb", vdbExtractor);
+        aliases.put("vdbextractor", vdbExtractor);
+        aliases.put("vdbtextextractor", vdbExtractor);
+        EXTRACTOR_ALIASES = Collections.unmodifiableMap(aliases);
+
+        SCHEMA_LIBRARY = Schematic.createSchemaLibrary("ModeShape Repository Configuration Schemas");
+        FileLookup factory = FileLookupFactory.newInstance();
+        InputStream configStream = factory.lookupFile(JSON_SCHEMA_RESOURCE_PATH, RepositoryConfiguration.class.getClassLoader());
+        if (configStream == null) {
+            Logger.getLogger(RepositoryConfiguration.class).error(JcrI18n.unableToFindRepositoryConfigurationSchema,
+                                                                  JSON_SCHEMA_RESOURCE_PATH);
+        }
+        try {
+            Document configDoc = Json.read(configStream);
+            SCHEMA_LIBRARY.put(JSON_SCHEMA_URI, configDoc);
+        } catch (IOException e) {
+            Logger.getLogger(RepositoryConfiguration.class).error(e,
+                                                                  JcrI18n.unableToLoadRepositoryConfigurationSchema,
+                                                                  JSON_SCHEMA_RESOURCE_PATH);
+        }
     }
 
     /**
@@ -497,7 +528,7 @@ public class RepositoryConfiguration {
     private final String docName;
     private final Document doc;
     private transient CacheContainer cacheContainer = null;
-    private volatile Results results = null;
+    private volatile Problems problems = null;
 
     public RepositoryConfiguration() {
         this(Schematic.newDocument(), null);
@@ -692,15 +723,21 @@ public class RepositoryConfiguration {
          * providers be specified in this list (to change the ordering), the {@link #getJaas()} and/or {@link #getAnonymous()}
          * configuration components will be null.
          * 
-         * @param problems the container for problems reading the provider information; may not be null
          * @return the immutable list of custom providers; never null but possibly empty
          */
-        public List<Component> getCustomProviders( Problems problems ) {
-            return readComponents(security, FieldName.PROVIDERS, FieldName.TYPE, PROVIDER_ALIASES, problems);
+        public List<Component> getCustomProviders() {
+            Problems problems = new SimpleProblems();
+            List<Component> components = readComponents(security, FieldName.PROVIDERS, FieldName.TYPE, PROVIDER_ALIASES, problems);
+            assert !problems.hasErrors();
+            return components;
+        }
+
+        protected void validateCustomProviders( Problems problems ) {
+            readComponents(security, FieldName.PROVIDERS, FieldName.TYPE, PROVIDER_ALIASES, problems);
         }
 
         private boolean isIncludedInCustomProviders( String classname ) {
-            for (Component component : getCustomProviders(new SimpleProblems())) {
+            for (Component component : getCustomProviders()) {
                 if (classname.equals(component.getClassname())) return true;
             }
             return false;
@@ -873,13 +910,28 @@ public class RepositoryConfiguration {
         }
 
         /**
+         * Get the name of the thread pool that should be used for indexing work.
+         * 
+         * @return the thread pool name; never null
+         */
+        public String getThreadPoolName() {
+            return query.getString(FieldName.THREAD_POOL, Default.THREAD_POOL);
+        }
+
+        /**
          * Get the ordered list of text extractors. All text extractors are configured with this list.
          * 
-         * @param problems the container for problems reading the provider information; may not be null
          * @return the immutable list of text extractors; never null but possibly empty
          */
-        public List<Component> getTextExtractors( Problems problems ) {
-            return readComponents(query, FieldName.EXTRACTORS, FieldName.TYPE, EXTRACTOR_ALIASES, problems);
+        public List<Component> getTextExtractors() {
+            Problems problems = new SimpleProblems();
+            List<Component> components = readComponents(query, FieldName.EXTRACTORS, FieldName.TYPE, EXTRACTOR_ALIASES, problems);
+            assert !problems.hasErrors();
+            return components;
+        }
+
+        protected void validateTextExtractors( Problems problems ) {
+            readComponents(query, FieldName.EXTRACTORS, FieldName.TYPE, EXTRACTOR_ALIASES, problems);
         }
     }
 
@@ -915,13 +967,37 @@ public class RepositoryConfiguration {
         }
 
         /**
+         * Get the name of the thread pool that should be used for sequencing work.
+         * 
+         * @return the thread pool name; never null
+         */
+        public String getThreadPoolName() {
+            return sequencing.getString(FieldName.THREAD_POOL, Default.THREAD_POOL);
+        }
+
+        /**
+         * Get the ordered list of sequencers. All sequencers are configured with this list.
+         * 
+         * @return the immutable list of sequencers; never null but possibly empty
+         */
+        public List<Component> getSequencers() {
+            Problems problems = new SimpleProblems();
+            List<Component> components = readComponents(sequencing,
+                                                        FieldName.SEQUENCERS,
+                                                        FieldName.TYPE,
+                                                        SEQUENCER_ALIASES,
+                                                        problems);
+            assert !problems.hasErrors();
+            return components;
+        }
+
+        /**
          * Get the ordered list of sequencers. All sequencers are configured with this list.
          * 
          * @param problems the container for problems reading the sequencer information; may not be null
-         * @return the immutable list of sequencers; never null but possibly empty
          */
-        public List<Component> getSequencers( Problems problems ) {
-            return readComponents(sequencing, FieldName.SEQUENCERS, FieldName.TYPE, SEQUENCER_ALIASES, problems);
+        protected void validateSequencers( Problems problems ) {
+            readComponents(sequencing, FieldName.SEQUENCERS, FieldName.TYPE, SEQUENCER_ALIASES, problems);
         }
     }
 
@@ -938,6 +1014,7 @@ public class RepositoryConfiguration {
                     Document component = (Document)value;
                     String name = component.getString(FieldName.NAME); // optional
                     String classname = component.getString(FieldName.CLASSNAME);
+                    String classpath = component.getString(FieldName.CLASSPATH); // optional
                     if (classname == null) {
                         String alias = component.getString(aliasFieldName);
                         if (alias != null) {
@@ -952,11 +1029,8 @@ public class RepositoryConfiguration {
                             problems.addError(JcrI18n.missingComponentClassnameOrAlias, aliases);
                         }
                     }
-                    if (!classnamesByAlias.values().contains(classname)) {
-                    } else {
-                        // Read the properties ...
-                        Map<String, Object> props = readProperties(component, FieldName.CLASSNAME, aliasFieldName);
-                        results.add(new Component(name, classname, props));
+                    if (classname != null) {
+                        results.add(new Component(name, classname, classpath, component));
                     }
                 }
             }
@@ -1081,11 +1155,27 @@ public class RepositoryConfiguration {
      * @return the validation results; never null
      * @see #validate(Changes)
      */
-    public Results validate() {
-        if (results == null) {
-            results = SCHEMA_LIBRARY.validate(doc, JSON_SCHEMA_URI);
+    public Problems validate() {
+        if (problems == null) {
+            SimpleProblems problems = new SimpleProblems();
+            Results results = SCHEMA_LIBRARY.validate(doc, JSON_SCHEMA_URI);
+            for (Problem problem : results) {
+                switch (problem.getType()) {
+                    case ERROR:
+                        problems.addError(JcrI18n.configurationError, problem.getPath(), problem.getReason());
+                        break;
+                    case WARNING:
+                        problems.addWarning(JcrI18n.configurationWarning, problem.getPath(), problem.getReason());
+                        break;
+                }
+            }
+            // Validate the components ...
+            getSecurity().validateCustomProviders(problems);
+            getSequencing().validateSequencers(problems);
+            getQuery().validateTextExtractors(problems);
+            this.problems = problems;
         }
-        return results;
+        return problems;
     }
 
     /***
@@ -1097,7 +1187,7 @@ public class RepositoryConfiguration {
      * @see #edit()
      * @see #validate()
      */
-    public Results validate( Changes changes ) {
+    public Problems validate( Changes changes ) {
         // Create a copy of this configuration ...
         Editor copy = edit();
         copy.apply(changes);
@@ -1129,15 +1219,18 @@ public class RepositoryConfiguration {
     public class Component {
         private final String name;
         private final String classname;
-        private final Map<String, Object> properties;
+        private final String classpath;
+        private final Document document;
 
         protected Component( String name,
                              String classname,
-                             Map<String, Object> properties ) {
+                             String classpath,
+                             Document document ) {
             assert classname != null;
             this.classname = classname;
+            this.classpath = classpath;
             this.name = name != null ? name : classname;
-            this.properties = properties != null ? properties : Collections.<String, Object>emptyMap();
+            this.document = document;
         }
 
         /**
@@ -1155,15 +1248,41 @@ public class RepositoryConfiguration {
         }
 
         /**
-         * @return properties
+         * @return classpath
          */
-        public Map<String, Object> getFields() {
-            return properties;
+        public String getClasspath() {
+            return classpath;
+        }
+
+        /**
+         * @return document
+         */
+        public Document getDocument() {
+            return document;
+        }
+
+        @Override
+        public int hashCode() {
+            return name.hashCode();
+        }
+
+        @Override
+        public boolean equals( Object obj ) {
+            if (obj == this) return true;
+            if (obj instanceof Component) {
+                Component that = (Component)obj;
+                if (!this.getClassname().equals(that.getClassname())) return false;
+                if (!this.getName().equals(that.getName())) return false;
+                if (!ObjectUtil.isEqualWithNulls(this.getClasspath(), that.getClasspath())) return false;
+                if (!this.getDocument().equals(that.getDocument())) return false;
+                return true;
+            }
+            return false;
         }
 
         @Override
         public String toString() {
-            return "\"" + name + "\" (" + this.classname + ") " + this.properties;
+            return document.toString();
         }
 
         /**
@@ -1172,7 +1291,8 @@ public class RepositoryConfiguration {
          * @param <Type>
          * @param type
          * @param classLoader the class loader that should be used
-         * @return the new instance, with all {@link #getFields() fields} set on it; never null
+         * @return the new instance, with all {@link #getDocument() document fields} set on it; never null
+         * @see #getClasspath()
          */
         @SuppressWarnings( "unchecked" )
         public <Type> Type createInstance( Class<Type> type,
@@ -1180,7 +1300,7 @@ public class RepositoryConfiguration {
             try {
                 // Handle some of the built-in providers in a special way ...
                 if (AnonymousProvider.class.getName().equals(getClassname())) {
-                    Object roles = this.properties.get(FieldName.ANONYMOUS_ROLES);
+                    Object roles = this.document.get(FieldName.ANONYMOUS_ROLES);
                     Set<String> roleNames = new HashSet<String>();
                     if (roles instanceof Array) {
                         Array roleValues = (Array)roles;
@@ -1188,11 +1308,11 @@ public class RepositoryConfiguration {
                             if (roleName instanceof String) roleNames.add(roleName.toString());
                         }
                     }
-                    Object usernameValue = this.properties.get(FieldName.ANONYMOUS_USERNAME);
+                    Object usernameValue = this.document.get(FieldName.ANONYMOUS_USERNAME);
                     String username = usernameValue instanceof String ? usernameValue.toString() : Default.ANONYMOUS_USERNAME;
                     return (Type)new AnonymousProvider(username, roleNames);
                 } else if (JaasProvider.class.getName().equals(getClassname())) {
-                    Object value = this.properties.get(FieldName.JAAS_POLICY_NAME);
+                    Object value = this.document.get(FieldName.JAAS_POLICY_NAME);
                     String policyName = value instanceof String ? value.toString() : Default.JAAS_POLICY_NAME;
                     return (Type)new JaasProvider(policyName);
                 }
@@ -1201,9 +1321,11 @@ public class RepositoryConfiguration {
                 Type instance = (Type)Util.getInstance(getClassname(), classLoader);
 
                 // And set the fields ...
-                for (Map.Entry<String, Object> field : getFields().entrySet()) {
-                    String fieldName = field.getKey();
+                for (Field field : getDocument().fields()) {
+                    String fieldName = field.getName();
                     Object fieldValue = field.getValue();
+                    if (COMPONENT_SKIP_PROPERTIES.contains(fieldName)) continue;
+                    if (fieldValue instanceof Document) continue;
                     try {
                         ReflectionUtil.setValue(instance, fieldName, fieldValue);
                     } catch (Throwable e) {

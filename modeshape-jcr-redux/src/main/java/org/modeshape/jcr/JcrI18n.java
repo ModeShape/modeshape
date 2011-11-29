@@ -77,6 +77,7 @@ public final class JcrI18n {
     public static I18n invalidJcrUrl;
     public static I18n unableToInitializeAuthenticationProvider;
     public static I18n errorInAuthenticationProvider;
+    public static I18n unableToInitializeSequencer;
 
     public static I18n rootNodeHasNoParent;
     public static I18n rootNodeIsNotProperty;
@@ -350,6 +351,9 @@ public final class JcrI18n {
 
     public static I18n failedWhileRollingBackDestroyToRuntimeError;
     public static I18n unexpectedException;
+
+    public static I18n configurationError;
+    public static I18n configurationWarning;
 
     static {
         try {

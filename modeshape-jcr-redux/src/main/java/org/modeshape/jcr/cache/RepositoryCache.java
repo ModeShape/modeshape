@@ -205,8 +205,8 @@ public class RepositoryCache implements Observable {
         public void notify( ChangeSet changeSet ) {
 
             if (changeSet == null || !getKey().equals(changeSet.getRepositoryKey())) return;
-            String workspaceKey = changeSet.getWorkspaceKey();
-            if (workspaceKey != null) {
+            String workspaceName = changeSet.getWorkspaceName();
+            if (workspaceName != null) {
                 for (WorkspaceCache cache : workspaces()) {
                     cache.notify(changeSet);
                 }
@@ -248,6 +248,10 @@ public class RepositoryCache implements Observable {
 
     public final NodeKey getSystemKey() {
         return this.systemKey;
+    }
+
+    public final String getSystemWorkspaceName() {
+        return this.systemWorkspaceName;
     }
 
     /**

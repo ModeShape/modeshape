@@ -28,8 +28,8 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import org.infinispan.schematic.SchemaLibrary.Results;
 import org.junit.Test;
+import org.modeshape.common.collection.Problems;
 import org.modeshape.jcr.RepositoryConfiguration.AnonymousSecurity;
 import org.modeshape.jcr.RepositoryConfiguration.JaasSecurity;
 import org.modeshape.jcr.RepositoryConfiguration.Security;
@@ -162,7 +162,7 @@ public class RepositoryConfigurationTest {
     }
 
     protected void assertValid( RepositoryConfiguration config ) {
-        Results results = config.validate();
+        Problems results = config.validate();
         assertThat(results.toString(), results.hasProblems(), is(false));
     }
 
@@ -172,7 +172,7 @@ public class RepositoryConfigurationTest {
 
     protected void assertNotValid( int numberOfErrors,
                                    RepositoryConfiguration config ) {
-        Results results = config.validate();
+        Problems results = config.validate();
         assertThat(results.toString(), results.hasProblems(), is(true));
         assertThat(results.toString(), results.hasErrors(), is(true));
         assertThat(results.toString(), results.errorCount(), is(numberOfErrors));

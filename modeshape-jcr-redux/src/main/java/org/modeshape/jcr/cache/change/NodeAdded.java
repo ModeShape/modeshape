@@ -64,7 +64,7 @@ public class NodeAdded extends AbstractNodeChange {
     }
 
     /**
-     * Get the path to the node that was added, if the path is known.
+     * Get the path to the node that was added.
      * 
      * @return the path; never null
      */

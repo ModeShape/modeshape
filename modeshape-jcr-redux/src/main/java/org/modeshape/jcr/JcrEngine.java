@@ -46,11 +46,11 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
-import org.infinispan.schematic.SchemaLibrary.Results;
 import org.infinispan.schematic.document.Changes;
 import org.infinispan.schematic.document.Editor;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.common.collection.Problems;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.NamedThreadFactory;
@@ -408,9 +408,9 @@ public class JcrEngine implements Repositories {
         checkRunning();
 
         final String repoName = repositoryConfiguration.getName();
-        Results results = repositoryConfiguration.validate();
-        if (results.hasErrors()) {
-            throw new ConfigurationException(results, JcrI18n.repositoryConfigurationIsNotValid.text(repoName));
+        Problems problems = repositoryConfiguration.validate();
+        if (problems.hasErrors()) {
+            throw new ConfigurationException(problems, JcrI18n.repositoryConfigurationIsNotValid.text(repoName));
         }
 
         // Now try to deploy the repository ...
@@ -506,9 +506,9 @@ public class JcrEngine implements Repositories {
 
             // Determine if the changes would result in a valid repository configuration ...
             RepositoryConfiguration config = repository.getConfiguration();
-            Results results = config.validate(changes);
-            if (results.hasErrors()) {
-                throw new ConfigurationException(results, JcrI18n.repositoryConfigurationIsNotValid.text(repositoryName));
+            Problems problems = config.validate(changes);
+            if (problems.hasErrors()) {
+                throw new ConfigurationException(problems, JcrI18n.repositoryConfigurationIsNotValid.text(repositoryName));
             }
 
             // Create an initializer that will start the repository ...

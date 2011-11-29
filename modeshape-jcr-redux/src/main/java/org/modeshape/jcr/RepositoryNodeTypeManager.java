@@ -87,7 +87,7 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
 
     private final JcrRepository.RunningState repository;
     private final ExecutionContext context;
-    private final String systemWorkspaceKey;
+    private final String systemWorkspaceName;
     private final Path nodeTypesPath;
     private final NameFactory nameFactory;
     private final Logger logger = Logger.getLogger(getClass());
@@ -131,16 +131,31 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
         this.repository = repository;
         this.context = repository.context();
         this.nameFactory = this.context.getValueFactories().getNameFactory();
-        this.systemWorkspaceKey = this.repository.repositoryCache().getSystemKey().getWorkspaceKey();
+        this.systemWorkspaceName = this.repository.repositoryCache().getSystemWorkspaceName();
 
-        this.nodeTypesCache = new NodeTypes(this.context);
         PathFactory pathFactory = this.context.getValueFactories().getPathFactory();
         this.nodeTypesPath = pathFactory.createAbsolutePath(JcrLexicon.SYSTEM, JcrLexicon.NODE_TYPES);
+        this.nodeTypesCache = new NodeTypes(this.context);
 
         // TODO: Query
         // this.includeColumnsForInheritedProperties = includeColumnsForInheritedProperties;
         // this.includePseudoColumnsInSelectStar = includePseudoColumnsInSelectStar;
         // queryParser = new SqlQueryParser();
+    }
+
+    RepositoryNodeTypeManager with( JcrRepository.RunningState repository,
+                                    boolean includeColumnsForInheritedProperties,
+                                    boolean includePseudoColumnsInSelectStar ) {
+        assert this.systemWorkspaceName.equals(repository.repositoryCache().getSystemWorkspaceName());
+        PathFactory pathFactory = repository.context().getValueFactories().getPathFactory();
+        Path nodeTypesPath = pathFactory.createAbsolutePath(JcrLexicon.SYSTEM, JcrLexicon.NODE_TYPES);
+        assert this.nodeTypesPath.equals(nodeTypesPath);
+        RepositoryNodeTypeManager result = new RepositoryNodeTypeManager(repository, includeColumnsForInheritedProperties,
+                                                                         includePseudoColumnsInSelectStar);
+        // Now copy the node types from this cache into the new manager's cache ...
+        // (If we didn't do this, we'd have to refresh from the system storage)
+        result.nodeTypesCache = result.nodeTypesCache.with(this.nodeTypesCache.getAllNodeTypes());
+        return result;
     }
 
     protected final ValueFactory<String> strings() {
@@ -606,7 +621,7 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
 
     @Override
     public void notify( ChangeSet changeSet ) {
-        if (!systemWorkspaceKey.equals(changeSet.getWorkspaceKey())) {
+        if (!systemWorkspaceName.equals(changeSet.getWorkspaceName())) {
             // The change does not affect the 'system' workspace, so skip it ...
             return;
         }
@@ -2658,5 +2673,9 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
             }
         }
 
+        @Override
+        public String toString() {
+            return getAllNodeTypes().toString();
+        }
     }
 }

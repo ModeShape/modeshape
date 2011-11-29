@@ -23,7 +23,7 @@
  */
 package org.modeshape.jcr;
 
-import org.infinispan.schematic.SchemaLibrary.Results;
+import org.modeshape.common.collection.Problems;
 
 /**
  * An exception signalling errors in a {@link RepositoryConfiguration configuration}.
@@ -32,12 +32,12 @@ public class ConfigurationException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 
-    private final Results results;
+    private final Problems results;
 
     /**
      * @param results the validation results for the configuration
      */
-    public ConfigurationException( Results results ) {
+    public ConfigurationException( Problems results ) {
         super();
         this.results = results;
     }
@@ -46,7 +46,7 @@ public class ConfigurationException extends RuntimeException {
      * @param results the validation results for the configuration
      * @param message the message
      */
-    public ConfigurationException( Results results,
+    public ConfigurationException( Problems results,
                                    String message ) {
         super(message);
         this.results = results;
@@ -56,7 +56,7 @@ public class ConfigurationException extends RuntimeException {
      * @param results the validation results for the configuration
      * @param cause the cause of this exception
      */
-    public ConfigurationException( Results results,
+    public ConfigurationException( Problems results,
                                    Throwable cause ) {
         super(cause);
         this.results = results;
@@ -67,7 +67,7 @@ public class ConfigurationException extends RuntimeException {
      * @param message the message
      * @param cause the cause of this exception
      */
-    public ConfigurationException( Results results,
+    public ConfigurationException( Problems results,
                                    String message,
                                    Throwable cause ) {
         super(message, cause);
@@ -82,7 +82,7 @@ public class ConfigurationException extends RuntimeException {
     /**
      * @return results
      */
-    public Results getResults() {
+    public Problems getProblems() {
         return results;
     }
 }

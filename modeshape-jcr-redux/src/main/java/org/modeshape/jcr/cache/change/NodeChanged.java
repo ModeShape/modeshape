@@ -36,6 +36,15 @@ public class NodeChanged extends AbstractNodeChange {
         super(key, path);
     }
 
+    /**
+     * Get the path to the node that was changed.
+     * 
+     * @return the path; never null
+     */
+    public Path getPath() {
+        return path;
+    }
+
     @Override
     public String toString() {
         return "Changed node '" + this.getKey() + "' at \"" + path + "\"";

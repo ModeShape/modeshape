@@ -268,6 +268,38 @@ public abstract class AbstractProblems implements Problems {
     }
 
     @Override
+    public int errorCount() {
+        int count = 0;
+        for (Problem problem : getProblems()) {
+            if (problem.getStatus() == Problem.Status.ERROR) ++count;
+        }
+        return count;
+    }
+
+    @Override
+    public int problemCount() {
+        return getProblems().size();
+    }
+
+    @Override
+    public int warningCount() {
+        int count = 0;
+        for (Problem problem : getProblems()) {
+            if (problem.getStatus() == Problem.Status.WARNING) ++count;
+        }
+        return count;
+    }
+
+    @Override
+    public int infoCount() {
+        int count = 0;
+        for (Problem problem : getProblems()) {
+            if (problem.getStatus() == Problem.Status.INFO) ++count;
+        }
+        return count;
+    }
+
+    @Override
     public int size() {
         return getProblems().size();
     }

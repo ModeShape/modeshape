@@ -4,13 +4,13 @@
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
  * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors.
+ * individual contributors. 
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- * 
+ *
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -21,52 +21,45 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.cache.change;
+package org.modeshape.jcr.api.sequencer;
 
-import java.util.Map;
-import java.util.Set;
-import org.modeshape.jcr.cache.NodeKey;
-import org.modeshape.jcr.value.DateTime;
+import javax.jcr.RepositoryException;
 
 /**
- * 
+ * A {@link RepositoryException repository exception} that denotes an error within a sequencer.
  */
-public interface ChangeSet extends Iterable<Change> {
+public class SequencerException extends RepositoryException {
 
     /**
-     * Return the number of individual changes.
-     * 
-     * @return the number of changes
      */
-    public int size();
-
-    public String getUserId();
-
-    public Map<String, String> getUserData();
-
-    public DateTime getTimestamp();
+    private static final long serialVersionUID = -7610898771539657335L;
 
     /**
-     * Get the key of the process in which the changes were made.
-     * 
-     * @return the process key; never null
      */
-    public String getProcessKey();
+    public SequencerException() {
+    }
 
     /**
-     * Get the key of the repository in which the changes were made.
-     * 
-     * @return the repository key; never null
+     * @param message
      */
-    public String getRepositoryKey();
+    public SequencerException( String message ) {
+        super(message);
+    }
 
     /**
-     * Get the name of the workspace in which the changes were made.
-     * 
-     * @return the workspace name; may be null only when workspaces are added or removed
+     * @param cause
      */
-    public String getWorkspaceName();
+    public SequencerException( Throwable cause ) {
+        super(cause);
+    }
 
-    public Set<NodeKey> changedNodes();
+    /**
+     * @param message
+     * @param cause
+     */
+    public SequencerException( String message,
+                               Throwable cause ) {
+        super(message, cause);
+    }
 
 }

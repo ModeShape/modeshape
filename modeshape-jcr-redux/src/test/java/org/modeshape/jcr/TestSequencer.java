@@ -21,52 +21,28 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.cache.change;
+package org.modeshape.jcr;
 
-import java.util.Map;
-import java.util.Set;
-import org.modeshape.jcr.cache.NodeKey;
-import org.modeshape.jcr.value.DateTime;
+import java.util.concurrent.atomic.AtomicInteger;
+import javax.jcr.Node;
+import javax.jcr.Property;
+import org.modeshape.jcr.api.sequencer.Sequencer;
+import org.modeshape.jcr.api.sequencer.SequencerContext;
 
 /**
- * 
+ * A simple sequencer that records the number of times all instances are {@link #execute(Node, Property, Node, SequencerContext)
+ * executed}.
  */
-public interface ChangeSet extends Iterable<Change> {
+public class TestSequencer extends Sequencer {
 
-    /**
-     * Return the number of individual changes.
-     * 
-     * @return the number of changes
-     */
-    public int size();
+    public static final AtomicInteger COUNTER = new AtomicInteger();
 
-    public String getUserId();
-
-    public Map<String, String> getUserData();
-
-    public DateTime getTimestamp();
-
-    /**
-     * Get the key of the process in which the changes were made.
-     * 
-     * @return the process key; never null
-     */
-    public String getProcessKey();
-
-    /**
-     * Get the key of the repository in which the changes were made.
-     * 
-     * @return the repository key; never null
-     */
-    public String getRepositoryKey();
-
-    /**
-     * Get the name of the workspace in which the changes were made.
-     * 
-     * @return the workspace name; may be null only when workspaces are added or removed
-     */
-    public String getWorkspaceName();
-
-    public Set<NodeKey> changedNodes();
+    @Override
+    public void execute( Node changedNode,
+                         Property changedProperty,
+                         Node parentOfOutput,
+                         SequencerContext context ) /*throws SequencerException, RepositoryException*/{
+        COUNTER.incrementAndGet();
+    }
 
 }

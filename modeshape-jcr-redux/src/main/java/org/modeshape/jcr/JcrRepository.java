@@ -26,14 +26,17 @@ package org.modeshape.jcr;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.AccessControlContext;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -52,6 +55,7 @@ import javax.jcr.LoginException;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
+import javax.jcr.Session;
 import javax.jcr.query.Query;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -60,7 +64,6 @@ import javax.security.auth.login.LoginContext;
 import javax.transaction.TransactionManager;
 import org.infinispan.Cache;
 import org.infinispan.manager.CacheContainer;
-import org.infinispan.schematic.SchemaLibrary.Results;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
@@ -81,18 +84,21 @@ import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.RepositoryConfiguration.JaasSecurity;
 import org.modeshape.jcr.RepositoryConfiguration.Security;
 import org.modeshape.jcr.RepositoryStatistics.ValueMetric;
+import org.modeshape.jcr.Sequencers.SequencingWorkItem;
 import org.modeshape.jcr.api.AnonymousCredentials;
 import org.modeshape.jcr.api.Repository;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.SessionCacheMonitor;
+import org.modeshape.jcr.cache.WorkspaceNotFoundException;
 import org.modeshape.jcr.cache.change.Change;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
 import org.modeshape.jcr.cache.change.WorkspaceAdded;
 import org.modeshape.jcr.cache.change.WorkspaceRemoved;
 import org.modeshape.jcr.core.ExecutionContext;
+import org.modeshape.jcr.core.SecurityContext;
 import org.modeshape.jcr.security.AnonymousProvider;
 import org.modeshape.jcr.security.AuthenticationProvider;
 import org.modeshape.jcr.security.AuthenticationProviders;
@@ -147,6 +153,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
     private static final boolean AUTO_START_REPO_UPON_LOGIN = true;
 
+    private static final String INTERNAL_WORKER_USERNAME = "<modeshape-worker>";
+
     protected final Logger logger;
     private final AtomicReference<RepositoryConfiguration> config = new AtomicReference<RepositoryConfiguration>();
     private final AtomicReference<String> repositoryName = new AtomicReference<String>();
@@ -167,7 +175,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         RepositoryConfiguration config = this.config.get();
 
         // Validate the configuration to make sure there are no errors ...
-        Results results = configuration.validate();
+        Problems results = configuration.validate();
         if (results.hasErrors()) {
             String msg = JcrI18n.errorsInRepositoryConfiguration.text(this.repositoryName,
                                                                       results.errorCount(),
@@ -542,18 +550,34 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         }
 
         // We have successfully authenticated ...
-        boolean readOnly = false; // assume not
-        JcrSession session = new JcrSession(this, workspaceName, sessionContext, attributes, readOnly);
-
-        // Need to make sure that the user has access to this session
         try {
+            boolean readOnly = false; // assume not
+            JcrSession session = new JcrSession(this, workspaceName, sessionContext, attributes, readOnly);
+
+            // Need to make sure that the user has access to this session
             session.checkPermission(workspaceName, null, ModeShapePermissions.READ);
+
+            running.addSession(session);
+            return session;
         } catch (AccessDeniedException ace) {
             throw new LoginException(JcrI18n.loginFailed.text(repoName, workspaceName), ace);
+        } catch (WorkspaceNotFoundException e) {
+            throw new NoSuchWorkspaceException(e.getMessage(), e);
         }
+    }
 
-        running.addSession(session);
-        return session;
+    protected Session loginInternalSession( String workspaceName ) throws RepositoryException {
+        try {
+            boolean readOnly = false; // assume not
+            RunningState running = runningState();
+            ExecutionContext sessionContext = running.internalWorkerContext();
+            Map<String, Object> attributes = Collections.emptyMap();
+            JcrSession session = new JcrSession(this, workspaceName, sessionContext, attributes, readOnly);
+            running.addSession(session);
+            return session;
+        } catch (WorkspaceNotFoundException e) {
+            throw new NoSuchWorkspaceException(e.getMessage(), e);
+        }
     }
 
     private String validateWorkspaceName( RunningState runningState,
@@ -761,8 +785,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         public void notify( ChangeSet changeSet ) {
 
             if (changeSet == null || !repositoryCache().getKey().equals(changeSet.getRepositoryKey())) return;
-            String workspaceKey = changeSet.getWorkspaceKey();
-            if (workspaceKey == null) {
+            String workspaceName = changeSet.getWorkspaceName();
+            if (workspaceName == null) {
                 // Look for changes to the workspaces ...
                 boolean changed = false;
                 for (Change change : changeSet) {
@@ -793,10 +817,13 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final String jndiName;
         private final SystemNamespaceRegistry persistentRegistry;
         private final ExecutionContext context;
+        private final ExecutionContext internalWorkerContext;
         private final ReadWriteLock activeSessionLock = new ReentrantReadWriteLock();
         private final WeakHashMap<JcrSession, Object> activeSessions = new WeakHashMap<JcrSession, Object>();
         private final RepositoryStatistics statistics;
         private final ScheduledExecutorService statsRollupService;
+        private final Sequencers sequencers;
+        private final Executor sequencingQueue;
 
         protected RunningState() throws IOException, NamingException {
             this(null, null);
@@ -843,10 +870,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.database = other.database;
                 this.txnMgr = other.txnMgr;
                 this.cache = other.cache;
-                this.nodeTypes = other.nodeTypes;
-                this.lockManager = other.lockManager;
-                this.persistentRegistry = other.persistentRegistry;
-                this.context = other.context;
                 if (change.largeValueChanged) {
                     // We can update the value used in the repository cache dynamically ...
                     this.cache.setLargeValueSizeInBytes(config.getLargeValueSizeInBytes());
@@ -857,6 +880,13 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                         this.cache.createWorkspace(workspaceName);
                     }
                 }
+                this.context = other.context;
+                this.internalWorkerContext = other.internalWorkerContext;
+                this.nodeTypes = other.nodeTypes.with(this, true, true);
+                this.lockManager = other.lockManager.with(this);
+                this.cache.register(this.lockManager);
+                other.cache.unregister(other.lockManager);
+                this.persistentRegistry = other.persistentRegistry;
             } else {
                 // find the Schematic database and Infinispan Cache ...
                 CacheContainer container = config.getCacheContainer();
@@ -869,6 +899,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.persistentRegistry = new SystemNamespaceRegistry(this);
                 this.context = tempContext.with(persistentRegistry);
                 this.persistentRegistry.setContext(this.context);
+                this.internalWorkerContext = this.context.with(new InternalSecurityContext(INTERNAL_WORKER_USERNAME));
 
                 // Set up the repository cache ...
                 SessionCacheMonitor monitor = statsRollupService != null ? new SessionMonitor(this.statistics) : null;
@@ -928,9 +959,58 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             }
 
             if (other != null && !change.sequencingChanged) {
-
+                this.sequencingQueue = other.sequencingQueue;
+                this.sequencers = other.sequencers.with(this);
+                if (!sequencers.isEmpty()) this.cache.register(this.sequencers);
+                this.cache.unregister(other.sequencers);
             } else {
+                // There are changes to the sequencers ...
+                Sequencers.WorkQueue queue = null;
+                List<Component> sequencerComponents = config.getSequencing().getSequencers();
+                if (sequencerComponents.isEmpty()) {
+                    // There are no sequencers ...
+                    this.sequencingQueue = null;
+                    this.sequencers = new Sequencers(this, sequencerComponents, cache.getWorkspaceNames(), queue);
+                } else {
+                    // Create an in-memory queue of sequencing work items ...
+                    String threadPool = config.getSequencing().getThreadPoolName();
+                    final Executor sequencingQueue = this.context.getThreadPool(threadPool);
+                    this.sequencingQueue = sequencingQueue;
+                    queue = new Sequencers.WorkQueue() {
+                        @Override
+                        public void submit( final SequencingWorkItem work ) {
+                            sequencingQueue.execute(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Session inputSession = null;
+                                    Session outputSession = null;
+                                    try {
+                                        // Create the required session(s) ...
+                                        inputSession = loginInternalSession(work.getInputWorkspaceName());
+                                        if (work.getOutputWorkspaceName() != null) {
+                                            outputSession = loginInternalSession(work.getOutputWorkspaceName());
+                                        } else {
+                                            outputSession = inputSession;
+                                        }
 
+                                        // Run the sequencer ...
+                                        sequencers().perform(work, inputSession, outputSession);
+
+                                        // Save the session
+                                        outputSession.save();
+                                    } catch (Throwable t) {
+                                        logger.error(t, RepositoryI18n.errorWhileSequencingNode, work.getSequencerName(), work);
+                                    } finally {
+                                        if (inputSession != null) inputSession.logout();
+                                        if (outputSession != null && outputSession != inputSession) outputSession.logout();
+                                    }
+                                }
+                            });
+                        }
+                    };
+                    this.sequencers = new Sequencers(this, sequencerComponents, cache.getWorkspaceNames(), queue);
+                    this.cache.register(this.sequencers);
+                }
             }
 
             if (other != null && !change.jndiChanged) {
@@ -948,8 +1028,23 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             }
         }
 
+        protected final Sequencers sequencers() {
+            return sequencers;
+        }
+
         private final ClassLoader classLoader() {
             return database.getCache().getConfiguration().getClassLoader();
+        }
+
+        private final ClassLoader classLoader( String classLoaderName,
+                                               ClassLoader defaultLoader ) {
+            if (classLoaderName != null) {
+                classLoaderName = classLoaderName.trim();
+                if (classLoaderName.length() == 0) classLoaderName = null;
+            }
+            if (classLoaderName == null) return defaultLoader;
+            ClassLoader loader = context.getClassLoader(classLoaderName);
+            return loader != null ? loader : defaultLoader;
         }
 
         final String name() {
@@ -958,6 +1053,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
         final ExecutionContext context() {
             return context;
+        }
+
+        final ExecutionContext internalWorkerContext() {
+            return internalWorkerContext;
         }
 
         final RepositoryCache repositoryCache() {
@@ -1046,15 +1145,15 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             }
 
             // Set up any custom AuthenticationProvider classes ...
-            Problems problems = new SimpleProblems();
-            ClassLoader cl = classLoader();
-            for (Component component : securityConfig.getCustomProviders(problems)) {
+            ClassLoader defaultClassLoader = classLoader();
+            for (Component component : securityConfig.getCustomProviders()) {
                 try {
+                    ClassLoader cl = classLoader(component.getClasspath(), defaultClassLoader);
                     AuthenticationProvider provider = component.createInstance(AuthenticationProvider.class, cl);
                     if (provider != null) {
                         authenticators = authenticators.with(provider);
                         if (provider instanceof AnonymousProvider) {
-                            Object value = component.getFields().get(FieldName.USE_ANONYMOUS_ON_FAILED_LOGINS);
+                            Object value = component.getDocument().get(FieldName.USE_ANONYMOUS_ON_FAILED_LOGINS);
                             if (Boolean.TRUE.equals(value)) useAnonymouOnFailedLogins.set(true);
                         }
                     }
@@ -1202,6 +1301,34 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         public void performChange( long changedNodesCount ) {
             // ValueMetric.SESSION_SAVES are tracked in JcrSession.save() ...
             this.statistics.increment(ValueMetric.NODE_CHANGES, changedNodesCount);
+        }
+    }
+
+    private final class InternalSecurityContext implements SecurityContext {
+        private final String username;
+
+        protected InternalSecurityContext( String username ) {
+            this.username = username;
+        }
+
+        @Override
+        public boolean isAnonymous() {
+            return false;
+        }
+
+        @Override
+        public String getUserName() {
+            return username;
+        }
+
+        @Override
+        public boolean hasRole( String roleName ) {
+            return true;
+        }
+
+        @Override
+        public void logout() {
+            // do nothing
         }
     }
 

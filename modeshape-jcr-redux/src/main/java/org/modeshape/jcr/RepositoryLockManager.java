@@ -45,7 +45,7 @@ class RepositoryLockManager implements ChangeSetListener {
     private static final int KEY_OFFSET = "mode:lock-".length();
 
     private final JcrRepository.RunningState repository;
-    private final String systemWorkspaceKey;
+    private final String systemWorkspaceName;
     private final String processId;
     private final ConcurrentMap<NodeKey, ModeShapeLock> locksByNodeKey;
     private final Path locksPath;
@@ -53,12 +53,21 @@ class RepositoryLockManager implements ChangeSetListener {
 
     RepositoryLockManager( JcrRepository.RunningState repository ) {
         this.repository = repository;
-        this.systemWorkspaceKey = repository.repositoryCache().getSystemKey().getWorkspaceKey();
+        this.systemWorkspaceName = repository.repositoryCache().getSystemWorkspaceName();
         this.processId = repository.context().getProcessId();
         this.locksByNodeKey = new ConcurrentHashMap<NodeKey, ModeShapeLock>();
         PathFactory pathFactory = repository.context().getValueFactories().getPathFactory();
         this.locksPath = pathFactory.create(pathFactory.createRootPath(), JcrLexicon.SYSTEM, ModeShapeLexicon.LOCKS);
         this.logger = Logger.getLogger(getClass());
+    }
+
+    RepositoryLockManager with( JcrRepository.RunningState repository ) {
+        assert this.systemWorkspaceName == repository.repositoryCache().getSystemWorkspaceName();
+        assert this.processId == repository.context().getProcessId();
+        PathFactory pathFactory = repository.context().getValueFactories().getPathFactory();
+        Path locksPath = pathFactory.create(pathFactory.createRootPath(), JcrLexicon.SYSTEM, ModeShapeLexicon.LOCKS);
+        assert this.locksPath.equals(locksPath);
+        return new RepositoryLockManager(repository);
     }
 
     /**
@@ -302,7 +311,7 @@ class RepositoryLockManager implements ChangeSetListener {
 
     @Override
     public void notify( ChangeSet changeSet ) {
-        if (!systemWorkspaceKey.equals(changeSet.getWorkspaceKey())) {
+        if (!systemWorkspaceName.equals(changeSet.getWorkspaceName())) {
             // The change does not affect the 'system' workspace, so skip it ...
             return;
         }

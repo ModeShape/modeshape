@@ -2165,6 +2165,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             throw new ConstraintViolationException(JcrI18n.cannotRemoveFromProtectedNode.text(getPath()));
         }
 
+        // TODO: When removing the 'mix:versionable' mixin, should we automatically remove the 'mix:versionable' properties?
+
         NodeTypes nodeTypes = session.nodeTypes();
         Name removedMixinName = nameFrom(mixinName);
         if (!isNodeType(mixinName)) return;

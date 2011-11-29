@@ -32,6 +32,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.Repository;
 import javax.jcr.Session;
 import javax.jcr.ValueFormatException;
@@ -50,7 +51,6 @@ import org.modeshape.jcr.RepositoryStatistics.History;
 import org.modeshape.jcr.RepositoryStatistics.Statistics;
 import org.modeshape.jcr.RepositoryStatistics.ValueMetric;
 import org.modeshape.jcr.RepositoryStatistics.Window;
-import org.modeshape.jcr.cache.WorkspaceNotFoundException;
 
 public class JcrRepositoryTest {
 
@@ -105,7 +105,7 @@ public class JcrRepositoryTest {
         assertThat(session1.isLive(), is(true));
     }
 
-    @Test( expected = WorkspaceNotFoundException.class )
+    @Test( expected = NoSuchWorkspaceException.class )
     public void shouldNotAllowCreatingSessionForNonExistantWorkspace() throws Exception {
         repository.login("non-existant-workspace");
     }
@@ -137,7 +137,7 @@ public class JcrRepositoryTest {
         // Verify the workspace does not exist yet ...
         try {
             repository.login("new-workspace");
-        } catch (WorkspaceNotFoundException e) {
+        } catch (NoSuchWorkspaceException e) {
             // expected
         }
         JcrSession session1 = repository.login();
@@ -154,7 +154,7 @@ public class JcrRepositoryTest {
         // Verify the workspace does not exist yet ...
         try {
             repository.login("new-workspace");
-        } catch (WorkspaceNotFoundException e) {
+        } catch (NoSuchWorkspaceException e) {
             // expected
         }
         JcrSession session1 = repository.login();
