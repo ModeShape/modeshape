@@ -89,7 +89,9 @@ public class NodeTypeRegistrationTest extends SingleUseAbstractTest {
 
     @Test( expected = IOException.class )
     public void shouldFailIfResourceFileCouldNotBeFoundAsUrl() throws Exception {
-        URL url = new URL("file://this/resource/file/does/not/exist");
+        File file = new File("/this/resource/file/does/not/exist");
+        assertThat(file.exists(), is(false));
+        URL url = file.toURI().toURL();
         nodeTypeManager.registerNodeTypeDefinitions(url);
     }
 

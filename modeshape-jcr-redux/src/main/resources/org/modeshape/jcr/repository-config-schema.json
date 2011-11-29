@@ -134,6 +134,10 @@
                             "classname" : {
                                 "type" : "string",
                                 "description" : "The fully-qualified name of the org.modeshape.graph.text.TextExtractor implementation class."
+                            },
+                            "classloader" : {
+                                "type" : "string",
+                                "description" : "The optional name of the classloader that should be used to load the sequencer class. If empty or not provided, the classpath accessible to ModeShape will be used."
                             }
                         }
                     }
@@ -152,6 +156,11 @@
                 "indexLocation" : {
                     "type" : "string",
                     "description" : "The location where the system is to store the indexes used in searching and querying the content. These size of these indexes depend upon the size of the content being stored, and thus may consume a significant amount of space. This option defines a location on the file system where this repository may (if needed) store indexes so they don't consume large amounts of memory. If specified, the value must be a valid absolute or relative path to a writable directory on the file system. If the path specifies a non-existant location, the repository may attempt to create the missing directories. The path may be absolute or relative to the location where this VM was started. If the specified location is not a readable and writable directory (or cannot be created as such), then this will generate an exception when the repository is created. The default value is null, meaning the search indexes may not be stored on the local file system and, if needed, will be stored within memory."
+                },
+                "threadPool" : {
+                    "type" : "string",
+                    "default" : "modeshape-workers",
+                    "description" : "Name of the thread pool that should be used for indexing. Thread pools are named globally within a single ModeShape engine, and by default all repositories use the same thread pool for sequencing and indexing."
                 },
                 "rebuildUponStartup" : {
                     "type" : "string",
@@ -181,7 +190,11 @@
                             },
                             "classname" : {
                                 "type" : "string",
-                                "description" : "The fully-qualified name of the org.modeshape.graph.text.TextExtractor implementation class."
+                                "description" : "The fully-qualified name of the org.modeshape.jcr.text.TextExtractor implementation class."
+                            },
+                            "classloader" : {
+                                "type" : "string",
+                                "description" : "The optional name of the classloader that should be used to load the sequencer class. If empty or not provided, the classpath accessible to ModeShape will be used."
                             }
                         }
                     }
@@ -197,6 +210,11 @@
                     "type" : "boolean",
                     "default" : true,
                     "description" : "Boolean option that controls whether the repository should also remove the content automatically derived by sequencers from the original content when that original content is removed. The default is 'true', since often times the derived content should not be kept if the original is being deleted."
+                },
+                "threadPool" : {
+                    "type" : "string",
+                    "default" : "modeshape-workers",
+                    "description" : "Name of the thread pool that should be used for sequencing. Thread pools are named globally within a single ModeShape engine, and by default all repositories use the same thread pool for sequencing and indexing."
                 },
                 "sequencers" : {
                     "type" : "array",
@@ -220,7 +238,11 @@
                             },
                             "classname" : {
                                 "type" : "string",
-                                "description" : "The fully-qualified name of the org.modeshape.graph.text.TextExtractor implementation class."
+                                "description" : "The fully-qualified name of the org.modeshape.jcr.sequencer.Sequencer implementation class."
+                            },
+                            "classloader" : {
+                                "type" : "string",
+                                "description" : "The optional name of the classloader that should be used to load the sequencer class. If empty or not provided, the classpath accessible to ModeShape will be used."
                             },
                             "pathExpression" : {
                                 "type" : "string",

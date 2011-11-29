@@ -563,10 +563,10 @@ public class WritableSessionCache extends AbstractSessionCache {
         String userId = context.getSecurityContext().getUserName();
         Map<String, String> userData = context.getData();
         DateTime timestamp = context.getValueFactories().getDateFactory().create();
-        String workspaceKey = workspaceCache().getWorkspaceKey();
+        String workspaceName = workspaceCache().getWorkspaceName();
         String repositoryKey = workspaceCache().getRepositoryKey();
         String processKey = workspaceCache().getProcessKey();
-        RecordingChanges changes = new RecordingChanges(processKey, repositoryKey, workspaceKey);
+        RecordingChanges changes = new RecordingChanges(processKey, repositoryKey, workspaceName);
 
         // Get the database ...
         SchematicDb database = workspaceCache.database();

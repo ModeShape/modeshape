@@ -21,52 +21,28 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.cache.change;
+package org.modeshape.common.component;
 
-import java.util.Map;
-import java.util.Set;
-import org.modeshape.jcr.cache.NodeKey;
-import org.modeshape.jcr.value.DateTime;
+import java.util.concurrent.Executor;
 
 /**
- * 
+ * Factory interface for creating/obtaining named thread pools.
  */
-public interface ChangeSet extends Iterable<Change> {
+public interface ThreadPoolFactory {
 
     /**
-     * Return the number of individual changes.
+     * Obtain a thread pool with the supplied name, or create and return one if no thread pool exists with that name. When
+     * finished with the thread pool, it should be {@link #releaseThreadPool released}.
      * 
-     * @return the number of changes
+     * @param name the name of the thread pool; may not be null
+     * @return the thread pool executor; never null
      */
-    public int size();
-
-    public String getUserId();
-
-    public Map<String, String> getUserData();
-
-    public DateTime getTimestamp();
+    Executor getThreadPool( String name );
 
     /**
-     * Get the key of the process in which the changes were made.
+     * Signal that the supplied thread pool is no longer needed.
      * 
-     * @return the process key; never null
+     * @param pool the pool that is no longer needed
      */
-    public String getProcessKey();
-
-    /**
-     * Get the key of the repository in which the changes were made.
-     * 
-     * @return the repository key; never null
-     */
-    public String getRepositoryKey();
-
-    /**
-     * Get the name of the workspace in which the changes were made.
-     * 
-     * @return the workspace name; may be null only when workspaces are added or removed
-     */
-    public String getWorkspaceName();
-
-    public Set<NodeKey> changedNodes();
-
+    void releaseThreadPool( Executor pool );
 }

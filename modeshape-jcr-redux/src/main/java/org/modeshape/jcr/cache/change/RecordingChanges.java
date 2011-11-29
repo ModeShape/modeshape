@@ -45,7 +45,7 @@ public class RecordingChanges implements Changes, ChangeSet {
 
     private final String processKey;
     private final String repositoryKey;
-    private final String workspaceKey;
+    private final String workspaceName;
     private final Queue<Change> events = new ConcurrentLinkedQueue<Change>();
     private Set<NodeKey> nodeKeys;
     private Map<String, String> userData;
@@ -59,10 +59,10 @@ public class RecordingChanges implements Changes, ChangeSet {
 
     public RecordingChanges( String processKey,
                              String repositoryKey,
-                             String workspaceKey ) {
+                             String workspaceName ) {
         this.processKey = processKey;
         this.repositoryKey = repositoryKey;
-        this.workspaceKey = workspaceKey;
+        this.workspaceName = workspaceName;
         assert this.processKey != null;
         assert this.repositoryKey != null;
     }
@@ -182,8 +182,8 @@ public class RecordingChanges implements Changes, ChangeSet {
     }
 
     @Override
-    public String getWorkspaceKey() {
-        return workspaceKey;
+    public String getWorkspaceName() {
+        return workspaceName;
     }
 
     @Override

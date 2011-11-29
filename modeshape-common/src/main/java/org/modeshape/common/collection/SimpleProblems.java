@@ -37,11 +37,6 @@ public class SimpleProblems extends AbstractProblems {
 
     private List<Problem> problems;
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.AbstractProblems#addProblem(Problem)
-     */
     @Override
     protected void addProblem( Problem problem ) {
         if (problem == null) return;
@@ -49,21 +44,11 @@ public class SimpleProblems extends AbstractProblems {
         problems.add(problem);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.AbstractProblems#getProblems()
-     */
     @Override
     protected List<Problem> getProblems() {
         return this.problems != null ? problems : EMPTY_PROBLEMS;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.collection.Problems#addAll(java.lang.Iterable)
-     */
     @Override
     public void addAll( Iterable<Problem> problems ) {
         if (problems != null) {

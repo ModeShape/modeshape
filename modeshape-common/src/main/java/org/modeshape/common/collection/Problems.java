@@ -416,6 +416,34 @@ public interface Problems extends Iterable<Problem>, Serializable {
     boolean hasInfo();
 
     /**
+     * Determine the number of errors within these results.
+     * 
+     * @return the number of errors; always 0 or a positive number
+     */
+    int errorCount();
+
+    /**
+     * Determine the number of warnings within these results.
+     * 
+     * @return the number of warnings; always 0 or a positive number
+     */
+    int warningCount();
+
+    /**
+     * Determine the number of information messages within these results.
+     * 
+     * @return the number of information messages; always 0 or a positive number
+     */
+    int infoCount();
+
+    /**
+     * Determine the number of problems (that is, errors and warnings) within these results.
+     * 
+     * @return the number of errors and warnings; always 0 or a positive number
+     */
+    int problemCount();
+
+    /**
      * <p>
      * {@inheritDoc}
      * </p>

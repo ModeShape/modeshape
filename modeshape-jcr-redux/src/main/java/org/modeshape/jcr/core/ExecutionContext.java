@@ -30,10 +30,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Executor;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.component.ClassLoaderFactory;
 import org.modeshape.common.component.StandardClassLoaderFactory;
+import org.modeshape.common.component.ThreadPoolFactory;
+import org.modeshape.common.component.ThreadPools;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.SecureHash;
@@ -68,7 +71,7 @@ import org.modeshape.jcr.value.basic.ThreadSafeNamespaceRegistry;
  * </p>
  */
 @Immutable
-public class ExecutionContext implements ClassLoaderFactory, Cloneable {
+public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, Cloneable {
 
     public static final ExecutionContext DEFAULT_CONTEXT = new ExecutionContext();
 
@@ -82,6 +85,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
     }
 
     private final ClassLoaderFactory classLoaderFactory;
+    private final ThreadPoolFactory threadPools;
     private final PropertyFactory propertyFactory;
     private final ValueFactories valueFactories;
     private final NamespaceRegistry namespaceRegistry;
@@ -100,7 +104,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      */
     @SuppressWarnings( "synthetic-access" )
     public ExecutionContext() {
-        this(new NullSecurityContext(), null, null, null, null, null, null, null, null);
+        this(new NullSecurityContext(), null, null, null, null, null, null, null, null, null);
         initializeDefaultNamespaces(this.getNamespaceRegistry());
         assert securityContext != null;
 
@@ -119,6 +123,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
         this.valueFactories = original.getValueFactories();
         this.propertyFactory = original.getPropertyFactory();
         this.classLoaderFactory = original.getClassLoaderFactory();
+        this.threadPools = original.getThreadPoolFactory();
         this.mimeTypeDetector = original.getMimeTypeDetector();
         this.textExtractor = original.getTextExtractor();
         this.data = original.getData();
@@ -141,6 +146,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
         this.valueFactories = original.getValueFactories();
         this.propertyFactory = original.getPropertyFactory();
         this.classLoaderFactory = original.getClassLoaderFactory();
+        this.threadPools = original.getThreadPoolFactory();
         this.mimeTypeDetector = original.getMimeTypeDetector();
         this.textExtractor = original.getTextExtractor();
         this.data = original.getData();
@@ -163,6 +169,8 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      *        instance
      * @param classLoaderFactory the {@link ClassLoaderFactory} implementation, or null if a {@link StandardClassLoaderFactory}
      *        instance should be used
+     * @param threadPoolFactory the {@link ThreadPoolFactory} implementation, or null if a {@link ThreadPools} instance should be
+     *        used
      * @param data the custom data for this context, or null if there is no such data
      * @param processId the unique identifier of the process in which this context exists, or null if it should be generated
      */
@@ -173,6 +181,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
                                 MimeTypeDetector mimeTypeDetector,
                                 TextExtractor textExtractor,
                                 ClassLoaderFactory classLoaderFactory,
+                                ThreadPoolFactory threadPoolFactory,
                                 Map<String, String> data,
                                 String processId ) {
         assert securityContext != null;
@@ -182,6 +191,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
         this.valueFactories = valueFactories == null ? new StandardValueFactories(this.namespaceRegistry) : valueFactories;
         this.propertyFactory = propertyFactory == null ? new BasicPropertyFactory(this.valueFactories) : propertyFactory;
         this.classLoaderFactory = classLoaderFactory == null ? new StandardClassLoaderFactory() : classLoaderFactory;
+        this.threadPools = threadPoolFactory == null ? new ThreadPools() : threadPoolFactory;
         this.mimeTypeDetector = mimeTypeDetector != null ? mimeTypeDetector : createDefaultMimeTypeDetector();
         this.textExtractor = textExtractor != null ? textExtractor : createDefaultTextExtractor();
         this.data = data != null ? data : Collections.<String, String>emptyMap();
@@ -206,6 +216,10 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      */
     protected ClassLoaderFactory getClassLoaderFactory() {
         return classLoaderFactory;
+    }
+
+    protected ThreadPoolFactory getThreadPoolFactory() {
+        return threadPools;
     }
 
     /**
@@ -293,6 +307,16 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
         return this.classLoaderFactory.getClassLoader(classpath);
     }
 
+    @Override
+    public Executor getThreadPool( String name ) {
+        return this.threadPools.getThreadPool(name);
+    }
+
+    @Override
+    public void releaseThreadPool( Executor pool ) {
+        this.threadPools.releaseThreadPool(pool);
+    }
+
     /**
      * Get the unique identifier for this context. Each context will always have a unique identifier.
      * 
@@ -334,7 +358,8 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
         // Don't supply the value factories or property factories, since they'll have to be recreated
         // to reference the supplied namespace registry ...
         return new ExecutionContext(getSecurityContext(), namespaceRegistry, null, getPropertyFactory(), getMimeTypeDetector(),
-                                    getTextExtractor(), getClassLoaderFactory(), getData(), getProcessId());
+                                    getTextExtractor(), getClassLoaderFactory(), getThreadPoolFactory(), getData(),
+                                    getProcessId());
     }
 
     /**
@@ -348,7 +373,8 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      */
     public ExecutionContext with( MimeTypeDetector mimeTypeDetector ) {
         return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
-                                    mimeTypeDetector, getTextExtractor(), getClassLoaderFactory(), getData(), getProcessId());
+                                    mimeTypeDetector, getTextExtractor(), getClassLoaderFactory(), getThreadPoolFactory(),
+                                    getData(), getProcessId());
     }
 
     /**
@@ -362,7 +388,8 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      */
     public ExecutionContext with( TextExtractor textExtractor ) {
         return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
-                                    getMimeTypeDetector(), textExtractor, getClassLoaderFactory(), getData(), getProcessId());
+                                    getMimeTypeDetector(), textExtractor, getClassLoaderFactory(), getThreadPoolFactory(),
+                                    getData(), getProcessId());
     }
 
     /**
@@ -375,7 +402,22 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      */
     public ExecutionContext with( ClassLoaderFactory classLoaderFactory ) {
         return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
-                                    getMimeTypeDetector(), getTextExtractor(), classLoaderFactory, getData(), getProcessId());
+                                    getMimeTypeDetector(), getTextExtractor(), classLoaderFactory, getThreadPoolFactory(),
+                                    getData(), getProcessId());
+    }
+
+    /**
+     * Create a new execution context that mirrors this context but that uses the supplied {@link ThreadPoolFactory thread pool
+     * factory}.
+     * 
+     * @param threadPoolFactory the new thread pool factory implementation, or null if the default implementation should be used
+     * @return the execution context that is identical with this execution context, but which uses the supplied thread pool
+     *         factory implementation; never null
+     */
+    public ExecutionContext with( ThreadPoolFactory threadPoolFactory ) {
+        return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
+                                    getMimeTypeDetector(), getTextExtractor(), getClassLoaderFactory(), threadPoolFactory,
+                                    getData(), getProcessId());
     }
 
     /**
@@ -387,7 +429,8 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      */
     public ExecutionContext with( PropertyFactory propertyFactory ) {
         return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), propertyFactory,
-                                    getMimeTypeDetector(), getTextExtractor(), getClassLoaderFactory(), getData(), getProcessId());
+                                    getMimeTypeDetector(), getTextExtractor(), getClassLoaderFactory(), getThreadPoolFactory(),
+                                    getData(), getProcessId());
     }
 
     /**
@@ -421,7 +464,8 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
             newData = Collections.unmodifiableMap(new HashMap<String, String>(data));
         }
         return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
-                                    getMimeTypeDetector(), getTextExtractor(), getClassLoaderFactory(), newData, getProcessId());
+                                    getMimeTypeDetector(), getTextExtractor(), getClassLoaderFactory(), getThreadPoolFactory(),
+                                    newData, getProcessId());
     }
 
     /**
@@ -453,7 +497,8 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
             newData = Collections.unmodifiableMap(newData);
         }
         return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
-                                    getMimeTypeDetector(), getTextExtractor(), getClassLoaderFactory(), newData, getProcessId());
+                                    getMimeTypeDetector(), getTextExtractor(), getClassLoaderFactory(), getThreadPoolFactory(),
+                                    newData, getProcessId());
     }
 
     /**
@@ -466,7 +511,8 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      */
     public ExecutionContext with( String processId ) {
         return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
-                                    getMimeTypeDetector(), getTextExtractor(), getClassLoaderFactory(), getData(), processId);
+                                    getMimeTypeDetector(), getTextExtractor(), getClassLoaderFactory(), getThreadPoolFactory(),
+                                    getData(), processId);
     }
 
     /**
