@@ -129,6 +129,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     protected static final String ALLOW_CREATING_WORKSPACES = "allowCreatingWorkspaces";
     protected static final String AUTO_GENERATE_SCHEMA = "autoGenerateSchema";
     protected static final String CACHE_PROVIDER_CLASS_NAME = "cacheProviderClassName";
+    protected static final String CACHE_MANAGER = "cacheManagerLookup";
     protected static final String CACHE_CONCURRENCY_STRATEGY = "cacheConcurrencyStrategy";
 
     /**
@@ -175,6 +176,11 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      * The {@link #getCacheProviderClassName() class name of the JPA cache provider} is "{@value} ", unless otherwise specified.
      */
     public static final String DEFAULT_CACHE_PROVIDER_CLASS_NAME = null;
+
+    /**
+     * The {@link #getCacheManagerLookup() cache manager lookup name} is "{@value} ", unless otherwise specified.
+     */
+    public static final String DEFAULT_CACHE_MANAGER_LOOKUP = null;
 
     /**
      * The {@link #getCacheConcurrencyStrategy() cache concurrency strategy} is "{@value} ", unless otherwise specified.
@@ -347,6 +353,11 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     @Label( i18n = JpaConnectorI18n.class, value = "cacheProviderClassNamePropertyLabel" )
     @Category( i18n = JpaConnectorI18n.class, value = "cacheProviderClassNamePropertyCategory" )
     private volatile String cacheProviderClassName = DEFAULT_CACHE_PROVIDER_CLASS_NAME;
+
+    @Description( i18n = JpaConnectorI18n.class, value = "cacheManagerLookupPropertyDescription" )
+    @Label( i18n = JpaConnectorI18n.class, value = "cacheManagerLookupPropertyLabel" )
+    @Category( i18n = JpaConnectorI18n.class, value = "cacheManagerLookupPropertyCategory" )
+    private volatile String cacheManagerLookup = DEFAULT_CACHE_MANAGER_LOOKUP;
 
     @Description( i18n = JpaConnectorI18n.class, value = "cacheConcurrencyStrategyPropertyDescription" )
     @Label( i18n = JpaConnectorI18n.class, value = "cacheConcurrencyStrategyPropertyLabel" )
@@ -607,26 +618,72 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     }
 
     /**
-     * Get the name of the JPA cache provider class.
+     * Get the name of the implementation class for the JPA cache provider or region factory.
      * 
-     * @return the class name of the JPA cache provider that should be used by default, or null if no JPA caching should be
-     *         performed.
+     * @return the class name of the JPA cache provider or region factory that should be used by default, or null if no JPA
+     *         caching should be performed.
      */
     public String getCacheProviderClassName() {
         return cacheProviderClassName;
     }
 
     /**
-     * Set the class name of the JPA cache provider that should be used.
+     * Set the class name of the JPA cache provider or region factory that should be used.
+     * <p>
+     * Typical values include:
+     * <ul>
+     * <li><code>net.sf.ehcache.hibernate.EhCacheRegionFactory</code> to use a separate Ehcache instance for the 2nd-level cache</li>
+     * <li><code>net.sf.ehcache.hibernate.SingletonEhCacheRegionFactory</code> to use a singleton Ehcache instance for the
+     * 2nd-level cache</li>
+     * <li><code>org.hibernate.cache.infinispan.InfinispanRegionFactory</code> to use a separate Infinispan cache for the
+     * 2nd-level cache</li>
+     * <li><code>org.hibernate.cache.infinispan.JndiInfinispanRegionFactory</code> to use an Infinispan cache built-into JBoss AS
+     * 6 or 7 for the 2nd-level cache; in this case, also set the {@link #setCacheManagerLookup(String)} value</li>
+     * </ul>
+     * </p>
      * 
-     * @param cacheProviderClassName the class name of the JPA cache provider that should be used by default, or null if no JPA
-     *        caching should be performed
+     * @param cacheProviderClassName the class name of the JPA cache provider or region factory that should be used by default, or
+     *        null if no JPA caching should be performed
      */
     public synchronized void setCacheProviderClassName( String cacheProviderClassName ) {
         if (cacheProviderClassName != null && cacheProviderClassName.trim().length() == 0) {
             cacheProviderClassName = null;
         }
         this.cacheProviderClassName = cacheProviderClassName;
+    }
+
+    /**
+     * Get the value specifying where the cache manager should be found. This is only used when deployed within an application
+     * server (usually JBoss AS 6 or 7) when using an Infinispan 2nd level cache via JNDI, and is often set to
+     * "java:CacheManager/entity" in these cases. This value should be left blank or null when running in other environments or
+     * with another 2nd-level cache implementation.
+     * 
+     * @return the JNDI location of Infinispan cache manager that should be used for the 2nd level cache; may be null
+     */
+    public String getCacheManagerLookup() {
+        return cacheManagerLookup;
+    }
+
+    /**
+     * Set the value specifying where the cache manager should be found. This is only used when deployed within an application
+     * server (usually JBoss AS 6 or 7) when using Infinispan 2nd level cache via JNDI, and is often set to
+     * "java:CacheManager/entity" in these cases. This value should be left blank or null when running in other environments or
+     * with another 2nd-level cache implementation.
+     * <p>
+     * This should always be set (usually to <code>java:CacheManager/entity</code>) when the
+     * {@link #setCacheProviderClassName(String)} is set to
+     * <code>org.hibernate.cache.infinispan.JndiInfinispanRegionFactory</code>.
+     * </p>
+     * 
+     * @param cacheManagerLookup the JNDI location of existing Infinispan cache manager (in JBoss AS 6 or 7) that should be used
+     *        for the 2nd level cache; or null if not using Infinispan for a 2nd-level cache or if deployed outside of JBoss AS 6
+     *        or 7
+     */
+    public synchronized void setCacheManagerLookup( String cacheManagerLookup ) {
+        if (cacheManagerLookup != null && cacheManagerLookup.trim().length() == 0) {
+            cacheManagerLookup = null;
+        }
+        this.cacheManagerLookup = cacheManagerLookup;
     }
 
     /**
@@ -1078,6 +1135,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
         ref.add(new StringRefAddr(DRIVER_CLASSLOADER_NAME, getDriverClassloaderName()));
         ref.add(new StringRefAddr(CACHE_CONCURRENCY_STRATEGY, getCacheConcurrencyStrategy()));
         ref.add(new StringRefAddr(CACHE_PROVIDER_CLASS_NAME, getCacheProviderClassName()));
+        ref.add(new StringRefAddr(CACHE_MANAGER, getCacheManagerLookup()));
         ref.add(new StringRefAddr(ISOLATION_LEVEL, Integer.toString(getIsolationLevel())));
         ref.add(new StringRefAddr(MAXIMUM_CONNECTIONS_IN_POOL, Integer.toString(getMaximumConnectionsInPool())));
         ref.add(new StringRefAddr(MINIMUM_CONNECTIONS_IN_POOL, Integer.toString(getMinimumConnectionsInPool())));
@@ -1161,6 +1219,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
             String defaultWorkspace = values.get(DEFAULT_WORKSPACE);
             String cacheConcurrencyStrategy = values.get(CACHE_CONCURRENCY_STRATEGY);
             String cacheProviderClassName = values.get(CACHE_PROVIDER_CLASS_NAME);
+            String cacheManager = values.get(CACHE_MANAGER);
             String createWorkspaces = values.get(ALLOW_CREATING_WORKSPACES);
             String autoGenerateSchema = values.get(AUTO_GENERATE_SCHEMA);
 
@@ -1199,6 +1258,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
             if (defaultWorkspace != null) source.setDefaultWorkspaceName(defaultWorkspace);
             if (cacheConcurrencyStrategy != null) source.setCacheConcurrencyStrategy(cacheConcurrencyStrategy);
             if (cacheProviderClassName != null) source.setCacheProviderClassName(cacheProviderClassName);
+            if (cacheManager != null) source.setCacheManagerLookup(cacheManager);
             if (createWorkspaces != null) source.setCreatingWorkspacesAllowed(Boolean.parseBoolean(createWorkspaces));
             if (workspaceNames != null && workspaceNames.length != 0) source.setPredefinedWorkspaceNames(workspaceNames);
             if (autoGenerateSchema != null) source.setAutoGenerateSchema(autoGenerateSchema);
