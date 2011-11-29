@@ -91,6 +91,7 @@
 					</execution>
 				</executions>
 				<configuration>
+                    <skip>${skipTests}</skip>
 					<container>
 						<containerId>${cargo.container}</containerId>
 						<systemProperties>
