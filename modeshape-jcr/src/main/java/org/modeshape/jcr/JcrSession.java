@@ -872,7 +872,13 @@ class JcrSession implements Session {
                 return getNode(path);
             } catch (org.modeshape.graph.property.ValueFormatException e2) {
                 // It's not a path either ...
-                throw new RepositoryException(JcrI18n.identifierPathContainedUnsupportedIdentifierFormat.text(id));
+                throw new RepositoryException(JcrI18n.identifierPathContainedUnsupportedIdentifierFormat.text(id), e2);
+            } catch (org.modeshape.graph.property.InvalidPathException e2) {
+                // It's an invalid path either ...
+                throw new RepositoryException(JcrI18n.identifierPathContainedUnsupportedIdentifierFormat.text(id), e2);
+            } catch (RuntimeException e2) {
+                // Something unexpected happened ...
+                throw new RepositoryException(JcrI18n.identifierPathContainedUnsupportedIdentifierFormat.text(id), e2);
             }
         }
     }

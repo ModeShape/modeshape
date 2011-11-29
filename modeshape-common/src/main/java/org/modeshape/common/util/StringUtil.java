@@ -37,8 +37,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.CommonI18n;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * Utilities for string processing and manipulation.
@@ -481,8 +481,11 @@ public class StringUtil {
 
     /**
      * Returns true if the given string is null or represents the empty string
+     * 
+     * @param str the string; may be null or empty
+     * @return true if the string is null or contains only whitespace
      */
-    public static boolean isBlank(String str) {
+    public static boolean isBlank( String str ) {
         return str == null || str.trim().isEmpty();
     }
 
