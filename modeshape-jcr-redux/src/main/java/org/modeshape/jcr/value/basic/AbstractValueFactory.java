@@ -31,6 +31,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.UUID;
+import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.util.CheckArg;
@@ -118,6 +119,14 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
         if (value instanceof UUID) return create((UUID)value);
         if (value instanceof URI) return create((URI)value);
         if (value instanceof Binary) return create((Binary)value);
+        if (value instanceof javax.jcr.Binary) {
+            javax.jcr.Binary jcrBinary = (javax.jcr.Binary) value;
+            try {
+                return create(jcrBinary.getStream(), jcrBinary.getSize());
+            } catch (RepositoryException e) {
+                throw new RuntimeException(e);
+            }
+        }
         if (value instanceof byte[]) return create((byte[])value);
         if (value instanceof InputStream) return create((InputStream)value, 0);
         if (value instanceof Reader) return create((Reader)value, 0);
