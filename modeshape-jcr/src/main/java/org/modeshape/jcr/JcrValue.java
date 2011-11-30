@@ -565,8 +565,20 @@ final class JcrValue implements javax.jcr.Value {
                 return valueFactories.getDecimalFactory().create(value);
             case PropertyType.URI:
                 return valueFactories.getUriFactory().create(value);
-            case PropertyType.BINARY:
-                return valueFactories.getBinaryFactory().create(value);
+            case PropertyType.BINARY:  {
+                //fix for MODE-1308 - any implementations for javax.jcr.Binary should produce valid values
+                if (value instanceof javax.jcr.Binary) {
+                    javax.jcr.Binary jcrBinary = (javax.jcr.Binary) value;
+                    try {
+                        return valueFactories.getBinaryFactory().create(jcrBinary.getStream(), jcrBinary.getSize());
+                    } catch (RepositoryException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                else {
+                    return valueFactories.getBinaryFactory().create(value);
+                }
+            }
             case PropertyType.STRING:
                 return valueFactories.getStringFactory().create(value);
             case PropertyType.UNDEFINED:
