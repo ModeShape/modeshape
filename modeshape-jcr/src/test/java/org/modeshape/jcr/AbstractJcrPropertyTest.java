@@ -23,19 +23,13 @@
  */
 package org.modeshape.jcr;
 
+import javax.jcr.*;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import java.io.ByteArrayInputStream;
-import javax.jcr.Binary;
-import javax.jcr.Item;
-import javax.jcr.ItemNotFoundException;
-import javax.jcr.ItemVisitor;
-import javax.jcr.Node;
-import javax.jcr.Repository;
-import javax.jcr.Session;
+import java.io.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -45,7 +39,7 @@ import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.jcr.api.Workspace;
 
 /**
- * 
+ *
  */
 public class AbstractJcrPropertyTest extends AbstractJcrTest {
 
@@ -291,4 +285,41 @@ public class AbstractJcrPropertyTest extends AbstractJcrTest {
         assertThat(toString.indexOf("**binary-value") > 0, is(true));
     }
 
+    @FixFor( "MODE-1308" )
+    @Test
+    public void shouldAllowAnyBinaryImplementation() throws Exception {
+        Node node = rootNode.addNode("nodeWithBinaryProperty", "nt:unstructured");
+        final String stringValue = "This is the string stringValue";
+        Binary binaryValue = new Binary() {
+            public InputStream getStream() throws RepositoryException {
+                return new ByteArrayInputStream(stringValue.getBytes());
+            }
+
+            public int read( byte[] b, long position ) throws IOException, RepositoryException {
+                byte[] content = stringValue.getBytes();
+                int length = b.length + position < content.length ? b.length : (int)(content.length - position);
+                System.arraycopy(content, (int)position, b, 0, length);
+                return length;
+            }
+
+            public long getSize() throws RepositoryException {
+                return stringValue.getBytes().length;
+            }
+
+            public void dispose() {
+            }
+        };
+        node.setProperty("binProp", binaryValue);
+        Binary nodeValue = node.getProperty("binProp").getBinary();
+        assertNotNull(nodeValue);
+        assertEquals(stringValue.getBytes().length, nodeValue.getSize());
+        byte[] buffer = new byte[100];
+        int available;
+        InputStream inputStream = nodeValue.getStream();
+        ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+        while ((available = inputStream.read(buffer)) != -1) {
+            byteOut.write(buffer, 0, available);
+        }
+        assertArrayEquals(stringValue.getBytes(), byteOut.toByteArray());
+    }
 }
