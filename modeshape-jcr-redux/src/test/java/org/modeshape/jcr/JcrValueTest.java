@@ -23,19 +23,25 @@
  */
 package org.modeshape.jcr;
 
+import javax.jcr.*;
+import javax.jcr.Binary;
+import javax.jcr.PropertyType;
+import javax.jcr.ValueFormatException;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertThat;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.UUID;
-import javax.jcr.PropertyType;
-import javax.jcr.ValueFormatException;
+import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
-import org.modeshape.jcr.value.ValueFactories;
+import org.modeshape.common.FixFor;
+import org.modeshape.jcr.value.*;
 import org.modeshape.jcr.value.basic.SimpleNamespaceRegistry;
 import org.modeshape.jcr.value.basic.StandardValueFactories;
 
@@ -134,9 +140,9 @@ public class JcrValueTest {
         date.set(Calendar.MILLISECOND, 0);
         String expectedValue = "2008-08-18T12:00:00.000";
         assertThat(new JcrValue(factories, PropertyType.DATE, date).getString().substring(0, expectedValue.length()),
-                   is(expectedValue));
+                is(expectedValue));
         assertThat(new JcrValue(factories, PropertyType.DATE, date.getTime()).getString().substring(0, expectedValue.length()),
-                   is(expectedValue));
+                is(expectedValue));
     }
 
     @Test( expected = ValueFormatException.class )
@@ -149,7 +155,7 @@ public class JcrValueTest {
         Calendar expectedValue = Calendar.getInstance();
         expectedValue.setTime(new Date(0L));
         assertThat(new JcrValue(factories, PropertyType.DOUBLE, 0.0).getDate().getTimeInMillis(),
-                   is(expectedValue.getTimeInMillis()));
+                is(expectedValue.getTimeInMillis()));
     }
 
     @Test
@@ -183,7 +189,7 @@ public class JcrValueTest {
         Calendar expectedValue = Calendar.getInstance();
         expectedValue.setTime(new Date(0L));
         assertThat(new JcrValue(factories, PropertyType.LONG, 0L).getDate().getTimeInMillis(),
-                   is(expectedValue.getTimeInMillis()));
+                is(expectedValue.getTimeInMillis()));
     }
 
     @Test
@@ -287,6 +293,49 @@ public class JcrValueTest {
     public void shouldProvideLength() throws Exception {
         assertThat(new JcrValue(factories, PropertyType.STRING, "test").getLength(), is(4L));
         assertThat(new JcrValue(factories, PropertyType.BINARY, "test").getLength(), is(4L));
+    }
+
+    @FixFor( "MODE-1308" )
+    @Test
+    public void shouldSupportAnyBinaryImplementation() throws Exception {
+        final String stringValue = "This is the string stringValue";
+        Binary customBinary = createCustomBinary(stringValue);
+        JcrValue jcrValue = new JcrValue(factories, PropertyType.BINARY, customBinary);
+
+        org.modeshape.jcr.value.Binary actualValue = jcrValue.getBinary();
+
+        assertNotNull(actualValue);
+        assertArrayEquals(stringValue.getBytes(), actualValue.getBytes());
+    }
+
+    @FixFor( "MODE-1308" )
+    @Test
+    public void shouldProvideStringFromBinary() throws Exception {
+        final String stringValue = "This is the string stringValue";
+        Binary customBinary = createCustomBinary(stringValue);
+        assertThat(new JcrValue(factories, PropertyType.BINARY, customBinary).getString(), is(stringValue));
+    }
+
+    private Binary createCustomBinary( final String stringValue ) {
+        return new Binary() {
+            public InputStream getStream() throws RepositoryException {
+                return new ByteArrayInputStream(stringValue.getBytes());
+            }
+
+            public int read( byte[] b, long position ) throws IOException, RepositoryException {
+                byte[] content = stringValue.getBytes();
+                int length = b.length + position < content.length ? b.length : (int)(content.length - position);
+                System.arraycopy(content, (int)position, b, 0, length);
+                return length;
+            }
+
+            public long getSize() throws RepositoryException {
+                return stringValue.getBytes().length;
+            }
+
+            public void dispose() {
+            }
+        };
     }
 
     private void testProvidesStream( JcrValue value ) throws Exception {
