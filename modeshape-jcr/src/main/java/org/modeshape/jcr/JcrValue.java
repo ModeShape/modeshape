@@ -82,7 +82,7 @@ final class JcrValue implements org.modeshape.jcr.api.Value {
         this.valueFactories = valueFactories;
         this.sessionCache = sessionCache;
         this.type = type;
-        this.value = convertToType(this.type, value instanceof JcrBinary ? ((JcrBinary)value).binary() : value);
+        this.value = convertToType(this.type, value);
     }
 
     JcrValue( ValueFactories valueFactories,
@@ -544,7 +544,12 @@ final class JcrValue implements org.modeshape.jcr.api.Value {
 
     protected Object convertToType( int type,
                                     Object value ) {
-        if (value == null) return null;
+        if (value == null) {
+            return null;
+        }
+
+        value = unpackValue(value);
+
         switch (type) {
             case PropertyType.BOOLEAN:
                 return valueFactories.getBooleanFactory().create(value);
@@ -565,20 +570,8 @@ final class JcrValue implements org.modeshape.jcr.api.Value {
                 return valueFactories.getDecimalFactory().create(value);
             case PropertyType.URI:
                 return valueFactories.getUriFactory().create(value);
-            case PropertyType.BINARY:  {
-                //fix for MODE-1308 - any implementations for javax.jcr.Binary should produce valid values
-                if (value instanceof javax.jcr.Binary) {
-                    javax.jcr.Binary jcrBinary = (javax.jcr.Binary) value;
-                    try {
-                        return valueFactories.getBinaryFactory().create(jcrBinary.getStream(), jcrBinary.getSize());
-                    } catch (RepositoryException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-                else {
-                    return valueFactories.getBinaryFactory().create(value);
-                }
-            }
+            case PropertyType.BINARY:
+                return valueFactories.getBinaryFactory().create(value);
             case PropertyType.STRING:
                 return valueFactories.getStringFactory().create(value);
             case PropertyType.UNDEFINED:
@@ -589,6 +582,22 @@ final class JcrValue implements org.modeshape.jcr.api.Value {
                 // This should still throw an exception even if assertions are turned off
                 throw new IllegalStateException("Invalid property type " + type);
         }
+    }
+
+    private Object unpackValue( Object value ) {
+        if (value instanceof JcrBinary) {
+            value = ((JcrBinary) value).binary();
+        }
+        if (value instanceof javax.jcr.Binary) {
+            //Support any implementation of javax.jcr.Binary (see MODE-1308)
+            javax.jcr.Binary jcrBinary = (javax.jcr.Binary) value;
+            try {
+                value = valueFactories.getBinaryFactory().create(jcrBinary.getStream(), jcrBinary.getSize());
+            } catch (RepositoryException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return value;
     }
 
     @Override
