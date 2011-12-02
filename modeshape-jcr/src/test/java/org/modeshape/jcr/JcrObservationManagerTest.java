@@ -26,9 +26,6 @@ package org.modeshape.jcr;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -67,6 +64,7 @@ import org.apache.jackrabbit.test.api.observation.PropertyRemovedTest;
 import org.apache.jackrabbit.test.api.observation.WorkspaceOperationTest;
 import org.junit.After;
 import org.junit.AfterClass;
+import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -134,17 +132,17 @@ public final class JcrObservationManagerTest extends TestSuite {
     // Methods
     // ===========================================================================================================================
 
-    TestListener addListener( int eventsExpected,
+    TestListener addListener( int expectedEventsCount,
                               int eventTypes,
                               String absPath,
                               boolean isDeep,
                               String[] uuids,
                               String[] nodeTypeNames,
                               boolean noLocal ) throws Exception {
-        return addListener(eventsExpected, 1, eventTypes, absPath, isDeep, uuids, nodeTypeNames, noLocal);
+        return addListener(expectedEventsCount, 1, eventTypes, absPath, isDeep, uuids, nodeTypeNames, noLocal);
     }
 
-    TestListener addListener( int eventsExpected,
+    TestListener addListener( int expectedEventsCount,
                               int numIterators,
                               int eventTypes,
                               String absPath,
@@ -152,22 +150,22 @@ public final class JcrObservationManagerTest extends TestSuite {
                               String[] uuids,
                               String[] nodeTypeNames,
                               boolean noLocal ) throws Exception {
-        return addListener(this.session, eventsExpected, numIterators, eventTypes, absPath, isDeep, uuids, nodeTypeNames, noLocal);
+        return addListener(this.session, expectedEventsCount, numIterators, eventTypes, absPath, isDeep, uuids, nodeTypeNames, noLocal);
     }
 
     TestListener addListener( Session session,
-                              int eventsExpected,
+                              int expectedEventsCount,
                               int eventTypes,
                               String absPath,
                               boolean isDeep,
                               String[] uuids,
                               String[] nodeTypeNames,
                               boolean noLocal ) throws Exception {
-        return addListener(session, eventsExpected, 1, eventTypes, absPath, isDeep, uuids, nodeTypeNames, noLocal);
+        return addListener(session, expectedEventsCount, 1, eventTypes, absPath, isDeep, uuids, nodeTypeNames, noLocal);
     }
 
     TestListener addListener( Session session,
-                              int eventsExpected,
+                              int expectedEventsCount,
                               int numIterators,
                               int eventTypes,
                               String absPath,
@@ -175,7 +173,7 @@ public final class JcrObservationManagerTest extends TestSuite {
                               String[] uuids,
                               String[] nodeTypeNames,
                               boolean noLocal ) throws Exception {
-        TestListener listener = new TestListener(eventsExpected, numIterators, eventTypes);
+        TestListener listener = new TestListener(expectedEventsCount, numIterators, eventTypes);
         session.getWorkspace()
                .getObservationManager()
                .addEventListener(listener, eventTypes, absPath, isDeep, uuids, nodeTypeNames, noLocal);
@@ -1963,6 +1961,29 @@ public final class JcrObservationManagerTest extends TestSuite {
         checkResults(listener);
     }
 
+    @FixFor(" MODE-1315 ")
+    @Test
+    public void shouldReceiveEventWhenPropertyDeletedOnCustomNode() throws Exception {
+        CndNodeTypeReader cndFactory = new CndNodeTypeReader(session);
+        cndFactory.read(getClass().getClassLoader().getResource("cars.cnd"));
+        session.getWorkspace().getNodeTypeManager().registerNodeTypes(cndFactory.getNodeTypeDefinitions(), true);
+
+        Node car = testRootNode.addNode("car", "car:Car");
+        car.setProperty("car:maker", "Audi");
+        session.save();
+
+        TestListener listener = addListener(1, Event.PROPERTY_REMOVED, null, true, null, new String[] {"car:Car"}, false);
+        Property carMakerProperty = car.getProperty("car:maker");
+        String propertyPath = carMakerProperty.getPath();
+        carMakerProperty.remove();
+        session.save();
+        listener.waitForEvents();
+        checkResults(listener);
+        Event receivedEvent = listener.getEvents().get(0);
+        assertEquals(Event.PROPERTY_REMOVED, receivedEvent.getType());
+        assertEquals(propertyPath, receivedEvent.getPath());
+    }
+
     protected void assertNoRepositoryNamespace( String uri,
                                                 String prefix ) throws RepositoryException {
         NamespaceRegistry registry = session.getWorkspace().getNamespaceRegistry();
@@ -2007,14 +2028,14 @@ public final class JcrObservationManagerTest extends TestSuite {
         private final List<Event> events;
         private int eventsProcessed = 0;
         private final int eventTypes;
-        private final int expectedEvents;
+        private final int expectedEventsCount;
         private final CountDownLatch latch;
 
-        public TestListener( int expectedEvents,
+        public TestListener( int expectedEventsCount,
                              int numIterators,
                              int eventTypes ) {
             this.eventTypes = eventTypes;
-            this.expectedEvents = expectedEvents;
+            this.expectedEventsCount = expectedEventsCount;
             this.events = new ArrayList<Event>();
             this.latch = new CountDownLatch(numIterators);
         }
@@ -2032,7 +2053,7 @@ public final class JcrObservationManagerTest extends TestSuite {
         }
 
         public int getExpectedEventCount() {
-            return this.expectedEvents;
+            return this.expectedEventsCount;
         }
 
         /**
@@ -2062,7 +2083,7 @@ public final class JcrObservationManagerTest extends TestSuite {
                         ++this.eventsProcessed;
 
                         // check to make sure we haven't received too many events
-                        if (this.eventsProcessed > this.expectedEvents) {
+                        if (this.eventsProcessed > this.expectedEventsCount) {
                             break;
                         }
 
@@ -2084,7 +2105,7 @@ public final class JcrObservationManagerTest extends TestSuite {
         }
 
         public void waitForEvents() throws Exception {
-            long millis = this.expectedEvents == 0 ? 50 : 250;
+            long millis = this.expectedEventsCount == 0 ? 50 : 250;
             this.latch.await(millis, TimeUnit.MILLISECONDS);
         }
     }

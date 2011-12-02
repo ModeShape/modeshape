@@ -34,7 +34,7 @@ import org.modeshape.graph.property.Path;
  * Instruction to remove the property with the supplied name from the node at the given location. This request has no net effect
  * if the node does not contain a property with the supplied name.
  */
-public class RemovePropertyRequest extends ChangeRequest {
+public class RemovePropertyRequest extends ChangeRequest implements PropertyChangeRequest {
 
     private static final long serialVersionUID = 1L;
 
