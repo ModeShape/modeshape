@@ -60,7 +60,7 @@ import org.modeshape.jcr.api.nodetype.NodeTypeManager;
  * 
  * </p>
  * 
- * @deprecated Use {@link NodeTypeManager#registerNodeTypeDefinitions} instead
+ * @deprecated Use {@link NodeTypeManager#registerNodeTypes} instead
  */
 @Deprecated
 public class CndNodeTypeReader extends GraphNodeTypeReader {
