@@ -130,7 +130,7 @@ public class ModeShapeRepositoryStub extends RepositoryStub {
                 String cndFileName = "/tck/tck_test_types.cnd";
                 URL cndUrl = getClass().getResource(cndFileName);
                 NodeTypeManager nodeTypeManager = (NodeTypeManager)session.getWorkspace().getNodeTypeManager();
-                nodeTypeManager.registerNodeTypeDefinitions(cndUrl);
+                nodeTypeManager.registerNodeTypes(cndUrl, true);
 
                 // This needs to check configProps directly to avoid an infinite loop
                 String skipImport = (String)configProps.get(MODE_SHAPE_SKIP_IMPORT);

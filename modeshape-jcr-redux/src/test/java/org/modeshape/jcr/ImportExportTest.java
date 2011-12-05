@@ -825,7 +825,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
     public void shouldImportIntoWorkspaceTheDocumentViewOfTheContentUsedInTckTests() throws Exception {
         Session session3 = repository.login();
 
-        session.nodeTypeManager().registerNodeTypeDefinitions(resourceStream("tck/tck_test_types.cnd"));
+        session.nodeTypeManager().registerNodeTypes(resourceStream("tck/tck_test_types.cnd"), true);
         session.getWorkspace().importXML("/",
                                          resourceStream("tck/documentViewForTckTests.xml"),
                                          ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING);
@@ -850,7 +850,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
     public void shouldImportIntoWorkspaceTheSystemViewOfTheContentUsedInTckTests() throws Exception {
         Session session3 = repository.login();
 
-        session.nodeTypeManager().registerNodeTypeDefinitions(resourceStream("tck/tck_test_types.cnd"));
+        session.nodeTypeManager().registerNodeTypes(resourceStream("tck/tck_test_types.cnd"), true);
         session.getWorkspace().importXML("/",
                                          resourceStream("tck/systemViewForTckTests.xml"),
                                          ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING);
@@ -874,7 +874,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
     public void shouldImportIntoSessionTheDocumentViewOfTheContentUsedInTckTests() throws Exception {
         Session session3 = repository.login();
 
-        session.nodeTypeManager().registerNodeTypeDefinitions(resourceStream("tck/tck_test_types.cnd"));
+        session.nodeTypeManager().registerNodeTypes(resourceStream("tck/tck_test_types.cnd"), true);
         session.importXML("/",
                           resourceStream("tck/documentViewForTckTests.xml"),
                           ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING);
@@ -903,7 +903,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
     public void shouldImportIntoSessionTheSystemViewOfTheContentUsedInTckTests() throws Exception {
         Session session3 = repository.login();
 
-        session.nodeTypeManager().registerNodeTypeDefinitions(resourceStream("tck/tck_test_types.cnd"));
+        session.nodeTypeManager().registerNodeTypes(resourceStream("tck/tck_test_types.cnd"), true);
         session.importXML("/",
                           resourceStream("tck/systemViewForTckTests.xml"),
                           ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING);

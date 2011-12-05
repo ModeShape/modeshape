@@ -845,10 +845,11 @@ public class JcrNodeTypeManager implements NodeTypeManager {
     }
 
     @Override
-    public void registerNodeTypeDefinitions( File file ) throws IOException, RepositoryException {
+    public void registerNodeTypes( File file,
+                                   boolean allowUpdate ) throws IOException, RepositoryException {
         String content = IoUtil.read(file);
         if (content.startsWith("<?xml")) {
-            registerNodeTypes(importFromXml(new InputSource(new FileInputStream(file))));
+            registerNodeTypes(importFromXml(new InputSource(new FileInputStream(file))), allowUpdate);
         } else {
             CndImporter importer = new CndImporter(context(), true);
             Problems problems = new SimpleProblems();
@@ -858,18 +859,19 @@ public class JcrNodeTypeManager implements NodeTypeManager {
                 String msg = JcrI18n.errorsParsingNodeTypeDefinitions.text(file.getAbsolutePath());
                 throw new RepositoryException(messageFrom(problems, msg));
             }
-            registerNodeTypes(importer.getNodeTypeDefinitions());
+            registerNodeTypes(importer.getNodeTypeDefinitions(), allowUpdate);
         }
     }
 
     @Override
-    public void registerNodeTypeDefinitions( InputStream stream )
+    public void registerNodeTypes( InputStream stream,
+                                   boolean allowUpdate )
         throws IOException, javax.jcr.nodetype.InvalidNodeTypeDefinitionException, javax.jcr.nodetype.NodeTypeExistsException,
         UnsupportedRepositoryOperationException, RepositoryException {
 
         String content = IoUtil.read(stream);
         if (content.startsWith("<?xml")) {
-            registerNodeTypes(importFromXml(new InputSource(new StringReader(content))));
+            registerNodeTypes(importFromXml(new InputSource(new StringReader(content))), allowUpdate);
         } else {
             CndImporter importer = new CndImporter(context(), true);
             Problems problems = new SimpleProblems();
@@ -879,15 +881,16 @@ public class JcrNodeTypeManager implements NodeTypeManager {
                 String msg = JcrI18n.errorsParsingStreamOfNodeTypeDefinitions.text();
                 throw new RepositoryException(messageFrom(problems, msg));
             }
-            registerNodeTypes(importer.getNodeTypeDefinitions());
+            registerNodeTypes(importer.getNodeTypeDefinitions(), allowUpdate);
         }
     }
 
     @Override
-    public void registerNodeTypeDefinitions( URL url ) throws IOException, RepositoryException {
+    public void registerNodeTypes( URL url,
+                                   boolean allowUpdate ) throws IOException, RepositoryException {
         String content = IoUtil.read(url.openStream());
         if (content.startsWith("<?xml")) {
-            registerNodeTypes(importFromXml(new InputSource(new StringReader(content))));
+            registerNodeTypes(importFromXml(new InputSource(new StringReader(content))), allowUpdate);
         } else {
             CndImporter importer = new CndImporter(context(), true);
             Problems problems = new SimpleProblems();
@@ -897,7 +900,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
                 String msg = JcrI18n.errorsParsingNodeTypeDefinitions.text(url.toExternalForm());
                 throw new RepositoryException(messageFrom(problems, msg));
             }
-            registerNodeTypes(importer.getNodeTypeDefinitions());
+            registerNodeTypes(importer.getNodeTypeDefinitions(), allowUpdate);
         }
     }
 }

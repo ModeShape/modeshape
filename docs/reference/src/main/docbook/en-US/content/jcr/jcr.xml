@@ -1072,7 +1072,7 @@ nodeTypeManager.unregisterNodeTypes(unusedNodeTypeNames);
 			</para>
 		</sect3>
 		<sect3>
-				<title>Reading JCR CND files</title>
+				<title>Reading node type definition files</title>
 			<para>
 			Custom node types can be defined more succinctly through the CND file format defined by the JCR 2.0 specification.  In fact, this is how JBoss
 			ModeShape defines its built-in node types. An example CND file that declares the same node type as above would be:
@@ -1083,50 +1083,30 @@ nodeTypeManager.unregisterNodeTypes(unusedNodeTypeNames);
 </programlisting>	
 			This definition could then be registered as part of the repository configuration
 			(see the <link linkend="programmatically_configuring_repositories">previous chapter</link>).  Or, you can also
-			use a Session to programmatically register the node types in a CND file, but this requires ModeShape-specific class to read this file:
+			use a Session to programmatically register the node types in a CND file, but this requires casting the node type manager
+			to a ModeShape-specific interface in the
+			<code>modeshape-jcr-api</code> module:
 <programlisting>&Session; session = ...
-&CndNodeTypeReader; reader = new &CndNodeTypeReader;(session);
-reader.read(cndFile); // from file, file system path, classpath resource, URL, etc.
+&ModeShapeNodeTypeManager; nodeTypeMgr = (org.modeshape.jcr.nodetype.NodeTypeManager)
+                              session.getWorkspace().getNodeTypeManager();
+boolean allowUpdate = true;
+File file = ...  // or InputStream or URL
+nodeTypeMgr.registerNodeTypes(file,allowUpdate);
+</programlisting>
 
-if (!reader.getProblems().isEmpty()) {
-  for (&Problem; problem : nodeTypeSource.getProblems()) {
-    // report or record problem
-  }
-} else {
-  boolean allowUpdate = ...
-  &NodeTypeManager; nodeTypeManager = session.getWorkspace().getNodeTypeManager();
-  nodeTypeManager.registerNodeTypes(reader.getNodeTypeDefinitions(), allowUpdate);
-}</programlisting>
-
-      The &CndNodeTypeReader; class provides a number of <code>read(...)</code> methods that accept &File;s, paths to files on the file system,
-      the names of resources on the classpath, &URLs;, and &InputStream;s. And &CndNodeTypeReader; will also register any namespace mappings
-      defined in the CND file but not yet registered in the session or workspace. For details, see the JavaDoc for &CndNodeTypeReader;.
-			If you have multiple CND files, you can either call <code>read(...)</code> multiple times before
-      registering (as long as the CND files don't contain duplicate node type definitions), or you can simply create and use a new reader
-      for each CND file. The choice is yours.
+      ModeShape's &ModeShapeNodeTypeManager; interface extends the standard <code>javax.jcr.nodetype.NodeTypeManager</code> interface
+      and provides <code>registerNodeTypes(...)</code> methods overloaded to accept &File;, 
+      &URL;, and &InputStream; instances. The content of these files can be the standard CND file format or the non-standard
+      XML format used by Jackrabbit.
+      These methods are also functionally similar to the standard methods that register arrays of &NodeTypeDefinition; objects
+      in that they have a second <code>allowUpdates</code> parameter specifying whether existing node types can be updated.
+      However, note that these methods will automatically register any namespaces declared in the files but not yet registered with the workspace.
 	  </para>
+	  <note>
+	    <para>This technique was added to ModeShape 2.7, and replaces the now-deprecated &CndNodeTypeReader; and &JackrabbitXmlNodeTypeReader; classes,
+	      which will be removed in ModeShape 3.0.</para>
+	  </note>
 	</sect3>
-	<sect3>
-			<title>Reading Jackrabbit XML Node Type Files</title>
-  	<para>
-			ModeShape also provides a class that reads the node types defined in a Jackrabbit XML format. This is useful if you've been using Jackrabbit,
-			have defined your custom node types in the Jackrabbit-specific format, but want to switch to ModeShape and don't want to have to manually
-			convert your node types in the standard CND format. This class is used almost identically to the &CndNodeTypeReader; class described above:
-<programlisting>&Session; session = ...
-&JackrabbitXmlNodeTypeReader; reader = new &JackrabbitXmlNodeTypeReader;(session);
-reader.read(cndFile); // from file, file system path, classpath resource, URL, etc.
-
-if (!reader.getProblems().isEmpty()) {
-  for (&Problem; problem : nodeTypeSource.getProblems()) {
-    // report or record problem
-  }
-} else {
-  boolean allowUpdate = ...
-  &NodeTypeManager; nodeTypeManager = session.getWorkspace().getNodeTypeManager();
-  nodeTypeManager.registerNodeTypes(reader.getNodeTypeDefinitions(), allowUpdate);
-}</programlisting>
-			</para>
-		</sect3>
 	</sect2>
 	</sect1>
 	<sect1>
