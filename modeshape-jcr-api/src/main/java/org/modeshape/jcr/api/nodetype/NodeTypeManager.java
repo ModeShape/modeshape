@@ -33,15 +33,17 @@ import javax.jcr.nodetype.InvalidNodeTypeDefinitionException;
 import javax.jcr.nodetype.NodeTypeExistsException;
 
 /**
- * An extension of the standard JCR {@link javax.jcr.nodetype.NodeTypeManager} with support for reading CND files.
+ * An extension of JCR 2.0's {@link javax.jcr.nodetype.NodeTypeManager} interface, with methods to support registering node type
+ * definitions from CND and Jackrabbit XML files.
  */
 public interface NodeTypeManager extends javax.jcr.nodetype.NodeTypeManager {
 
     /**
-     * Read the supplied stream containing node type definitions in the standard JCR 2.0 Compact Node Definition (CND) format, and
-     * register the node types with this repository.
+     * Read the supplied stream containing node type definitions in the standard JCR 2.0 Compact Node Definition (CND) format or
+     * non-standard Jackrabbit XML format, and register the node types with this repository.
      * 
      * @param stream the stream containing the node type definitions in CND format
+     * @param allowUpdate a boolean stating whether existing node type definitions should be modified/updated
      * @throws IOException if there is a problem reading from the supplied stream
      * @throws InvalidNodeTypeDefinitionException if the <code>NodeTypeDefinition</code> is invalid.
      * @throws NodeTypeExistsException if <code>allowUpdate</code> is <code>false</code> and the <code>NodeTypeDefinition</code>
@@ -49,15 +51,17 @@ public interface NodeTypeManager extends javax.jcr.nodetype.NodeTypeManager {
      * @throws UnsupportedRepositoryOperationException if this implementation does not support node type registration.
      * @throws RepositoryException if another error occurs.
      */
-    void registerNodeTypeDefinitions( InputStream stream )
+    void registerNodeTypes( InputStream stream,
+                            boolean allowUpdate )
         throws IOException, InvalidNodeTypeDefinitionException, NodeTypeExistsException, UnsupportedRepositoryOperationException,
         RepositoryException;
 
     /**
-     * Read the supplied file containing node type definitions in the standard JCR 2.0 Compact Node Definition (CND) format, and
-     * register the node types with this repository.
+     * Read the supplied file containing node type definitions in the standard JCR 2.0 Compact Node Definition (CND) format or
+     * non-standard Jackrabbit XML format, and register the node types with this repository.
      * 
      * @param file the file containing the node types
+     * @param allowUpdate a boolean stating whether existing node type definitions should be modified/updated
      * @throws IOException if there is a problem reading from the supplied stream
      * @throws InvalidNodeTypeDefinitionException if the <code>NodeTypeDefinition</code> is invalid.
      * @throws NodeTypeExistsException if <code>allowUpdate</code> is <code>false</code> and the <code>NodeTypeDefinition</code>
@@ -65,13 +69,15 @@ public interface NodeTypeManager extends javax.jcr.nodetype.NodeTypeManager {
      * @throws UnsupportedRepositoryOperationException if this implementation does not support node type registration.
      * @throws RepositoryException if another error occurs.
      */
-    void registerNodeTypeDefinitions( File file ) throws IOException, RepositoryException;
+    void registerNodeTypes( File file,
+                            boolean allowUpdate ) throws IOException, RepositoryException;
 
     /**
-     * Read the supplied stream containing node type definitions in the standard JCR 2.0 Compact Node Definition (CND) format, and
-     * register the node types with this repository.
+     * Read the supplied stream containing node type definitions in the standard JCR 2.0 Compact Node Definition (CND) format or
+     * non-standard Jackrabbit XML format, and register the node types with this repository.
      * 
      * @param url the URL that can be resolved to the file containing the node type definitions in CND format
+     * @param allowUpdate a boolean stating whether existing node type definitions should be modified/updated
      * @throws IOException if there is a problem reading from the supplied stream
      * @throws InvalidNodeTypeDefinitionException if the <code>NodeTypeDefinition</code> is invalid.
      * @throws NodeTypeExistsException if <code>allowUpdate</code> is <code>false</code> and the <code>NodeTypeDefinition</code>
@@ -79,5 +85,6 @@ public interface NodeTypeManager extends javax.jcr.nodetype.NodeTypeManager {
      * @throws UnsupportedRepositoryOperationException if this implementation does not support node type registration.
      * @throws RepositoryException if another error occurs.
      */
-    void registerNodeTypeDefinitions( URL url ) throws IOException, RepositoryException;
+    void registerNodeTypes( URL url,
+                            boolean allowUpdate ) throws IOException, RepositoryException;
 }

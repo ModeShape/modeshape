@@ -49,8 +49,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * A class that reads node types from Jackrabbit XML files. This class is used automatically when the ModeShape
- * {@link NodeTypeManager}'s {@link NodeTypeManager#registerNodeTypeDefinitions registerNodeTypeDefinitions(...)} methods are
- * used:
+ * {@link NodeTypeManager}'s {@link NodeTypeManager#registerNodeTypes registerNodeTypes(...)} methods are used:
  * 
  * <pre>
  * Session session = ...

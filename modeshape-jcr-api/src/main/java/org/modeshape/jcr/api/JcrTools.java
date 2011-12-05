@@ -740,7 +740,7 @@ public class JcrTools {
         assert stream != null;
         try {
             NodeTypeManager nodeTypeMgr = (NodeTypeManager)session.getWorkspace().getNodeTypeManager();
-            nodeTypeMgr.registerNodeTypeDefinitions(stream);
+            nodeTypeMgr.registerNodeTypes(stream, true);
         } catch (RepositoryException re) {
             throw new IllegalStateException("Could not load node type definition files", re);
         } catch (IOException ioe) {
