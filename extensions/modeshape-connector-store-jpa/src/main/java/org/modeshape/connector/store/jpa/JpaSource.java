@@ -447,9 +447,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      * @param allowsUpdates true if this source allows updating content, or false if this source only allows reading content.
      */
     public synchronized void setAllowsUpdates( boolean allowsUpdates ) {
-        capabilities = new RepositorySourceCapabilities(capabilities.supportsSameNameSiblings(), allowsUpdates,
-                                                        capabilities.supportsEvents(), capabilities.supportsCreatingWorkspaces(),
-                                                        capabilities.supportsReferences());
+        capabilities = capabilities.withUpdates(allowsUpdates);
     }
 
     /**
@@ -763,9 +761,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      * @see #isCreatingWorkspacesAllowed()
      */
     public synchronized void setCreatingWorkspacesAllowed( boolean allowWorkspaceCreation ) {
-        capabilities = new RepositorySourceCapabilities(capabilities.supportsSameNameSiblings(), capabilities.supportsUpdates(),
-                                                        capabilities.supportsEvents(), allowWorkspaceCreation,
-                                                        capabilities.supportsReferences());
+        capabilities = capabilities.withCreatingWorkspaces(allowWorkspaceCreation);
     }
 
     /**
