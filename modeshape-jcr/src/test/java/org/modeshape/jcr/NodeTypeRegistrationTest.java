@@ -84,7 +84,7 @@ public class NodeTypeRegistrationTest extends AbstractJcrAccessTest {
     public void shouldFailIfResourceFileCouldNotBeFoundAsRelativeFile() throws Exception {
         File file = new File("/this/resource/file/does/not/exist");
         assertThat(file.exists(), is(false));
-        nodeTypeManager.registerNodeTypeDefinitions(file, true);
+        nodeTypeManager.registerNodeTypes(file, true);
     }
 
     @Test( expected = IOException.class )
@@ -92,12 +92,12 @@ public class NodeTypeRegistrationTest extends AbstractJcrAccessTest {
         File file = new File("/this/resource/file/does/not/exist");
         assertThat(file.exists(), is(false));
         URL url = file.toURI().toURL();
-        nodeTypeManager.registerNodeTypeDefinitions(url, true);
+        nodeTypeManager.registerNodeTypes(url, true);
     }
 
     @Test
     public void shouldLoadNodeTypesFromCndResourceFileFoundOnClasspath() throws Exception {
-        nodeTypeManager.registerNodeTypeDefinitions(resourceAsStream("cars.cnd"), true);
+        nodeTypeManager.registerNodeTypes(resourceAsStream("cars.cnd"), true);
         assertNodeType("car:Car");
     }
 
@@ -105,7 +105,7 @@ public class NodeTypeRegistrationTest extends AbstractJcrAccessTest {
     public void shouldLoadNodeTypesFromCndResourceFileFoundWithRelativePathOnFileSystem() throws Exception {
         File file = new File("src/test/resources/cnd/cars.cnd");
         if (file.exists()) {
-            nodeTypeManager.registerNodeTypeDefinitions(file, true);
+            nodeTypeManager.registerNodeTypes(file, true);
             assertNodeType("car:Car");
         }
     }
@@ -114,32 +114,32 @@ public class NodeTypeRegistrationTest extends AbstractJcrAccessTest {
     public void shouldLoadNodeTypesFromCndResourceFileFoundWithAbsolutePathOnFileSystem() throws Exception {
         File file = new File("src/test/resources/cnd/cars.cnd");
         if (file.exists()) {
-            nodeTypeManager.registerNodeTypeDefinitions(file.getAbsoluteFile(), true);
+            nodeTypeManager.registerNodeTypes(file.getAbsoluteFile(), true);
             assertNodeType("car:Car");
         }
     }
 
     @Test
     public void shouldLoadNodeTypesFromUrlToCndFile() throws Exception {
-        nodeTypeManager.registerNodeTypeDefinitions(resourceAsUrl("cars.cnd"), true);
+        nodeTypeManager.registerNodeTypes(resourceAsUrl("cars.cnd"), true);
         assertNodeType("car:Car");
     }
 
     @Test( expected = NodeTypeExistsException.class )
     public void shouldNotAllowRedefinitionOfExistingTypesFromCndFile() throws Exception {
-        nodeTypeManager.registerNodeTypeDefinitions(resourceAsUrl("cndNodeTypeRegistration/existingType.cnd"), false);
+        nodeTypeManager.registerNodeTypes(resourceAsUrl("cndNodeTypeRegistration/existingType.cnd"), false);
         // assertNodeType("nt:folder");
     }
 
     @Test
     public void shouldLoadMagnoliaTypesFromCndFile() throws Exception {
-        nodeTypeManager.registerNodeTypeDefinitions(resourceAsUrl("magnolia.cnd"), true);
+        nodeTypeManager.registerNodeTypes(resourceAsUrl("magnolia.cnd"), true);
         assertNodeType("mgnl:contentNode");
     }
 
     @Test
     public void shouldRegisterValidTypesFromCndFile() throws Exception {
-        nodeTypeManager.registerNodeTypeDefinitions(resourceAsUrl("cndNodeTypeRegistration/validType.cnd"), true);
+        nodeTypeManager.registerNodeTypes(resourceAsUrl("cndNodeTypeRegistration/validType.cnd"), true);
 
         NodeType nodeType = assertNodeType("modetest:testType");
         assertThat(nodeType, is(notNullValue()));
@@ -169,8 +169,7 @@ public class NodeTypeRegistrationTest extends AbstractJcrAccessTest {
 
     @Test
     public void shouldLoadNodeTypesFromXmlResourceFileFoundOnClasspath() throws Exception {
-        nodeTypeManager.registerNodeTypeDefinitions(resourceAsStream("xmlNodeTypeRegistration/magnolia_forum_nodetypes.xml"),
-                                                    true);
+        nodeTypeManager.registerNodeTypes(resourceAsStream("xmlNodeTypeRegistration/magnolia_forum_nodetypes.xml"), true);
         assertNodeType("mgnl:forum");
     }
 
@@ -178,7 +177,7 @@ public class NodeTypeRegistrationTest extends AbstractJcrAccessTest {
     public void shouldLoadNodeTypesFromXmlResourceFileFoundWithRelativePathOnFileSystem() throws Exception {
         File file = new File("src/test/resources/xmlNodeTypeRegistration/magnolia_forum_nodetypes.xml");
         if (file.exists()) {
-            nodeTypeManager.registerNodeTypeDefinitions(file, true);
+            nodeTypeManager.registerNodeTypes(file, true);
             assertNodeType("mgnl:forum");
         }
     }
@@ -187,33 +186,32 @@ public class NodeTypeRegistrationTest extends AbstractJcrAccessTest {
     public void shouldLoadNodeTypesFromXmlResourceFileFoundWithAbsolutePathOnFileSystem() throws Exception {
         File file = new File("src/test/resources/xmlNodeTypeRegistration/magnolia_forum_nodetypes.xml");
         if (file.exists()) {
-            nodeTypeManager.registerNodeTypeDefinitions(file.getAbsoluteFile(), true);
+            nodeTypeManager.registerNodeTypes(file.getAbsoluteFile(), true);
             assertNodeType("mgnl:forum");
         }
     }
 
     @Test
     public void shouldLoadNodeTypesFromUrl() throws Exception {
-        nodeTypeManager.registerNodeTypeDefinitions(resourceAsUrl("xmlNodeTypeRegistration/magnolia_forum_nodetypes.xml"), true);
+        nodeTypeManager.registerNodeTypes(resourceAsUrl("xmlNodeTypeRegistration/magnolia_forum_nodetypes.xml"), true);
         assertNodeType("mgnl:forum");
     }
 
     @Test
     public void shouldLoadMagnoliaNodeTypesFromXml() throws Exception {
-        nodeTypeManager.registerNodeTypeDefinitions(resourceAsStream("xmlNodeTypeRegistration/magnolia_forum_nodetypes.xml"),
-                                                    true);
+        nodeTypeManager.registerNodeTypes(resourceAsStream("xmlNodeTypeRegistration/magnolia_forum_nodetypes.xml"), true);
         assertNodeType("mgnl:forum");
     }
 
     @Test
     public void shouldLoadOwfeNodeTypesFromXml() throws Exception {
-        nodeTypeManager.registerNodeTypeDefinitions(resourceAsStream("xmlNodeTypeRegistration/owfe_nodetypes.xml"), true);
+        nodeTypeManager.registerNodeTypes(resourceAsStream("xmlNodeTypeRegistration/owfe_nodetypes.xml"), true);
         assertNodeType("expression");
     }
 
     @Test
     public void shouldLoadCustomNodeTypesFromXml() throws Exception {
-        nodeTypeManager.registerNodeTypeDefinitions(resourceAsStream("xmlNodeTypeRegistration/custom_nodetypes.xml"), true);
+        nodeTypeManager.registerNodeTypes(resourceAsStream("xmlNodeTypeRegistration/custom_nodetypes.xml"), true);
         assertNodeType("mgnl:reserve");
     }
 

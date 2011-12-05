@@ -124,7 +124,7 @@ import org.xml.sax.SAXException;
  * 
  * </pre>
  * 
- * @deprecated Use {@link NodeTypeManager#registerNodeTypeDefinitions} instead
+ * @deprecated Use {@link NodeTypeManager#registerNodeTypes} instead
  */
 @Deprecated
 public class JackrabbitXmlNodeTypeReader extends GraphNodeTypeReader {

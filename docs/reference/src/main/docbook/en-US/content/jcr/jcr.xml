@@ -1091,11 +1091,11 @@ nodeTypeManager.unregisterNodeTypes(unusedNodeTypeNames);
                               session.getWorkspace().getNodeTypeManager();
 boolean allowUpdate = true;
 File file = ...  // or InputStream or URL
-nodeTypeMgr.registerNodeTypeDefinitions(file,allowUpdate);
+nodeTypeMgr.registerNodeTypes(file,allowUpdate);
 </programlisting>
 
       ModeShape's &ModeShapeNodeTypeManager; interface extends the standard <code>javax.jcr.nodetype.NodeTypeManager</code> interface
-      and provides <code>registerNodeTypeDefinitions(...)</code> methods overloaded to accept &File;, 
+      and provides <code>registerNodeTypes(...)</code> methods overloaded to accept &File;, 
       &URL;, and &InputStream; instances. The content of these files can be the standard CND file format or the non-standard
       XML format used by Jackrabbit.
       These methods are also functionally similar to the standard methods that register arrays of &NodeTypeDefinition; objects

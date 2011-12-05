@@ -51,8 +51,8 @@ public interface NodeTypeManager extends javax.jcr.nodetype.NodeTypeManager {
      * @throws UnsupportedRepositoryOperationException if this implementation does not support node type registration.
      * @throws RepositoryException if another error occurs.
      */
-    void registerNodeTypeDefinitions( InputStream stream,
-                                      boolean allowUpdate )
+    void registerNodeTypes( InputStream stream,
+                            boolean allowUpdate )
         throws IOException, InvalidNodeTypeDefinitionException, NodeTypeExistsException, UnsupportedRepositoryOperationException,
         RepositoryException;
 
@@ -69,8 +69,8 @@ public interface NodeTypeManager extends javax.jcr.nodetype.NodeTypeManager {
      * @throws UnsupportedRepositoryOperationException if this implementation does not support node type registration.
      * @throws RepositoryException if another error occurs.
      */
-    void registerNodeTypeDefinitions( File file,
-                                      boolean allowUpdate ) throws IOException, RepositoryException;
+    void registerNodeTypes( File file,
+                            boolean allowUpdate ) throws IOException, RepositoryException;
 
     /**
      * Read the supplied stream containing node type definitions in the standard JCR 2.0 Compact Node Definition (CND) format, and
@@ -85,6 +85,6 @@ public interface NodeTypeManager extends javax.jcr.nodetype.NodeTypeManager {
      * @throws UnsupportedRepositoryOperationException if this implementation does not support node type registration.
      * @throws RepositoryException if another error occurs.
      */
-    void registerNodeTypeDefinitions( URL url,
-                                      boolean allowUpdate ) throws IOException, RepositoryException;
+    void registerNodeTypes( URL url,
+                            boolean allowUpdate ) throws IOException, RepositoryException;
 }

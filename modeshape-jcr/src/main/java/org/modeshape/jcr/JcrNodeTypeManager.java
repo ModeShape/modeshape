@@ -819,24 +819,10 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         return false;
     }
 
-    protected List<NodeTypeDefinition> importFromXml( InputStream stream,
-                                                      String sourceName ) throws RepositoryException {
-        JackrabbitXmlNodeTypeReader reader = new JackrabbitXmlNodeTypeReader(session);
-        try {
-            reader.read(stream, sourceName);
-            return Arrays.asList(reader.getNodeTypeDefinitions());
-        } catch (IOException ioe) {
-            throw new RepositoryException(ioe);
-        } catch (RuntimeException t) {
-            throw t;
-        } catch (Throwable t) {
-            throw new RepositoryException(t);
-        }
-    }
-
+    @SuppressWarnings( "deprecation" )
     @Override
-    public void registerNodeTypeDefinitions( File file,
-                                             boolean allowUpdate ) throws IOException, RepositoryException {
+    public void registerNodeTypes( File file,
+                                   boolean allowUpdate ) throws IOException, RepositoryException {
         CheckArg.isNotNull(file, "file");
         String content = IoUtil.read(file);
         GraphNodeTypeReader reader = null;
@@ -859,9 +845,10 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         }
     }
 
+    @SuppressWarnings( "deprecation" )
     @Override
-    public void registerNodeTypeDefinitions( InputStream stream,
-                                             boolean allowUpdate )
+    public void registerNodeTypes( InputStream stream,
+                                   boolean allowUpdate )
         throws IOException, javax.jcr.nodetype.InvalidNodeTypeDefinitionException, javax.jcr.nodetype.NodeTypeExistsException,
         UnsupportedRepositoryOperationException, RepositoryException {
         CheckArg.isNotNull(stream, "stream");
@@ -885,9 +872,10 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         }
     }
 
+    @SuppressWarnings( "deprecation" )
     @Override
-    public void registerNodeTypeDefinitions( URL url,
-                                             boolean allowUpdate ) throws IOException, RepositoryException {
+    public void registerNodeTypes( URL url,
+                                   boolean allowUpdate ) throws IOException, RepositoryException {
         CheckArg.isNotNull(url, "url");
         InputStream stream = url.openStream();
         if (stream == null) {
