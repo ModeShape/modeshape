@@ -38,6 +38,7 @@ import org.modeshape.graph.Location;
 import org.modeshape.graph.Subgraph;
 import org.modeshape.graph.io.Destination;
 import org.modeshape.graph.property.Path;
+import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 
 /**
  * A class that reads files in the standard CND format defined by the JCR 2.0 specification.
@@ -58,7 +59,10 @@ import org.modeshape.graph.property.Path;
  * </pre>
  * 
  * </p>
+ * 
+ * @deprecated Use {@link NodeTypeManager#registerNodeTypeDefinitions} instead
  */
+@Deprecated
 public class CndNodeTypeReader extends GraphNodeTypeReader {
 
     /**
