@@ -54,6 +54,7 @@ import org.modeshape.graph.property.PathNotFoundException;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.PropertyFactory;
 import org.modeshape.graph.property.ValueFactories;
+import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.xml.sax.SAXException;
 
 /**
@@ -122,7 +123,10 @@ import org.xml.sax.SAXException;
  *     &lt;!ELEMENT requiredPrimaryType (CDATA)>
  * 
  * </pre>
+ * 
+ * @deprecated Use {@link NodeTypeManager#registerNodeTypeDefinitions} instead
  */
+@Deprecated
 public class JackrabbitXmlNodeTypeReader extends GraphNodeTypeReader {
 
     /**

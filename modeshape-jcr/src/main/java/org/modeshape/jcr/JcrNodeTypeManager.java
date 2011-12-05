@@ -23,6 +23,10 @@
  */
 package org.modeshape.jcr;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,15 +43,16 @@ import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.NodeTypeDefinition;
 import javax.jcr.nodetype.NodeTypeIterator;
-import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.PropertyDefinition;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.IoUtil;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NameFactory;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.query.validate.Schemata;
+import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.nodetype.InvalidNodeTypeDefinitionException;
 import org.modeshape.jcr.nodetype.NodeDefinitionTemplate;
 import org.modeshape.jcr.nodetype.NodeTypeExistsException;
@@ -813,4 +818,100 @@ public class JcrNodeTypeManager implements NodeTypeManager {
 
         return false;
     }
+
+    protected List<NodeTypeDefinition> importFromXml( InputStream stream,
+                                                      String sourceName ) throws RepositoryException {
+        JackrabbitXmlNodeTypeReader reader = new JackrabbitXmlNodeTypeReader(session);
+        try {
+            reader.read(stream, sourceName);
+            return Arrays.asList(reader.getNodeTypeDefinitions());
+        } catch (IOException ioe) {
+            throw new RepositoryException(ioe);
+        } catch (RuntimeException t) {
+            throw t;
+        } catch (Throwable t) {
+            throw new RepositoryException(t);
+        }
+    }
+
+    @Override
+    public void registerNodeTypeDefinitions( File file,
+                                             boolean allowUpdate ) throws IOException, RepositoryException {
+        CheckArg.isNotNull(file, "file");
+        String content = IoUtil.read(file);
+        GraphNodeTypeReader reader = null;
+        if (content.startsWith("<?xml")) {
+            reader = new JackrabbitXmlNodeTypeReader(session);
+        } else {
+            reader = new CndNodeTypeReader(session);
+        }
+        try {
+            reader.read(file);
+            registerNodeTypes(reader.getNodeTypeDefinitions(), allowUpdate);
+        } catch (IOException ioe) {
+            throw new RepositoryException(ioe);
+        } catch (RepositoryException t) {
+            throw t;
+        } catch (RuntimeException t) {
+            throw t;
+        } catch (Throwable t) {
+            throw new RepositoryException(t);
+        }
+    }
+
+    @Override
+    public void registerNodeTypeDefinitions( InputStream stream,
+                                             boolean allowUpdate )
+        throws IOException, javax.jcr.nodetype.InvalidNodeTypeDefinitionException, javax.jcr.nodetype.NodeTypeExistsException,
+        UnsupportedRepositoryOperationException, RepositoryException {
+        CheckArg.isNotNull(stream, "stream");
+
+        String content = IoUtil.read(stream);
+        GraphNodeTypeReader reader = null;
+        if (content.startsWith("<?xml")) {
+            reader = new JackrabbitXmlNodeTypeReader(session);
+        } else {
+            reader = new CndNodeTypeReader(session);
+        }
+        try {
+            reader.read(content, "Node type definitions");
+            registerNodeTypes(reader.getNodeTypeDefinitions(), allowUpdate);
+        } catch (RepositoryException t) {
+            throw t;
+        } catch (RuntimeException t) {
+            throw t;
+        } catch (Throwable t) {
+            throw new RepositoryException(t);
+        }
+    }
+
+    @Override
+    public void registerNodeTypeDefinitions( URL url,
+                                             boolean allowUpdate ) throws IOException, RepositoryException {
+        CheckArg.isNotNull(url, "url");
+        InputStream stream = url.openStream();
+        if (stream == null) {
+            throw new RepositoryException(JcrI18n.fileDoesNotExist.text(url.toExternalForm()));
+        }
+        String content = IoUtil.read(stream);
+        GraphNodeTypeReader reader = null;
+        if (content.startsWith("<?xml")) {
+            reader = new JackrabbitXmlNodeTypeReader(session);
+        } else {
+            reader = new CndNodeTypeReader(session);
+        }
+        try {
+            reader.read(url);
+            registerNodeTypes(reader.getNodeTypeDefinitions(), allowUpdate);
+        } catch (IOException ioe) {
+            throw new RepositoryException(ioe);
+        } catch (RepositoryException t) {
+            throw t;
+        } catch (RuntimeException t) {
+            throw t;
+        } catch (Throwable t) {
+            throw new RepositoryException(t);
+        }
+    }
+
 }
