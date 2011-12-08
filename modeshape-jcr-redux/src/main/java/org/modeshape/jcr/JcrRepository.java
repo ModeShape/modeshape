@@ -36,7 +36,6 @@ import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -44,7 +43,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
@@ -560,7 +558,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             // Need to make sure that the user has access to this session
             session.checkPermission(workspaceName, null, ModeShapePermissions.READ);
 
-            running.addSession(session);
+            running.addSession(session, false);
             return session;
         } catch (AccessDeniedException ace) {
             throw new LoginException(JcrI18n.loginFailed.text(repoName, workspaceName), ace);
@@ -810,6 +808,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final ExecutionContext internalWorkerContext;
         private final ReadWriteLock activeSessionLock = new ReentrantReadWriteLock();
         private final WeakHashMap<JcrSession, Object> activeSessions = new WeakHashMap<JcrSession, Object>();
+        private final WeakHashMap<JcrSession, Object> internalSessions = new WeakHashMap<JcrSession, Object>();
         private final RepositoryStatistics statistics;
         private final ScheduledExecutorService statsRollupService;
         private final Sequencers sequencers;
@@ -1167,18 +1166,17 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             if (this.sequencingQueue != null) {
                 // Shutdown the sequencers ...
                 sequencers().shutdown();
+                this.context().releaseThreadPool(sequencingQueue);
+            }
 
-                // Now wait until all the sequencing queue is emptied ...
-                final CountDownLatch latch = new CountDownLatch(1);
-                this.sequencingQueue.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        latch.countDown();
-                    }
-                });
+            // Now wait until all the internal sessions are gone ...
+            if (!internalSessions.isEmpty()) {
                 try {
-                    latch.await(10, TimeUnit.SECONDS);
-                    this.context().releaseThreadPool(sequencingQueue);
+                    int counter = 200; // this will block at most for 10 sec (200*50ms)
+                    while (counter > 0 && !internalSessions.isEmpty()) {
+                        Thread.sleep(50L);
+                        --counter;
+                    }
                 } catch (InterruptedException e) {
                     // do nothing ...
                 }
@@ -1217,11 +1215,13 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             }
         }
 
-        void addSession( JcrSession session ) {
+        void addSession( JcrSession session,
+                         boolean internal ) {
+            Map<JcrSession, Object> sessions = internal ? internalSessions : activeSessions;
             Lock lock = this.activeSessionLock.writeLock();
             try {
                 lock.lock();
-                activeSessions.put(session, null);
+                sessions.put(session, null);
             } finally {
                 lock.unlock();
             }
@@ -1231,7 +1231,9 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             Lock lock = this.activeSessionLock.writeLock();
             try {
                 lock.lock();
-                activeSessions.remove(session);
+                if (activeSessions.remove(session) == null) {
+                    internalSessions.remove(session);
+                }
             } finally {
                 lock.unlock();
             }
@@ -1291,7 +1293,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 ExecutionContext sessionContext = running.internalWorkerContext();
                 Map<String, Object> attributes = Collections.emptyMap();
                 JcrSession session = new JcrSession(JcrRepository.this, workspaceName, sessionContext, attributes, readOnly);
-                // running.addSession(session);
+                running.addSession(session, true);
                 return session;
             } catch (WorkspaceNotFoundException e) {
                 throw new NoSuchWorkspaceException(e.getMessage(), e);
