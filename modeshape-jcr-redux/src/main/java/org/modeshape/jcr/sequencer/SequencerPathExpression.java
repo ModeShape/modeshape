@@ -32,7 +32,6 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.HashCode;
 import org.modeshape.common.util.ObjectUtil;
 import org.modeshape.jcr.RepositoryI18n;
-import org.modeshape.jcr.api.sequencer.InvalidSequencerPathExpression;
 import org.modeshape.jcr.sequencer.PathExpression.WorkspacePath;
 
 /**

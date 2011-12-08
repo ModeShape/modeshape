@@ -23,9 +23,13 @@
  */
 package org.modeshape.jcr.api.sequencer;
 
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.Property;
-import javax.jcr.RepositoryException;
+import javax.jcr.nodetype.NodeTypeManager;
 
 /**
  * A component that reads recently-changed content (often uploaded files) and extracts additional information from the content.
@@ -42,15 +46,16 @@ public abstract class Sequencer {
 
     private String name;
     private String description;
+    private String repositoryName;
     private Object[] pathExpressions;
     private String pathExpression;
 
     /**
      * Get the name of this sequencer.
      * 
-     * @return the sequencer name; null only if not {@link #initialize(String, String) initialized}
+     * @return the sequencer name; null only if not {@link #initialize initialized}
      */
-    public String getName() {
+    public final String getName() {
         return name;
     }
 
@@ -59,64 +64,114 @@ public abstract class Sequencer {
      * 
      * @return the description, or null if there is no description
      */
-    public String getDescription() {
+    public final String getDescription() {
         return description;
     }
 
     /**
-     * @return pathExpression
+     * Get the name of the repository.
+     * 
+     * @return the repository name; never null
      */
-    public String getPathExpression() {
-        return pathExpression;
+    public final String getRepositoryName() {
+        return repositoryName;
     }
 
     /**
-     * @return pathExpressions
+     * Obtain the path expressions as configured on the sequencer. This method always returns a copy to prevent modification of
+     * the values.
+     * 
+     * @return the path expressions; never null but possibly empty
      */
-    public Object[] getPathExpressions() {
-        return pathExpressions;
+    public final String[] getPathExpressions() {
+        String pathExpression = this.pathExpression;
+        Object[] pathExpressions = this.pathExpressions;
+        if (pathExpression != null && pathExpressions == null || pathExpressions.length == 0) {
+            // There's just one ...
+            return new String[] {pathExpression};
+        }
+        List<String> expressions = new ArrayList<String>(pathExpressions.length + 1);
+        addExpression(expressions, pathExpression);
+        for (Object value : pathExpressions) {
+            addExpression(expressions, value);
+        }
+        return expressions.toArray(new String[expressions.size()]);
+    }
+
+    private void addExpression( List<String> values,
+                                Object value ) {
+        if (value instanceof String) {
+            String str = (String)value;
+            str = str.trim();
+            if (str.length() != 0) {
+                values.add(str);
+            }
+        }
     }
 
     /**
      * Initialize the sequencer. This is called automatically by ModeShape, and should not be called by the sequencer.
      * <p>
-     * This method can be overridden by implementations to do a one-time initialization of any internal components. This method is
-     * invoked during first {@link #initialize} invocation, which is done automatically by ModeShape upon repository
-     * intialization.
+     * By default this method does nothing, so it should be overridden by implementations to do a one-time initialization of any
+     * internal components. For example, sequencers can use the supplied <code>registry</code> and <code>nodeTypeManager</code>
+     * objects to register custom namesapces and node types required by the generated content.
+     * </p>
      * 
-     * @param sequencerName the name of the sequencer, which can be used for logging or exception purposes
-     * @param repositoryName the name of the repository, which can be used for logging or exception purposes
-     * @throws InvalidSequencerPathExpression if any of the path expressions are invalid
+     * @param registry the namespace registry that can be used to register custom namespaces; never null
+     * @param nodeTypeManager the node type manager that can be used to register custom node types; never null
      */
-    public void initialize( String sequencerName,
-                            String repositoryName ) throws InvalidSequencerPathExpression {
+    public void initialize( NamespaceRegistry registry,
+                            NodeTypeManager nodeTypeManager ) {
     }
 
     /**
-     * Execute the sequencing operation on the supplied node, which has recently been created or changed. The implementation of
-     * this method is responsible for modifying the appropriate nodes under the supplied <code>parentOfOutput</code> node and
-     * closing all acquired resources, even in the case of exceptions.
+     * Execute the sequencing operation on the specified property, which has recently been created or changed.
      * <p>
-     * It is possible that a sequencer is configured to apply to zero, one, or multiple properties on a node. In the case of one
-     * property, that property will be passed into the method; in other cases, the <code>changedProperty</code> will be null.
+     * Each sequencer is expected to process the value of the property, extract information from the value, and write a structured
+     * representation (in the form of a node or a subgraph of nodes) using the supplied output node. Note that the output node
+     * will either be:
+     * <ol>
+     * <li>the selected node, in which case the sequencer was configured to generate the output information directly under the
+     * selected input node; or</li>
+     * <li>a newly created node in a different location than node being sequenced (in this case, the primary type of the new node
+     * will be 'nt:unstructured', but the sequencer can easily change that using {@link Node#setPrimaryType(String)})</li>
+     * </ol>
+     * </p>
+     * <p>
+     * The implementation is expected to always clean up all resources that it acquired, even in the case of exceptions.
      * </p>
      * 
-     * @param changedNode the node that was changed and that typically contains the input for the sequencer; never null
-     * @param changedProperty the property that was changed; may be null if the sequencer's match conditions did not specify a
-     *        property, but if not null will always be a property on <code>changedNode</code>
-     * @param parentOfOutput the parent node under which the sequencer is to place the generated/derived output; never null, but
-     *        possibly in a different workspace than the <code>changedNode</code>
-     * @param context the context in which this sequencer is executing; never null
-     * @throws SequencerException if there is an error in this sequencer
-     * @throws RepositoryException if there is an error accessing the repository
+     * @param inputProperty the property that was changed and that should be used as the input; never null
+     * @param outputNode the node that represents the output for the derived information; never null, and will either be
+     *        {@link Node#isNew() new} if the output is being placed outside of the selected node, or will not be new when the
+     *        output is to be placed on the selected input node
+     * @param context the context in which this sequencer is executing, and which may contain additional parameters useful when
+     *        generating the output structure; never null
+     * @return true if the sequencer's output should be saved, or false otherwise
+     * @throws Exception if there was a problem with the sequencer that could not be handled. All exceptions will be logged
+     *         automatically as errors by ModeShape.
      */
-    public abstract void execute( Node changedNode,
-                                  Property changedProperty,
-                                  Node parentOfOutput,
-                                  SequencerContext context ) throws SequencerException, RepositoryException;
+    public abstract boolean execute( Property inputProperty,
+                                     Node outputNode,
+                                     Context context ) throws Exception;
 
     @Override
     public String toString() {
-        return name + (description != null ? (" : " + description) : "");
+        return repositoryName + " -> " + name + (description != null ? (" : " + description) : "");
     }
+
+    /**
+     * The sequencer context represents the complete context of a sequencer invocation. Currently, this information includes the
+     * current time of sequencer execution.
+     */
+    public interface Context {
+
+        /**
+         * Get the timestamp of the sequencing. This is always the timestamp of the change event that is being processed.
+         * 
+         * @return timestamp the "current" timestamp; never null
+         */
+        Calendar getTimestamp();
+    }
+
 }

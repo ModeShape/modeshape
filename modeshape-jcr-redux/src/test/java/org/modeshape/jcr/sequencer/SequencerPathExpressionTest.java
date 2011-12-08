@@ -29,7 +29,6 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import org.junit.Before;
 import org.junit.Test;
-import org.modeshape.jcr.api.sequencer.InvalidSequencerPathExpression;
 
 /**
  * @author Randall Hauch

@@ -804,8 +804,12 @@ public class JcrSession implements Session {
             throw (cause instanceof RepositoryException) ? (RepositoryException)cause : new RepositoryException(e.getCause());
         }
 
-        // Record the save operation ...
-        repository().statistics().increment(ValueMetric.SESSION_SAVES);
+        try {
+            // Record the save operation ...
+            repository().statistics().increment(ValueMetric.SESSION_SAVES);
+        } catch (IllegalStateException e) {
+            // The repository has been shutdown ...
+        }
     }
 
     /**
@@ -1149,11 +1153,15 @@ public class JcrSession implements Session {
     @Override
     public void logout() {
         this.isLive = false;
-        RunningState running = repository.runningState();
-        long lifetime = System.nanoTime() - this.nanosCreated;
-        running.statistics().recordDuration(DurationMetric.SESSION_LIFETIME, lifetime, TimeUnit.NANOSECONDS, getUserID());
-        running.statistics().decrement(ValueMetric.SESSION_COUNT);
-        running.removeSession(this);
+        try {
+            RunningState running = repository.runningState();
+            long lifetime = System.nanoTime() - this.nanosCreated;
+            running.statistics().recordDuration(DurationMetric.SESSION_LIFETIME, lifetime, TimeUnit.NANOSECONDS, getUserID());
+            running.statistics().decrement(ValueMetric.SESSION_COUNT);
+            running.removeSession(this);
+        } catch (IllegalStateException e) {
+            // The repository has been shutdown
+        }
     }
 
     @Override
@@ -1431,6 +1439,7 @@ public class JcrSession implements Session {
                 // covered by existing children ...
                 for (JcrNodeDefinition defn : mandatoryChildDefns) {
                     Name propName = defn.getInternalName();
+                    // TODO: Validation
                 }
             }
 

@@ -28,6 +28,7 @@ import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.Future;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.InvalidItemStateException;
 import javax.jcr.InvalidSerializedDataException;
@@ -38,7 +39,6 @@ import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.UnsupportedRepositoryOperationException;
-import javax.jcr.Workspace;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeTypeManager;
@@ -60,7 +60,7 @@ import org.xml.sax.helpers.XMLReaderFactory;
 /**
  * 
  */
-class JcrWorkspace implements Workspace {
+class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
 
     private final JcrSession session;
     private final String workspaceName;
@@ -317,6 +317,28 @@ class JcrWorkspace implements Workspace {
         } catch (UnsupportedOperationException e) {
             throw new UnsupportedRepositoryOperationException(e.getMessage());
         }
+    }
+
+    @Override
+    public void reindex() throws RepositoryException {
+        // TODO: Query
+    }
+
+    @Override
+    public void reindex( String path ) throws RepositoryException {
+        // TODO: Query
+    }
+
+    @Override
+    public Future<Boolean> reindexAsync() throws RepositoryException {
+        // TODO: Query
+        return null;
+    }
+
+    @Override
+    public Future<Boolean> reindexAsync( String path ) throws RepositoryException {
+        // TODO: Query
+        return null;
     }
 
 }
