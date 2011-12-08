@@ -36,6 +36,7 @@ import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -43,6 +44,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
@@ -306,6 +308,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.runningState.compareAndSet(null, state);
                 workspacesChanged();
                 this.state.set(State.RUNNING);
+                state.postInitialize();
             }
             return state;
         } catch (IOException e) {
@@ -566,20 +569,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         }
     }
 
-    protected Session loginInternalSession( String workspaceName ) throws RepositoryException {
-        try {
-            boolean readOnly = false; // assume not
-            RunningState running = runningState();
-            ExecutionContext sessionContext = running.internalWorkerContext();
-            Map<String, Object> attributes = Collections.emptyMap();
-            JcrSession session = new JcrSession(this, workspaceName, sessionContext, attributes, readOnly);
-            running.addSession(session);
-            return session;
-        } catch (WorkspaceNotFoundException e) {
-            throw new NoSuchWorkspaceException(e.getMessage(), e);
-        }
-    }
-
     private String validateWorkspaceName( RunningState runningState,
                                           String workspaceName ) throws RepositoryException {
         if (workspaceName == null) {
@@ -803,6 +792,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
     @Immutable
     protected class RunningState {
+
         private final RepositoryConfiguration config;
         private final SchematicDb database;
         private final RepositoryCache cache;
@@ -979,33 +969,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     queue = new Sequencers.WorkQueue() {
                         @Override
                         public void submit( final SequencingWorkItem work ) {
-                            sequencingQueue.execute(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Session inputSession = null;
-                                    Session outputSession = null;
-                                    try {
-                                        // Create the required session(s) ...
-                                        inputSession = loginInternalSession(work.getInputWorkspaceName());
-                                        if (work.getOutputWorkspaceName() != null) {
-                                            outputSession = loginInternalSession(work.getOutputWorkspaceName());
-                                        } else {
-                                            outputSession = inputSession;
-                                        }
-
-                                        // Run the sequencer ...
-                                        sequencers().perform(work, inputSession, outputSession);
-
-                                        // Save the session
-                                        outputSession.save();
-                                    } catch (Throwable t) {
-                                        logger.error(t, RepositoryI18n.errorWhileSequencingNode, work.getSequencerName(), work);
-                                    } finally {
-                                        if (inputSession != null) inputSession.logout();
-                                        if (outputSession != null && outputSession != inputSession) outputSession.logout();
-                                    }
-                                }
-                            });
+                            sequencingQueue.execute(new SequencingRunner(JcrRepository.this, work));
                         }
                     };
                     this.sequencers = new Sequencers(this, sequencerComponents, cache.getWorkspaceNames(), queue);
@@ -1026,6 +990,13 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     other.unbindFromJndi();
                 }
             }
+        }
+
+        /**
+         * Perform any initialization code that requires the repository to be in a running state.
+         */
+        protected final void postInitialize() {
+            this.sequencers.initialize();
         }
 
         protected final Sequencers sequencers() {
@@ -1192,6 +1163,26 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         protected void shutdown() {
             // Unregister from JNDI ...
             unbindFromJndi();
+
+            if (this.sequencingQueue != null) {
+                // Shutdown the sequencers ...
+                sequencers().shutdown();
+
+                // Now wait until all the sequencing queue is emptied ...
+                final CountDownLatch latch = new CountDownLatch(1);
+                this.sequencingQueue.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        latch.countDown();
+                    }
+                });
+                try {
+                    latch.await(10, TimeUnit.SECONDS);
+                    this.context().releaseThreadPool(sequencingQueue);
+                } catch (InterruptedException e) {
+                    // do nothing ...
+                }
+            }
         }
 
         protected void bindIntoJndi() {
@@ -1286,6 +1277,24 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
             if (logger.isDebugEnabled()) {
                 logger.trace("Finishing lock cleanup in the '{0}' repository", repositoryName());
+            }
+        }
+
+        protected Session loginInternalSession() throws RepositoryException {
+            return loginInternalSession(defaultWorkspaceName());
+        }
+
+        protected JcrSession loginInternalSession( String workspaceName ) throws RepositoryException {
+            try {
+                boolean readOnly = false; // assume not
+                RunningState running = runningState();
+                ExecutionContext sessionContext = running.internalWorkerContext();
+                Map<String, Object> attributes = Collections.emptyMap();
+                JcrSession session = new JcrSession(JcrRepository.this, workspaceName, sessionContext, attributes, readOnly);
+                // running.addSession(session);
+                return session;
+            } catch (WorkspaceNotFoundException e) {
+                throw new NoSuchWorkspaceException(e.getMessage(), e);
             }
         }
     }

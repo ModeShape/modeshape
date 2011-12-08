@@ -26,6 +26,7 @@ package org.modeshape.jcr.security;
 import java.util.Map;
 import java.util.Set;
 import javax.jcr.Credentials;
+import javax.jcr.GuestCredentials;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.AnonymousCredentials;
 import org.modeshape.jcr.core.ExecutionContext;
@@ -64,6 +65,9 @@ public class AnonymousProvider implements AuthenticationProvider {
         if (credentials instanceof AnonymousCredentials) {
             AnonymousCredentials creds = (AnonymousCredentials)credentials;
             sessionAttributes.putAll(creds.getAttributes());
+            return repositoryContext.with(anonymousContext);
+        }
+        if (credentials instanceof GuestCredentials) {
             return repositoryContext.with(anonymousContext);
         }
         return null;

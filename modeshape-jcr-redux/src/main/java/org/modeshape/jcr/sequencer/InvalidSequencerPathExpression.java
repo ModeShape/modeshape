@@ -21,45 +21,49 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.api.sequencer;
+package org.modeshape.jcr.sequencer;
 
 import javax.jcr.RepositoryException;
 
 /**
- * A {@link RepositoryException repository exception} that denotes an error within a sequencer.
+ * A {@link RepositoryException repository exception} that denotes an invalid path expression for a sequencer.
  */
-public class SequencerException extends RepositoryException {
+public class InvalidSequencerPathExpression extends RepositoryException {
 
     /**
      */
-    private static final long serialVersionUID = -7610898771539657335L;
+    private static final long serialVersionUID = -2814638971450551156L;
 
     /**
+     * 
      */
-    public SequencerException() {
+    public InvalidSequencerPathExpression() {
     }
 
     /**
      * @param message
      */
-    public SequencerException( String message ) {
+    public InvalidSequencerPathExpression( String message ) {
         super(message);
+
     }
 
     /**
      * @param cause
      */
-    public SequencerException( Throwable cause ) {
+    public InvalidSequencerPathExpression( Throwable cause ) {
         super(cause);
+
     }
 
     /**
      * @param message
      * @param cause
      */
-    public SequencerException( String message,
-                               Throwable cause ) {
+    public InvalidSequencerPathExpression( String message,
+                                           Throwable cause ) {
         super(message, cause);
+
     }
 
 }
