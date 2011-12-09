@@ -765,6 +765,38 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     }
 
     /**
+     * Get whether this source garbage collects unused large values (BINARY and large STRING values) automatically, in the
+     * background.
+     * 
+     * @return true if this source should garbage collect unused large values, or false if they should not be garbage collected
+     * @see #setPredefinedWorkspaceNames(String[])
+     * @see #getPredefinedWorkspaceNames()
+     * @see #setCreatingWorkspacesAllowed(boolean)
+     */
+    @Description( i18n = JpaConnectorI18n.class, value = "garbageCollectionEnabledPropertyDescription" )
+    @Label( i18n = JpaConnectorI18n.class, value = "garbageCollectionEnabledPropertyLabel" )
+    @Category( i18n = JpaConnectorI18n.class, value = "garbageCollectionEnabledPropertyCategory" )
+    public boolean isGarbageCollectionEnabled() {
+        return capabilities.supportsAutomaticGarbageCollection();
+    }
+
+    /**
+     * Set whether this source garbage collects unused large values (BINARY and large STRING values) automatically, in the
+     * background.
+     * 
+     * @param garbageCollectionEnabled true if this source should garbage collect unused large values
+     * @see #isGarbageCollectionEnabled()
+     */
+    public synchronized void setGarbageCollectionEnabled( boolean garbageCollectionEnabled ) {
+        // Note that the capabilities define whether this source automatically handles garbage collection.
+        // By default, this is false for this connector, meaning the engine periodically garbage collects
+        // the content. If we set this to 'true', then the engine assumes the source does it.
+        // Therefore, when the user turns off garbage collection, we need to set this to 'true' ...
+        boolean engineExpectsSourceToHandleGarbageCollection = !garbageCollectionEnabled;
+        capabilities = capabilities.withAutomaticGarbageCollection(engineExpectsSourceToHandleGarbageCollection);
+    }
+
+    /**
      * @return dialect
      */
     public String getDialect() {
