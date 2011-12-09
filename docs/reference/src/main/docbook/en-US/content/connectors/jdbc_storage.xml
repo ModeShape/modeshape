@@ -178,11 +178,21 @@
       </listitem>
     </varlistentry>
     <varlistentry>
-      <term>idleTimeInSecondsBeforeTestingConnections</term>
+      <term>driverClassName</term>
       <listitem>
         <para>
-					Optional property that specifies the number of seconds after a connection remains in the pool that the connection should be 
-					tested to ensure it is still valid. The default is 180 seconds (or 3 minutes).
+					The name of the JDBC driver class. This is not required if the DataSource is found in JNDI, but is required otherwise.
+				</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>garbageCollectionEnabled</term>
+      <listitem>
+        <para>
+					Advanced optional property that specifies whether unused BINARY and large STRING values should be removed from the database. 
+					The default value is "true", meaning that garbage collection is enabled and results in a periodic running of a
+					query; this setting is appropriate for most applications. However, some applications store files and rarely (if ever)
+					update or change that content, and in these cases this property may be set to "false".
 				</para>
       </listitem>
     </varlistentry>

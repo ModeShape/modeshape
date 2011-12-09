@@ -155,6 +155,9 @@ public final class JpaConnectorI18n {
     public static I18n cacheConcurrencyStrategyPropertyDescription;
     public static I18n cacheConcurrencyStrategyPropertyLabel;
     public static I18n cacheConcurrencyStrategyPropertyCategory;
+    public static I18n garbageCollectionEnabledPropertyDescription;
+    public static I18n garbageCollectionEnabledPropertyLabel;
+    public static I18n garbageCollectionEnabledPropertyCategory;
     static {
         try {
             I18n.initialize(JpaConnectorI18n.class);
