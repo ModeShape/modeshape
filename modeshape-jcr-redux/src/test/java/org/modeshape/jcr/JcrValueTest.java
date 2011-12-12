@@ -23,27 +23,30 @@
  */
 package org.modeshape.jcr;
 
-import javax.jcr.*;
-import javax.jcr.Binary;
-import javax.jcr.PropertyType;
-import javax.jcr.ValueFormatException;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.UUID;
-import static org.junit.Assert.*;
+import javax.jcr.Binary;
+import javax.jcr.PropertyType;
+import javax.jcr.RepositoryException;
+import javax.jcr.ValueFormatException;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
 import org.modeshape.common.FixFor;
-import org.modeshape.jcr.value.*;
+import org.modeshape.common.util.IoUtil;
+import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.basic.SimpleNamespaceRegistry;
 import org.modeshape.jcr.value.basic.StandardValueFactories;
+import org.modeshape.jcr.value.binary.TransientBinaryStore;
 
 public class JcrValueTest {
 
@@ -54,7 +57,7 @@ public class JcrValueTest {
     public void before() {
         MockitoAnnotations.initMocks(this);
 
-        factories = new StandardValueFactories(new SimpleNamespaceRegistry());
+        factories = new StandardValueFactories(new SimpleNamespaceRegistry(), TransientBinaryStore.get());
         value = new JcrValue(factories, PropertyType.BOOLEAN, Boolean.TRUE);
     }
 
@@ -140,9 +143,9 @@ public class JcrValueTest {
         date.set(Calendar.MILLISECOND, 0);
         String expectedValue = "2008-08-18T12:00:00.000";
         assertThat(new JcrValue(factories, PropertyType.DATE, date).getString().substring(0, expectedValue.length()),
-                is(expectedValue));
+                   is(expectedValue));
         assertThat(new JcrValue(factories, PropertyType.DATE, date.getTime()).getString().substring(0, expectedValue.length()),
-                is(expectedValue));
+                   is(expectedValue));
     }
 
     @Test( expected = ValueFormatException.class )
@@ -155,7 +158,7 @@ public class JcrValueTest {
         Calendar expectedValue = Calendar.getInstance();
         expectedValue.setTime(new Date(0L));
         assertThat(new JcrValue(factories, PropertyType.DOUBLE, 0.0).getDate().getTimeInMillis(),
-                is(expectedValue.getTimeInMillis()));
+                   is(expectedValue.getTimeInMillis()));
     }
 
     @Test
@@ -189,7 +192,7 @@ public class JcrValueTest {
         Calendar expectedValue = Calendar.getInstance();
         expectedValue.setTime(new Date(0L));
         assertThat(new JcrValue(factories, PropertyType.LONG, 0L).getDate().getTimeInMillis(),
-                is(expectedValue.getTimeInMillis()));
+                   is(expectedValue.getTimeInMillis()));
     }
 
     @Test
@@ -305,7 +308,8 @@ public class JcrValueTest {
         org.modeshape.jcr.value.Binary actualValue = jcrValue.getBinary();
 
         assertNotNull(actualValue);
-        assertArrayEquals(stringValue.getBytes(), actualValue.getBytes());
+        byte[] actualBytes = IoUtil.readBytes(actualValue.getStream());
+        assertArrayEquals(stringValue.getBytes(), actualBytes);
     }
 
     @FixFor( "MODE-1308" )
@@ -318,21 +322,29 @@ public class JcrValueTest {
 
     private Binary createCustomBinary( final String stringValue ) {
         return new Binary() {
+            @SuppressWarnings( "unused" )
+            @Override
             public InputStream getStream() throws RepositoryException {
                 return new ByteArrayInputStream(stringValue.getBytes());
             }
 
-            public int read( byte[] b, long position ) throws IOException, RepositoryException {
+            @SuppressWarnings( "unused" )
+            @Override
+            public int read( byte[] b,
+                             long position ) throws IOException, RepositoryException {
                 byte[] content = stringValue.getBytes();
                 int length = b.length + position < content.length ? b.length : (int)(content.length - position);
                 System.arraycopy(content, (int)position, b, 0, length);
                 return length;
             }
 
+            @SuppressWarnings( "unused" )
+            @Override
             public long getSize() throws RepositoryException {
                 return stringValue.getBytes().length;
             }
 
+            @Override
             public void dispose() {
             }
         };

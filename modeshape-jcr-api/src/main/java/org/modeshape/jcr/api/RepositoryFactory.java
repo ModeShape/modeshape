@@ -24,47 +24,51 @@
 package org.modeshape.jcr.api;
 
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import javax.jcr.Repository;
 
 public interface RepositoryFactory extends javax.jcr.RepositoryFactory {
 
     /**
-     * Begin the shutdown process for all the {@code JcrEngine JcrEngines} created by calls to {@link #getRepository(Map)}.
+     * Shutdown this engine to stop all repositories created by calls to {@link #getRepository(Map)}, terminate any ongoing
+     * background operations (such as sequencing), and reclaim any resources that were acquired by the repositories. This method
+     * may be called multiple times, but only the first time has an effect.
      * <p>
-     * Calling {@code #getRepository(Map)} with a file-based URL parameter causes a new {@code JcrEngine} to be instantiated and
-     * started. Any {@code JcrEngine} created in this manner must be stored by the {@code RepositoryFactory} implementation.
-     * Invoking this method iteratively invokes the {@code shutdown()} method on each {@code JcrEngine}.
+     * Invoking this method does not preclude creating new {@link Repository} instances with future calls to
+     * {@link #getRepository(Map)}. Any caller using this method as part of an application shutdown process should take care to
+     * cease invocations of {@link #getRepository(Map)} prior to invoking this method.
      * </p>
      * <p>
-     * This method merely initiates the shutdown process for each {@code JcrEngine}. There is no guarantee that the shutdown
-     * process will have completed prior to this method returning. The {@link #shutdown(long, TimeUnit)} method provides the
-     * ability to wait until all engines are shutdown or the given time elapses.
+     * This method returns immediately, even before the repositories have been shut down. However, the caller can simply call the
+     * {@link Future#get() get()} method on the returned {@link Future} to block until all repositories have shut down. Note that
+     * the {@link Future#get(long, TimeUnit)} method can be called to block for a maximum amount of time.
      * </p>
-     * <p>
-     * Invoking this method does not preclude creating new {@code JcrEngines} with future calls to {@link #getRepository(Map)}.
-     * Any caller using this method as part of an application shutdown process should take care to cease invocations of
-     * {@link #getRepository(Map)} prior to invoking this method.
-     * </p>
+     * 
+     * @return a future that allows the caller to block until the engine is shutdown; any error during shutdown will be thrown
+     *         when {@link Future#get() getting} the repository from the future, where the exception is wrapped in a
+     *         {@link ExecutionException}. The value returned from the future will always be true if the engine shutdown (or was
+     *         not running), or false if the engine is still running.
      */
-    public void shutdown();
+    public Future<Boolean> shutdown();
 
     /**
-     * Begin the shutdown process for all the {@code JcrEngine JcrEngines} created by calls to {@link #getRepository(Map)}.
+     * Shutdown this engine to stop all repositories created by calls to {@link #getRepository(Map)}, terminate any ongoing
+     * background operations (such as sequencing), and reclaim any resources that were acquired by the repositories. This method
+     * may be called multiple times, but only the first time has an effect.
      * <p>
-     * Calling {@code #getRepository(Map)} with a file-based URL parameter causes a new {@code JcrEngine} to be instantiated and
-     * started. Any {@code JcrEngine} created in this manner must be stored by the {@code RepositoryFactory} implementation.
-     * Invoking this method iteratively invokes the {@code shutdown()} method on each {@code JcrEngine} and then iteratively
-     * invokes the {@code awaitTermination(long, TimeUnit)} method to await termination.
+     * This method is equivalent to calling "<code>shutdown().get(timeout,unit)</code>" on this method.
      * </p>
      * <p>
-     * Although this method initiates the shutdown process for each {@code JcrEngine} and invokes the {@code awaitTermination}
-     * method, there is still no guarantee that the shutdown process will have completed prior to this method returning. It is
-     * possible for the time required to shutdown one or more of the engines to exceed the provided time window.
+     * Invoking this method does not preclude creating new {@link Repository} instances with future calls to
+     * {@link #getRepository(Map)}. Any caller using this method as part of an application shutdown process should take care to
+     * cease invocations of {@link #getRepository(Map)} prior to invoking this method.
      * </p>
      * <p>
-     * Invoking this method does not preclude creating new {@code JcrEngines} with future calls to {@link #getRepository(Map)}.
-     * Any caller using this method as part of an application shutdown process should take care to cease invocations of
-     * {@link #getRepository(Map)} prior to invoking this method.
+     * This method returns immediately, even before the repositories have been shut down. However, the caller can simply call the
+     * {@link Future#get() get()} method on the returned {@link Future} to block until all repositories have shut down. Note that
+     * the {@link Future#get(long, TimeUnit)} method can be called to block for a maximum amount of time.
      * </p>
      * 
      * @param timeout the maximum time per engine to allow for shutdown
@@ -75,7 +79,6 @@ public interface RepositoryFactory extends javax.jcr.RepositoryFactory {
      */
     public boolean shutdown( long timeout,
                              TimeUnit unit ) throws InterruptedException;
-
 
     /**
      * Returns the {@link Repositories} instance referenced by the {@code jcrUrl} parameter.

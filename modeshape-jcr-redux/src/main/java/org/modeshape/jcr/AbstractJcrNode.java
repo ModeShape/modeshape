@@ -364,6 +364,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         NodeTypes nodeTypes = session.nodeTypes();
         JcrPropertyDefinition defn = propertyDefinitionFor(property, primaryTypeName, mixinTypeNames, nodeTypes);
         int jcrPropertyType = defn.getRequiredType();
+        jcrPropertyType = determineBestPropertyTypeIfUndefined(jcrPropertyType, property);
         AbstractJcrProperty prop = null;
         if (property.isSingle()) {
             prop = new JcrSingleValueProperty(this, property.getName(), jcrPropertyType);
@@ -372,6 +373,14 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         }
         prop.setPropertyDefinitionId(defn.getId(), nodeTypes.getVersion());
         return prop;
+    }
+
+    private final int determineBestPropertyTypeIfUndefined( int actualPropertyType,
+                                                            Property property ) {
+        if (actualPropertyType == PropertyType.UNDEFINED) {
+            return PropertyTypeUtil.jcrPropertyTypeFor(property);
+        }
+        return actualPropertyType;
     }
 
     final ValueFactories factories() {
@@ -1524,6 +1533,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         }
 
         // Create the JCR Property object ...
+        if (requiredType == PropertyType.UNDEFINED) requiredType = value.getType();
         AbstractJcrProperty jcrProp = new JcrSingleValueProperty(this, name, requiredType);
         AbstractJcrProperty otherProp = this.jcrProperties.putIfAbsent(name, jcrProp);
         if (otherProp != null) {
@@ -1649,6 +1659,13 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         }
 
         // Create the JCR Property object ...
+        if (requiredType == PropertyType.UNDEFINED) {
+            for (Value value : values) {
+                if (value == null) continue;
+                requiredType = value.getType();
+                break;
+            }
+        }
         AbstractJcrProperty jcrProp = new JcrMultiValueProperty(this, name, requiredType);
         jcrProp.setPropertyDefinitionId(defn.getId(), nodeTypes.getVersion());
         AbstractJcrProperty otherProp = this.jcrProperties.putIfAbsent(name, jcrProp);

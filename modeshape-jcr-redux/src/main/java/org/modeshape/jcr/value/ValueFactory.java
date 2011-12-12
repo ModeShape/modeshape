@@ -25,7 +25,6 @@ package org.modeshape.jcr.value;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.util.Calendar;
@@ -251,30 +250,16 @@ public interface ValueFactory<T> {
      * Create a value from the binary content given by the supplied stream.
      * 
      * @param stream the stream containing the content to be used to create the value
-     * @param approximateLength the approximate length of the content (in bytes)
      * @return the value, or null if the supplied stream is null
      * @throws ValueFormatException if the conversion from an input stream could not be performed
      * @throws IoException If an unexpected problem occurs while accessing the supplied stream (such as an {@link IOException}).
      */
-    T create( InputStream stream,
-              long approximateLength ) throws ValueFormatException, IoException;
-
-    /**
-     * Create a value from a the binary content given by the supplied reader.
-     * 
-     * @param reader the reader containing the content to be used to create the value
-     * @param approximateLength the approximate length of the content (in bytes)
-     * @return the value, or null if the supplied string is null
-     * @throws ValueFormatException if the conversion from a reader could not be performed
-     * @throws IoException If an unexpected problem occurs while accessing the supplied reader (such as an {@link IOException}).
-     */
-    T create( Reader reader,
-              long approximateLength ) throws ValueFormatException, IoException;
+    T create( InputStream stream ) throws ValueFormatException, IoException;
 
     /**
      * Create a value from the specified information by determining which other <code>create</code> method applies and delegating
      * to that method. Note that this method only will call <code>create</code> methods that take a single parameter; so this
-     * excludes {@link #create(InputStream, long)}, {@link #create(Reader, long)} and {@link #create(String, TextDecoder)}.
+     * excludes {@link #create(InputStream)} and {@link #create(String, TextDecoder)}.
      * 
      * @param value the value
      * @return the new value, or null if the supplied parameter is null
@@ -462,8 +447,8 @@ public interface ValueFactory<T> {
 
     /**
      * Create an array of values from the specified information by determining which other <code>create</code> method applies for
-     * each object and then delegating to that method. Note that this method will not consider {@link #create(InputStream, long)},
-     * {@link #create(Reader, long)} and {@link #create(String, TextDecoder)}.
+     * each object and then delegating to that method. Note that this method will not consider {@link #create(InputStream)} and
+     * {@link #create(String, TextDecoder)}.
      * 
      * @param values the values
      * @return the new value, or null if the supplied parameter is null
@@ -474,8 +459,7 @@ public interface ValueFactory<T> {
 
     /**
      * Create an iterator over the values (of an unknown type). The factory converts any values as required. Note that this method
-     * will not consider {@link #create(InputStream, long)}, {@link #create(Reader, long)} and
-     * {@link #create(String, TextDecoder)}.
+     * will not consider {@link #create(InputStream)} and {@link #create(String, TextDecoder)}.
      * <p>
      * This is useful to use when iterating over the {@link Property#getValues() values} of a {@link Property}.
      * </p>
@@ -490,8 +474,7 @@ public interface ValueFactory<T> {
 
     /**
      * Create an iterable with the values (of an unknown type). The factory converts any values as required. Note that this method
-     * will not consider {@link #create(InputStream, long)}, {@link #create(Reader, long)} and
-     * {@link #create(String, TextDecoder)}.
+     * will not consider {@link #create(InputStream)} and {@link #create(String, TextDecoder)}.
      * <p>
      * This is useful to use when converting all the {@link Property#getValues() values} of a {@link Property}.
      * </p>

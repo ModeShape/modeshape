@@ -14,10 +14,6 @@
             "type" : "string",
             "description" : "The name in JNDI where this repository is to be registered. If not specified, the location is assumed to be 'jcr:local:<name>', where '<name>' is the repository name. Setting this field to an empty string signals that the repository should not be registered in JNDI."
         },
-        "largeValueSizeInBytes" : {
-            "type" : "integer",
-            "description" : "The size threshold that dictates how property values are stored. String and binary values smaller than this value are stored with the node, whereas string and binary values with a size equal to or greater than this limit may be stored separately from the node and keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is '10240' bytes, or 10 kilobytes."
-        },
         "monitoring" : {
             "type" : "object",
             "description" : "The specification for the monitoring system for the repositories.",
@@ -47,7 +43,23 @@
                     "type" : "string",
                     "default" : "org.infinispan.transaction.lookup.GenericTransactionManagerLookup",
                     "description" : "The name of the Infinispan class that should be used to find the JTA transaction manager instance. It defaults to 'org.infinispan.transaction.lookup.GenericTransactionManagerLookup'"
-                }
+                },
+                "binaryStorage" : {
+                    "type" : "object",
+                    "additionalProperties" : true,
+                    "properties" : {
+                        "minimumBinarySizeInBytes" : {
+                            "type" : "integer",
+                            "default" : 4096,
+                            "description" : "The size threshold that dictates whether String and binary values should be stored in the binary store. String and binary values smaller than this value are stored with the node, whereas string and binary values with a size equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is '4096' bytes, or 4 kilobytes."
+                        },
+                        "type" : {
+                            "type" : "string",
+                            "description" : "A shortcut for 'classname' of built-in providers, where the package name is not required. Values are matched against the names of built-in provider implementation classes. The value of this field will also determine whether any additional fields are required or optional.",
+                            "enum" : [ "transient", "file", "database","cache"]
+                        },
+                    }
+                },
             }
         },
         "workspaces" : {

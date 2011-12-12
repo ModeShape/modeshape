@@ -355,6 +355,17 @@ public final class JcrI18n {
     public static I18n configurationError;
     public static I18n configurationWarning;
 
+    public static I18n errorDuringGarbageCollection;
+    public static I18n errorMarkingBinaryValuesUnused;
+
+    public static I18n unableToReadTemporaryDirectory;
+    public static I18n unableToWriteTemporaryDirectory;
+    public static I18n unableToPersistBinaryValueToFileSystemStore;
+    public static I18n unableToDeleteTemporaryFile;
+    public static I18n unableToFindBinaryValue;
+    public static I18n tempDirectorySystemPropertyMustBeSet;
+    public static I18n tempDirectoryLocation;
+
     static {
         try {
             I18n.initialize(JcrI18n.class);

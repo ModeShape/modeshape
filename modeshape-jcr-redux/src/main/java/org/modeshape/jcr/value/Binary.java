@@ -23,19 +23,20 @@
  */
 package org.modeshape.jcr.value;
 
-import java.io.InputStream;
 import java.io.Serializable;
-import java.security.MessageDigest;
 import org.modeshape.common.annotation.Immutable;
 
 /**
  * Value holder for binary data. Binary instances are not mutable.
  */
 @Immutable
-public interface Binary extends Comparable<Binary>, Serializable, javax.jcr.Binary {
+public interface Binary extends Comparable<Binary>, Serializable, org.modeshape.jcr.api.Binary {
 
     /**
      * Get the length of this binary data.
+     * <p>
+     * Note that this method, unlike the standard {@link javax.jcr.Binary#getSize()} method, does not throw an exception.
+     * </p>
      * 
      * @return the number of bytes in this binary data
      */
@@ -43,40 +44,9 @@ public interface Binary extends Comparable<Binary>, Serializable, javax.jcr.Bina
     public long getSize();
 
     /**
-     * Get the SHA-1 hash of the contents. This hash can be used to determine whether two Binary instances contain the same
-     * content.
-     * <p>
-     * Repeatedly calling this method should generally be efficient, as it most implementations will compute the hash only once.
-     * </p>
+     * Get the key for the binary value.
      * 
-     * @return the hash of the contents as a byte array, or an empty array if the hash could not be computed.
-     * @see MessageDigest#digest(byte[])
-     * @see MessageDigest#getInstance(String)
+     * @return the key; never null
      */
-    public byte[] getHash();
-
-    /**
-     * Get the contents of this data as a stream.
-     * 
-     * @return the stream to this data's contents
-     * @throws IoException if there is a problem returning the stream
-     */
-    @Override
-    public InputStream getStream();
-
-    /**
-     * Get the contents of this data as a byte array.
-     * 
-     * @return the data as an array
-     * @throws IoException if there is a problem returning the bytes
-     */
-    public byte[] getBytes();
-
-    /**
-     * Acquire any resources for this data. This method must be called before any other method on this object.
-     * 
-     * @see #dispose()
-     */
-    public void acquire();
-
+    public BinaryKey getKey();
 }

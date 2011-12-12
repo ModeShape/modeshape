@@ -24,7 +24,6 @@
 package org.modeshape.jcr.value.basic;
 
 import java.io.InputStream;
-import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.util.Calendar;
@@ -222,17 +221,9 @@ public class UuidValueFactory extends AbstractValueFactory<UUID> implements Uuid
     }
 
     @Override
-    public UUID create( InputStream stream,
-                        long approximateLength ) throws IoException {
+    public UUID create( InputStream stream ) throws IoException {
         // First attempt to create a string from the value, then a double from the string ...
-        return create(getStringValueFactory().create(stream, approximateLength));
-    }
-
-    @Override
-    public UUID create( Reader reader,
-                        long approximateLength ) throws IoException {
-        // First attempt to create a string from the value, then a double from the string ...
-        return create(getStringValueFactory().create(reader, approximateLength));
+        return create(getStringValueFactory().create(stream));
     }
 
     @Override

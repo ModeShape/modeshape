@@ -25,14 +25,14 @@ package org.modeshape.jcr;
 
 import java.io.IOException;
 import java.io.InputStream;
+import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.jcr.value.Binary;
 
 /**
- * An {@link InputStream} implementation that can be used to access the content of a supplied {@link Binary} value. An instance of
- * this class immediately {@link Binary#acquire() acquires} the binary's lock, and allows the InputStream to be processed and used
- * normally. This class, however, guarantees that the binary lock is {@link Binary#dispose() released} whenever this class throws
- * an exception or when the instance is {@link #close() closed}.
+ * An {@link InputStream} implementation that can be used to access the content of a supplied {@link Binary} value. This class,
+ * however, guarantees that the binary lock is {@link Binary#dispose() released} whenever this class throws an exception or when
+ * the instance is {@link #close() closed}.
  * <p>
  * The draft version of the JSR-283 specification outlines a new mechanism for obtaining a lock on a binary value, and in fact
  * this mechanism was used as the baseline for the design of ModeShape's Binary value. Therefore, when ModeShape's JCR
@@ -46,9 +46,7 @@ class SelfClosingInputStream extends InputStream {
     private InputStream stream;
 
     /**
-     * Create a self-closing {@link InputStream} to access the content of the supplied {@link Binary} value. This construct
-     * immediately {@link Binary#acquire() acquires} the binary's lock, which is {@link Binary#dispose() disposed} whenever this
-     * class throws an exception or when the instance is {@link #close() closed}.
+     * Create a self-closing {@link InputStream} to access the content of the supplied {@link Binary} value.
      * 
      * @param binary the {@link Binary} object that this stream accesses; may not be null
      */
@@ -57,9 +55,8 @@ class SelfClosingInputStream extends InputStream {
         this.binary = binary;
     }
 
-    protected void open() {
+    protected void open() throws RepositoryException {
         if (this.stream == null) {
-            this.binary.acquire();
             this.stream = binary.getStream();
         }
     }
@@ -69,6 +66,9 @@ class SelfClosingInputStream extends InputStream {
         try {
             open();
             return stream.available();
+        } catch (RepositoryException e) {
+            this.binary.dispose();
+            throw new IOException(e);
         } catch (IOException e) {
             this.binary.dispose();
             throw e;
@@ -104,6 +104,9 @@ class SelfClosingInputStream extends InputStream {
         try {
             open();
             stream.mark(readlimit);
+        } catch (RepositoryException e) {
+            this.binary.dispose();
+            throw new RuntimeException(e);
         } catch (RuntimeException e) {
             this.binary.dispose();
             throw e;
@@ -112,8 +115,16 @@ class SelfClosingInputStream extends InputStream {
 
     @Override
     public boolean markSupported() {
-        open();
-        return stream.markSupported();
+        try {
+            open();
+            return stream.markSupported();
+        } catch (RepositoryException e) {
+            this.binary.dispose();
+            throw new RuntimeException(e);
+        } catch (RuntimeException e) {
+            this.binary.dispose();
+            throw e;
+        }
     }
 
     @Override
@@ -128,6 +139,9 @@ class SelfClosingInputStream extends InputStream {
                 this.binary.dispose();
             }
             return result;
+        } catch (RepositoryException e) {
+            this.binary.dispose();
+            throw new IOException(e);
         } catch (IOException e) {
             this.binary.dispose();
             throw e;
@@ -147,6 +161,9 @@ class SelfClosingInputStream extends InputStream {
                 this.binary.dispose();
             }
             return result;
+        } catch (RepositoryException e) {
+            this.binary.dispose();
+            throw new IOException(e);
         } catch (IOException e) {
             this.binary.dispose();
             throw e;
@@ -166,6 +183,9 @@ class SelfClosingInputStream extends InputStream {
                 this.binary.dispose();
             }
             return result;
+        } catch (RepositoryException e) {
+            this.binary.dispose();
+            throw new IOException(e);
         } catch (IOException e) {
             this.binary.dispose();
             throw e;
@@ -192,9 +212,12 @@ class SelfClosingInputStream extends InputStream {
 
     @Override
     public long skip( long n ) throws IOException {
-        open();
         try {
+            open();
             return stream.skip(n);
+        } catch (RepositoryException e) {
+            this.binary.dispose();
+            throw new IOException(e);
         } catch (IOException e) {
             this.binary.dispose();
             throw e;
@@ -206,7 +229,6 @@ class SelfClosingInputStream extends InputStream {
 
     @Override
     public String toString() {
-        open();
-        return stream.toString();
+        return binary.toString();
     }
 }

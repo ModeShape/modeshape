@@ -49,6 +49,7 @@ import org.modeshape.jcr.core.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.core.mimetype.MimeTypeDetectors;
 import org.modeshape.jcr.core.text.TextExtractor;
 import org.modeshape.jcr.core.text.TextExtractors;
+import org.modeshape.jcr.value.BinaryFactory;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.PropertyFactory;
@@ -57,6 +58,8 @@ import org.modeshape.jcr.value.basic.BasicPropertyFactory;
 import org.modeshape.jcr.value.basic.SimpleNamespaceRegistry;
 import org.modeshape.jcr.value.basic.StandardValueFactories;
 import org.modeshape.jcr.value.basic.ThreadSafeNamespaceRegistry;
+import org.modeshape.jcr.value.binary.BinaryStore;
+import org.modeshape.jcr.value.binary.TransientBinaryStore;
 
 /**
  * An ExecutionContext is a representation of the environment or context in which a component or operation is operating. Some
@@ -92,6 +95,7 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
     private final MimeTypeDetector mimeTypeDetector;
     private final TextExtractor textExtractor;
     private final SecurityContext securityContext;
+    private final BinaryStore binaryStore;
     /** The unique ID string, which is always generated so that it can be final and not volatile. */
     private final String id = sha1(UUID.randomUUID().toString()).substring(0, 9);
     private final String processId;
@@ -104,7 +108,7 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
      */
     @SuppressWarnings( "synthetic-access" )
     public ExecutionContext() {
-        this(new NullSecurityContext(), null, null, null, null, null, null, null, null, null);
+        this(new NullSecurityContext(), null, null, null, null, null, null, null, null, null, null);
         initializeDefaultNamespaces(this.getNamespaceRegistry());
         assert securityContext != null;
 
@@ -128,6 +132,7 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
         this.textExtractor = original.getTextExtractor();
         this.data = original.getData();
         this.processId = original.getProcessId();
+        this.binaryStore = TransientBinaryStore.get();
     }
 
     /**
@@ -151,6 +156,7 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
         this.textExtractor = original.getTextExtractor();
         this.data = original.getData();
         this.processId = original.getProcessId();
+        this.binaryStore = original.getBinaryStore();
     }
 
     /**
@@ -171,6 +177,7 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
      *        instance should be used
      * @param threadPoolFactory the {@link ThreadPoolFactory} implementation, or null if a {@link ThreadPools} instance should be
      *        used
+     * @param binaryStore the {@link BinaryStore} implementation, or null if a default {@link TransientBinaryStore} should be used
      * @param data the custom data for this context, or null if there is no such data
      * @param processId the unique identifier of the process in which this context exists, or null if it should be generated
      */
@@ -182,13 +189,16 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
                                 TextExtractor textExtractor,
                                 ClassLoaderFactory classLoaderFactory,
                                 ThreadPoolFactory threadPoolFactory,
+                                BinaryStore binaryStore,
                                 Map<String, String> data,
                                 String processId ) {
         assert securityContext != null;
         this.securityContext = securityContext;
+        if (binaryStore == null) binaryStore = TransientBinaryStore.get();
+        this.binaryStore = binaryStore;
         this.namespaceRegistry = namespaceRegistry != null ? namespaceRegistry : new ThreadSafeNamespaceRegistry(
                                                                                                                  new SimpleNamespaceRegistry());
-        this.valueFactories = valueFactories == null ? new StandardValueFactories(this.namespaceRegistry) : valueFactories;
+        this.valueFactories = valueFactories == null ? new StandardValueFactories(this.namespaceRegistry, binaryStore) : valueFactories;
         this.propertyFactory = propertyFactory == null ? new BasicPropertyFactory(this.valueFactories) : propertyFactory;
         this.classLoaderFactory = classLoaderFactory == null ? new StandardClassLoaderFactory() : classLoaderFactory;
         this.threadPools = threadPoolFactory == null ? new ThreadPools() : threadPoolFactory;
@@ -302,6 +312,16 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
         return this.valueFactories;
     }
 
+    /**
+     * Get the binary store that should be used to store binary values. This store is used by the {@link BinaryFactory} in the
+     * {@link #getValueFactories()}.
+     * 
+     * @return the binary store; never null
+     */
+    public BinaryStore getBinaryStore() {
+        return binaryStore;
+    }
+
     @Override
     public ClassLoader getClassLoader( String... classpath ) {
         return this.classLoaderFactory.getClassLoader(classpath);
@@ -346,6 +366,20 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
     }
 
     /**
+     * Create a new execution context that mirrors this context but that uses the supplied binary store.
+     * 
+     * @param binaryStore the binary store that should be used, or null if the default implementation should be used
+     * @return the execution context that is identical with this execution context, but which uses the supplied binary store;
+     *         never null
+     */
+    public ExecutionContext with( BinaryStore binaryStore ) {
+        if (binaryStore == null) binaryStore = TransientBinaryStore.get();
+        return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), valueFactories, getPropertyFactory(),
+                                    getMimeTypeDetector(), getTextExtractor(), getClassLoaderFactory(), getThreadPoolFactory(),
+                                    binaryStore, getData(), getProcessId());
+    }
+
+    /**
      * Create a new execution context that mirrors this context but that uses the supplied namespace registry. The resulting
      * context's {@link #getValueFactories() value factories} and {@link #getPropertyFactory() property factory} all make use of
      * the new namespace registry.
@@ -358,8 +392,8 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
         // Don't supply the value factories or property factories, since they'll have to be recreated
         // to reference the supplied namespace registry ...
         return new ExecutionContext(getSecurityContext(), namespaceRegistry, null, getPropertyFactory(), getMimeTypeDetector(),
-                                    getTextExtractor(), getClassLoaderFactory(), getThreadPoolFactory(), getData(),
-                                    getProcessId());
+                                    getTextExtractor(), getClassLoaderFactory(), getThreadPoolFactory(), getBinaryStore(),
+                                    getData(), getProcessId());
     }
 
     /**
@@ -374,7 +408,7 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
     public ExecutionContext with( MimeTypeDetector mimeTypeDetector ) {
         return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
                                     mimeTypeDetector, getTextExtractor(), getClassLoaderFactory(), getThreadPoolFactory(),
-                                    getData(), getProcessId());
+                                    getBinaryStore(), getData(), getProcessId());
     }
 
     /**
@@ -389,7 +423,7 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
     public ExecutionContext with( TextExtractor textExtractor ) {
         return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
                                     getMimeTypeDetector(), textExtractor, getClassLoaderFactory(), getThreadPoolFactory(),
-                                    getData(), getProcessId());
+                                    getBinaryStore(), getData(), getProcessId());
     }
 
     /**
@@ -403,7 +437,7 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
     public ExecutionContext with( ClassLoaderFactory classLoaderFactory ) {
         return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
                                     getMimeTypeDetector(), getTextExtractor(), classLoaderFactory, getThreadPoolFactory(),
-                                    getData(), getProcessId());
+                                    getBinaryStore(), getData(), getProcessId());
     }
 
     /**
@@ -417,7 +451,7 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
     public ExecutionContext with( ThreadPoolFactory threadPoolFactory ) {
         return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
                                     getMimeTypeDetector(), getTextExtractor(), getClassLoaderFactory(), threadPoolFactory,
-                                    getData(), getProcessId());
+                                    getBinaryStore(), getData(), getProcessId());
     }
 
     /**
@@ -430,7 +464,7 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
     public ExecutionContext with( PropertyFactory propertyFactory ) {
         return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), propertyFactory,
                                     getMimeTypeDetector(), getTextExtractor(), getClassLoaderFactory(), getThreadPoolFactory(),
-                                    getData(), getProcessId());
+                                    getBinaryStore(), getData(), getProcessId());
     }
 
     /**
@@ -465,7 +499,7 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
         }
         return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
                                     getMimeTypeDetector(), getTextExtractor(), getClassLoaderFactory(), getThreadPoolFactory(),
-                                    newData, getProcessId());
+                                    getBinaryStore(), newData, getProcessId());
     }
 
     /**
@@ -498,7 +532,7 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
         }
         return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
                                     getMimeTypeDetector(), getTextExtractor(), getClassLoaderFactory(), getThreadPoolFactory(),
-                                    newData, getProcessId());
+                                    getBinaryStore(), newData, getProcessId());
     }
 
     /**
@@ -512,7 +546,7 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
     public ExecutionContext with( String processId ) {
         return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
                                     getMimeTypeDetector(), getTextExtractor(), getClassLoaderFactory(), getThreadPoolFactory(),
-                                    getData(), processId);
+                                    getBinaryStore(), getData(), processId);
     }
 
     /**

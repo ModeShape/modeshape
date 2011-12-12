@@ -23,15 +23,20 @@
  */
 package org.modeshape.sequencer.image;
 
-import javax.jcr.*;
+import java.io.IOException;
+import java.io.InputStream;
+import javax.jcr.Binary;
+import javax.jcr.NamespaceException;
+import javax.jcr.NamespaceRegistry;
+import javax.jcr.Node;
+import javax.jcr.Property;
+import javax.jcr.RepositoryException;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.io.IOException;
-import java.io.InputStream;
 
 /**
  * A sequencer that processes the binary content of an image file, extracts the metadata for the image, and then writes that image
@@ -71,7 +76,9 @@ public class ImageMetadataSequencer extends Sequencer {
     private static final Logger LOGGER = LoggerFactory.getLogger(ImageMetadataSequencer.class);
 
     @Override
-    public boolean execute( Property inputProperty, Node outputNode, Context context ) throws Exception {
+    public boolean execute( Property inputProperty,
+                            Node outputNode,
+                            Context context ) throws Exception {
         Binary binaryValue = inputProperty.getBinary();
         CheckArg.isNotNull(binaryValue, "binary");
 
@@ -79,7 +86,6 @@ public class ImageMetadataSequencer extends Sequencer {
         metadata.setInput(binaryValue.getStream());
         metadata.setDetermineImageNumber(true);
         metadata.setCollectComments(true);
-
 
         // Process the image stream and extract the metadata ...
         if (!metadata.check()) {
@@ -96,12 +102,11 @@ public class ImageMetadataSequencer extends Sequencer {
             outputNode.setPrimaryType(ImageMetadataLexicon.METADATA_NODE);
             return outputNode;
         }
-        else {
-            return outputNode.addNode(ImageMetadataLexicon.METADATA_NODE, ImageMetadataLexicon.METADATA_NODE);
-        }
+        return outputNode.addNode(ImageMetadataLexicon.METADATA_NODE, ImageMetadataLexicon.METADATA_NODE);
     }
 
-    private void setImagePropertiesOnNode( Node node, ImageMetadata metadata ) throws Exception {
+    private void setImagePropertiesOnNode( Node node,
+                                           ImageMetadata metadata ) throws Exception {
         node.setProperty(JcrConstants.JCR_MIMETYPE, metadata.getMimeType());
         // output.setProperty(metadataNode, nameFactory.create(IMAGE_ENCODING), "");
         node.setProperty(ImageMetadataLexicon.FORMAT_NAME, metadata.getFormatName());
@@ -118,11 +123,12 @@ public class ImageMetadataSequencer extends Sequencer {
     }
 
     @Override
-    public void initialize( NamespaceRegistry registry, NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
+    public void initialize( NamespaceRegistry registry,
+                            NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
         try {
             registry.getPrefix(ImageMetadataLexicon.Namespace.URI);
-        } catch (NamespaceException  e) {
-            //not initialized yet
+        } catch (NamespaceException e) {
+            // not initialized yet
             registry.registerNamespace(ImageMetadataLexicon.Namespace.PREFIX, ImageMetadataLexicon.Namespace.URI);
             InputStream imagesCndFile = getClass().getResourceAsStream("images.cnd");
             if (imagesCndFile == null) {

@@ -294,11 +294,28 @@ public class IoUtil {
      */
     public static void write( InputStream input,
                               OutputStream stream ) throws IOException {
+        write(input, stream, 1024);
+    }
+
+    /**
+     * Write the entire contents of the supplied string to the given stream. This method always flushes and closes the stream when
+     * finished.
+     * 
+     * @param input the content to write to the stream; may be null
+     * @param stream the stream to which the content is to be written
+     * @param bufferSize the size of the buffer; must be positive
+     * @throws IOException
+     * @throws IllegalArgumentException if the stream is null
+     */
+    public static void write( InputStream input,
+                              OutputStream stream,
+                              int bufferSize ) throws IOException {
         CheckArg.isNotNull(stream, "destination stream");
+        CheckArg.isPositive(bufferSize, "bufferSize");
         boolean error = false;
         try {
             if (input != null) {
-                byte[] buffer = new byte[1024];
+                byte[] buffer = new byte[bufferSize];
                 try {
                     int numRead = 0;
                     while ((numRead = input.read(buffer)) > -1) {

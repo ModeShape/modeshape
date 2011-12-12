@@ -24,7 +24,6 @@
 package org.modeshape.jcr.value.basic;
 
 import java.io.InputStream;
-import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.util.Calendar;
@@ -179,15 +178,8 @@ public class ObjectValueFactory extends AbstractValueFactory<Object> {
     }
 
     @Override
-    public Object create( InputStream stream,
-                          long approximateLength ) {
-        return getBinaryValueFactory().create(stream, approximateLength);
-    }
-
-    @Override
-    public Object create( Reader reader,
-                          long approximateLength ) {
-        return getBinaryValueFactory().create(reader, approximateLength);
+    public Object create( InputStream stream ) {
+        return getBinaryValueFactory().create(stream);
     }
 
     @Override

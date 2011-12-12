@@ -408,6 +408,7 @@ public class Paths {
                     if (!thisIter.next().equals(thatIter.next())) return false;
                 }
                 assert !thisIter.hasNext();
+                return true;
             }
             return false;
         }

@@ -8,6 +8,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Session;
 import org.infinispan.schematic.document.Changes;
+import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Editor;
 import org.junit.After;
 import org.junit.Before;
@@ -235,12 +236,14 @@ public class JcrEngineTest {
         JcrRepository repository = engine.deploy(config);
         String name = repository.getName();
         assertThat(engine.getRepositoryState(name), is(State.NOT_RUNNING));
-        assertThat(config.getLargeValueSizeInBytes(), is(Default.LARGE_VALUE_SIZE_IN_BYTES));
+        assertThat(config.getBinaryStorage().getMinimumBinarySizeInBytes(), is(Default.MINIMUM_BINARY_SIZE_IN_BYTES));
 
         // Change the configuration ...
-        long newLargeValueSizeInBytes = Default.LARGE_VALUE_SIZE_IN_BYTES * 2;
+        long newLargeValueSizeInBytes = Default.MINIMUM_BINARY_SIZE_IN_BYTES * 2;
         Editor editor = repository.getConfiguration().edit();
-        editor.setNumber(FieldName.LARGE_VALUE_SIZE_IN_BYTES, newLargeValueSizeInBytes);
+        EditableDocument binaryStorage = editor.getOrCreateDocument(FieldName.STORAGE)
+                                               .getOrCreateDocument(FieldName.BINARY_STORAGE);
+        binaryStorage.setNumber(FieldName.MINIMUM_BINARY_SIZE_IN_BYTES, newLargeValueSizeInBytes);
         Changes changes = editor.getChanges();
 
         // Apply the changes to the deployed repository ...
@@ -248,7 +251,7 @@ public class JcrEngineTest {
         assertThat(engine.getRepositoryState(name), is(State.NOT_RUNNING));
 
         RepositoryConfiguration newConfig = engine.getRepository(name).getConfiguration();
-        assertThat(newConfig.getLargeValueSizeInBytes(), is(newLargeValueSizeInBytes));
+        assertThat(newConfig.getBinaryStorage().getMinimumBinarySizeInBytes(), is(newLargeValueSizeInBytes));
     }
 
     @Test
@@ -259,14 +262,16 @@ public class JcrEngineTest {
         assertThat(engine.getRepositoryState(name), is(State.NOT_RUNNING));
         engine.startRepository(name).get(); // blocks
         assertThat(engine.getRepositoryState(name), is(State.RUNNING));
-        long defaultLargeValueSize = Default.LARGE_VALUE_SIZE_IN_BYTES;
-        assertThat(config.getLargeValueSizeInBytes(), is(defaultLargeValueSize));
+        long defaultLargeValueSize = Default.MINIMUM_BINARY_SIZE_IN_BYTES;
+        assertThat(config.getBinaryStorage().getMinimumBinarySizeInBytes(), is(defaultLargeValueSize));
         assertThat(repository.repositoryCache().largeValueSizeInBytes(), is(defaultLargeValueSize));
 
         // Change the configuration. We'll do something simple, like changing the large value size ...
         long newLargeValueSizeInBytes = defaultLargeValueSize * 2L;
         Editor editor = repository.getConfiguration().edit();
-        editor.setNumber(FieldName.LARGE_VALUE_SIZE_IN_BYTES, newLargeValueSizeInBytes);
+        EditableDocument binaryStorage = editor.getOrCreateDocument(FieldName.STORAGE)
+                                               .getOrCreateDocument(FieldName.BINARY_STORAGE);
+        binaryStorage.setNumber(FieldName.MINIMUM_BINARY_SIZE_IN_BYTES, newLargeValueSizeInBytes);
         Changes changes = editor.getChanges();
 
         // Apply the changes to the deployed repository ...
@@ -275,7 +280,7 @@ public class JcrEngineTest {
 
         // Verify the running repository and its configuraiton are using the new value ...
         RepositoryConfiguration newConfig = engine.getRepository(name).getConfiguration();
-        assertThat(newConfig.getLargeValueSizeInBytes(), is(newLargeValueSizeInBytes));
+        assertThat(newConfig.getBinaryStorage().getMinimumBinarySizeInBytes(), is(newLargeValueSizeInBytes));
         assertThat(repository.repositoryCache().largeValueSizeInBytes(), is(newLargeValueSizeInBytes));
     }
 }

@@ -83,7 +83,7 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
         this.nameFactory = context.getValueFactories().getNameFactory();
     }
 
-    public void setLargeValueSize( long largeValueSize ) {
+    public void setMinimumBinarySizeInBytes( long largeValueSize ) {
         assert largeValueSize > -1;
         this.translator.setLargeValueSize(largeValueSize);
     }

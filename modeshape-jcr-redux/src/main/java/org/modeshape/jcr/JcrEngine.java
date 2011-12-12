@@ -115,8 +115,8 @@ public class JcrEngine implements Repositories {
 
             // Add a Cron job that cleans up each repository ...
             cron.scheduleAtFixedRate(new GarbageCollectionTask(),
-                                     RepositoryConfiguration.LOCK_SWEEP_PERIOD_IN_MILLIS,
-                                     RepositoryConfiguration.LOCK_SWEEP_PERIOD_IN_MILLIS,
+                                     RepositoryConfiguration.GARBAGE_COLLECTION_SWEEP_PERIOD,
+                                     RepositoryConfiguration.GARBAGE_COLLECTION_SWEEP_PERIOD,
                                      TimeUnit.MILLISECONDS);
 
             state = State.RUNNING;
@@ -264,6 +264,22 @@ public class JcrEngine implements Repositories {
         final Lock lock = this.lock.readLock();
         try {
             lock.lock();
+            Set<String> names = new HashSet<String>();
+            for (JcrRepository repository : repositories.values()) {
+                names.add(repository.getName());
+            }
+            return names;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    protected Set<String> getRepositoryKeys() {
+        checkRunning();
+
+        final Lock lock = this.lock.readLock();
+        try {
+            lock.lock();
             return new HashSet<String>(repositories.keySet());
         } finally {
             lock.unlock();
@@ -404,10 +420,32 @@ public class JcrEngine implements Repositories {
      */
     public JcrRepository deploy( final RepositoryConfiguration repositoryConfiguration )
         throws ConfigurationException, RepositoryException {
+        return deploy(repositoryConfiguration, null);
+    }
+
+    /**
+     * Deploy a new repository with the given configuration. This method will fail if this engine already contains a repository
+     * with the specified name.
+     * 
+     * @param repositoryConfiguration the configuration for the repository
+     * @param repositoryKey the key by which this repository is known to this engine; may be null if the
+     *        {@link RepositoryConfiguration#getName() repository's name} should be used
+     * @return the deployed repository instance, which must be {@link #startRepository(String) started} before it can be used;
+     *         never null
+     * @throws ConfigurationException if the configuration is not valid
+     * @throws RepositoryException if there is already a deployed repository with the specified name, or if there is a problem
+     *         deploying the repository
+     * @throws IllegalArgumentException if the configuration is null
+     * @see #deploy(RepositoryConfiguration)
+     * @see #update(String, Changes)
+     * @see #undeploy(String)
+     */
+    protected JcrRepository deploy( final RepositoryConfiguration repositoryConfiguration,
+                                    final String repositoryKey ) throws ConfigurationException, RepositoryException {
         CheckArg.isNotNull(repositoryConfiguration, "repositoryConfiguration");
         checkRunning();
 
-        final String repoName = repositoryConfiguration.getName();
+        final String repoName = repositoryKey != null ? repositoryKey : repositoryConfiguration.getName();
         Problems problems = repositoryConfiguration.validate();
         if (problems.hasErrors()) {
             throw new ConfigurationException(problems, JcrI18n.repositoryConfigurationIsNotValid.text(repoName));

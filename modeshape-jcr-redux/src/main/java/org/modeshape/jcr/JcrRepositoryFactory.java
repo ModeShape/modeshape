@@ -27,12 +27,12 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import javax.jcr.Repository;
@@ -105,16 +105,47 @@ public class JcrRepositoryFactory implements RepositoryFactory {
     private static final Logger LOG = Logger.getLogger(JcrRepositoryFactory.class);
 
     /**
-     * A map of configuration file locations to existing repository instances. This map helps ensure that Repositories are not
-     * recreated with every call to {@link #getRepository(Map)}.
+     * The engine that hosts the deployed repository instances.
      */
-    private static final Map<String, JcrRepository> REPOSITORIES = new HashMap<String, JcrRepository>();
+    private static final JcrEngine ENGINE = new JcrEngine();
 
     /** The name of the key for the ModeShape JCR URL in the parameter map */
     public static final String URL = "org.modeshape.jcr.URL";
 
     /** The name of the URL parameter that specifies the repository name. */
     public static final String REPOSITORY_NAME_PARAM = "repositoryName";
+
+    static {
+        ENGINE.start();
+    }
+
+    /**
+     * Shutdown this engine to stop all repositories created by calls to {@link #getRepository(Map)}, terminate any ongoing
+     * background operations (such as sequencing), and reclaim any resources that were acquired by the repositories. This method
+     * may be called multiple times, but only the first time has an effect.
+     * <p>
+     * Calling this static method is identical to calling the {@link #shutdown()} method on any JcrRepositoryFactory instance, and
+     * is provided for convenience.
+     * </p>
+     * <p>
+     * Invoking this method does not preclude creating new {@link Repository} instances with future calls to
+     * {@link #getRepository(Map)}. Any caller using this method as part of an application shutdown process should take care to
+     * cease invocations of {@link #getRepository(Map)} prior to invoking this method.
+     * </p>
+     * <p>
+     * This method returns immediately, even before the repositories have been shut down. However, the caller can simply call the
+     * {@link Future#get() get()} method on the returned {@link Future} to block until all repositories have shut down. Note that
+     * the {@link Future#get(long, TimeUnit)} method can be called to block for a maximum amount of time.
+     * </p>
+     * 
+     * @return a future that allows the caller to block until the engine is shutdown; any error during shutdown will be thrown
+     *         when {@link Future#get() getting} the repository from the future, where the exception is wrapped in a
+     *         {@link ExecutionException}. The value returned from the future will always be true if the engine shutdown (or was
+     *         not running), or false if the engine is still running.
+     */
+    public static Future<Boolean> shutdownAll() {
+        return ENGINE.shutdown();
+    }
 
     /**
      * Returns a reference to the appropriate repository for the given parameter map, if one exists. Although the
@@ -192,9 +223,62 @@ public class JcrRepositoryFactory implements RepositoryFactory {
      */
     private JcrRepository getRepositoryFromConfigFile( URL configUrl ) {
         assert configUrl != null;
-        RepositoryConfiguration config = null;
 
         try {
+            if ("file".equals(configUrl.getProtocol())) {
+                try {
+                    // Strip any query parameters from the incoming file URLs by creating a new URL with the same protocol, host,
+                    // and
+                    // port,
+                    // but using the URL path as returned by URL#getPath() instead of the URL path and query parameters as
+                    // returned by
+                    // URL#getFile().
+                    //
+                    // We need to strip for the file protocol only because an URL with a file protocol and query parameters has
+                    // the
+                    // query parameters appended to the file name (e.g., "file:/tmp/foo/bar?repositoryName=foo" turns into an
+                    // attempt
+                    // to access the "/tmp/foo/bar?repositoryName=foo" file). Other protocol handlers like http handle this
+                    // better.
+                    configUrl = new URL(configUrl.getProtocol(), configUrl.getHost(), configUrl.getPort(), configUrl.getPath());
+                } catch (MalformedURLException mfe) {
+                    // This shouldn't be possible, since we're creating a new URL from an existing, valid URL
+                    throw new IllegalStateException(mfe);
+                }
+            }
+
+            // Make sure the engine is started ...
+            switch (ENGINE.getState()) {
+                case NOT_RUNNING:
+                    ENGINE.start();
+                    break;
+                case STOPPING:
+                    // Wait until it's shutdown ...
+                    try {
+                        ENGINE.shutdown().get(10, TimeUnit.SECONDS);
+                    } catch (Exception e) {
+                        // ignore and let if fail ...
+                    }
+                    break;
+                case RUNNING:
+                case STARTING:
+                    // do nothing ...
+            }
+
+            // Look for an existing repository with the same URL ...
+            String configKey = configUrl.toString();
+            if (ENGINE.getRepositoryKeys().contains(configKey)) {
+                try {
+                    return ENGINE.getRepository(configKey);
+                } catch (NoSuchRepositoryException e) {
+                    // Must have been removed since we checked, so just continue on to redeploy it ...
+                }
+            }
+
+            // Otherwise, we need to deploy and start a new repository ...
+
+            // Now try reading the configuration ...
+            RepositoryConfiguration config = null;
             if ("file".equals(configUrl.getProtocol())) {
                 // Strip any query parameters from the incoming file URLs by creating a new URL with the same protocol, host, and
                 // port,
@@ -205,7 +289,6 @@ public class JcrRepositoryFactory implements RepositoryFactory {
                 // query parameters appended to the file name (e.g., "file:/tmp/foo/bar?repositoryName=foo" turns into an attempt
                 // to access the "/tmp/foo/bar?repositoryName=foo" file). Other protocol handlers like http handle this better.
                 try {
-                    configUrl = new URL(configUrl.getProtocol(), configUrl.getHost(), configUrl.getPort(), configUrl.getPath());
                     config = RepositoryConfiguration.read(configUrl);
                 } catch (ParsingException e) {
                     // Try reading from the classpath ...
@@ -217,9 +300,6 @@ public class JcrRepositoryFactory implements RepositoryFactory {
                         // This didn't work, so throw the original exception
                         throw e;
                     }
-                } catch (MalformedURLException mfe) {
-                    // This shouldn't be possible, since we're creating a new URL from an existing, valid URL
-                    throw new IllegalStateException(mfe);
                 }
             } else if ("classpath".equals(configUrl.getProtocol())) {
                 // Look for the configuration file on the classpath ...
@@ -229,17 +309,14 @@ public class JcrRepositoryFactory implements RepositoryFactory {
                 // Just try resolving the URL ...
                 config = RepositoryConfiguration.read(configUrl);
             }
-            String configKey = configUrl.toString();
 
-            synchronized (REPOSITORIES) {
-                JcrRepository repository = REPOSITORIES.get(configKey);
-                if (repository != null) return repository;
-
-                repository = new JcrRepository(config);
-                repository.start();
-                REPOSITORIES.put(configKey, repository);
-                return repository;
-            }
+            // Now deploy the new repository, using the URL as the key ...
+            JcrRepository repository = ENGINE.deploy(config, configKey);
+            repository.start();
+            return repository;
+        } catch (RepositoryException err) {
+            LOG.debug(err, "Unable to start repository for configuration file at '{0}': {1}", configUrl, err.getMessage());
+            return null;
         } catch (IOException err) {
             LOG.debug(err, "Unable to start repository for configuration file at '{0}': {1}", configUrl, err.getMessage());
             return null;
@@ -356,34 +433,21 @@ public class JcrRepositoryFactory implements RepositoryFactory {
     }
 
     @Override
-    public void shutdown() {
-        synchronized (REPOSITORIES) {
-            for (JcrRepository repository : REPOSITORIES.values()) {
-                repository.shutdown();
-            }
-
-            REPOSITORIES.clear();
-        }
+    public Future<Boolean> shutdown() {
+        return ENGINE.shutdown();
     }
 
     @Override
     public boolean shutdown( long timeout,
                              TimeUnit unit ) throws InterruptedException {
-        synchronized (REPOSITORIES) {
-            for (JcrRepository repository : REPOSITORIES.values()) {
-                try {
-                    repository.shutdown().get(timeout, unit);
-                } catch (ExecutionException e) {
-                    LOG.error(e, JcrI18n.errorShuttingDownJcrRepositoryFactory);
-                    return false;
-                } catch (TimeoutException e) {
-                    return false;
-                }
-            }
-
-            REPOSITORIES.clear();
+        try {
+            return ENGINE.shutdown().get(timeout, unit);
+        } catch (ExecutionException e) {
+            LOG.error(e, JcrI18n.errorShuttingDownJcrRepositoryFactory);
+            return false;
+        } catch (TimeoutException e) {
+            return false;
         }
-        return true;
     }
 
     /**

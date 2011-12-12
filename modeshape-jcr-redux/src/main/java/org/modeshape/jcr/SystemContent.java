@@ -866,7 +866,7 @@ public class SystemContent {
         // Create a new expiration date ...
         DateTimeFactory dates = context().getValueFactories().getDateFactory();
         DateTime now = dates.create();
-        DateTime newExpiration = dates.create(now, RepositoryConfiguration.LOCK_SWEEP_PERIOD_IN_MILLIS);
+        DateTime newExpiration = dates.create(now, RepositoryConfiguration.GARBAGE_COLLECTION_SWEEP_PERIOD);
         DateTime expiry = dates.create(now, -RepositoryConfiguration.LOCK_EXPIRY_AGE_IN_MILLIS);
 
         // Iterate over the locks ...

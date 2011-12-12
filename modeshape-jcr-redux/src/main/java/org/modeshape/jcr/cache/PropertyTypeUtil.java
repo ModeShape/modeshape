@@ -38,20 +38,21 @@ public class PropertyTypeUtil {
     /**
      * Compute the JCR {@link PropertyType} for the given ModeShape {@link org.modeshape.jcr.value.PropertyType}.
      * <p>
-     * See ModeShape-293 for complete discussion on why this method works the way it does. The best option appears to be basing
-     * the PropertyType on the first value, since that should be compatible with the PropertyType that was used when the values
-     * were set on the property in the first place.
+     * See MODE-328 for complete discussion on why this method works the way it does. The best option appears to be basing the
+     * PropertyType on the first value, since that should be compatible with the PropertyType that was used when the values were
+     * set on the property in the first place.
      * </p>
      * 
      * @param property the ModeShape property for which the {@link PropertyType} is to be determined; never null
      * @return the JCR property type; always a valid value and never {@link PropertyType#UNDEFINED}.
      */
     public static final int jcrPropertyTypeFor( org.modeshape.jcr.value.Property property ) {
-        Object value = property.getFirstValue();
-        if (value == null) return PropertyType.UNDEFINED;
-
-        // Get the ModeShape property type for this ...
-        return jcrPropertyTypeFor(org.modeshape.jcr.value.PropertyType.discoverType(value));
+        for (Object value : property) {
+            if (value != null) {
+                return jcrPropertyTypeFor(org.modeshape.jcr.value.PropertyType.discoverType(value));
+            }
+        }
+        return PropertyType.STRING;
     }
 
     /**
