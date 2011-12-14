@@ -25,6 +25,7 @@
 		<module>modeshape-schematic</module>
 		<module>modeshape-jcr-redux</module>
 
+        <module>sequencers/modeshape-sequencer-images</module>
 	</modules>
 	<properties>
 		<rootDir>${project.basedir}</rootDir>
@@ -51,8 +52,7 @@
     		<module>modeshape-jcr</module>
     		<!-- Order of extensions is not important -->
     		<module>extensions/modeshape-classloader-maven</module>
-    		<module>extensions/modeshape-sequencer-images</module>
-    		<module>extensions/modeshape-sequencer-mp3</module>
+    	    <module>extensions/modeshape-sequencer-mp3</module>
     		<module>extensions/modeshape-sequencer-jbpm-jpdl</module>
     		<module>extensions/modeshape-sequencer-cnd</module>
     		<module>extensions/modeshape-sequencer-java</module>

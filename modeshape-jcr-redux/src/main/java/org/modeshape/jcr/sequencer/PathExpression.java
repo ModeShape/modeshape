@@ -186,7 +186,7 @@ public class PathExpression implements Serializable {
 
     /**
      * The regular expression that is used to extract the workspace name and path from an path expression (or a real path). The
-     * regular expression is <code>(([^:/]*):)?(.*)</code>. Group 1 will contain the workspace name and group 3 the path.
+     * regular expression is <code>(([^:/]*):)?(.*)</code>. Group 2 will contain the workspace name and group 3 the path.
      */
     private static final String WORKSPACE_AND_PATH_PATTERN_STRING = "(([^:/]*):)?(.*)";
     private static final Pattern WORKSPACE_AND_PATH_PATTERN = Pattern.compile(WORKSPACE_AND_PATH_PATTERN_STRING);
@@ -599,7 +599,7 @@ public class PathExpression implements Serializable {
             // No match ...
             return null;
         }
-        String workspaceName = pathMatcher.group(1);
+        String workspaceName = pathMatcher.group(2);
         String absolutePath = pathMatcher.group(3);
         if (workspaceName == null || workspaceName.length() == 0 || workspaceName.trim().length() == 0) workspaceName = null;
         return new WorkspacePath(workspaceName, absolutePath);

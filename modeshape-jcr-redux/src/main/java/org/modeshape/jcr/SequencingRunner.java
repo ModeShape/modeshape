@@ -34,6 +34,7 @@ import org.modeshape.common.util.Logger;
 import org.modeshape.jcr.JcrRepository.RunningState;
 import org.modeshape.jcr.Sequencers.SequencingContext;
 import org.modeshape.jcr.Sequencers.SequencingWorkItem;
+import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.modeshape.jcr.value.DateTime;
@@ -56,8 +57,7 @@ final class SequencingRunner implements Runnable {
         try {
             // Create the required session(s) ...
             inputSession = state.loginInternalSession(work.getInputWorkspaceName());
-            if (work.getOutputWorkspaceName() != null) {
-                assert !work.getOutputWorkspaceName().equals(work.getInputWorkspaceName());
+            if (work.getOutputWorkspaceName() != null && !work.getOutputWorkspaceName().equals(work.getInputWorkspaceName())) {
                 outputSession = state.loginInternalSession(work.getOutputWorkspaceName());
             } else {
                 outputSession = inputSession;
@@ -86,7 +86,7 @@ final class SequencingRunner implements Runnable {
             String primaryType = null;
             if (work.getSelectedPath().equals(work.getOutputPath())) {
                 // The output is to go directly under the sequenced node ...
-                outputNode = selectedNode;
+                outputNode = selectedNode.getName().equals(JcrConstants.JCR_CONTENT) ? selectedNode.getParent() : selectedNode;
                 primaryType = selectedNode.getPrimaryNodeType().getName();
             } else {
                 // Find the parent of the output if it exists, or create the node(s) along the path if not ...
@@ -105,7 +105,7 @@ final class SequencingRunner implements Runnable {
                 removeExistingOutputNodes(parentOfOutput, outputNodeName, work.getSelectedPath());
 
                 // Create the output node ...
-                outputNode = parentOfOutput.addNode(outputNodeName, "nt:unstructured");
+                outputNode = parentOfOutput.addNode(outputNodeName, JcrConstants.NT_UNSTRUCTURED);
 
                 // and make sure the output node has the 'mode:derived' mixin ...
                 outputNode.addMixin(DERIVED_NODE_TYPE_NAME);
@@ -163,7 +163,7 @@ final class SequencingRunner implements Runnable {
      */
     protected final String computeOutputNodeName( Node selectedNode ) throws RepositoryException {
         String selectedNodeName = selectedNode.getName();
-        if (selectedNodeName.equals("jcr:content")) {
+        if (selectedNodeName.equals(JcrConstants.JCR_CONTENT)) {
             try {
                 return selectedNode.getParent().getName();
             } catch (ItemNotFoundException e) {
