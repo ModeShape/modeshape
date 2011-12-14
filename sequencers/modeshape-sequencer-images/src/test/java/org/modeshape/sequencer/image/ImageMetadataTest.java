@@ -26,15 +26,17 @@ package org.modeshape.sequencer.image;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.number.IsCloseTo.closeTo;
-import static org.junit.Assert.assertThat;
-import java.io.InputStream;
-import org.modeshape.sequencer.image.ImageMetadata;
 import org.junit.After;
+import static org.junit.Assert.assertThat;
 import org.junit.Before;
 import org.junit.Test;
+import java.io.InputStream;
 
 /**
+ * Unit test for {@link ImageMetadata}.
+ *
  * @author Randall Hauch
+ * @author Horia Chiorean
  */
 public class ImageMetadataTest {
 
@@ -158,5 +160,4 @@ public class ImageMetadataTest {
         // Process the image ...
         assertThat(image.check(), is(false));
     }
-
 }

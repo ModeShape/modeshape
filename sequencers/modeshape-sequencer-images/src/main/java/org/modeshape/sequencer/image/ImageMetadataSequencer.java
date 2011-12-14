@@ -23,13 +23,15 @@
  */
 package org.modeshape.sequencer.image;
 
+import javax.jcr.*;
+import org.modeshape.common.util.CheckArg;
+import org.modeshape.jcr.api.JcrConstants;
+import org.modeshape.jcr.api.nodetype.NodeTypeManager;
+import org.modeshape.jcr.api.sequencer.Sequencer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.io.IOException;
 import java.io.InputStream;
-import org.modeshape.graph.JcrLexicon;
-import org.modeshape.graph.property.Path;
-import org.modeshape.graph.property.PathFactory;
-import org.modeshape.graph.sequencer.SequencerOutput;
-import org.modeshape.graph.sequencer.StreamSequencer;
-import org.modeshape.graph.sequencer.StreamSequencerContext;
 
 /**
  * A sequencer that processes the binary content of an image file, extracts the metadata for the image, and then writes that image
@@ -64,48 +66,69 @@ import org.modeshape.graph.sequencer.StreamSequencerContext;
  * "IPTC") as the name of a child node, with the EXIF tags values stored as either properties or child nodes.
  * </p>
  */
-public class ImageMetadataSequencer implements StreamSequencer {
+public class ImageMetadataSequencer extends Sequencer {
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see StreamSequencer#sequence(InputStream, SequencerOutput, StreamSequencerContext)
-     */
+    private static final Logger LOGGER = LoggerFactory.getLogger(ImageMetadataSequencer.class);
+
     @Override
-    public void sequence( InputStream stream,
-                          SequencerOutput output,
-                          StreamSequencerContext context ) {
+    public boolean execute( Property inputProperty, Node outputNode, Context context ) throws Exception {
+        Binary binaryValue = inputProperty.getBinary();
+        CheckArg.isNotNull(binaryValue, "binary");
 
         ImageMetadata metadata = new ImageMetadata();
-        metadata.setInput(stream);
+        metadata.setInput(binaryValue.getStream());
         metadata.setDetermineImageNumber(true);
         metadata.setCollectComments(true);
 
+
         // Process the image stream and extract the metadata ...
         if (!metadata.check()) {
-            metadata = null;
+            LOGGER.info("Unknown format detected. Skipping sequencing");
+            return false;
         }
+        Node imageNode = getImageMetadataNode(outputNode);
+        setImagePropertiesOnNode(imageNode, metadata);
+        return true;
+    }
 
-        // Generate the output graph if we found useful metadata ...
-        if (metadata != null) {
-            PathFactory pathFactory = context.getValueFactories().getPathFactory();
-            Path metadataNode = pathFactory.createRelativePath(ImageMetadataLexicon.METADATA_NODE);
+    private Node getImageMetadataNode( Node outputNode ) throws RepositoryException {
+        if (outputNode.isNew()) {
+            outputNode.setPrimaryType(ImageMetadataLexicon.METADATA_NODE);
+            return outputNode;
+        }
+        else {
+            return outputNode.addNode(ImageMetadataLexicon.METADATA_NODE, ImageMetadataLexicon.METADATA_NODE);
+        }
+    }
 
-            // Place the image metadata into the output map ...
-            output.setProperty(metadataNode, JcrLexicon.PRIMARY_TYPE, "image:metadata");
-            // output.psetProperty(metadataNode, nameFactory.create(IMAGE_MIXINS), "");
-            output.setProperty(metadataNode, JcrLexicon.MIMETYPE, metadata.getMimeType());
-            // output.setProperty(metadataNode, nameFactory.create(IMAGE_ENCODING), "");
-            output.setProperty(metadataNode, ImageMetadataLexicon.FORMAT_NAME, metadata.getFormatName());
-            output.setProperty(metadataNode, ImageMetadataLexicon.WIDTH, metadata.getWidth());
-            output.setProperty(metadataNode, ImageMetadataLexicon.HEIGHT, metadata.getHeight());
-            output.setProperty(metadataNode, ImageMetadataLexicon.BITS_PER_PIXEL, metadata.getBitsPerPixel());
-            output.setProperty(metadataNode, ImageMetadataLexicon.PROGRESSIVE, metadata.isProgressive());
-            output.setProperty(metadataNode, ImageMetadataLexicon.NUMBER_OF_IMAGES, metadata.getNumberOfImages());
-            output.setProperty(metadataNode, ImageMetadataLexicon.PHYSICAL_WIDTH_DPI, metadata.getPhysicalWidthDpi());
-            output.setProperty(metadataNode, ImageMetadataLexicon.PHYSICAL_HEIGHT_DPI, metadata.getPhysicalHeightDpi());
-            output.setProperty(metadataNode, ImageMetadataLexicon.PHYSICAL_WIDTH_INCHES, metadata.getPhysicalWidthInch());
-            output.setProperty(metadataNode, ImageMetadataLexicon.PHYSICAL_HEIGHT_INCHES, metadata.getPhysicalHeightInch());
+    private void setImagePropertiesOnNode( Node node, ImageMetadata metadata ) throws Exception {
+        node.setProperty(JcrConstants.JCR_MIMETYPE, metadata.getMimeType());
+        // output.setProperty(metadataNode, nameFactory.create(IMAGE_ENCODING), "");
+        node.setProperty(ImageMetadataLexicon.FORMAT_NAME, metadata.getFormatName());
+        node.setProperty(ImageMetadataLexicon.WIDTH, metadata.getWidth());
+        node.setProperty(ImageMetadataLexicon.HEIGHT, metadata.getHeight());
+        node.setProperty(ImageMetadataLexicon.BITS_PER_PIXEL, metadata.getBitsPerPixel());
+        node.setProperty(ImageMetadataLexicon.PROGRESSIVE, metadata.isProgressive());
+        node.setProperty(ImageMetadataLexicon.NUMBER_OF_IMAGES, metadata.getNumberOfImages());
+        node.setProperty(ImageMetadataLexicon.PHYSICAL_WIDTH_DPI, metadata.getPhysicalWidthDpi());
+        node.setProperty(ImageMetadataLexicon.PHYSICAL_HEIGHT_DPI, metadata.getPhysicalHeightDpi());
+        node.setProperty(ImageMetadataLexicon.PHYSICAL_WIDTH_INCHES, metadata.getPhysicalWidthInch());
+        node.setProperty(ImageMetadataLexicon.PHYSICAL_HEIGHT_INCHES, metadata.getPhysicalHeightInch());
+
+    }
+
+    @Override
+    public void initialize( NamespaceRegistry registry, NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
+        try {
+            registry.getPrefix(ImageMetadataLexicon.Namespace.URI);
+        } catch (NamespaceException  e) {
+            //not initialized yet
+            registry.registerNamespace(ImageMetadataLexicon.Namespace.PREFIX, ImageMetadataLexicon.Namespace.URI);
+            InputStream imagesCndFile = getClass().getResourceAsStream("images.cnd");
+            if (imagesCndFile == null) {
+                throw new IllegalStateException("Cannot locate image.cnd file");
+            }
+            nodeTypeManager.registerNodeTypes(imagesCndFile, false);
         }
     }
 }

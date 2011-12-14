@@ -23,13 +23,15 @@
  */
 package org.modeshape.jcr.api.sequencer;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.Property;
-import javax.jcr.nodetype.NodeTypeManager;
+import javax.jcr.RepositoryException;
+import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 
 /**
  * A component that reads recently-changed content (often uploaded files) and extracts additional information from the content.
@@ -119,9 +121,11 @@ public abstract class Sequencer {
      * 
      * @param registry the namespace registry that can be used to register custom namespaces; never null
      * @param nodeTypeManager the node type manager that can be used to register custom node types; never null
+     * @throws RepositoryException if operations on the {@link NamespaceRegistry} or {@link NodeTypeManager} fail
+     * @throws IOException if any stream based operations fail (like importing cnd files)
      */
     public void initialize( NamespaceRegistry registry,
-                            NodeTypeManager nodeTypeManager ) {
+                            NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
     }
 
     /**

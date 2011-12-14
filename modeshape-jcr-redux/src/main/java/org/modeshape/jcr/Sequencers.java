@@ -179,10 +179,14 @@ public class Sequencers implements ChangeSetListener {
             NamespaceRegistry registry = session.getWorkspace().getNamespaceRegistry();
             NodeTypeManager nodeTypeManager = session.getWorkspace().getNodeTypeManager();
 
+            if (! (nodeTypeManager instanceof org.modeshape.jcr.api.nodetype.NodeTypeManager)) {
+                throw new IllegalStateException("Invalid node type manager (expected modeshape NodeTypeManager): " + nodeTypeManager.getClass().getName());
+            }
+
             // Initialize each sequencer using the supplied session ...
             for (Sequencer sequencer : sequencersByName.values()) {
                 try {
-                    sequencer.initialize(registry, nodeTypeManager);
+                    sequencer.initialize(registry, (org.modeshape.jcr.api.nodetype.NodeTypeManager)nodeTypeManager);
                 } catch (Throwable t) {
                     logger.error(JcrI18n.unableToInitializeSequencer, sequencer.getName(), repository.name(), t.getMessage());
                 }
