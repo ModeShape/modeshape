@@ -26,6 +26,7 @@ package org.modeshape.jcr.cache.change;
 import java.util.Map;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
@@ -99,6 +100,10 @@ public final class NoOpChanges implements Changes {
                                  Path nodePath,
                                  Property newProperty,
                                  Property oldProperty ) {
+    }
+
+    @Override
+    public void binaryValueNoLongerUsed( BinaryKey key ) {
     }
 
 }

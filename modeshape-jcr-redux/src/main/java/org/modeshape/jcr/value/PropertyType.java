@@ -130,6 +130,7 @@ public enum PropertyType {
             types.add(type);
             byLowerCaseName.put(type.getName().toLowerCase(), type);
         }
+        byLowerCaseName.put("undefined", PropertyType.OBJECT);
         ALL_PROPERTY_TYPES = Collections.unmodifiableList(types);
         PROPERTY_TYPE_BY_LOWERCASE_NAME = Collections.unmodifiableMap(byLowerCaseName);
     }

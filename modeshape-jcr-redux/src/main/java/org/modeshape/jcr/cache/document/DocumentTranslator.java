@@ -25,7 +25,6 @@ package org.modeshape.jcr.cache.document;
 
 import java.math.BigDecimal;
 import java.net.URI;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -46,14 +45,10 @@ import org.infinispan.schematic.document.Document.Field;
 import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Null;
-import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.text.NoOpEncoder;
 import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.text.TextEncoder;
-import org.modeshape.common.util.SecureHash;
-import org.modeshape.common.util.SecureHash.Algorithm;
-import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.JcrMixLexicon;
 import org.modeshape.jcr.cache.CachedNode.ReferenceType;
@@ -66,6 +61,7 @@ import org.modeshape.jcr.cache.document.SessionNode.Insertions;
 import org.modeshape.jcr.cache.document.SessionNode.ReferrerChanges;
 import org.modeshape.jcr.core.ExecutionContext;
 import org.modeshape.jcr.value.BinaryFactory;
+import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.DateTime;
 import org.modeshape.jcr.value.DateTimeFactory;
 import org.modeshape.jcr.value.Name;
@@ -80,6 +76,8 @@ import org.modeshape.jcr.value.ReferenceFactory;
 import org.modeshape.jcr.value.UuidFactory;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFactory;
+import org.modeshape.jcr.value.binary.BinaryStoreException;
+import org.modeshape.jcr.value.binary.InMemoryBinaryValue;
 
 /**
  * A utility class that encapsulates all the logic for reading from and writing to {@link Document} instances.
@@ -101,9 +99,10 @@ public class DocumentTranslator {
     public static final String REFERRERS = "referrers";
     public static final String WEAK = "weak";
     public static final String STRONG = "strong";
+    public static final String REFERENCE_COUNT = "refCount";
 
     private final SchematicDb database;
-    private final AtomicLong largeValueSize = new AtomicLong();
+    private final AtomicLong largeStringSize = new AtomicLong();
     private final ExecutionContext context;
     private final PropertyFactory propertyFactory;
     private final ValueFactories factories;
@@ -124,9 +123,9 @@ public class DocumentTranslator {
 
     public DocumentTranslator( ExecutionContext context,
                                SchematicDb database,
-                               long largeValueSize ) {
+                               long largeStringSize ) {
         this.database = database;
-        this.largeValueSize.set(largeValueSize);
+        this.largeStringSize.set(largeStringSize);
         this.context = context;
         this.propertyFactory = this.context.getPropertyFactory();
         this.factories = this.context.getValueFactories();
@@ -142,12 +141,12 @@ public class DocumentTranslator {
         this.weakrefs = this.factories.getWeakReferenceFactory();
         this.uuids = this.factories.getUuidFactory();
         this.strings = this.factories.getStringFactory();
-        assert this.largeValueSize.get() >= 0;
+        assert this.largeStringSize.get() >= 0;
     }
 
     void setLargeValueSize( long largeValueSize ) {
         assert largeValueSize > -1;
-        this.largeValueSize.set(largeValueSize);
+        this.largeStringSize.set(largeValueSize);
     }
 
     /**
@@ -327,7 +326,8 @@ public class DocumentTranslator {
     }
 
     public void setProperty( EditableDocument document,
-                             Property property ) {
+                             Property property,
+                             Set<BinaryKey> unusedBinaryKeys ) {
         // Get or create the properties container ...
         EditableDocument properties = document.getDocument(PROPERTIES);
         if (properties == null) {
@@ -342,25 +342,31 @@ public class DocumentTranslator {
             urlProps = properties.setDocument(namespaceUri);
         }
 
-        // Now set the property ...
+        // Get the old value ...
         String localName = propertyName.getLocalName();
+        Object oldValue = urlProps.get(localName);
+        decrementBinaryReferenceCount(oldValue, unusedBinaryKeys);
+
+        // Now set the property ...
         if (property.isEmpty()) {
             urlProps.setArray(localName);
         } else if (property.isMultiple()) {
             EditableArray values = Schematic.newArray(property.size());
             for (Object v : property) {
-                values.add(valueToDocument(v));
+                values.add(valueToDocument(v, unusedBinaryKeys));
             }
             urlProps.setArray(localName, values);
         } else {
             assert property.isSingle();
-            Object value = valueToDocument(property.getFirstValue());
-            if (value != null) urlProps.set(localName, value);
+            Object value = valueToDocument(property.getFirstValue(), unusedBinaryKeys);
+            if (value == null) urlProps.remove(localName);
+            else urlProps.set(localName, value);
         }
     }
 
     public Property removeProperty( EditableDocument document,
-                                    Name propertyName ) {
+                                    Name propertyName,
+                                    Set<BinaryKey> unusedBinaryKeys ) {
         // Get the properties container if it exists ...
         EditableDocument properties = document.getDocument(PROPERTIES);
         if (properties == null) {
@@ -380,6 +386,9 @@ public class DocumentTranslator {
         String localName = propertyName.getLocalName();
         Object fieldValue = urlProps.remove(localName);
 
+        // We're removing a reference to a binary value, and we need to decrement the reference count ...
+        decrementBinaryReferenceCount(fieldValue, unusedBinaryKeys);
+
         // Now remove the namespace if empty ...
         if (urlProps.isEmpty()) {
             properties.remove(namespaceUri);
@@ -390,7 +399,8 @@ public class DocumentTranslator {
     public void addPropertyValues( EditableDocument document,
                                    Name propertyName,
                                    boolean isMultiple,
-                                   Collection<?> values ) {
+                                   Collection<?> values,
+                                   Set<BinaryKey> unusedBinaryKeys ) {
         assert values != null;
         int numValues = values.size();
         if (numValues == 0) return;
@@ -416,23 +426,29 @@ public class DocumentTranslator {
             if (isMultiple || numValues > 1) {
                 EditableArray array = Schematic.newArray(numValues);
                 for (Object value : values) {
-                    array.addValue(valueToDocument(value));
+                    array.addValue(valueToDocument(value, unusedBinaryKeys));
                 }
                 urlProps.setArray(localName, array);
             } else {
-                urlProps.set(localName, valueToDocument(values.iterator().next()));
+                urlProps.set(localName, valueToDocument(values.iterator().next(), unusedBinaryKeys));
             }
         } else if (propValue instanceof List<?>) {
+            // Decrement the reference count of any binary references ...
+            decrementBinaryReferenceCount(propValue, unusedBinaryKeys);
+
             // There's an existing property with multiple values ...
             EditableArray array = urlProps.getArray(localName);
             for (Object value : values) {
-                value = valueToDocument(value);
+                value = valueToDocument(value, unusedBinaryKeys);
                 array.addValueIfAbsent(value);
             }
         } else {
+            // Decrement the reference count of any binary references ...
+            decrementBinaryReferenceCount(propValue, unusedBinaryKeys);
+
             // There's just a single value ...
             if (numValues == 1) {
-                Object value = valueToDocument(values.iterator().next());
+                Object value = valueToDocument(values.iterator().next(), unusedBinaryKeys);
                 if (!value.equals(propValue)) {
                     // But the existing value is different, so we have to change to an array ...
                     EditableArray array = Schematic.newArray(value, propValue);
@@ -441,7 +457,7 @@ public class DocumentTranslator {
             } else {
                 EditableArray array = Schematic.newArray(numValues);
                 for (Object value : values) {
-                    value = valueToDocument(value);
+                    value = valueToDocument(value, unusedBinaryKeys);
                     if (!value.equals(propValue)) {
                         array.addValue(value);
                     }
@@ -454,7 +470,8 @@ public class DocumentTranslator {
 
     public void removePropertyValues( EditableDocument document,
                                       Name propertyName,
-                                      Collection<?> values ) {
+                                      Collection<?> values,
+                                      Set<BinaryKey> unusedBinaryKeys ) {
         assert values != null;
         int numValues = values.size();
         if (numValues == 0) return;
@@ -481,13 +498,13 @@ public class DocumentTranslator {
             // There's an existing property with multiple values ...
             EditableArray array = urlProps.getArray(localName);
             for (Object value : values) {
-                value = valueToDocument(value);
+                value = valueToDocument(value, unusedBinaryKeys);
                 array.remove(value);
             }
         } else if (propValue != null) {
             // There's just a single value ...
             for (Object value : values) {
-                value = valueToDocument(value);
+                value = valueToDocument(value, unusedBinaryKeys);
                 if (value.equals(propValue)) {
                     // And the value matches, so remove the field ...
                     urlProps.remove(localName);
@@ -789,7 +806,7 @@ public class DocumentTranslator {
 
     public EditableDocument fromChildReference( ChildReference ref ) {
         // We don't write the
-        return Schematic.newDocument(KEY, valueToDocument(ref.getKey()), NAME, strings.create(ref.getName()));
+        return Schematic.newDocument(KEY, valueToDocument(ref.getKey(), null), NAME, strings.create(ref.getName()));
     }
 
     public Set<NodeKey> getReferrers( Document document,
@@ -870,20 +887,18 @@ public class DocumentTranslator {
         }
     }
 
-    protected Object valueToDocument( Object value ) {
+    protected Object valueToDocument( Object value,
+                                      Set<BinaryKey> unusedBinaryKeys ) {
         if (value == null) return null;
         if (value instanceof String) {
             String valueStr = (String)value;
-            if (valueStr.length() >= this.largeValueSize.get()) {
-                // This is a large value ...
-                String sha1 = sha1(valueStr);
-                Document metadata = Schematic.newDocument(SHA1, sha1);
-                Document content = Schematic.newDocument(LARGE_VALUE, valueStr);
-                database.putIfAbsent(sha1, content, metadata);
-                Document ref = Schematic.newDocument("$sha1", sha1);
-                return ref;
+            if (valueStr.length() < this.largeStringSize.get()) {
+                // It's just a small string ...
+                return value;
             }
-            return value;
+            // Otherwise, this string is larger than our threshold, and we should treat it as a binary value ...
+            value = binaries.create(valueStr);
+            // and just continue, where the value will be processed below ...
         }
         if (value instanceof NodeKey) {
             return ((NodeKey)value).toString();
@@ -933,32 +948,91 @@ public class DocumentTranslator {
         }
         if (value instanceof org.modeshape.jcr.value.Binary) {
             org.modeshape.jcr.value.Binary binary = (org.modeshape.jcr.value.Binary)value;
-            if (binary.getSize() >= this.largeValueSize.get()) {
-                // This is a large value ...
-                String sha1 = sha1(binary.getHash());
-                Document metadata = Schematic.newDocument(SHA1, sha1);
-                Binary content = new Binary(binary.getBytes());
-                database.putIfAbsent(sha1, content, metadata);
-                Document ref = Schematic.newDocument("$sha1", sha1);
-                return ref;
+            if (binary instanceof InMemoryBinaryValue) {
+                return new Binary(((InMemoryBinaryValue)binary).getBytes());
             }
-            return new Binary(binary.getBytes());
+            // This is a large value ...
+            String sha1 = binary.getHexHash();
+            long size = binary.getSize();
+            Document ref = Schematic.newDocument("$sha1", sha1, "$len", size);
+
+            // Find the document metadata and increment the usage count ...
+            incrementBinaryReferenceCount(binary.getKey(), unusedBinaryKeys);
+
+            // Now return the sha-1 reference ...
+            return ref;
         }
         assert false : "Unexpected property value \"" + value + "\" of type " + value.getClass().getSimpleName();
         return null;
     }
 
-    private String sha1( byte[] hash ) {
-        return StringUtil.getHexString(hash);
+    protected final String keyForBinaryReferenceDocument( String sha1 ) {
+        return sha1 + "-ref";
     }
 
-    private String sha1( String value ) {
-        try {
-            byte[] hash = SecureHash.getHash(Algorithm.SHA_1, value.getBytes());
-            return sha1(hash);
-        } catch (NoSuchAlgorithmException e) {
-            throw new SystemFailureException(e);
+    /**
+     * Increment the reference count for the stored binary value with the supplied SHA-1 hash.
+     * 
+     * @param binaryKey the key for the binary value; never null
+     * @param unusedBinaryKeys the set of binary keys that are considered unused; may be null
+     */
+    protected void incrementBinaryReferenceCount( BinaryKey binaryKey,
+                                                  Set<BinaryKey> unusedBinaryKeys ) {
+        // Find the document metadata and increment the usage count ...
+        String sha1 = binaryKey.toString();
+        String key = keyForBinaryReferenceDocument(sha1);
+        SchematicEntry entry = database.get(key);
+        if (entry == null) {
+            // The document doesn't yet exist, so create it ...
+            Document metadata = Schematic.newDocument(SHA1, sha1, REFERENCE_COUNT, 1L);
+            Document content = Schematic.newDocument();
+            database.put(key, metadata, content);
+        } else {
+            EditableDocument sha1Usage = entry.editDocumentContent();
+            Long countValue = sha1Usage.getLong(REFERENCE_COUNT);
+            sha1Usage.setNumber(REFERENCE_COUNT, countValue != null ? countValue.longValue() + 1 : 1L);
         }
+        // We're using the sha1, so remove it if its in the set of unused binary keys ...
+        if (unusedBinaryKeys != null) {
+            unusedBinaryKeys.remove(binaryKey);
+        }
+    }
+
+    /**
+     * Decrement the reference count for the binary value.
+     * 
+     * @param fieldValue the value in the document that may contain a binary value reference; may be null
+     * @param unusedBinaryKeys the set of binary keys that are considered unused; may be null
+     * @return true if the binary value is no longer referenced, or false otherwise
+     */
+    protected boolean decrementBinaryReferenceCount( Object fieldValue,
+                                                     Set<BinaryKey> unusedBinaryKeys ) {
+        if (fieldValue instanceof List<?>) {
+            for (Object value : (List<?>)fieldValue) {
+                decrementBinaryReferenceCount(value, unusedBinaryKeys);
+            }
+        } else if (fieldValue instanceof Document) {
+            Document docValue = (Document)fieldValue;
+            String sha1 = docValue.getString("sha1");
+            if (sha1 != null) {
+                // Find the document metadata and increment the usage count ...
+                SchematicEntry entry = database.get(sha1 + "-usage");
+                EditableDocument sha1Usage = entry.editDocumentContent();
+                Long countValue = sha1Usage.getLong(REFERENCE_COUNT);
+                if (countValue == null) return true;
+                long count = countValue.longValue() - 1;
+                if (count < 0) {
+                    count = 0;
+                    // We're not using the binary value anymore ...
+                    if (unusedBinaryKeys != null) {
+                        unusedBinaryKeys.add(new BinaryKey(sha1));
+                    }
+                }
+                sha1Usage.setNumber(REFERENCE_COUNT, count);
+                return count <= 1;
+            }
+        }
+        return false;
     }
 
     protected Object valueFromDocument( Object value ) {
@@ -1022,7 +1096,12 @@ public class DocumentTranslator {
             }
             if (!Null.matches(valueStr = doc.getString("$sha1"))) {
                 String sha1 = valueStr;
-                return resolveLargeValue(sha1);
+                long size = doc.getLong("$len");
+                try {
+                    return binaries.find(new BinaryKey(sha1), size);
+                } catch (BinaryStoreException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
         if (value instanceof Integer) {
@@ -1333,7 +1412,7 @@ public class DocumentTranslator {
         Property mixins = getProperty(doc, JcrLexicon.MIXIN_TYPES);
         if (mixins == null || mixins.isEmpty()) {
             // No mixins, so just add the property ...
-            setProperty(doc, propertyFactory.create(JcrLexicon.MIXIN_TYPES, JcrMixLexicon.LOCKABLE));
+            setProperty(doc, propertyFactory.create(JcrLexicon.MIXIN_TYPES, JcrMixLexicon.LOCKABLE), null);
         } else {
             List<Name> values = new ArrayList<Name>(mixins.size() + 1);
             for (Object value : mixins) {
@@ -1341,10 +1420,10 @@ public class DocumentTranslator {
                 values.add(name);
             }
             values.add(JcrMixLexicon.LOCKABLE);
-            setProperty(doc, propertyFactory.create(JcrLexicon.MIXIN_TYPES, values));
+            setProperty(doc, propertyFactory.create(JcrLexicon.MIXIN_TYPES, values), null);
         }
-        setProperty(doc, propertyFactory.create(JcrLexicon.LOCK_OWNER, owner));
-        setProperty(doc, propertyFactory.create(JcrLexicon.LOCK_IS_DEEP, isDeep));
+        setProperty(doc, propertyFactory.create(JcrLexicon.LOCK_OWNER, owner), null);
+        setProperty(doc, propertyFactory.create(JcrLexicon.LOCK_IS_DEEP, isDeep), null);
         return true;
     }
 
@@ -1354,12 +1433,12 @@ public class DocumentTranslator {
      * @param doc the document
      */
     public void unlock( EditableDocument doc ) {
-        removeProperty(doc, JcrLexicon.LOCK_OWNER);
-        removeProperty(doc, JcrLexicon.LOCK_IS_DEEP);
+        removeProperty(doc, JcrLexicon.LOCK_OWNER, null);
+        removeProperty(doc, JcrLexicon.LOCK_IS_DEEP, null);
         Property mixins = getProperty(doc, JcrLexicon.MIXIN_TYPES);
         if (mixins.isEmpty() || (mixins.isSingle() && JcrMixLexicon.LOCKABLE.equals(names.create(mixins.getFirstValue())))) {
             // The only mixin, so just remove it ...
-            removeProperty(doc, JcrLexicon.MIXIN_TYPES);
+            removeProperty(doc, JcrLexicon.MIXIN_TYPES, null);
         } else {
             List<Name> values = new ArrayList<Name>(mixins.size() - 1);
             for (Object value : mixins) {
@@ -1367,7 +1446,7 @@ public class DocumentTranslator {
                 if (JcrMixLexicon.LOCKABLE.equals(name)) continue;
                 values.add(name);
             }
-            setProperty(doc, propertyFactory.create(JcrLexicon.MIXIN_TYPES, values));
+            setProperty(doc, propertyFactory.create(JcrLexicon.MIXIN_TYPES, values), null);
         }
     }
 }

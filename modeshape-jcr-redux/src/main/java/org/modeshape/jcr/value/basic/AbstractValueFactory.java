@@ -24,7 +24,6 @@
 package org.modeshape.jcr.value.basic;
 
 import java.io.InputStream;
-import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.util.Calendar;
@@ -120,16 +119,15 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
         if (value instanceof URI) return create((URI)value);
         if (value instanceof Binary) return create((Binary)value);
         if (value instanceof javax.jcr.Binary) {
-            javax.jcr.Binary jcrBinary = (javax.jcr.Binary) value;
+            javax.jcr.Binary jcrBinary = (javax.jcr.Binary)value;
             try {
-                return create(jcrBinary.getStream(), jcrBinary.getSize());
+                return create(jcrBinary.getStream());
             } catch (RepositoryException e) {
                 throw new RuntimeException(e);
             }
         }
         if (value instanceof byte[]) return create((byte[])value);
-        if (value instanceof InputStream) return create((InputStream)value, 0);
-        if (value instanceof Reader) return create((Reader)value, 0);
+        if (value instanceof InputStream) return create((InputStream)value);
         return create(value.toString());
     }
 

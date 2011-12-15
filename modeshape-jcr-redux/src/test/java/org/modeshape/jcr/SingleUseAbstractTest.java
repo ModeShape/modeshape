@@ -32,7 +32,6 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
@@ -49,7 +48,6 @@ import org.infinispan.schematic.document.Changes;
 import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Editor;
-import org.infinispan.test.TestingUtil;
 import org.infinispan.test.fwk.TestCacheManagerFactory;
 import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.junit.After;
@@ -92,12 +90,12 @@ public abstract class SingleUseAbstractTest {
     @After
     public void afterEach() throws Exception {
         try {
-            repository.shutdown().get(3L, TimeUnit.SECONDS);
+            TestingUtil.killRepositories(repository);
         } finally {
             repository = null;
             config = null;
             try {
-                TestingUtil.killCacheManagers(cm);
+                org.infinispan.test.TestingUtil.killCacheManagers(cm);
             } finally {
                 cm = null;
             }

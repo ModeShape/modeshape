@@ -25,13 +25,13 @@ package org.modeshape.jcr.value.basic;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.UUID;
+import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.text.TextEncoder;
@@ -247,10 +247,9 @@ public class StringValueFactory extends AbstractValueFactory<String> {
     public String create( Binary value ) throws ValueFormatException, IoException {
         if (value == null) return null;
         try {
-            value.acquire();
             InputStream stream = value.getStream();
             try {
-                return create(stream, value.getSize());
+                return create(stream);
             } finally {
                 try {
                     stream.close();
@@ -258,14 +257,15 @@ public class StringValueFactory extends AbstractValueFactory<String> {
                     Logger.getLogger(getClass()).debug(e, "Error closing the stream while converting from Binary to String");
                 }
             }
+        } catch (RepositoryException e) {
+            throw new IoException(e);
         } finally {
             value.dispose();
         }
     }
 
     @Override
-    public String create( InputStream stream,
-                          long approximateLength ) throws IoException {
+    public String create( InputStream stream ) throws IoException {
         if (stream == null) return null;
         byte[] value = null;
         try {
@@ -279,18 +279,6 @@ public class StringValueFactory extends AbstractValueFactory<String> {
         } catch (IOException err) {
             throw new IoException(GraphI18n.errorConvertingIo.text(InputStream.class.getSimpleName(),
                                                                    String.class.getSimpleName()), err);
-        }
-    }
-
-    @Override
-    public String create( Reader reader,
-                          long approximateLength ) throws IoException {
-        if (reader == null) return null;
-        try {
-            return IoUtil.read(reader);
-        } catch (IOException err) {
-            throw new IoException(GraphI18n.errorConvertingIo.text(Reader.class.getSimpleName(), String.class.getSimpleName()),
-                                  err);
         }
     }
 

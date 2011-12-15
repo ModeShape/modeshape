@@ -23,11 +23,8 @@
  */
 package org.modeshape.jcr.value;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
 import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.jcr.value.binary.BinaryStoreException;
 
 /**
  * A factory for creating {@link Binary} instances. This interface extends the {@link ValueFactory} generic interface and adds
@@ -37,60 +34,16 @@ import org.modeshape.common.annotation.ThreadSafe;
 public interface BinaryFactory extends ValueFactory<Binary> {
 
     /**
-     * Create a value from the binary content given by the supplied stream, the approximate length, and the SHA-1 secure hash of
-     * the content. If the secure hash is null, then a secure hash is computed from the content. If the secure hash is not null,
-     * it is assumed to be the hash for the content and may not be checked.
-     * 
-     * @param stream the stream containing the content to be used to create the value
-     * @param approximateLength the approximate length of the content (in bytes)
-     * @param secureHash the secure hash of the content in the <code>stream</code>; if null, the secure hash is computed from the
-     *        content, and if not null it is assumed to be the correct secure hash (and is not checked)
-     * @return the value, or null if the supplied stream is null
-     * @throws ValueFormatException if the conversion from an input stream could not be performed
-     * @throws IoException If an unexpected problem occurs while accessing the supplied stream (such as an {@link IOException}).
-     * @throws IllegalArgumentException if the secure hash was discovered to be incorrect
-     */
-    Binary create( InputStream stream,
-                   long approximateLength,
-                   byte[] secureHash ) throws ValueFormatException, IoException;
-
-    /**
-     * Create a value from the binary content given by the supplied reader, the approximate length, and the SHA-1 secure hash of
-     * the content. If the secure hash is null, then a secure hash is computed from the content. If the secure hash is not null,
-     * it is assumed to be the hash for the content and may not be checked.
-     * 
-     * @param reader the reader containing the content to be used to create the value
-     * @param approximateLength the approximate length of the content (in bytes)
-     * @param secureHash the secure hash of the content in the <code>stream</code>; if null, the secure hash is computed from the
-     *        content, and if not null it is assumed to be the correct secure hash (and is not checked)
-     * @return the value, or null if the supplied string is null
-     * @throws ValueFormatException if the conversion from a reader could not be performed
-     * @throws IoException If an unexpected problem occurs while accessing the supplied reader (such as an {@link IOException}).
-     * @throws IllegalArgumentException if the secure hash was discovered to be incorrect
-     */
-    Binary create( Reader reader,
-                   long approximateLength,
-                   byte[] secureHash ) throws ValueFormatException, IoException;
-
-    /**
-     * Create a binary value from the given file.
-     * 
-     * @param file the file containing the content to be used
-     * @return the binary value, or null if the file parameter was null
-     * @throws ValueFormatException if the conversion from the file could not be performed
-     * @throws IoException If an unexpected problem occurs while accessing the supplied file (such as an {@link IOException}).
-     */
-    Binary create( File file ) throws ValueFormatException, IoException;
-
-    /**
-     * Find an existing binary value given the supplied secure hash. If no such binary value exists, null is returned. This method
+     * Find an existing binary value given the supplied binary key. If no such binary value exists, null is returned. This method
      * can be used when the caller knows the secure hash (e.g., from a previously-held Binary object), and would like to reuse an
-     * existing binary value (if possible) rather than recreate the binary value by processing the stream contents. This is
-     * especially true when the size of the binary is quite large.
+     * existing binary value (if possible).
      * 
-     * @param secureHash the secure hash of the binary content, which was probably {@link Binary#getHash() obtained} from a
+     * @param secureHash the secure hash of the binary content, which was probably {@link Binary#getHexHash() obtained} from a
      *        previously-held {@link Binary} object; a null or empty value is allowed, but will always result in returning null
-     * @return the existing Binary value that has the same secure hash, or null if there is no such value available at this time
+     * @param size the size of the binary content
+     * @return the existing Binary value that has the same secure hash; never null
+     * @throws BinaryStoreException if there is a problem accessing the binary store
      */
-    Binary find( byte[] secureHash );
+    Binary find( BinaryKey secureHash,
+                 long size ) throws BinaryStoreException;
 }

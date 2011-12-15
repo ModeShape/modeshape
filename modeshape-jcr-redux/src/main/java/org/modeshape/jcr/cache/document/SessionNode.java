@@ -874,7 +874,7 @@ public class SessionNode implements MutableCachedNode {
                 if (value instanceof Binary) {
                     Binary binary = (Binary)value;
                     // we don't care about the string encoding, as long as its consistent and will change if a property changes
-                    sb.append(binary.getHash());
+                    sb.append(binary.getHexHash());
                 }
             }
         }

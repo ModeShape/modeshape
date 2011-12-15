@@ -24,7 +24,6 @@
 package org.modeshape.jcr.value.basic;
 
 import java.io.InputStream;
-import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.util.ArrayList;
@@ -676,17 +675,9 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
     }
 
     @Override
-    public Path create( InputStream stream,
-                        long approximateLength ) throws IoException {
+    public Path create( InputStream stream ) throws IoException {
         // First attempt to create a string from the value, then a double from the string ...
-        return create(getStringValueFactory().create(stream, approximateLength));
-    }
-
-    @Override
-    public Path create( Reader reader,
-                        long approximateLength ) throws IoException {
-        // First attempt to create a string from the value, then a double from the string ...
-        return create(getStringValueFactory().create(reader, approximateLength));
+        return create(getStringValueFactory().create(stream));
     }
 
     @Override

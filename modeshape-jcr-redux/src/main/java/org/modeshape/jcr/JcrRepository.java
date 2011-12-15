@@ -26,6 +26,8 @@ package org.modeshape.jcr;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.AccessControlContext;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -43,6 +45,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
@@ -79,6 +82,7 @@ import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.NamedThreadFactory;
 import org.modeshape.jcr.JcrEngine.State;
 import org.modeshape.jcr.RepositoryConfiguration.AnonymousSecurity;
+import org.modeshape.jcr.RepositoryConfiguration.BinaryStorage;
 import org.modeshape.jcr.RepositoryConfiguration.Component;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.RepositoryConfiguration.JaasSecurity;
@@ -105,6 +109,9 @@ import org.modeshape.jcr.security.AuthenticationProviders;
 import org.modeshape.jcr.security.JaasProvider;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.ValueFactories;
+import org.modeshape.jcr.value.binary.BinaryStore;
+import org.modeshape.jcr.value.binary.InfinispanBinaryStore;
+import org.modeshape.jcr.value.binary.UnusedBinaryChangeSetListener;
 
 /**
  * 
@@ -171,6 +178,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
      * @throws ConfigurationException if there is a problem with the configuration
      */
     protected JcrRepository( RepositoryConfiguration configuration ) throws ConfigurationException {
+        ModeShape.getName(); // force log message right up front
         this.config.set(configuration);
         RepositoryConfiguration config = this.config.get();
 
@@ -585,17 +593,23 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final Path SEQUENCING_PATH = Paths.path(FieldName.SEQUENCING);
         private final Path EXTRACTORS_PATH = Paths.path(FieldName.QUERY, FieldName.EXTRACTORS);
         private final Path STORAGE_PATH = Paths.path(FieldName.STORAGE);
+        private final Path BINARY_STORAGE_PATH = Paths.path(FieldName.STORAGE, FieldName.BINARY_STORAGE);
         private final Path WORKSPACES_PATH = Paths.path(FieldName.WORKSPACES);
         private final Path PREDEFINED_PATH = Paths.path(FieldName.WORKSPACES, FieldName.PREDEFINED);
         private final Path JNDI_PATH = Paths.path(FieldName.JNDI_NAME);
-        private final Path LARGE_VALUE_PATH = Paths.path(FieldName.LARGE_VALUE_SIZE_IN_BYTES);
+        private final Path MINIMUM_BINARY_SIZE_IN_BYTES_PATH = Paths.path(FieldName.STORAGE,
+                                                                          FieldName.BINARY_STORAGE,
+                                                                          FieldName.MINIMUM_BINARY_SIZE_IN_BYTES);
         private final Path NAME_PATH = Paths.path(FieldName.NAME);
         private final Path MONITORING_PATH = Paths.path(FieldName.MONITORING);
+
+        private final Path[] IGNORE_PATHS = new Path[] {STORAGE_PATH, BINARY_STORAGE_PATH};
 
         protected boolean securityChanged = false;
         protected boolean sequencingChanged = false;
         protected boolean extractorsChanged = false;
         protected boolean storageChanged = false;
+        protected boolean binaryStorageChanged = false;
         protected boolean indexingChanged = false;
         protected boolean workspacesChanged = false;
         protected boolean predefinedWorkspacesChanged = false;
@@ -641,7 +655,13 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         }
 
         private void checkForChanges( Path path ) {
-            if (!storageChanged && path.startsWith(STORAGE_PATH)) storageChanged = true;
+            for (Path ignorePath : IGNORE_PATHS) {
+                if (path.equals(ignorePath)) return;
+            }
+
+            if (!largeValueChanged && path.equals(MINIMUM_BINARY_SIZE_IN_BYTES_PATH)) largeValueChanged = true;
+            else if (!binaryStorageChanged && path.startsWith(BINARY_STORAGE_PATH)) binaryStorageChanged = true;
+            else if (!storageChanged && path.startsWith(STORAGE_PATH)) storageChanged = true;
             if (!sequencingChanged && path.startsWith(SEQUENCING_PATH)) sequencingChanged = true;
             if (!extractorsChanged && path.startsWith(EXTRACTORS_PATH)) extractorsChanged = true;
             if (!securityChanged && path.startsWith(SECURITY_PATH)) securityChanged = true;
@@ -649,7 +669,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             if (!predefinedWorkspacesChanged && path.startsWith(PREDEFINED_PATH)) predefinedWorkspacesChanged = true;
             if (!indexingChanged && path.startsWith(QUERY_PATH) && !path.startsWith(EXTRACTORS_PATH)) indexingChanged = true;
             if (!jndiChanged && path.equals(JNDI_PATH)) jndiChanged = true;
-            if (!largeValueChanged && path.equals(LARGE_VALUE_PATH)) largeValueChanged = true;
             if (!nameChanged && path.equals(NAME_PATH)) nameChanged = true;
             if (!monitoringChanged && path.equals(MONITORING_PATH)) monitoringChanged = true;
         }
@@ -759,12 +778,32 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
     /**
      * Clean up the repository content's garbage.
+     * 
+     * @see JcrEngine.GarbageCollectionTask#run()
      */
     void cleanUp() {
         RunningState running = runningState.get();
         if (running != null) {
             running.cleanUpLocks();
+            running.cleanUpBinaryValues();
         }
+    }
+
+    Collection<Cache<?, ?>> caches() {
+        RunningState running = runningState.get();
+        if (running == null) return Collections.emptyList();
+
+        List<Cache<?, ?>> caches = new ArrayList<Cache<?, ?>>();
+        caches.add(running.database().getCache());
+        // Add the binary store's cache, if there is one ...
+        BinaryStore store = running.binaryStore();
+        if (store instanceof InfinispanBinaryStore) {
+            InfinispanBinaryStore ispnStore = (InfinispanBinaryStore)store;
+            Cache<?, ?> binaryCache = ispnStore.getCache();
+            if (binaryCache != null) caches.add(binaryCache);
+        }
+
+        return caches;
     }
 
     protected class WorkspaceListener implements ChangeSetListener {
@@ -810,6 +849,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final WeakHashMap<JcrSession, Object> activeSessions = new WeakHashMap<JcrSession, Object>();
         private final WeakHashMap<JcrSession, Object> internalSessions = new WeakHashMap<JcrSession, Object>();
         private final RepositoryStatistics statistics;
+        private final BinaryStore binaryStore;
         private final ScheduledExecutorService statsRollupService;
         private final Sequencers sequencers;
         private final Executor sequencingQueue;
@@ -855,13 +895,20 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     // Can't change where we're storing the content while we're running, so take effect upon next startup
                     logger.warn(JcrI18n.storageRelatedConfigurationChangesWillTakeEffectAfterShutdown, getName());
                 }
+                if (change.binaryStorageChanged) {
+                    // Can't change where we're storing the content while we're running, so take effect upon next startup
+                    logger.warn(JcrI18n.storageRelatedConfigurationChangesWillTakeEffectAfterShutdown, getName());
+                }
                 // reuse the existing storage-related components ...
                 this.database = other.database;
                 this.txnMgr = other.txnMgr;
                 this.cache = other.cache;
+                this.context = other.context;
                 if (change.largeValueChanged) {
                     // We can update the value used in the repository cache dynamically ...
-                    this.cache.setLargeValueSizeInBytes(config.getLargeValueSizeInBytes());
+                    BinaryStorage binaryStorage = config.getBinaryStorage();
+                    this.cache.setLargeValueSizeInBytes(binaryStorage.getMinimumBinarySizeInBytes());
+                    this.context.getBinaryStore().setMinimumBinarySizeInBytes(binaryStorage.getMinimumBinarySizeInBytes());
                 }
                 if (change.workspacesChanged) {
                     // Make sure that all the predefined workspaces are available ...
@@ -869,7 +916,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                         this.cache.createWorkspace(workspaceName);
                     }
                 }
-                this.context = other.context;
+                this.binaryStore = other.binaryStore;
                 this.internalWorkerContext = other.internalWorkerContext;
                 this.nodeTypes = other.nodeTypes.with(this, true, true);
                 this.lockManager = other.lockManager.with(this);
@@ -883,6 +930,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.database = Schematic.get(container, cacheName);
                 assert this.database != null;
                 this.txnMgr = this.database.getCache().getAdvancedCache().getTransactionManager();
+
+                // Set up the binary store ...
+                BinaryStorage binaryStorageConfig = config.getBinaryStorage();
+                binaryStore = binaryStorageConfig.getBinaryStore();
+                tempContext = tempContext.with(binaryStore);
 
                 // Now create the registry implementation and the execution context that uses it ...
                 this.persistentRegistry = new SystemNamespaceRegistry(this);
@@ -902,6 +954,9 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 // Set up the lock manager ...
                 this.lockManager = new RepositoryLockManager(this);
                 this.cache.register(this.lockManager);
+
+                // Set up the unused binary value listener ...
+                this.cache.register(new UnusedBinaryChangeSetListener(binaryStore));
 
                 // Refresh several of the components information from the repository cache ...
                 this.persistentRegistry.refreshFromSystem();
@@ -1039,6 +1094,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
         protected final SchematicDb database() {
             return database;
+        }
+
+        protected final BinaryStore binaryStore() {
+            return binaryStore;
         }
 
         protected final TransactionManager txnManager() {
@@ -1252,33 +1311,59 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             }
         }
 
+        /**
+         * @see JcrRepository#cleanUp()
+         */
         void cleanUpLocks() {
             if (logger.isDebugEnabled()) {
-                logger.trace("Starting lock cleanup in the '{0}' repository", repositoryName());
+                logger.debug("Starting lock cleanup in the '{0}' repository", repositoryName());
             }
 
-            // Get the IDs for the active sessions ...
-            Set<String> activeSessionIds = new HashSet<String>();
-            Lock lock = this.activeSessionLock.writeLock();
             try {
-                lock.lock();
-                Iterator<Map.Entry<JcrSession, Object>> iter = this.activeSessions.entrySet().iterator();
-                while (iter.hasNext()) {
-                    JcrSession session = iter.next().getKey();
-                    if (session.isLive()) activeSessionIds.add(session.sessionId());
+                // Get the IDs for the active sessions ...
+                Set<String> activeSessionIds = new HashSet<String>();
+                Lock lock = this.activeSessionLock.writeLock();
+                try {
+                    lock.lock();
+                    Iterator<Map.Entry<JcrSession, Object>> iter = this.activeSessions.entrySet().iterator();
+                    while (iter.hasNext()) {
+                        JcrSession session = iter.next().getKey();
+                        if (session.isLive()) activeSessionIds.add(session.sessionId());
+                    }
+                } finally {
+                    lock.unlock();
                 }
-            } finally {
-                lock.unlock();
-            }
 
-            // Create a system session and delegate to its logic ...
-            SessionCache systemSession = createSystemSession(context(), false);
-            SystemContent system = new SystemContent(systemSession);
-            system.cleanUpLocks(activeSessionIds);
-            system.save();
+                // Create a system session and delegate to its logic ...
+                SessionCache systemSession = createSystemSession(context(), false);
+                SystemContent system = new SystemContent(systemSession);
+                system.cleanUpLocks(activeSessionIds);
+                system.save();
+            } catch (Throwable e) {
+                logger.error(e, JcrI18n.errorDuringGarbageCollection, e.getMessage());
+            }
 
             if (logger.isDebugEnabled()) {
-                logger.trace("Finishing lock cleanup in the '{0}' repository", repositoryName());
+                logger.debug("Finishing lock cleanup in the '{0}' repository", repositoryName());
+            }
+        }
+
+        /**
+         * @see JcrRepository#cleanUp()
+         */
+        void cleanUpBinaryValues() {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Starting binary value cleanup in the '{0}' repository", repositoryName());
+            }
+            try {
+                this.binaryStore.removeValuesUnusedLongerThan(RepositoryConfiguration.UNUSED_BINARY_VALUE_AGE_IN_MILLIS,
+                                                              TimeUnit.MILLISECONDS);
+            } catch (Throwable e) {
+                logger.error(e, JcrI18n.errorDuringGarbageCollection, e.getMessage());
+            }
+
+            if (logger.isDebugEnabled()) {
+                logger.debug("Finishing binary value cleanup in the '{0}' repository", repositoryName());
             }
         }
 

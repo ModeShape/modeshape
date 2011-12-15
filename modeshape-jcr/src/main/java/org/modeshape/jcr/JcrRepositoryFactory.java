@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
@@ -318,7 +319,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
         }
     }
 
-    public void shutdown() {
+    public Future<Boolean> shutdown() {
         synchronized (ENGINES) {
             for (JcrEngine engine : ENGINES.values()) {
                 engine.shutdown();
@@ -326,6 +327,33 @@ public class JcrRepositoryFactory implements RepositoryFactory {
 
             ENGINES.clear();
         }
+        return new Future<Boolean>() {
+            @Override
+            public Boolean get() {
+                return Boolean.TRUE;
+            }
+
+            @Override
+            public boolean cancel( boolean mayInterruptIfRunning ) {
+                return false;
+            }
+
+            @Override
+            public Boolean get( long timeout,
+                                TimeUnit unit ) {
+                return Boolean.TRUE;
+            }
+
+            @Override
+            public boolean isCancelled() {
+                return false;
+            }
+
+            @Override
+            public boolean isDone() {
+                return true;
+            }
+        };
     }
 
     public boolean shutdown( long timeout,

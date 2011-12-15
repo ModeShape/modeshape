@@ -31,6 +31,7 @@ import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.UUID;
+import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.SecureHash;
 import org.modeshape.jcr.GraphI18n;
@@ -114,26 +115,20 @@ public class ValueComparators {
             if (o1 == null) return -1;
             if (o2 == null) return 1;
             try {
-                o1.acquire();
                 try {
-                    o2.acquire();
+                    // Check the lengths first ...
                     final long len1 = o1.getSize();
                     final long len2 = o2.getSize();
                     if (len1 < len2) return -1;
                     if (len1 > len2) return 1;
 
                     // Compare using the hashes, if available
-                    byte[] hash1 = o1.getHash();
-                    byte[] hash2 = o2.getHash();
-                    if (hash1.length != 0 || hash2.length != 0) {
-                        assert hash1.length == hash2.length;
-                        for (int i = 0; i != hash1.length; ++i) {
-                            int diff = hash1[i] - hash2[i];
-                            if (diff != 0) return diff;
-                        }
-                        return 0;
+                    String hash1 = o1.getHexHash();
+                    String hash2 = o2.getHexHash();
+                    if (hash1 != null && hash2 != null) {
                         // If the hashes match, then we should assume that the values match.
                         // That's the whole point of using a secure hash.
+                        return hash1.compareTo(hash2);
                     }
 
                     // One or both of the hashes could not be generated, so we have to go compare
@@ -161,6 +156,8 @@ public class ValueComparators {
                             }
                         }
                         return 0;
+                    } catch (RepositoryException e) {
+                        throw new IoException(GraphI18n.errorReadingPropertyValueBytes.text());
                     } catch (IOException e) {
                         throw new IoException(GraphI18n.errorReadingPropertyValueBytes.text());
                     } finally {

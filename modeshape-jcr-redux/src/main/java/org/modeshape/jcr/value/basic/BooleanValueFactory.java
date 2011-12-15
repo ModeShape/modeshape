@@ -24,7 +24,6 @@
 package org.modeshape.jcr.value.basic;
 
 import java.io.InputStream;
-import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.util.Calendar;
@@ -198,17 +197,9 @@ public class BooleanValueFactory extends AbstractValueFactory<Boolean> {
     }
 
     @Override
-    public Boolean create( InputStream stream,
-                           long approximateLength ) throws IoException {
+    public Boolean create( InputStream stream ) throws IoException {
         // First create a string and then create the boolean from the string value ...
-        return create(getStringValueFactory().create(stream, approximateLength));
-    }
-
-    @Override
-    public Boolean create( Reader reader,
-                           long approximateLength ) throws IoException {
-        // First create a string and then create the boolean from the string value ...
-        return create(getStringValueFactory().create(reader, approximateLength));
+        return create(getStringValueFactory().create(stream));
     }
 
     @Override

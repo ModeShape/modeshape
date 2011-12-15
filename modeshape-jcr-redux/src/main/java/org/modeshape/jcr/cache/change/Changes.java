@@ -25,6 +25,7 @@ package org.modeshape.jcr.cache.change;
 
 import java.util.Map;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Property;
@@ -78,4 +79,11 @@ public interface Changes {
                           Path nodePath,
                           Property newProperty,
                           Property oldProperty );
+
+    /**
+     * Create an event that signals that the (stored) binary value with the supplied key is no longer used.
+     * 
+     * @param key the key for the now-unused binary value; may not be null
+     */
+    void binaryValueNoLongerUsed( BinaryKey key );
 }

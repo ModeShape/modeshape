@@ -24,6 +24,7 @@
 package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import javax.jcr.Node;
@@ -197,7 +198,8 @@ public class MixinTest extends SingleUseAbstractTest {
 
         Node rootNode = session.getRootNode();
         Node nodeA = rootNode.getNode("a");
-        nodeA.setProperty(PROPERTY_B, "Not a boolean");
+        Property b = nodeA.setProperty(PROPERTY_B, "Not a boolean");
+        assertThat(b.getType(), is(not(PropertyType.UNDEFINED))); // see JavaDoc on javax.jcr.PropertyType.UNDEFINED
 
         assertThat(nodeA.canAddMixin(MIXIN_TYPE_WITH_AUTO_PROP), is(false));
         nodeA.addMixin(MIXIN_TYPE_WITH_AUTO_PROP);

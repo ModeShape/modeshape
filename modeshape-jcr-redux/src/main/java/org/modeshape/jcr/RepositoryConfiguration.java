@@ -71,6 +71,11 @@ import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.ObjectUtil;
 import org.modeshape.jcr.security.AnonymousProvider;
 import org.modeshape.jcr.security.JaasProvider;
+import org.modeshape.jcr.value.binary.BinaryStore;
+import org.modeshape.jcr.value.binary.DatabaseBinaryStore;
+import org.modeshape.jcr.value.binary.FileSystemBinaryStore;
+import org.modeshape.jcr.value.binary.InfinispanBinaryStore;
+import org.modeshape.jcr.value.binary.TransientBinaryStore;
 
 /**
  * A representation of the configuration for a {@link JcrRepository JCR Repository}.
@@ -93,29 +98,44 @@ public class RepositoryConfiguration {
      */
     public static final String DEFAULT_JNDI_PREFIX_OF_NAME = "java:jcr/local/";
 
-    /**
-     * The process of cleaning up unused or expired locks runs periodically, and this value controls how often it runs. The value
-     * is currently set to 30 seconds.
-     */
-    final static int LOCK_SWEEP_PERIOD_IN_MILLIS = (int)TimeUnit.MILLISECONDS.convert(30, TimeUnit.SECONDS);
+    final static TimeUnit GARBAGE_COLLECTION_SWEEP_PERIOD_UNIT = TimeUnit.MINUTES;
 
     /**
-     * Each time the lock cleanup process runs, session-scoped locks that are still used by active sessions will have their expiry
-     * times extended by this amount of time. Each repository instance in the ModeShape cluster will run its own cleanup process,
-     * which will extend the expiry times of its own locks. As soon as a repository is no longer running the cleanup process, we
-     * know that there can be no active sessions.
+     * The process of garbage collecting locks and binary values runs periodically, and this value controls how often it runs. The
+     * value is currently set to 5 minutes.
+     */
+    final static int GARBAGE_COLLECTION_SWEEP_PERIOD = (int)TimeUnit.MILLISECONDS.convert(5, GARBAGE_COLLECTION_SWEEP_PERIOD_UNIT);
+
+    /**
+     * Each time the garbage collection process runs, session-scoped locks that are still used by active sessions will have their
+     * expiry times extended by this amount of time. Each repository instance in the ModeShape cluster will run its own cleanup
+     * process, which will extend the expiry times of its own locks. As soon as a repository is no longer running the cleanup
+     * process, we know that there can be no active sessions.
      * <p>
-     * The extension interval is generally twice the length of the period that the cleanup process runs, ensuring that any slight
-     * deviation in the period does not cause locks to be expired prematurely.
+     * The extension interval is generally twice the length of the period that the garbage collection runs, ensuring that any
+     * slight deviation in the period does not cause locks to be expired prematurely.
      * </p>
      */
-    final static int LOCK_EXTENSION_INTERVAL_IN_MILLIS = LOCK_SWEEP_PERIOD_IN_MILLIS * 2;
+    final static int LOCK_EXTENSION_INTERVAL_IN_MILLIS = (int)TimeUnit.MILLISECONDS.convert(GARBAGE_COLLECTION_SWEEP_PERIOD * 2,
+                                                                                            GARBAGE_COLLECTION_SWEEP_PERIOD_UNIT);
 
     /**
      * The amount of time that a lock may be expired before being removed. The sweep process will extend the locks for active
      * sessions, so only unused locks will have an unmodified expiry time. The value is currently twice the sweep period.
      */
-    final static int LOCK_EXPIRY_AGE_IN_MILLIS = LOCK_SWEEP_PERIOD_IN_MILLIS * 2;
+    final static int LOCK_EXPIRY_AGE_IN_MILLIS = (int)TimeUnit.MILLISECONDS.convert(GARBAGE_COLLECTION_SWEEP_PERIOD * 2,
+                                                                                    GARBAGE_COLLECTION_SWEEP_PERIOD_UNIT);
+
+    /**
+     * As binary values are no longer used, they are quarantined in the binary store. When the garbage collection process runs,
+     * any binary values that have been quarantined longer than this duration will be removed.
+     * <p>
+     * The age is generally twice the length of the period that the garbage collection process runs, ensuring that any slight
+     * deviation in the period does not cause binary values to be removed prematurely.
+     * </p>
+     */
+    final static int UNUSED_BINARY_VALUE_AGE_IN_MILLIS = (int)TimeUnit.MILLISECONDS.convert(GARBAGE_COLLECTION_SWEEP_PERIOD * 2,
+                                                                                            GARBAGE_COLLECTION_SWEEP_PERIOD_UNIT);
 
     protected static final Document EMPTY = Schematic.newDocument();
 
@@ -179,13 +199,13 @@ public class RepositoryConfiguration {
         public static final String CACHE_TRANSACTION_MANAGER_LOOKUP = "transactionManagerLookup";
 
         /**
-         * The name for the field containing the size threshold dictating how property values are stored. String and binary values
-         * smaller than this value are stored with the node, whereas string and binary values with a size equal to or greater than
-         * this limit may be stored separately from the node and keyed by the SHA-1 hash of the value. This is a space and
-         * performance optimization that stores each unique large value only once. The default value is "10240" bytes, or 10
-         * kilobytes.
+         * The size threshold that dictates whether String and binary values should be stored in the binary store. String and
+         * binary values smaller than this value are stored with the node, whereas string and binary values with a size equal to
+         * or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of
+         * the value. This is a space and performance optimization that stores each unique large value only once. The default
+         * value is '4096' bytes, or 4 kilobytes.
          */
-        public static final String LARGE_VALUE_SIZE_IN_BYTES = "largeValueSizeInBytes";
+        public static final String MINIMUM_BINARY_SIZE_IN_BYTES = "minimumBinarySizeInBytes";
 
         /**
          * The name for the field whose value is a document containing workspace information.
@@ -208,6 +228,11 @@ public class RepositoryConfiguration {
          * creating sessions where the workspace is not specified.
          */
         public static final String DEFAULT = "default";
+
+        /**
+         * The name for the field whose value is a document containing binary storage information.
+         */
+        public static final String BINARY_STORAGE = "binaryStorage";
 
         /**
          * The name for the field whose value is a document containing security information.
@@ -250,6 +275,7 @@ public class RepositoryConfiguration {
 
         public static final String PROVIDERS = "providers";
         public static final String TYPE = "type";
+        public static final String DIRECTORY = "type";
         public static final String CLASSNAME = "classname";
         public static final String CLASSPATH = "classpath";
         public static final String QUERY = "query";
@@ -274,9 +300,9 @@ public class RepositoryConfiguration {
 
     public static class Default {
         /**
-         * The default value of the {@link FieldName#LARGE_VALUE_SIZE_IN_BYTES} field is '{@value} ' (10 kilobytes).
+         * The default value of the {@link FieldName#MINIMUM_BINARY_SIZE_IN_BYTES} field is '{@value} ' (4 kilobytes).
          */
-        public static final long LARGE_VALUE_SIZE_IN_BYTES = 10 * 1024L;
+        public static final long MINIMUM_BINARY_SIZE_IN_BYTES = 4 * 1024L;
 
         /**
          * The default value of the {@link FieldName#ALLOW_CREATION} field is '{@value} '.
@@ -562,6 +588,10 @@ public class RepositoryConfiguration {
         return doc.getString(FieldName.NAME, docName);
     }
 
+    public Document getDocument() {
+        return doc;
+    }
+
     public String getJndiName() {
         return doc.getString(FieldName.JNDI_NAME, DEFAULT_JNDI_PREFIX_OF_NAME + getName());
     }
@@ -604,8 +634,51 @@ public class RepositoryConfiguration {
         }
     }
 
-    public long getLargeValueSizeInBytes() {
-        return doc.getLong(FieldName.LARGE_VALUE_SIZE_IN_BYTES, Default.LARGE_VALUE_SIZE_IN_BYTES);
+    public BinaryStorage getBinaryStorage() {
+        Document storage = doc.getDocument(FieldName.STORAGE);
+        if (storage == null) {
+            storage = Schematic.newDocument();
+        }
+        return new BinaryStorage(storage.getDocument(FieldName.BINARY_STORAGE));
+    }
+
+    /**
+     * The binary-storage-related configuration information.
+     */
+    @Immutable
+    public class BinaryStorage {
+        private final Document binaryStorage;
+
+        protected BinaryStorage( Document binaryStorage ) {
+            this.binaryStorage = binaryStorage != null ? binaryStorage : EMPTY;
+        }
+
+        public long getMinimumBinarySizeInBytes() {
+            return binaryStorage.getLong(FieldName.MINIMUM_BINARY_SIZE_IN_BYTES, Default.MINIMUM_BINARY_SIZE_IN_BYTES);
+        }
+
+        public BinaryStore getBinaryStore() {
+            String type = binaryStorage.getString(FieldName.TYPE, "transient");
+            BinaryStore store = null;
+            if (type.equalsIgnoreCase("transient")) {
+                store = TransientBinaryStore.get();
+            } else if (type.equalsIgnoreCase("file")) {
+                String directory = binaryStorage.getString(FieldName.DIRECTORY);
+                File dir = new File(directory);
+                store = FileSystemBinaryStore.create(dir);
+            } else if (type.equalsIgnoreCase("database")) {
+                store = new DatabaseBinaryStore();
+            } else if (type.equalsIgnoreCase("cache")) {
+                String cacheName = binaryStorage.getString(FieldName.CACHE_NAME, getName());
+                String cacheConfiguration = binaryStorage.getString(FieldName.CACHE_CONFIGURATION);
+                String cacheTransactionManagerLookupClass = binaryStorage.getString(FieldName.CACHE_TRANSACTION_MANAGER_LOOKUP,
+                                                                                    Default.CACHE_TRANSACTION_MANAGER_LOOKUP);
+                store = new InfinispanBinaryStore();
+            }
+            if (store == null) store = TransientBinaryStore.get();
+            store.setMinimumBinarySizeInBytes(getMinimumBinarySizeInBytes());
+            return store;
+        }
     }
 
     public boolean isCreatingWorkspacesAllowed() {

@@ -25,9 +25,9 @@ package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
@@ -59,8 +59,8 @@ public class ClientLoad {
         final CyclicBarrier barrier = new CyclicBarrier(numClients / 4);
         final CountDownLatch latch = new CountDownLatch(numClients);
         final ExecutorService clientService = Executors.newFixedThreadPool(numClients + 2);
-        final List<Future<?>> clientFutures = new ArrayList<Future<?>>(numClients);
-        final List<Client<Result>> results = new ArrayList<Client<Result>>(numClients);
+        final List<Future<?>> clientFutures = new CopyOnWriteArrayList<Future<?>>();
+        final List<Client<Result>> results = new CopyOnWriteArrayList<Client<Result>>();
         try {
             for (int i = 0; i != numClients; ++i) {
                 clientFutures.add(clientService.submit(new Callable<Object>() {

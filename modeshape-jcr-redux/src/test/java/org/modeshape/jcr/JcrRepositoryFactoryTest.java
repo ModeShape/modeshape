@@ -30,8 +30,10 @@ import static org.junit.Assert.assertThat;
 import java.util.Collections;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.concurrent.TimeUnit;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
+import org.junit.After;
 import org.junit.Test;
 import org.modeshape.jcr.api.RepositoryFactory;
 
@@ -40,6 +42,12 @@ public class JcrRepositoryFactoryTest {
     private String url;
     private Map<String, String> params;
     private Repository repository;
+
+    @After
+    public void afterEach() throws Exception {
+        // Shut down all repositories after each test, since multiple tests may use the same URL ...
+        JcrRepositoryFactory.shutdownAll().get(10, TimeUnit.SECONDS);
+    }
 
     @Test
     public void shouldReturnRepositoryFromConfigurationFile() {

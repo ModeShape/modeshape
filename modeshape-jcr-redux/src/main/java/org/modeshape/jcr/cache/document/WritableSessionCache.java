@@ -73,6 +73,7 @@ import org.modeshape.jcr.cache.document.SessionNode.LockChange;
 import org.modeshape.jcr.cache.document.SessionNode.MixinChanges;
 import org.modeshape.jcr.cache.document.SessionNode.ReferrerChanges;
 import org.modeshape.jcr.core.ExecutionContext;
+import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.DateTime;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
@@ -578,6 +579,7 @@ public class WritableSessionCache extends AbstractSessionCache {
         // Make the changes (in order the nodes were added to the session) ...
         Set<NodeKey> referrers = null;
         Set<NodeKey> removedNodes = null;
+        Set<BinaryKey> unusedBinaryKeys = new HashSet<BinaryKey>();
         for (NodeKey key : changedNodesInOrder) {
             SessionNode node = changedNodes.get(key);
             String keyStr = key.toString();
@@ -635,8 +637,8 @@ public class WritableSessionCache extends AbstractSessionCache {
                     MixinChanges mixinChanges = node.mixinChanges(false);
                     if (mixinChanges != null && !mixinChanges.isEmpty()) {
                         Property oldProperty = translator.getProperty(doc, JcrLexicon.MIXIN_TYPES);
-                        translator.addPropertyValues(doc, JcrLexicon.MIXIN_TYPES, true, mixinChanges.getAdded());
-                        translator.removePropertyValues(doc, JcrLexicon.MIXIN_TYPES, mixinChanges.getRemoved());
+                        translator.addPropertyValues(doc, JcrLexicon.MIXIN_TYPES, true, mixinChanges.getAdded(), unusedBinaryKeys);
+                        translator.removePropertyValues(doc, JcrLexicon.MIXIN_TYPES, mixinChanges.getRemoved(), unusedBinaryKeys);
                         // the property was changed ...
                         Property newProperty = translator.getProperty(doc, JcrLexicon.MIXIN_TYPES);
                         if (oldProperty == null) {
@@ -676,7 +678,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                         persisted = workspaceCache.getNode(key);
                     }
                     for (Name name : removedProperties) {
-                        Property oldProperty = translator.removeProperty(doc, name);
+                        Property oldProperty = translator.removeProperty(doc, name, unusedBinaryKeys);
                         if (oldProperty != null) {
                             // the property was removed ...
                             changes.propertyRemoved(key, newPath, oldProperty);
@@ -694,7 +696,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                         Property prop = propEntry.getValue();
                         // Get the old property ...
                         Property oldProperty = persisted != null ? persisted.getProperty(name, workspaceCache) : null;
-                        translator.setProperty(doc, prop);
+                        translator.setProperty(doc, prop, unusedBinaryKeys);
                         if (oldProperty == null) {
                             // the property was created ...
                             changes.propertyAdded(key, newPath, prop);
@@ -772,6 +774,13 @@ public class WritableSessionCache extends AbstractSessionCache {
             // (see Node 1), meaning getting the path and other information for removed nodes never would work properly.
             for (NodeKey removedKey : removedNodes) {
                 database.remove(removedKey.toString());
+            }
+        }
+
+        if (!unusedBinaryKeys.isEmpty()) {
+            // There are some binary values that are no longer referenced ...
+            for (BinaryKey key : unusedBinaryKeys) {
+                changes.binaryValueNoLongerUsed(key);
             }
         }
 

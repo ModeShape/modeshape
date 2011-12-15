@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.DateTime;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
@@ -134,6 +135,11 @@ public class RecordingChanges implements Changes, ChangeSet {
                                  Property newProperty,
                                  Property oldProperty ) {
         events.add(new PropertyChanged(key, nodePath, newProperty, oldProperty));
+    }
+
+    @Override
+    public void binaryValueNoLongerUsed( BinaryKey key ) {
+        events.add(new BinaryValueUnused(key));
     }
 
     @Override

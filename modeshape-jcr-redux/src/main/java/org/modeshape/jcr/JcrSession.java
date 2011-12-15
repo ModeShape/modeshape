@@ -1456,13 +1456,5 @@ public class JcrSession implements Session {
             }
 
         }
-
-        protected void addBinaryHash( JcrValue value,
-                                      StringBuilder sb ) throws RepositoryException {
-            org.modeshape.jcr.value.Binary binary = value.getBinary();
-            String hash = new String(binary.getHash()); // doesn't matter what charset, as long as its always the
-            // same
-            sb.append(hash);
-        }
     }
 }
