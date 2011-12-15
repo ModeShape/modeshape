@@ -47,7 +47,7 @@
  * {@link org.modeshape.jcr.api.sequencer.Sequencer#execute(javax.jcr.Property, javax.jcr.Node, org.modeshape.jcr.api.sequencer.Sequencer.Context) execute(...)}
  * method by processing the supplied input property and creating a node (or subgraph) that represents the structured output of the
  * input property.</li>
- * <li>If the output structure uses custom node types, overwrite the {@link org.modeshape.jcr.api.sequencer.Sequencer#initialize(javax.jcr.NamespaceRegistry, javax.jcr.nodetype.NodeTypeManager) initialize(...)}
+ * <li>If the output structure uses custom node types, overwrite the {@link org.modeshape.jcr.api.sequencer.Sequencer#initialize(javax.jcr.NamespaceRegistry, org.modeshape.jcr.api.nodetype.NodeTypeManager) initialize(...)}
  * method to register any custom node types and namespaces. Be sure your method only registers them if they don't exist.</li>
  * <li>Configure a repository to use your new sequencer. Be sure your class (and any third-party libraries it uses)
  * are available on the classpath.</li>
