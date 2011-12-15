@@ -25,6 +25,7 @@ package org.modeshape.jcr.value.binary;
 
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
+import org.infinispan.Cache;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.jcr.value.Binary;
 import org.modeshape.jcr.value.BinaryKey;
@@ -34,6 +35,10 @@ import org.modeshape.jcr.value.BinaryKey;
  */
 @ThreadSafe
 public class InfinispanBinaryStore extends AbstractBinaryStore {
+
+    public Cache<?, ?> getCache() {
+        return null;
+    }
 
     @Override
     public Binary storeValue( InputStream stream ) throws BinaryStoreException {

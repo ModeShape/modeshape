@@ -38,7 +38,6 @@ import javax.jcr.Session;
 import javax.jcr.ValueFormatException;
 import org.infinispan.config.Configuration;
 import org.infinispan.manager.CacheContainer;
-import org.infinispan.test.TestingUtil;
 import org.infinispan.test.fwk.TestCacheManagerFactory;
 import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.junit.After;
@@ -72,12 +71,12 @@ public class JcrRepositoryTest {
     @After
     public void afterEach() throws Exception {
         try {
-            repository.shutdown().get(3L, TimeUnit.SECONDS);
+            TestingUtil.killRepositories(repository);
         } finally {
             repository = null;
             config = null;
             try {
-                TestingUtil.killCacheManagers(cm);
+                org.infinispan.test.TestingUtil.killCacheManagers(cm);
             } finally {
                 cm = null;
             }

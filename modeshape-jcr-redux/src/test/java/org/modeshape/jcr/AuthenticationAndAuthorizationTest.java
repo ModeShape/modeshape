@@ -26,7 +26,6 @@ package org.modeshape.jcr;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import java.util.concurrent.TimeUnit;
 import javax.jcr.LoginException;
 import javax.jcr.SimpleCredentials;
 import org.infinispan.config.Configuration;
@@ -35,7 +34,6 @@ import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
-import org.infinispan.test.TestingUtil;
 import org.infinispan.test.fwk.TestCacheManagerFactory;
 import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.junit.After;
@@ -74,12 +72,12 @@ public class AuthenticationAndAuthorizationTest {
     public void afterEach() throws Exception {
         if (repository != null) {
             try {
-                repository.shutdown().get(3L, TimeUnit.SECONDS);
+                TestingUtil.killRepositories(repository);
             } finally {
                 repository = null;
                 session = null;
                 try {
-                    TestingUtil.killCacheManagers(cm);
+                    org.infinispan.test.TestingUtil.killCacheManagers(cm);
                 } finally {
                     cm = null;
                 }

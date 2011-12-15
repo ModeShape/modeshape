@@ -366,6 +366,9 @@ public final class JcrI18n {
     public static I18n tempDirectorySystemPropertyMustBeSet;
     public static I18n tempDirectoryLocation;
 
+    public static I18n errorKillingRepository;
+    public static I18n errorKillingEngine;
+
     static {
         try {
             I18n.initialize(JcrI18n.class);

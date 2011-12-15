@@ -33,7 +33,6 @@ import javax.jcr.NamespaceRegistry;
 import javax.jcr.Session;
 import org.apache.jackrabbit.test.RepositoryStub;
 import org.infinispan.manager.CacheContainer;
-import org.infinispan.test.TestingUtil;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 
 /**
@@ -80,13 +79,13 @@ public class ModeShapeRepositoryStub extends RepositoryStub {
                 container = repository.database().getCache().getCacheManager();
             }
             try {
-                // Terminate any existing engine, and no need to block ...
-                engine.shutdown();
+                // Terminate any existing engine and destry any content used by the repositories ...
+                TestingUtil.killEngine(engine);
             } finally {
                 engine = null;
                 if (container != null) {
                     try {
-                        TestingUtil.killCacheManagers(container);
+                        org.infinispan.test.TestingUtil.killCacheManagers(container);
                     } finally {
                         container = null;
                     }

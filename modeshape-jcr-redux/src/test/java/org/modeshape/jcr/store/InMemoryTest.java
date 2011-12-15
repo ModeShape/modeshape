@@ -37,7 +37,6 @@ import org.infinispan.config.GlobalConfiguration;
 import org.infinispan.loaders.CacheLoaderConfig;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.schematic.Schematic;
-import org.infinispan.test.TestingUtil;
 import org.infinispan.test.fwk.TestCacheManagerFactory;
 import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.junit.After;
@@ -47,6 +46,7 @@ import org.junit.Test;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.RepositoryConfiguration;
+import org.modeshape.jcr.TestingUtil;
 
 public class InMemoryTest {
 
@@ -82,7 +82,7 @@ public class InMemoryTest {
         }
         c = c.fluent().transaction().transactionManagerLookup(new DummyTransactionManagerLookup()).build();
         cm = TestCacheManagerFactory.createCacheManager(global, c);
-        txnMgr = TestingUtil.getTransactionManager(cm.getCache(REPO_NAME));
+        txnMgr = org.infinispan.test.TestingUtil.getTransactionManager(cm.getCache(REPO_NAME));
         INFINISPAN_STARTUP.stop();
         MODESHAPE_STARTUP.start();
         config = new RepositoryConfiguration(REPO_NAME, cm);
@@ -98,16 +98,16 @@ public class InMemoryTest {
     @After
     public void afterEach() throws Exception {
         try {
-            engine.shutdown().get(3L, TimeUnit.SECONDS);
+            TestingUtil.killEngine(engine);
         } finally {
             engine = null;
             repository = null;
             config = null;
             try {
-                TestingUtil.killTransaction(txnMgr);
+                org.infinispan.test.TestingUtil.killTransaction(txnMgr);
             } finally {
                 try {
-                    TestingUtil.killCacheManagers(cm);
+                    org.infinispan.test.TestingUtil.killCacheManagers(cm);
                 } finally {
                     cm = null;
                     cleanUpFileSystem();

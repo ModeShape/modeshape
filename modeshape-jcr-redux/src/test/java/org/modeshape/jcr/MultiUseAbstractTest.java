@@ -23,10 +23,8 @@
  */
 package org.modeshape.jcr;
 
-import java.util.concurrent.TimeUnit;
 import org.infinispan.config.Configuration;
 import org.infinispan.manager.CacheContainer;
-import org.infinispan.test.TestingUtil;
 import org.infinispan.test.fwk.TestCacheManagerFactory;
 import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.junit.AfterClass;
@@ -61,12 +59,12 @@ public abstract class MultiUseAbstractTest {
     @AfterClass
     public static void afterAll() throws Exception {
         try {
-            repository.shutdown().get(3L, TimeUnit.SECONDS);
+            TestingUtil.killRepositories(repository);
         } finally {
             repository = null;
             config = null;
             try {
-                TestingUtil.killCacheManagers(cm);
+                org.infinispan.test.TestingUtil.killCacheManagers(cm);
             } finally {
                 cm = null;
             }

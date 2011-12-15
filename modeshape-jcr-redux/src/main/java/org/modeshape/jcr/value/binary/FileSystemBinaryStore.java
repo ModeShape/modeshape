@@ -82,7 +82,7 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
         this.trash = new File(this.directory, TRASH_DIRECTORY_NAME);
     }
 
-    protected File getDirectory() {
+    public File getDirectory() {
         return directory;
     }
 

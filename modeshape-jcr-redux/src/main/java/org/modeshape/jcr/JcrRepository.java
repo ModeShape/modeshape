@@ -26,6 +26,8 @@ package org.modeshape.jcr;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.AccessControlContext;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -108,6 +110,7 @@ import org.modeshape.jcr.security.JaasProvider;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.binary.BinaryStore;
+import org.modeshape.jcr.value.binary.InfinispanBinaryStore;
 import org.modeshape.jcr.value.binary.UnusedBinaryChangeSetListener;
 
 /**
@@ -786,6 +789,23 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         }
     }
 
+    Collection<Cache<?, ?>> caches() {
+        RunningState running = runningState.get();
+        if (running == null) return Collections.emptyList();
+
+        List<Cache<?, ?>> caches = new ArrayList<Cache<?, ?>>();
+        caches.add(running.database().getCache());
+        // Add the binary store's cache, if there is one ...
+        BinaryStore store = running.binaryStore();
+        if (store instanceof InfinispanBinaryStore) {
+            InfinispanBinaryStore ispnStore = (InfinispanBinaryStore)store;
+            Cache<?, ?> binaryCache = ispnStore.getCache();
+            if (binaryCache != null) caches.add(binaryCache);
+        }
+
+        return caches;
+    }
+
     protected class WorkspaceListener implements ChangeSetListener {
         @Override
         public void notify( ChangeSet changeSet ) {
@@ -1074,6 +1094,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
         protected final SchematicDb database() {
             return database;
+        }
+
+        protected final BinaryStore binaryStore() {
+            return binaryStore;
         }
 
         protected final TransactionManager txnManager() {
