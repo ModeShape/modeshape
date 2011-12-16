@@ -230,15 +230,17 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
         // output the sv:property element
         startElement(contentHandler, JcrSvLexicon.PROPERTY, propAtts);
 
+        boolean modified = property.isModified();
+
         // then output a sv:value element for each of its values
         if (prop instanceof JcrMultiValueProperty) {
             Value[] values = prop.getValues();
             for (int i = 0; i < values.length; i++) {
 
-                emitValue(values[i], contentHandler, property.getType(), skipBinary);
+                emitValue(values[i], contentHandler, property.getType(), skipBinary, modified);
             }
         } else {
-            emitValue(property.getValue(), contentHandler, property.getType(), skipBinary);
+            emitValue(property.getValue(), contentHandler, property.getType(), skipBinary, modified);
         }
 
         // end the sv:property element
@@ -252,13 +254,15 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
      * @param contentHandler the SAX content handler for which SAX events will be invoked as the XML document is created.
      * @param propertyType the {@link PropertyType} for the given value
      * @param skipBinary if <code>true</code>, indicates that binary properties should not be exported
+     * @param isModified true if the property is modified; any modified binary properties will not be purged
      * @throws SAXException if an exception occurs during generation of the XML document
      * @throws RepositoryException if an exception occurs accessing the content repository
      */
     private void emitValue( Value value,
                             ContentHandler contentHandler,
                             int propertyType,
-                            boolean skipBinary ) throws RepositoryException, SAXException {
+                            boolean skipBinary,
+                            boolean isModified ) throws RepositoryException, SAXException {
 
         if (PropertyType.BINARY == propertyType) {
             startElement(contentHandler, JcrSvLexicon.VALUE, null);
@@ -278,7 +282,15 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
                 } catch (IOException ioe) {
                     throw new RepositoryException(ioe);
                 } finally {
-                    binary.dispose();
+                    try {
+                        binary.dispose();
+                    } finally {
+                        if (!isModified) {
+                            if (binary instanceof org.modeshape.graph.property.Binary) {
+                                ((org.modeshape.graph.property.Binary)binary).purge();
+                            }
+                        }
+                    }
                 }
             }
             endElement(contentHandler, JcrSvLexicon.VALUE);

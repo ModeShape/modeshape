@@ -133,6 +133,11 @@ public class FileSystemBinary extends AbstractBinary {
         // do nothing
     }
 
+    @Override
+    public void purge() {
+        // no need to do anything
+    }
+
     private void writeObject( ObjectOutputStream out ) throws IOException {
         out.writeUTF(this.file.getPath());
     }

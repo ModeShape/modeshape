@@ -46,8 +46,10 @@ import org.xml.sax.SAXException;
 /**
  * Superclass of ModeShape JCR exporters, provides basic support for traversing through the nodes recursively (if needed),
  * exception wrapping (since {@link ItemVisitor} does not allow checked exceptions to be thrown from its visit* methods, and the
- * ability to wrap an {@link OutputStream} with a {@link ContentHandler}. <p /> Each exporter is only intended to be used once (by
- * calling <code>exportView</code>) and discarded. This class is <b>NOT</b> thread-safe.
+ * ability to wrap an {@link OutputStream} with a {@link ContentHandler}.
+ * <p />
+ * Each exporter is only intended to be used once (by calling <code>exportView</code>) and discarded. This class is <b>NOT</b>
+ * thread-safe.
  * 
  * @see JcrSystemViewExporter
  * @see JcrDocumentViewExporter
@@ -156,7 +158,13 @@ abstract class AbstractJcrExporter {
             }
         }
 
-        exportNode(exportRootNode, contentHandler, skipBinary, noRecurse);
+        try {
+            exportNode(exportRootNode, contentHandler, skipBinary, noRecurse);
+        } finally {
+            // Refresh the session to release all nodes that have been cached and any binary values that were purged,
+            // but keep any transient changes made within the session ...
+            exportRootNode.refresh(true);
+        }
 
         for (int i = 0; i < namespacePrefixes.length; i++) {
             if (!restrictedPrefixes.contains(namespacePrefixes[i])) {
