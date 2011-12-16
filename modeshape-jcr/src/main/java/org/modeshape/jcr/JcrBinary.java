@@ -25,6 +25,7 @@ package org.modeshape.jcr;
 
 import java.io.IOException;
 import java.io.InputStream;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.graph.property.Binary;
 
 /**
@@ -41,6 +42,14 @@ class JcrBinary implements javax.jcr.Binary, org.modeshape.jcr.api.Binary {
 
     Binary binary() {
         return this.binary;
+    }
+
+    public byte[] getHash() {
+        return this.binary.getHash();
+    }
+
+    public String getHexHash() {
+        return StringUtil.getHexString(getHash());
     }
 
     /**

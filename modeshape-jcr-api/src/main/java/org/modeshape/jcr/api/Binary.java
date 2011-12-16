@@ -23,11 +23,39 @@
  */
 package org.modeshape.jcr.api;
 
+import java.security.MessageDigest;
+
 /**
- * Replicates JCR 2.0's javax.jcr.Binary interface.
- *
- * @deprecated use <code>javax.jcr.Binary</code> interface directly.
+ * An extension of the standard {@link javax.jcr.Binary} interface, with methods to obtain the SHA-1 hash of the binary value.
  */
-@Deprecated
-public interface Binary {
+public interface Binary extends javax.jcr.Binary {
+
+    /**
+     * Get the SHA-1 hash of the contents. This hash can be used to determine whether two Binary instances contain the same
+     * content.
+     * <p>
+     * Repeatedly calling this method should generally be efficient, as it most implementations will compute the hash only once.
+     * </p>
+     * 
+     * @return the hash of the contents as a byte array, or an empty array if the hash could not be computed.
+     * @see MessageDigest#digest(byte[])
+     * @see MessageDigest#getInstance(String)
+     * @see #getHexHash()
+     */
+    public byte[] getHash();
+
+    /**
+     * Get the hexadecimal form of the SHA-1 hash of the contents. This hash can be used to determine whether two Binary instances
+     * contain the same content.
+     * <p>
+     * Repeatedly calling this method should generally be efficient, as it most implementations will compute the hash only once.
+     * </p>
+     * 
+     * @return the hexadecimal form of the {@link #getHash()}, or a null string if the hash could not be computed or is not known
+     * @see MessageDigest#digest(byte[])
+     * @see MessageDigest#getInstance(String)
+     * @see #getHash()
+     */
+    public String getHexHash();
+
 }
