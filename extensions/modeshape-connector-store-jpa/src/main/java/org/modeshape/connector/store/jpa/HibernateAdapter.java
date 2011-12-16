@@ -117,9 +117,6 @@ public class HibernateAdapter implements JpaAdapter {
                         "hibernate.ejb.classcache.org.modeshape.connector.store.jpa.model.simple.NodeEntity",
                         cacheConcurrencyStrategy);
             setProperty(jpaProperties,
-                        "hibernate.ejb.classcache.org.modeshape.connector.store.jpa.model.simple.LargeValueEntity",
-                        cacheConcurrencyStrategy);
-            setProperty(jpaProperties,
                         "hibernate.ejb.collectioncache.org.modeshape.connector.store.jpa.model.simple.NodeEntity.children",
                         cacheConcurrencyStrategy);
             setProperty(jpaProperties,
