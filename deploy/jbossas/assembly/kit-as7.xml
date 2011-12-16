@@ -1,0 +1,62 @@
+<!--This script builds a zip for ModeShape server Installation -->
+<assembly>
+
+	<id>jboss-dist</id>
+
+	<formats>
+		<format>zip</format>
+	</formats>
+
+	<includeBaseDirectory>false</includeBaseDirectory>
+
+	<baseDirectory>/</baseDirectory>
+
+	<fileSets>
+
+		<fileSet>
+			<directory>kit/jboss-as7</directory>
+			<outputDirectory>/</outputDirectory>
+		</fileSet>
+
+		<fileSet>
+			<directory>modeshape-jbossas-subsystem/target</directory>
+			<outputDirectory>modules/org/modeshape/main</outputDirectory>
+			<includes>
+				<include>modeshape-subsystem-${project.version}.jar</include>
+			</includes>
+		</fileSet>
+
+
+	</fileSets>
+
+	<dependencySets>
+		<dependencySet>
+			<outputDirectory>modules/org/modeshape/jcr/api/main</outputDirectory>
+			<includes>
+				<include>org.modeshape:modeshape-jcr-api</include>
+			</includes>
+			<unpack>false</unpack>
+		</dependencySet>
+
+		<dependencySet>
+			<outputDirectory>modules/javax/jcr/main</outputDirectory>
+			<includes>
+				<include>javax.jcr:jcr</include>
+			</includes>
+			<unpack>false</unpack>
+		</dependencySet>
+
+		<dependencySet>
+			<outputDirectory>modules/org/modeshape/main</outputDirectory>
+			<includes>
+				<include>org.modeshape:modeshape-jcr-redux</include>
+				<include>org.modeshape:modeshape-common</include>
+				<include>org.modeshape:modeshape-schematic</include>
+			</includes>
+			<unpack>false</unpack>
+		</dependencySet>
+
+
+	</dependencySets>
+
+</assembly>
