@@ -25,12 +25,14 @@ package org.modeshape.jcr;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Repository;
 import javax.transaction.TransactionManager;
 import org.infinispan.Cache;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.Logger;
+import org.modeshape.jcr.JcrEngine.State;
 import org.modeshape.jcr.value.binary.TransientBinaryStore;
 
 /**
@@ -60,9 +62,7 @@ public class TestingUtil {
     public static void killRepository( JcrRepository repository ) {
         if (repository == null) return;
         try {
-            // First shut down the repository ...
-            repository.shutdown().get(20, TimeUnit.SECONDS);
-
+            if (repository.getState() != State.RUNNING) return;
             // Rollback any open transactions ...
             TransactionManager txnMgr = repository.runningState().txnManager();
             if (txnMgr != null) {
@@ -73,8 +73,14 @@ public class TestingUtil {
                 }
             }
 
+            // Then get the caches (which we'll kill after we shutdown the repository) ...
+            Collection<Cache<?, ?>> caches = repository.caches();
+
+            // First shut down the repository ...
+            repository.shutdown().get(20, TimeUnit.SECONDS);
+
             // Get the caches and kill them ...
-            for (Cache<?, ?> cache : repository.caches()) {
+            for (Cache<?, ?> cache : caches) {
                 if (cache != null) org.infinispan.test.TestingUtil.killCaches(cache);
             }
         } catch (Throwable t) {
@@ -85,13 +91,16 @@ public class TestingUtil {
     public static void killEngine( JcrEngine engine ) {
         if (engine == null) return;
         try {
-            // First, shutdown the engine ...
-            engine.shutdown().get(20, TimeUnit.SECONDS);
+            if (engine.getState() != State.RUNNING) return;
 
+            // First shutdown and destroy the repositories ...
             for (String key : engine.getRepositoryKeys()) {
                 JcrRepository repository = engine.getRepository(key);
                 killRepository(repository);
             }
+            // Then shutdown the engine ...
+            engine.shutdown().get(20, TimeUnit.SECONDS);
+
         } catch (Throwable t) {
             log.error(t, JcrI18n.errorKillingEngine, t.getMessage());
         }
