@@ -40,7 +40,7 @@ public class InMemoryBinary extends AbstractBinary {
      */
     private static final long serialVersionUID = 2L;
 
-    private final byte[] bytes;
+    private byte[] bytes;
     private byte[] sha1hash;
     private int hc;
 
@@ -48,6 +48,7 @@ public class InMemoryBinary extends AbstractBinary {
         super();
         CheckArg.isNotNull(bytes, "bytes");
         this.bytes = bytes;
+        assert this.bytes != null;
     }
 
     /**
@@ -59,6 +60,7 @@ public class InMemoryBinary extends AbstractBinary {
     public int hashCode() {
         if (sha1hash == null) {
             // Idempotent, so doesn't matter if we recompute in concurrent threads ...
+            assert this.bytes != null : "This Binary object was purged and has no content";
             sha1hash = computeHash(bytes);
             hc = sha1hash.hashCode();
         }
@@ -80,6 +82,7 @@ public class InMemoryBinary extends AbstractBinary {
     public byte[] getHash() {
         if (sha1hash == null) {
             // Idempotent, so doesn't matter if we recompute in concurrent threads ...
+            assert this.bytes != null : "This Binary object was purged and has no content";
             sha1hash = computeHash(bytes);
             hc = sha1hash.hashCode();
         }
@@ -90,6 +93,7 @@ public class InMemoryBinary extends AbstractBinary {
      * {@inheritDoc}
      */
     public byte[] getBytes() {
+        assert this.bytes != null : "This Binary object was purged and has no content";
         return this.bytes;
     }
 
@@ -97,6 +101,7 @@ public class InMemoryBinary extends AbstractBinary {
      * {@inheritDoc}
      */
     public InputStream getStream() {
+        assert this.bytes != null : "This Binary object was purged and has no content";
         return new ByteArrayInputStream(this.bytes);
     }
 
@@ -112,5 +117,10 @@ public class InMemoryBinary extends AbstractBinary {
      */
     public void release() {
         // do nothing
+    }
+
+    @Override
+    public void purge() {
+        this.bytes = null;
     }
 }

@@ -30,6 +30,7 @@ import java.text.StringCharacterIterator;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import javax.jcr.Binary;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Property;
@@ -201,6 +202,7 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
         String valueAsString;
         if (PropertyType.BINARY == prop.getType()) {
             StringBuffer buff = new StringBuffer(ENCODE_BUFFER_SIZE);
+            Binary binary = value.getBinary();
             try {
                 Base64.InputStream is = new Base64.InputStream(value.getBinary().getStream(), Base64.ENCODE);
 
@@ -211,6 +213,17 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
                 }
             } catch (IOException ioe) {
                 throw new RepositoryException(ioe);
+            } finally {
+                try {
+                    binary.dispose();
+                } finally {
+                    if (!prop.isModified()) {
+                        // Modified properties cannot be purged, but unmodified properties can and should be!
+                        if (binary instanceof org.modeshape.graph.property.Binary) {
+                            ((org.modeshape.graph.property.Binary)binary).purge();
+                        }
+                    }
+                }
             }
             valueAsString = buff.toString();
         } else {

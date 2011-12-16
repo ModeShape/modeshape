@@ -88,4 +88,9 @@ public interface Binary extends Comparable<Binary>, Serializable {
      */
     public void release();
 
+    /**
+     * A method that signals that any data kept in memory should be purged as it is no longer needed.
+     */
+    public void purge();
+
 }
