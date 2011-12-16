@@ -24,20 +24,13 @@
 package org.modeshape.sequencer.image;
 
 import javax.jcr.Node;
-import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
-import javax.jcr.Session;
-import org.junit.After;
+import org.infinispan.manager.CacheContainer;
 import static org.junit.Assert.*;
-import org.junit.Before;
 import org.junit.Test;
-import org.modeshape.jcr.JcrRepositoryFactory;
+import org.modeshape.jcr.RepositoryConfiguration;
+import org.modeshape.jcr.SingleUseAbstractTest;
 import org.modeshape.jcr.api.JcrConstants;
-import org.modeshape.jcr.api.RepositoryFactory;
-import java.net.URL;
-import java.util.Collections;
-import java.util.Map;
-import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -49,21 +42,19 @@ import java.util.concurrent.TimeUnit;
  * @author John Verhaeg
  * @author Horia Chiorean
  */
-public class ImageMetadataSequencerTest {
+public class ImageMetadataSequencerTest extends SingleUseAbstractTest {
 
-    private Session session;
     private Node rootNode;
 
-    @Before
-    public void beforeEach() throws Exception {
-        Repository repository = repositoryFor(getClass().getClassLoader().getResource("config/repo-config.json"));
-        session = repository.login();
-        rootNode = session.getRootNode();
+    @Override
+    protected RepositoryConfiguration createRepositoryConfiguration( String repositoryName, CacheContainer cacheContainer ) throws  Exception{
+        return  RepositoryConfiguration.read(resourceStream("config/repo-config.json"), repositoryName).with(cacheContainer);
     }
 
-    @After
-    public void afterEach() throws Exception {
-        session.logout();
+    @Override
+    public void beforeEach() throws Exception {
+        super.beforeEach();
+        rootNode = session.getRootNode();
     }
 
     @Test
@@ -113,7 +104,7 @@ public class ImageMetadataSequencerTest {
     private Node createImageNode( String imageFile ) throws RepositoryException {
         Node imageNode = rootNode.addNode(imageFile);
         Node content = imageNode.addNode(JcrConstants.JCR_CONTENT);
-        content.setProperty(JcrConstants.JCR_DATA, session.getValueFactory().createBinary(getClass().getClassLoader().getResourceAsStream(imageFile)));
+        content.setProperty(JcrConstants.JCR_DATA, ((javax.jcr.Session)session).getValueFactory().createBinary(resourceStream(imageFile)));
         session.save();
         return imageNode;
     }
@@ -148,16 +139,5 @@ public class ImageMetadataSequencerTest {
         assertEquals(physicalHeightDpi, metadataNode.getProperty(ImageMetadataLexicon.PHYSICAL_HEIGHT_DPI).getLong());
         assertEquals(physicalWidthInches, metadataNode.getProperty(ImageMetadataLexicon.PHYSICAL_WIDTH_INCHES).getDouble(), 0.0001d);
         assertEquals(physicalHeightInches, metadataNode.getProperty(ImageMetadataLexicon.PHYSICAL_HEIGHT_INCHES).getDouble(), 0.0001d);
-    }
-
-    private Repository repositoryFor( URL configUrl ) throws RepositoryException {
-        Map<?, ?> configParams = Collections.singletonMap(JcrRepositoryFactory.URL, configUrl);
-        for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
-            Repository repository = factory.getRepository(configParams);
-            if (repository != null) {
-                return repository;
-            }
-        }
-        return null;
     }
 }
