@@ -23,25 +23,25 @@
  */
 package org.modeshape.graph.connector;
 
-import static org.modeshape.graph.connector.RepositorySourceLoadHarness.runLoadTest;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertThat;
-import java.util.List;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.connector.RepositoryConnection;
-import org.modeshape.graph.connector.RepositoryConnectionPool;
-import org.modeshape.graph.connector.RepositorySource;
-import org.modeshape.graph.connector.RepositorySourceException;
 import org.junit.After;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
+import org.modeshape.graph.ExecutionContext;
+import static org.modeshape.graph.connector.RepositorySourceLoadHarness.runLoadTest;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.concurrent.*;
 
 /**
  * @author Randall Hauch
+ * @author Horia Chiorean
  */
 public class RepositoryConnectionPoolTest {
 
@@ -109,7 +109,7 @@ public class RepositoryConnectionPoolTest {
 
     @Test
     public void shouldAllowShutdownToBeCalledMultipleTimesEvenWhenShutdown()
-        throws RepositorySourceException, InterruptedException {
+            throws RepositorySourceException, InterruptedException {
         assertThat(pool.getTotalConnectionsCreated(), is(0l));
         assertThat(pool.getTotalConnectionsUsed(), is(0l));
 
@@ -214,13 +214,15 @@ public class RepositoryConnectionPoolTest {
         int total = 0;
         for (Future<Integer> result : results) {
             assertThat(result.isDone(), is(true));
-            if (result.isDone()) total += result.get();
+            if (result.isDone()) {
+                total += result.get();
+            }
         }
         assertThat(total, is(20 * numClients));
         pool.shutdown();
         pool.awaitTermination(4, TimeUnit.SECONDS);
     }
-    
+
     @Test
     public void shouldReturnTrueFromPingIfRunning() throws Exception {
         int numConnectionsInPool = 2;
@@ -232,7 +234,7 @@ public class RepositoryConnectionPoolTest {
         pool.shutdown();
         pool.awaitTermination(4, TimeUnit.SECONDS);
     }
-    
+
     @Test
     public void shouldReturnFalseFromPingIfNotRunning() throws Exception {
         int numConnectionsInPool = 2;
@@ -243,6 +245,86 @@ public class RepositoryConnectionPoolTest {
         pool.awaitTermination(4, TimeUnit.SECONDS);
         assertThat(pool.ping(), is(false));
 
+    }
+
+    @FixFor("MODE-1347")
+    @Test
+    public void shouldntBlockOnConcurrentOpenCloseConnectionScenario1() throws Exception {
+        final RepositoryConnectionPool pool = new RepositoryConnectionPool(source);
+        final Random rnd = new Random();
+        final int maxWaitSeconds = 10;
+
+        ExecutorService executorService = Executors.newCachedThreadPool();
+
+        //open & close twice the number of connections that the pool can handle, pausing in-between
+        for (int i = 0; i < pool.getMaximumPoolSize() * 2; i++) {
+            executorService.submit(new Callable<RepositoryConnection>() {
+                public RepositoryConnection call() throws Exception {
+                    RepositoryConnection connection = pool.getConnection();
+                    assertNotNull(connection);
+                    long waitMillis = TimeUnit.SECONDS.toMillis(rnd.nextInt(maxWaitSeconds));
+                    Thread.sleep(waitMillis);
+                    connection.close();
+                    return connection;
+                }
+            });
+        }
+
+        //open the maximum number of connections the pool can handle, without closing
+        List<Future<Void>> futureTasks = new ArrayList<Future<Void>>();
+        for (int i = 0; i < pool.getMaximumPoolSize(); i++) {
+            futureTasks.add(executorService.submit(new Callable<Void>() {
+                public Void call() throws Exception {
+                    RepositoryConnection connection = pool.getConnection();
+                    assertNotNull(connection);
+                    long waitMillis = TimeUnit.SECONDS.toMillis(rnd.nextInt(maxWaitSeconds));
+                    Thread.sleep(waitMillis);
+                    return null;
+                }
+            }));
+        }
+
+        //wait for each of the the latest tasks to finish
+        for (Future<Void> futureTask : futureTasks) {
+            futureTask.get();
+        }
+
+        executorService.shutdown();
+    }
+
+    @FixFor("MODE-1347")
+    @Test
+    public void shouldntBlockOnConcurrentOpenCloseConnectionScenario2() throws Exception {
+        final RepositoryConnectionPool pool = new RepositoryConnectionPool(source);
+        ExecutorService executorService = Executors.newCachedThreadPool();
+
+        //open the maximum number of connections + 1
+        final List<Future<RepositoryConnection>> futureConnections = new ArrayList<Future<RepositoryConnection>>();
+        for (int i = 0; i <= pool.getMaximumPoolSize(); i++) {
+            Callable<RepositoryConnection> openConnectionTask = new Callable<RepositoryConnection>() {
+                public RepositoryConnection call() throws Exception {
+                    RepositoryConnection connection = pool.getConnection();
+                    assertNotNull(connection);
+                    return connection;
+                }
+            };
+            futureConnections.add(executorService.submit(openConnectionTask));
+        }
+
+        //close the first connection
+        executorService.submit(new Callable<Void>() {
+            public Void call() throws Exception {
+                futureConnections.get(0).get().close();
+                return null;
+            }
+        });
+
+        //wait for all the submitted jobs to finish
+        for (int i = 1; i < futureConnections.size(); i++) {
+           futureConnections.get(i).get();
+        }
+
+        executorService.shutdown();
     }
 
 }

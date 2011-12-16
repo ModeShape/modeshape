@@ -831,15 +831,8 @@ public class RepositoryConnectionPool {
                     connection = newWrappedConnection();
                 }
                 // Peek to see if there is a connection available ...
-                else if (this.availableConnections.peek() != null) {
-                    // There is, so take it and return it ...
-                    try {
-                        connection = this.availableConnections.take();
-                    } catch (InterruptedException e) {
-                        LOGGER.trace("Cancelled obtaining a repository connection from pool {0}", getSourceName());
-                        Thread.interrupted();
-                        throw new RepositorySourceException(getSourceName(), e);
-                    }
+                // MODE-1347 Replaced peek & take with one atomic operation
+                else if ((connection = this.availableConnections.poll()) != null) {
                 }
                 // There is no connection available. If there are fewer total
                 // connections than the maximum size ...
@@ -853,6 +846,7 @@ public class RepositoryConnectionPool {
             } finally {
                 mainLock.unlock();
             }
+
             if (connection == null) {
                 // There are not enough connections, so wait in line for the
                 // next available connection ...
@@ -875,6 +869,7 @@ public class RepositoryConnectionPool {
                 }
                 LOGGER.trace("Recieved a repository connection from pool {0}", getSourceName());
             }
+
             if (connection != null && this.validateConnectionBeforeUse.get()) {
                 try {
                     connection = validateConnection(connection);
