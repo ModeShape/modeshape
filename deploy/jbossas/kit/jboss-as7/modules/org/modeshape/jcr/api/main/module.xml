@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module xmlns="urn:jboss:module:1.0" name="org.modeshape.jcr.api">
+    <resources>
+        <resource-root path="modeshape-jcr-api-3.0-SNAPSHOT.jar" />
+        <!-- Insert resources here -->
+    </resources>
+    
+    <dependencies>
+        <module name="javax.jcr" export="true"/>
+    </dependencies>
+</module>

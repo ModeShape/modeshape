@@ -8,87 +8,110 @@
 		<relativePath>../../modeshape-parent</relativePath>
 	</parent>
 	<packaging>pom</packaging>
-	<artifactId>jbossas</artifactId>
+	<artifactId>modeshape</artifactId>
 	<name>ModeShape JBoss Deployment Components</name>
 	<url>http://www.modeshape.org</url>
 	<description>Builds the ModeShape components that can be deployed to JBoss</description>
 	<modules>
-		<module>modeshape-jbossas-service</module>
-		<module>modeshape-jbossas-console</module>
-		<module>modeshape-jbossas-web-rest-war</module>
-		<module>modeshape-jbossas-web-webdav-war</module>
+	<!--    <module>modeshape-jbossas-console</module>  -->
+	<!-- 	<module>modeshape-jbossas-service</module>  -->
+	 <module>modeshape-jbossas-subsystem</module> 
+	<!-- <module>modeshape-jbossas-web-rest-war</module> -->
+	<!-- <module>modeshape-jbossas-web-webdav-war</module> -->
 	</modules>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.modeshape</groupId>
-			<artifactId>modeshape-jcr</artifactId>
+			<artifactId>modeshape-jcr-redux</artifactId>
 			<version>${project.version}</version>
 		</dependency>
-		<dependency>
+	<!-- 	<dependency>
 			<groupId>org.modeshape</groupId>
 			<artifactId>modeshape-jdbc</artifactId>
 			<version>${project.version}</version>
-		</dependency>
+		</dependency> -->
 		<dependency>
 			<groupId>javax.jcr</groupId>
 			<artifactId>jcr</artifactId>
 		</dependency>
 	</dependencies>
 
-	<profiles>
-		<profile>
-			<id>assembly</id>
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-antrun-plugin</artifactId>
-						<version>1.6</version>
-						<executions>
-							<execution>
-								<id>unsign-eclipse-jars</id>
-								<phase>prepare-package</phase>
-								<goals>
-									<goal>run</goal>
-								</goals>
-								<inherited>false</inherited>
-								<configuration>
-									<target>
-										<ant antfile="build.xml" />
-									</target>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-					<plugin>
-						<artifactId>maven-assembly-plugin</artifactId>
+	 <build>
+        <outputDirectory>target/kits</outputDirectory>
+        
+        <resources>
+            <resource>
+                <directory>kits</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>**/*.xml</include>
+                    <include>**/*.properties</include>
+                    <include>**/*.sh</include>
+                    <include>**/*.bat</include>
+                    <include>**/*.html</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>kits</directory>
+                <filtering>false</filtering>
+                <excludes>
+                    <exclude>**/*.xml</exclude>
+                    <exclude>**/*.properties</exclude>
+                    <exclude>**/*.sh</exclude>
+                    <exclude>**/*.bat</exclude>
+                    <exclude>**/*.html</exclude>
+                </excludes>
+            </resource>
+        </resources>
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <artifactId>maven-assembly-plugin</artifactId>
+            </plugin>
+          </plugins>
+        </pluginManagement>
+        <plugins>
+          <plugin>
+            <artifactId>maven-assembly-plugin</artifactId>
 
-						<configuration>
-							<finalName>modeshape-jbossas-${project.version}</finalName>
-							<descriptors>
-								<descriptor>assembly/kit.xml</descriptor>
-								<descriptor>assembly/kit-as6.xml</descriptor>
-							</descriptors>
-							<outputDirectory>target/distribution</outputDirectory>
-							<workDirectory>target/assembly/work</workDirectory>
-							<archive>
-								<manifest>
-									<addClasspath>true</addClasspath>
-								</manifest>
-							</archive>
-						</configuration>
-						<executions>
-							<execution>
-								<phase>package</phase>
-								<goals>
-									<goal>single</goal>
-								</goals>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-	</profiles>
+            <configuration>
+              <descriptors>
+                <descriptor>assembly/kit-as7.xml</descriptor>
+              </descriptors>
+            </configuration>
+
+            <executions>
+              <execution>
+                <id>create-assemblies</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>single</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>          
+        </plugins>
+    </build>
+    
+    <profiles>
+      <profile>
+        <!-- 
+            This profile is activated manually, as in "mvn ... -P release ..."
+  		  -->
+        <id>release</id>
+        <build>
+          <plugins>
+            <plugin>
+              <artifactId>maven-assembly-plugin</artifactId>
+              <configuration>
+                <descriptors>
+                  <descriptor>assembly/kit-as7.xml</descriptor>
+                </descriptors>
+              </configuration>
+            </plugin>
+          </plugins>
+        </build>
+      </profile>
+    </profiles>
 </project>
