@@ -30,6 +30,8 @@
             <artifactId>modeshape-jcr-api</artifactId>
         </dependency>
 
+        <!-- Testing -->
+
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-common</artifactId>
@@ -52,9 +54,15 @@
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
-        <!--
-        Testing (note the scope)
-        -->
+
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-core</artifactId>
+            <version>${infinispan.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
