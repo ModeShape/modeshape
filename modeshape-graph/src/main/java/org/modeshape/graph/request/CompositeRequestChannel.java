@@ -82,6 +82,7 @@ public class CompositeRequestChannel {
     /** Flag that defines whether the channel has processed all requests */
     protected final AtomicBoolean closed = new AtomicBoolean(false);
     protected Throwable compositeError = null;
+    private final boolean keepRequests;
 
     /**
      * Create a new channel with the supplied channel name.
@@ -93,6 +94,22 @@ public class CompositeRequestChannel {
         assert sourceName != null;
         this.sourceName = sourceName;
         this.composite = new ChannelCompositeRequest();
+        this.keepRequests = true;
+    }
+
+    /**
+     * Create a new channel with the supplied channel name.
+     * 
+     * @param sourceName the name of the repository source used to execute this channel's {@link #allRequests() requests}; may not
+     *        be null or empty
+     * @param keepRequests true if this channel should keep all of the requests that it processes, or false otherwise
+     */
+    public CompositeRequestChannel( final String sourceName,
+                                    boolean keepRequests ) {
+        assert sourceName != null;
+        this.sourceName = sourceName;
+        this.composite = new ChannelCompositeRequest();
+        this.keepRequests = keepRequests;
     }
 
     /**
@@ -245,7 +262,7 @@ public class CompositeRequestChannel {
             throw new IllegalStateException(GraphI18n.unableToAddRequestToChannelThatIsDone.text(sourceName, request));
         }
         assert request != null;
-        this.allRequests.add(request);
+        if (this.keepRequests) this.allRequests.add(request);
         this.queue.add(request);
     }
 
@@ -266,7 +283,7 @@ public class CompositeRequestChannel {
         assert request != null;
         assert latch != null;
         // Submit the request for processing ...
-        this.allRequests.add(request);
+        if (this.keepRequests) this.allRequests.add(request);
         request.setLatchForFreezing(latch);
         this.queue.add(request);
         return latch;
