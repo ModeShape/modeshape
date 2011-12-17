@@ -104,7 +104,7 @@ public class SearchEngineIndexer {
         this.searchEngine = searchEngine;
         this.sourceName = searchEngine.getSourceName();
         this.connectionFactory = connectionFactory;
-        this.channel = new CompositeRequestChannel(this.sourceName);
+        this.channel = new CompositeRequestChannel(this.sourceName, false);
         this.service = Executors.newSingleThreadExecutor(new NamedThreadFactory("search-" + sourceName));
         // Start the channel and search engine processor right away (this is why this object must be closed)
         this.channel.start(service, this.context, this.connectionFactory);
