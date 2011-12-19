@@ -3,7 +3,7 @@
  * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of
+ * See the AUTHORS.txt file in the distribution for a full listing of 
  * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
@@ -21,22 +21,27 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org
  */
-package org.modeshape.jcr.api;
+package org.modeshape.sequencer.classfile.testdata;
+
+import java.io.Serializable;
 
 /**
- * Class which should hold string constants defined by the JCR spec.
- *
+ * Dummy class, used for testing the sequencing.
+ * 
  * @author Horia Chiorean
  */
-public final class JcrConstants {
-    public static final String JCR_MIMETYPE = "jcr:mimetype";
-    public static final String JCR_CONTENT = "jcr:content";
-    public static final String JCR_DATA = "jcr:data";
-    public static final String JCR_PRIMARY_TYPE = "jcr:primaryType";
-    public static final String NT_UNSTRUCTURED = "nt:unstructured";
-    public static final String NT_FILE = "nt:file";
+public final class MockClass implements Serializable {
+    
+    private static volatile String STATIC_VOLATILE_STRING_FIELD;
+    public static final Integer STATIC_FINAL_INTEGER_FIELD = 0;
+    
+    protected Boolean booleanField;
 
-
-    private JcrConstants() {
+    public MockClass( Boolean booleanField ) {
+        this.booleanField = booleanField;
+    }
+    
+    @Deprecated
+    synchronized void voidMethod() {
     }
 }

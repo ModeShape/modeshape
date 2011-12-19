@@ -27,6 +27,7 @@
 		<module>deploy/jbossas</module>
 
         <module>sequencers/modeshape-sequencer-images</module>
+        <module>sequencers/modeshape-sequencer-classfile</module>
 	</modules>
 	<properties>
 		<rootDir>${project.basedir}</rootDir>
@@ -57,7 +58,6 @@
     		<module>extensions/modeshape-sequencer-jbpm-jpdl</module>
     		<module>extensions/modeshape-sequencer-cnd</module>
     		<module>extensions/modeshape-sequencer-java</module>
-    		<module>extensions/modeshape-sequencer-classfile</module>
     		<module>extensions/modeshape-sequencer-msoffice</module>
     		<module>extensions/modeshape-sequencer-sramp</module>
     		<module>extensions/modeshape-sequencer-teiid</module>
