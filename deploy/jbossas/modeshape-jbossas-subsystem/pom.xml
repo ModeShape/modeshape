@@ -207,23 +207,7 @@
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <version>${maven.assembly.plugin.version}</version>
-        <configuration>
-            <descriptors>
-                <descriptor>src/assembly/kit.xml</descriptor>
-            </descriptors>
-            <outputDirectory>target/distribution</outputDirectory>
-            <workDirectory>target/assembly/work</workDirectory>
-        </configuration>
-        <executions>
-            <execution>
-                <id>make-assembly</id>
-                <phase>package</phase>
-                <goals>
-                    <goal>attached</goal>
-                </goals>
-            </execution>
-        </executions>
-      </plugin>
+        </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
