@@ -24,13 +24,12 @@
 package org.modeshape.jcr.api.sequencer;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-import javax.jcr.NamespaceRegistry;
-import javax.jcr.Node;
-import javax.jcr.Property;
-import javax.jcr.RepositoryException;
+import javax.jcr.*;
+import javax.jcr.nodetype.NodeTypeExistsException;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 
 /**
@@ -164,6 +163,48 @@ public abstract class Sequencer {
         return repositoryName + " -> " + name + (description != null ? (" : " + description) : "");
     }
 
+    /**
+     * Registers a namespace using the given {@link NamespaceRegistry}, if the namespace has not been previously registered. 
+     * 
+     * @param namespacePrefix a non-null {@code String}
+     * @param namespaceUri a non-null {@code String}
+     * @param namespaceRegistry a {@code NamespaceRegistry} instance.
+     * @return true if the namespace has been registered, or false if it was already registered
+     * 
+     * @throws RepositoryException if anything fails during the registration process
+     */
+    protected boolean registerNamespace(String namespacePrefix, String namespaceUri, NamespaceRegistry namespaceRegistry) throws RepositoryException {
+        if (namespacePrefix == null || namespaceUri == null) {
+            throw new IllegalArgumentException("Neither the namespace prefix, nor the uri should be null");
+        }
+        try {
+            //if the call succeeds, means it was previously registered
+            namespaceRegistry.getPrefix(namespaceUri);
+            return false;
+        }
+        catch (NamespaceException e) {
+            //namespace not registered yet
+            namespaceRegistry.registerNamespace(namespacePrefix, namespaceUri);
+            return true;
+        }
+    }
+
+    /**
+     * Registers types from a CDN file, using the given {@link NodeTypeManager}
+     * @param cndFile the relative path to the cnd file, which is loaded using via {@link Class#getResourceAsStream(String)}
+     * @param nodeTypeManager the node type manager with which the cnd will be registered.
+     * @throws RepositoryException
+     * @throws NodeTypeExistsException
+     * @throws IOException
+     */
+    protected void registerCND(String cndFile, NodeTypeManager nodeTypeManager) throws RepositoryException, NodeTypeExistsException, IOException {
+        InputStream cndStream = getClass().getResourceAsStream(cndFile);
+        if (cndStream == null) {
+            throw new IllegalStateException("Cannot locate cnd file: " + cndFile);
+        }
+        nodeTypeManager.registerNodeTypes(cndStream, false);
+    }
+    
     /**
      * The sequencer context represents the complete context of a sequencer invocation. Currently, this information includes the
      * current time of sequencer execution.

@@ -25,13 +25,10 @@ package org.modeshape.sequencer.image;
 
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
-import org.infinispan.manager.CacheContainer;
 import static org.junit.Assert.*;
 import org.junit.Test;
-import org.modeshape.jcr.RepositoryConfiguration;
-import org.modeshape.jcr.SingleUseAbstractTest;
 import org.modeshape.jcr.api.JcrConstants;
-import java.util.concurrent.TimeUnit;
+import org.modeshape.jcr.sequencer.AbstractSequencerTest;
 
 /**
  * Unit test for {@link ImageMetadataSequencer}. This test runs a minimal, in memory MS repository, which has two image sequencers
@@ -42,25 +39,12 @@ import java.util.concurrent.TimeUnit;
  * @author John Verhaeg
  * @author Horia Chiorean
  */
-public class ImageMetadataSequencerTest extends SingleUseAbstractTest {
-
-    private Node rootNode;
-
-    @Override
-    protected RepositoryConfiguration createRepositoryConfiguration( String repositoryName, CacheContainer cacheContainer ) throws  Exception{
-        return  RepositoryConfiguration.read(resourceStream("config/repo-config.json"), repositoryName).with(cacheContainer);
-    }
-
-    @Override
-    public void beforeEach() throws Exception {
-        super.beforeEach();
-        rootNode = session.getRootNode();
-    }
+public class ImageMetadataSequencerTest extends AbstractSequencerTest {
 
     @Test
     public void shouldGenerateMetadataForJpegImageFiles() throws Exception {
         String filename = "caution.jpg";
-        Node imageNode = createImageNode(filename);
+        Node imageNode = createNodeWithContentFromFile(filename, filename);
 
         Node sequencedNodeDifferentLocation = getSequencedNode(rootNode, "sequenced/images/" + filename);
         assertMetaDataProperties(sequencedNodeDifferentLocation, "image/jpeg", "jpeg", 48, 48, 24, false, 1, 72, 72, 0.666667, 0.666667);
@@ -72,7 +56,7 @@ public class ImageMetadataSequencerTest extends SingleUseAbstractTest {
     @Test
     public void shouldGenerateMetadataForPngImageFiles() throws Exception {
         String filename = "caution.png";
-        Node imageNode = createImageNode(filename);
+        Node imageNode = createNodeWithContentFromFile(filename, filename);
 
         Node sequencedNodeDifferentLocation = getSequencedNode(rootNode, "sequenced/images/" + filename);
         assertMetaDataProperties(sequencedNodeDifferentLocation, "image/png", "png", 48, 48, 24, false, 1, -1, -1, -1, -1);
@@ -84,7 +68,7 @@ public class ImageMetadataSequencerTest extends SingleUseAbstractTest {
     @Test
     public void shouldGenerateMetadataForGifImageFiles() throws Exception {
         String filename = "caution.gif";
-        Node imageNode = createImageNode(filename);
+        Node imageNode = createNodeWithContentFromFile(filename, filename);
 
         Node sequencedNodeDifferentLocation = getSequencedNode(rootNode, "sequenced/images/" + filename);
         assertMetaDataProperties(sequencedNodeDifferentLocation, "image/gif", "gif", 48, 48, 8, false, 1, -1, -1, -1, -1);
@@ -96,31 +80,10 @@ public class ImageMetadataSequencerTest extends SingleUseAbstractTest {
     @Test
     public void shouldGenerateNoMetadataforPictImageFiles() throws Exception {
         String filename = "caution.pict";
-        Node imageNode =  createImageNode(filename);
+        Node imageNode = createNodeWithContentFromFile(filename, filename);
         assertNull(getSequencedNode(rootNode, "sequenced/images/" + filename));
         assertNull(getSequencedNode(imageNode, ImageMetadataLexicon.METADATA_NODE));
-    }
-
-    private Node createImageNode( String imageFile ) throws RepositoryException {
-        Node imageNode = rootNode.addNode(imageFile);
-        Node content = imageNode.addNode(JcrConstants.JCR_CONTENT);
-        content.setProperty(JcrConstants.JCR_DATA, ((javax.jcr.Session)session).getValueFactory().createBinary(resourceStream(imageFile)));
-        session.save();
-        return imageNode;
-    }
-
-    private Node getSequencedNode(Node parentNode, String path) throws  Exception{
-        //TODO author=Horia Chiorean date=12/14/11 description=Change this hack once there is a proper way (events) of retrieving the sequenced node
-        long maxWaitTime = TimeUnit.SECONDS.toNanos(2);
-        long start = System.nanoTime();
-        while (System.nanoTime() - start <= maxWaitTime) {
-            try {
-                return parentNode.getNode(path);
-            } catch (RepositoryException e) {
-            }
-        }
-        return null;
-    }
+    }   
 
     private void assertMetaDataProperties( Node metadataNode, String mimeType, String format, int width, int height, int bitsPerPixel,
                                            boolean progressive, int numberOfImages, int physicalWidthDpi, int physicalHeightDpi,

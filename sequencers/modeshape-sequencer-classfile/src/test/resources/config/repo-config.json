@@ -1,0 +1,22 @@
+{
+    "name" : "My Repository",
+    "workspaces" : {
+        "default" : "default",
+        "allowCreation" : true
+    },
+    "sequencing" : {
+        "removeDerivedContentWithOriginal" : true,
+        "sequencers" : [
+            {
+                "name" : "Classes in the same location",
+                "type" : "ClassSequencer",
+                "pathExpression" : "default://(*.class)/jcr:content[@jcr:data]"
+            },
+            {
+                "name" : "Classes in different location",
+                "classname" : "org.modeshape.sequencer.classfile.ClassFileSequencer",
+                "pathExpression" : "default://(*.class)/jcr:content[@jcr:data] => /classes"
+            }
+        ]
+    }
+}
