@@ -52,7 +52,6 @@ import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.UnsupportedRepositoryOperationException;
-import javax.jcr.Workspace;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
@@ -542,7 +541,7 @@ public class JcrSession implements Session {
     }
 
     @Override
-    public Workspace getWorkspace() {
+    public JcrWorkspace getWorkspace() {
         return workspace;
     }
 
@@ -567,12 +566,14 @@ public class JcrSession implements Session {
     @Override
     public AbstractJcrNode getNodeByIdentifier( String id ) throws ItemNotFoundException, RepositoryException {
         checkLive();
-        // Try the identifier as a node key ...
-        try {
-            NodeKey key = new NodeKey(id);
-            return node(key, null);
-        } catch (ItemNotFoundException e) {
-            // continue ...
+        if (NodeKey.isValidFormat(id)) {
+            // Try the identifier as a node key ...
+            try {
+                NodeKey key = new NodeKey(id);
+                return node(key, null);
+            } catch (ItemNotFoundException e) {
+                // continue ...
+            }
         }
         // Try as node key identifier ...
         NodeKey key = this.rootNode.key.withId(id);

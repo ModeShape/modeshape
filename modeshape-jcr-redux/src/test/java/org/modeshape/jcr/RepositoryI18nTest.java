@@ -21,34 +21,13 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
- 
-//------------------------------------------------------------------------------
-// N A M E S P A C E S
-//------------------------------------------------------------------------------
-<jcr='http://www.jcp.org/jcr/1.0'>
-<nt='http://www.jcp.org/jcr/nt/1.0'>
-<mix='http://www.jcp.org/jcr/mix/1.0'>
-<image='http://www.modeshape.org/images/1.0'>
+package org.modeshape.jcr;
 
-//------------------------------------------------------------------------------
-// N O D E T Y P E S
-//------------------------------------------------------------------------------
+import org.modeshape.common.AbstractI18nTest;
 
-/**
- * Mixin that defines the metadata for an image
- */
-[image:metadata] > nt:unstructured, mix:mimeType
-  - image:formatName (string) mandatory
-    < 'JPEG', 'GIF', 'PNG', 'BMP', 'PCX', 'IFF', 'RAS', 'PBM', 'PGM', 'PPM', 'PSD'
-  - image:width (long)
-  - image:height (long)
-  - image:bitsPerPixel (long)
-  - image:progressive (boolean)
-  - image:numberOfImages (long)
-  - image:physicalWidthDpi (long)
-  - image:physicalHeightDpi (long)
-  - image:physicalWidthInches (double)
-  - image:physicalHeightInches (double)
+public class RepositoryI18nTest extends AbstractI18nTest {
 
-
- 
+    public RepositoryI18nTest() {
+        super(RepositoryI18n.class);
+    }
+}

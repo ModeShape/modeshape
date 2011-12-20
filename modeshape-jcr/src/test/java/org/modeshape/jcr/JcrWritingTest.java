@@ -23,12 +23,13 @@
  */
 package org.modeshape.jcr;
 
-import org.modeshape.common.statistic.Stopwatch;
 import org.junit.Test;
+import org.modeshape.common.statistic.Stopwatch;
 
 /**
  * Test performance writing graph subtrees of various sizes with varying number of properties
  */
+@Migrated
 public class JcrWritingTest extends AbstractJcrAccessTest {
 
     @Test

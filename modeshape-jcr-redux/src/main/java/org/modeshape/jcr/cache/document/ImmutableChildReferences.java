@@ -480,6 +480,10 @@ public class ImmutableChildReferences {
 
                 @Override
                 public boolean hasNext() {
+                    if (next != null) {
+                        // Called 'hasNext()' multiple times in a row ...
+                        return true;
+                    }
                     if (!iter.hasNext()) {
                         while (segment != null) {
                             segment = segment.next(cache);

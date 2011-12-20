@@ -93,11 +93,23 @@ public class SessionChildReferences extends AbstractChildReferences {
                                     Context context ) {
         if (changedChildren != null) context = new WithChanges(context, changedChildren);
         // First look in the delegate references ...
+        // Note that we don't know the name of the child yet, so we'll have to come back
+        // to the persisted node after we know the name ...
         ChildReference ref = persisted.getChild(key, context);
         if (ref == null) {
             if (appended != null) {
                 // Look in the added ...
                 ref = appended.getChild(key, context);
+                if (ref != null) {
+                    // The node was appended, but we need to increment the SNS indexes
+                    // by the number of same-named children in 'persisted' ...
+                    int numSnsInPersisted = persisted.getChildCount(ref.getName());
+                    if (numSnsInPersisted != 0) {
+                        // There were some persisted with the same name, and we didn't find these
+                        // when looking in the persisted node above. So adjust the SNS index ...
+                        ref = ref.with(numSnsInPersisted + ref.getSnsIndex());
+                    }
+                }
             }
         }
         return ref;

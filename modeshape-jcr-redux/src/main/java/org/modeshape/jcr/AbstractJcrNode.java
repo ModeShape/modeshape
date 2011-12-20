@@ -1534,6 +1534,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
         // Create the JCR Property object ...
         if (requiredType == PropertyType.UNDEFINED) requiredType = value.getType();
+        // Convert the value to the required type ...
+        value = value.asType(requiredType);
         AbstractJcrProperty jcrProp = new JcrSingleValueProperty(this, name, requiredType);
         AbstractJcrProperty otherProp = this.jcrProperties.putIfAbsent(name, jcrProp);
         if (otherProp != null) {
@@ -1580,9 +1582,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 for (int i = 0; i != len; ++i) {
                     JcrValue value = (JcrValue)values[i];
                     if (value == null) continue; // null values are removed
-                    if (value.getType() != jcrPropertyType) {
-                        value = value.asType(jcrPropertyType);
-                    }
+                    value = value.asType(jcrPropertyType);
                     valuesWithDesiredType.add(value);
                 }
                 if (valuesWithDesiredType.isEmpty()) {

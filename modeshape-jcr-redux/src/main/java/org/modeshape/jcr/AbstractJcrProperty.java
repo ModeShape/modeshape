@@ -348,12 +348,22 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
                 sb.append('[');
                 Iterator<?> iter = property.iterator();
                 if (iter.hasNext()) {
-                    sb.append(stringFactory.create(iter.next()));
+                    Object value = iter.next();
+                    if (value instanceof javax.jcr.Binary) {
+                        sb.append("**binary-value-not-shown**");
+                    } else {
+                        sb.append(stringFactory.create(value));
+                    }
                     if (iter.hasNext()) sb.append(',');
                 }
                 sb.append(']');
             } else {
-                sb.append(stringFactory.create(property.getFirstValue()));
+                Object value = property.getFirstValue();
+                if (value instanceof javax.jcr.Binary) {
+                    sb.append("**binary-value-not-shown**");
+                } else {
+                    sb.append(stringFactory.create(value));
+                }
             }
         } catch (RepositoryException e) {
             // The node likely does not exist ...

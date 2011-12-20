@@ -25,42 +25,34 @@ package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.property.Name;
 
 /**
  * @author jverhaeg
  */
-@Migrated
 public class JcrPropertyIteratorTest {
 
-    private Map<Name, Property> properties;
-    private ExecutionContext context;
+    private List<Property> properties;
     private PropertyIterator iter;
 
     @Before
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
-        context = new ExecutionContext();
-        properties = new HashMap<Name, Property>();
-        properties.put(name("prop1"), Mockito.mock(Property.class));
-        properties.put(name("prop2"), Mockito.mock(Property.class));
-        properties.put(name("prop3"), Mockito.mock(Property.class));
-        properties.put(name("prop4"), Mockito.mock(Property.class));
-        iter = new JcrPropertyIterator(properties.values());
-    }
-
-    protected Name name( String name ) {
-        return context.getValueFactories().getNameFactory().create(name);
+        properties = new ArrayList<Property>();
+        properties.add(Mockito.mock(Property.class));
+        properties.add(Mockito.mock(Property.class));
+        properties.add(Mockito.mock(Property.class));
+        properties.add(Mockito.mock(Property.class));
+        iter = new JcrPropertyIterator(properties);
     }
 
     @Test
@@ -69,24 +61,33 @@ public class JcrPropertyIteratorTest {
         assertThat(iter.getSize(), is(4L));
         assertThat(iter.getPosition(), is(0L));
         assertThat(iter.hasNext(), is(true));
-        assertThat(iter.next(), notNullValue());
+        assertThat(iter.nextProperty(), is(sameInstance(properties.get(0))));
         assertThat(iter.getPosition(), is(1L));
         assertThat(iter.hasNext(), is(true));
         iter.skip(2);
         assertThat(iter.getPosition(), is(3L));
         assertThat(iter.hasNext(), is(true));
-        assertThat(iter.nextProperty(), notNullValue());
+        assertThat(iter.nextProperty(), is(sameInstance(properties.get(3))));
         assertThat(iter.getPosition(), is(4L));
         assertThat(iter.hasNext(), is(false));
     }
 
     @Test( expected = UnsupportedOperationException.class )
     public void shouldNotAllowPropertyIteratorRemove() throws Exception {
-        new JcrPropertyIterator(properties.values()).remove();
+        new JcrPropertyIterator(properties).remove();
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowPropertyIteratorNegativeSkip() throws Exception {
-        new JcrPropertyIterator(properties.values()).skip(-1);
+        new JcrPropertyIterator(properties).skip(-1);
+    }
+
+    @Test
+    public void shouldAllowPropertyIteratorPositiveSkip() throws Exception {
+        JcrPropertyIterator iter = new JcrPropertyIterator(properties);
+        iter.skip(3);
+        assertThat(iter.hasNext(), is(true));
+        assertThat(iter.nextProperty(), is(properties.get(3)));
+        assertThat(iter.hasNext(), is(false));
     }
 }

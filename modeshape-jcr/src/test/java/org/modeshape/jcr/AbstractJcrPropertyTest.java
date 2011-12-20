@@ -23,13 +23,26 @@
  */
 package org.modeshape.jcr;
 
-import javax.jcr.*;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import javax.jcr.Binary;
+import javax.jcr.Item;
+import javax.jcr.ItemNotFoundException;
+import javax.jcr.ItemVisitor;
+import javax.jcr.Node;
+import javax.jcr.Repository;
+import javax.jcr.RepositoryException;
+import javax.jcr.Session;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -41,6 +54,7 @@ import org.modeshape.jcr.api.Workspace;
 /**
  *
  */
+@Migrated
 public class AbstractJcrPropertyTest extends AbstractJcrTest {
 
     protected AbstractJcrNode rootNode;
@@ -295,7 +309,8 @@ public class AbstractJcrPropertyTest extends AbstractJcrTest {
                 return new ByteArrayInputStream(stringValue.getBytes());
             }
 
-            public int read( byte[] b, long position ) throws IOException, RepositoryException {
+            public int read( byte[] b,
+                             long position ) throws IOException, RepositoryException {
                 byte[] content = stringValue.getBytes();
                 int length = b.length + position < content.length ? b.length : (int)(content.length - position);
                 System.arraycopy(content, (int)position, b, 0, length);

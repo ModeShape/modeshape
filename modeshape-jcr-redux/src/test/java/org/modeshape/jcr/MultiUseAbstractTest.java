@@ -23,17 +23,29 @@
  */
 package org.modeshape.jcr;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertThat;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+import javax.jcr.Node;
+import javax.jcr.RepositoryException;
+import javax.jcr.Workspace;
+import javax.jcr.nodetype.NodeTypeDefinition;
 import org.infinispan.config.Configuration;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.test.fwk.TestCacheManagerFactory;
 import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
+import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 
 /**
  * A base class for tests that require a single shared JcrSession and JcrRepository for all test methods.
  */
-public abstract class MultiUseAbstractTest {
+public abstract class MultiUseAbstractTest extends AbstractJcrRepositoryTest {
 
     private static final String REPO_NAME = "testRepo";
 
@@ -71,11 +83,66 @@ public abstract class MultiUseAbstractTest {
         }
     }
 
+    @Before
+    @Override
+    public void beforeEach() throws Exception {
+        super.beforeEach();
+        // create a new session for each test ...
+        session = repository.login();
+    }
+
+    @After
+    public void afterEach() throws Exception {
+        // log out of the session after each test ...
+        try {
+            session.logout();
+        } finally {
+            session = null;
+        }
+    }
+
+    @Override
     public JcrRepository repository() {
         return repository;
     }
 
+    @Override
     public JcrSession session() {
         return session;
+    }
+
+    protected static InputStream resourceStream( String name ) {
+        return MultiUseAbstractTest.class.getClassLoader().getResourceAsStream(name);
+    }
+
+    protected static void registerNodeTypes( String resourceName ) throws RepositoryException, IOException {
+        InputStream stream = resourceStream(resourceName);
+        assertThat(stream, is(notNullValue()));
+        Workspace workspace = session.getWorkspace();
+        org.modeshape.jcr.api.nodetype.NodeTypeManager ntMgr = (org.modeshape.jcr.api.nodetype.NodeTypeManager)workspace.getNodeTypeManager();
+        ntMgr.registerNodeTypes(stream, true);
+    }
+
+    protected static void registerNodeTypes( List<? extends NodeTypeDefinition> nodeTypes ) throws RepositoryException {
+        Workspace workspace = session.getWorkspace();
+        org.modeshape.jcr.api.nodetype.NodeTypeManager ntMgr = (org.modeshape.jcr.api.nodetype.NodeTypeManager)workspace.getNodeTypeManager();
+        NodeTypeDefinition[] defns = nodeTypes.toArray(new NodeTypeDefinition[nodeTypes.size()]);
+        ntMgr.registerNodeTypes(defns, true);
+    }
+
+    protected static void importContent( Node parent,
+                                         String resourceName,
+                                         int uuidBehavior ) throws RepositoryException, IOException {
+        InputStream stream = resourceStream(resourceName);
+        assertThat(stream, is(notNullValue()));
+        parent.getSession().getWorkspace().importXML(parent.getPath(), stream, uuidBehavior);
+    }
+
+    protected static void importContent( String parentPath,
+                                         String resourceName,
+                                         int uuidBehavior ) throws RepositoryException, IOException {
+        InputStream stream = resourceStream(resourceName);
+        assertThat(stream, is(notNullValue()));
+        session.getWorkspace().importXML(parentPath, stream, uuidBehavior);
     }
 }

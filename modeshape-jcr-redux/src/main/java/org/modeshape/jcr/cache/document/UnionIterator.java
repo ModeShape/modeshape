@@ -24,6 +24,7 @@
 package org.modeshape.jcr.cache.document;
 
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
  * An iterator that presents the union of two iterators. The second iterator is retrieved only when needed.
@@ -62,7 +63,19 @@ public class UnionIterator<Type> implements Iterator<Type> {
 
     @Override
     public Type next() {
-        return current.next();
+        if (current.hasNext()) {
+            // At least one more on the current iterator ...
+            return current.next();
+        }
+        // The current iterator has no more ...
+        if (useNext) {
+            // We have another iterator ...
+            current = next.iterator();
+            useNext = false;
+            return current.next();
+        }
+        // No more iterators ...
+        throw new NoSuchElementException();
     }
 
     @Override

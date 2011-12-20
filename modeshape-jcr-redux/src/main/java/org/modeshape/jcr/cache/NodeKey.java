@@ -58,6 +58,19 @@ public final class NodeKey implements Serializable, Comparable<NodeKey> {
     private static final int WORKSPACE_END_INDEX = WORKSPACE_START_INDEX + WORKSPACE_LENGTH;
     private static final int IDENTIFIER_START_INDEX = WORKSPACE_END_INDEX;
 
+    /**
+     * Determine if the supplied string may be a valid identifier. This method returns 'false' only if the identifier is known to
+     * be invalid (e.g., it is not of the correct format). This method may return true even if the identifier itself does not
+     * reference an existing node.
+     * 
+     * @param key
+     * @return true if the string is of the correct format for a node key, or false if it not the correct format
+     */
+    public static boolean isValidFormat( String key ) {
+        if (key.length() <= IDENTIFIER_START_INDEX) return false;
+        return true;
+    }
+
     private final String key;
     private transient String sourceKey;
     private transient String workspaceKey;

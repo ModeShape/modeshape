@@ -23,59 +23,45 @@
  */
 package org.modeshape.jcr;
 
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
 import java.util.NoSuchElementException;
-import javax.jcr.Node;
 import javax.jcr.NodeIterator;
-import org.modeshape.common.annotation.Immutable;
-import org.modeshape.common.util.CheckArg;
+import org.junit.Before;
+import org.junit.Test;
 
-/**
- * A concrete {@link NodeIterator} that is always empty.
- */
-@Immutable
-class JcrEmptyNodeIterator implements NodeIterator {
+public class JcrEmptyNodeIteratorTest {
 
-    static final NodeIterator INSTANCE = new JcrEmptyNodeIterator();
+    private NodeIterator iter;
 
-    private JcrEmptyNodeIterator() {
-        // Prevent instantiation
+    @Before
+    public void beforeEach() {
+        iter = JcrEmptyNodeIterator.INSTANCE;
     }
 
-    @Override
-    public Node nextNode() {
-        throw new NoSuchElementException();
+    @Test
+    public void shouldNotHaveNext() {
+        assertThat(iter.hasNext(), is(false));
     }
 
-    @Override
-    public long getPosition() {
-        return 0;
+    @Test
+    public void shouldHavePositionOfZero() {
+        assertThat(iter.getPosition(), is(0L));
     }
 
-    @Override
-    public long getSize() {
-        return 0;
+    @Test
+    public void shouldHaveSizeOfZero() {
+        assertThat(iter.getSize(), is(0L));
     }
 
-    @Override
-    public void skip( long skipNum ) {
-        CheckArg.isNonNegative(skipNum, "skipNum");
-        if (skipNum == 0L) return;
-        throw new NoSuchElementException();
+    @Test( expected = UnsupportedOperationException.class )
+    public void shouldNotAllowRemove() {
+        iter.remove();
     }
 
-    @Override
-    public boolean hasNext() {
-        return false;
-    }
-
-    @Override
-    public Object next() {
-        throw new NoSuchElementException();
-    }
-
-    @Override
-    public void remove() {
-        throw new UnsupportedOperationException();
+    @Test( expected = NoSuchElementException.class )
+    public void shouldFailWhenNextIsCalled() {
+        iter.next();
     }
 
 }

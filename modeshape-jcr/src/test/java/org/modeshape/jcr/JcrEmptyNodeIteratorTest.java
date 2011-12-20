@@ -33,6 +33,7 @@ import org.junit.Test;
 /**
  * 
  */
+@Migrated
 public class JcrEmptyNodeIteratorTest {
 
     private NodeIterator iter;
