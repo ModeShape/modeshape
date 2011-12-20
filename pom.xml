@@ -24,6 +24,7 @@
 		<module>modeshape-common</module>
 		<module>modeshape-schematic</module>
 		<module>modeshape-jcr-redux</module>
+		<module>deploy/jbossas</module>
 
         <module>sequencers/modeshape-sequencer-images</module>
 	</modules>

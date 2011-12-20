@@ -1,7 +1,7 @@
 <!--This script builds a zip for ModeShape server Installation -->
 <assembly>
 
-	<id>jboss-dist</id>
+	<id>jbossas-7-dist</id>
 
 	<formats>
 		<format>zip</format>
