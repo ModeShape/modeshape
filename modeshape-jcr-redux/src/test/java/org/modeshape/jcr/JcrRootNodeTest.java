@@ -33,8 +33,7 @@ import org.junit.Test;
 /**
  * @author jverhaeg
  */
-@Migrated
-public class JcrRootNodeTest extends AbstractJcrTest {
+public class JcrRootNodeTest extends MultiUseAbstractTest {
 
     private AbstractJcrNode rootNode;
 
@@ -42,7 +41,7 @@ public class JcrRootNodeTest extends AbstractJcrTest {
     @Before
     public void beforeEach() throws Exception {
         super.beforeEach();
-        rootNode = cache.findJcrRootNode();
+        rootNode = session.getRootNode();
     }
 
     @Test( expected = ItemNotFoundException.class )

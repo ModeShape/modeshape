@@ -1,8 +1,11 @@
 package org.modeshape.jcr;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.naming.Context;
@@ -16,7 +19,6 @@ import javax.naming.event.NamingEvent;
 import javax.naming.event.NamingExceptionEvent;
 import javax.naming.spi.ObjectFactory;
 import org.modeshape.common.util.Logger;
-import org.modeshape.jcr.api.Repositories;
 import org.xml.sax.SAXException;
 
 /**
@@ -51,11 +53,24 @@ import org.xml.sax.SAXException;
 public class JndiRepositoryFactory implements ObjectFactory {
 
     private static final String CONFIG_FILE = "configFile";
+    private static final String CONFIG_FILES = "configFiles";
     private static final String REPOSITORY_NAME = "repositoryName";
     private static final String TYPE = "type";
 
     private static final JcrEngine engine = new JcrEngine();
     protected static final Logger log = Logger.getLogger(JndiRepositoryFactory.class);
+
+    /**
+     * Method that shuts down the JDNI repository factory's engine, usually for testing purposes.
+     * 
+     * @return a future that allows the caller to block until the engine is shutdown; any error during shutdown will be thrown
+     *         when {@link Future#get() getting} the result from the future, where the exception is wrapped in a
+     *         {@link ExecutionException}. The value returned from the future will always be true if the engine shutdown (or was
+     *         not running), or false if the engine is still running.
+     */
+    static Future<Boolean> shutdown() {
+        return engine.shutdown();
+    }
 
     /**
      * Get or initialize the JCR Repository instance as described by the supplied configuration file and repository name.
@@ -81,6 +96,9 @@ public class JndiRepositoryFactory implements ObjectFactory {
         throws IOException, RepositoryException, NamingException {
 
         if (repositoryName != null) {
+            // Make sure the engine is running ...
+            engine.start();
+
             // See if we can shortcut the process by using the name ...
             try {
                 JcrRepository repository = engine.getRepository(repositoryName);
@@ -152,6 +170,10 @@ public class JndiRepositoryFactory implements ObjectFactory {
                         // Thread.interrupted();
                     } catch (ExecutionException e) {
                         log.error(e.getCause(), JcrI18n.errorWhileShuttingDownRepositoryInJndi, repoName, jndiName);
+                    } finally {
+                        // Try to shutdown the repository only if there are no more running repositories.
+                        // IOW, shutdown but do not force shutdown of running repositories ...
+                        engine.shutdown(false); // no need to block on the futured returned by 'shutdown(boolean)'
                     }
                 }
 
@@ -207,42 +229,35 @@ public class JndiRepositoryFactory implements ObjectFactory {
         RefAddr configFileRef = ref.get(CONFIG_FILE);
         String configFile = configFileRef != null ? configFileRef.getContent().toString() : null;
 
-        if (repoName == null && configFile == null) {
-            return null;
+        RefAddr configFilesRef = ref.get(CONFIG_FILES);
+        Set<String> configFiles = configFilesRef != null ? parseStrings(configFilesRef.getContent().toString()) : null;
+
+        engine.start();
+        if (repoName != null && configFile != null) {
+            // Start the named repository ...
+            return getRepository(configFile, repoName, nameCtx, name);
         }
-
-        // Determine the type that we're supposed to create/register ...
-        RefAddr type = ref.get(TYPE);
-        if (type != null) {
-            String typeName = type.getContent().toString();
-            if (typeName != null && typeName.trim().length() == 0) typeName = null;
-
-            // See if the type value matches a classname we know how to deal with ...
-            if (Repositories.class.getName().equals(typeName) || JcrEngine.class.getName().equals(typeName)) {
-                if (repositoryName != null) {
-                    // Log a warning ...
-                    log.warn(JcrI18n.repositoryNameProvidedWhenRegisteringEngineInJndi, name, repoName, typeName);
-                }
-                // We're supposed to register the engine ...
-                return engine;
+        if (configFiles != null) {
+            // Start the configured repositories ...
+            for (String file : configFiles) {
+                getRepository(file, null, nameCtx, name);
             }
-            if (!Repository.class.getName().equals(typeName) && !JcrRepository.class.getName().equals(typeName)
-                && !org.modeshape.jcr.api.Repository.class.getName().equals(typeName)) {
-                // We only know how to reigster the repository (other than engine), so return null ...
-                return null;
-            }
-        } else {
-            // There's no type ...
-            log.warn(JcrI18n.typeMissingWhenRegisteringEngineInJndi, name, Repositories.class.getName());
-            // and base what we register purely upon whether there's a name ...
-            if (repoName == null) {
-                // This factory registers an engine or a repository, and they didn't specify a repository ...
-                return engine;
-            }
-
-            // Otherwise there is a repository name, so continue ...
+            return engine;
         }
+        return null;
+    }
 
-        return getRepository(configFile, repoName, nameCtx, name);
+    protected Set<String> parseStrings( String value ) {
+        if (value == null) return null;
+        value = value.trim();
+        if (value == null) return null;
+        Set<String> result = new HashSet<String>();
+        for (String strValue : value.split(",")) {
+            if (strValue == null) continue;
+            strValue = strValue.trim();
+            if (strValue == null) continue;
+            result.add(strValue);
+        }
+        return result;
     }
 }

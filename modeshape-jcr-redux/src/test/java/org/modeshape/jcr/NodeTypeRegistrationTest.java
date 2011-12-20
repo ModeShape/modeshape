@@ -23,13 +23,15 @@
  */
 package org.modeshape.jcr;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import javax.jcr.Node;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
@@ -215,4 +217,25 @@ public class NodeTypeRegistrationTest extends SingleUseAbstractTest {
         assertNodeType("mgnl:reserve");
     }
 
+    @Test
+    public void shouldAllowDisjunctiveResidualChildNodeDefinitions() throws Exception {
+        // This is an extended test of the MODE-698 fix
+        nodeTypeManager.registerNodeTypes(resourceAsStream("cnd/magnolia.cnd"), true);
+        assertNodeType("mgnl:contentNode");
+
+        Node rootNode = session.getRootNode();
+        Node branchNode = rootNode.addNode("disjunctiveTest", "nt:unstructured");
+        Node testNode = branchNode.addNode("testNode", "mgnl:content");
+
+        assertTrue(testNode.hasNode("MetaData"));
+        session.save();
+
+        // This residual definition comes from the ancestor - nt:hierarchyNode
+        testNode.addNode("hierarchyNode", "nt:folder");
+
+        // This residual definition comes from mgnl:content
+        testNode.addNode("baseNode", "nt:unstructured");
+
+        session.save();
+    }
 }

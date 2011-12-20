@@ -81,6 +81,11 @@ class JcrValueFactory implements ValueFactory {
         return new JcrValue(valueFactories, propertyType, convertValueToType(value, propertyType));
     }
 
+    public JcrValue createValue( Object value,
+                                 int propertyType ) throws ValueFormatException {
+        return new JcrValue(valueFactories, propertyType, convertValueToType(value, propertyType));
+    }
+
     @Override
     public JcrValue createValue( Node value ) throws RepositoryException {
         if (value == null) {

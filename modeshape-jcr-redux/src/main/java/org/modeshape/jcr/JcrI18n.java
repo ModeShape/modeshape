@@ -178,7 +178,6 @@ public final class JcrI18n {
     public static I18n missingComponentClassnameOrAlias;
 
     public static I18n typeMissingWhenRegisteringEngineInJndi;
-    public static I18n repositoryNameProvidedWhenRegisteringEngineInJndi;
     public static I18n repositoryNameNotProvidedWhenRegisteringRepositoryInJndi;
     public static I18n invalidRepositoryNameWhenRegisteringRepositoryInJndi;
     public static I18n emptyRepositoryNameProvidedWhenRegisteringRepositoryInJndi;

@@ -78,7 +78,7 @@ import org.modeshape.jcr.api.RepositoryFactory;
  * <ul>
  * <li><strong>JNDI location of repository</strong> - The URL contains the location in JNDI of an existing
  * <code>javax.jcr.Repository</code> instance. For example, "<code>jndi:jcr/local/my_repository</code>" is a URL that identifies
- * the JCR repository located in JNDI at the name "jcr/local/my_respository". Note that the use of such URLs requires that the
+ * the JCR repository located in JNDI at the name "jcr/local/my_repository". Note that the use of such URLs requires that the
  * repository already be registered in JNDI at that location.</li>
  * <li><strong>JNDI location of engine and repository name</strong> - The URL contains the location in JNDI of an existing
  * ModeShape {@link JcrEngine engine} instance and the name of the <code>javax.jcr.Repository</code> repository as a URL query

@@ -48,10 +48,10 @@ import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import org.infinispan.schematic.document.Changes;
 import org.infinispan.schematic.document.Editor;
-import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.ImmediateFuture;
 import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.NamedThreadFactory;
 import org.modeshape.jcr.api.Repositories;
@@ -142,14 +142,53 @@ public class JcrEngine implements Repositories {
      * Shutdown this engine to stop all repositories, terminate any ongoing background operations (such as sequencing), and
      * reclaim any resources that were acquired by this engine. This method may be called multiple times, but only the first time
      * has an effect.
+     * <p>
+     * This is equivalent to calling <code>shutdown(true)</code>
      * 
+     * @return a future that allows the caller to block until the engine is shutdown; any error during shutdown will be thrown
+     *         when {@link Future#get() getting} the result from the future, where the exception is wrapped in a
+     *         {@link ExecutionException}. The value returned from the future will always be true if the engine shutdown (or was
+     *         not running), or false if the engine is still running.
+     * @see #start()
+     */
+    public Future<Boolean> shutdown() {
+        return shutdown(true);
+    }
+
+    /**
+     * Shutdown this engine, optionally stopping all still-running repositories.
+     * 
+     * @param forceShutdownOfAllRepositories true if the engine should be shutdown even if there are currently-running
+     *        repositories, or false if the engine should not be shutdown if at least one repository is still running.
      * @return a future that allows the caller to block until the engine is shutdown; any error during shutdown will be thrown
      *         when {@link Future#get() getting} the repository from the future, where the exception is wrapped in a
      *         {@link ExecutionException}. The value returned from the future will always be true if the engine shutdown (or was
      *         not running), or false if the engine is still running.
      * @see #start()
      */
-    public Future<Boolean> shutdown() {
+    public Future<Boolean> shutdown( boolean forceShutdownOfAllRepositories ) {
+        if (!forceShutdownOfAllRepositories) {
+            // Check to see if there are any still running ...
+            final Lock lock = this.lock.readLock();
+            try {
+                lock.lock();
+                for (JcrRepository repository : repositories.values()) {
+                    switch (repository.getState()) {
+                        case NOT_RUNNING:
+                        case STOPPING:
+                            break;
+                        case RUNNING:
+                        case STARTING:
+                            // This repository is still running, so fail
+                            return ImmediateFuture.create(Boolean.FALSE);
+                    }
+                }
+                // If we got to here, there are no more running repositories ...
+            } finally {
+                lock.unlock();
+            }
+
+        }
         // Create a simple executor that will do the backgrounding for us ...
         final ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
@@ -322,7 +361,7 @@ public class JcrEngine implements Repositories {
     public final Future<JcrRepository> startRepository( String repositoryName ) throws NoSuchRepositoryException {
         final JcrRepository repository = getRepository(repositoryName);
         if (repository.getState() == State.RUNNING) {
-            return new ImmediateFuture<JcrRepository>(repository);
+            return ImmediateFuture.create(repository);
         }
 
         // Create an initializer that will start the repository ...
@@ -596,41 +635,4 @@ public class JcrEngine implements Repositories {
             lock.unlock();
         }
     }
-
-    @Immutable
-    protected static class ImmediateFuture<Type> implements Future<Type> {
-
-        private final Type value;
-
-        protected ImmediateFuture( Type value ) {
-            this.value = value;
-        }
-
-        @Override
-        public boolean cancel( boolean mayInterruptIfRunning ) {
-            return false;
-        }
-
-        @Override
-        public boolean isCancelled() {
-            return false;
-        }
-
-        @Override
-        public boolean isDone() {
-            return true;
-        }
-
-        @Override
-        public Type get() {
-            return value;
-        }
-
-        @Override
-        public Type get( long timeout,
-                         TimeUnit unit ) {
-            return value;
-        }
-    }
-
 }

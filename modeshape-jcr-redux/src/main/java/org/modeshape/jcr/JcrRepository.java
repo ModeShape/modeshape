@@ -1286,6 +1286,16 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             }
         }
 
+        int activeSessinCount() {
+            Lock lock = this.activeSessionLock.writeLock();
+            try {
+                lock.lock();
+                return activeSessions.size();
+            } finally {
+                lock.unlock();
+            }
+        }
+
         void removeSession( JcrSession session ) {
             Lock lock = this.activeSessionLock.writeLock();
             try {

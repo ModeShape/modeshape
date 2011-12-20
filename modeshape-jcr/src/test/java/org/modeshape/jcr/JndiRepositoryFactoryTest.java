@@ -9,6 +9,7 @@ import javax.naming.StringRefAddr;
 import org.junit.Before;
 import org.junit.Test;
 
+@Migrated
 public class JndiRepositoryFactoryTest {
     private static final String JCR_REPOSITORY_NAME = "Test Repository Source";
     private static final String REPOSITORY_SOURCE_NAME = "Store";

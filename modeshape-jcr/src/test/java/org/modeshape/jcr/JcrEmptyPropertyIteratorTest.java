@@ -33,6 +33,7 @@ import org.junit.Test;
 /**
  * 
  */
+@Migrated
 public class JcrEmptyPropertyIteratorTest {
 
     private PropertyIterator iter;

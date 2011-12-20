@@ -27,28 +27,35 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.when;
 import javax.jcr.NamespaceException;
+import javax.jcr.NamespaceRegistry;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.modeshape.graph.ExecutionContext;
 
-@Migrated
-public class JcrNamespaceRegistryTest {
+public class JcrNamespaceRegistryTest extends MultiUseAbstractTest {
 
-    private ExecutionContext executionContext;
-    private JcrNamespaceRegistry registry;
-    @Mock
-    private JcrSession session;
+    private NamespaceRegistry registry;
 
+    @Override
     @Before
-    public void before() {
-        MockitoAnnotations.initMocks(this);
-        executionContext = new ExecutionContext();
-        when(session.isLive()).thenReturn(true);
-        registry = new JcrNamespaceRegistry(executionContext.getNamespaceRegistry(), session);
+    public void beforeEach() throws Exception {
+        super.beforeEach();
+        registry = session.getWorkspace().getNamespaceRegistry();
+    }
+
+    @After
+    public void afterEach() throws Exception {
+        // Unregister all of the namespaces ...
+        for (String existingPrefix : registry.getPrefixes()) {
+            try {
+                registry.unregisterNamespace(existingPrefix);
+                // Make sure the prefix is not in the list of built-ins ...
+                assertThat(JcrNamespaceRegistry.STANDARD_BUILT_IN_PREFIXES.contains(existingPrefix), is(false));
+            } catch (NamespaceException e) {
+                // built in namespace ...
+            }
+        }
     }
 
     protected void assertThatNamespaceIsRegistered( String prefix,

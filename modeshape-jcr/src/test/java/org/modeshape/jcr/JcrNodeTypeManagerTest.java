@@ -46,6 +46,7 @@ import org.modeshape.jcr.JcrRepository.Option;
 /**
  * The {@link JcrNodeTypeManager} test class.
  */
+@Migrated
 public final class JcrNodeTypeManagerTest extends TestSuite {
 
     // ===========================================================================================================================

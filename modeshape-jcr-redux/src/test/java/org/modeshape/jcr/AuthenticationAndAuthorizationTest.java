@@ -24,10 +24,18 @@
 package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.PrivilegedExceptionAction;
+import javax.jcr.Credentials;
 import javax.jcr.LoginException;
+import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
+import javax.security.auth.Subject;
+import javax.security.auth.login.LoginContext;
 import org.infinispan.config.Configuration;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.schematic.Schematic;
@@ -41,6 +49,7 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.modeshape.jcr.core.JaasSecurityContext.UserPasswordCallbackHandler;
 
 public class AuthenticationAndAuthorizationTest {
 
@@ -301,6 +310,92 @@ public class AuthenticationAndAuthorizationTest {
         session.getRootNode().getPath();
         session.getRootNode().getDefinition();
         session.getRootNode().addNode("someNewNode");
+    }
+
+    @SuppressWarnings( "cast" )
+    @Test
+    public void shouldAllowLoginWithNoCredentialsInPrivilegedBlock() throws Exception {
+        String repoName = REPO_NAME;
+        String jaasPolicyName = "modeshape-jcr";
+        String[] anonRoleNames = {ModeShapeRoles.READWRITE};
+        Document config = createRepositoryConfiguration(repoName, jaasPolicyName, anonRoleNames);
+        startRepositoryWith(config, repoName);
+
+        // Verify the JAAS was configured correctly ...
+        session = repository.login(new SimpleCredentials("readwrite", "readwrite".toCharArray()));
+
+        LoginContext login = new LoginContext("modeshape-jcr", new UserPasswordCallbackHandler("superuser",
+                                                                                               "superuser".toCharArray()));
+        login.login();
+
+        Subject subject = login.getSubject();
+
+        Session session = (Session)Subject.doAsPrivileged(subject, new PrivilegedExceptionAction<Session>() {
+
+            @SuppressWarnings( "synthetic-access" )
+            @Override
+            public Session run() throws Exception {
+                return repository.login();
+            }
+
+        }, AccessController.getContext());
+
+        assertThat(session, is(notNullValue()));
+        assertThat(session.getUserID(), is("superuser"));
+        login.logout();
+    }
+
+    @Test( expected = javax.jcr.LoginException.class )
+    public void shouldNotAllowLoginIfCredentialsDoNotProvideJaasMethod() throws Exception {
+        String repoName = REPO_NAME;
+        String jaasPolicyName = "modeshape-jcr";
+        String[] anonRoleNames = {};
+        Document config = createRepositoryConfiguration(repoName, jaasPolicyName, anonRoleNames);
+
+        startRepositoryWith(config, repoName);
+
+        repository.login(new Credentials() {
+            private static final long serialVersionUID = 1L;
+        });
+    }
+
+    @Test( expected = javax.jcr.LoginException.class )
+    public void shouldNotAllowLoginIfCredentialsReturnNullAccessControlContext() throws Exception {
+        String repoName = REPO_NAME;
+        String jaasPolicyName = "modeshape-jcr";
+        String[] anonRoleNames = {};
+        Document config = createRepositoryConfiguration(repoName, jaasPolicyName, anonRoleNames);
+
+        startRepositoryWith(config, repoName);
+
+        repository.login(new Credentials() {
+            private static final long serialVersionUID = 1L;
+
+            @SuppressWarnings( "unused" )
+            public AccessControlContext getAccessControlContext() {
+                return null;
+            }
+        });
+    }
+
+    @Test( expected = javax.jcr.LoginException.class )
+    public void shouldNotAllowLoginIfCredentialsReturnNullLoginContext() throws Exception {
+        String repoName = REPO_NAME;
+        String jaasPolicyName = "modeshape-jcr";
+        String[] anonRoleNames = {};
+        Document config = createRepositoryConfiguration(repoName, jaasPolicyName, anonRoleNames);
+
+        startRepositoryWith(config, repoName);
+
+        repository.login(new Credentials() {
+
+            private static final long serialVersionUID = 1L;
+
+            @SuppressWarnings( "unused" )
+            public LoginContext getLoginContext() {
+                return null;
+            }
+        });
     }
 
 }

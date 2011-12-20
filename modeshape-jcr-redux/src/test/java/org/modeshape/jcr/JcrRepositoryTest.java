@@ -31,7 +31,9 @@ import static org.junit.Assert.assertThat;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import javax.jcr.NamespaceException;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.Repository;
 import javax.jcr.Session;
@@ -44,6 +46,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.jcr.RepositoryStatistics.DurationActivity;
 import org.modeshape.jcr.RepositoryStatistics.DurationMetric;
 import org.modeshape.jcr.RepositoryStatistics.History;
@@ -56,6 +59,7 @@ public class JcrRepositoryTest {
     private CacheContainer cm;
     private RepositoryConfiguration config;
     private JcrRepository repository;
+    private JcrSession session;
 
     @Before
     public void beforeEach() throws Exception {
@@ -70,15 +74,22 @@ public class JcrRepositoryTest {
 
     @After
     public void afterEach() throws Exception {
-        try {
-            TestingUtil.killRepositories(repository);
-        } finally {
-            repository = null;
-            config = null;
+        if (session != null) {
             try {
-                org.infinispan.test.TestingUtil.killCacheManagers(cm);
+                session.logout();
             } finally {
-                cm = null;
+                session = null;
+                try {
+                    TestingUtil.killRepositories(repository);
+                } finally {
+                    repository = null;
+                    config = null;
+                    try {
+                        org.infinispan.test.TestingUtil.killCacheManagers(cm);
+                    } finally {
+                        cm = null;
+                    }
+                }
             }
         }
     }
@@ -302,6 +313,250 @@ public class JcrRepositoryTest {
         assertThat(repository.getDescriptor(Repository.REP_VERSION_DESC).startsWith("3."), is(true));
         assertThat(repository.getDescriptor(Repository.SPEC_NAME_DESC), is(JcrI18n.SPEC_NAME_DESC.text()));
         assertThat(repository.getDescriptor(Repository.SPEC_VERSION_DESC), is("2.0"));
+    }
+
+    @Test
+    public void shouldReturnNullWhenDescriptorKeyIsNull() {
+        assertThat(repository.getDescriptor(null), is(nullValue()));
+    }
+
+    @Test
+    public void shouldNotAllowEmptyDescriptorKey() {
+        assertThat(repository.getDescriptor(""), is(nullValue()));
+    }
+
+    @Test
+    public void shouldNotProvideRepositoryWorkspaceNamesDescriptorIfOptionSetToFalse() throws Exception {
+        assertThat(repository.getDescriptor(org.modeshape.jcr.api.Repository.REPOSITORY_WORKSPACES), is(nullValue()));
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldHaveRootNode() throws Exception {
+        session = createSession();
+        javax.jcr.Node root = session.getRootNode();
+        String uuid = root.getIdentifier();
+
+        // Should be referenceable ...
+        assertThat(root.isNodeType("mix:referenceable"), is(true));
+
+        // Should have a UUID ...
+        assertThat(root.getUUID(), is(uuid));
+
+        // Should have an identifier ...
+        assertThat(root.getIdentifier(), is(uuid));
+
+        // Get the children of the root node ...
+        javax.jcr.NodeIterator iter = root.getNodes();
+        javax.jcr.Node system = iter.nextNode();
+        assertThat(system.getName(), is("jcr:system"));
+
+        // Add a child node ...
+        javax.jcr.Node childA = root.addNode("childA", "nt:unstructured");
+        assertThat(childA, is(notNullValue()));
+        iter = root.getNodes();
+        javax.jcr.Node system2 = iter.nextNode();
+        javax.jcr.Node childA2 = iter.nextNode();
+        assertThat(system2.getName(), is("jcr:system"));
+        assertThat(childA2.getName(), is("childA"));
+    }
+
+    @Test
+    public void shouldHaveSystemBranch() throws Exception {
+        session = createSession();
+        javax.jcr.Node root = session.getRootNode();
+        AbstractJcrNode system = (AbstractJcrNode)root.getNode("jcr:system");
+        assertThat(system, is(notNullValue()));
+    }
+
+    @Test
+    public void shouldHaveRegisteredModeShapeSpecificNamespacesNamespaces() throws Exception {
+        session = createSession();
+        // Don't use the constants, since this needs to check that the actual values are correct
+        assertThat(session.getNamespaceURI("mode"), is("http://www.modeshape.org/1.0"));
+    }
+
+    @Test( expected = NamespaceException.class )
+    public void shouldNotHaveModeShapeInternalNamespaceFromVersion2() throws Exception {
+        session = createSession();
+        // Don't use the constants, since this needs to check that the actual values are correct
+        session.getNamespaceURI("modeint");
+    }
+
+    @Test
+    public void shouldHaveRegisteredThoseNamespacesDefinedByTheJcrSpecification() throws Exception {
+        session = createSession();
+        // Don't use the constants, since this needs to check that the actual values are correct
+        assertThat(session.getNamespaceURI("mode"), is("http://www.modeshape.org/1.0"));
+        assertThat(session.getNamespaceURI("jcr"), is("http://www.jcp.org/jcr/1.0"));
+        assertThat(session.getNamespaceURI("mix"), is("http://www.jcp.org/jcr/mix/1.0"));
+        assertThat(session.getNamespaceURI("nt"), is("http://www.jcp.org/jcr/nt/1.0"));
+        assertThat(session.getNamespaceURI(""), is(""));
+    }
+
+    @Test
+    public void shouldHaveRegisteredThoseNamespacesDefinedByTheJcrApiJavaDoc() throws Exception {
+        session = createSession();
+        // Don't use the constants, since this needs to check that the actual values are correct
+        assertThat(session.getNamespaceURI("sv"), is("http://www.jcp.org/jcr/sv/1.0"));
+        assertThat(session.getNamespaceURI("xmlns"), is("http://www.w3.org/2000/xmlns/"));
+    }
+
+    protected JcrSession createSession() throws Exception {
+        return repository.login();
+    }
+
+    protected JcrSession createSession( final String workspace ) throws Exception {
+        return repository.login(workspace);
+    }
+
+    @Ignore( "GC behavior is non-deterministic from the application's POV - this test _will_ occasionally fail" )
+    @Test
+    public void shouldAllowManySessionLoginsAndLogouts() throws Exception {
+        Session session = null;
+        for (int i = 0; i < 10000; i++) {
+            session = repository.login();
+            session.logout();
+        }
+
+        session = repository.login();
+        session = null;
+
+        // Give the gc a chance to run
+        System.gc();
+        Thread.sleep(100);
+
+        assertThat(repository.runningState().activeSessinCount(), is(0));
+    }
+
+    @Ignore( "This test normally sleeps for 30 seconds" )
+    @Test
+    public void shouldCleanUpLocksFromDeadSessions() throws Exception {
+        String lockedNodeName = "lockedNode";
+        JcrSession locker = (JcrSession)repository.login();
+
+        // Create a node to lock
+        javax.jcr.Node lockedNode = locker.getRootNode().addNode(lockedNodeName);
+        lockedNode.addMixin("mix:lockable");
+        locker.save();
+
+        // Create a session-scoped lock (not deep)
+        locker.getWorkspace().getLockManager().lock(lockedNode.getPath(), false, true, 1L, "me");
+        assertThat(lockedNode.isLocked(), is(true));
+
+        Session reader = repository.login();
+        javax.jcr.Node readerNode = (javax.jcr.Node)reader.getItem("/" + lockedNodeName);
+        assertThat(readerNode.isLocked(), is(true));
+
+        // No locks should have changed yet.
+        repository.runningState().cleanUpLocks();
+        assertThat(lockedNode.isLocked(), is(true));
+        assertThat(readerNode.isLocked(), is(true));
+
+        /*       
+         * Simulate the GC cleaning up the session and it being purged from the activeSessions() map.
+         * This can't really be tested in a consistent way due to a lack of specificity around when
+         * the garbage collector runs. The @Ignored test above does cause a GC sweep on by computer and
+         * confirms that the code works in principle. A different chicken dance may be required to
+         * fully test this on a different computer.
+         */
+        repository.runningState().removeSession(locker);
+        Thread.sleep(RepositoryConfiguration.LOCK_EXTENSION_INTERVAL_IN_MILLIS + 100);
+
+        // The locker thread should be inactive and the lock cleaned up
+        repository.runningState().cleanUpLocks();
+        assertThat(readerNode.isLocked(), is(false));
+    }
+
+    @Test
+    public void shouldAllowCreatingWorkspaces() throws Exception {
+        RepositoryConfiguration config = null;
+        config = RepositoryConfiguration.read("{ \"name\" : \"repoName\", \"workspaces\" : { \"allowCreation\" : true } }");
+        config = new RepositoryConfiguration(config.getDocument(), "repoName", cm);
+        repository = new JcrRepository(config);
+        repository.start();
+
+        // Create several sessions ...
+        Session session2 = null;
+        Session session3 = null;
+        try {
+            session = createSession();
+            session2 = createSession();
+
+            // Create a new workspace ...
+            String newWorkspaceName = "MyCarWorkspace";
+            session.getWorkspace().createWorkspace(newWorkspaceName);
+            assertAccessibleWorkspace(session, newWorkspaceName);
+            assertAccessibleWorkspace(session2, newWorkspaceName);
+            session.logout();
+
+            session3 = createSession();
+            assertAccessibleWorkspace(session2, newWorkspaceName);
+            assertAccessibleWorkspace(session3, newWorkspaceName);
+
+            // Create a session for this new workspace ...
+            session = createSession(newWorkspaceName);
+        } finally {
+            try {
+                if (session2 != null) session2.logout();
+            } finally {
+                if (session3 != null) session3.logout();
+            }
+        }
+
+    }
+
+    protected void assertAccessibleWorkspace( Session session,
+                                              String workspaceName ) throws Exception {
+        assertContains(session.getWorkspace().getAccessibleWorkspaceNames(), workspaceName);
+    }
+
+    protected void assertContains( String[] actuals,
+                                   String... expected ) {
+        // Each expected must appear in the actuals ...
+        for (String expect : expected) {
+            if (expect == null) continue;
+            boolean found = false;
+            for (String actual : actuals) {
+                if (expect.equals(actual)) {
+                    found = true;
+                    break;
+                }
+            }
+            assertThat("Did not find '" + expect + "' in the actuals: " + actuals, found, is(true));
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-1269" )
+    public void shouldAllowReindexingEntireWorkspace() throws Exception {
+        session = createSession();
+        session.getWorkspace().reindex();
+    }
+
+    @Test
+    @FixFor( "MODE-1269" )
+    public void shouldAllowReindexingSubsetOfWorkspace() throws Exception {
+        session = createSession();
+        session.getWorkspace().reindex("/");
+    }
+
+    @Test
+    @FixFor( "MODE-1269" )
+    public void shouldAllowAsynchronousReindexingEntireWorkspace() throws Exception {
+        session = createSession();
+        Future<Boolean> future = session.getWorkspace().reindexAsync();
+        assertThat(future, is(notNullValue()));
+        assertThat(future.get(), is(true)); // get() blocks until done
+    }
+
+    @Test
+    @FixFor( "MODE-1269" )
+    public void shouldAllowAsynchronousReindexingSubsetOfWorkspace() throws Exception {
+        session = createSession();
+        Future<Boolean> future = session.getWorkspace().reindexAsync("/");
+        assertThat(future, is(notNullValue()));
+        assertThat(future.get(), is(true)); // get() blocks until done
     }
 
 }

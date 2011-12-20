@@ -47,6 +47,7 @@ import javax.jcr.query.QueryManager;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.ImmediateFuture;
 import org.modeshape.jcr.JcrContentHandler.EnclosingSAXException;
 import org.modeshape.jcr.RepositoryStatistics.ValueMetric;
 import org.modeshape.jcr.core.ExecutionContext;
@@ -112,6 +113,9 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
         throws ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException,
         LockException, RepositoryException {
         session.checkLive();
+        // TODO: copy
+        CheckArg.isNotEmpty(srcAbsPath, "srcAbsPath");
+        CheckArg.isNotEmpty(destAbsPath, "destAbsPath");
     }
 
     @Override
@@ -121,6 +125,10 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
         throws NoSuchWorkspaceException, ConstraintViolationException, VersionException, AccessDeniedException,
         PathNotFoundException, ItemExistsException, LockException, RepositoryException {
         session.checkLive();
+        // TODO: copy
+        CheckArg.isNotEmpty(srcWorkspace, "srcWorkspace");
+        CheckArg.isNotEmpty(srcAbsPath, "srcAbsPath");
+        CheckArg.isNotEmpty(destAbsPath, "destAbsPath");
     }
 
     @Override
@@ -131,6 +139,10 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
         throws NoSuchWorkspaceException, ConstraintViolationException, VersionException, AccessDeniedException,
         PathNotFoundException, ItemExistsException, LockException, RepositoryException {
         session.checkLive();
+        // TODO: clone
+        CheckArg.isNotEmpty(srcWorkspace, "srcWorkspace");
+        CheckArg.isNotEmpty(srcAbsPath, "srcAbsPath");
+        CheckArg.isNotEmpty(destAbsPath, "destAbsPath");
     }
 
     @Override
@@ -139,6 +151,9 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
         throws ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException,
         LockException, RepositoryException {
         session.checkLive();
+
+        CheckArg.isNotEmpty(srcAbsPath, "srcAbsPath");
+        CheckArg.isNotEmpty(destAbsPath, "destAbsPath");
 
         // Create a new JCR session, perform the move, and then save the session ...
         JcrSession session = this.session.spawnSession(false);
@@ -332,13 +347,17 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
     @Override
     public Future<Boolean> reindexAsync() throws RepositoryException {
         // TODO: Query
-        return null;
+
+        // This is a bogus Future that always returns it's done ...
+        return ImmediateFuture.create(Boolean.TRUE);
     }
 
     @Override
     public Future<Boolean> reindexAsync( String path ) throws RepositoryException {
         // TODO: Query
-        return null;
+
+        // This is a bogus Future that always returns it's done ...
+        return ImmediateFuture.create(Boolean.TRUE);
     }
 
 }
