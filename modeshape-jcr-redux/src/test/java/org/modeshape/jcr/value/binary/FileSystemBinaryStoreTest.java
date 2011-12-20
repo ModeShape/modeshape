@@ -27,11 +27,17 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.net.URL;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -42,6 +48,7 @@ import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
@@ -240,6 +247,47 @@ public class FileSystemBinaryStoreTest {
         fileLock.release();
         assertThat(file1.exists(), is(false));
         assertThat(file2.exists(), is(true));
+    }
+
+    @FixFor( "MODE-1358" )
+    @Test
+    public void shouldCopyFilesUsingStreams() throws Exception {
+        // Copy a large file into a temporary file ...
+        File tempFile = File.createTempFile("copytest", "pdf");
+        try {
+            URL sourceUrl = getClass().getResource("/docs/postgresql-8.4.1-US.pdf");
+            assertThat(sourceUrl, is(notNullValue()));
+            File sourceFile = new File(sourceUrl.toURI());
+            assertThat(sourceFile.exists(), is(true));
+            assertThat(sourceFile.canRead(), is(true));
+            assertThat(sourceFile.isFile(), is(true));
+
+            boolean useBufferedStream = true;
+            final int bufferSize = AbstractBinaryStore.bestBufferSize(sourceFile.length());
+
+            RandomAccessFile destinationRaf = new RandomAccessFile(tempFile, "rw");
+            RandomAccessFile originalRaf = new RandomAccessFile(sourceFile, "r");
+
+            FileChannel destinationChannel = destinationRaf.getChannel();
+            OutputStream output = Channels.newOutputStream(destinationChannel);
+            if (useBufferedStream) output = new BufferedOutputStream(output, bufferSize);
+
+            // Create an input stream to the original file ...
+            FileChannel originalChannel = originalRaf.getChannel();
+            InputStream input = Channels.newInputStream(originalChannel);
+            if (useBufferedStream) input = new BufferedInputStream(input, bufferSize);
+
+            // Copy the content ...
+            Stopwatch sw = new Stopwatch();
+            sw.start();
+            IoUtil.write(input, output, bufferSize);
+            sw.stop();
+            System.out.println("Time to copy \"" + sourceFile.getName() + "\" (" + sourceFile.length() + " bytes): "
+                               + sw.getTotalDuration());
+        } finally {
+            tempFile.delete();
+        }
+
     }
 
     protected Binary storeAndCheck( int contentIndex ) throws Exception {
