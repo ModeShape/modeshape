@@ -150,7 +150,7 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
             destination.getParentFile().mkdirs();
 
             // First, obtain an exclusive lock on the original file ...
-            Lock fileLock = FileLocks.get().writeLock(original);
+            FileLocks.WrappedLock fileLock = FileLocks.get().writeLock(original);
             try {
                 // The perform the move/rename (which may not work on all platforms) ...
                 if (original.renameTo(destination)) {
@@ -166,19 +166,22 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
             // Create the new file and obtain an exclusive lock on it ...
             fileLock = FileLocks.get().writeLock(destination);
             try {
-                RandomAccessFile destinationRaf = new RandomAccessFile(destination, "rw");
-                FileChannel destinationChannel = destinationRaf.getChannel();
+                FileChannel destinationChannel = fileLock.lockedFileChannel();
                 OutputStream output = Channels.newOutputStream(destinationChannel);
 
                 // Create an input stream to the original file ...
-                RandomAccessFile originalRaf = new RandomAccessFile(destination, "r");
+                RandomAccessFile originalRaf = new RandomAccessFile(original, "r");
                 FileChannel originalChannel = originalRaf.getChannel();
                 InputStream input = Channels.newInputStream(originalChannel);
 
                 // Copy the content ...
                 IoUtil.write(input, output, AbstractBinaryStore.bestBufferSize(destination.length()));
             } finally {
-                fileLock.unlock();
+                try {
+                    fileLock.unlock();
+                } finally {
+                    original.delete();
+                }
             }
         } catch (IOException e) {
             throw new BinaryStoreException(e);
@@ -271,6 +274,7 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
                 // Change the length to the current value, which updates the last modified timestamp ...
                 raf.setLength(raf.length());
             } finally {
+                raf.close();
                 fileLock.unlock();
             }
         } catch (IOException e) {
@@ -316,22 +320,22 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
     @Override
     public void removeValuesUnusedLongerThan( long minimumAge,
                                               TimeUnit unit ) throws BinaryStoreException {
-        long youngestModifiedTimestamp = System.currentTimeMillis() - TimeUnit.MILLISECONDS.convert(minimumAge, unit);
+        long oldestTimestamp = System.currentTimeMillis() - TimeUnit.MILLISECONDS.convert(minimumAge, unit);
         try {
-            removeFilesOlderThan(youngestModifiedTimestamp, trash);
+            removeFilesOlderThan(oldestTimestamp, trash);
         } catch (IOException e) {
             throw new BinaryStoreException(e);
         }
     }
 
-    private void removeFilesOlderThan( long timestamp,
+    private void removeFilesOlderThan( long oldestTimestamp,
                                        File parentDirectory ) throws IOException {
         boolean removed = false;
         for (File fileOrDir : parentDirectory.listFiles()) {
             if (fileOrDir.isDirectory()) {
-                removeFilesOlderThan(timestamp, fileOrDir);
+                removeFilesOlderThan(oldestTimestamp, fileOrDir);
             } else if (fileOrDir.isFile()) {
-                if (fileOrDir.lastModified() > timestamp) {
+                if (fileOrDir.lastModified() < oldestTimestamp) {
                     if (fileOrDir.delete()) removed = true;
                 }
             }

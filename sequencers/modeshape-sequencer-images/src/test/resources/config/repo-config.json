@@ -1,22 +1,5 @@
 {
-    "name" : "My Repository",
-    "jndiName" : "java:jcr/local/MyRepository",
-    "storage" : {
-        "transactionManagerLookup" : "org.infinispan.transaction.lookup.DummyTransactionManagerLookup"
-    },
-    "workspaces" : {
-        "default" : "default",
-        "allowCreation" : true
-    },
-    "security" : {
-        "anonymous" : {
-            "roles" : ["readonly","readwrite","admin"],
-            "useOnFailedLogin" : false
-        }
-    },
-    "query" : {
-        "enabled" : false
-    },
+    "name" : "ImageSequencer Test Repository",
     "sequencing" : {
         "removeDerivedContentWithOriginal" : true,
         "sequencers" : [
