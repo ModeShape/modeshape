@@ -23,13 +23,13 @@
  */
 package org.modeshape.jcr.value.binary;
 
+import org.modeshape.jcr.value.BinaryKey;
 import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.Channels;
 import java.util.concurrent.locks.Lock;
-import org.modeshape.jcr.value.BinaryKey;
 
 /**
  * A {@link InputStream} implementation around a file that creates a shared lock when reading the file, ensuring the file is not
@@ -43,7 +43,7 @@ public final class SharedLockingInputStream extends InputStream {
     private final NamedLocks lockManager;
     private InputStream stream;
     private Lock processLock;
-    private Lock fileLock;
+    private FileLocks.WrappedLock fileLock;
 
     /**
      * Create a self-closing, (shared) locking {@link InputStream} to read the content of the supplied {@link File file}.
@@ -74,8 +74,7 @@ public final class SharedLockingInputStream extends InputStream {
             this.fileLock = FileLocks.get().readLock(file);
 
             // Now create a buffered stream ...
-            this.stream = new FileInputStream(file);
-            this.stream = new BufferedInputStream(stream, AbstractBinaryStore.bestBufferSize(file.length()));
+            this.stream = new BufferedInputStream(Channels.newInputStream(fileLock.lockedFileChannel()), AbstractBinaryStore.bestBufferSize(file.length()));
         }
     }
 
