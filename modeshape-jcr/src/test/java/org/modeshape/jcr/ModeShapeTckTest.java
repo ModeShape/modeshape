@@ -15,6 +15,7 @@ import javax.jcr.Credentials;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.InvalidItemStateException;
 import javax.jcr.LoginException;
+import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
@@ -36,7 +37,9 @@ import javax.jcr.observation.Event;
 import javax.jcr.observation.EventIterator;
 import javax.jcr.observation.EventListener;
 import javax.jcr.query.Query;
+import javax.jcr.query.QueryManager;
 import javax.jcr.query.QueryResult;
+import javax.jcr.version.OnParentVersionAction;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
@@ -1130,6 +1133,56 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         assertThat(belowCopyNode2.getProperty("computeProp").getString(), is("computePropValue"));
         assertThat(belowCopyNode2.getProperty("versionProp").getString(), is("versionPropValue"));
         assertThat(belowCopyNode2.getMixinNodeTypes()[0].getName(), is("mix:referenceable"));
+    }
+
+    @SuppressWarnings( "unchecked" )
+    @FixFor( "MODE-1359" )
+    public void testShouldQueryUsingJoinWithLeftHandSideOfJoinConditionBeingNullable() throws Exception {
+        session = getHelper().getSuperuserSession();
+        final NamespaceRegistry registry = session.getWorkspace().getNamespaceRegistry();
+
+        final String NAMESPACE_PREFIX = "tt";
+        final String NAMESPACE_URI = "http://test.com/tt";
+        final String FRIENDLY = "tt:friendly";
+        final String FRIEND = "tt:friend";
+
+        registry.registerNamespace(NAMESPACE_PREFIX, NAMESPACE_URI);
+
+        NodeTypeManager manager = session.getWorkspace().getNodeTypeManager();
+        NodeTypeTemplate nodeType = manager.createNodeTypeTemplate();
+        nodeType.setMixin(true);
+        nodeType.setName(FRIENDLY);
+        nodeType.setQueryable(true);
+        nodeType.setDeclaredSuperTypeNames(new String[] {"mix:referenceable"});
+
+        PropertyDefinitionTemplate propertyDef = manager.createPropertyDefinitionTemplate();
+        propertyDef.setName(FRIEND);
+        propertyDef.setMultiple(true);
+        propertyDef.setRequiredType(PropertyType.REFERENCE);
+        propertyDef.setOnParentVersion(OnParentVersionAction.COPY);
+        propertyDef.setProtected(false);
+
+        nodeType.getPropertyDefinitionTemplates().add(propertyDef);
+        manager.registerNodeType(nodeType, true);
+
+        final String USER_NAME = "Paul";
+        final Node userNode = session.getRootNode().addNode(USER_NAME, "nt:folder");
+        userNode.addMixin(FRIENDLY);
+
+        session.save();
+
+        final QueryManager queryManager = session.getWorkspace().getQueryManager();
+        String expression = "SELECT grantee.* FROM [tt:friendly] as grantee "
+                            + "INNER JOIN [tt:friendly] as grantor ON grantee.[jcr:uuid] = grantor.[tt:friend]";
+
+        QueryResult queryResult = queryManager.createQuery(expression, "JCR-SQL2").execute();
+        assertThat(queryResult, is(notNullValue()));
+
+        expression = "SELECT grantee.* FROM [tt:friendly] as grantor "
+                     + "INNER JOIN [tt:friendly] as grantee ON grantor.[tt:friend] = grantee.[jcr:uuid]";
+
+        queryResult = queryManager.createQuery(expression, "JCR-SQL2").execute();
+        assertThat(queryResult, is(notNullValue()));
     }
 
     @FixFor( "MODE-693" )
