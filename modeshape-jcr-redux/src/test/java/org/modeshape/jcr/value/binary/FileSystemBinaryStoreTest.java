@@ -41,6 +41,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.common.util.FileUtil;
@@ -49,6 +50,8 @@ import org.modeshape.common.util.SecureHash;
 import org.modeshape.common.util.SecureHash.Algorithm;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.value.BinaryKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FileSystemBinaryStoreTest {
 
@@ -64,6 +67,7 @@ public class FileSystemBinaryStoreTest {
 
     public static final String[] CONTENT_HASHES;
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(FileSystemBinaryStoreTest.class); 
     static {
         String[] sha1s = new String[CONTENT.length];
         int index = 0;
@@ -149,7 +153,7 @@ public class FileSystemBinaryStoreTest {
         assertThat(countTrashFiles(), is(1));
 
         Thread.sleep(1100L); // Sleep more than a second, since modified times may only be accurate to nearest second ...
-        store.removeValuesUnusedLongerThan(3, TimeUnit.SECONDS);
+        store.removeValuesUnusedLongerThan(1, TimeUnit.SECONDS);
 
         // Make sure the file was removed from the trash ...
         assertThat(countStoredFiles(), is(storedSha1s.size() - 1));
@@ -235,7 +239,13 @@ public class FileSystemBinaryStoreTest {
 
         // Now try moving our locked file ...
         File file2 = new File(tmpDir, "afterMove");
-        file1.renameTo(file2);
+        if (!file1.renameTo(file2)) {
+            LOGGER.warn("RenameTo not successful. Will be ignored if on Windows");
+            if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+                fileLock.release();
+                return;
+            }
+        }
 
         fileLock.release();
         assertThat(file1.exists(), is(false));

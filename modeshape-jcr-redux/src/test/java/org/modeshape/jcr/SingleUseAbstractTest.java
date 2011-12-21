@@ -23,6 +23,7 @@
  */
 package org.modeshape.jcr;
 
+import junit.framework.AssertionFailedError;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
@@ -41,7 +42,6 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeType;
 import javax.naming.NamingException;
-import org.hibernate.annotations.common.AssertionFailure;
 import org.infinispan.config.Configuration;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.schematic.document.Changes;
@@ -103,7 +103,7 @@ public abstract class SingleUseAbstractTest {
     }
 
     protected RepositoryConfiguration createRepositoryConfiguration( String repositoryName,
-                                                                     CacheContainer cacheContainer ) {
+                                                                     CacheContainer cacheContainer ) throws Exception {
         return new RepositoryConfiguration(repositoryName, cacheContainer);
     }
 
@@ -120,9 +120,9 @@ public abstract class SingleUseAbstractTest {
         try {
             repository.apply(changes);
         } catch (NamingException e) {
-            throw new AssertionFailure("Unexpected error while predefining the \"" + workspaceName + "\" workspace", e);
+            throw new AssertionFailedError("Unexpected error while predefining the \"" + workspaceName + "\" workspace:" + e.getMessage());
         } catch (IOException e) {
-            throw new AssertionFailure("Unexpected error while predefining the \"" + workspaceName + "\" workspace", e);
+            throw new AssertionFailedError("Unexpected error while predefining the \"" + workspaceName + "\" workspace:" + e.getMessage());
         }
     }
 

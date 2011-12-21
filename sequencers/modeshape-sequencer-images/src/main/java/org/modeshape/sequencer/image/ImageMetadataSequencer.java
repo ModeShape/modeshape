@@ -23,20 +23,14 @@
  */
 package org.modeshape.sequencer.image;
 
-import java.io.IOException;
-import java.io.InputStream;
-import javax.jcr.Binary;
-import javax.jcr.NamespaceException;
-import javax.jcr.NamespaceRegistry;
-import javax.jcr.Node;
-import javax.jcr.Property;
-import javax.jcr.RepositoryException;
+import javax.jcr.*;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.io.IOException;
 
 /**
  * A sequencer that processes the binary content of an image file, extracts the metadata for the image, and then writes that image
@@ -125,16 +119,6 @@ public class ImageMetadataSequencer extends Sequencer {
     @Override
     public void initialize( NamespaceRegistry registry,
                             NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
-        try {
-            registry.getPrefix(ImageMetadataLexicon.Namespace.URI);
-        } catch (NamespaceException e) {
-            // not initialized yet
-            registry.registerNamespace(ImageMetadataLexicon.Namespace.PREFIX, ImageMetadataLexicon.Namespace.URI);
-            InputStream imagesCndFile = getClass().getResourceAsStream("images.cnd");
-            if (imagesCndFile == null) {
-                throw new IllegalStateException("Cannot locate image.cnd file");
-            }
-            nodeTypeManager.registerNodeTypes(imagesCndFile, false);
-        }
+        registerNodeTypes("images.cnd", nodeTypeManager, true);
     }
 }

@@ -8,10 +8,11 @@
         <relativePath>../../modeshape-parent</relativePath>
     </parent>
     <!-- The groupId and version values are inherited from parent -->
-    <artifactId>modeshape-sequencer-images</artifactId>
+    <artifactId>modeshape-sequencer-classfile</artifactId>
     <packaging>jar</packaging>
-    <name>ModeShape Image Sequencer</name>
-    <description>ModeShape Sequencer that processes PNG, JPEG, GIF and other image files</description>
+    <name>ModeShape Java Class File Sequencer</name>
+
+    <description>ModeShape Sequencer that processes Java class files</description>
     <url>http://www.modeshape.org</url>
 
     <!--
@@ -30,8 +31,13 @@
             <artifactId>modeshape-jcr-api</artifactId>
         </dependency>
 
-        <!-- Testing -->
+        <dependency>
+            <groupId>javassist</groupId>
+            <artifactId>javassist</artifactId>
+            <version>3.11.0.GA</version>
+        </dependency>
 
+        <!-- Testing -->
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-common</artifactId>
@@ -91,14 +97,7 @@
             <artifactId>log4j</artifactId>
         </dependency>
     </dependencies>
-    <reporting>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-report-plugin</artifactId>
-            </plugin>
-        </plugins>
-    </reporting>
+
     <build>
         <plugins>
             <!--
