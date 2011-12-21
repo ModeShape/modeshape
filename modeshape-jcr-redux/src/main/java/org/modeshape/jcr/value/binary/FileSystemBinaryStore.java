@@ -23,6 +23,7 @@
  */
 package org.modeshape.jcr.value.binary;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -164,18 +165,24 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
             // The move/rename didn't work, so we have to copy from the original ...
 
             // Create the new file and obtain an exclusive lock on it ...
+            final int bufferSize = AbstractBinaryStore.bestBufferSize(destination.length());
             fileLock = FileLocks.get().writeLock(destination);
             try {
+                // Create a buffered output stream to the destination file ...
+                // (Note that the Channels.newOutputStream does not create a buffered stream)
                 FileChannel destinationChannel = fileLock.lockedFileChannel();
                 OutputStream output = Channels.newOutputStream(destinationChannel);
+                output = new BufferedOutputStream(output, bufferSize);
 
                 // Create an input stream to the original file ...
+                // (Note that the Channels.newInputStream does not create a buffered stream)
                 RandomAccessFile originalRaf = new RandomAccessFile(original, "r");
                 FileChannel originalChannel = originalRaf.getChannel();
                 InputStream input = Channels.newInputStream(originalChannel);
+                input = new BufferedInputStream(input, bufferSize);
 
                 // Copy the content ...
-                IoUtil.write(input, output, AbstractBinaryStore.bestBufferSize(destination.length()));
+                IoUtil.write(input, output, bufferSize);
             } finally {
                 try {
                     fileLock.unlock();
