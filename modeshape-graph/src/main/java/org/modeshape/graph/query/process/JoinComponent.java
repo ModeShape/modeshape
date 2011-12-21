@@ -349,14 +349,14 @@ public abstract class JoinComponent extends ProcessingComponent {
                                          Object locationB ) {
                     Location location1 = (Location)locationA;
                     Location location2 = (Location)locationB;
-                    return location1.isSame(location2);
+                    return location1 == null ? location2 == null : location1.isSame(location2);
                 }
             };
         } else if (condition instanceof EquiJoinCondition) {
             return new Joinable() {
                 public boolean evaluate( Object leftValue,
                                          Object rightValue ) {
-                    return leftValue.equals(rightValue);
+                    return leftValue == null ? rightValue == null : leftValue.equals(rightValue);
                 }
             };
         } else if (condition instanceof ChildNodeJoinCondition) {
@@ -367,6 +367,7 @@ public abstract class JoinComponent extends ProcessingComponent {
                 return new Joinable() {
                     public boolean evaluate( Object childLocation,
                                              Object parentLocation ) {
+                        if (childLocation == null || parentLocation == null) return false;
                         Path childPath = ((Location)childLocation).getPath();
                         Path parentPath = ((Location)parentLocation).getPath();
                         if (childPath.isRoot()) return false;
@@ -378,6 +379,7 @@ public abstract class JoinComponent extends ProcessingComponent {
             return new Joinable() {
                 public boolean evaluate( Object parentLocation,
                                          Object childLocation ) {
+                    if (childLocation == null || parentLocation == null) return false;
                     Path childPath = ((Location)childLocation).getPath();
                     Path parentPath = ((Location)parentLocation).getPath();
                     if (childPath.isRoot()) return false;
@@ -392,6 +394,7 @@ public abstract class JoinComponent extends ProcessingComponent {
                 return new Joinable() {
                     public boolean evaluate( Object ancestorLocation,
                                              Object descendantLocation ) {
+                        if (ancestorLocation == null || descendantLocation == null) return false;
                         Path ancestorPath = ((Location)ancestorLocation).getPath();
                         Path descendantPath = ((Location)descendantLocation).getPath();
                         return ancestorPath.isAncestorOf(descendantPath);
@@ -402,6 +405,7 @@ public abstract class JoinComponent extends ProcessingComponent {
             return new Joinable() {
                 public boolean evaluate( Object descendantLocation,
                                          Object ancestorLocation ) {
+                    if (ancestorLocation == null || descendantLocation == null) return false;
                     Path ancestorPath = ((Location)ancestorLocation).getPath();
                     Path descendantPath = ((Location)descendantLocation).getPath();
                     return ancestorPath.isAncestorOf(descendantPath);
@@ -430,6 +434,8 @@ public abstract class JoinComponent extends ProcessingComponent {
             return new Comparator<Object>() {
                 public int compare( Object location1,
                                     Object location2 ) {
+                    if (location1 == null) return location2 == null ? 0 : -1;
+                    else if (location2 == null) return 1;
                     Path path1 = ((Location)location1).getPath();
                     Path path2 = ((Location)location2).getPath();
                     return pathComparator.compare(path1, path2);
@@ -444,6 +450,8 @@ public abstract class JoinComponent extends ProcessingComponent {
                 return new Comparator<Object>() {
                     public int compare( Object childLocation,
                                         Object parentLocation ) {
+                        if (childLocation == null) return parentLocation == null ? 0 : -1;
+                        else if (parentLocation == null) return 1;
                         Path childPath = ((Location)childLocation).getPath();
                         Path parentPath = ((Location)parentLocation).getPath();
                         if (childPath.isRoot()) return parentPath.isRoot() ? 0 : -1;
@@ -456,6 +464,8 @@ public abstract class JoinComponent extends ProcessingComponent {
             return new Comparator<Object>() {
                 public int compare( Object parentLocation,
                                     Object childLocation ) {
+                    if (parentLocation == null) return parentLocation == null ? 0 : -1;
+                    else if (parentLocation == null) return 1;
                     Path childPath = ((Location)childLocation).getPath();
                     Path parentPath = ((Location)parentLocation).getPath();
                     if (childPath.isRoot()) return parentPath.isRoot() ? 0 : -1;
