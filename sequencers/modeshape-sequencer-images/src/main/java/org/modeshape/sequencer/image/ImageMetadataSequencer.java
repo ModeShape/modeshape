@@ -119,8 +119,6 @@ public class ImageMetadataSequencer extends Sequencer {
     @Override
     public void initialize( NamespaceRegistry registry,
                             NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
-        if (registerNamespace(ImageMetadataLexicon.Namespace.PREFIX, ImageMetadataLexicon.Namespace.URI, registry)) {
-            registerCND("images.cnd", nodeTypeManager);
-        }
+        registerNodeTypes("images.cnd", nodeTypeManager, true);
     }
 }

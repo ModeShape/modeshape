@@ -190,19 +190,23 @@ public abstract class Sequencer {
     }
 
     /**
-     * Registers types from a CDN file, using the given {@link NodeTypeManager}
+     * Registers node types from a CND file, using the given {@link NodeTypeManager}. Any namespaces defined in the CND file will
+     * be automatically registered as well.
+     *
      * @param cndFile the relative path to the cnd file, which is loaded using via {@link Class#getResourceAsStream(String)}
-     * @param nodeTypeManager the node type manager with which the cnd will be registered.
+     * @param nodeTypeManager the node type manager with which the cnd will be registered
+     * @param allowUpdate a boolean which indicates whether updates on existing node types are allowed or no.
+     * See {@link NodeTypeManager#registerNodeType(javax.jcr.nodetype.NodeTypeDefinition, boolean)}
      * @throws RepositoryException
      * @throws NodeTypeExistsException
      * @throws IOException
      */
-    protected void registerCND(String cndFile, NodeTypeManager nodeTypeManager) throws RepositoryException, NodeTypeExistsException, IOException {
+    protected void registerNodeTypes( String cndFile, NodeTypeManager nodeTypeManager, boolean allowUpdate ) throws RepositoryException, NodeTypeExistsException, IOException {
         InputStream cndStream = getClass().getResourceAsStream(cndFile);
         if (cndStream == null) {
-            throw new IllegalStateException("Cannot locate cnd file: " + cndFile);
+            throw new IllegalArgumentException("Cannot locate the compact node definition file on classpath: " + cndFile);
         }
-        nodeTypeManager.registerNodeTypes(cndStream, false);
+        nodeTypeManager.registerNodeTypes(cndStream, allowUpdate);
     }
     
     /**

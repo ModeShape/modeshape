@@ -50,9 +50,7 @@ public class ClassFileSequencer extends Sequencer {
 
     @Override
     public void initialize( NamespaceRegistry registry, NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
-        if (registerNamespace(ClassFileSequencerLexicon.Namespace.PREFIX, ClassFileSequencerLexicon.Namespace.URI, registry)) {
-            registerCND("sequencer-classfile.cnd", nodeTypeManager);
-        }
+        registerNodeTypes("sequencer-classfile.cnd", nodeTypeManager, true);
     }
 
     /**

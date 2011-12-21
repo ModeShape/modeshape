@@ -1,9 +1,5 @@
 {
-    "name" : "My Repository",
-    "workspaces" : {
-        "default" : "default",
-        "allowCreation" : true
-    },
+    "name" : "ImageSequencer Test Repository",
     "sequencing" : {
         "removeDerivedContentWithOriginal" : true,
         "sequencers" : [
