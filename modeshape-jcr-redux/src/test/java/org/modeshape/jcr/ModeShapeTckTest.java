@@ -2475,6 +2475,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
             this.latch = new CountDownLatch(counts);
         }
 
+        @Override
         public void onEvent( EventIterator events ) {
             while (events.hasNext()) {
                 try {

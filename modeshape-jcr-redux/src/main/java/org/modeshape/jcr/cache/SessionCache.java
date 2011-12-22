@@ -80,6 +80,11 @@ public interface SessionCache extends NodeCache {
 
     /**
      * Saves all changes made within this session.
+     * 
+     * @throws LockFailureException if a requested lock could not be made
+     * @throws DocumentAlreadyExistsException if this session attempts to create a document that has the same key as an existing
+     *         document
+     * @throws DocumentNotFoundException if one of the modified documents was removed by another session
      */
     public void save();
 
@@ -90,6 +95,10 @@ public interface SessionCache extends NodeCache {
      * @param node the node at or below which all changes should be saved; may not be null
      * @param otherSession another session whose changes should be saved with this session's changes; may not be null
      * @param preSaveOperation the set of operations to run against the new and changed nodes prior to saving; may be null
+     * @throws LockFailureException if a requested lock could not be made
+     * @throws DocumentAlreadyExistsException if this session attempts to create a document that has the same key as an existing
+     *         document
+     * @throws DocumentNotFoundException if one of the modified documents was removed by another session
      */
     public void save( CachedNode node,
                       SessionCache otherSession,
@@ -100,6 +109,10 @@ public interface SessionCache extends NodeCache {
      * 
      * @param otherSession another session whose changes should be saved with this session's changes; may not be null
      * @param preSaveOperation the set of operations to run against the new and changed nodes prior to saving; may be null
+     * @throws LockFailureException if a requested lock could not be made
+     * @throws DocumentAlreadyExistsException if this session attempts to create a document that has the same key as an existing
+     *         document
+     * @throws DocumentNotFoundException if one of the modified documents was removed by another session
      */
     public void save( SessionCache otherSession,
                       PreSave preSaveOperation );

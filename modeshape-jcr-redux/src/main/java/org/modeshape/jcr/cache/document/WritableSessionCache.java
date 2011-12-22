@@ -56,6 +56,8 @@ import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.CachedNode.ReferenceType;
 import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.ChildReferences;
+import org.modeshape.jcr.cache.DocumentAlreadyExistsException;
+import org.modeshape.jcr.cache.DocumentNotFoundException;
 import org.modeshape.jcr.cache.LockFailureException;
 import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeCache;
@@ -91,6 +93,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private Map<NodeKey, SessionNode> changedNodes;
+    private Set<NodeKey> replacedNodes;
     private LinkedHashSet<NodeKey> changedNodesInOrder;
     private final TransactionManager tm;
 
@@ -207,6 +210,9 @@ public class WritableSessionCache extends AbstractSessionCache {
      * Persist the changes within a transaction.
      * 
      * @throws LockFailureException if a requested lock could not be made
+     * @throws DocumentAlreadyExistsException if this session attempts to create a document that has the same key as an existing
+     *         document
+     * @throws DocumentNotFoundException if one of the modified documents was removed by another session
      */
     @Override
     public void save() {
@@ -281,6 +287,9 @@ public class WritableSessionCache extends AbstractSessionCache {
             // The changes have been made, so create a new map (we're using the keys from the current map) ...
             this.changedNodes = new HashMap<NodeKey, SessionNode>();
             this.changedNodesInOrder.clear();
+            this.replacedNodes = null;
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
             throw new WrappedException(e);
         } finally {
@@ -370,11 +379,15 @@ public class WritableSessionCache extends AbstractSessionCache {
             // The changes have been made, so create a new map (we're using the keys from the current map) ...
             this.changedNodes = new HashMap<NodeKey, SessionNode>();
             this.changedNodesInOrder.clear();
+            this.replacedNodes = null;
 
             // And in the referenced session ...
             that.changedNodes = new HashMap<NodeKey, SessionNode>();
             that.changedNodesInOrder.clear();
+            that.replacedNodes = null;
 
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
             throw new WrappedException(e);
         } finally {
@@ -409,6 +422,9 @@ public class WritableSessionCache extends AbstractSessionCache {
      * 
      * @param other the other session
      * @throws LockFailureException if a requested lock could not be made
+     * @throws DocumentAlreadyExistsException if this session attempts to create a document that has the same key as an existing
+     *         document
+     * @throws DocumentNotFoundException if one of the modified documents was removed by another session
      */
     @Override
     public void save( CachedNode node,
@@ -499,16 +515,20 @@ public class WritableSessionCache extends AbstractSessionCache {
                 throw new SystemFailureException(err);
             }
 
-            // The changes have been made, so create a new map (we're using the keys from the current map) ...
+            // The changes have been made, so remove the changes from this session's map ...
             for (NodeKey savedNode : savedNodesInOrder) {
                 this.changedNodes.remove(savedNode);
                 this.changedNodesInOrder.remove(savedNode);
+                this.replacedNodes.remove(savedNode);
             }
 
             // And in the referenced session ...
             that.changedNodes = new HashMap<NodeKey, SessionNode>();
             that.changedNodesInOrder.clear();
+            that.replacedNodes = null;
 
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
             throw new WrappedException(e);
         } finally {
@@ -556,6 +576,9 @@ public class WritableSessionCache extends AbstractSessionCache {
      * @param changedNodesInOrder the nodes that are to be persisted; may not be null
      * @return the ChangeSet encapsulating the changes that were made
      * @throws LockFailureException if a requested lock could not be made
+     * @throws DocumentAlreadyExistsException if this session attempts to create a document that has the same key as an existing
+     *         document
+     * @throws DocumentNotFoundException if one of the modified documents was removed by another session
      */
     @GuardedBy( "lock" )
     protected ChangeSet persistChanges( Iterable<NodeKey> changedNodesInOrder ) {
@@ -616,6 +639,11 @@ public class WritableSessionCache extends AbstractSessionCache {
                     changes.nodeCreated(key, newParent, newPath, node.changedProperties());
                 } else {
                     SchematicEntry nodeEntry = database.get(keyStr);
+                    if (nodeEntry == null) {
+                        // Could not find the entry in the database, which means it was deleted by someone else
+                        // just moments before we got our transaction to save ...
+                        throw new DocumentNotFoundException(keyStr);
+                    }
                     doc = nodeEntry.editDocumentContent();
                     if (newParent != null) {
                         persisted = workspaceCache.getNode(key);
@@ -755,7 +783,19 @@ public class WritableSessionCache extends AbstractSessionCache {
 
                 if (node.isNew()) {
                     // We need to create the schematic entry for the new node ...
-                    database.put(keyStr, doc, metadata);
+                    if (database.putIfAbsent(keyStr, doc, metadata) != null) {
+                        if (replacedNodes != null && replacedNodes.contains(key)) {
+                            // Then a node is being removed and recreated with the same key ...
+                            database.put(keyStr, doc, metadata);
+                        } else if (removedNodes != null && removedNodes.contains(key)) {
+                            // Then a node is being removed and recreated with the same key ...
+                            database.put(keyStr, doc, metadata);
+                            removedNodes.remove(key);
+                        } else {
+                            // We couldn't create the entry because one already existed ...
+                            throw new DocumentAlreadyExistsException(keyStr);
+                        }
+                    }
                 }
             }
         }
@@ -819,10 +859,16 @@ public class WritableSessionCache extends AbstractSessionCache {
             lock.lock();
             NodeKey key = newNode.getKey();
             SessionNode node = changedNodes.put(key, newNode);
-            if (node != null && node != REMOVED) {
-                // Put the original node back ...
-                changedNodes.put(key, node);
-                return node;
+            if (node != null) {
+                if (node != REMOVED) {
+                    // Put the original node back ...
+                    changedNodes.put(key, node);
+                    return node;
+                }
+                // Otherwise, a node with the same key was removed by this session before creating a new
+                // node with the same ID ...
+                if (replacedNodes == null) replacedNodes = new HashSet<NodeKey>();
+                replacedNodes.add(key);
             }
             changedNodesInOrder.add(key);
             return newNode;

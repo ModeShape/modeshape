@@ -262,9 +262,7 @@ public class CacheSchematicDb implements SchematicDb {
         SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key);
         newEntry.setContent(document, metadata, defaultContentTypeForDocument);
         SchematicEntry existingEntry = store.putIfAbsent(key, newEntry);
-        if (existingEntry == null) {
-            existingEntry = newEntry;
-        }
+        if (existingEntry == null) return null;
         return proxy(key, existingEntry);
     }
 
@@ -275,9 +273,7 @@ public class CacheSchematicDb implements SchematicDb {
         SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key);
         newEntry.setContent(binaryContent, metadata, defaultContentTypeForBinary);
         SchematicEntry existingEntry = store.putIfAbsent(key, newEntry);
-        if (existingEntry == null) {
-            existingEntry = newEntry;
-        }
+        if (existingEntry == null) return null;
         return proxy(key, existingEntry);
     }
 

@@ -433,7 +433,7 @@ public class JcrRepositoryTest {
     @Test
     public void shouldCleanUpLocksFromDeadSessions() throws Exception {
         String lockedNodeName = "lockedNode";
-        JcrSession locker = (JcrSession)repository.login();
+        JcrSession locker = repository.login();
 
         // Create a node to lock
         javax.jcr.Node lockedNode = locker.getRootNode().addNode(lockedNodeName);
