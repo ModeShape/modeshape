@@ -1,24 +1,21 @@
 # Release Notes for ModeShape &version;
 
-ModeShape &version; includes several new features, improvements, and bug fixes since 2.5.0.Final:
+ModeShape &version; includes several new features, improvements, and bug fixes since 2.6.0.Final:
 
-- improved overall performance
-- new disk-based storage connector
-- added cache support in several connectors
-- pluggable authentication and authorization
-- the JPA connector now support configuring/using Hibernate 2nd-level cache 
-- kits for JBoss Application Server 5.x and 6.x
-- improved BINARY property support for large files
-- automatically use the JDK logger if SLF4J binding is not available
-- upgraded to Infinispan 4.2.1.Final
-- faster startup of the ModeShape engine
-- over five dozen bug fixes
-
-> ***NOTE***: This release makes changes to the way the indexes store property values,
-> so it is strongly recommended that all users force re-indexing their content
-> after upgrading to &version;. To do this, simply remove the directory containing
-> the repository's indexes, as defined by the "queryIndexDirectory" repository 
-> configuration option.
+- improved memory usage during export and indexing
+- fixed JPA connectors use of 2nd level cache for Hibernate 3.3 and later
+- JPA connector's background garbage collection can be disabled
+- JPA no longer caches large value entities
+- fixed race condition in RepositoryConnectionPool
+- added public API methods to register node types in CND files, eliminating need for depending upon implementation classes
+- deprecated public API interfaces/methods that were redundant with JCR 2.0
+- added support for setting values with custom javax.jcr.Binary implementations
+- added public API methods to get the SHA-1 hash of binary values
+- fixes to query processing
+- fixes to enable building on Windows
+- corrected Teiid sequencers generation of transformation queries
+- upgraded to Tika 1.0
+- upgraded versions of several Maven plugins
 
 
 ## JCR Supported Features
