@@ -23,7 +23,6 @@
  */
 package org.modeshape.jcr.value.binary;
 
-import org.modeshape.common.annotation.GuardedBy;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -33,7 +32,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.*;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.modeshape.common.annotation.GuardedBy;
 
 /**
  * A utility class that represents read and write lock for files, which internally uses {@link FileLock} to coordinate file locks
@@ -46,7 +50,7 @@ public final class FileLocks {
 
     /**
      * Obtain the singleton instance for this virtual machine.
-     *
+     * 
      * @return the file lock manager; never null
      */
     public static FileLocks get() {
@@ -64,30 +68,65 @@ public final class FileLocks {
      * Obtain a write lock for the supplied file. When this method returns, the current thread will have obtained the lock.
      * Therefore, there is no need to call any of the lock methods (e.g., {@link Lock#lock()}, {@link Lock#lockInterruptibly()},
      * {@link Lock#tryLock()} or {@link Lock#tryLock(long, TimeUnit)}), as those methods will immediately return.
-     *
+     * 
      * @param file the file to be locked; may not be null
      * @return the lock held by the current thread; never null
      * @throws IOException if there is a problem obtaining the file lock
      */
     public WrappedLock writeLock( File file ) throws IOException {
-        return lock(file, true);
+        return lock(file, true, true);
     }
 
     /**
      * Obtain a read lock for the supplied file. When this method returns, the current thread will have obtained the lock.
      * Therefore, there is no need to call any of the lock methods (e.g., {@link Lock#lock()}, {@link Lock#lockInterruptibly()},
      * {@link Lock#tryLock()} or {@link Lock#tryLock(long, TimeUnit)}), as those methods will immediately return.
-     *
+     * 
      * @param file the file to be locked; may not be null
      * @return the lock held by the current thread; never null
      * @throws IOException if there is a problem obtaining the file lock
      */
     public WrappedLock readLock( File file ) throws IOException {
-        return lock(file, false);
+        return lock(file, false, true);
+    }
+
+    /**
+     * Try to obtain a write lock for the supplied file. When this method returns a non-null lock, the current thread will have
+     * obtained the lock. Therefore, there is no need to call any of the lock methods (e.g., {@link Lock#lock()},
+     * {@link Lock#lockInterruptibly()}, {@link Lock#tryLock()} or {@link Lock#tryLock(long, TimeUnit)}), as those methods will
+     * immediately return.
+     * <p>
+     * However, if this method returns <code>null</code>, this method could not obtain the lock.
+     * </p>
+     * 
+     * @param file the file to be locked; may not be null
+     * @return the lock held by the current thread; null if the lock could not be obtained
+     * @throws IOException if there is a problem obtaining the file lock
+     */
+    public WrappedLock tryWriteLock( File file ) throws IOException {
+        return lock(file, true, false);
+    }
+
+    /**
+     * Try to obtain a read lock for the supplied file. When this method returns a non-null lock, the current thread will have
+     * obtained the lock. Therefore, there is no need to call any of the lock methods (e.g., {@link Lock#lock()},
+     * {@link Lock#lockInterruptibly()}, {@link Lock#tryLock()} or {@link Lock#tryLock(long, TimeUnit)}), as those methods will
+     * immediately return.
+     * <p>
+     * However, if this method returns <code>null</code>, this method could not obtain the lock.
+     * </p>
+     * 
+     * @param file the file to be locked; may not be null
+     * @return the lock held by the current thread; null if the lock could not be obtained
+     * @throws IOException if there is a problem obtaining the file lock
+     */
+    public WrappedLock tryReadLock( File file ) throws IOException {
+        return lock(file, false, false);
     }
 
     protected final WrappedLock lock( File file,
-                               boolean writeLock ) throws IOException {
+                                      boolean writeLock,
+                                      boolean block ) throws IOException {
         LockHolder holder = null;
         try {
             masterLock.lock();
@@ -99,7 +138,7 @@ public final class FileLocks {
                 // Now store the wrapper in the map ...
                 locks.put(file.getAbsolutePath(), holder);
                 // Obtain and return the read or write lock (which we just created and nobody else can even see yet) ...
-                return holder.lock(writeLock);
+                return holder.lock(writeLock, block);
             }
             // Otherwise we found the lock and just need to increment the counter within the 'masterLock' scope ...
             holder.incrementReferenceCount();
@@ -108,7 +147,7 @@ public final class FileLocks {
         }
 
         // Now be sure to obtain the lock (outside of the 'masterLock' scope) ...
-        return holder.lock(writeLock);
+        return holder.lock(writeLock, block);
     }
 
     protected void unlock( LockHolder holder,
@@ -132,7 +171,7 @@ public final class FileLocks {
 
     /**
      * Get the number of named locks.
-     *
+     * 
      * @return the number of named locks; never negative
      */
     public int size() {
@@ -191,10 +230,11 @@ public final class FileLocks {
 
         /**
          * Returns the {@link java.nio.channels.FileLock#channel()} associated with the file lock.
+         * 
          * @return a {@code FileChannel} instance.
          */
         public FileChannel lockedFileChannel() {
-            return holder.fileLock != null ? holder.fileLock.channel() : null;
+            return holder.lockedFileChannel();
         }
     }
 
@@ -216,6 +256,15 @@ public final class FileLocks {
             this.writeLock = new WrappedLock(this, lock.writeLock());
         }
 
+        protected FileChannel lockedFileChannel() {
+            try {
+                fileLockLock.lock();
+                return fileLock != null ? fileLock.channel() : null;
+            } finally {
+                fileLockLock.unlock();
+            }
+        }
+
         protected void incrementReferenceCount() {
             referenceCount.incrementAndGet();
         }
@@ -224,7 +273,8 @@ public final class FileLocks {
             return referenceCount.decrementAndGet();
         }
 
-        protected WrappedLock lock( boolean write ) throws IOException {
+        protected WrappedLock lock( boolean write,
+                                    boolean block ) throws IOException {
             if (write) {
                 this.lock.writeLock().lock();
                 assert this.fileLock == null;
@@ -233,7 +283,16 @@ public final class FileLocks {
                 RandomAccessFile raf = new RandomAccessFile(file, "rw");
                 FileChannel channel = raf.getChannel();
                 // Create a exclusive (non-shared) lock that does not allow other readers ...
-                fileLock = channel.lock(0, Long.MAX_VALUE, false);
+                if (block) {
+                    fileLock = channel.lock(0, Long.MAX_VALUE, false);
+                } else {
+                    fileLock = channel.tryLock(0, Long.MAX_VALUE, false);
+                    if (fileLock == null) {
+                        // Couldn't immediately get our write-lock, so unlock the read lock and return ...
+                        this.lock.writeLock().unlock();
+                        return null;
+                    }
+                }
 
                 // And return the wrapped write lock that will forward the unlock to us ...
                 return writeLock;
@@ -252,7 +311,16 @@ public final class FileLocks {
                     RandomAccessFile raf = new RandomAccessFile(file, "r");
                     FileChannel channel = raf.getChannel();
                     // Create a shared lock that allows other readers ...
-                    fileLock = channel.lock(0, Long.MAX_VALUE, true);
+                    if (block) {
+                        fileLock = channel.lock(0, Long.MAX_VALUE, true);
+                    } else {
+                        fileLock = channel.tryLock(0, Long.MAX_VALUE, true);
+                        if (fileLock == null) {
+                            // Couldn't immediately get our read-lock, so unlock the read lock and return ...
+                            this.lock.readLock().unlock();
+                            return null;
+                        }
+                    }
                     lockedReaders++;
                 } else {
                     assert this.lockedReaders != 0;
@@ -277,8 +345,7 @@ public final class FileLocks {
                     try {
                         if (fileLock.channel().isOpen()) {
                             fileLock.channel().close();
-                        }
-                        else {
+                        } else {
                             fileLock.release();
                         }
                     } catch (IOException e) {

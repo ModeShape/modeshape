@@ -79,6 +79,9 @@ public interface BinaryStore {
      * Mark the supplied binary keys as unused, but key them in quarantine until needed again (at which point they're removed from
      * quarantine) or until {@link #removeValuesUnusedLongerThan(long, TimeUnit)} is called. This method ignores any keys for
      * values not stored within this store.
+     * <p>
+     * Note that the implementation must <i>never</i> block.
+     * </p>
      * 
      * @param keys the keys for the binary values that are no longer needed
      * @throws BinaryStoreException if there is a problem marking any of the supplied binary values as unused
@@ -87,6 +90,9 @@ public interface BinaryStore {
 
     /**
      * Remove binary values that have been {@link #markAsUnused(Iterable) unused} for at least the specified amount of time.
+     * <p>
+     * Note that the implementation must <i>never</i> block.
+     * </p>
      * 
      * @param minimumAge the minimum time that a binary value has been {@link #markAsUnused(Iterable) unused} before it can be
      *        removed; must be non-negative
