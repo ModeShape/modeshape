@@ -47,7 +47,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.statistic.Stopwatch;
@@ -74,7 +73,7 @@ public class FileSystemBinaryStoreTest {
 
     public static final String[] CONTENT_HASHES;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(FileSystemBinaryStoreTest.class); 
+    private static final Logger LOGGER = LoggerFactory.getLogger(FileSystemBinaryStoreTest.class);
     static {
         String[] sha1s = new String[CONTENT.length];
         int index = 0;

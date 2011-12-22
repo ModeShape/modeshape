@@ -47,6 +47,7 @@ import org.modeshape.common.util.SecureHash.HashingInputStream;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.value.Binary;
 import org.modeshape.jcr.value.BinaryKey;
+import org.modeshape.jcr.value.binary.FileLocks.WrappedLock;
 
 /**
  * A {@link BinaryStore} that stores files in a directory on the file system. The store does use file locks to prevent other
@@ -57,6 +58,8 @@ import org.modeshape.jcr.value.BinaryKey;
 public class FileSystemBinaryStore extends AbstractBinaryStore {
 
     private static final ConcurrentHashMap<String, FileSystemBinaryStore> INSTANCES = new ConcurrentHashMap<String, FileSystemBinaryStore>();
+
+    private static final boolean LOCK_WHEN_REMOVING_UNUSED_FILES = true;
 
     public static FileSystemBinaryStore create( File directory ) {
         String key = directory.getAbsolutePath();
@@ -337,13 +340,32 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
 
     private void removeFilesOlderThan( long oldestTimestamp,
                                        File parentDirectory ) throws IOException {
+        if (parentDirectory == null || !parentDirectory.exists() || parentDirectory.isFile()) return;
         boolean removed = false;
         for (File fileOrDir : parentDirectory.listFiles()) {
+            if (fileOrDir == null || !fileOrDir.exists()) continue;
+            // The file or directory should exist at this point (at least for now) ...
             if (fileOrDir.isDirectory()) {
                 removeFilesOlderThan(oldestTimestamp, fileOrDir);
             } else if (fileOrDir.isFile()) {
-                if (fileOrDir.lastModified() < oldestTimestamp) {
-                    if (fileOrDir.delete()) removed = true;
+                File file = fileOrDir;
+                if (file.lastModified() < oldestTimestamp) {
+                    if (LOCK_WHEN_REMOVING_UNUSED_FILES) {
+                        // Get a write lock on the file we want to delete ...
+                        WrappedLock fileLock = FileLocks.get().tryWriteLock(file);
+                        if (fileLock != null) {
+                            try {
+                                // And then delete the file ...
+                                file.delete();
+                                removed = true;
+                            } finally {
+                                fileLock.unlock();
+                            }
+                        }
+                        // otherwise it was locked, so just skip the file and we'll get it next time round
+                    } else {
+                        if (file.delete()) removed = true;
+                    }
                 }
             }
         }
