@@ -347,6 +347,8 @@ public final class JcrI18n {
     public static I18n repositoryNameDoesNotMatchConfigurationName;
     public static I18n errorWhileShuttingDownRepositoryInJndi;
     public static I18n errorWhileShuttingDownEngineInJndi;
+    public static I18n nodeModifiedBySessionWasRemovedByAnotherSession;
+    public static I18n nodeCreatedBySessionUsedExistingKey;
 
     public static I18n failedWhileRollingBackDestroyToRuntimeError;
     public static I18n unexpectedException;

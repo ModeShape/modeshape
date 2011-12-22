@@ -71,6 +71,8 @@ import org.modeshape.jcr.RepositoryStatistics.DurationMetric;
 import org.modeshape.jcr.RepositoryStatistics.ValueMetric;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
+import org.modeshape.jcr.cache.DocumentAlreadyExistsException;
+import org.modeshape.jcr.cache.DocumentNotFoundException;
 import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
@@ -803,6 +805,20 @@ public class JcrSession implements Session {
         } catch (WrappedException e) {
             Throwable cause = e.getCause();
             throw (cause instanceof RepositoryException) ? (RepositoryException)cause : new RepositoryException(e.getCause());
+        } catch (DocumentNotFoundException e) {
+            // Try to figure out which node in this transient state was the problem ...
+            NodeKey key = new NodeKey(e.getKey());
+            AbstractJcrNode problemNode = node(key, null);
+            String path = problemNode.getPath();
+            throw new InvalidItemStateException(JcrI18n.nodeModifiedBySessionWasRemovedByAnotherSession.text(path, key), e);
+        } catch (DocumentAlreadyExistsException e) {
+            // Try to figure out which node in this transient state was the problem ...
+            NodeKey key = new NodeKey(e.getKey());
+            AbstractJcrNode problemNode = node(key, null);
+            String path = problemNode.getPath();
+            throw new InvalidItemStateException(JcrI18n.nodeCreatedBySessionUsedExistingKey.text(path, key), e);
+        } catch (Throwable t) {
+            throw new RepositoryException(t);
         }
 
         try {
@@ -831,10 +847,28 @@ public class JcrSession implements Session {
         } catch (WrappedException e) {
             Throwable cause = e.getCause();
             throw (cause instanceof RepositoryException) ? (RepositoryException)cause : new RepositoryException(e.getCause());
+        } catch (DocumentNotFoundException e) {
+            // Try to figure out which node in this transient state was the problem ...
+            NodeKey key = new NodeKey(e.getKey());
+            AbstractJcrNode problemNode = node(key, null);
+            String path = problemNode.getPath();
+            throw new InvalidItemStateException(JcrI18n.nodeModifiedBySessionWasRemovedByAnotherSession.text(path, key), e);
+        } catch (DocumentAlreadyExistsException e) {
+            // Try to figure out which node in this transient state was the problem ...
+            NodeKey key = new NodeKey(e.getKey());
+            AbstractJcrNode problemNode = node(key, null);
+            String path = problemNode.getPath();
+            throw new InvalidItemStateException(JcrI18n.nodeCreatedBySessionUsedExistingKey.text(path, key), e);
+        } catch (Throwable t) {
+            throw new RepositoryException(t);
         }
 
-        // Record the save operation ...
-        repository().statistics().increment(ValueMetric.SESSION_SAVES);
+        try {
+            // Record the save operation ...
+            repository().statistics().increment(ValueMetric.SESSION_SAVES);
+        } catch (IllegalStateException e) {
+            // The repository has been shutdown ...
+        }
     }
 
     @Override

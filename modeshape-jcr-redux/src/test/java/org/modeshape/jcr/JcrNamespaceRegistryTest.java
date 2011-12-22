@@ -44,6 +44,7 @@ public class JcrNamespaceRegistryTest extends MultiUseAbstractTest {
         registry = session.getWorkspace().getNamespaceRegistry();
     }
 
+    @Override
     @After
     public void afterEach() throws Exception {
         // Unregister all of the namespaces ...

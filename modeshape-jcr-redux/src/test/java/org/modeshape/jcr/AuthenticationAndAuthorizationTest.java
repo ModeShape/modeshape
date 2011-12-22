@@ -332,7 +332,6 @@ public class AuthenticationAndAuthorizationTest {
 
         Session session = (Session)Subject.doAsPrivileged(subject, new PrivilegedExceptionAction<Session>() {
 
-            @SuppressWarnings( "synthetic-access" )
             @Override
             public Session run() throws Exception {
                 return repository.login();

@@ -290,9 +290,9 @@ public class WritableSessionCacheTest extends AbstractSessionCacheTest {
     public void shouldAllowTransientlyRenamingChildNode() {
         MutableCachedNode root = session1.mutable(session1.getRootKey());
         MutableCachedNode node = root.createChild(session(), newKey("node"), name("node"), property("p1", "value"));
-        NodeKey childAKey = node.createChild(session(), newKey("childA"), name("childA"), property("p1", "value A")).getKey();
-        NodeKey childBKey = node.createChild(session(), newKey("childB"), name("childB"), property("p1", "value B")).getKey();
-        NodeKey childCKey = node.createChild(session(), newKey("childC"), name("childC"), property("p1", "value C")).getKey();
+        NodeKey childAKey = node.createChild(session(), newKey("x-childA"), name("childA"), property("p1", "value A")).getKey();
+        NodeKey childBKey = node.createChild(session(), newKey("x-childB"), name("childB"), property("p1", "value B")).getKey();
+        NodeKey childCKey = node.createChild(session(), newKey("x-childC"), name("childC"), property("p1", "value C")).getKey();
         session1.save();
 
         // Check the children ...
@@ -321,9 +321,9 @@ public class WritableSessionCacheTest extends AbstractSessionCacheTest {
     public void shouldAllowAccessingRenamedChildNodeAfterPersisting() {
         MutableCachedNode root = session1.mutable(session1.getRootKey());
         MutableCachedNode node = root.createChild(session(), newKey("node"), name("node"), property("p1", "value"));
-        NodeKey childAKey = node.createChild(session(), newKey("childA"), name("childA"), property("p1", "value A")).getKey();
-        NodeKey childBKey = node.createChild(session(), newKey("childB"), name("childB"), property("p1", "value B")).getKey();
-        NodeKey childCKey = node.createChild(session(), newKey("childC"), name("childC"), property("p1", "value C")).getKey();
+        NodeKey childAKey = node.createChild(session(), newKey("x-childA"), name("childA"), property("p1", "value A")).getKey();
+        NodeKey childBKey = node.createChild(session(), newKey("x-childB"), name("childB"), property("p1", "value B")).getKey();
+        NodeKey childCKey = node.createChild(session(), newKey("x-childC"), name("childC"), property("p1", "value C")).getKey();
         session1.save();
 
         // Check the children ...
