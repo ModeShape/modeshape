@@ -21,16 +21,31 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.sequencer.cnd;
+ 
+//------------------------------------------------------------------------------
+// N A M E S P A C E S
+//------------------------------------------------------------------------------
+<jcr='http://www.jcp.org/jcr/1.0'>
+<nt='http://www.jcp.org/jcr/nt/1.0'>
+<mix='http://www.jcp.org/jcr/mix/1.0'>
+<image='http://www.modeshape.org/images/1.0'>
 
-import org.modeshape.common.AbstractI18nTest;
+//------------------------------------------------------------------------------
+// N O D E T Y P E S
+//------------------------------------------------------------------------------
 
 /**
- * @author John Verhaeg
+ * Mixin that defines the metadata for an image
  */
-public class CndSequencerI18nTest extends AbstractI18nTest {
+[image:metadata] > nt:unstructured, mix:mimeType
+  - image:formatName (string) mandatory
+    < 'JPEG', 'GIF', 'PNG', 'BMP', 'PCX', 'IFF', 'RAS', 'PBM', 'PGM', 'PPM', 'PSD'
+  - image:width (long)
+  - image:progressive (boolean)
+  + * (image:embeddedImage) = image:embeddedImage sns
 
-    public CndSequencerI18nTest() {
-        super(CndSequencerI18n.class);
-    }
-}
+[image:embeddedImage] mixin
+    - image:width (long)
+
+
+ 

@@ -49,9 +49,12 @@ public class JcrSystemNode extends JcrNode {
     }
 
     @Override
-    protected void checkNodeTypeCanBeModified() throws RepositoryException {
-        String msg = JcrI18n.unableToModifySystemNodes.text(location(), workspaceName());
-        throw new RepositoryException(msg);
+    protected void checkNodeTypeCanBeModified() throws RepositoryException { 
+        String systemPath = JcrLexicon.SYSTEM.getString();
+        if (getPath().contains(systemPath)) {
+            String msg = JcrI18n.unableToModifySystemNodes.text(location(), workspaceName());
+            throw new RepositoryException(msg);
+        }
     }
 
 }

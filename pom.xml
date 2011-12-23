@@ -56,7 +56,6 @@
     		<module>extensions/modeshape-classloader-maven</module>
     	    <module>extensions/modeshape-sequencer-mp3</module>
     		<module>extensions/modeshape-sequencer-jbpm-jpdl</module>
-    		<module>extensions/modeshape-sequencer-cnd</module>
     		<module>extensions/modeshape-sequencer-java</module>
     		<module>extensions/modeshape-sequencer-msoffice</module>
     		<module>extensions/modeshape-sequencer-sramp</module>

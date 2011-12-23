@@ -83,7 +83,7 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
         while (System.nanoTime() - start <= maxWaitTime) {
             try {
                 return parentNode.getNode(path);
-            } catch (RepositoryException e) {
+            } catch (Exception e) {
             }
         }
         return null;

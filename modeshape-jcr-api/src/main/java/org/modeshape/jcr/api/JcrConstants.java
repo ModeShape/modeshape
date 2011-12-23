@@ -31,11 +31,10 @@ package org.modeshape.jcr.api;
 public final class JcrConstants {
     public static final String JCR_MIMETYPE = "jcr:mimetype";
     public static final String JCR_CONTENT = "jcr:content";
+    public static final String JCR_NAME = "jcr:name";
     public static final String JCR_DATA = "jcr:data";
     public static final String JCR_PRIMARY_TYPE = "jcr:primaryType";
     public static final String NT_UNSTRUCTURED = "nt:unstructured";
-    public static final String NT_FILE = "nt:file";
-
 
     private JcrConstants() {
     }
