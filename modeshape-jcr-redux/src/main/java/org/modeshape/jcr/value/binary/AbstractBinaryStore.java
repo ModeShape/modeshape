@@ -33,15 +33,15 @@ import org.modeshape.common.util.CheckArg;
 @ThreadSafe
 public abstract class AbstractBinaryStore implements BinaryStore {
 
-    private static final long LARGE_SIZE = 2 << 25; // 32MB
-    private static final long MEDIUM_FILE_SIZE = 2 << 20; // 1MB
-    private static final long SMALL_FILE_SIZE = 2 << 15; // 32K
-    private static final long TINY_FILE_SIZE = 2 << 10; // 1K
+    private static final long LARGE_SIZE = 1 << 25; // 32MB
+    private static final long MEDIUM_FILE_SIZE = 1 << 20; // 1MB
+    private static final long SMALL_FILE_SIZE = 1 << 15; // 32K
+    private static final long TINY_FILE_SIZE = 1 << 10; // 1K
 
-    private static final int LARGE_BUFFER_SIZE = 2 << 20; // 1MB
-    private static final int MEDIUM_BUFFER_SIZE = 2 << 15; // 64K
-    private static final int SMALL_BUFFER_SIZE = 2 << 12; // 4K
-    private static final int TINY_BUFFER_SIZE = 2 << 11; // 2K
+    private static final int LARGE_BUFFER_SIZE = 1 << 20; // 1MB
+    protected static final int MEDIUM_BUFFER_SIZE = 1 << 16; // 64K
+    private static final int SMALL_BUFFER_SIZE = 1 << 12; // 4K
+    private static final int TINY_BUFFER_SIZE = 1 << 11; // 2K
 
     public static int bestBufferSize( long fileSize ) {
         assert fileSize >= 0;
