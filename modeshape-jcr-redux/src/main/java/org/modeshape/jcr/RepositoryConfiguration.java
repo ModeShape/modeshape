@@ -374,7 +374,7 @@ public class RepositoryConfiguration {
         aliases.put("servletprovider", servletProvider);
         PROVIDER_ALIASES = Collections.unmodifiableMap(aliases);
 
-        String cndSequencer = "org.modeshape.jcr.sequencer.cnd.CndSequencer";
+        String cndSequencer = "org.modeshape.sequencer.cnd.CndSequencer";
         String classfileSequencer = "org.modeshape.sequencer.classfile.ClassFileSequencer";
         String ddlSequencer = "org.modeshape.sequencer.ddl.DdlSequencer";
         String imageSequencer = "org.modeshape.sequencer.image.ImageMetadataSequencer";
