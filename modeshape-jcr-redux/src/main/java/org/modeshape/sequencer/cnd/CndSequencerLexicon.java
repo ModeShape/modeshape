@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org
  */
-package org.modeshape.jcr.sequencer.cnd;
+package org.modeshape.sequencer.cnd;
 
 /**
  * Class which holds the string constants corresponding to the cnd sequencer's lexicon

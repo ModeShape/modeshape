@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.sequencer.cnd;
+package org.modeshape.sequencer.cnd;
 
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -31,7 +31,7 @@ import static junit.framework.Assert.*;
 import org.junit.Test;
 import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
-import static org.modeshape.jcr.sequencer.cnd.CndSequencerLexicon.*;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.*;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
