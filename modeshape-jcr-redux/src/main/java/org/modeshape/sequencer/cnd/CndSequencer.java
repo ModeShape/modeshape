@@ -52,6 +52,7 @@ import java.util.List;
  */
 public class CndSequencer extends Sequencer {
 
+    private static final String RESIDUAL_ITEM_NAME = "*";
     private static final Logger LOGGER = Logger.getLogger(CndSequencer.class);
 
     @Override
@@ -139,7 +140,10 @@ public class CndSequencer extends Sequencer {
     private void processChildNodeDefinition( Node nodeTypeNode, NodeDefinition childNodeDefinition ) throws RepositoryException {
         Node childNode = nodeTypeNode.addNode(CHILD_NODE_DEFINITION, CHILD_NODE_DEFINITION);
 
-        childNode.setProperty(NAME, childNodeDefinition.getDefaultPrimaryTypeName());
+        if (!RESIDUAL_ITEM_NAME.equals(childNodeDefinition.getName())) {
+            childNode.setProperty(NAME, childNodeDefinition.getName());
+        }
+
         childNode.setProperty(AUTO_CREATED, childNodeDefinition.isAutoCreated());
         childNode.setProperty(MANDATORY, childNodeDefinition.isMandatory());
         childNode.setProperty(ON_PARENT_VERSION, OnParentVersionAction.nameFromValue(childNodeDefinition.getOnParentVersion()));
@@ -153,7 +157,9 @@ public class CndSequencer extends Sequencer {
     private void processPropertyDefinition( Node nodeTypeNode, PropertyDefinition propertyDefinition ) throws RepositoryException {
         Node propertyDefinitionNode = nodeTypeNode.addNode(PROPERTY_DEFINITION, PROPERTY_DEFINITION);
 
-        propertyDefinitionNode.setProperty(NAME, propertyDefinition.getName());
+        if (!RESIDUAL_ITEM_NAME.equals(propertyDefinition.getName())) {
+            propertyDefinitionNode.setProperty(NAME, propertyDefinition.getName());
+        }
         propertyDefinitionNode.setProperty(AUTO_CREATED, propertyDefinition.isAutoCreated());
         propertyDefinitionNode.setProperty(MANDATORY, propertyDefinition.isMandatory());
         propertyDefinitionNode.setProperty(MULTIPLE, propertyDefinition.isMultiple());

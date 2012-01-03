@@ -85,7 +85,7 @@ public class CndSequencerTest extends AbstractSequencerTest {
         new PropertyDefinitionVerifier().name("image:progressive").mandatory(false).requiredType("boolean").verify(propertyDefinition);
 
         Node childNodeDefinition = nodesIterator.nextNode();
-        new NodeDefinitionVerifier().name("image:embeddedImage").sameNameSiblings(true).requiredPrimaryTypes("image:embeddedImage")
+        new NodeDefinitionVerifier().name("image:subImage").sameNameSiblings(true).requiredPrimaryTypes("image:embeddedImage")
                 .defaultPrimaryType("image:embeddedImage").verifyChildNode(childNodeDefinition);
 
         assertFalse(nodesIterator.hasNext());
