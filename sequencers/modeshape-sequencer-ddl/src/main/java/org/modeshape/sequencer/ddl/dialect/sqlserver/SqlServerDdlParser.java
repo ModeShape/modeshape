@@ -21,23 +21,28 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org
  */
-package org.modeshape.jcr.api;
+package org.modeshape.sequencer.ddl.dialect.sqlserver;
 
-/**
- * Class which should hold string constants defined by the JCR spec.
- *
- * @author Horia Chiorean
- */
-public final class JcrConstants {
-    public static final String JCR_MIMETYPE = "jcr:mimetype";
-    public static final String JCR_CONTENT = "jcr:content";
-    public static final String JCR_NAME = "jcr:name";
-    public static final String JCR_DATA = "jcr:data";
-    public static final String JCR_MIXIN_TYPES = "jcr:mixinTypes";
-    public static final String JCR_PRIMARY_TYPE = "jcr:primaryType";
+import org.modeshape.sequencer.ddl.DdlTokenStream;
+import org.modeshape.sequencer.ddl.StandardDdlParser;
 
-    public static final String NT_UNSTRUCTURED = "nt:unstructured";
+public class SqlServerDdlParser extends StandardDdlParser {
 
-    private JcrConstants() {
+    private static final String[] COMMENT_ON = {"COMMENT", "ON"};
+    private static final String TERMINATOR = "GO";
+
+    public SqlServerDdlParser() {
+        setTerminator(TERMINATOR);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.sequencer.ddl.StandardDdlParser#initializeTokenStream(org.modeshape.sequencer.ddl.DdlTokenStream)
+     */
+    @Override
+    protected void initializeTokenStream( DdlTokenStream tokens ) {
+        super.initializeTokenStream(tokens);
+        tokens.registerStatementStartPhrase(COMMENT_ON);
     }
 }
