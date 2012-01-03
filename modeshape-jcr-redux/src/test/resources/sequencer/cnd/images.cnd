@@ -42,7 +42,7 @@
     < 'JPEG', 'GIF', 'PNG', 'BMP', 'PCX', 'IFF', 'RAS', 'PBM', 'PGM', 'PPM', 'PSD'
   - image:width (long)
   - image:progressive (boolean)
-  + * (image:embeddedImage) = image:embeddedImage sns
+  + image:subImage (image:embeddedImage) = image:embeddedImage sns
 
 [image:embeddedImage] mixin
     - image:width (long)
