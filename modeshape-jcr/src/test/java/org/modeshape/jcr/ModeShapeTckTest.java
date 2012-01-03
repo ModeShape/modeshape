@@ -25,6 +25,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import javax.jcr.UnsupportedRepositoryOperationException;
+import javax.jcr.Value;
 import javax.jcr.ValueFactory;
 import javax.jcr.lock.LockException;
 import javax.jcr.lock.LockManager;
@@ -1183,6 +1184,122 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
         queryResult = queryManager.createQuery(expression, "JCR-SQL2").execute();
         assertThat(queryResult, is(notNullValue()));
+    }
+
+    @SuppressWarnings( "unchecked" )
+    @FixFor( "MODE-13xx" )
+    public void testShouldQueryUsingJoinWithMultiValueReferenceInJoinCondition() throws Exception {
+        session = getHelper().getSuperuserSession();
+
+        final String friendlyNodeType = "tt:friendly";
+        final String friendPropertyName = "tt:friend";
+
+        final NamespaceRegistry registry = session.getWorkspace().getNamespaceRegistry();
+        registry.registerNamespace("tt", "http://test.com/tt");
+
+        final NodeTypeManager manager = session.getWorkspace().getNodeTypeManager();
+        final NodeTypeTemplate nodeType = manager.createNodeTypeTemplate();
+        nodeType.setMixin(true);
+        nodeType.setName(friendlyNodeType);
+        nodeType.setQueryable(true);
+        nodeType.setDeclaredSuperTypeNames(new String[] {"mix:referenceable"});
+
+        final PropertyDefinitionTemplate propertyDef = manager.createPropertyDefinitionTemplate();
+        propertyDef.setName(friendPropertyName);
+        propertyDef.setMultiple(true);
+        propertyDef.setRequiredType(PropertyType.REFERENCE);
+        propertyDef.setOnParentVersion(OnParentVersionAction.COPY);
+        propertyDef.setProtected(false);
+
+        nodeType.getPropertyDefinitionTemplates().add(propertyDef);
+        manager.registerNodeType(nodeType, true);
+
+        final Node granteeNode = session.getRootNode().addNode("Paul", "nt:folder");
+        granteeNode.addMixin(friendlyNodeType);
+
+        final Node grantorNode = session.getRootNode().addNode("Pedro", "nt:folder");
+        grantorNode.addMixin(friendlyNodeType);
+
+        final ValueFactory valueFactory = session.getValueFactory();
+        final Value granteeValue = valueFactory.createValue(granteeNode);
+        grantorNode.setProperty(friendPropertyName, new Value[] {granteeValue});
+
+        try {
+            session.save();
+            // Thread.sleep(1000L);
+
+            final QueryManager queryManager = session.getWorkspace().getQueryManager();
+            final String expression = "SELECT grantee.* FROM [tt:friendly] as grantee " + "INNER JOIN [tt:friendly] as grantor "
+                                      + "ON grantee.[jcr:uuid] = grantor.[tt:friend]";
+
+            final Query query = queryManager.createQuery(expression, "JCR-SQL2");
+            final QueryResult queryResult = query.execute();
+            //System.out.println(queryResult);
+            assertThat(queryResult.getRows().getSize(), is(1L));
+        } finally {
+            granteeNode.remove();
+            grantorNode.remove();
+            session.save();
+        }
+    }
+
+    @SuppressWarnings( "unchecked" )
+    @FixFor( "MODE-13xx" )
+    public void testShouldQueryUsingJoinWithSingleValueReferenceInJoinCondition() throws Exception {
+        session = getHelper().getSuperuserSession();
+
+        final String friendlyNodeType = "tt:friendly";
+        final String friendPropertyName = "tt:friend";
+
+        final NamespaceRegistry registry = session.getWorkspace().getNamespaceRegistry();
+        registry.registerNamespace("tt", "http://test.com/tt");
+
+        final NodeTypeManager manager = session.getWorkspace().getNodeTypeManager();
+        final NodeTypeTemplate nodeType = manager.createNodeTypeTemplate();
+        nodeType.setMixin(true);
+        nodeType.setName(friendlyNodeType);
+        nodeType.setQueryable(true);
+        nodeType.setDeclaredSuperTypeNames(new String[] {"mix:referenceable"});
+
+        final PropertyDefinitionTemplate propertyDef = manager.createPropertyDefinitionTemplate();
+        propertyDef.setName(friendPropertyName);
+        // propertyDef.setMultiple(true);
+        propertyDef.setMultiple(false);
+        propertyDef.setRequiredType(PropertyType.REFERENCE);
+        propertyDef.setOnParentVersion(OnParentVersionAction.COPY);
+        propertyDef.setProtected(false);
+
+        nodeType.getPropertyDefinitionTemplates().add(propertyDef);
+        manager.registerNodeType(nodeType, true);
+
+        final Node granteeNode = session.getRootNode().addNode("Paul", "nt:folder");
+        granteeNode.addMixin(friendlyNodeType);
+
+        final Node grantorNode = session.getRootNode().addNode("Pedro", "nt:folder");
+        grantorNode.addMixin(friendlyNodeType);
+
+        final ValueFactory valueFactory = session.getValueFactory();
+        final Value granteeValue = valueFactory.createValue(granteeNode);
+        // grantorNode.setProperty(friendPropertyName, new Value[] {granteeValue});
+        grantorNode.setProperty(friendPropertyName, granteeValue);
+
+        try {
+            session.save();
+            // Thread.sleep(1000L);
+
+            final QueryManager queryManager = session.getWorkspace().getQueryManager();
+            final String expression = "SELECT grantee.* FROM [tt:friendly] as grantee " + "INNER JOIN [tt:friendly] as grantor "
+                                      + "ON grantee.[jcr:uuid] = grantor.[tt:friend]";
+
+            final Query query = queryManager.createQuery(expression, "JCR-SQL2");
+            final QueryResult queryResult = query.execute();
+            //System.out.println(queryResult);
+            assertThat(queryResult.getRows().getSize(), is(1L));
+        } finally {
+            granteeNode.remove();
+            grantorNode.remove();
+            session.save();
+        }
     }
 
     @FixFor( "MODE-693" )
