@@ -23,11 +23,11 @@
  */
 package org.modeshape.jcr.cache.document;
 
+import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.change.PrintingChangeSetListener;
-import org.modeshape.jcr.core.ExecutionContext;
 
 /**
  * Abstract base class for tests that operate against a SessionCache. Note that all methods must be able to operate against all

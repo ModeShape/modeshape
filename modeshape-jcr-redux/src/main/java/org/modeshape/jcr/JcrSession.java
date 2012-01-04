@@ -81,9 +81,8 @@ import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.SessionCache.SaveContext;
 import org.modeshape.jcr.cache.WorkspaceNotFoundException;
 import org.modeshape.jcr.cache.WrappedException;
-import org.modeshape.jcr.core.ExecutionContext;
-import org.modeshape.jcr.core.SecurityContext;
 import org.modeshape.jcr.security.AuthorizationProvider;
+import org.modeshape.jcr.security.SecurityContext;
 import org.modeshape.jcr.value.DateTimeFactory;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
@@ -517,7 +516,7 @@ public class JcrSession implements Session {
     }
 
     @Override
-    public Repository getRepository() {
+    public JcrRepository getRepository() {
         return repository;
     }
 
@@ -923,7 +922,9 @@ public class JcrSession implements Session {
             } else if (ModeShapePermissions.REGISTER_NAMESPACE.equals(action)
                        || ModeShapePermissions.REGISTER_TYPE.equals(action) || ModeShapePermissions.UNLOCK_ANY.equals(action)
                        || ModeShapePermissions.CREATE_WORKSPACE.equals(action)
-                       || ModeShapePermissions.DELETE_WORKSPACE.equals(action) || ModeShapePermissions.MONITOR.equals(action)) {
+                       || ModeShapePermissions.DELETE_WORKSPACE.equals(action) || ModeShapePermissions.MONITOR.equals(action)
+                       || ModeShapePermissions.DELETE_WORKSPACE.equals(action)
+                       || ModeShapePermissions.INDEX_WORKSPACE.equals(action)) {
                 hasPermission &= hasRole(sec, ModeShapeRoles.ADMIN, repositoryName, workspaceName);
             } else {
                 hasPermission &= hasRole(sec, ModeShapeRoles.ADMIN, repositoryName, workspaceName)

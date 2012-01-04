@@ -38,7 +38,6 @@ import org.modeshape.jcr.api.query.qom.Operator;
 import org.modeshape.jcr.api.query.qom.QueryObjectModelConstants;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.NodeKey;
-import org.modeshape.jcr.core.ExecutionContext;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.NamespaceRegistry;

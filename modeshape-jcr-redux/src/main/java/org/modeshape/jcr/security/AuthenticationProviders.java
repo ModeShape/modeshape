@@ -29,8 +29,8 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import javax.jcr.Credentials;
 import org.modeshape.common.util.Logger;
+import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
-import org.modeshape.jcr.core.ExecutionContext;
 
 /**
  * An implementation of {@link AuthenticationProvider} that represents an ordered list of other {@link AuthenticationProvider}
@@ -56,7 +56,7 @@ public class AuthenticationProviders implements AuthenticationProvider {
      * {@inheritDoc}
      * 
      * @see org.modeshape.jcr.security.AuthenticationProvider#authenticate(javax.jcr.Credentials, java.lang.String,
-     *      java.lang.String, org.modeshape.jcr.core.ExecutionContext, java.util.Map)
+     *      java.lang.String, org.modeshape.jcr.ExecutionContext, java.util.Map)
      */
     @Override
     public ExecutionContext authenticate( Credentials credentials,

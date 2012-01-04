@@ -51,7 +51,6 @@ import org.modeshape.jcr.api.monitor.RepositoryMonitor;
 import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.api.monitor.Window;
 import org.modeshape.jcr.api.value.DateTime;
-import org.modeshape.jcr.core.ExecutionContext;
 import org.modeshape.jcr.value.DateTimeFactory;
 
 /**

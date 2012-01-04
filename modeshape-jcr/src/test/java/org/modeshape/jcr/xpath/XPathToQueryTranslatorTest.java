@@ -34,11 +34,13 @@ import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.query.model.QueryCommand;
 import org.modeshape.graph.query.model.TypeSystem;
 import org.modeshape.graph.query.parse.SqlQueryParser;
+import org.modeshape.jcr.Migrated;
 import org.modeshape.jcr.xpath.XPath.Component;
 
 /**
  * 
  */
+@Migrated
 public class XPathToQueryTranslatorTest {
 
     private ExecutionContext context;

@@ -59,10 +59,12 @@ import org.modeshape.graph.query.model.Source;
 import org.modeshape.graph.query.model.StaticOperand;
 import org.modeshape.graph.query.model.TypeSystem;
 import org.modeshape.graph.query.parse.SqlQueryParser;
+import org.modeshape.jcr.Migrated;
 
 /**
  * 
  */
+@Migrated
 public class JcrSqlQueryParserTest {
 
     private TypeSystem typeSystem;

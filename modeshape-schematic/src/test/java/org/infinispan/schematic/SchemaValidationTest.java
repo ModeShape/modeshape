@@ -71,7 +71,7 @@ public class SchemaValidationTest {
     }
 
     @Test
-    public void shouldBeAbleToValidateEmptyDocumentUsingSchemaDocument() throws Exception {
+    public void shouldNotBeAbleToValidateEmptyDocumentUsingSchemaDocument() throws Exception {
         results = validate("json/empty.json", "json/schema/repository-config-schema.json");
         assert results.errorCount() == 1;
     }

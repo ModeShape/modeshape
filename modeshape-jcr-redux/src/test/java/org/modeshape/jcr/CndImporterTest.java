@@ -45,7 +45,6 @@ import org.modeshape.common.collection.Problem;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.jcr.cache.PropertyTypeUtil;
-import org.modeshape.jcr.core.ExecutionContext;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
 
@@ -312,6 +311,7 @@ public class CndImporterTest {
     @Test
     public void shouldImportCndThatIsOnOneLine() {
         String cnd = "<ns = 'http://namespace.com/ns'> "
+                     + "<ex = 'http://namespace.com/ex'>\n"
                      + "[ns:NodeType] > ns:ParentType1, ns:ParentType2 abstract orderable mixin noquery primaryitem ex:property "
                      + "- ex:property (STRING) = 'default1', 'default2' mandatory autocreated protected multiple VERSION < 'constraint1', 'constraint2' "
                      + " queryops '=, <>, <, <=, >, >=, LIKE' nofulltext noqueryorder "
@@ -322,6 +322,7 @@ public class CndImporterTest {
     @Test
     public void shouldImportCndThatHasNoChildren() {
         String cnd = "<ns = 'http://namespace.com/ns'>\n"
+                     + "<ex = 'http://namespace.com/ex'>\n"
                      + "[ns:NodeType] > ns:ParentType1, ns:ParentType2 abstract orderable mixin noquery primaryitem ex:property\n"
                      + "- ex:property (STRING) = 'default1', 'default2' mandatory autocreated protected multiple VERSION < 'constraint1', 'constraint2'\n"
                      + " queryops '=, <>, <, <=, >, >=, LIKE' nofulltext noqueryorder";

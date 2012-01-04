@@ -69,11 +69,13 @@ import org.modeshape.graph.query.model.Source;
 import org.modeshape.graph.query.model.StaticOperand;
 import org.modeshape.graph.query.model.TypeSystem;
 import org.modeshape.graph.query.parse.SqlQueryParser;
+import org.modeshape.jcr.Migrated;
 import org.modeshape.jcr.query.qom.JcrLiteral;
 
 /**
  * 
  */
+@Migrated
 public class JcrSql2QueryParserTest {
 
     /**

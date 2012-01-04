@@ -73,6 +73,7 @@ import org.modeshape.jcr.query.JcrQueryResult;
  * Also, because queries are read-only, the engine is set up once and used for the entire set of test methods.
  * </p>
  */
+@Migrated
 public class JcrQueryManagerTest {
 
     protected static URI resourceUri( String name ) throws URISyntaxException {

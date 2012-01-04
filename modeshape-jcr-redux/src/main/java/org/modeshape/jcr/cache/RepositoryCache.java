@@ -37,6 +37,7 @@ import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.common.collection.Collections;
 import org.modeshape.common.util.Logger;
+import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.ModeShapeLexicon;
@@ -54,7 +55,6 @@ import org.modeshape.jcr.cache.document.DocumentTranslator;
 import org.modeshape.jcr.cache.document.ReadOnlySessionCache;
 import org.modeshape.jcr.cache.document.WorkspaceCache;
 import org.modeshape.jcr.cache.document.WritableSessionCache;
-import org.modeshape.jcr.core.ExecutionContext;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.PropertyFactory;
@@ -248,6 +248,10 @@ public class RepositoryCache implements Observable {
 
     public final NodeKey getSystemKey() {
         return this.systemKey;
+    }
+
+    public final String getSystemWorkspaceKey() {
+        return NodeKey.keyForWorkspaceName(getSystemWorkspaceName());
     }
 
     public final String getSystemWorkspaceName() {

@@ -29,7 +29,7 @@
  * Creating a custom authenticator is a matter of properly implementing {@link org.modeshape.jcr.security.AuthenticationProvider}
  * and configuring the repository to use that class. Each authenticator is responsible for authenticating the supplied
  * {@link javax.jcr.Credentials} and returning an ExecutionContext that will represent the user, including
- * its embedded {@link org.modeshape.jcr.core.SecurityContext} (for simple role-based authorization) or {@link org.modeshape.jcr.security.AuthorizationProvider} (for a combination of path- and role-based authorization).
+ * its embedded {@link org.modeshape.jcr.security.SecurityContext} (for simple role-based authorization) or {@link org.modeshape.jcr.security.AuthorizationProvider} (for a combination of path- and role-based authorization).
  * </p>
  */
 

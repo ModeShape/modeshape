@@ -32,7 +32,6 @@ import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
 import org.modeshape.jcr.cache.change.NodeAdded;
 import org.modeshape.jcr.cache.change.NodeRemoved;
-import org.modeshape.jcr.core.ExecutionContext;
 import org.modeshape.jcr.value.DateTimeFactory;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;

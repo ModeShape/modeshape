@@ -34,6 +34,11 @@ import org.infinispan.schematic.document.Path;
 public interface Problems {
 
     /**
+     * Record a successful validation.
+     */
+    void recordSuccess();
+
+    /**
      * Record an error at the given path in a document.
      * 
      * @param path the path; may not be null

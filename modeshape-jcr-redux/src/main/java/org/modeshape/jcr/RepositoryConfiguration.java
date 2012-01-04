@@ -37,12 +37,16 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.security.auth.login.LoginException;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.search.DefaultSimilarity;
+import org.apache.lucene.util.Version;
 import org.infinispan.config.Configuration;
 import org.infinispan.config.FluentConfiguration;
 import org.infinispan.manager.CacheContainer;
@@ -86,9 +90,10 @@ import org.modeshape.jcr.value.binary.TransientBinaryStore;
  * </p>
  * <p>
  * Variables may appear anywhere within the document's string field values. If a variable is to be used within a non-string field,
- * simply use a string field within the JSON document. When the configuration is {@link #read(String)} from the JSON document,
+ * simply use a string field within the JSON document. When a RepositoryConfiguration instance is created from a JSON document,
  * these variables will be replaced with the System properties of the same name, and any resulting fields that are expected to be
- * non-string values will be parsed into the expected field type.
+ * non-string values will be converted into the expected field type. As expected, use {@link #validate()} to ensure the
+ * configuration is valid.
  * </p>
  * <p>
  * Variables take the form:
@@ -310,8 +315,10 @@ public class RepositoryConfiguration {
         public static final String CLASSPATH = "classpath";
         public static final String QUERY = "query";
         public static final String QUERY_ENABLED = "enabled";
-        public static final String INDEX_LOCATION = "indexLocation";
         public static final String REBUILD_UPON_STARTUP = "rebuildUponStartup";
+        public static final String INDEX_STORAGE = "indexStorage";
+        public static final String INDEXING = "indexing";
+        public static final String INDEXING_BACKEND = "backend";
         public static final String TABLES_INCLUDE_INHERITED_COLUMNS = "tablesIncludeInheritedColumns";
         public static final String EXTRACTORS = "extractors";
         public static final String SEQUENCING = "sequencing";
@@ -326,6 +333,44 @@ public class RepositoryConfiguration {
         public static final String THREAD_POOL = "threadPool";
         public static final String REMOVE_DERIVED_CONTENT_WITH_ORIGINAL = "removeDerivedContentWithOriginal";
 
+        public static final String INDEXING_ANALYZER = "analyzer";
+        public static final String INDEXING_SIMILARITY = "similarity";
+        public static final String INDEXING_BATCH_SIZE = "batchSize";
+        public static final String INDEXING_INDEX_FORMAT = "indexFormat";
+        public static final String INDEXING_READER_STRATEGY = "readerStrategy";
+        public static final String INDEXING_MODE = "mode";
+        public static final String INDEXING_ASYNC_THREAD_POOL_SIZE = "asyncThreadPoolSize";
+        public static final String INDEXING_ASYNC_MAX_QUEUE_SIZE = "asyncMaxQueueSize";
+
+        public static final String INDEX_STORAGE_LOCATION = "location";
+        public static final String INDEX_STORAGE_SOURCE_LOCATION = "sourceLocation";
+        public static final String INDEX_STORAGE_LOCKING_STRATEGY = "lockingStrategy";
+        public static final String INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE = "fileSystemAccessType";
+        public static final String INDEX_STORAGE_REFRESH_IN_SECONDS = "refreshInSeconds";
+        public static final String INDEX_STORAGE_COPY_BUFFER_SIZE_IN_MEGABYTES = "copyBufferSizeInMegabytes";
+        public static final String INDEX_STORAGE_RETRY_MARKER_LOOKUP = "retryMarkerLookup";
+        public static final String INDEX_STORAGE_RETRY_INITIALIZE_PERIOD_IN_SECONDS = "retryInitializePeriodInSeconds";
+        public static final String INDEX_STORAGE_INFINISPAN_CHUNK_SIZE_IN_BYTES = "chunkSizeInBytes";
+
+        public static final String INDEX_STORAGE_RAM = "ram";
+        public static final String INDEX_STORAGE_FILESYSTEM = "filesystem";
+        public static final String INDEX_STORAGE_FILESYSTEM_MASTER = "filesystem-master";
+        public static final String INDEX_STORAGE_FILESYSTEM_SLAVE = "filesystem-slave";
+        public static final String INDEX_STORAGE_INFINISPAN = "infinispan";
+        public static final String INDEX_STORAGE_BLACKHOLE = "blackhole";
+        public static final String INDEX_STORAGE_CUSTOM = "custom";
+
+        public static final String INDEXING_BACKEND_TYPE_LUCENE = "lucene";
+        public static final String INDEXING_BACKEND_TYPE_JMS_MASTER = "jms-master";
+        public static final String INDEXING_BACKEND_TYPE_JMS_SLAVE = "jms-slave";
+        public static final String INDEXING_BACKEND_TYPE_JGROUPS_MASTER = "jgroups-master";
+        public static final String INDEXING_BACKEND_TYPE_JGROUPS_SLAVE = "jgroups-slave";
+        public static final String INDEXING_BACKEND_TYPE_BLACKHOLE = "blackhole";
+        public static final String INDEXING_BACKEND_TYPE_CUSTOM = "custom";
+        public static final String INDEXING_BACKEND_JMS_CONNECTION_FACTORY_JNDI_NAME = "connectionFactoryJndiName";
+        public static final String INDEXING_BACKEND_JMS_QUEUE_JNDI_NAME = "queueJndiName";
+        public static final String INDEXING_BACKEND_JGROUPS_CHANNEL_NAME = "channelName";
+        public static final String INDEXING_BACKEND_JGROUPS_CHANNEL_CONFIGURATION = "channelConfiguration";
     }
 
     public static class Default {
@@ -378,6 +423,26 @@ public class RepositoryConfiguration {
          * The default value of the {@link FieldName#THREAD_POOL} field is '{@value} '.
          */
         public static final String THREAD_POOL = "modeshape-workers";
+
+        public static final String INDEXING_ANALYZER = StandardAnalyzer.class.getName();
+        public static final String INDEXING_SIMILARITY = DefaultSimilarity.class.getName();
+        public static final String INDEXING_BATCH_SIZE = "-1";
+        @SuppressWarnings( "deprecation" )
+        public static final String INDEXING_INDEX_FORMAT = Version.LUCENE_CURRENT.name();
+        public static final String INDEXING_READER_STRATEGY = "shared";
+        public static final String INDEXING_MODE = "sync";
+        public static final String INDEXING_ASYNC_THREAD_POOL_SIZE = "1";
+        public static final String INDEXING_ASYNC_MAX_QUEUE_SIZE = "1";
+
+        public static final String INDEX_STORAGE_LOCKING_STRATEGY = "native";
+        public static final String INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE = "auto";
+        public static final String INDEX_STORAGE_REFRESH_IN_SECONDS = "3600";
+        public static final String INDEX_STORAGE_COPY_BUFFER_SIZE_IN_MEGABYTES = "16";
+        public static final String INDEX_STORAGE_RETRY_MARKER_LOOKUP = "0";
+        public static final String INDEX_STORAGE_RETRY_INITIALIZE_PERIOD_IN_SECONDS = "0";
+        public static final String INDEX_STORAGE_INFINISPAN_CHUNK_SIZE_IN_BYTES = "16834";
+
+        public static final String INDEXING_BACKEND_TYPE = "lucene";
     }
 
     /**
@@ -494,6 +559,7 @@ public class RepositoryConfiguration {
      *         variables were found
      */
     protected static Document replaceSystemPropertyVariables( Document doc ) {
+        if (doc.isEmpty()) return doc;
         Document modified = doc.withVariablesReplacedWithSystemProperties();
         if (modified == doc) return doc;
 
@@ -1020,20 +1086,11 @@ public class RepositoryConfiguration {
         }
 
         /**
-         * Get the location where ModeShape should place the indexes used by the query system.
-         * 
-         * @return the location for the indexes; may be null if in-memory indexes should be used
-         */
-        public String getIndexLocation() {
-            return query.getString(FieldName.INDEX_LOCATION);
-        }
-
-        /**
          * Get the specification for when the indexes should be built when the system starts up.
          * 
          * @return whether to rebuild the indexes upon repository startup
          */
-        public QueryRebuild getRebuildUponStartup() {
+        public QueryRebuild getRebuildIndexesUponStartup() {
             String rebuild = query.getString(FieldName.REBUILD_UPON_STARTUP);
             QueryRebuild result = QueryRebuild.valueOf(rebuild);
             return result != null ? result : QueryRebuild.IF_MISSING;
@@ -1046,6 +1103,105 @@ public class RepositoryConfiguration {
          */
         public String getThreadPoolName() {
             return query.getString(FieldName.THREAD_POOL, Default.THREAD_POOL);
+        }
+
+        /**
+         * Get the configuration properties for the storage of indexes. The values of the properties will consist of string
+         * values.
+         * 
+         * @return the configuration properties; never null
+         */
+        public Properties getIndexStorageProperties() {
+            Properties props = new Properties();
+            Document doc = query.getDocument(FieldName.INDEX_STORAGE);
+            if (doc != null) {
+                for (Field field : doc.fields()) {
+                    String name = field.getName();
+                    String value = field.getValue().toString(); // schema only allows strings and integers
+                    props.setProperty(name, value);
+                }
+            }
+
+            // Set the defaults ...
+            setDefProp(props, FieldName.TYPE, FieldName.INDEX_STORAGE_RAM);
+            String type = props.getProperty(FieldName.TYPE);
+            if (FieldName.INDEX_STORAGE_FILESYSTEM.equalsIgnoreCase(type)) {
+                setDefProp(props, FieldName.INDEX_STORAGE_LOCKING_STRATEGY, Default.INDEX_STORAGE_LOCKING_STRATEGY);
+                setDefProp(props, FieldName.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE, Default.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE);
+            } else if (FieldName.INDEX_STORAGE_FILESYSTEM_MASTER.equalsIgnoreCase(type)) {
+                setDefProp(props, FieldName.INDEX_STORAGE_LOCKING_STRATEGY, Default.INDEX_STORAGE_LOCKING_STRATEGY);
+                setDefProp(props, FieldName.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE, Default.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE);
+                setDefProp(props, FieldName.INDEX_STORAGE_REFRESH_IN_SECONDS, Default.INDEX_STORAGE_REFRESH_IN_SECONDS);
+            } else if (FieldName.INDEX_STORAGE_FILESYSTEM_SLAVE.equalsIgnoreCase(type)) {
+                setDefProp(props, FieldName.INDEX_STORAGE_LOCKING_STRATEGY, Default.INDEX_STORAGE_LOCKING_STRATEGY);
+                setDefProp(props, FieldName.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE, Default.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE);
+                setDefProp(props, FieldName.INDEX_STORAGE_REFRESH_IN_SECONDS, Default.INDEX_STORAGE_REFRESH_IN_SECONDS);
+                setDefProp(props,
+                           FieldName.INDEX_STORAGE_COPY_BUFFER_SIZE_IN_MEGABYTES,
+                           Default.INDEX_STORAGE_COPY_BUFFER_SIZE_IN_MEGABYTES);
+                setDefProp(props, FieldName.INDEX_STORAGE_RETRY_MARKER_LOOKUP, Default.INDEX_STORAGE_RETRY_MARKER_LOOKUP);
+                setDefProp(props,
+                           FieldName.INDEX_STORAGE_RETRY_INITIALIZE_PERIOD_IN_SECONDS,
+                           Default.INDEX_STORAGE_RETRY_INITIALIZE_PERIOD_IN_SECONDS);
+            } else if (FieldName.INDEX_STORAGE_INFINISPAN.equalsIgnoreCase(type)) {
+                setDefProp(props,
+                           FieldName.INDEX_STORAGE_INFINISPAN_CHUNK_SIZE_IN_BYTES,
+                           Default.INDEX_STORAGE_INFINISPAN_CHUNK_SIZE_IN_BYTES);
+            }
+            return props;
+        }
+
+        /**
+         * Get the configuration properties for the indexing section. The values of the properties will consist of string values,
+         * and they may contain properties of the form "hibernate.search.*".
+         * 
+         * @return the configuration properties; never null
+         */
+        public Properties getIndexingProperties() {
+            Properties props = new Properties();
+            Document doc = query.getDocument(FieldName.INDEXING);
+            if (doc != null) {
+                for (Field field : doc.fields()) {
+                    String name = field.getName();
+                    if (FieldName.INDEXING_BACKEND.equals(name)) continue;
+                    if (FieldName.THREAD_POOL.equals(name)) continue;
+                    String value = field.getValue().toString(); // schema only allows strings and integers
+                    props.setProperty(name, value);
+                }
+            }
+            // Set the defaults ...
+            setDefProp(props, FieldName.INDEXING_ANALYZER, Default.INDEXING_ANALYZER);
+            setDefProp(props, FieldName.INDEXING_SIMILARITY, Default.INDEXING_SIMILARITY);
+            setDefProp(props, FieldName.INDEXING_BATCH_SIZE, Default.INDEXING_BATCH_SIZE);
+            setDefProp(props, FieldName.INDEXING_INDEX_FORMAT, Default.INDEXING_INDEX_FORMAT);
+            setDefProp(props, FieldName.INDEXING_READER_STRATEGY, Default.INDEXING_READER_STRATEGY);
+            setDefProp(props, FieldName.INDEXING_MODE, Default.INDEXING_MODE);
+            setDefProp(props, FieldName.INDEXING_ASYNC_THREAD_POOL_SIZE, Default.INDEXING_ASYNC_THREAD_POOL_SIZE);
+            setDefProp(props, FieldName.INDEXING_ASYNC_MAX_QUEUE_SIZE, Default.INDEXING_ASYNC_MAX_QUEUE_SIZE);
+            return props;
+        }
+
+        /**
+         * Get the configuration properties for the indexing backend. The values of the properties will consist of string values.
+         * 
+         * @return the configuration properties; never null
+         */
+        public Properties getIndexingBackendProperties() {
+            Properties props = new Properties();
+            Document doc = query.getDocument(FieldName.INDEXING);
+            if (doc != null) {
+                doc = doc.getDocument(FieldName.INDEXING_BACKEND);
+                if (doc != null) {
+                    for (Field field : doc.fields()) {
+                        String name = field.getName();
+                        String value = field.getValue().toString(); // schema only allows strings and integers
+                        props.setProperty(name, value);
+                    }
+                }
+            }
+            // Set the defaults ...
+            setDefProp(props, FieldName.TYPE, Default.INDEXING_BACKEND_TYPE);
+            return props;
         }
 
         /**
@@ -1062,6 +1218,14 @@ public class RepositoryConfiguration {
 
         protected void validateTextExtractors( Problems problems ) {
             readComponents(query, FieldName.EXTRACTORS, FieldName.TYPE, EXTRACTOR_ALIASES, problems);
+        }
+
+        protected void setDefProp( Properties props,
+                                   String name,
+                                   String defaultValue ) {
+            if (!props.containsKey(name) && defaultValue != null) {
+                props.setProperty(name, defaultValue);
+            }
         }
     }
 

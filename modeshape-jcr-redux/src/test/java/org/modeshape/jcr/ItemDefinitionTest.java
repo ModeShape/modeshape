@@ -38,7 +38,6 @@ import javax.jcr.nodetype.NodeTypeTemplate;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.jcr.RepositoryNodeTypeManager.NodeTypes;
-import org.modeshape.jcr.core.ExecutionContext;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.basic.BasicName;

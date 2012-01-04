@@ -28,11 +28,11 @@ import static org.junit.Assert.assertThat;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.statistic.Stopwatch;
+import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.SessionCache;
-import org.modeshape.jcr.core.ExecutionContext;
 
 /**
  * Tests that operate against a {@link WritableSessionCache}. Each test method starts with a clean slate of content, which is

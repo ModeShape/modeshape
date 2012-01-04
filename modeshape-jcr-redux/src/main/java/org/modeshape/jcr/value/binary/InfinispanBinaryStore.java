@@ -60,4 +60,9 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
                                               TimeUnit unit ) throws BinaryStoreException {
         throw new BinaryStoreException("Not implemented");
     }
+
+    @Override
+    public String getText( Binary binary ) throws BinaryStoreException {
+        throw new BinaryStoreException("Not implemented");
+    }
 }

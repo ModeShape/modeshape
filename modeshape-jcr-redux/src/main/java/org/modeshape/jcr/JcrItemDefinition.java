@@ -26,7 +26,6 @@ package org.modeshape.jcr;
 import javax.jcr.nodetype.ItemDefinition;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.jcr.cache.NodeKey;
-import org.modeshape.jcr.core.ExecutionContext;
 import org.modeshape.jcr.value.Name;
 
 /**

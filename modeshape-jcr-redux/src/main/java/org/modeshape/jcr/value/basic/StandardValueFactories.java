@@ -31,6 +31,7 @@ import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.text.TextEncoder;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.jcr.query.model.TypeSystem;
 import org.modeshape.jcr.value.BinaryFactory;
 import org.modeshape.jcr.value.DateTimeFactory;
 import org.modeshape.jcr.value.NameFactory;
@@ -40,6 +41,7 @@ import org.modeshape.jcr.value.PropertyType;
 import org.modeshape.jcr.value.ReferenceFactory;
 import org.modeshape.jcr.value.UuidFactory;
 import org.modeshape.jcr.value.ValueFactory;
+import org.modeshape.jcr.value.ValueTypeSystem;
 import org.modeshape.jcr.value.binary.BinaryStore;
 import org.modeshape.jcr.value.binary.BinaryStoreValueFactory;
 import org.modeshape.jcr.value.binary.TransientBinaryStore;
@@ -66,8 +68,7 @@ public class StandardValueFactories extends AbstractValueFactories {
     private final UuidFactory uuidFactory;
     private final ValueFactory<Object> objectFactory;
     private final NamespaceRegistry namespaceRegistry;
-
-    // private final TypeSystem typeSystem;
+    private final TypeSystem typeSystem;
 
     /**
      * Create a standard set of value factories, using the {@link ValueFactory#DEFAULT_DECODER default decoder}.
@@ -133,7 +134,7 @@ public class StandardValueFactories extends AbstractValueFactories {
         this.uriFactory = getFactory(factories, new UriValueFactory(this.namespaceRegistry, decoder, this.stringFactory));
         this.objectFactory = getFactory(factories, new ObjectValueFactory(decoder, this.stringFactory, this.binaryFactory));
 
-        // this.typeSystem = new ValueTypeSystem(this);
+        this.typeSystem = new ValueTypeSystem(this);
     }
 
     public StandardValueFactories( StandardValueFactories factories,
@@ -157,6 +158,7 @@ public class StandardValueFactories extends AbstractValueFactories {
         StringValueFactory stringFactoryWithoutNamespaces = new StringValueFactory(decoder, encoder);
         this.binaryFactory = new BinaryStoreValueFactory(store, decoder, stringFactoryWithoutNamespaces);
         this.objectFactory = new ObjectValueFactory(decoder, this.stringFactory, this.binaryFactory);
+        this.typeSystem = new ValueTypeSystem(this);
     }
 
     @SuppressWarnings( "unchecked" )
@@ -171,14 +173,10 @@ public class StandardValueFactories extends AbstractValueFactories {
         return (ValueFactory<T>)factory;
     }
 
-    // /**
-    // * {@inheritDoc}
-    // *
-    // * @see org.modeshape.jcr.value.ValueFactories#getTypeSystem()
-    // */
-    // public TypeSystem getTypeSystem() {
-    // return typeSystem;
-    // }
+    @Override
+    public TypeSystem getTypeSystem() {
+        return typeSystem;
+    }
 
     /**
      * @return namespaceRegistry

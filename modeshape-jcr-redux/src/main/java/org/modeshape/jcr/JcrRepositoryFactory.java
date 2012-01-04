@@ -41,6 +41,7 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import org.infinispan.schematic.document.ParsingException;
 import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.Logger;
 import org.modeshape.jcr.api.Repositories;
 import org.modeshape.jcr.api.RepositoryFactory;
@@ -520,6 +521,20 @@ public class JcrRepositoryFactory implements RepositoryFactory {
                     return engine;
                 } else if (ob instanceof Repositories) {
                     return (Repositories)ob;
+                } else if (ob != null) {
+                    // The object is not what we expected, but figure out which error to report ...
+                    for (Class<?> intrfc : ob.getClass().getInterfaces()) {
+                        if (intrfc.getName().equals(Repositories.class.getName())) {
+                            // We found an instance of the Repositories class, but not the Repositories class on our
+                            // classloader. Therefore, the application must have the ModeShape JCR API JAR on
+                            // their classpath while we also have the JAR on a different classloader.
+                            I18n msg = JcrI18n.potentialClasspathErrorAtJndiLocation;
+                            throw new ClassCastException(msg.text(jndiName, ob.getClass().getName()));
+                        }
+                    }
+                    String className = ob.getClass().getName();
+                    I18n msg = JcrI18n.repositoriesNotFoundInEngineAtJndiLocation;
+                    throw new ClassCastException(msg.text(jndiName, className, Repositories.class.getName()));
                 }
             } catch (NamingException ne) {
                 // eat

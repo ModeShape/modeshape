@@ -29,6 +29,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.InvalidItemStateException;
 import javax.jcr.InvalidSerializedDataException;
@@ -37,21 +39,21 @@ import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
-import javax.jcr.Session;
 import javax.jcr.UnsupportedRepositoryOperationException;
+import javax.jcr.Workspace;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
-import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.observation.ObservationManager;
 import javax.jcr.query.QueryManager;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.common.util.ImmediateFuture;
 import org.modeshape.jcr.JcrContentHandler.EnclosingSAXException;
 import org.modeshape.jcr.api.monitor.RepositoryMonitor;
 import org.modeshape.jcr.api.monitor.ValueMetric;
-import org.modeshape.jcr.core.ExecutionContext;
+import org.modeshape.jcr.value.Path;
+import org.modeshape.jcr.value.ValueFormatException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -60,39 +62,30 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
 
 /**
- * 
+ * The ModeShape implementation of the {@link Workspace JCR Workspace}. This implementation is pretty lightweight, and only
+ * instantiates the various components when needed.
  */
+@ThreadSafe
 class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
 
     private final JcrSession session;
     private final String workspaceName;
-    private final JcrNodeTypeManager nodeTypeManager;
-    private final JcrLockManager lockManager;
-    private final JcrNamespaceRegistry workspaceRegistry;
-    private final JcrVersionManager versionManager;
+    private final Lock lock = new ReentrantLock();
+    private JcrNodeTypeManager nodeTypeManager;
+    private JcrLockManager lockManager;
+    private JcrNamespaceRegistry workspaceRegistry;
+    private JcrVersionManager versionManager;
+    private JcrQueryManager queryManager;
     private JcrRepositoryMonitor monitor;
 
     JcrWorkspace( JcrSession session,
                   String workspaceName ) {
         this.session = session;
         this.workspaceName = workspaceName;
-        JcrRepository repository = session.repository();
-        this.nodeTypeManager = new JcrNodeTypeManager(session, repository.nodeTypeManager());
-        this.workspaceRegistry = new JcrNamespaceRegistry(repository.persistentRegistry(), this.session);
-        this.lockManager = new JcrLockManager(session, repository.lockManager());
-        this.versionManager = new JcrVersionManager(session);
-    }
-
-    final JcrNodeTypeManager nodeTypeManager() {
-        return nodeTypeManager;
     }
 
     final JcrRepository repository() {
         return session.repository();
-    }
-
-    final JcrVersionManager versionManager() {
-        return versionManager;
     }
 
     final ExecutionContext context() {
@@ -100,7 +93,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
     }
 
     @Override
-    public final Session getSession() {
+    public final JcrSession getSession() {
         return session;
     }
 
@@ -178,29 +171,68 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
     @Override
     public JcrLockManager getLockManager() throws UnsupportedRepositoryOperationException, RepositoryException {
         session.checkLive();
-        return lockManager;
+        return lockManager();
     }
 
     final JcrLockManager lockManager() {
+        if (lockManager == null) {
+            try {
+                lock.lock();
+                if (lockManager == null) lockManager = new JcrLockManager(session, repository().lockManager());
+            } finally {
+                lock.unlock();
+            }
+        }
         return lockManager;
     }
 
     @Override
     public QueryManager getQueryManager() throws RepositoryException {
         session.checkLive();
-        // TODO: Query
-        return null;
+        if (this.queryManager == null) {
+            try {
+                lock.lock();
+                if (queryManager == null) queryManager = new JcrQueryManager(session);
+            } finally {
+                lock.unlock();
+            }
+        }
+        return queryManager;
     }
 
     @Override
     public javax.jcr.NamespaceRegistry getNamespaceRegistry() throws RepositoryException {
         session.checkLive();
+        if (workspaceRegistry == null) {
+            try {
+                lock.lock();
+                if (workspaceRegistry == null) {
+                    workspaceRegistry = new JcrNamespaceRegistry(repository().persistentRegistry(), this.session);
+                }
+            } finally {
+                lock.unlock();
+            }
+        }
         return workspaceRegistry;
     }
 
     @Override
-    public NodeTypeManager getNodeTypeManager() throws RepositoryException {
+    public JcrNodeTypeManager getNodeTypeManager() throws RepositoryException {
         session.checkLive();
+        return nodeTypeManager();
+    }
+
+    final JcrNodeTypeManager nodeTypeManager() {
+        if (nodeTypeManager == null) {
+            try {
+                lock.lock();
+                if (nodeTypeManager == null) {
+                    nodeTypeManager = new JcrNodeTypeManager(session, repository().nodeTypeManager());
+                }
+            } finally {
+                lock.unlock();
+            }
+        }
         return nodeTypeManager;
     }
 
@@ -214,6 +246,18 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
     @Override
     public JcrVersionManager getVersionManager() throws UnsupportedRepositoryOperationException, RepositoryException {
         session.checkLive();
+        return versionManager();
+    }
+
+    final JcrVersionManager versionManager() {
+        if (versionManager == null) {
+            try {
+                lock.lock();
+                if (versionManager == null) versionManager = new JcrVersionManager(session);
+            } finally {
+                lock.unlock();
+            }
+        }
         return versionManager;
     }
 
@@ -338,34 +382,57 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
 
     @Override
     public void reindex() throws RepositoryException {
-        // TODO: Query
+        // First check permissions ...
+        session.checkPermission(workspaceName, Path.ROOT_PATH, ModeShapePermissions.INDEX_WORKSPACE);
+        // Then reindex ...
+        repository().runningState().queryManager().reindexContent(this);
     }
 
     @Override
-    public void reindex( String path ) throws RepositoryException {
-        // TODO: Query
+    public void reindex( String pathStr ) throws RepositoryException {
+        try {
+            // First check permissions ...
+            Path path = session.pathFactory().create(pathStr);
+            session.checkPermission(workspaceName, path, ModeShapePermissions.INDEX_WORKSPACE);
+            // Then reindex ...
+            repository().runningState().queryManager().reindexContent(this, path, Integer.MAX_VALUE);
+        } catch (ValueFormatException e) {
+            throw new RepositoryException(e.getMessage());
+        }
     }
 
     @Override
     public Future<Boolean> reindexAsync() throws RepositoryException {
-        // TODO: Query
-
-        // This is a bogus Future that always returns it's done ...
-        return ImmediateFuture.create(Boolean.TRUE);
+        // First check permissions ...
+        session.checkPermission(workspaceName, Path.ROOT_PATH, ModeShapePermissions.INDEX_WORKSPACE);
+        // Then reindex ...
+        return repository().runningState().queryManager().reindexContentAsync(this);
     }
 
     @Override
-    public Future<Boolean> reindexAsync( String path ) throws RepositoryException {
-        // TODO: Query
-
-        // This is a bogus Future that always returns it's done ...
-        return ImmediateFuture.create(Boolean.TRUE);
+    public Future<Boolean> reindexAsync( String pathStr ) throws RepositoryException {
+        try {
+            // First check permissions ...
+            Path path = session.pathFactory().create(pathStr);
+            session.checkPermission(workspaceName, path, ModeShapePermissions.INDEX_WORKSPACE);
+            // Then reindex ...
+            return repository().runningState().queryManager().reindexContentAsync(this, path, Integer.MAX_VALUE);
+        } catch (ValueFormatException e) {
+            throw new RepositoryException(e.getMessage());
+        }
     }
 
     @Override
     public RepositoryMonitor getRepositoryMonitor() throws RepositoryException {
         if (monitor == null) {
-            this.monitor = new JcrRepositoryMonitor(session);
+            try {
+                lock.lock();
+                if (monitor == null) {
+                    monitor = new JcrRepositoryMonitor(session);
+                }
+            } finally {
+                lock.unlock();
+            }
         }
         return monitor;
     }

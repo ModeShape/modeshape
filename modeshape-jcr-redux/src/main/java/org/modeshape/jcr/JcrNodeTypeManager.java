@@ -60,7 +60,7 @@ import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.JcrContentHandler.EnclosingSAXException;
 import org.modeshape.jcr.RepositoryNodeTypeManager.NodeTypes;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
-import org.modeshape.jcr.core.ExecutionContext;
+import org.modeshape.jcr.query.validate.Schemata;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.Path;
@@ -83,6 +83,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
 
     private final JcrSession session;
     private final RepositoryNodeTypeManager repositoryTypeManager;
+    private Schemata schemata;
 
     JcrNodeTypeManager( JcrSession session,
                         RepositoryNodeTypeManager repositoryTypeManager ) {
@@ -94,18 +95,16 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         return session.context();
     }
 
-    // TODO: Query
-    // Schemata schemata() {
-    // if (schemata == null) {
-    // schemata = repositoryTypeManager.getRepositorySchemata().getSchemataForSession(session);
-    // assert schemata != null;
-    // }
-    // return schemata;
-    // }
+    Schemata schemata() {
+        if (schemata == null) {
+            schemata = repositoryTypeManager.getRepositorySchemata().getSchemataForSession(session);
+            assert schemata != null;
+        }
+        return schemata;
+    }
 
     void signalNamespaceChanges() {
-        // TODO: Query
-        // this.schemata = null;
+        this.schemata = null;
     }
 
     final NodeTypes nodeTypes() {

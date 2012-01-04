@@ -23,8 +23,8 @@
  */
 package org.modeshape.jcr.cache.document;
 
+import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.cache.SessionCache;
-import org.modeshape.jcr.core.ExecutionContext;
 
 /**
  * Tests that operate against a {@link ReadOnlySessionCache}.

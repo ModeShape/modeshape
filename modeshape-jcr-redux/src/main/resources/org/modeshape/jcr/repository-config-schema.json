@@ -37,7 +37,7 @@
                 },
                 "cacheConfiguration" : {
                     "type" : "string",
-                    "description" : "The name of the Infinispan configuration file. If a file could not be found (on the thread context classloader, on the application's classpath, or on the system classpath), then the name is used to look in JNDI for an Infinispan CacheContainer instance. If no such container is found, then a default Infinispan configuration (a basic, local mode, non-clustered cache) will be used."
+                    "description" : "The name of the Infinispan configuration file for creating a new cache manager. If a file could not be found (on the thread context classloader, on the application's classpath, or on the system classpath), then the name is assumed to reference an existing Infinispan CacheContainer instance via a valid JNDI name or as the name of a service as defined by the local environment. If no such container is found, then a default Infinispan configuration (a basic, local mode, non-clustered cache) will be used."
                 },
                 "transactionManagerLookup" : {
                     "type" : "string",
@@ -159,26 +159,18 @@
         "query" : {
             "type" : "object",
             "additionalProperties" : false,
+            "description" : "The specification of the configuration options for the query system.",
             "properties" : {
                 "enabled" : {
                     "type" : "boolean",
                     "default" : true,
                     "description" : "A boolean flag that specifies whether this repository is expected to execute searches and queries. If client applications will never perform searches or queries, then maintaining the query indexes is an unnecessary overhead, and can be disabled. Note that this is merely a hint, and that searches and queries might still work when this is set to 'false'."
                 },
-                "indexLocation" : {
-                    "type" : "string",
-                    "description" : "The location where the system is to store the indexes used in searching and querying the content. These size of these indexes depend upon the size of the content being stored, and thus may consume a significant amount of space. This option defines a location on the file system where this repository may (if needed) store indexes so they don't consume large amounts of memory. If specified, the value must be a valid absolute or relative path to a writable directory on the file system. If the path specifies a non-existant location, the repository may attempt to create the missing directories. The path may be absolute or relative to the location where this VM was started. If the specified location is not a readable and writable directory (or cannot be created as such), then this will generate an exception when the repository is created. The default value is null, meaning the search indexes may not be stored on the local file system and, if needed, will be stored within memory."
-                },
-                "threadPool" : {
-                    "type" : "string",
-                    "default" : "modeshape-workers",
-                    "description" : "Name of the thread pool that should be used for indexing. Thread pools are named globally within a single ModeShape engine, and by default all repositories use the same thread pool for sequencing and indexing."
-                },
                 "rebuildUponStartup" : {
                     "type" : "string",
                     "enum" : ["ifMissing","always"],
                     "default" : "ifMissing",
-                    "description" : ""
+                    "description" : "Specifies whether the indexes need to be rebuilt immediately when each ModeShape process starts up."
                 },
                 "extractors" : {
                     "type" : "array",
@@ -208,6 +200,408 @@
                                 "type" : "string",
                                 "description" : "The optional name of the classloader that should be used to load the sequencer class. If empty or not provided, the classpath accessible to ModeShape will be used."
                             }
+                        }
+                    }
+                },
+                "indexStorage" : {
+                    "description" : "The specification of where and how the indexes are to be stored. The value is a single nested document, with a required 'type' property (with values of 'ram', 'filesystem', 'filesystem-master', 'filesystem-slave', 'infinispan', or 'custom') and additional properties that are dictated by the 'type' value. If not specified, 'ram' storage will be used.",
+                    "type" : [ 
+                        {
+                            "type" : "object",
+                            "description" : "The specification for storing indexes for a non-clustered repository in local memory.",
+                            "additionalProperties" : false,
+                            "properties" : {
+                                "type" : {
+                                    "type" : "string",
+                                    "enum" : ["ram"],
+                                    "required" : true,
+                                    "description" : "The specification of the in-memory storage type."
+                                }
+                            }
+                        },
+                        {
+                            "type" : "object",
+                            "description" : "The specification for storing indexes for a (clustered or non-clustered) repository on the local filesystem.",
+                            "additionalProperties" : false,
+                            "properties" : {
+                                "type" : {
+                                    "type" : "string",
+                                    "description" : "The specification of the local filesystem storage type.",
+                                    "required" : true,
+                                    "enum" : ["filesystem"]
+                                },
+                                "location" : {
+                                    "type" : "string",
+                                    "required" : true,
+                                    "description" : "The path on the file system of the directory where the indexes are to be stored."
+                                },
+                                "lockingStrategy" : {
+                                    "type" : "string",
+                                    "enum" : [ "simple", "native", "single", "none" ],
+                                    "default" : "native",
+                                    "description" : "Species the type of locking used to prevent concurrent writes to the indexes. The default locking strategy works well for most cases. If set to 'simple', a marker file will be created using the Java File API (this file may need to be manually removed if the process is terminated abormally). If set to 'native' (the default), a marker file will be created using native OS file locks (which will never need to be cleaned up). If set to 'single', an in-memory Java object is used for the lock, and therefore not useful in a clustered repository. If 'none' is used, no locking is used to prevent concurrent writes (use with caution)."
+                                },
+                                "fileSystemAccessType" : {
+                                    "type" : "string",
+                                    "enum" : [ "auto", "simple", "nio", "mmap" ],
+                                    "default" : "auto",
+                                    "description" : "Specifies the exact type of Lucene FSDirectory implementation to be used. If set to 'auto' (the default), NIOFSDirectory will be used on non Windows systems and SimpleFSDirectory will be used on Windows. If set to 'simple', then SimpleFSDirectory will be used. If set to 'nio', then NIOFSDirectory will be used. If set to 'mmap', then MMapDirectory will be used. Make sure to refer to Javadocs of these Directory implementations before changing this setting. Even though NIOFSDirectory or MMapDirectory can bring substantial performace boosts they also have constraints and limitations."
+                                }
+                            }
+                        },
+                        {
+                            "type" : "object",
+                            "description" : "The specification for storing the master (writable) indexes for a clustered repository (typically when using the JMS backend for updating indexes). Other processes in the cluster will be configured with 'filesystem-slave'. Like 'filesystem', except that a copy of the indexes is made to 'sourceLocation'.",
+                            "additionalProperties" : false,
+                            "properties" : {
+                                "type" : {
+                                    "type" : "string",
+                                    "description" : "The specification of the master filesystem storage type.",
+                                    "required" : true,
+                                    "enum" : ["filesystem-master"]
+                                },
+                                "location" : {
+                                    "type" : "string",
+                                    "required" : true,
+                                    "description" : "The path on the local file system of the directory where the indexes are to be stored for local use."
+                                },
+                                "lockingStrategy" : {
+                                    "type" : "string",
+                                    "enum" : [ "simple", "native", "single", "none" ],
+                                    "default" : "native",
+                                    "description" : "Species the type of locking used to prevent concurrent writes to the indexes. The default locking strategy works well for most cases. If set to 'simple', a marker file will be created using the Java File API (this file may need to be manually removed if the process is terminated abormally). If set to 'native' (the default), a marker file will be created using native OS file locks (which will never need to be cleaned up). If set to 'single', an in-memory Java object is used for the lock, and therefore not useful in a clustered repository. If 'none' is used, no locking is used to prevent concurrent writes (use with caution)."
+                                },
+                                "fileSystemAccessType" : {
+                                    "type" : "string",
+                                    "enum" : [ "auto", "simple", "nio", "mmap" ],
+                                    "default" : "auto",
+                                    "description" : "Specifies the exact type of Lucene FSDirectory implementation to be used. If set to 'auto' (the default), NIOFSDirectory will be used on non Windows systems and SimpleFSDirectory will be used on Windows. If set to 'simple', then SimpleFSDirectory will be used. If set to 'nio', then NIOFSDirectory will be used. If set to 'mmap', then MMapDirectory will be used. Make sure to refer to Javadocs of these Directory implementations before changing this setting. Even though NIOFSDirectory or MMapDirectory can bring substantial performace boosts they also have constraints and limitations."
+                                },
+                                "sourceLocation" : {
+                                    "type" : "string",
+                                    "required" : true,
+                                    "description" : "The path on the (remote) file system of the directory to which the copy is to be written. This must not be the same directory as 'location'."
+                                },
+                                "refreshInSeconds" : {
+                                    "type" : "integer",
+                                    "default" : 3600,
+                                    "minimum" : 0,
+                                    "description" : "The number of seconds specifying the frequency of copying the master index into the 'sourceLocation' directory. The copy is incremental, so it only copies the changes since the last copy. The recommended value for the refresh period is (at least) 50% higher that the time to copy the information, and defaults to 3600 seconds - 60 minutes."
+                                }
+                            }
+                        },
+                        {
+                            "type" : "object",
+                            "description" : "The specification for storing the slave (read-only) indexes for a clustered repository (typically when using the JMS backend for updating indexes). One process in the cluster will be configured with 'filesystem-master', while rest with 'filesystem-slave'.",
+                            "additionalProperties" : false,
+                            "properties" : {
+                                "type" : {
+                                    "type" : "string",
+                                    "required" : true,
+                                    "description" : "The specification of the slave filesystem storage type.",
+                                    "enum" : ["filesystem-slave"]
+                                },
+                                "location" : {
+                                    "type" : "string",
+                                    "required" : true,
+                                    "description" : "The path on the local file system of the directory where the indexes are to be stored for local use."
+                                },
+                                "lockingStrategy" : {
+                                    "type" : "string",
+                                    "enum" : [ "simple", "native", "single", "none" ],
+                                    "default" : "native",
+                                    "description" : "Species the type of locking used to prevent concurrent writes to the indexes. The default locking strategy works well for most cases. If set to 'simple', a marker file will be created using the Java File API (this file may need to be manually removed if the process is terminated abormally). If set to 'native' (the default), a marker file will be created using native OS file locks (which will never need to be cleaned up). If set to 'single', an in-memory Java object is used for the lock, and therefore not useful in a clustered repository. If 'none' is used, no locking is used to prevent concurrent writes (use with caution)."
+                                },
+                                "fileSystemAccessType" : {
+                                    "type" : "string",
+                                    "enum" : [ "auto", "simple", "nio", "mmap" ],
+                                    "default" : "auto",
+                                    "description" : "Specifies the exact type of Lucene FSDirectory implementation to be used. If set to 'auto' (the default), NIOFSDirectory will be used on non Windows systems and SimpleFSDirectory will be used on Windows. If set to 'simple', then SimpleFSDirectory will be used. If set to 'nio', then NIOFSDirectory will be used. If set to 'mmap', then MMapDirectory will be used. Make sure to refer to Javadocs of these Directory implementations before changing this setting. Even though NIOFSDirectory or MMapDirectory can bring substantial performace boosts they also have constraints and limitations."
+                                },
+                                "sourceLocation" : {
+                                    "type" : "string",
+                                    "required" : true,
+                                    "description" : "The path on the (remote) file system of the directory from which the copy is to be read. This must not be the same directory as 'location'."
+                                },
+                                "refreshInSeconds" : {
+                                    "type" : "integer",
+                                    "default" : 3600,
+                                    "minimum" : 0,
+                                    "description" : "The number of seconds specifying the frequency of copying the index in the 'location' directory into the 'sourceLocation' directory. The copy is incremental, so it only copies the changes since the last copy. The recommended value for the refresh period is (at least) 50% higher that the time to copy the information, and defaults to 3600 seconds - 60 minutes."
+                                },
+                                "copyBufferSizeInMegabytes" : {
+                                    "type" : "integer",
+                                    "exclusiveMinimum" : 0,
+                                    "default" : 16,
+                                    "description" : "The number of megabytes to move in a single low level copy instruction. The default is '16' (or 16MB)."
+                                },
+                                "retryMarkerLookup" : {
+                                    "type" : "integer",
+                                    "minimum" : 0,
+                                    "default" : 0,
+                                    "description" : "The number of times to look for the marker files in the source directory before failing, waiting 5 seconds between each try. The default is '0'."
+                                },
+                                "retryInitializePeriodInSeconds" : {
+                                    "type" : "integer",
+                                    "minimum" : 0,
+                                    "default" : 0,
+                                    "description" : "The number of seconds before retrying initialization. If the slave can't find the master index, it will try again (in the background) until it's found, without preventing the application to start. Queries performed before the index is initialized are not blocked but will return empty results. A value of '0' is used by default, signaling that initialization will fail with an exception rather than trying in the background. To prevent the application from starting without an invalid index but still control an initialization timeout, use 'retryMarkerLookup' instead."
+                                }
+                            }
+                        },
+                        {
+                            "type" : "object",
+                            "description" : "The specification for storing the indexes for a (typically clustered) repository in an Infinispan data grid, making index changes visible to all elements of the cluster very quickly.",
+                            "additionalProperties" : false,
+                            "properties" : {
+                                "type" : {
+                                    "type" : "string",
+                                    "description" : "The specification of the Infinispan index storage type.",
+                                    "required" : true,
+                                    "enum" : ["infinispan"]
+                                },
+                                "cacheConfiguration" : {
+                                    "type" : "string",
+                                    "description" : "The name of the Infinispan configuration file for creating a new cache manager. If a file could not be found (on the thread context classloader, on the application's classpath, or on the system classpath), then the name is assumed to reference an existing Infinispan CacheContainer instance via a valid JNDI name or as the name of a service as defined by the local environment. If no such container is found, then the cache container used by the 'storage' configuration is used."
+                                },
+                                "chunkSizeInBytes" : {
+                                    "type" : "integer",
+                                    "exclusiveMinimum" : 0,
+                                    "default" : 16834,
+                                    "description" : "The maximum size in bytes for each chunk of data. Larger sizes offer better search performance but might be problematic during network replication or storage. The default is 16KB, or 16834."
+                                }
+                            }
+                        },
+                        {
+                            "type" : "object",
+                            "description" : "The specification for storing the indexes in a custom directory provider.",
+                            "additionalProperties" : true,
+                            "properties" : {
+                                "type" : {
+                                    "type" : "string",
+                                    "description" : "The specification of a custom index storage type.",
+                                    "required" : true,
+                                    "enum" : ["custom"]
+                                },
+                                "classname" : {
+                                    "type" : "string",
+                                    "required" : true,
+                                    "description" : "The name of the Hiberate Search 'org.hibernate.search.store.DirectoryProvider' implementation class."
+                                },
+                                "classloader" : {
+                                    "type" : "string",
+                                    "description" : "The optional name of the classloader or module that should be used to load the DirectoryProvider implementation class. If empty or not provided, the classpath accessible to ModeShape will be used."
+                                }
+                            }
+                        }
+                    ]
+                },
+                "indexing" : {
+                    "type" : "object",
+                    "additionalProperties" : false,
+                    "description" : "The configuration settings controlling how the search indexes are created and maintained.",
+                    "properties" : {
+                        "threadPool" : {
+                            "type" : "string",
+                            "default" : "modeshape-workers",
+                            "description" : "Name of the thread pool that should be used for background re-indexing. Thread pools are named globally within a single ModeShape engine, and by default all repositories use the same thread pool for sequencing and indexing."
+                        },
+                        "analyzer" : {
+                            "type" : "string",
+                            "default" : "org.apache.lucene.analysis.standard.StandardAnalyzer",
+                            "description" : "Advanced setting that specifies the fully-qualified name of the 'org.apache.lucene.analysis.Analyzer' implementation class that should be used to extract search terms from text."
+                        },
+                        "similarity" : {
+                            "type" : "string",
+                            "default" : "org.apache.lucene.search.DefaultSimilarity",
+                            "description" : "Advanced setting that specifies the fully-qualified name of the 'org.apache.lucene.search.Similarity' implementation class that should be used for scoring (determining the similarity of terms). The 'org.apache.lucene.search.DefaultSimilarity' class is used by default."
+                        },
+                        "batchSize" : {
+                            "type" : "integer",
+                            "default" : -1,
+                            "description" : "Advanced setting that specifies the maximum number of indexing operation batched per transaction. Once the limit is reached indexing will be triggered even though the context has not ended yet. A value of '-1' implies no maximum size."
+                        },
+                        "indexFormat" : {
+                            "type" : "string",
+                            "pattern" : "LUCENE_(3[0-9]{1,2}|CURRENT)",
+                            "default" : "LUCENE_CURRENT",
+                            "description" : "Specifies the Lucene version defining the format of the indexes. The default value is 'LUCENE_CURRENT', but for production uses it should be explicitly set to the specific Lucene version used when first creating the versions; changing this value will require a manual rebuilt of all indexes."
+                        },
+                        "readerStrategy" : {
+                            "type" : "string",
+                            "enum" : [ "shared", "not-shared" ],
+                            "default" : "shared",
+                            "description" : "Advanced setting that defines whether Lucene index readers can be shared. With the 'shared' strategy, the same IndexReader will be used (for a given Lucene index) across multiple queries and threads, provided that the IndexReader is still up-to-date. If the IndexReader is not up-to-date, a new one is opened and provided. With the 'not-shared' strategy, a new IndexReader is opened every time a query is executed, which can be expensive."
+                        },
+                        "mode" : {
+                            "type" : "string",
+                            "enum" : [ "sync", "async" ],
+                            "default" : "sync",
+                            "description" : "Specifies whether to apply the index changes synchronously or asynchronously (in separate threads). Synchronous updates have the advantage that the index is at all times in sync with the storec content. Asynchronous updates, on the other hand, can help to minimize Session.save() times since index updates are executed in the background, but may result in potential discrepancies between the saved changes and query results."
+                        },
+                        "asyncThreadPoolSize" : {
+                            "type" : "integer",
+                            "default" : 1,
+                            "minimum" : 1,
+                            "description" : "Specifies the number of threads that may be used for asynchronous application of updates. Defaults to '1', and is not used for synchronous updates."
+                        },
+                        "asyncMaxQueueSize" : {
+                            "type" : "integer",
+                            "default" : 1,
+                            "minimum" : 0,
+                            "description" : "Specifies the maximum size of the queue used for making asynchronous updates. When the queue is filled, updates block until the queue catches up. A value of '0' is the default and implies no limit to the queue size."
+                        },
+                        "backend" : {
+                            "description" : "The specification of options for how the indexes are to be updated. The value is a single nested document, with a required 'type' property (with values of 'lucene', 'jms-backend', 'jgroups-master', 'jgroups-slave', 'blackhold', or 'custom') and additional properties that are dictated by the 'type' value. If not specified, 'lucene' storage will be used.",
+                            "type" : [ 
+                                {
+                                    "type" : "object",
+                                    "description" : "The specification for writing all updates directly to Lucene. This is the default and works well for non-clustered repositories. It can also work for clustered repositories, but requires an index storage type that supports locking.",
+                                    "additionalProperties" : false,
+                                    "properties" : {
+                                        "type" : {
+                                            "type" : "string",
+                                            "enum" : ["lucene"],
+                                            "required" : true,
+                                            "description" : "The specification of the Lucene backend for writing all updates directly to Lucene."
+                                        }
+                                    }
+                                },
+                                {
+                                    "type" : "object",
+                                    "description" : "The specification for pulling all index updates from a JMS queue and writing them to a local Lucene backend. Index updates originating locally are directly written to Lucene. This is only useful for clustered repositories, where other processes in the cluster are configured with 'jms-slave'. Extra properties will be used to initialize the JNDI InitialContext.",
+                                    "additionalProperties" : true,
+                                    "properties" : {
+                                        "type" : {
+                                            "type" : "string",
+                                            "enum" : ["jms-master"],
+                                            "required" : true,
+                                            "description" : "The specification of the JMS master backend."
+                                        },
+                                        "connectionFactoryJndiName" : { 
+                                            "type" : "string",
+                                            "required" : true,
+                                            "description" : "Defines the name in JNDI where the JMS connection factory can be found. The value is often '/ConnectionFactory' by default in JBoss AS.",
+                                        },
+                                        "queueJndiName" : { 
+                                            "type" : "string",
+                                            "required" : true,
+                                            "description" : "Defines the name in JNDI where JMS queue can be found. The queue will be used to post work messages.",
+                                        }
+                                    }
+                                }
+                                {
+                                    "type" : "object",
+                                    "description" : "The specification for sending all index updates to a JMS queue, where the master writing all updates directly to Lucene.  This is only useful for clustered repositories, where one other processes in the cluster is configured with 'jms-master'. Extra properties will be used to initialize the JNDI InitialContext.",
+                                    "additionalProperties" : true,
+                                    "properties" : {
+                                        "type" : {
+                                            "type" : "string",
+                                            "enum" : ["jms-slave"],
+                                            "required" : true,
+                                            "description" : "The specification of the Lucene backend for writing all updates directly to Lucene."
+                                        },
+                                        "connectionFactoryJndiName" : { 
+                                            "type" : "string",
+                                            "required" : true,
+                                            "description" : "Defines the name in JNDI where the JMS connection factory can be found. The value is often '/ConnectionFactory' by default in JBoss AS.",
+                                        },
+                                        "queueJndiName" : { 
+                                            "type" : "string",
+                                            "required" : true,
+                                            "description" : "Defines the name in JNDI where JMS queue can be found. The queue will be used to post work messages.",
+                                        }
+                                    }
+                                },
+                                {
+                                    "type" : "object",
+                                    "description" : "The specification for pulling all index updates from a JGroups channel and writing them to a local Lucene backend. This is only useful for clustered repositories, where other processes in the cluster are configured with 'jgroups-slave'.",
+                                    "additionalProperties" : false,
+                                    "properties" : {
+                                        "type" : {
+                                            "type" : "string",
+                                            "enum" : ["jgroups-master"],
+                                            "required" : true,
+                                            "description" : "The specification of the Lucene backend for writing all updates directly to Lucene."
+                                        },
+                                        "channelName" : { 
+                                            "type" : "string",
+                                            "required" : true,
+                                            "description" : "The name of the JGroups channel used for indexing updates."
+                                        },
+                                        "channelConfiguration" : { 
+                                            "type" : "string",
+                                            "required" : true,
+                                            "description" : "The JGroups channel configuration. The value can either be the path to a resource file on the classpath, or a value containing the JGroups configuration (in either XML or old-style format)."
+                                        }
+                                    }
+                                },
+                                {
+                                    "type" : "object",
+                                    "description" : "The specification for sending all index updates to the maste through a JGroups channel. This is only useful for clustered repositories, where one other process in the cluster is configured with 'jgroups-master'. ",
+                                    "additionalProperties" : false,
+                                    "properties" : {
+                                        "type" : {
+                                            "type" : "string",
+                                            "enum" : ["jgroups-master"],
+                                            "required" : true,
+                                            "description" : "The specification of the Lucene backend for writing all updates directly to Lucene."
+                                        },
+                                        "connectionFactoryJndiName" : { 
+                                            "type" : "string",
+                                            "required" : true,
+                                            "description" : "Defines the name in JNDI where the JMS connection factory can be found. The value is often '/ConnectionFactory' by default in JBoss AS.",
+                                        },
+                                        "queueJndiName" : { 
+                                            "type" : "string",
+                                            "required" : true,
+                                            "description" : "Defines the name in JNDI where JMS queue can be found. The queue will be used to post work messages.",
+                                        }
+                                    }
+                                },
+                                {
+                                    "type" : "object",
+                                    "description" : "The specification for a backend where all index updates are dropped and not processed. This may be useful during development and testing, but should never be used in a staging or production environment.",
+                                    "additionalProperties" : false,
+                                    "properties" : {
+                                        "type" : {
+                                            "type" : "string",
+                                            "enum" : ["blackhole"],
+                                            "required" : true,
+                                            "description" : "The specification of the blackhole backend."
+                                        },
+                                    }
+                                },
+                                {
+                                    "type" : "object",
+                                    "description" : "The specification for a custom backend processor.",
+                                    "additionalProperties" : true,
+                                    "properties" : {
+                                        "type" : {
+                                            "type" : "string",
+                                            "description" : "The specification of a custom backend processor.",
+                                            "required" : true,
+                                            "enum" : ["custom"]
+                                        },
+                                        "classname" : {
+                                            "type" : "string",
+                                            "required" : true,
+                                            "description" : "The fully-qualified name of the class that implements the 'org.hibernate.search.backend.spi.BackendQueueProcessor' interface."
+                                        },
+                                        "classloader" : {
+                                            "type" : "string",
+                                            "description" : "The optional name of the classloader or module that should be used to load the BackendQueueProcessor implementation class. If empty or not provided, the classpath accessible to ModeShape will be used."
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "patternProperties" : {
+                        "hibernate[.]search[.].*" : {
+                            "type" : "string",
+                            "required" : false,
+                            "description" : "Additional properties that follow the 'hibernate.search.*' pattern will override all other properties and will be passed directly to Hibernate Search. These are optional, and should only be used for advanced configuration."
                         }
                     }
                 }

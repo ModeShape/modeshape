@@ -37,7 +37,9 @@ import org.modeshape.graph.query.model.Column;
 import org.modeshape.graph.query.model.SelectorName;
 import org.modeshape.graph.query.process.QueryResultColumns;
 import org.modeshape.graph.query.validate.Schemata;
+import org.modeshape.jcr.Migrated;
 
+@Migrated
 public class XPathQueryResultTest {
 
     private XPathQueryResult result;
@@ -59,9 +61,8 @@ public class XPathQueryResultTest {
         columnTypes = Arrays.asList("STRING", "LONG");
         columnNames = Arrays.asList("jcr:primaryType", "foo:bar");
         SelectorName tableName = new SelectorName("nt:unstructured");
-        columns = Arrays.asList(new Column(tableName, columnNames.get(0), columnNames.get(0)), new Column(tableName,
-                                                                                                          columnNames.get(1),
-                                                                                                          columnNames.get(1)));
+        columns = Arrays.asList(new Column(tableName, columnNames.get(0), columnNames.get(0)),
+                                new Column(tableName, columnNames.get(1), columnNames.get(1)));
         resultColumns = new QueryResultColumns(columns, columnTypes, true);
         when(graphResult.getColumns()).thenReturn(resultColumns);
 

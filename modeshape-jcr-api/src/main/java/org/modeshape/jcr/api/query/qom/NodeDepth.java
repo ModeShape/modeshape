@@ -28,7 +28,7 @@ import javax.jcr.query.qom.Comparison;
 /**
  * A dynamic operand that evaluates to the depth of a node given by a selector, used in a {@link Comparison} constraint.
  */
-public interface NodeDepth {
+public interface NodeDepth extends javax.jcr.query.qom.DynamicOperand {
 
     /**
      * Get the selector symbol upon which this operand applies.

@@ -52,7 +52,6 @@ import org.modeshape.common.text.TokenStream;
 import org.modeshape.common.text.TokenStream.Tokenizer;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.cache.PropertyTypeUtil;
-import org.modeshape.jcr.core.ExecutionContext;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.NamespaceRegistry;
@@ -352,7 +351,7 @@ public class CndImporter {
         boolean isMixin = false;
         boolean isAbstract = false;
         boolean isQueryable = true;
-        Name primaryItem = null;
+        String primaryItem = null;
         while (true) {
             // Keep reading while we see a valid option ...
             if (tokens.canConsumeAnyOf("ORDERABLE", "ORD", "O")) {
@@ -371,7 +370,7 @@ public class CndImporter {
                 tokens.canConsume('?');
                 isQueryable = true;
             } else if (tokens.canConsumeAnyOf("PRIMARYITEM", "!")) {
-                primaryItem = parseName(tokens);
+                primaryItem = removeQuotes(tokens.consume());
                 tokens.canConsume('?');
             } else if (tokens.matches(CndTokenizer.VENDOR_EXTENSION)) {
                 List<Property> properties = new LinkedList<Property>();

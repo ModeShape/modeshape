@@ -52,7 +52,6 @@ import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockException;
 import javax.jcr.lock.LockManager;
 import javax.jcr.nodetype.ConstraintViolationException;
-import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.observation.ObservationManager;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
@@ -287,7 +286,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
     /**
      * {@inheritDoc}
      */
-    public final NodeTypeManager getNodeTypeManager() {
+    public final org.modeshape.jcr.api.nodetype.NodeTypeManager getNodeTypeManager() {
         return nodeTypeManager;
     }
 
