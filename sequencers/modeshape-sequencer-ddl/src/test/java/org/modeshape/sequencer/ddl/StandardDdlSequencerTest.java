@@ -39,7 +39,7 @@ import java.util.List;
 /**
  *
  */
-public class DdlSequencerTest extends AbstractSequencerTest {
+public class StandardDdlSequencerTest extends AbstractSequencerTest {
 
     private void verifyProperty( Node node, String propNameStr, String expectedValue ) throws RepositoryException {
         Property property = node.getProperty(propNameStr);

@@ -26,6 +26,7 @@ package org.modeshape.jcr;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import javax.jcr.Node;
 import org.infinispan.schematic.Schematic;
@@ -81,7 +82,7 @@ public class SequencingTest extends SingleUseAbstractTest {
     @Test
     public void shouldStartRepositoryWithOneSequencer() throws Exception {
         EditableDocument doc = Schematic.newDocument();
-        addSequencer(doc, "seq1", "desc of seq1", TestSequencer.class.getName(), "/foo[@bar] => /output");
+        addSequencer(doc, "seq1", "desc of seq1", TestSequencersHolder.DefaultSequencer.class.getName(), "/foo[@bar] => /output");
         startRepositoryWithConfiguration(doc);
 
         // Now use a session to add a '/foo' node with a 'bar' property ...
@@ -92,7 +93,7 @@ public class SequencingTest extends SingleUseAbstractTest {
 
         boolean found = false;
         for (int i = 0; i != 10; ++i) {
-            if (TestSequencer.COUNTER.get() == 1) {
+            if (TestSequencersHolder.DefaultSequencer.COUNTER.get() == 1) {
                 found = true;
                 break;
             }
@@ -106,14 +107,14 @@ public class SequencingTest extends SingleUseAbstractTest {
         // Now verify that the test sequencer created a node ...
         Node fooOutput = session.getNode("/output/foo");
         assertThat(fooOutput, is(notNullValue()));
-        Node derivedNode = session.getNode("/output/foo/" + TestSequencer.DERIVED_NODE_NAME);
+        Node derivedNode = session.getNode("/output/foo/" + TestSequencersHolder.DefaultSequencer.DERIVED_NODE_NAME);
         assertThat(derivedNode, is(notNullValue()));
     }
 
     @Test
     public void shouldAllowSequencerToBeConfiguredWithOnlyInputPath() throws Exception {
         EditableDocument doc = Schematic.newDocument();
-        addSequencer(doc, "seq1", "desc of seq1", TestSequencer.class.getName(), "/foo[@bar]");
+        addSequencer(doc, "seq1", "desc of seq1", TestSequencersHolder.DefaultSequencer.class.getName(), "/foo[@bar]");
         startRepositoryWithConfiguration(doc);
 
         // Now use a session to add a '/foo' node with a 'bar' property ...
@@ -124,7 +125,7 @@ public class SequencingTest extends SingleUseAbstractTest {
 
         boolean found = false;
         for (int i = 0; i != 10; ++i) {
-            if (TestSequencer.COUNTER.get() == 1) {
+            if (TestSequencersHolder.DefaultSequencer.COUNTER.get() == 1) {
                 found = true;
                 break;
             }
@@ -138,14 +139,14 @@ public class SequencingTest extends SingleUseAbstractTest {
         // Now verify that the test sequencer created a node ...
         Node foo2 = session.getNode("/foo");
         assertThat(foo2, is(sameInstance(foo)));
-        Node derivedNode = session.getNode("/foo/" + TestSequencer.DERIVED_NODE_NAME);
+        Node derivedNode = session.getNode("/foo/" + TestSequencersHolder.DefaultSequencer.DERIVED_NODE_NAME);
         assertThat(derivedNode, is(notNullValue()));
     }
 
     @Test
     public void shouldNotWreakHavocIfSequencerFails() throws Exception {
         EditableDocument doc = Schematic.newDocument();
-        addSequencer(doc, "seq1", "desc of seq1", TestFaultySequencer.class.getName(), "/foo[@bar] => /output");
+        addSequencer(doc, "seq1", "desc of seq1", TestSequencersHolder.FaultyDuringExecute.class.getName(), "/foo[@bar] => /output");
         startRepositoryWithConfiguration(doc);
 
         // Now use a session to add a '/foo' node with a 'bar' property ...
@@ -157,7 +158,7 @@ public class SequencingTest extends SingleUseAbstractTest {
         // Verify that the sequencer at least ran ...
         boolean found = false;
         for (int i = 0; i != 10; ++i) {
-            if (TestFaultySequencer.COUNTER.get() == 1) {
+            if (TestSequencersHolder.FaultyDuringExecute.EXECUTE_CALL_COUNTER.get() == 1) {
                 found = true;
                 break;
             }
@@ -181,7 +182,23 @@ public class SequencingTest extends SingleUseAbstractTest {
     @Test
     public void shouldCreateStartRepositoryWithValidButUnusableSequencerPathExpression() throws Exception {
         EditableDocument doc = Schematic.newDocument();
-        addSequencer(doc, "seq1", "desc of seq1", TestSequencer.class.getName(), "## valid but unusable");
+        addSequencer(doc, "seq1", "desc of seq1", TestSequencersHolder.DefaultSequencer.class.getName(), "## valid but unusable");
         startRepositoryWithConfiguration(doc);
+    }
+
+    @Test
+    public void shouldRemoveSequencerIfItCrashesDuringInitialize() throws Exception {
+        EditableDocument doc = Schematic.newDocument();
+        addSequencer(doc, "seq1", "desc of seq1", TestSequencersHolder.FaultyDuringInitialize.class.getName(), "/foo[@bar] => /output");
+        startRepositoryWithConfiguration(doc);
+
+        Node foo = session.getRootNode().addNode("foo");
+        foo.setProperty("bar", "value of bar"); 
+        session.save();
+
+        // The session for the sequencer may not have been saved, so wait a bit ...
+        Thread.sleep(100L);
+        
+        assertEquals(0, TestSequencersHolder.FaultyDuringInitialize.EXECUTE_CALL_COUNTER.get());
     }
 }
