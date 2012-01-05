@@ -29,7 +29,7 @@ import org.modeshape.sequencer.ddl.*;
 import org.modeshape.sequencer.ddl.DdlTokenStream.DdlTokenizer;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.CREATE_VIEW_QUERY_EXPRESSION;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DROP_BEHAVIOR;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DROP_OPTION_TYPE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_OPTION;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.NEW_NAME;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_TABLE_STATEMENT;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_REFERENCE;
@@ -585,7 +585,7 @@ public class OracleDdlParser extends StandardDdlParser
             }
 
             if (tokens.matchesAnyOf(":=", "DEFAULT") || !tokens.matchesAnyOf(COMMA, R_PAREN)) {
-                String msg = DdlSequencerI18n.unsupportedProcedureParameterDeclaration.text(procedureNode.getProperty(StandardDdlLexicon.NAME));
+                String msg = DdlSequencerI18n.unsupportedProcedureParameterDeclaration.text(procedureNode.getName());
                 DdlParserProblem problem = new DdlParserProblem(Problems.WARNING, getCurrentMarkedPosition(), msg);
                 addProblem(problem, procedureNode);
                 return false;
@@ -1296,33 +1296,12 @@ public class OracleDdlParser extends StandardDdlParser
             String name = parseName(tokens);
             dropNode = nodeFactory().node(name, parentNode, TYPE_DROP_TABLE_STATEMENT);
 
-            dropNode.setProperty(DROP_OPTION_TYPE, "TABLE");
-
-            if (tokens.matchesAnyOf("CASCADE", "RESTRICT")) {
-                StringBuffer sb = new StringBuffer();
-
-                if (tokens.canConsume("CASCADE")) {
-                    sb.append("CASCADE");
-                    tokens.consume("CONSTRAINTS");
-                    sb.append(SPACE).append("CONSTRAINTS");
-                    AstNode optionNode = nodeFactory().node("OPTION", dropNode, StandardDdlLexicon.DROP_OPTION_TYPE);
-                    optionNode.setProperty(StandardDdlLexicon.NAME, "CASCADE OR RESTRICT");
-                    optionNode.setProperty(StandardDdlLexicon.VALUE, sb.toString());
-                } else {
-                    tokens.consume("RESTRICT");
-                    sb.append("RESTRICT");
-                    tokens.consume("CONSTRAINTS");
-                    sb.append(SPACE).append("CONSTRAINTS");
-                    AstNode optionNode = nodeFactory().node("OPTION", dropNode, StandardDdlLexicon.DROP_OPTION_TYPE);
-                    optionNode.setProperty(StandardDdlLexicon.NAME, "CASCADE OR RESTRICT");
-                    optionNode.setProperty(StandardDdlLexicon.VALUE, sb.toString());
-                }
-
+            if (tokens.canConsume("CASCADE", "CONSTRAINTTS")) {
+                dropNode.setProperty(DROP_BEHAVIOR, "CASCADE CONSTRAINTS");
             }
 
             if (tokens.canConsume("PURGE")) {
-                AstNode optionNode = nodeFactory().node("OPTION", dropNode, StandardDdlLexicon.DROP_OPTION_TYPE);
-                optionNode.setProperty(StandardDdlLexicon.NAME, "PURGE");
+                AstNode optionNode = nodeFactory().node(DROP_OPTION, dropNode, TYPE_STATEMENT_OPTION);
                 optionNode.setProperty(StandardDdlLexicon.VALUE, "PURGE");
             }
 
@@ -1461,7 +1440,7 @@ public class OracleDdlParser extends StandardDdlParser
         } while (localTokens.canConsume(COMMA));
 
         if (unusedTokensSB.length() > 0) {
-            String msg = DdlSequencerI18n.unusedTokensParsingColumnDefinition.text(tableNode.getProperty(StandardDdlLexicon.NAME));
+            String msg = DdlSequencerI18n.unusedTokensParsingColumnDefinition.text(tableNode.getName());
             DdlParserProblem problem = new DdlParserProblem(Problems.WARNING, getCurrentMarkedPosition(), msg);
             problem.setUnusedSource(unusedTokensSB.toString());
             addProblem(problem, tableNode);

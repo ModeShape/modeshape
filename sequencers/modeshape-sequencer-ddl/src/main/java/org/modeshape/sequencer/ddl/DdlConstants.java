@@ -84,18 +84,6 @@ public interface DdlConstants {
     public static final String UNIQUE = "UNIQUE";
     public static final String VIEW = "VIEW";
 
-    /*
-     * Default Value ID's
-     */
-    public static final int DEFAULT_ID_UNDEFINED = -1;
-    public static final int DEFAULT_ID_LITERAL = 0;
-    public static final int DEFAULT_ID_DATETIME = 1;
-    public static final int DEFAULT_ID_USER = 2;
-    public static final int DEFAULT_ID_CURRENT_USER = 3;
-    public static final int DEFAULT_ID_SESSION_USER = 4;
-    public static final int DEFAULT_ID_SYSTEM_USER = 5;
-    public static final int DEFAULT_ID_NULL = 6;
-
     public static final String MISSING_TERMINATOR_NODE_LITERAL = "missingTerminator";
 
     interface DropBehavior {

@@ -95,4 +95,5 @@ public class DerbyDdlLexicon extends StandardDdlLexicon {
     public static final String ROLE_NAME                          = PREFIX +  ":roleName";
     public static final String GENERATED_COLUMN_SPEC_CLAUSE       = PREFIX + ":generatedColumnSpecClause";
     public static final String IS_TABLE_TYPE                      = PREFIX + ":isTableType";
+    public static final String PARAMETER_STYLE                    = PREFIX + ":parameterStyle";
 }

@@ -33,7 +33,6 @@ import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.text.Position;
 import org.modeshape.common.util.CheckArg;
-import static org.modeshape.jcr.api.JcrConstants.JCR_MIXIN_TYPES;
 import org.modeshape.sequencer.ddl.DdlTokenStream.DdlTokenizer;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.*;
 import org.modeshape.sequencer.ddl.datatype.DataType;
@@ -366,7 +365,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         assert problem != null;
         assert parentNode != null;
 
-        AstNode problemNode = nodeFactory().node("DDL PROBLEM", parentNode, TYPE_PROBLEM);
+        AstNode problemNode = nodeFactory().node(DDL_PROBLEM, parentNode, TYPE_PROBLEM);
         problemNode.setProperty(PROBLEM_LEVEL, problem.getLevel());
         problemNode.setProperty(MESSAGE, problem.toString() + "[" + problem.getUnusedSource() + "]");
 
@@ -417,6 +416,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         Position endPosition = new Position((secondStartIndex + deltaLength), 1, 0);
         String source = tokens.getContentBetween(startPosition, endPosition);
         firstNode.setProperty(DDL_EXPRESSION, source);
+        firstNode.setProperty(DDL_LENGTH, source.length());
     }
 
     /**
@@ -491,7 +491,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
             String msg = DdlSequencerI18n.unknownCreateStatement.text(position.getLine(), position.getColumn());
             DdlParserProblem problem = new DdlParserProblem(DdlConstants.Problems.WARNING, position, msg);
 
-            stmtNode.setProperty(TYPE_PROBLEM, problem.toString());
+            stmtNode.setProperty(DDL_PROBLEM, problem.toString());
 
             markEndOfStatement(tokens, stmtNode);
         }
@@ -985,8 +985,14 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         tokens.consume(STMT_CREATE_DOMAIN);
 
         String name = parseName(tokens);
+        AstNode node = nodeFactory().node(name, parentNode, TYPE_CREATE_DOMAIN_STATEMENT);        
 
-        AstNode node = nodeFactory().node(name, parentNode, TYPE_CREATE_DOMAIN_STATEMENT);
+        tokens.canConsume("AS");
+        DataType datatype = getDatatypeParser().parse(tokens);
+        if (datatype != null) {
+            getDatatypeParser().setPropertiesOnNode(node, datatype);
+            parseDefaultClause(tokens, node);
+        }
 
         parseUntilTerminator(tokens);
 
@@ -1016,10 +1022,40 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
         AstNode node = nodeFactory().node(name, parentNode, TYPE_CREATE_COLLATION_STATEMENT);
 
+        //character set attribute
+        tokens.consume("FOR");
+        String charSetName = parseName(tokens);
+        node.setProperty(COLLATION_CHARACTER_SET_NAME, charSetName);
+
+        //collation source
+        //TODO author=Horia Chiorean date=1/4/12 description=Only parsing a string atm (should probably be some nested nodes - see StandardDdl.cnd
+        tokens.consume("FROM");
+        String collationSource = null;
+        if (tokens.canConsume("EXTERNAL") || tokens.canConsume("DESC")) {
+            collationSource = consumeParenBoundedTokens(tokens, false);
+        }
+        else if (tokens.canConsume("TRANSLATION")) {
+            StringBuilder translationCollation = new StringBuilder("TRANSLATION ").append(tokens.consume());
+            if (tokens.canConsume("THEN", "COLLATION")) {
+                translationCollation.append(" THEN COLLATION ");
+                translationCollation.append(parseName(tokens));
+            }
+            collationSource = translationCollation.toString();
+        }
+        else {
+            collationSource =parseName(tokens);
+        }
+        node.setProperty(COLLATION_SOURCE, collationSource);
+
+        //pad attribute
+        if (tokens.canConsume("PAD", "SPACE")){
+            node.setProperty(PAD_ATTRIBUTE, PAD_ATTRIBUTE_PAD);
+        } else if (tokens.canConsume("NO", "PAD")) {
+            node.setProperty(PAD_ATTRIBUTE, PAD_ATTRIBUTE_NO_PAD);
+        }
+
         parseUntilTerminator(tokens);
-
         markEndOfStatement(tokens, node);
-
         return node;
     }
 
@@ -1043,6 +1079,10 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         String name = parseName(tokens);
 
         AstNode node = nodeFactory().node(name, parentNode, TYPE_CREATE_TRANSLATION_STATEMENT);
+        tokens.consume("FOR");
+        node.setProperty(SOURCE_CHARACTER_SET_NAME, parseName(tokens));
+        tokens.consume("TO");
+        node.setProperty(TARGET_CHARACTER_SET_NAME, parseName(tokens));
 
         parseUntilTerminator(tokens);
 
@@ -1071,6 +1111,8 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         String name = parseName(tokens);
 
         AstNode node = nodeFactory().node(name, parentNode, TYPE_CREATE_CHARACTER_SET_STATEMENT);
+        //TODO author=Horia Chiorean date=1/4/12 description=Some of the optional attributes from the CND are not implemented yet
+        node.setProperty(EXISTING_NAME, consumeIdentifier(tokens));
 
         parseUntilTerminator(tokens);
 
@@ -1231,7 +1273,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         } while (localTokens.canConsume(COMMA));
 
         if (unusedTokensSB.length() > 0) {
-            String msg = DdlSequencerI18n.unusedTokensParsingColumnsAndConstraints.text(tableNode.getProperty(NAME));
+            String msg = DdlSequencerI18n.unusedTokensParsingColumnsAndConstraints.text(tableNode.getName());
             DdlParserProblem problem = new DdlParserProblem(DdlConstants.Problems.WARNING, Position.EMPTY_CONTENT_POSITION, msg);
             problem.setUnusedSource(unusedTokensSB.toString());
             addProblem(problem, tableNode);
@@ -1567,7 +1609,6 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
             String ck_name = "CHECK_1";
 
             AstNode constraintNode = nodeFactory().node(ck_name, columnNode.getParent(), mixinType);
-            constraintNode.setProperty(NAME, ck_name);
             constraintNode.setProperty(CONSTRAINT_TYPE, CHECK);
 
             String clause = consumeParenBoundedTokens(tokens, true);
@@ -1778,27 +1819,27 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
         // EXAMPLE : foreign key (contact_id) references contact (contact_id) on delete cascade INITIALLY DEFERRED,
         if (tokens.canConsume("INITIALLY", "DEFERRED")) {
-            AstNode attrNode = nodeFactory().node("CONSTRAINT_ATTRIBUTE", constraintNode, CONSTRAINT_ATTRIBUTE_TYPE);
+            AstNode attrNode = nodeFactory().node("CONSTRAINT_ATTRIBUTE", constraintNode, TYPE_CONSTRAINT_ATTRIBUTE);
             attrNode.setProperty(PROPERTY_VALUE, "INITIALLY DEFERRED");
         }
         if (tokens.canConsume("INITIALLY", "IMMEDIATE")) {
-            AstNode attrNode = nodeFactory().node("CONSTRAINT_ATTRIBUTE", constraintNode, CONSTRAINT_ATTRIBUTE_TYPE);
+            AstNode attrNode = nodeFactory().node("CONSTRAINT_ATTRIBUTE", constraintNode, TYPE_CONSTRAINT_ATTRIBUTE);
             attrNode.setProperty(PROPERTY_VALUE, "INITIALLY IMMEDIATE");
         }
         if (tokens.canConsume("NOT", "DEFERRABLE")) {
-            AstNode attrNode = nodeFactory().node("CONSTRAINT_ATTRIBUTE", constraintNode, CONSTRAINT_ATTRIBUTE_TYPE);
+            AstNode attrNode = nodeFactory().node("CONSTRAINT_ATTRIBUTE", constraintNode, TYPE_CONSTRAINT_ATTRIBUTE);
             attrNode.setProperty(PROPERTY_VALUE, "NOT DEFERRABLE");
         }
         if (tokens.canConsume("DEFERRABLE")) {
-            AstNode attrNode = nodeFactory().node("CONSTRAINT_ATTRIBUTE", constraintNode, CONSTRAINT_ATTRIBUTE_TYPE);
+            AstNode attrNode = nodeFactory().node("CONSTRAINT_ATTRIBUTE", constraintNode, TYPE_CONSTRAINT_ATTRIBUTE);
             attrNode.setProperty(PROPERTY_VALUE, "DEFERRABLE");
         }
         if (tokens.canConsume("INITIALLY", "DEFERRED")) {
-            AstNode attrNode = nodeFactory().node("CONSTRAINT_ATTRIBUTE", constraintNode, CONSTRAINT_ATTRIBUTE_TYPE);
+            AstNode attrNode = nodeFactory().node("CONSTRAINT_ATTRIBUTE", constraintNode, TYPE_CONSTRAINT_ATTRIBUTE);
             attrNode.setProperty(PROPERTY_VALUE, "INITIALLY DEFERRED");
         }
         if (tokens.canConsume("INITIALLY", "IMMEDIATE")) {
-            AstNode attrNode = nodeFactory().node("CONSTRAINT_ATTRIBUTE", constraintNode, CONSTRAINT_ATTRIBUTE_TYPE);
+            AstNode attrNode = nodeFactory().node("CONSTRAINT_ATTRIBUTE", constraintNode, TYPE_CONSTRAINT_ATTRIBUTE);
             attrNode.setProperty(PROPERTY_VALUE, "INITIALLY IMMEDIATE");
         }
     }
@@ -2609,7 +2650,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
         if (tokens.canConsume("DEFAULT")) {
 
-            int optionID = -1;
+            String optionID;
             int precision = -1;
 
             if (tokens.canConsume("CURRENT_DATE")) {
@@ -2758,6 +2799,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
         String source = tokens.getMarkedContent().trim();
         statementNode.setProperty(DDL_EXPRESSION, source);
+        statementNode.setProperty(DDL_LENGTH, source.length());
         statementNode.setProperty(DDL_START_LINE_NUMBER, currentMarkedPosition.getLine());
         statementNode.setProperty(DDL_START_CHAR_INDEX, currentMarkedPosition.getIndexInContent());
         statementNode.setProperty(DDL_START_COLUMN_NUMBER, currentMarkedPosition.getColumn());

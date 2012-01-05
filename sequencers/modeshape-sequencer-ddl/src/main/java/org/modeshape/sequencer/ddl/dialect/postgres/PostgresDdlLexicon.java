@@ -130,7 +130,8 @@ public class PostgresDdlLexicon  extends StandardDdlLexicon {
     public static final String TYPE_TRUNCATE_STATEMENT 				= Namespace.PREFIX + ":truncateStatement";
     public static final String TYPE_UNLISTEN_STATEMENT 				= Namespace.PREFIX + ":unlistenStatement";
     public static final String TYPE_VACUUM_STATEMENT 					= Namespace.PREFIX + ":vacuumStatement";
-    
+    public static final String TYPE_COMMIT_STATEMENT 					= Namespace.PREFIX + ":commitStatement";
+
     public static final String TYPE_GRANT_ON_SEQUENCE_STATEMENT       = Namespace.PREFIX + ":grantOnSequenceStatement";
     public static final String TYPE_GRANT_ON_DATABASE_STATEMENT       = Namespace.PREFIX + ":grantOnDatabaseStatement";
     public static final String TYPE_GRANT_ON_FOREIGN_DATA_WRAPPER_STATEMENT  = Namespace.PREFIX + ":grantOnForeignDataWrapperStatement";
@@ -145,7 +146,7 @@ public class PostgresDdlLexicon  extends StandardDdlLexicon {
     public static final String TYPE_RENAME_COLUMN 					= Namespace.PREFIX + ":renamedColumn";
     
     public static final String SCHEMA_NAME 							= Namespace.PREFIX + ":schemaName";
-    public static final String FUNCTION_PARAMETER                     = Namespace.PREFIX + ":functionParameter";
+    public static final String TYPE_FUNCTION_PARAMETER                     = Namespace.PREFIX + ":functionParameter";
     public static final String FUNCTION_PARAMETER_MODE                = Namespace.PREFIX + ":mode";
     public static final String ROLE                                   = Namespace.PREFIX + ":role";
     

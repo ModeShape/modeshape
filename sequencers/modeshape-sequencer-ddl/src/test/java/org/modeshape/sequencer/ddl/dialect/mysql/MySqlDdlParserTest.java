@@ -25,6 +25,7 @@ package org.modeshape.sequencer.ddl.dialect.mysql;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+import org.junit.Ignore;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_TABLE_STATEMENT;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_TABLE_STATEMENT;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_VIEW_STATEMENT;
@@ -108,7 +109,8 @@ public class MySqlDdlParserTest extends DdlParserTestHelper {
         assertThat(insertIntos.size(), is(1));
     }
 
-    // @Test
+    @Ignore
+    @Test
     public void shouldParseMySqlTestStatements() {
         printTest("shouldParseMySqlTestStatements()");
         String content = getFileContent(DDL_FILE_PATH + "mysql_test_statements.ddl");

@@ -23,20 +23,55 @@
  */
 package org.modeshape.sequencer.ddl.dialect.postgres;
 
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.*;
-import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.*;
-import java.util.ArrayList;
-import java.util.List;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.sequencer.ddl.DdlParserProblem;
 import org.modeshape.sequencer.ddl.DdlSequencerI18n;
 import org.modeshape.sequencer.ddl.DdlTokenStream;
-import org.modeshape.sequencer.ddl.StandardDdlLexicon;
-import org.modeshape.sequencer.ddl.StandardDdlParser;
 import org.modeshape.sequencer.ddl.DdlTokenStream.DdlTokenizer;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.ALL_PRIVILEGES;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_EXPRESSION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_LENGTH;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_ORIGINAL_EXPRESSION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_START_CHAR_INDEX;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_START_COLUMN_NUMBER;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_START_LINE_NUMBER;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DEFAULT_ID_CURRENT_USER;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DEFAULT_ID_DATETIME;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DEFAULT_ID_LITERAL;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DEFAULT_ID_NULL;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DEFAULT_ID_SESSION_USER;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DEFAULT_ID_SYSTEM_USER;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DEFAULT_ID_USER;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DEFAULT_OPTION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DEFAULT_PRECISION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DEFAULT_VALUE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DROP_BEHAVIOR;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.GRANTEE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.GRANT_PRIVILEGE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.NEW_NAME;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_COLUMN_DEFINITION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_DEFINITION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_REFERENCE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_COLUMN_DEFINITION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_DOMAIN_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_SCHEMA_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_TABLE_CONSTRAINT_DEFINITION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_VIEW_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_GRANT_ON_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_MISSING_TERMINATOR;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_STATEMENT_OPTION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_UNKNOWN_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.VALUE;
+import org.modeshape.sequencer.ddl.StandardDdlParser;
 import org.modeshape.sequencer.ddl.datatype.DataType;
 import org.modeshape.sequencer.ddl.datatype.DataTypeParser;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.*;
 import org.modeshape.sequencer.ddl.node.AstNode;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Postgres-specific DDL Parser. Includes custom data types as well as custom DDL statements.
@@ -719,7 +754,7 @@ public class PostgresDdlParser extends StandardDdlParser
                 tokens.consume();
             }
             tokens.consume("DEFAULT");
-            int optionID = -1;
+            String optionID;
             int precision = -1;
 
             if (tokens.canConsume("CURRENT_DATE")) {
@@ -851,6 +886,8 @@ public class PostgresDdlParser extends StandardDdlParser
             return parseStatement(tokens, STMT_UNLISTEN, parentNode, TYPE_UNLISTEN_STATEMENT);
         } else if (tokens.matches(STMT_VACUUM)) {
             return parseStatement(tokens, STMT_VACUUM, parentNode, TYPE_VACUUM_STATEMENT);
+        } else if (tokens.matches(STMT_COMMIT)) {
+            return parseStatement(tokens, STMT_COMMIT, parentNode, TYPE_COMMIT_STATEMENT);
         }
 
         return super.parseCustomStatement(tokens, parentNode);
@@ -1012,6 +1049,7 @@ public class PostgresDdlParser extends StandardDdlParser
             }
             sb.append(SEMICOLON);
             dropNode.setProperty(DDL_EXPRESSION, sb.toString());
+            dropNode.setProperty(DDL_LENGTH, sb.length());
             dropNode.setProperty(DDL_ORIGINAL_EXPRESSION, originalExpression);
         }
 
@@ -1042,6 +1080,7 @@ public class PostgresDdlParser extends StandardDdlParser
         sb.append(SEMICOLON);
 
         newNode.setProperty(DDL_EXPRESSION, sb.toString());
+        newNode.setProperty(DDL_LENGTH, sb.length());
         newNode.setProperty(DDL_ORIGINAL_EXPRESSION, originalExpression);
 
         return newNode;
@@ -1196,6 +1235,7 @@ public class PostgresDdlParser extends StandardDdlParser
         for (int i = 1; i < grantNodes.size(); i++) {
             AstNode grantNode = grantNodes.get(i);
             grantNode.setProperty(DDL_EXPRESSION, firstGrantNode.getProperty(DDL_EXPRESSION));
+            grantNode.setProperty(DDL_LENGTH, firstGrantNode.getProperty(DDL_LENGTH));
             grantNode.setProperty(DDL_START_LINE_NUMBER, firstGrantNode.getProperty(DDL_START_LINE_NUMBER));
             grantNode.setProperty(DDL_START_CHAR_INDEX, firstGrantNode.getProperty(DDL_START_CHAR_INDEX));
             grantNode.setProperty(DDL_START_COLUMN_NUMBER, firstGrantNode.getProperty(DDL_START_COLUMN_NUMBER));
@@ -1365,7 +1405,7 @@ public class PostgresDdlParser extends StandardDdlParser
                         DataType dType = getDatatypeParser().parse(tokens);
                         if (dType != null) {
                             // NO Parameter Name, only DataType
-                            paramNode = nodeFactory().node("parameter", grantFunctionNode, FUNCTION_PARAMETER);
+                            paramNode = nodeFactory().node("parameter", grantFunctionNode, TYPE_FUNCTION_PARAMETER);
                             if (mode != null) {
                                 paramNode.setProperty(FUNCTION_PARAMETER_MODE, mode);
                             }
@@ -1375,7 +1415,7 @@ public class PostgresDdlParser extends StandardDdlParser
                             dType = getDatatypeParser().parse(tokens);
                             assert paramName != null;
 
-                            paramNode = nodeFactory().node(paramName, grantFunctionNode, FUNCTION_PARAMETER);
+                            paramNode = nodeFactory().node(paramName, grantFunctionNode, TYPE_FUNCTION_PARAMETER);
                             if (mode != null) {
                                 paramNode.setProperty(FUNCTION_PARAMETER_MODE, mode);
                             }
@@ -1617,7 +1657,7 @@ public class PostgresDdlParser extends StandardDdlParser
         } while (localTokens.canConsume(COMMA));
 
         if (unusedTokensSB.length() > 0) {
-            String msg = DdlSequencerI18n.unusedTokensParsingColumnDefinition.text(tableNode.getProperty(StandardDdlLexicon.NAME));
+            String msg = DdlSequencerI18n.unusedTokensParsingColumnDefinition.text(tableNode.getName());
             DdlParserProblem problem = new DdlParserProblem(Problems.WARNING, getCurrentMarkedPosition(), msg);
             problem.setUnusedSource(unusedTokensSB.toString());
             addProblem(problem, tableNode);

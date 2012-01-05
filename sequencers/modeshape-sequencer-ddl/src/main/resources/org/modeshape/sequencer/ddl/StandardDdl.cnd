@@ -38,7 +38,6 @@
 [ddl:operation] mixin abstract
 
 [ddl:operand] mixin abstract
-  - ddl:name (STRING)
 
 // =============================================================================
 // STATEMENT
@@ -49,7 +48,7 @@
   - ddl:startLineNumber (long) mandatory                    // The starting line number for the statement
   - ddl:startColumnNumber (long) mandatory                  // The starting column number for the statement
   - ddl:startCharIndex (long) mandatory                     // The starting content character index for the statement
-  - ddl:length (long)                             // The string length
+  - ddl:length (long)  mandatory                           // The string length
   + ddl:problem (ddl:ddlProblem) = ddl:ddlProblem sns       // Problems encountered during parsing.
 
 // =============================================================================
@@ -113,13 +112,13 @@
 // COLUMN
 // =============================================================================
 [ddl:columnDefinition] > ddl:creatable, ddl:columnOperand mixin
-  - ddl:datatypeName (STRING) mandatory
+  - ddl:datatypeName (STRING)
   - ddl:datatypeLength (LONG)
   - ddl:datatypePrecision (LONG)
   - ddl:datatypeScale (LONG)
   - ddl:nullable (STRING)
   - ddl:defaultOption (STRING) 
-      < 0, 1, 2, 3, 4, 5, 6
+      < 'LITERAL', 'DATETIME', 'USER', 'CURRENT_USER', 'SESSION_USER', 'SYSTEM_USER', 'NULL'
   - ddl:defaultValue (STRING)
   - ddl:defaultPrecision (LONG)
   - ddl:collationName (STRING)
@@ -130,7 +129,7 @@
 // TABLE CONSTRAINT
 // =============================================================================
 [ddl:tableConstraint] > ddl:creatable, ddl:tableConstraintOperand mixin
-  - ddl:constraintType (STRING) mandatory
+  - ddl:constraintType (STRING)
       < 'UNIQUE', 'PRIMARY KEY', 'FOREIGN KEY', 'CHECK'
   - ddl:deferrable (STRING)
       < 'DEFERRABLE', 'NOT DEFERRABLE'
@@ -172,7 +171,6 @@
 // CREATE VIEW
 // =============================================================================
 [ddl:createViewStatement] > ddl:statement, ddl:creatable, ddl:viewOperand mixin
-  - ddl:sqlExpression (STRING)
   - ddl:checkOption (STRING)
   + * (ddl:columnReference) = ddl:columnReference sns
   
@@ -184,13 +182,11 @@
   - ddl:datatypeLength (LONG)
   - ddl:datatypePrecision (LONG)
   - ddl:datatypeScale (LONG)
-  - ddl:nullable (STRING)
-  - ddl:defaultOption (STRING) 
-      <  0, 1, 2, 3, 4, 5, 6
+  - ddl:defaultOption (STRING)
+      <  'LITERAL', 'DATETIME', 'USER', 'CURRENT_USER', 'SESSION_USER', 'SYSTEM_USER', 'NULL'
   - ddl:defaultValue (STRING)
   - ddl:defaultPrecision (LONG)
   - ddl:collationName (STRING)
-  + ddl:domainConstraintDefinition (ddl:tableConstraint) = ddl:tableConstraint sns
 
 // =============================================================================
 // CREATE ASSERTION

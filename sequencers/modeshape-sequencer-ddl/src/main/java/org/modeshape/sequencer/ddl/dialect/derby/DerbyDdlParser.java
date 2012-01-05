@@ -136,9 +136,9 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
         } else if (tokens.matches(STMT_CREATE_FUNCTION)) {
             return parseCreateFunction(tokens, parentNode);
         } else if (tokens.matches(STMT_CREATE_PROCEDURE)) {
-            return parseStatement(tokens, STMT_CREATE_PROCEDURE, parentNode, TYPE_CREATE_PROCEDURE_STATEMENT);
+            return parseCreateProcedure(tokens, parentNode);
         } else if (tokens.matches(STMT_CREATE_ROLE)) {
-            return parseStatement(tokens, STMT_CREATE_ROLE, parentNode, TYPE_CREATE_ROLE_STATEMENT);
+            return parseCreateRole(tokens, parentNode);
         } else if (tokens.matches(STMT_CREATE_SYNONYM)) {
             return parseCreateSynonym(tokens, parentNode);
         } else if (tokens.matches(STMT_CREATE_TRIGGER)) {
@@ -248,8 +248,15 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
 
         if (tokens.canConsume("TABLE")) {
             AstNode tableNode = nodeFactory().node("TABLE", functionNode, TYPE_CREATE_TABLE_STATEMENT);
+            tableNode.setProperty(DDL_START_LINE_NUMBER, getCurrentMarkedPosition().getLine());
+            tableNode.setProperty(DDL_START_CHAR_INDEX, getCurrentMarkedPosition().getIndexInContent());
+            tableNode.setProperty(DDL_START_COLUMN_NUMBER, getCurrentMarkedPosition().getColumn());
             parseColumnsAndConstraints(tokens, tableNode);
-            tableNode.setProperty(IS_TABLE_TYPE, true);
+            String expressionSource = "TABLE " + tokens.getMarkedContent();
+            tableNode.setProperty(DDL_EXPRESSION, expressionSource);
+            tableNode.setProperty(DDL_LENGTH, expressionSource.length());
+
+            functionNode.setProperty(IS_TABLE_TYPE, true);
         } else {
             // Assume DataType
             DataType datatype = getDatatypeParser().parse(tokens);
@@ -282,12 +289,11 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
                 AstNode optionNode = nodeFactory().node("externalName", functionNode, TYPE_STATEMENT_OPTION);
                 optionNode.setProperty(VALUE, "EXTERNAL NAME" + SPACE + extName);
             } else if (tokens.canConsume("PARAMETER", "STYLE")) {
-                AstNode optionNode = nodeFactory().node("parameterStyle", functionNode, TYPE_STATEMENT_OPTION);
                 if (tokens.canConsume("JAVA")) {
-                    optionNode.setProperty(VALUE, "PARAMETER STYLE" + SPACE + "JAVA");
+                    functionNode.setProperty(PARAMETER_STYLE, "PARAMETER STYLE" + SPACE + "JAVA");
                 } else {
                     tokens.consume("DERBY_JDBC_RESULT_SET");
-                    optionNode.setProperty(VALUE, "PARAMETER STYLE" + SPACE + "DERBY_JDBC_RESULT_SET");
+                    functionNode.setProperty(PARAMETER_STYLE, "PARAMETER STYLE" + SPACE + "DERBY_JDBC_RESULT_SET");
                 }
             } else if (tokens.canConsume("NO", "SQL")) {
                 AstNode optionNode = nodeFactory().node("sqlStatus", functionNode, TYPE_STATEMENT_OPTION);
@@ -363,7 +369,34 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
 
         String functionName = parseName(tokens);
 
-        AstNode functionNode = nodeFactory().node(functionName, parentNode, TYPE_CREATE_FUNCTION_STATEMENT);
+        AstNode functionNode = nodeFactory().node(functionName, parentNode, TYPE_CREATE_PROCEDURE_STATEMENT);
+
+        parseUntilTerminator(tokens);
+        markEndOfStatement(tokens, functionNode);
+
+        return functionNode;
+    }
+
+  /**
+     * Parses DDL CREATE ROLE statement
+     *
+     * @param tokens the tokenized {@link DdlTokenStream} of the DDL input content; may not be null
+     * @param parentNode the parent {@link AstNode} node; may not be null
+     * @return the parsed CREATE ROLE statement node
+     * @throws ParsingException
+     */
+    protected AstNode parseCreateRole( DdlTokenStream tokens,
+                                            AstNode parentNode ) throws ParsingException {
+        assert tokens != null;
+        assert parentNode != null;
+
+        markStartOfStatement(tokens);
+
+        tokens.consume(CREATE, "ROLE");
+
+        String functionName = parseName(tokens);
+
+        AstNode functionNode = nodeFactory().node(functionName, parentNode, TYPE_CREATE_ROLE_STATEMENT);
 
         markEndOfStatement(tokens, functionNode);
 
@@ -659,7 +692,6 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
                 String columnName = parseName(tokens);
 
                 AstNode columnNode = nodeFactory().node(columnName, alterTableNode, TYPE_DROP_COLUMN_DEFINITION);
-                columnNode.setProperty(StandardDdlLexicon.NAME, columnName);
 
                 if (tokens.canConsume(DropBehavior.CASCADE)) {
                     columnNode.setProperty(StandardDdlLexicon.DROP_BEHAVIOR, DropBehavior.CASCADE);
@@ -791,7 +823,7 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
         }
 
         if (unusedTokensSB.length() > 0) {
-            String msg = DdlSequencerI18n.unusedTokensParsingColumnDefinition.text(tableNode.getProperty(StandardDdlLexicon.NAME));
+            String msg = DdlSequencerI18n.unusedTokensParsingColumnDefinition.text(tableNode.getName());
             DdlParserProblem problem = new DdlParserProblem(Problems.WARNING, getCurrentMarkedPosition(), msg);
             problem.setUnusedSource(unusedTokensSB.toString());
             addProblem(problem, tableNode);
@@ -829,7 +861,7 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
         } while (localTokens.canConsume(COMMA));
 
         if (unusedTokensSB.length() > 0) {
-            String msg = DdlSequencerI18n.unusedTokensParsingColumnDefinition.text(tableNode.getProperty(StandardDdlLexicon.NAME));
+            String msg = DdlSequencerI18n.unusedTokensParsingColumnDefinition.text(tableNode.getName());
             DdlParserProblem problem = new DdlParserProblem(Problems.WARNING, getCurrentMarkedPosition(), msg);
             problem.setUnusedSource(unusedTokensSB.toString());
             addProblem(problem, tableNode);
@@ -866,7 +898,7 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
                 tokens.consume(R_PAREN);
                 sb.append(SPACE).append(R_PAREN);
             }
-            AstNode propNode = nodeFactory().node("GENERATED_COLUMN_SPEC", columnNode, COLUMN_ATTRIBUTE_TYPE);
+            AstNode propNode = nodeFactory().node(COLUMN_ATTRIBUTE, columnNode, TYPE_SIMPLE_PROPERTY);
             propNode.setProperty(PROPERTY_VALUE, sb.toString());
 
             return true;

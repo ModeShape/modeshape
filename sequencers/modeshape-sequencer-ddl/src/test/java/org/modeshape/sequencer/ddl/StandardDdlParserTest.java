@@ -30,47 +30,18 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.CONSTRAINT_ATTRIBUTE_TYPE;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.CONSTRAINT_TYPE;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_LENGTH;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_NAME;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_PRECISION;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_SCALE;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DEFAULT_OPTION;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DEFAULT_VALUE;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DROP_BEHAVIOR;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.NULLABLE;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.PROPERTY_VALUE;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ADD_TABLE_CONSTRAINT_DEFINITION;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_TABLE_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_DEFINITION;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_REFERENCE;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_SCHEMA_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_TABLE_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_VIEW_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_ASSERTION_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_CHARACTER_SET_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_COLLATION_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_DOMAIN_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_SCHEMA_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_TABLE_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_TRANSLATION_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_VIEW_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_STATEMENT_OPTION;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_TABLE_CONSTRAINT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.VALUE;
 import java.util.List;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.*;
 import org.modeshape.sequencer.ddl.node.AstNode;
 
 public class StandardDdlParserTest extends DdlParserTestHelper {
 
     public static final String DDL_FILE_PATH = "ddl/";
-    public static final String MM_DDL_FILE_PATH = "mmddl/";
 
     @Before
     public void beforeEach() {
@@ -647,7 +618,7 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
 
         assertEquals(1, constraintNode.getChildCount()); // ONE CHILD
 
-        List<AstNode> attributes = parser.nodeFactory().getChildrenForType(constraintNode, CONSTRAINT_ATTRIBUTE_TYPE);
+        List<AstNode> attributes = parser.nodeFactory().getChildrenForType(constraintNode, TYPE_CONSTRAINT_ATTRIBUTE);
         assertEquals(1, attributes.size());
         assertEquals(content, attributes.get(0).getProperty(PROPERTY_VALUE));
 
@@ -661,7 +632,7 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
 
         assertEquals(2, constraintNode.getChildCount()); // TWO CHILDREN
 
-        attributes = parser.nodeFactory().getChildrenForType(constraintNode, CONSTRAINT_ATTRIBUTE_TYPE);
+        attributes = parser.nodeFactory().getChildrenForType(constraintNode, TYPE_CONSTRAINT_ATTRIBUTE);
         assertEquals(2, attributes.size());
         assertEquals("INITIALLY IMMEDIATE", attributes.get(0).getProperty(PROPERTY_VALUE));
         assertEquals("DEFERRABLE", attributes.get(1).getProperty(PROPERTY_VALUE));
@@ -676,7 +647,7 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
 
         assertEquals(2, constraintNode.getChildCount()); // 2 Children
 
-        attributes = parser.nodeFactory().getChildrenForType(constraintNode, CONSTRAINT_ATTRIBUTE_TYPE);
+        attributes = parser.nodeFactory().getChildrenForType(constraintNode, TYPE_CONSTRAINT_ATTRIBUTE);
         assertEquals(2, attributes.size());
         assertEquals("NOT DEFERRABLE", attributes.get(0).getProperty(PROPERTY_VALUE));
         assertEquals("INITIALLY IMMEDIATE", attributes.get(1).getProperty(PROPERTY_VALUE));

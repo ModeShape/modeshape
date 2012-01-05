@@ -122,7 +122,7 @@ public class StandardDdlLexicon {
     public static final String TYPE_DROP_TABLE_CONSTRAINT_DEFINITION = PREFIX + ":dropTableConstraintDefinition";
     public static final String TYPE_ADD_TABLE_CONSTRAINT_DEFINITION = PREFIX + ":addTableConstraintDefinition";
 
-    public static final String TYPE_PROBLEM = PREFIX + ":problem";
+    public static final String TYPE_PROBLEM = PREFIX + ":ddlProblem";
     public static final String TYPE_COLUMN_DEFINITION = PREFIX + ":columnDefinition";
     public static final String TYPE_COLUMN_REFERENCE = PREFIX + ":columnReference";
     public static final String TYPE_TABLE_CONSTRAINT = PREFIX + ":tableConstraint";
@@ -130,18 +130,19 @@ public class StandardDdlLexicon {
     public static final String TYPE_TABLE_REFERENCE = PREFIX + ":tableReference";
     public static final String TYPE_FK_COLUMN_REFERENCE = PREFIX + ":fkColumnReference";
     public static final String TYPE_CLAUSE = PREFIX + ":clause";
-
+    public static final String TYPE_DOMAIN_CONSTRAINT = PREFIX + ":domainConstraint";
+    public static final String TYPE_SIMPLE_PROPERTY = PREFIX + ":simpleProperty";
+    /*
+     * node property names
+     */
     public static final String DDL_EXPRESSION = PREFIX + ":expression";
     public static final String DDL_ORIGINAL_EXPRESSION = PREFIX + ":originalExpression";
     public static final String DDL_START_LINE_NUMBER = PREFIX + ":startLineNumber";
     public static final String DDL_START_COLUMN_NUMBER = PREFIX + ":startColumnNumber";
     public static final String DDL_START_CHAR_INDEX = PREFIX + ":startCharIndex";
-    // public static final Name DDL_LENGTH = new BasicName(Namespace.URI, "length");
+    public static final String DDL_PROBLEM = PREFIX + ":problem";
+    public static final String DDL_LENGTH = PREFIX + ":length";
 
-    /*
-     * node property names
-     */
-    public static final String NAME = PREFIX + ":name";
     public static final String OPTION = PREFIX + ":option";
     public static final String TYPE = PREFIX + ":type";
     public static final String NEW_NAME = PREFIX +":newName";
@@ -174,11 +175,34 @@ public class StandardDdlLexicon {
 
     public static final String MESSAGE = PREFIX + ":message";
 
+    public static final String EXISTING_NAME = PREFIX + ":existingName";
+    public static final String COLLATION_CHARACTER_SET_NAME = PREFIX + ":characterSetName";
+    public static final String COLLATION_SOURCE = PREFIX + ":collationSource";
+    public static final String PAD_ATTRIBUTE = PREFIX + ":padAttribute";
+
+    public static final String SOURCE_CHARACTER_SET_NAME = PREFIX + ":sourceCharacterSetName";
+    public static final String TARGET_CHARACTER_SET_NAME = PREFIX + ":targetCharacterSetName";
+
+
+    public static final String DROP_OPTION = PREFIX + ":dropOption";
+    public static final String COLUMN_ATTRIBUTE = PREFIX + ":columnAttribute";
+
+    /**
+     * value constraints
+     */
+    public static final String PAD_ATTRIBUTE_PAD = "PAD SPACE";
+    public static final String PAD_ATTRIBUTE_NO_PAD = "NO PAD";
+    public static final String DEFAULT_ID_LITERAL = "LITERAL";
+    public static final String DEFAULT_ID_DATETIME = "DATETIME";
+    public static final String DEFAULT_ID_USER = "USER";
+    public static final String DEFAULT_ID_CURRENT_USER = "CURRENT_USER";
+    public static final String DEFAULT_ID_SESSION_USER = "SESSION_USER";
+    public static final String DEFAULT_ID_SYSTEM_USER = "SYSTEM_USER";
+    public static final String DEFAULT_ID_NULL = "NULL";
+
     /*
      * node child types
      */
-
-    public static final String DROP_OPTION_TYPE = PREFIX + ":dropOption";
-    public static final String COLUMN_ATTRIBUTE_TYPE = PREFIX + ":columnAttribute";
-    public static final String CONSTRAINT_ATTRIBUTE_TYPE = PREFIX + ":constraintAttribute";
+    public static final String TYPE_DROP_OPTION = PREFIX + ":dropOption";
+    public static final String TYPE_CONSTRAINT_ATTRIBUTE = PREFIX + ":constraintAttribute";
 }
