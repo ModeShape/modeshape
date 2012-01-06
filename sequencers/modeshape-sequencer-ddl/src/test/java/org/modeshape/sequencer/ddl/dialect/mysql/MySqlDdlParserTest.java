@@ -109,7 +109,7 @@ public class MySqlDdlParserTest extends DdlParserTestHelper {
         assertThat(insertIntos.size(), is(1));
     }
 
-    @Ignore
+    @Ignore("MySql support not fully implemented yet")
     @Test
     public void shouldParseMySqlTestStatements() {
         printTest("shouldParseMySqlTestStatements()");
