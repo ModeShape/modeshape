@@ -24,14 +24,7 @@
 package org.modeshape.jcr;
 
 import java.io.Serializable;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.jcr.NamespaceRegistry;
@@ -184,11 +177,13 @@ public class Sequencers implements ChangeSetListener {
             }
 
             // Initialize each sequencer using the supplied session ...
-            for (Sequencer sequencer : sequencersByName.values()) {
+            for (Iterator<Map.Entry<String, Sequencer>> sequencersIterator = sequencersByName.entrySet().iterator(); sequencersIterator.hasNext();) {
+                Sequencer sequencer = sequencersIterator.next().getValue();
                 try {
                     sequencer.initialize(registry, (org.modeshape.jcr.api.nodetype.NodeTypeManager)nodeTypeManager);
                 } catch (Throwable t) {
                     logger.error(JcrI18n.unableToInitializeSequencer, sequencer.getName(), repository.name(), t.getMessage());
+                    sequencersIterator.remove();
                 }
             }
         } catch (RepositoryException e) {

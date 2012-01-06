@@ -28,6 +28,7 @@
 
         <module>sequencers/modeshape-sequencer-images</module>
         <module>sequencers/modeshape-sequencer-classfile</module>
+        <module>sequencers/modeshape-sequencer-ddl</module>
 	</modules>
 	<properties>
 		<rootDir>${project.basedir}</rootDir>

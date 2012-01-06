@@ -33,7 +33,9 @@ public final class JcrConstants {
     public static final String JCR_CONTENT = "jcr:content";
     public static final String JCR_NAME = "jcr:name";
     public static final String JCR_DATA = "jcr:data";
+    public static final String JCR_MIXIN_TYPES = "jcr:mixinTypes";
     public static final String JCR_PRIMARY_TYPE = "jcr:primaryType";
+
     public static final String NT_UNSTRUCTURED = "nt:unstructured";
 
     private JcrConstants() {
