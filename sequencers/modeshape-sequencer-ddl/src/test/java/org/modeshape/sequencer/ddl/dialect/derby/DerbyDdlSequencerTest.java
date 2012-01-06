@@ -23,15 +23,37 @@
  */
 package org.modeshape.sequencer.ddl.dialect.derby;
 
-import javax.jcr.Node;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
-import org.junit.Test;
 import static org.modeshape.jcr.api.JcrConstants.NT_UNSTRUCTURED;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.CONSTRAINT_TYPE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_NAME;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_START_LINE_NUMBER;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.GRANTEE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.NEW_NAME;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.PARSER_ID;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ADD_TABLE_CONSTRAINT_DEFINITION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_REFERENCE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_SCHEMA_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.VALUE;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.PARAMETER_STYLE;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TABLE_NAME;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_CREATE_FUNCTION_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_CREATE_INDEX_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_CREATE_SYNONYM_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_CREATE_TRIGGER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_DECLARE_GLOBAL_TEMPORARY_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_DROP_PROCEDURE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_GRANT_ON_PROCEDURE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_GRANT_ROLES_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_INDEX_COLUMN_REFERENCE;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_LOCK_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_RENAME_TABLE_STATEMENT;
+import javax.jcr.Node;
+import org.junit.Test;
 import org.modeshape.sequencer.ddl.AbstractDdlSequencerTest;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.*;
-import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.*;
 
 /**
  * Unit test for the {@link org.modeshape.sequencer.ddl.DdlSequencer} when Derby specific files are used
@@ -50,7 +72,7 @@ public class DerbyDdlSequencerTest extends AbstractDdlSequencerTest {
         Node indexNode = statementsNode.getNode("IXSALE");
         assertNotNull(indexNode);
         verifyBaseProperties(indexNode, NT_UNSTRUCTURED, "87", "1", "2886", 1);
-        verifyMixinType(indexNode, TYPE_CREATE_INDEX_STATEMENT);        
+        verifyMixinType(indexNode, TYPE_CREATE_INDEX_STATEMENT);
         findNode(indexNode, "SALES", TYPE_INDEX_COLUMN_REFERENCE);
 
         Node schemaNode = statementsNode.getNode("FLIGHTS");
@@ -82,7 +104,6 @@ public class DerbyDdlSequencerTest extends AbstractDdlSequencerTest {
         verifyPrimaryType(colRefNode, NT_UNSTRUCTURED);
         verifyMixinType(colRefNode, TYPE_COLUMN_REFERENCE);
 
-
         // Create Function
         Node functionNode = findNode(statementsNode, "PROPERTY_FILE_READER", TYPE_CREATE_FUNCTION_STATEMENT);
         verifyProperty(functionNode, DDL_START_LINE_NUMBER, 71);
@@ -95,8 +116,8 @@ public class DerbyDdlSequencerTest extends AbstractDdlSequencerTest {
         verifyProperty(colNode, DATATYPE_NAME, "int");
 
         // LOCK TABLE FlightAvailability IN EXCLUSIVE MODE;
-        Node lockNode = findNode(statementsNode, "FlightAvailability", TYPE_LOCK_TABLE_STATEMENT);        
-        Node optionNode = findNode(lockNode, "lockMode");       
+        Node lockNode = findNode(statementsNode, "FlightAvailability", TYPE_LOCK_TABLE_STATEMENT);
+        Node optionNode = findNode(lockNode, "lockMode");
         verifyProperty(optionNode, VALUE, "EXCLUSIVE");
 
         // RENAME TABLE SAMP.EMP_ACT TO EMPLOYEE_ACT
@@ -104,7 +125,7 @@ public class DerbyDdlSequencerTest extends AbstractDdlSequencerTest {
         verifyProperty(renameTableNode, NEW_NAME, "EMPLOYEE_ACT");
 
         // CREATE SYNONYM SAMP.T1 FOR SAMP.TABLEWITHLONGNAME;
-        Node synonymNode = findNode(statementsNode, "SAMP.T1", TYPE_CREATE_SYNONYM_STATEMENT);       
+        Node synonymNode = findNode(statementsNode, "SAMP.T1", TYPE_CREATE_SYNONYM_STATEMENT);
         verifyProperty(synonymNode, TABLE_NAME, "SAMP.TABLEWITHLONGNAME");
 
         // CREATE TRIGGER FLIGHTSDELETE3
@@ -120,16 +141,16 @@ public class DerbyDdlSequencerTest extends AbstractDdlSequencerTest {
         // values app.notifyEmail('Jerry', 'Table x is about to be updated');
         triggerNode = findNode(statementsNode, "t1", TYPE_CREATE_TRIGGER_STATEMENT);
         verifyProperty(triggerNode, TABLE_NAME, "x");
-        optionNode = findNode(triggerNode, "forEach");       
+        optionNode = findNode(triggerNode, "forEach");
         verifyProperty(optionNode, VALUE, "FOR EACH ROW");
-        optionNode = findNode(triggerNode, "eventType");       
+        optionNode = findNode(triggerNode, "eventType");
         verifyProperty(optionNode, VALUE, "UPDATE");
 
         // GRANT EXECUTE ON PROCEDURE p TO george;
-        findNode(statementsNode, "p", TYPE_GRANT_ON_PROCEDURE_STATEMENT);      
+        findNode(statementsNode, "p", TYPE_GRANT_ON_PROCEDURE_STATEMENT);
 
         // GRANT purchases_reader_role TO george,maria;
         Node grantNode = findNode(statementsNode, "grantRoles", TYPE_GRANT_ROLES_STATEMENT);
-        Node roleNode = findNode(grantNode, "george", GRANTEE);
+        /*Node roleNode =*/findNode(grantNode, "george", GRANTEE);
     }
 }

@@ -23,10 +23,18 @@
  */
 package org.modeshape.sequencer.ddl.node;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.JcrConstants;
-import java.util.*;
 
 /**
  * Utility object class designed to facilitate constructing an AST or Abstract Syntax Tree representing nodes and properties that
@@ -44,7 +52,7 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
 
     /**
      * Construct a node with the supplied name but without a parent.
-     *
+     * 
      * @param name the name of the node; may not be null
      */
     AstNode( String name ) {
@@ -54,11 +62,12 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
 
     /**
      * Construct a node with the supplied name and parent.
-     *
+     * 
      * @param parent the parent node; may be null if the new node is to be a root
      * @param name the name of the node; may not be null
      */
-    public AstNode( AstNode parent, String name ) {
+    public AstNode( AstNode parent,
+                    String name ) {
         CheckArg.isNotNull(name, "name");
         this.name = name;
         if (parent != null) {
@@ -69,20 +78,20 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
 
     /**
      * Get the name of the node.
-     *
+     * 
      * @return the node's name; never null
      */
     public String getName() {
         return name;
     }
-    
+
     public String getPrimaryType() {
-        return (String) properties.get(JcrConstants.JCR_PRIMARY_TYPE);
+        return (String)properties.get(JcrConstants.JCR_PRIMARY_TYPE);
     }
 
     /**
      * Get the current same-name-sibling index.
-     *
+     * 
      * @return the SNS index, or 1 if this is the first sibling with the same name
      */
     public int getSameNameSiblingIndex() {
@@ -104,7 +113,7 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
 
     /**
      * Get the current path of this node
-     *
+     * 
      * @return the path of this node; never null
      */
     public String getAbsolutePath() {
@@ -119,7 +128,7 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
 
     /**
      * Get the property with the supplied name.
-     *
+     * 
      * @param name the property name; never null
      * @return the property, or null if no such property exists on the node
      */
@@ -129,12 +138,13 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
 
     /**
      * Set the property with the given name to the supplied value. Any existing property with the same name will be replaced.
-     *
+     * 
      * @param name the name of the property; may not be null
      * @param value the value of the property; may not be null
      * @return this node, for method chaining purposes
      */
-    public AstNode setProperty( String name, Object value ) {
+    public AstNode setProperty( String name,
+                                Object value ) {
         CheckArg.isNotNull(name, "name");
         CheckArg.isNotNull(value, "value");
         properties.put(name, value);
@@ -144,12 +154,13 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
     /**
      * Set the property with the given name to the supplied values. If there is at least one value, the new property will replace
      * any existing property with the same name. This method does nothing if zero values are supplied.
-     *
+     * 
      * @param name the name of the property; may not be null
      * @param values the values of the property
      * @return this node, for method chaining purposes
      */
-    public AstNode setProperty( String name, Object... values ) {
+    public AstNode setProperty( String name,
+                                Object... values ) {
         CheckArg.isNotNull(name, "name");
         CheckArg.isNotNull(values, "value");
         if (values.length != 0) {
@@ -160,7 +171,7 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
 
     /**
      * Remove and return the property with the supplied name.
-     *
+     * 
      * @param name the property name; may not be null
      * @return the list of values of the property that was removed, or null if there was no such property
      */
@@ -170,28 +181,28 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
 
     /**
      * Return the list of property names for this node.
-     *
+     * 
      * @return the list of strings.
      */
     public List<String> getPropertyNames() {
         return new ArrayList<String>(properties.keySet());
     }
 
+    @SuppressWarnings( "unchecked" )
     public List<String> getMixins() {
         Object mixinValues = getProperty(JcrConstants.JCR_MIXIN_TYPES);
         List<String> result = new ArrayList<String>();
         if (mixinValues instanceof Collection) {
-            result.addAll((Collection) mixinValues);
-        }
-        else if (mixinValues != null) {
+            result.addAll((Collection<? extends String>)mixinValues);
+        } else if (mixinValues != null) {
             result.add(mixinValues.toString());
         }
         return result;
     }
-    
+
     /**
      * Get the parent of this node.
-     *
+     * 
      * @return the parent node, or null if this node has no parent
      */
     public AstNode getParent() {
@@ -201,7 +212,7 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
     /**
      * Set the parent for this node. If this node already has a parent, this method will remove this node from the current parent.
      * If the supplied parent is not null, then this node will be added to the supplied parent's children.
-     *
+     * 
      * @param parent the new parent, or null if this node is to have no parent
      */
     public void setParent( AstNode parent ) {
@@ -218,16 +229,16 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
      * does nothing if the supplied new parent is null.
      * <p>
      * For example, consider a plan node tree before this method is called:
-     *
+     * 
      * <pre>
      *        A
      *      / | \
      *     /  |  \
      *    B   C   D
      * </pre>
-     *
+     * 
      * Then after this method is called with <code>c.insertAsParent(e)</code>, the resulting plan node tree will be:
-     *
+     * 
      * <pre>
      *        A
      *      / | \
@@ -237,14 +248,14 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
      *        |
      *        C
      * </pre>
-     *
+     * 
      * </p>
      * <p>
      * Also note that the node on which this method is called ('C' in the example above) will always be added as the
      * {@link #addLastChild(AstNode) last child} to the new parent. This allows the new parent to already have children before
      * this method is called.
      * </p>
-     *
+     * 
      * @param newParent the new parent; method does nothing if this is null
      */
     public void insertAsParent( AstNode newParent ) {
@@ -261,7 +272,7 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
     /**
      * Remove this node from its parent, and return the node that used to be the parent of this node. Note that this method
      * removes the entire subgraph under this node.
-     *
+     * 
      * @return the node that was the parent of this node, or null if this node had no parent
      * @see #extractChild(AstNode)
      * @see #extractFromParent()
@@ -279,7 +290,7 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
     /**
      * Replace the supplied child with another node. If the replacement is already a child of this node, this method effectively
      * swaps the position of the child and replacement nodes.
-     *
+     * 
      * @param child the node that is already a child and that is to be replaced; may not be null and must be a child
      * @param replacement the node that is to replace the 'child' node; may not be null
      * @return true if the child was successfully replaced
@@ -309,7 +320,7 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
 
     /**
      * Get the number of child nodes.
-     *
+     * 
      * @return the number of children; never negative
      */
     public int getChildCount() {
@@ -318,7 +329,7 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
 
     /**
      * Get the first child.
-     *
+     * 
      * @return the first child, or null if there are no children
      */
     public AstNode getFirstChild() {
@@ -327,7 +338,7 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
 
     /**
      * Get the last child.
-     *
+     * 
      * @return the last child, or null if there are no children
      */
     public AstNode getLastChild() {
@@ -336,7 +347,7 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
 
     /**
      * Get the child at the supplied index.
-     *
+     * 
      * @param index the index
      * @return the child, or null if there are no children
      * @throws IndexOutOfBoundsException if the index is not valid given the number of children
@@ -347,7 +358,7 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
 
     /**
      * Add the supplied node to the front of the list of children.
-     *
+     * 
      * @param child the node that should be added as the first child; may not be null
      */
     public void addFirstChild( AstNode child ) {
@@ -359,7 +370,7 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
 
     /**
      * Add the supplied node to the end of the list of children.
-     *
+     * 
      * @param child the node that should be added as the last child; may not be null
      */
     public void addLastChild( AstNode child ) {
@@ -371,7 +382,7 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
 
     /**
      * Add the supplied nodes at the end of the list of children.
-     *
+     * 
      * @param otherChildren the children to add; may not be null
      */
     public void addChildren( Iterable<AstNode> otherChildren ) {
@@ -383,7 +394,7 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
 
     /**
      * Add the supplied nodes at the end of the list of children.
-     *
+     * 
      * @param first the first child to add
      * @param second the second child to add
      */
@@ -399,7 +410,7 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
 
     /**
      * Add the supplied nodes at the end of the list of children.
-     *
+     * 
      * @param first the first child to add
      * @param second the second child to add
      * @param third the third child to add
@@ -420,7 +431,7 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
 
     /**
      * Remove the node from this node.
-     *
+     * 
      * @param child the child node; may not be null
      * @return true if the child was removed from this node, or false if the supplied node was not a child of this node
      */
@@ -434,7 +445,7 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
 
     /**
      * Remove the child node from this node, and replace that child with its first child (if there is one).
-     *
+     * 
      * @param child the child to be extracted; may not be null and must have at most 1 child
      * @see #extractFromParent()
      */
@@ -449,7 +460,7 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
 
     /**
      * Extract this node from its parent, but replace this node with its child (if there is one).
-     *
+     * 
      * @see #extractChild(AstNode)
      */
     public void extractFromParent() {
@@ -459,7 +470,7 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
     /**
      * Get the unmodifiable list of child nodes. This list will immediately reflect any changes made to the children (via other
      * methods), but this list cannot be used to add or remove children.
-     *
+     * 
      * @return the list of children, which immediately reflects changes but which cannot be modified directly; never null
      */
     public List<AstNode> getChildren() {
@@ -471,7 +482,7 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
      * <p>
      * This iterator is immutable.
      * </p>
-     *
+     * 
      * @see java.lang.Iterable#iterator()
      */
     @Override
@@ -481,7 +492,7 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
 
     /**
      * Remove all children from this node. All nodes immediately become orphaned. The resulting list will be mutable.
-     *
+     * 
      * @return a copy of all the of the children that were removed (and which have no parent); never null
      */
     public List<AstNode> removeAllChildren() {
@@ -489,7 +500,7 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
             return new ArrayList<AstNode>(0);
         }
         List<AstNode> copyOfChildren = new ArrayList<AstNode>(this.children);
-        for (Iterator<AstNode> childIter = this.children.iterator(); childIter.hasNext(); ) {
+        for (Iterator<AstNode> childIter = this.children.iterator(); childIter.hasNext();) {
             AstNode child = childIter.next();
             childIter.remove();
             child.parent = null;
@@ -499,7 +510,7 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
 
     /**
      * Determine whether the supplied plan is equivalent to this plan.
-     *
+     * 
      * @param other the other plan to compare with this instance
      * @return true if the two plans are equivalent, or false otherwise
      */
@@ -532,7 +543,7 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
      * This class returns a new clone of the plan tree rooted at this node. However, the top node of the resulting plan tree (that
      * is, the node returned from this method) has no parent.
      * </p>
-     *
+     * 
      * @see java.lang.Object#clone()
      */
     @Override
@@ -560,9 +571,11 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
         for (Iterator<String> propertyIt = properties.keySet().iterator(); propertyIt.hasNext();) {
             String propertyName = propertyIt.next();
             stringBuilder.append(propertyName).append(":").append(properties.get(propertyName));
-            if (propertyIt.hasNext()) {{
-                stringBuilder.append(", ");
-            }}
+            if (propertyIt.hasNext()) {
+                {
+                    stringBuilder.append(", ");
+                }
+            }
         }
         stringBuilder.append("]");
         return stringBuilder.toString();

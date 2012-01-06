@@ -23,17 +23,18 @@
  */
 package org.modeshape.sequencer.ddl.node;
 
-import org.modeshape.common.util.CheckArg;
-import static org.modeshape.jcr.api.JcrConstants.*;
+import static org.modeshape.jcr.api.JcrConstants.JCR_MIXIN_TYPES;
+import static org.modeshape.jcr.api.JcrConstants.JCR_PRIMARY_TYPE;
+import static org.modeshape.jcr.api.JcrConstants.NT_UNSTRUCTURED;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
+import org.modeshape.common.util.CheckArg;
 
 /**
  * Utility class which provides construction, editing and assorted methods to work with AstNodes.
  */
 public final class AstNodeFactory {
-  
+
     /**
      * Constructs an {@link AstNode} with the given string name
      * 
@@ -52,9 +53,12 @@ public final class AstNodeFactory {
      * 
      * @param name the name property of the node; may not be null
      * @param parent the parent of the node; may not be null
+     * @param types the mixin types; may not be null, but may be empty
      * @return the tree node
      */
-    public AstNode node( String name, AstNode parent, Object... types ) {
+    public AstNode node( String name,
+                         AstNode parent,
+                         Object... types ) {
         CheckArg.isNotNull(name, "name");
         CheckArg.isNotNull(parent, "parent");
         CheckArg.isNotEmpty(types, "types");
@@ -74,7 +78,9 @@ public final class AstNodeFactory {
      * @param type the mixin type {@link String} for the requested node; may not be null
      * @return the tree node
      */
-    public AstNode node( String name, AstNode parent, String type ) {
+    public AstNode node( String name,
+                         AstNode parent,
+                         String type ) {
         CheckArg.isNotNull(name, "name");
         CheckArg.isNotNull(parent, "parent");
         CheckArg.isNotNull(type, "type");
@@ -92,7 +98,8 @@ public final class AstNodeFactory {
      * @param node the node to set the property on; may not be null
      * @param type the mixin type {@link String}; may not be null
      */
-    public void setType( AstNode node, String type ) {
+    public void setType( AstNode node,
+                         String type ) {
         CheckArg.isNotNull(node, "node");
         CheckArg.isNotNull(type, "parent");
         node.setProperty(JCR_MIXIN_TYPES, type);
@@ -105,7 +112,8 @@ public final class AstNodeFactory {
      * @param nodeType the type property of the target child node; may not be null
      * @return the list of typed nodes (may be empty)
      */
-    public List<AstNode> getChildrenForType( AstNode astNode, String nodeType ) {
+    public List<AstNode> getChildrenForType( AstNode astNode,
+                                             String nodeType ) {
         CheckArg.isNotNull(astNode, "astNode");
         CheckArg.isNotNull(nodeType, "nodeType");
 
@@ -127,7 +135,9 @@ public final class AstNodeFactory {
      * @param nodeType the type property of the target child node; may not be null
      * @return the matched child (may be null)
      */
-    public AstNode getChildforNameAndType( AstNode astNode, String name, String nodeType ) {
+    public AstNode getChildforNameAndType( AstNode astNode,
+                                           String name,
+                                           String nodeType ) {
         CheckArg.isNotNull(astNode, "astNode");
         CheckArg.isNotNull(name, "name");
         CheckArg.isNotNull(nodeType, "nodeType");
@@ -149,7 +159,8 @@ public final class AstNodeFactory {
      * @param mixinType the target mixin type {@link String}; may not be null;
      * @return true if the mixinType exists for this node
      */
-    public boolean hasMixinType( AstNode node, String mixinType ) {
+    public boolean hasMixinType( AstNode node,
+                                 String mixinType ) {
         CheckArg.isNotNull(node, "node");
         CheckArg.isNotNull(mixinType, "mixinType");
         return node.getMixins().contains(mixinType);

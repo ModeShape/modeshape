@@ -23,13 +23,9 @@
  */
 package org.modeshape.sequencer.ddl.dialect.oracle;
 
-import org.modeshape.common.text.ParsingException;
-import org.modeshape.common.util.CheckArg;
-import org.modeshape.sequencer.ddl.*;
-import org.modeshape.sequencer.ddl.DdlTokenStream.DdlTokenizer;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.CREATE_VIEW_QUERY_EXPRESSION;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DROP_BEHAVIOR;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_OPTION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DROP_OPTION;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.NEW_NAME;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_TABLE_STATEMENT;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_REFERENCE;
@@ -38,14 +34,22 @@ import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_COLUMN_DE
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_TABLE_CONSTRAINT_DEFINITION;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_TABLE_STATEMENT;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_GRANT_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_STATEMENT_OPTION;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_UNKNOWN_STATEMENT;
-import org.modeshape.sequencer.ddl.datatype.DataType;
-import org.modeshape.sequencer.ddl.datatype.DataTypeParser;
 import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.*;
-import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_REVOKE_STATEMENT;
-import org.modeshape.sequencer.ddl.node.AstNode;
 import java.util.ArrayList;
 import java.util.List;
+import org.modeshape.common.text.ParsingException;
+import org.modeshape.common.util.CheckArg;
+import org.modeshape.sequencer.ddl.DdlParserProblem;
+import org.modeshape.sequencer.ddl.DdlSequencerI18n;
+import org.modeshape.sequencer.ddl.DdlTokenStream;
+import org.modeshape.sequencer.ddl.DdlTokenStream.DdlTokenizer;
+import org.modeshape.sequencer.ddl.StandardDdlLexicon;
+import org.modeshape.sequencer.ddl.StandardDdlParser;
+import org.modeshape.sequencer.ddl.datatype.DataType;
+import org.modeshape.sequencer.ddl.datatype.DataTypeParser;
+import org.modeshape.sequencer.ddl.node.AstNode;
 
 /**
  * Oracle-specific DDL Parser. Includes custom data types as well as custom DDL statements.
@@ -668,7 +672,7 @@ public class OracleDdlParser extends StandardDdlParser
         // GRANT { grant_system_privileges | grant_object_privileges } ;
         //
         // ** grant_system_privileges **
-        //        
+        //
         // { system_privilege | role | ALL PRIVILEGES } [, { system_privilege | role | ALL PRIVILEGES } ]...
         // TO grantee_clause [ WITH ADMIN OPTION ]
         //
@@ -718,10 +722,10 @@ public class OracleDdlParser extends StandardDdlParser
         // tokens.consume(); // TO Value
         // && problem != null
         // String value = parseUntilTerminator(tokens);
-        //			
+        //
         // AstNode grantNode = nodeFactory().node("GRANT", parentNode, TYPE_GRANT_STATEMENT);
         // markEndOfStatement(tokens, grantNode);
-        //			
+        //
         // return grantNode;
         // } else if( tokens.matches(GRANT, DdlTokenStream.ANY_VALUE, COMMA)) {
         // markStartOfStatement(tokens);
@@ -731,23 +735,23 @@ public class OracleDdlParser extends StandardDdlParser
         // while( tokens.canConsume(COMMA)) {
         // tokens.consume(); // Next privilege
         // }
-        //			
+        //
         // tokens.consume("ON");
         // tokens.consume(); // TO Value
-        //			
+        //
         // tokens.canConsume("WITH", GRANT);
-        //			
+        //
         // String value = parseUntilTerminator(tokens);
-        //			
+        //
         // AstNode grantNode = nodeFactory().node("GRANT", parentNode, TYPE_GRANT_STATEMENT);
         // markEndOfStatement(tokens, grantNode);
-        //			
+        //
         // return grantNode;
         // } else if( tokens.matches(GRANT, DdlTokenStream.ANY_VALUE, "ON", DdlTokenStream.ANY_VALUE, "TO",
         // DdlTokenStream.ANY_VALUE, "WITH", GRANT)) {
         // markStartOfStatement(tokens);
         // //GRANT ALL ON bonuses TO hr WITH GRANT OPTION;
-        //			
+        //
         // tokens.consume(GRANT);
         // String privilege = tokens.consume();
         // tokens.consume("ON");
@@ -759,7 +763,7 @@ public class OracleDdlParser extends StandardDdlParser
         //
         // AstNode grantNode = nodeFactory().node("GRANT", parentNode, TYPE_GRANT_STATEMENT);
         // markEndOfStatement(tokens, grantNode);
-        //			
+        //
         // return grantNode;
         // }
         // else if( tokens.matches(GRANT, DdlTokenStream.ANY_VALUE, "ON")) {
@@ -767,7 +771,7 @@ public class OracleDdlParser extends StandardDdlParser
         // String privilege = tokens.consume();
         // tokens.consume("ON");
         // tokens.consume(); // ON Value
-        //			
+        //
         // String value = parseUntilTerminator(tokens);
         // stmt.appendSource(true, value);&& problem != null
         // stmt.setType("GRANT" + SPACE + privilege + SPACE + "ON");
@@ -812,15 +816,15 @@ public class OracleDdlParser extends StandardDdlParser
         // tokens.matches(GRANT, "SYSOPER") ||
         // tokens.matches(GRANT, "WRITE") ) {
         // tokens.consume(GRANT);
-        //			
+        //
         // String nextTok = tokens.consume() + SPACE + tokens.consume() + SPACE + tokens.consume();
         //
         // String value = parseUntilTerminator(tokens);
         // stmt.setType("GRANT" + SPACE + nextTok);
         // consumeTerminator(tokens);
         // }
-        //		
-        //		
+        //
+        //
         // return grantNode;
 
         // return super.parseGrantStatement(tokens, parentNode);
@@ -1175,7 +1179,7 @@ public class OracleDdlParser extends StandardDdlParser
         assert parentNode != null;
 
         // markStartOfStatement(tokens);
-        //    	
+        //
         // // CREATE [ UNIQUE | BITMAP ] INDEX index-name ON
         // // { cluster_index_clause | table_index_clause | bitmap_join_index_clause }
         // // cluster_index_clause = CLUSTER cluster-name index_attributes
@@ -1183,29 +1187,29 @@ public class OracleDdlParser extends StandardDdlParser
         // // CREATE [UNIQUE] INDEX index-Name
         // // ON table-Name ( Simple-column-Name [ ASC | DESC ] [ , Simple-column-Name [ ASC | DESC ]] * )
         // tokens.consume(CREATE); // CREATE
-        //    	
+        //
         // boolean isUnique = tokens.canConsume("UNIQUE");
         // boolean isBitmap = tokens.canConsume("BITMAP");
         // tokens.consume("INDEX");
         // String indexName = parseName(tokens);
-        //    	
+        //
         // AstNode indexNode = nodeFactory().node(indexName, parentNode, TYPE_CREATE_INDEX_STATEMENT);
-        //		
+        //
         // tokens.consume("ON");
         // boolean isCluster = tokens.canConsume("CLUSTER");
-        //    	
+        //
         // String objName = parseName(tokens);
-        //    	
+        //
         // indexNode.setProperty(UNIQUE_INDEX, isUnique);
         // indexNode.setProperty(BITMAP_INDEX, isBitmap);
         // if( !isCluster ) {
         // indexNode.setProperty(OracleDdlLexicon.TABLE_NAME, objName);
         // }
-        //    	
+        //
         // parseUntilTerminator(tokens);
-        //        
+        //
         // markEndOfStatement(tokens, indexNode);
-        //        
+        //
         // return indexNode;
 
         return parseStatement(tokens, STMT_CREATE_INDEX, parentNode, TYPE_CREATE_INDEX_STATEMENT);

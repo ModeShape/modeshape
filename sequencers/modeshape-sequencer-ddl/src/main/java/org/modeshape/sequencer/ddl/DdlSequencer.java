@@ -23,7 +23,24 @@
  */
 package org.modeshape.sequencer.ddl;
 
-import javax.jcr.*;
+import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import javax.jcr.Binary;
+import javax.jcr.NamespaceRegistry;
+import javax.jcr.Node;
+import javax.jcr.Property;
+import javax.jcr.RepositoryException;
+import javax.jcr.Value;
+import javax.jcr.ValueFactory;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.util.CheckArg;
@@ -33,10 +50,6 @@ import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.modeshape.sequencer.ddl.node.AstNode;
-import java.io.IOException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.*;
 
 /**
  * A sequencer of DDL files.
@@ -68,7 +81,7 @@ public class DdlSequencer extends Sequencer {
     /**
      * Get the names of the grammars that should be considered during processing. The grammar names may be the case-insensitive
      * {@link DdlParser#getId() identifier} of a built-in grammar, or the name of a {@link DdlParser} implementation class.
-     *
+     * 
      * @return the array of grammar names or classes; never null but possibly empty
      */
     public String[] getGrammars() {
@@ -78,7 +91,7 @@ public class DdlSequencer extends Sequencer {
     /**
      * Set the names of the grammars that should be considered during processing. The grammar names may be the case-insensitive
      * {@link DdlParser#getId() identifier} of a built-in grammar, or the name of a {@link DdlParser} implementation class.
-     *
+     * 
      * @param grammarNamesOrClasses the names; may be null if the default grammar list should be used
      */
     public void setGrammars( String[] grammarNamesOrClasses ) {
@@ -88,7 +101,7 @@ public class DdlSequencer extends Sequencer {
     /**
      * Get the names of the classloaders that should be used to load any non-standard DdlParser implementations specified in the
      * list of grammars.
-     *
+     * 
      * @return the classloader names that make up the classpath; never null but possibly empty if the default classpath should be
      *         used
      */
@@ -99,9 +112,9 @@ public class DdlSequencer extends Sequencer {
     /**
      * Set the names of the classloaders that should be used to load any non-standard DdlParser implementations specified in the
      * list of grammars.
-     *
+     * 
      * @param classpath the classloader names that make up the classpath; may be null or empty if the default classpath should be
-     * used
+     *        used
      */
     public void setClasspath( URL[] classpath ) {
         this.classpath = classpath != null ? classpath : DEFAULT_CLASSPATH;
@@ -109,7 +122,7 @@ public class DdlSequencer extends Sequencer {
 
     /**
      * Method that creates the DdlParsers instance. This may be overridden in subclasses to creates specific implementations.
-     *
+     * 
      * @param parsers the list of DdlParser instances to use; may be empty or null
      * @return the DdlParsers implementation; may not be null
      */
@@ -156,7 +169,8 @@ public class DdlSequencer extends Sequencer {
     }
 
     @Override
-    public void initialize( NamespaceRegistry registry, NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
+    public void initialize( NamespaceRegistry registry,
+                            NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
         registerNodeTypes("StandardDdl.cnd", nodeTypeManager, true);
         registerNodeTypes("dialect/derby/DerbyDdl.cnd", nodeTypeManager, true);
         registerNodeTypes("dialect/oracle/OracleDdl.cnd", nodeTypeManager, true);
@@ -164,7 +178,9 @@ public class DdlSequencer extends Sequencer {
     }
 
     @Override
-    public boolean execute( Property inputProperty, Node outputNode, Context context ) throws Exception {
+    public boolean execute( Property inputProperty,
+                            Node outputNode,
+                            Context context ) throws Exception {
         Binary ddlContent = inputProperty.getBinary();
         CheckArg.isNotNull(ddlContent, "ddl content binary value");
 
@@ -182,7 +198,7 @@ public class DdlSequencer extends Sequencer {
         } catch (IOException e) {
             LOGGER.error(e, DdlSequencerI18n.errorSequencingDdlContent, e.getLocalizedMessage());
             return false;
-        } 
+        }
 
         Queue<AstNode> queue = new LinkedList<AstNode>();
         queue.add(rootNode);
@@ -194,12 +210,13 @@ public class DdlSequencer extends Sequencer {
             // Add the children to the queue ...
             for (AstNode child : astNode.getChildren()) {
                 queue.add(child);
-            }      
+            }
         }
         return true;
     }
 
-    private void appendNodeProperties(AstNode astNode, Node sequenceNode ) throws RepositoryException {
+    private void appendNodeProperties( AstNode astNode,
+                                       Node sequenceNode ) throws RepositoryException {
         ValueFactory valueFactory = sequenceNode.getSession().getValueFactory();
 
         for (String propertyName : astNode.getPropertyNames()) {
@@ -213,7 +230,8 @@ public class DdlSequencer extends Sequencer {
         }
     }
 
-    private Node createFromAstNode( Node parent, AstNode astNode ) throws RepositoryException {
+    private Node createFromAstNode( Node parent,
+                                    AstNode astNode ) throws RepositoryException {
         String relativePath = astNode.getAbsolutePath().substring(1);
         Node sequenceNode = parent.addNode(relativePath, astNode.getPrimaryType());
         for (String mixin : astNode.getMixins()) {
@@ -224,10 +242,12 @@ public class DdlSequencer extends Sequencer {
         return sequenceNode;
     }
 
-    private List<Value> convertToPropertyValues( Object objectValue, ValueFactory valueFactory ) {
+    private List<Value> convertToPropertyValues( Object objectValue,
+                                                 ValueFactory valueFactory ) {
         List<Value> result = new ArrayList<Value>();
         if (objectValue instanceof Collection) {
-            Collection objects = (Collection)objectValue;
+            @SuppressWarnings( "unchecked" )
+            Collection<? extends Value> objects = (Collection<? extends Value>)objectValue;
             for (Object childObjectValue : objects) {
                 List<Value> childValues = convertToPropertyValues(childObjectValue, valueFactory);
                 result.addAll(childValues);

@@ -25,16 +25,22 @@ package org.modeshape.sequencer.ddl.dialect.postgres;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_SCHEMA_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_COLUMN_DEFINITION;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_FOREIGN_DATA_WRAPPER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_TABLE_STATEMENT_POSTGRES;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_COMMENT_ON_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_RULE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_SEQUENCE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_GRANT_ON_FUNCTION_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_LISTEN_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_RENAME_COLUMN;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.sequencer.ddl.DdlConstants;
 import org.modeshape.sequencer.ddl.DdlParserScorer;
 import org.modeshape.sequencer.ddl.DdlParserTestHelper;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_SCHEMA_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_TABLE_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_COLUMN_DEFINITION;
-import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.*;
 import org.modeshape.sequencer.ddl.node.AstNode;
 
 /**

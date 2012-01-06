@@ -138,6 +138,9 @@ public class ClassFileSequencerTest extends AbstractSequencerTest {
         field = fieldsIt.nextNode();
 
         assertField(field, "STATIC_VOLATILE_STRING_FIELD", String.class.getName(), "private", true, false, false, true);
+        field = fieldsIt.nextNode();
+
+        assertField(field, "serialVersionUID", Long.TYPE.getName(), "private", true, true, false, false);
         assertFalse(fieldsIt.hasNext());
     }
 

@@ -31,16 +31,19 @@ import java.io.Serializable;
  * @author Horia Chiorean
  */
 public final class MockClass implements Serializable {
-    
+
+    private static final long serialVersionUID = 1L;
+
+    @SuppressWarnings( "unused" )
     private static volatile String STATIC_VOLATILE_STRING_FIELD;
     public static final Integer STATIC_FINAL_INTEGER_FIELD = 0;
-    
+
     protected Boolean booleanField;
 
     public MockClass( Boolean booleanField ) {
         this.booleanField = booleanField;
     }
-    
+
     @Deprecated
     synchronized void voidMethod() {
     }

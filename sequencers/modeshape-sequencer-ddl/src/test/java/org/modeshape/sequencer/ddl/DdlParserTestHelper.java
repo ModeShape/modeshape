@@ -78,7 +78,6 @@ public class DdlParserTestHelper implements DdlConstants {
         return node.getMixins().contains(mixinType);
     }
 
-    @SuppressWarnings( "null" )
     protected String getFileContent( String filePath ) {
         StringBuilder sb = new StringBuilder(1000);
 
