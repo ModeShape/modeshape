@@ -47,7 +47,10 @@ enum Element {
             	
 	// Repository
     REPOSITORY_ELEMENT("repository"),
-    REPOSITORY_NAME_ATTRIBUTE("name", "name", ModelType.STRING, true, null);
+    REPOSITORY_NAME_ATTRIBUTE("name", "name", ModelType.STRING, true, null),
+    REPOSITORY_JNDI_NAME_ATTRIBUTE("jndi-name", "jndi-name", ModelType.STRING, true, null),
+    REPOSITORY_ROOT_NODE_ID_ATTRIBUTE("root-node-id", "root-node-id", ModelType.STRING, true, "cafebabe-cafe-babe-cafe-babecafebabe"),
+    REPOSITORY_LARGE_VALUE_SIZE_ID_ATTRIBUTE("large-value-size", "large-value-size", ModelType.STRING, true, "10240");
 //    REPOSITORY_STORAGE_ELEMENT("storage"),
 //    REPOSITORY_CACHE_NAME("cache-name", "cache-name", ModelType.STRING, true, null),
 //    REPOSITORY_CACHE_CONFIGURATION("cache-configuration", "cache-configuration", ModelType.STRING, true, null),

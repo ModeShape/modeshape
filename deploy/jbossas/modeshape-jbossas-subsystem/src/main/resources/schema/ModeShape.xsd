@@ -403,7 +403,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:attribute>
-            <xs:attribute name="large-value-size" type="xs:string">
+            <xs:attribute name="large-value-size" type="xs:string" default="10240">
                 <xs:annotation>
                     <xs:documentation>The size threshold that dictates how property
                         values are stored. String and binary values smaller than this

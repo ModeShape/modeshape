@@ -61,7 +61,11 @@ public class RepositoryAdd extends AbstractAddStepHandler implements Description
 
 	private static Element[] attributes = {
 		Element.REPOSITORY_ELEMENT,
-		Element.REPOSITORY_NAME_ATTRIBUTE
+		Element.REPOSITORY_NAME_ATTRIBUTE,
+		Element.REPOSITORY_JNDI_NAME_ATTRIBUTE,
+		Element.REPOSITORY_ROOT_NODE_ID_ATTRIBUTE,
+		Element.REPOSITORY_LARGE_VALUE_SIZE_ID_ATTRIBUTE
+		
 	};
 	
 	@Override

@@ -48,6 +48,7 @@ import org.jboss.as.server.DeploymentProcessorTarget;
 import org.jboss.as.server.deployment.Phase;
 import org.jboss.as.server.services.path.RelativePathService;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
@@ -65,7 +66,10 @@ class ModeShapeAdd extends AbstractAddStepHandler implements DescriptionProvider
 
 	private static Element[] attributes = {
 		Element.REPOSITORY_ELEMENT,
-		Element.REPOSITORY_NAME_ATTRIBUTE
+		Element.REPOSITORY_NAME_ATTRIBUTE,
+		Element.REPOSITORY_JNDI_NAME_ATTRIBUTE,
+		Element.REPOSITORY_ROOT_NODE_ID_ATTRIBUTE,
+		Element.REPOSITORY_LARGE_VALUE_SIZE_ID_ATTRIBUTE
 //		Element.MAX_THREADS_ELEMENT,
 //		Element.MAX_ACTIVE_PLANS_ELEMENT,
 //		Element.USER_REQUEST_SOURCE_CONCURRENCY_ELEMENT, 

@@ -78,8 +78,8 @@ public class ModeShapeExtension implements Extension {
 				final ModelNode node = new ModelNode();
 	            node.get(DESCRIPTION).set(Element.REPOSITORY_ELEMENT.getDescription(bundle));
 	            node.get(HEAD_COMMENT_ALLOWED).set(true);
-	            node.get(TAIL_COMMENT_ALLOWED).set(true);
-	            Element.REPOSITORY_NAME_ATTRIBUTE.describe(node, ATTRIBUTES, bundle);
+	            RepositoryAdd.repositoryDescribe(node, ATTRIBUTES, bundle);
+	            
 	            return node;
 			}
 		});
