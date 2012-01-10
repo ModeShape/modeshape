@@ -12,13 +12,24 @@
 	<description>ModeShape deployment as a subsystem within the JBoss Application Server</description>
 	<url>http://www.modeshape.org</url>
 	<properties>
-	<jbossas-version>7.1.0.Alpha1-SNAPSHOT</jbossas-version>
-    </properties>
+    <jbossas-version>7.1.0.Alpha1-SNAPSHOT</jbossas-version>
+  </properties>
 	<!--
 		Define the dependencies. Note that all version and scopes default to
 		those defined in the dependencyManagement section of the parent pom.
 	-->
 	<dependencies>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>modeshape-common</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.modeshape</groupId>
+      <artifactId>modeshape-common</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
 		<dependency>
 				<groupId>javax.resource</groupId>
 				<artifactId>connector-api</artifactId>
@@ -27,7 +38,7 @@
 			</dependency>
 			<dependency>
 				<groupId>javax.transaction</groupId>
-                <artifactId>jta</artifactId>
+        <artifactId>jta</artifactId>
 				<version>1.1</version>
 				<scope>provided</scope>
 			</dependency>
@@ -194,15 +205,10 @@
                     </exclusion>
                 </exclusions>
             </dependency>
-            <dependency>
-                <groupId>org.modeshape</groupId>
-            	<artifactId>modeshape-common</artifactId>
-            	<version>3.0-SNAPSHOT</version>
-            </dependency>
 	</dependencies>
 
 	<build>
-	  <finalName>modeshape-subsystem-3.0-SNAPSHOT</finalName>
+	  <finalName>modeshape-subsystem-${project.version}</finalName>
     <plugins>
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
