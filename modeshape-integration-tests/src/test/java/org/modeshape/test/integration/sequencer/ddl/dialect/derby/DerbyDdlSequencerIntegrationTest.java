@@ -43,7 +43,7 @@ public class DerbyDdlSequencerIntegrationTest extends AbstractDdlIntegrationTest
     @Override
     protected void addCustomConfiguration() {
         config.repository(DEFAULT_REPOSITORY_NAME)
-              .addNodeTypes(getUrl(RESOURCE_FOLDER + "DerbyDdl.cnd"))
+              .addNodeTypes(getUrl("org/modeshape/sequencer/ddl/dialect/derby/DerbyDdl.cnd"))
               .registerNamespace(DerbyDdlLexicon.Namespace.PREFIX, DerbyDdlLexicon.Namespace.URI);
     }
 
@@ -81,7 +81,7 @@ public class DerbyDdlSequencerIntegrationTest extends AbstractDdlIntegrationTest
 
             Node functionNode = findNode(ddlNode, "TO_DEGREES");
             assertNotNull(functionNode);
-            verifyChildNode(functionNode, "parameterStyle", "ddl:value", "PARAMETER STYLE JAVA");
+            verifySimpleStringProperty(functionNode, "derbyddl:parameterStyle", "PARAMETER STYLE JAVA");
 
             // Create Index
             // CREATE INDEX IXSALE ON SAMP.SALES (SALES);

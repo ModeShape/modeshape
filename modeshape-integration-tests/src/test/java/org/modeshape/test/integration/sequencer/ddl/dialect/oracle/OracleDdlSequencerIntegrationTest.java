@@ -42,7 +42,7 @@ public class OracleDdlSequencerIntegrationTest extends AbstractDdlIntegrationTes
     @Override
     protected void addCustomConfiguration() {
         config.repository(DEFAULT_REPOSITORY_NAME)
-                .addNodeTypes(getUrl(RESOURCE_FOLDER + "OracleDdl.cnd"))
+                .addNodeTypes(getUrl("org/modeshape/sequencer/ddl/dialect/oracle/OracleDdl.cnd"))
                 .registerNamespace(OracleDdlLexicon.Namespace.PREFIX, OracleDdlLexicon.Namespace.URI);
     }
 

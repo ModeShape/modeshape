@@ -125,7 +125,7 @@ public class StandardDdlLexicon {
     public static final Name TYPE_DROP_TABLE_CONSTRAINT_DEFINITION = new BasicName(Namespace.URI, "dropTableConstraintDefinition");
     public static final Name TYPE_ADD_TABLE_CONSTRAINT_DEFINITION = new BasicName(Namespace.URI, "addTableConstraintDefinition");
 
-    public static final Name TYPE_PROBLEM = new BasicName(Namespace.URI, "problem");
+    public static final Name TYPE_PROBLEM = new BasicName(Namespace.URI, "ddlProblem");
     public static final Name TYPE_COLUMN_DEFINITION = new BasicName(Namespace.URI, "columnDefinition");
     public static final Name TYPE_COLUMN_REFERENCE = new BasicName(Namespace.URI, "columnReference");
     public static final Name TYPE_TABLE_CONSTRAINT = new BasicName(Namespace.URI, "tableConstraint");
@@ -133,18 +133,19 @@ public class StandardDdlLexicon {
     public static final Name TYPE_TABLE_REFERENCE = new BasicName(Namespace.URI, "tableReference");
     public static final Name TYPE_FK_COLUMN_REFERENCE = new BasicName(Namespace.URI, "fkColumnReference");
     public static final Name TYPE_CLAUSE = new BasicName(Namespace.URI, "clause");
+    public static final Name TYPE_DOMAIN_CONSTRAINT = new BasicName(Namespace.URI, "domainConstraint");
+    public static final Name TYPE_SIMPLE_PROPERTY = new BasicName(Namespace.URI, "simpleProperty");
 
     public static final Name DDL_EXPRESSION = new BasicName(Namespace.URI, "expression");
     public static final Name DDL_ORIGINAL_EXPRESSION = new BasicName(Namespace.URI, "originalExpression");
     public static final Name DDL_START_LINE_NUMBER = new BasicName(Namespace.URI, "startLineNumber");
     public static final Name DDL_START_COLUMN_NUMBER = new BasicName(Namespace.URI, "startColumnNumber");
     public static final Name DDL_START_CHAR_INDEX = new BasicName(Namespace.URI, "startCharIndex");
-    // public static final Name DDL_LENGTH = new BasicName(Namespace.URI, "length");
+    public static final Name DDL_LENGTH = new BasicName(Namespace.URI, "length");
 
     /*
      * node property names
      */
-    public static final Name NAME = new BasicName(Namespace.URI, "name");
     public static final Name OPTION = new BasicName(Namespace.URI, "option");
     public static final Name TYPE = new BasicName(Namespace.URI, "type");
     public static final Name NEW_NAME = new BasicName(Namespace.URI, "newName");
@@ -176,6 +177,27 @@ public class StandardDdlLexicon {
     public static final Name CREATE_VIEW_OPTION_CLAUSE = new BasicName(Namespace.URI, "createViewOption");
 
     public static final Name MESSAGE = new BasicName(Namespace.URI, "message");
+    public static final Name EXISTING_NAME = new BasicName(Namespace.URI, "existingName");
+    public static final Name COLLATION_CHARACTER_SET_NAME = new BasicName(Namespace.URI, "characterSetName");
+    public static final Name COLLATION_SOURCE = new BasicName(Namespace.URI, "collationSource");
+    public static final Name PAD_ATTRIBUTE = new BasicName(Namespace.URI, "padAttribute");
+
+    public static final Name SOURCE_CHARACTER_SET_NAME = new BasicName(Namespace.URI, "sourceCharacterSetName");
+    public static final Name TARGET_CHARACTER_SET_NAME = new BasicName(Namespace.URI, "targetCharacterSetName");
+
+    /**
+     * value constraints
+     */
+    public static final String PAD_ATTRIBUTE_PAD = "PAD SPACE";
+    public static final String PAD_ATTRIBUTE_NO_PAD = "NO PAD";
+    public static final String DEFAULT_ID_LITERAL = "LITERAL";
+    public static final String DEFAULT_ID_DATETIME = "DATETIME";
+    public static final String DEFAULT_ID_USER = "USER";
+    public static final String DEFAULT_ID_CURRENT_USER = "CURRENT_USER";
+    public static final String DEFAULT_ID_SESSION_USER = "SESSION_USER";
+    public static final String DEFAULT_ID_SYSTEM_USER = "SYSTEM_USER";
+    public static final String DEFAULT_ID_NULL = "NULL";
+
 
     /*
      * node child types

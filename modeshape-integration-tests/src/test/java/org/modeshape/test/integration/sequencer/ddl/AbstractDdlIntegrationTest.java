@@ -528,7 +528,10 @@ public abstract class AbstractDdlIntegrationTest {
     /**
      * Checks that the type (including mixins) of the sequenced node has at least the required properties and child definitions.
      * This will recurse down to all the children of the given node.
-     * 
+     *
+     * This method is only needed because of the fact that in 2.x, the Sequncer framework does not validate the integrity of the
+     * generated subgraph.
+     *
      * @param sequencedNode a {@link Node} instance
      * @throws RepositoryException if anything fails during this check
      */

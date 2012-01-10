@@ -132,7 +132,8 @@ public class PostgresDdlLexicon  extends StandardDdlLexicon {
     public static final Name TYPE_TRUNCATE_STATEMENT 				= new BasicName(Namespace.URI, "truncateStatement");
     public static final Name TYPE_UNLISTEN_STATEMENT 				= new BasicName(Namespace.URI, "unlistenStatement");
     public static final Name TYPE_VACUUM_STATEMENT 					= new BasicName(Namespace.URI, "vacuumStatement");
-    
+    public static final Name TYPE_COMMIT_STATEMENT 					= new BasicName(Namespace.URI, "commitStatement");
+
     public static final Name TYPE_GRANT_ON_SEQUENCE_STATEMENT       = new BasicName(Namespace.URI, "grantOnSequenceStatement");
     public static final Name TYPE_GRANT_ON_DATABASE_STATEMENT       = new BasicName(Namespace.URI, "grantOnDatabaseStatement");
     public static final Name TYPE_GRANT_ON_FOREIGN_DATA_WRAPPER_STATEMENT  = new BasicName(Namespace.URI, "grantOnForeignDataWrapperStatement");

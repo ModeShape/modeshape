@@ -43,7 +43,7 @@ public class PostgresDdlSequencerIntegrationTest extends AbstractDdlIntegrationT
     @Override
     protected void addCustomConfiguration() {
         config.repository(DEFAULT_REPOSITORY_NAME)
-                .addNodeTypes(getUrl(RESOURCE_FOLDER + "PostgresDdl.cnd"))
+                .addNodeTypes(getUrl("org/modeshape/sequencer/ddl/dialect/postgres/PostgresDdl.cnd"))
                 .registerNamespace(PostgresDdlLexicon.Namespace.PREFIX, PostgresDdlLexicon.Namespace.URI);
     }
 

@@ -25,83 +25,10 @@
 /**
  * This class provides basic parsing of SQL-92 based DDL files.  The initial implementation does NOT handle generic SQL query
  * statements, but rather database schema manipulation (i.e. CREATE, DROP, ALTER, etc...)
- * 
+ *
  */
 package org.modeshape.sequencer.ddl;
 
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.ALL_PRIVILEGES;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.CHECK_SEARCH_CONDITION;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.COLLATION_NAME;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.CONSTRAINT_ATTRIBUTE_TYPE;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.CONSTRAINT_TYPE;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.CREATE_VIEW_QUERY_EXPRESSION;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_EXPRESSION;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_START_CHAR_INDEX;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_START_COLUMN_NUMBER;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_START_LINE_NUMBER;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DEFAULT_OPTION;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DEFAULT_PRECISION;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DEFAULT_VALUE;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DROP_BEHAVIOR;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.GRANTEE;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.GRANT_PRIVILEGE;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.MESSAGE;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.NAME;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.NULLABLE;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.PROBLEM_LEVEL;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.PROPERTY_VALUE;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TEMPORARY;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ADD_TABLE_CONSTRAINT_DEFINITION;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_COLUMN_DEFINITION;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_DOMAIN_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_TABLE_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_DEFINITION;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_REFERENCE;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_ASSERTION_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_CHARACTER_SET_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_COLLATION_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_DOMAIN_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_SCHEMA_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_TABLE_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_TRANSLATION_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_VIEW_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_ASSERTION_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_CHARACTER_SET_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_COLLATION_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_COLUMN_DEFINITION;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_DOMAIN_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_SCHEMA_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_TABLE_CONSTRAINT_DEFINITION;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_TABLE_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_TRANSLATION_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_VIEW_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_FK_COLUMN_REFERENCE;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_GRANT_ON_CHARACTER_SET_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_GRANT_ON_COLLATION_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_GRANT_ON_DOMAIN_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_GRANT_ON_TABLE_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_GRANT_ON_TRANSLATION_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_INSERT_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_MISSING_TERMINATOR;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_PROBLEM;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_REVOKE_ON_CHARACTER_SET_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_REVOKE_ON_COLLATION_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_REVOKE_ON_DOMAIN_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_REVOKE_ON_TABLE_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_REVOKE_ON_TRANSLATION_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_SET_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_STATEMENT_OPTION;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_TABLE_CONSTRAINT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_TABLE_REFERENCE;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.VALUE;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.WITH_GRANT_OPTION;
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.text.Position;
@@ -109,10 +36,16 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.property.Name;
 import org.modeshape.sequencer.ddl.DdlTokenStream.DdlTokenizer;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.*;
 import org.modeshape.sequencer.ddl.datatype.DataType;
 import org.modeshape.sequencer.ddl.datatype.DataTypeParser;
 import org.modeshape.sequencer.ddl.node.AstNode;
 import org.modeshape.sequencer.ddl.node.AstNodeFactory;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Standard SQL 92 DDL file content parser.
@@ -141,7 +74,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * Returns the data type parser instance.
-     * 
+     *
      * @return the {@link DataTypeParser}
      */
     public DataTypeParser getDatatypeParser() {
@@ -157,7 +90,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * Method to access the node utility class.
-     * 
+     *
      * @return the instance of the {@link AstNodeFactory} node utility class
      */
     public AstNodeFactory nodeFactory() {
@@ -180,7 +113,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * {@inheritDoc}
-     * 
+     *
      * @see org.modeshape.sequencer.ddl.DdlParser#score(java.lang.String, java.lang.String,
      *      org.modeshape.sequencer.ddl.DdlParserScorer)
      */
@@ -235,7 +168,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * {@inheritDoc}
-     * 
+     *
      * @see org.modeshape.sequencer.ddl.DdlParser#parse(java.lang.String, org.modeshape.sequencer.ddl.node.AstNode,
      *      java.lang.Object)
      */
@@ -303,7 +236,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
      * Method called by {@link #score(String, String, DdlParserScorer)} and {@link #parse(String, AstNode, Object)} to initialize
      * the {@link DdlTokenStream token stream}, giving subclasses a chance to {@link DdlTokenStream#registeredKeyWords register
      * key words} and {@link DdlTokenStream#registerStatementStartPhrase(String[]) statement start phrases}.
-     * 
+     *
      * @param tokens the stream of tokens
      */
     protected void initializeTokenStream( DdlTokenStream tokens ) {
@@ -315,7 +248,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
      * Performs token match checks for initial statement type and delegates to specific parser methods. If no specific statement
      * is found, then a call is made to parse a custom statement type. Subclasses may override this method, but the
      * {@link StandardDdlParser}.parseCustomStatement() method is designed to allow for parsing db-specific statement types.
-     * 
+     *
      * @param tokens the tokenized {@link DdlTokenStream} of the DDL input content; may not be null
      * @param node the top level {@link AstNode}; may not be null
      * @return node the new statement node
@@ -359,7 +292,9 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         // Check to see if any more tokens exists
         if (tokens.hasNext()) {
             while (tokens.hasNext()) {
-                if (tokens.canConsume(DdlTokenizer.COMMENT)) continue;
+                if (tokens.canConsume(DdlTokenizer.COMMENT)) {
+                    continue;
+                }
 
                 // If the next toke is a STATEMENT_KEY, then stop
                 if (!tokens.matches(DdlTokenizer.STATEMENT_KEY)) {
@@ -469,7 +404,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * Merges second node into first node by re-setting expression source and length.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param firstNode the node to merge into; may not be null
      * @param secondNode the node to merge into first node; may not be null
@@ -488,13 +423,14 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         Position endPosition = new Position((secondStartIndex + deltaLength), 1, 0);
         String source = tokens.getContentBetween(startPosition, endPosition);
         firstNode.setProperty(DDL_EXPRESSION, source);
+        firstNode.setProperty(DDL_LENGTH, source.length());
     }
 
     /**
      * Utility method subclasses can override to check unknown tokens and perform additional node manipulation. Example would be
      * in Oracle dialect for CREATE FUNCTION statements that can end with an '/' character because statement can contain multiple
      * statements.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param tokenValue the string value of the unknown token; never null
      * @return the new node
@@ -510,7 +446,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * Parses DDL CREATE statement based on SQL 92 specifications.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param parentNode the parent {@link AstNode} node; may not be null
      * @return the parsed CREATE {@link AstNode}
@@ -540,7 +476,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         if (tokens.matches(STMT_CREATE_SCHEMA)) {
             stmtNode = parseCreateSchemaStatement(tokens, parentNode);
         } else if (tokens.matches(STMT_CREATE_TABLE) || tokens.matches(STMT_CREATE_GLOBAL_TEMPORARY_TABLE)
-                   || tokens.matches(STMT_CREATE_LOCAL_TEMPORARY_TABLE)) {
+                || tokens.matches(STMT_CREATE_LOCAL_TEMPORARY_TABLE)) {
             stmtNode = parseCreateTableStatement(tokens, parentNode);
         } else if (tokens.matches(STMT_CREATE_VIEW) || tokens.matches(STMT_CREATE_OR_REPLACE_VIEW)) {
             stmtNode = parseCreateViewStatement(tokens, parentNode);
@@ -572,7 +508,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * Parses DDL ALTER statement based on SQL 92 specifications.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param parentNode the parent {@link AstNode} node; may not be null
      * @return the parsed ALTER {@link AstNode}
@@ -599,7 +535,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * Parses DDL ALTER TABLE {@link AstNode} based on SQL 92 specifications.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param parentNode the parent {@link AstNode} node; may not be null
      * @return the parsed ALTER TABLE {@link AstNode}
@@ -679,7 +615,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * Parses DDL DROP {@link AstNode} based on SQL 92 specifications.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param parentNode the parent {@link AstNode} node; may not be null
      * @return the parsed DROP {@link AstNode}
@@ -750,7 +686,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * Parses DDL INSERT {@link AstNode} based on SQL 92 specifications.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param parentNode the parent {@link AstNode} node; may not be null
      * @return the {@link AstNode}
@@ -776,7 +712,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * Parses DDL SET {@link AstNode} based on SQL 92 specifications.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param parentNode the parent {@link AstNode} node; may not be null
      * @return the {@link AstNode}
@@ -801,7 +737,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * Parses DDL GRANT statement {@link AstNode} based on SQL 92 specifications.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param parentNode the parent {@link AstNode} node; may not be null
      * @return the {@link AstNode}
@@ -1033,7 +969,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * Parses DDL CREATE DOMAIN {@link AstNode} based on SQL 92 specifications.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param parentNode the parent {@link AstNode} node; may not be null
      * @return the parsed statement node {@link AstNode}
@@ -1059,6 +995,12 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
         AstNode node = nodeFactory().node(name, parentNode, TYPE_CREATE_DOMAIN_STATEMENT);
 
+        tokens.canConsume("AS");
+        DataType datatype = getDatatypeParser().parse(tokens);
+        if (datatype != null) {
+            getDatatypeParser().setPropertiesOnNode(node, datatype);
+            parseDefaultClause(tokens, node);
+        }
         parseUntilTerminator(tokens);
 
         markEndOfStatement(tokens, node);
@@ -1068,7 +1010,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * Parses DDL CREATE COLLATION {@link AstNode} based on SQL 92 specifications.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param parentNode the parent {@link AstNode} node; may not be null
      * @return the parsed statement node {@link AstNode}
@@ -1087,16 +1029,45 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
         AstNode node = nodeFactory().node(name, parentNode, TYPE_CREATE_COLLATION_STATEMENT);
 
+
+        //character set attribute
+        tokens.consume("FOR");
+        String charSetName = parseName(tokens);
+        node.setProperty(COLLATION_CHARACTER_SET_NAME, charSetName);
+
+        //collation source
+        //TODO author=Horia Chiorean date=1/4/12 description=Only parsing a string atm (should probably be some nested nodes - see StandardDdl.cnd
+        tokens.consume("FROM");
+        String collationSource = null;
+        if (tokens.canConsume("EXTERNAL") || tokens.canConsume("DESC")) {
+            collationSource = consumeParenBoundedTokens(tokens, false);
+        } else if (tokens.canConsume("TRANSLATION")) {
+            StringBuilder translationCollation = new StringBuilder("TRANSLATION ").append(tokens.consume());
+            if (tokens.canConsume("THEN", "COLLATION")) {
+                translationCollation.append(" THEN COLLATION ");
+                translationCollation.append(parseName(tokens));
+            }
+            collationSource = translationCollation.toString();
+        } else {
+            collationSource = parseName(tokens);
+        }
+        node.setProperty(COLLATION_SOURCE, collationSource);
+
+        //pad attribute
+        if (tokens.canConsume("PAD", "SPACE")) {
+            node.setProperty(PAD_ATTRIBUTE, PAD_ATTRIBUTE_PAD);
+        } else if (tokens.canConsume("NO", "PAD")) {
+            node.setProperty(PAD_ATTRIBUTE, PAD_ATTRIBUTE_NO_PAD);
+        }
+
         parseUntilTerminator(tokens);
-
         markEndOfStatement(tokens, node);
-
         return node;
     }
 
     /**
      * Parses DDL CREATE TRANSLATION {@link AstNode} based on SQL 92 specifications.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param parentNode the parent {@link AstNode} node; may not be null
      * @return the parsed statement node {@link AstNode}
@@ -1114,6 +1085,10 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         String name = parseName(tokens);
 
         AstNode node = nodeFactory().node(name, parentNode, TYPE_CREATE_TRANSLATION_STATEMENT);
+        tokens.consume("FOR");
+        node.setProperty(SOURCE_CHARACTER_SET_NAME, parseName(tokens));
+        tokens.consume("TO");
+        node.setProperty(TARGET_CHARACTER_SET_NAME, parseName(tokens));
 
         parseUntilTerminator(tokens);
 
@@ -1124,7 +1099,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * Parses DDL CREATE CHARACTER SET {@link AstNode} based on SQL 92 specifications.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param parentNode the parent {@link AstNode} node; may not be null
      * @return the parsed statement node {@link AstNode}
@@ -1142,6 +1117,9 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         String name = parseName(tokens);
 
         AstNode node = nodeFactory().node(name, parentNode, TYPE_CREATE_CHARACTER_SET_STATEMENT);
+        //TODO author=Horia Chiorean date=1/4/12 description=Some of the optional attributes from the CND are not implemented yet
+        node.setProperty(EXISTING_NAME, consumeIdentifier(tokens));
+
 
         parseUntilTerminator(tokens);
 
@@ -1152,7 +1130,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * Catch-all method to parse unknown (not registered or handled by sub-classes) statements.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param parentNode the parent {@link AstNode} node; may not be null
      * @return the {@link AstNode}
@@ -1175,7 +1153,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * Parses DDL CREATE TABLE {@link AstNode} based on SQL 92 specifications.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param parentNode the parent {@link AstNode} node; may not be null
      * @return the parsed CREATE TABLE {@link AstNode}
@@ -1270,7 +1248,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
      * Utility method to parse columns and table constraints within either a CREATE TABLE statement. Method first parses and
      * copies the text enclosed within the bracketed "( xxxx  )" statement. Then the individual column definition or table
      * constraint definition sub-statements are parsed assuming they are comma delimited.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param tableNode
      * @throws ParsingException
@@ -1302,7 +1280,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         } while (localTokens.canConsume(COMMA));
 
         if (unusedTokensSB.length() > 0) {
-            String msg = DdlSequencerI18n.unusedTokensParsingColumnsAndConstraints.text(tableNode.getProperty(NAME));
+            String msg = DdlSequencerI18n.unusedTokensParsingColumnsAndConstraints.text(tableNode.getName());
             DdlParserProblem problem = new DdlParserProblem(DdlConstants.Problems.WARNING, Position.EMPTY_CONTENT_POSITION, msg);
             problem.setUnusedSource(unusedTokensSB.toString());
             addProblem(problem, tableNode);
@@ -1313,7 +1291,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
     /**
      * Utility method to parse the actual column definition. SQL-92 Structural Specification <column definition> ::= <column name>
      * { <data type> | <domain name> } [ <default clause> ] [ <column constraint definition>... ] [ <collate clause> ]
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param tableNode
      * @param isAlterTable true if in-line constraint is part of add column in alter table statement
@@ -1361,7 +1339,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
     /**
      * Utility method to parse the actual column definition. SQL-92 Structural Specification <column definition> ::= <column name>
      * { <data type> | <domain name> } [ <default clause> ] [ <column constraint definition>... ] [ <collate clause> ]
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param tableNode the alter or create table statement node; may not be null
      * @param isAlterTable true if in-line constraint is part of add column in alter table statement
@@ -1392,13 +1370,15 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
                 foundSomething |= parseColumnConstraint(tokens, columnNode, isAlterTable);
             }
             foundSomething |= consumeComment(tokens);
-            if (tokens.canConsume(COMMA) || !foundSomething) break;
+            if (tokens.canConsume(COMMA) || !foundSomething) {
+                break;
+            }
         }
     }
 
     /**
      * Method which extracts the table element string from a CREATE TABLE statement.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param useTerminator
      * @return the parsed table elements String.
@@ -1445,7 +1425,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
     /**
      * Simple method which parses, consumes and returns a string representing text found between parenthesis (i.e. '()') If
      * parents don't exist, method returns NULL;
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param includeParens
      * @return the parenthesis bounded text or null if no parens.
@@ -1491,7 +1471,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
     /**
      * Parses an in-line column constraint including NULLABLE value, UNIQUE, PRIMARY KEY and REFERENCES to a Foreign Key. The
      * values for the constraint are set as properties on the input columnNode.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param columnNode the column definition being created; may not be null
      * @param isAlterTable true if in-line constraint is part of add column in alter table statement
@@ -1638,7 +1618,6 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
             String ck_name = "CHECK_1";
 
             AstNode constraintNode = nodeFactory().node(ck_name, columnNode.getParent(), mixinType);
-            constraintNode.setProperty(NAME, ck_name);
             constraintNode.setProperty(CONSTRAINT_TYPE, CHECK);
 
             String clause = consumeParenBoundedTokens(tokens, true);
@@ -1651,7 +1630,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
     /**
      * Parses full table constraint definition including the "CONSTRAINT" token Examples: CONSTRAINT P_KEY_2a UNIQUE
      * (PERMISSIONUID)
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param tableNode
      * @param isAlterTable true if in-line constraint is part of add column in alter table statement
@@ -1827,7 +1806,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * Parses the attributes associated with any in-line column constraint definition or a table constrain definition.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param constraintNode
      * @throws ParsingException
@@ -1933,7 +1912,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
     /**
      * Parses DDL CREATE VIEW {@link AstNode} basedregisterStatementStartPhrase on SQL 92 specifications. Initial implementation
      * here does not parse the statement in detail.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param parentNode the parent {@link AstNode} node; may not be null
      * @return the Create View node
@@ -1988,7 +1967,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
     /**
      * Parses DDL CREATE SCHEMA {@link AstNode} based on SQL 92 specifications. Initial implementation here does not parse the
      * statement in detail.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param parentNode the parent {@link AstNode} node; may not be null
      * @return the parsed schema node
@@ -2035,7 +2014,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
     /**
      * Parses DDL CREATE ASSERTION {@link AstNode} based on SQL 92 specifications. Initial implementation here does not parse the
      * statement's search condition in detail.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param parentNode the parent {@link AstNode} node; may not be null
      * @return the parsed schema node
@@ -2079,7 +2058,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
      * Utility method to parse a statement that can be ignored. The value returned in the generic {@link AstNode} will contain all
      * text between starting token and either the terminator (if defined) or the next statement start token. NOTE: This method
      * does NOT mark and add consumed fragment to parent node.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param name
      * @param parentNode the parent {@link AstNode} node; may not be null
@@ -2102,7 +2081,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
      * Utility method to parse a statement that can be ignored. The value returned in the generic {@link AstNode} will contain all
      * text between starting token and either the terminator (if defined) or the next statement start token. NOTE: This method
      * does NOT mark and add consumed fragment to parent node.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param name
      * @param parentNode the parent {@link AstNode} node; may not be null
@@ -2128,7 +2107,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * Utility method to parse a generic statement given a start phrase and statement mixin type.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param stmt_start_phrase the string array statement start phrase
      * @param parentNode the parent of the newly created node.
@@ -2154,7 +2133,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * Constructs a terminator AstNode as child of root node
-     * 
+     *
      * @param parentNode the parent {@link AstNode} node; may not be null
      * @return terminator node
      */
@@ -2164,7 +2143,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * Constructs a terminator AstNode as child of root node
-     * 
+     *
      * @param parentNode the parent {@link AstNode} node; may not be null
      * @return terminator node
      */
@@ -2174,7 +2153,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     public final boolean isMissingTerminatorNode( AstNode node ) {
         return node.getName().getString().equals(MISSING_TERMINATOR_NODE_LITERAL)
-               && nodeFactory().hasMixinType(node, TYPE_MISSING_TERMINATOR);
+                && nodeFactory().hasMixinType(node, TYPE_MISSING_TERMINATOR);
     }
 
     public final boolean isValidSchemaChild( AstNode node ) {
@@ -2212,7 +2191,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
                 // If the last child of a schema is missing terminator, then the schema isn't complete.
                 // If it is NOT a missing terminator, we aren't under a schema node anymore.
                 if (theSchemaNode.getChildCount() == 0
-                    || nodeFactory().hasMixinType(theSchemaNode.getLastChild(), TYPE_MISSING_TERMINATOR)) {
+                        || nodeFactory().hasMixinType(theSchemaNode.getLastChild(), TYPE_MISSING_TERMINATOR)) {
                     if (nodeFactory().hasMixinType(theSchemaNode, TYPE_CREATE_SCHEMA_STATEMENT)) {
                         statementNode.setParent(theSchemaNode);
                         if (stmtIsMissingTerminator) {
@@ -2229,7 +2208,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * Returns current terminator
-     * 
+     *
      * @return terminator string value
      */
     protected String getTerminator() {
@@ -2255,7 +2234,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * Checks if next token is of type comment.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @return true if next token is a comment.
      * @throws ParsingException
@@ -2266,7 +2245,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * Consumes an an end-of-line comment or in-line comment
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @return true if a comment was found and consumed
      * @throws ParsingException
@@ -2278,7 +2257,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
     /**
      * This utility method provides this parser the ability to distinguish between a CreateTable Constraint and a ColumnDefinition
      * Definition which are the only two statement segment types allowed within the CREATE TABLE parenthesis ( xxxxxx );
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @return is table constraint
      * @throws ParsingException
@@ -2290,9 +2269,9 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
             result = true;
         } else if (tokens.matches("CONSTRAINT")) {
             if (tokens.matches("CONSTRAINT", DdlTokenStream.ANY_VALUE, "UNIQUE")
-                || tokens.matches("CONSTRAINT", DdlTokenStream.ANY_VALUE, "PRIMARY", "KEY")
-                || tokens.matches("CONSTRAINT", DdlTokenStream.ANY_VALUE, "FOREIGN", "KEY")
-                || tokens.matches("CONSTRAINT", DdlTokenStream.ANY_VALUE, "CHECK")) {
+                    || tokens.matches("CONSTRAINT", DdlTokenStream.ANY_VALUE, "PRIMARY", "KEY")
+                    || tokens.matches("CONSTRAINT", DdlTokenStream.ANY_VALUE, "FOREIGN", "KEY")
+                    || tokens.matches("CONSTRAINT", DdlTokenStream.ANY_VALUE, "CHECK")) {
                 result = true;
             }
         }
@@ -2303,7 +2282,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
     /**
      * This utility method provides this parser the ability to distinguish between a CreateTable Constrain and a ColumnDefinition
      * Definition which are the only two statement segment types allowed within the CREATE TABLE parenthesis ( xxxxxx );
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @return is column definition start phrase
      * @throws ParsingException
@@ -2330,7 +2309,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * Returns a list of data type start words which can be used to help identify a column definition sub-statement.
-     * 
+     *
      * @return list of data type start words
      */
     protected List<String> getDataTypeStartWords() {
@@ -2345,7 +2324,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
     /**
      * Returns a list of custom data type start words which can be used to help identify a column definition sub-statement.
      * Sub-classes should override this method to contribute DB-specific data types.
-     * 
+     *
      * @return list of data type start words
      */
     protected List<String> getCustomDataTypeStartWords() {
@@ -2355,7 +2334,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
     /**
      * Method to parse fully qualified schema, table and column names that are defined with '.' separator and optionally bracketed
      * with square brackets Example: partsSchema.supplier Example: [partsSchema].[supplier]
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @return the parsed name
      */
@@ -2399,7 +2378,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * Consumes an token identifier which can be of the form of a simple string or a double-quoted string.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @return the identifier
      * @throws ParsingException
@@ -2425,7 +2404,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * Utility method to determine if next token is a terminator.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @return is terminator token
      * @throws ParsingException
@@ -2438,7 +2417,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * Adds column reference nodes to a parent node. Returns true if column references added, false if not.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param parentNode the parent node
      * @param referenceType the type of the reference node to create
@@ -2467,7 +2446,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * Parses a comma separated list of column names.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @return list of column names.
      * @throws ParsingException
@@ -2488,7 +2467,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
     /**
      * Utility method which parses tokens until a terminator is found, another statement is identified or there are no more
      * tokens.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @return the parsed string
      * @throws ParsingException
@@ -2539,7 +2518,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
      * Utility method which parses tokens until a terminator is found or there are no more tokens. This method differs from
      * parseUntilTermintor() in that it ignores embedded statements. This method can be used for parsers that have statements
      * which can embed statements that should not be parsed.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @return the parsed string
      * @throws ParsingException
@@ -2569,7 +2548,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * Utility method which parses tokens until a semicolon is found or there are no more tokens.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @return the parsed string
      * @throws ParsingException
@@ -2601,7 +2580,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         StringBuffer sb = new StringBuffer();
         if (doUseTerminator()) {
             while (tokens.hasNext() && !tokens.matches(DdlTokenizer.STATEMENT_KEY) && !isTerminator(tokens)
-                   && !tokens.matches(COMMA)) {
+                    && !tokens.matches(COMMA)) {
                 sb.append(SPACE).append(tokens.consume());
             }
         } else {
@@ -2616,7 +2595,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * Returns if parser is using statement terminator or not.
-     * 
+     *
      * @return value of useTerminator flag.
      */
     public boolean doUseTerminator() {
@@ -2626,7 +2605,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
     /**
      * Sets the value of the use terminator flag for the parser. If TRUE, then all statements are expected to be terminated by a
      * terminator. The default terminator ";" can be overridden by setting the value using setTerminator() method.
-     * 
+     *
      * @param useTerminator
      */
     public void setDoUseTerminator( boolean useTerminator ) {
@@ -2648,7 +2627,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * Parses the default clause for a column and sets appropriate properties on the column node.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param columnNode the column node which may contain a default clause; may not be null
      * @return true if default clause was found and parsed, otherwise false
@@ -2683,7 +2662,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
         if (tokens.canConsume("DEFAULT")) {
 
-            int optionID = -1;
+            String optionID;
             int precision = -1;
 
             if (tokens.canConsume("CURRENT_DATE")) {
@@ -2750,7 +2729,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * Parses the default clause for a column and sets appropriate properties on the column node.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param columnNode the column node which may contain a collate clause; may not be null
      * @return true if collate clause was found and parsed else return false.
@@ -2778,7 +2757,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
     /**
      * Returns the integer value of the input string. Handles both straight integer string or complex KMG (CLOB or BLOB) value.
      * Throws {@link NumberFormatException} if a valid integer is not found.
-     * 
+     *
      * @param value the string to be parsed; may not be null and length must be > 0;
      * @return integer value
      */
@@ -2795,7 +2774,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * Marks the token stream with the current position to help track statement scope within the original input string.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      */
     public final void markStartOfStatement( DdlTokenStream tokens ) {
@@ -2808,7 +2787,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
      * be added. If the resulting statement node is a valid child node type for a schema, the child node may be re-parented to the
      * schema if the schema is still parentable. Each resulting statement node is tagged with the enclosing source expression,
      * starting line number and column number from the file content as well as a starting character index from that same content.
-     * 
+     *
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param statementNode
      */
@@ -2832,6 +2811,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
         String source = tokens.getMarkedContent().trim();
         statementNode.setProperty(DDL_EXPRESSION, source);
+        statementNode.setProperty(DDL_LENGTH, source.length());
         statementNode.setProperty(DDL_START_LINE_NUMBER, currentMarkedPosition.getLine());
         statementNode.setProperty(DDL_START_CHAR_INDEX, currentMarkedPosition.getIndexInContent());
         statementNode.setProperty(DDL_START_COLUMN_NUMBER, currentMarkedPosition.getColumn());
@@ -2861,7 +2841,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * {@inheritDoc}
-     * 
+     *
      * @see org.modeshape.sequencer.ddl.DdlParser#getId()
      */
     @Override
@@ -2871,7 +2851,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * {@inheritDoc}
-     * 
+     *
      * @see java.lang.Object#hashCode()
      */
     @Override
@@ -2881,12 +2861,14 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * {@inheritDoc}
-     * 
+     *
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
     public boolean equals( Object obj ) {
-        if (obj == this) return true;
+        if (obj == this) {
+            return true;
+        }
         if (obj instanceof DdlParser) {
             return ((DdlParser)obj).getId().equals(this.getId());
         }

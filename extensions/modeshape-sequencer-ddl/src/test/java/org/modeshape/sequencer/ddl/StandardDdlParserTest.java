@@ -10,16 +10,16 @@
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- * 
+ *
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ * Lesser General Public License for more details
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this software; if not, write to the Free
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org
  */
 package org.modeshape.sequencer.ddl;
 
@@ -30,35 +30,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.CONSTRAINT_ATTRIBUTE_TYPE;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.CONSTRAINT_TYPE;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_LENGTH;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_NAME;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_PRECISION;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_SCALE;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DEFAULT_OPTION;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DEFAULT_VALUE;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DROP_BEHAVIOR;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.NULLABLE;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.PROPERTY_VALUE;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ADD_TABLE_CONSTRAINT_DEFINITION;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_TABLE_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_DEFINITION;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_REFERENCE;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_SCHEMA_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_TABLE_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_VIEW_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_ASSERTION_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_CHARACTER_SET_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_COLLATION_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_DOMAIN_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_SCHEMA_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_TABLE_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_TRANSLATION_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_VIEW_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_STATEMENT_OPTION;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_TABLE_CONSTRAINT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.VALUE;
 import java.util.List;
 import org.junit.After;
 import org.junit.Before;
@@ -66,6 +37,7 @@ import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.property.Property;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.*;
 import org.modeshape.sequencer.ddl.node.AstNode;
 
 public class StandardDdlParserTest extends DdlParserTestHelper {

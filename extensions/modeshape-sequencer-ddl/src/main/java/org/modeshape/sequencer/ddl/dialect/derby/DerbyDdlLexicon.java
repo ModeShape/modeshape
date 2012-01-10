@@ -96,4 +96,5 @@ public class DerbyDdlLexicon extends StandardDdlLexicon {
     public static final Name ROLE_NAME                          = new BasicName(Namespace.URI, "roleName");
     public static final Name GENERATED_COLUMN_SPEC_CLAUSE       = new BasicName(Namespace.URI, "generatedColumnSpecClause");
     public static final Name IS_TABLE_TYPE                      = new BasicName(Namespace.URI, "isTableType");
+    public static final Name PARAMETER_STYLE                    = new BasicName(Namespace.URI, "parameterStyle");
 }

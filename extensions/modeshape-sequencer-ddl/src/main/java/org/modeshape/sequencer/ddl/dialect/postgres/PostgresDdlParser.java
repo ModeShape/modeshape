@@ -725,7 +725,7 @@ public class PostgresDdlParser extends StandardDdlParser
                 tokens.consume();
             }
             tokens.consume("DEFAULT");
-            int optionID = -1;
+            String optionID;
             int precision = -1;
 
             if (tokens.canConsume("CURRENT_DATE")) {
@@ -857,6 +857,8 @@ public class PostgresDdlParser extends StandardDdlParser
             return parseStatement(tokens, STMT_UNLISTEN, parentNode, TYPE_UNLISTEN_STATEMENT);
         } else if (tokens.matches(STMT_VACUUM)) {
             return parseStatement(tokens, STMT_VACUUM, parentNode, TYPE_VACUUM_STATEMENT);
+        } else if (tokens.matches(STMT_COMMIT)) {
+            return parseStatement(tokens, STMT_COMMIT, parentNode, TYPE_COMMIT_STATEMENT);
         }
 
         return super.parseCustomStatement(tokens, parentNode);
@@ -1202,6 +1204,7 @@ public class PostgresDdlParser extends StandardDdlParser
         for (int i = 1; i < grantNodes.size(); i++) {
             AstNode grantNode = grantNodes.get(i);
             grantNode.setProperty(DDL_EXPRESSION, firstGrantNode.getProperty(DDL_EXPRESSION));
+grantNode.setProperty(DDL_LENGTH, firstGrantNode.getProperty(DDL_LENGTH));
             grantNode.setProperty(DDL_START_LINE_NUMBER, firstGrantNode.getProperty(DDL_START_LINE_NUMBER));
             grantNode.setProperty(DDL_START_CHAR_INDEX, firstGrantNode.getProperty(DDL_START_CHAR_INDEX));
             grantNode.setProperty(DDL_START_COLUMN_NUMBER, firstGrantNode.getProperty(DDL_START_COLUMN_NUMBER));
@@ -1623,7 +1626,7 @@ public class PostgresDdlParser extends StandardDdlParser
         } while (localTokens.canConsume(COMMA));
 
         if (unusedTokensSB.length() > 0) {
-            String msg = DdlSequencerI18n.unusedTokensParsingColumnDefinition.text(tableNode.getProperty(StandardDdlLexicon.NAME));
+            String msg = DdlSequencerI18n.unusedTokensParsingColumnDefinition.text(tableNode.getName());
             DdlParserProblem problem = new DdlParserProblem(Problems.WARNING, getCurrentMarkedPosition(), msg);
             problem.setUnusedSource(unusedTokensSB.toString());
             addProblem(problem, tableNode);
