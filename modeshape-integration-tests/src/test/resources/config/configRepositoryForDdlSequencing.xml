@@ -40,7 +40,7 @@
                 <mode:resource>/org/modeshape/sequencer/ddl/dialect/postgres/PostgresDdl.cnd</mode:resource>
             </jcr:nodeTypes>
             <!-- Define what the initial content looks like for each workspace -->
-            <mode:initialContent mode:workspaces="default" mode:applyToNewWorkspaces="true" mode:content="src/test/resources/config/modeshape-initial-content.xml"/>
+            <mode:initialContent mode:workspaces="default" mode:applyToNewWorkspaces="true" mode:content="config/modeshape-initial-content.xml"/>
         </mode:repository>
     </mode:repositories>
 

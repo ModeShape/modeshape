@@ -23,96 +23,154 @@
  */
 package org.modeshape.test.integration.sequencer.ddl;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
-import java.io.IOException;
-import java.net.URL;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import javax.jcr.Node;
-import javax.jcr.NodeIterator;
-import javax.jcr.PathNotFoundException;
-import javax.jcr.Property;
-import javax.jcr.PropertyIterator;
-import javax.jcr.PropertyType;
-import javax.jcr.RepositoryException;
-import javax.jcr.Session;
-import javax.jcr.Value;
-import javax.jcr.ValueFormatException;
+import javax.jcr.*;
+import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
+import javax.jcr.nodetype.NodeTypeManager;
+import javax.jcr.nodetype.PropertyDefinition;
+import static org.hamcrest.core.Is.is;
+import org.junit.After;
+import org.junit.AfterClass;
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
+import org.modeshape.jcr.JaasTestUtil;
+import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.JcrTools;
 import org.modeshape.repository.sequencer.SequencingService;
+import org.modeshape.sequencer.ddl.StandardDdlLexicon;
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
+ * Base class for the {@link org.modeshape.sequencer.ddl.DdlSequencer} integration tests
  *
+ * @author  ?
+ * @author Horia Chiorean
  */
-public class DdlIntegrationTestUtil {
-    public JcrEngine engine;
-    public Session session;
-    public JcrTools tools;
-    public static final String ddlTestResourceRootFolder = "org/modeshape/test/integration/sequencer/ddl/";
+public abstract class AbstractDdlIntegrationTest {
+
+    protected static final String DDL_TEST_RESOURCE_ROOT_FOLDER = "org/modeshape/test/integration/sequencer/ddl/";
+    protected static final String DEFAULT_REPOSITORY_NAME = "ddlRepository";
+    protected static final String DEFAULT_DDL_SEQUENCER = "DDL Sequencer";
+
+    private static final String DEFAULT_WORKSPACE_NAME = "default";
+    private static final String ROOT_PATH = "/a/b/";
+
+    protected Session session;
+    protected JcrEngine engine;
+    protected JcrConfiguration config;
     protected boolean print = false;
 
+    private JcrTools tools;
+
+    @BeforeClass
+    public static void beforeAll() {
+        // Initialize the JAAS configuration to allow for an admin login later
+        JaasTestUtil.initJaas("security/jaas.conf.xml");
+    }
+
+    @AfterClass
+    public static void afterAll() {
+        JaasTestUtil.releaseJaas();
+    }
+
+    @Before
+    public void beforeEach() throws Exception {
+        print = false;
+        tools = new JcrTools();
+        createDefaultConfig();
+        startEngine();
+    }
+
+    private JcrConfiguration createDefaultConfig() {
+        String repositorySource = "ddlRepositorySource";
+
+        config = new JcrConfiguration();
+        // Set up the in-memory source where we'll upload the content and where the sequenced output will be stored ...
+        config.repositorySource(repositorySource)
+                .usingClass(InMemoryRepositorySource.class)
+                .setDescription("The repository for our content")
+                .setProperty("defaultWorkspaceName", DEFAULT_WORKSPACE_NAME);
+        // Set up the JCR repository to use the source ...
+        config.repository(DEFAULT_REPOSITORY_NAME)
+                .setSource(repositorySource)
+                .addNodeTypes(getUrl("org/modeshape/sequencer/ddl/StandardDdl.cnd"))
+                .registerNamespace(StandardDdlLexicon.Namespace.PREFIX, StandardDdlLexicon.Namespace.URI);
+
+        // Set up the DDL sequencer ...
+        config.sequencer(DEFAULT_DDL_SEQUENCER)
+                .usingClass("org.modeshape.sequencer.ddl.DdlSequencer")
+                .loadedFromClasspath()
+                .setDescription("Sequences DDL files to extract individual statements and accompanying statement properties and values")
+                .sequencingFrom("(//(*.(ddl)[*]))/jcr:content[@jcr:data]")
+                .andOutputtingTo("/ddls/$1");
+        addCustomConfiguration();
+        config.save();
+        return config;
+    }
+
+    protected void startEngine() throws RepositoryException {
+        this.engine = config.build();
+        this.engine.start();
+        this.session = this.engine.getRepository(DEFAULT_REPOSITORY_NAME).login(
+                new SimpleCredentials("superuser", "superuser".toCharArray()), DEFAULT_WORKSPACE_NAME);
+    }
+
+    @After
+    public void afterEach() throws Exception {
+        if (this.session != null) {
+            this.session.logout();
+        }
+        if (this.engine != null) {
+            this.engine.shutdown();
+        }
+    }
+
+    protected void addCustomConfiguration() {
+        //nothing by default
+    }
+    
     protected URL getUrl( String urlStr ) {
         return this.getClass().getClassLoader().getResource(urlStr);
     }
 
-    public void uploadFile( String folder,
-                            String fileName,
-                            String testMethod ) throws RepositoryException, IOException {
-        // printStart(fileName, testMethod);
-
+    protected void uploadFile( String folder, String fileName ) throws RepositoryException, IOException {
         URL url = getUrl(folder + fileName);
         uploadFile(url);
     }
 
-    public void uploadFile( URL url ) throws RepositoryException, IOException {
+    private void uploadFile( URL url ) throws RepositoryException, IOException {
         // Grab the last segment of the URL path, using it as the filename
         String filename = url.getPath().replaceAll("([^/]*/)*", "");
-        String nodePath = "/a/b/" + filename;
-        // String mimeType = "ddl";
-
-        // Now use the JCR API to upload the file ...
-
-        // Create the node at the supplied path ...
-        // Node node = tools.findOrCreateNode(session.getRootNode(), nodePath, "nt:folder", "nt:file");
-
-        // Upload the file to that node ...
+        String nodePath = ROOT_PATH + filename;
         tools.uploadFile(session, nodePath, url);
-        // Node contentNode = tools.findOrCreateChild(node, "jcr:content", "nt:resource");
-        // contentNode.setProperty("jcr:mimeType", mimeType);
-        // contentNode.setProperty("jcr:lastModified", Calendar.getInstance());
-        // Binary binary = session.getValueFactory().createBinary(url.openStream());
-        // contentNode.setProperty("jcr:data", binary);
-
-        // Save the session ...
         session.save();
-
     }
 
     /**
      * Get the sequencing statistics.
-     * 
+     *
      * @return the statistics; never null
      */
-    public SequencingService.Statistics getStatistics() {
+    private SequencingService.Statistics getStatistics() {
         return this.engine.getSequencingService().getStatistics();
     }
 
-    public void waitUntilSequencedNodesIs( int totalNumberOfNodesSequenced ) throws InterruptedException {
+    protected void waitUntilSequencedNodesIs( int totalNumberOfNodesSequenced ) throws InterruptedException {
         // check 50 times, waiting 0.1 seconds between (for a total of 5 seconds max) ...
         waitUntilSequencedNodesIs(totalNumberOfNodesSequenced, 5);
     }
 
-    public void waitUntilSequencedNodesIs( int totalNumberOfNodesSequenced,
-                                           int numberOfSeconds ) throws InterruptedException {
+    private void waitUntilSequencedNodesIs( int totalNumberOfNodesSequenced, int numberOfSeconds ) throws InterruptedException {
         long numFound = 0;
-        int actualMillis = 0;
         int numberOfMillis = numberOfSeconds * 1000;
         int numberOfIterations = numberOfMillis / 100;
         for (int i = 0; i != numberOfIterations; i++) {
@@ -121,18 +179,14 @@ public class DdlIntegrationTestUtil {
                 return;
             }
             Thread.sleep(100);
-            actualMillis += 100;
         }
         fail("Expected to find " + totalNumberOfNodesSequenced + " nodes sequenced, but found " + numFound);
     }
 
-    public void verifyChildNode( Node parentNode,
-                                 String childNodeName,
-                                 String propName,
-                                 String expectedValue ) throws Exception {
+    protected void verifyChildNode( Node parentNode, String childNodeName, String propName, String expectedValue ) throws Exception {
         // Find child node
         Node childNode = null;
-        for (NodeIterator iter = parentNode.getNodes(); iter.hasNext();) {
+        for (NodeIterator iter = parentNode.getNodes(); iter.hasNext(); ) {
             Node nextNode = iter.nextNode();
             if (nextNode.getName().equals(childNodeName)) {
                 childNode = nextNode;
@@ -149,9 +203,7 @@ public class DdlIntegrationTestUtil {
 
     }
 
-    public void verifyNode( Node topNode,
-                            String name,
-                            String propName ) throws Exception {
+    protected void verifyNode( Node topNode, String name, String propName ) throws Exception {
         Node node = findNode(topNode, name);
 
         if (node != null) {
@@ -162,17 +214,12 @@ public class DdlIntegrationTestUtil {
 
     }
 
-    public void verifySimpleStringProperty( Node node,
-                                            String propName,
-                                            String expectedValue ) throws Exception {
+    protected void verifySimpleStringProperty( Node node, String propName, String expectedValue ) throws Exception {
         assertThat(node.hasProperty(propName), is(true));
         verifySingleValueProperty(node, propName, expectedValue);
     }
 
-    public void verifyNode( Node topNode,
-                            String name,
-                            String propName,
-                            String expectedValue ) throws Exception {
+    protected void verifyNode( Node topNode, String name, String propName, String expectedValue ) throws Exception {
         Node node = findNode(topNode, name);
 
         if (node != null) {
@@ -185,10 +232,7 @@ public class DdlIntegrationTestUtil {
 
     }
 
-    public void verifyNode( Node topNode,
-                            String name,
-                            String propName,
-                            int expectedValue ) throws Exception {
+    protected void verifyNode( Node topNode, String name, String propName, int expectedValue ) throws Exception {
         Node node = findNode(topNode, name);
 
         if (node != null) {
@@ -201,13 +245,11 @@ public class DdlIntegrationTestUtil {
 
     }
 
-    protected Value value( String value ) throws Exception {
+    private Value value( String value ) throws Exception {
         return session.getValueFactory().createValue(value);
     }
 
-    public void verifySingleValueProperty( Node node,
-                                           String propNameStr,
-                                           String expectedValue ) throws Exception {
+    protected void verifySingleValueProperty( Node node, String propNameStr, String expectedValue ) throws Exception {
         if (node == null) {
             return;
         }
@@ -231,9 +273,7 @@ public class DdlIntegrationTestUtil {
 
     }
 
-    public void verifySingleValueProperty( Node node,
-                                           String propNameStr,
-                                           int expectedValue ) throws Exception {
+    protected void verifySingleValueProperty( Node node, String propNameStr, int expectedValue ) throws Exception {
         Property prop = node.getProperty(propNameStr);
         Value expValue = session.getValueFactory().createValue(expectedValue);
         Object actualValue = prop.getValue();
@@ -241,9 +281,7 @@ public class DdlIntegrationTestUtil {
 
     }
 
-    public void verifyMixin( Node topNode,
-                             String nodeName,
-                             String nodeType ) throws Exception {
+    protected void verifyMixin( Node topNode, String nodeName, String nodeType ) throws Exception {
         Node node = findNode(topNode, nodeName);
 
         if (node != null) {
@@ -254,8 +292,7 @@ public class DdlIntegrationTestUtil {
         }
     }
 
-    public boolean hasMixin( Node node,
-                             String nodeType ) throws Exception {
+    protected boolean hasMixin( Node node, String nodeType ) throws Exception {
         for (NodeType mixin : node.getMixinNodeTypes()) {
             String mixinName = mixin.getName();
             if (mixinName.equals(nodeType)) {
@@ -265,16 +302,13 @@ public class DdlIntegrationTestUtil {
         return false;
     }
 
-    public void verifyMixin( Node node,
-                             String nodeType ) throws Exception {
+    protected void verifyMixin( Node node, String nodeType ) throws Exception {
         boolean foundMixin = hasMixin(node, nodeType);
 
         assertThat(foundMixin, is(true));
     }
 
-    public void verifyNodeType( Node topNode,
-                                String nodeName,
-                                String nodeTypeName ) throws Exception {
+    protected void verifyNodeType( Node topNode, String nodeName, String nodeTypeName ) throws Exception {
         Node node = findNode(topNode, nodeName);
 
         if (node != null) {
@@ -285,10 +319,7 @@ public class DdlIntegrationTestUtil {
 
     }
 
-    public void verifyNodeTypes( Node topNode,
-                                 String nodeName,
-                                 String nodeTypeName,
-                                 String... moreNodeTypeNames ) throws Exception {
+    protected void verifyNodeTypes( Node topNode, String nodeName, String nodeTypeName, String... moreNodeTypeNames ) throws Exception {
         Node node = findNode(topNode, nodeName);
 
         if (node != null) {
@@ -302,12 +333,11 @@ public class DdlIntegrationTestUtil {
 
     }
 
-    public Node findNode( Node node,
-                          String name ) throws Exception {
+    protected Node findNode( Node node, String name ) throws Exception {
         if (node.getName().equals(name)) {
             return node;
         }
-        for (NodeIterator iter = node.getNodes(); iter.hasNext();) {
+        for (NodeIterator iter = node.getNodes(); iter.hasNext(); ) {
             Node nextNode = iter.nextNode();
             if (nextNode.getName().equals(name)) {
                 return nextNode;
@@ -321,13 +351,11 @@ public class DdlIntegrationTestUtil {
         return null;
     }
 
-    public Node findNode( Node node,
-                          String name,
-                          String type ) throws Exception {
+    protected Node findNode( Node node, String name, String type ) throws Exception {
         if (node.getName().equals(name) && node.isNodeType(type)) { // (hasMixin(node, type) || node.isNodeType(type))) {
             return node;
         }
-        for (NodeIterator iter = node.getNodes(); iter.hasNext();) {
+        for (NodeIterator iter = node.getNodes(); iter.hasNext(); ) {
             Node nextNode = iter.nextNode();
             // String nextNodeName = nextNode.getName();
             // boolean isNodeType = nextNode.isNodeType(type);
@@ -345,74 +373,16 @@ public class DdlIntegrationTestUtil {
         return null;
     }
 
-    public Node assertNode( Node node,
-                            String name,
-                            String type ) throws Exception {
+    protected Node assertNode( Node node, String name, String type ) throws Exception {
         Node existingNode = findNode(node, name, type);
         assertNotNull(node);
 
         return existingNode;
     }
 
-    public void printPropertiesRecursive( Node node ) throws RepositoryException, PathNotFoundException, ValueFormatException {
-        printProperties(node);
-
-        for (NodeIterator iter = node.getNodes(); iter.hasNext();) {
-            printPropertiesRecursive(iter.nextNode());
-        }
-
-    }
-
-    public void printChildProperties( Node node ) throws RepositoryException, PathNotFoundException, ValueFormatException {
-        for (NodeIterator iter = node.getNodes(); iter.hasNext();) {
-            printProperties(iter.nextNode());
-        }
-
-    }
-
-    public void printProperties( Node node ) throws RepositoryException, PathNotFoundException, ValueFormatException {
-
-        System.out.println("\n >>>  NODE PATH: " + node.getPath());
-        System.out.println("           NAME: " + node.getName() + "\n");
-
-        // Create a Properties object containing the properties for this node; ignore any children ...
-        // Properties props = new PropMyCustomSecurityContexterties();
-        for (PropertyIterator propertyIter = node.getProperties(); propertyIter.hasNext();) {
-            Property property = propertyIter.nextProperty();
-            String name = property.getName();
-            String stringValue = null;
-            if (property.getDefinition().isMultiple()) {
-                StringBuilder sb = new StringBuilder();
-                boolean first = true;
-                for (Value value : property.getValues()) {
-                    if (!first) {
-                        sb.append(", ");
-                        first = false;
-                    }
-                    sb.append(value.getString());
-                }
-                stringValue = sb.toString();
-            } else {
-                stringValue = property.getValue().getString();
-            }
-            System.out.println("   | PROP: " + name + "  VALUE: " + stringValue);
-            // props.put(name, stringValue);
-        }
-    }
-
-    public void printStart( String fileName,
-                            String testMethod ) {
-        System.out.println("STARTED:  " + testMethod + "(" + fileName + ")");
-    }
-
-    public void printEnd( String fileName,
-                          String testMethod ) {
-        System.out.println("ENDED:    " + testMethod + "(" + fileName + ")");
-    }
-
     /**
      * Load the subgraph below this node, and print it to System.out if printing is enabled.
-     * 
+     *
      * @param node the root of the subgraph
      * @throws RepositoryException
      */
@@ -422,19 +392,18 @@ public class DdlIntegrationTestUtil {
 
     /**
      * Load the subgraph below this node, and print it to System.out if printing is enabled.
-     * 
+     *
      * @param node the root of the subgraph
      * @param maxDepth the maximum depth of the subgraph that should be printed
      * @throws RepositoryException
      */
-    protected void printSubgraph( Node node,
-                                  int maxDepth ) throws RepositoryException {
+    protected void printSubgraph( Node node, int maxDepth ) throws RepositoryException {
         printSubgraph(node, " ", node.getDepth(), maxDepth);
     }
 
     /**
      * Print this node and its properties to System.out if printing is enabled.
-     * 
+     *
      * @param node the node to be printed
      * @throws RepositoryException
      */
@@ -444,7 +413,7 @@ public class DdlIntegrationTestUtil {
 
     /**
      * Load the subgraph below this node, and print it to System.out if printing is enabled.
-     * 
+     *
      * @param node the root of the subgraph
      * @param lead the string that each line should begin with; may be null if there is no such string
      * @param depthOfSubgraph the depth of this subgraph's root node
@@ -455,10 +424,16 @@ public class DdlIntegrationTestUtil {
                                 String lead,
                                 int depthOfSubgraph,
                                 int maxDepthOfSubgraph ) throws RepositoryException {
-        if (!print) return;
+        if (!print) {
+            return;
+        }
         int currentDepth = node.getDepth() - depthOfSubgraph + 1;
-        if (currentDepth > maxDepthOfSubgraph) return;
-        if (lead == null) lead = "";
+        if (currentDepth > maxDepthOfSubgraph) {
+            return;
+        }
+        if (lead == null) {
+            lead = "";
+        }
         String nodeLead = lead + StringUtil.createString(' ', (currentDepth - 1) * 2);
 
         StringBuilder sb = new StringBuilder();
@@ -477,10 +452,15 @@ public class DdlIntegrationTestUtil {
             sb.append(" jcr:mixinTypes=[");
             boolean first = true;
             for (NodeType mixin : node.getMixinNodeTypes()) {
-                if (first) first = false;
-                else sb.append(',');
+                if (first) {
+                    first = false;
+                } else {
+                    sb.append(',');
+                }
                 sb.append(mixin.getName());
-                if (mixin.getName().equals("mix:referenceable")) referenceable = true;
+                if (mixin.getName().equals("mix:referenceable")) {
+                    referenceable = true;
+                }
             }
             sb.append(']');
         }
@@ -490,10 +470,12 @@ public class DdlIntegrationTestUtil {
         System.out.println(sb);
 
         List<String> propertyNames = new LinkedList<String>();
-        for (PropertyIterator iter = node.getProperties(); iter.hasNext();) {
+        for (PropertyIterator iter = node.getProperties(); iter.hasNext(); ) {
             Property property = iter.nextProperty();
             String name = property.getName();
-            if (name.equals("jcr:primaryType") || name.equals("jcr:mixinTypes") || name.equals("jcr:uuid")) continue;
+            if (name.equals("jcr:primaryType") || name.equals("jcr:mixinTypes") || name.equals("jcr:uuid")) {
+                continue;
+            }
             propertyNames.add(property.getName());
         }
         Collections.sort(propertyNames);
@@ -506,8 +488,11 @@ public class DdlIntegrationTestUtil {
                 sb.append('[');
                 boolean first = true;
                 for (Value value : property.getValues()) {
-                    if (first) first = false;
-                    else sb.append(',');
+                    if (first) {
+                        first = false;
+                    } else {
+                        sb.append(',');
+                    }
                     if (binary) {
                         sb.append(value.getBinary());
                     } else {
@@ -527,11 +512,88 @@ public class DdlIntegrationTestUtil {
         }
 
         if (currentDepth < maxDepthOfSubgraph) {
-            for (NodeIterator iter = node.getNodes(); iter.hasNext();) {
+            for (NodeIterator iter = node.getNodes(); iter.hasNext(); ) {
                 Node child = iter.nextNode();
                 printSubgraph(child, lead, depthOfSubgraph, maxDepthOfSubgraph);
             }
         }
     }
 
+    protected Node getStatementsContainer() throws RepositoryException {
+        Node statementsContainer = session.getRootNode().getNode("ddls" + ROOT_PATH);
+        validateSequencedNodeType(statementsContainer);
+        return statementsContainer;
+    }
+
+    /**
+     * Checks that the type (including mixins) of the sequenced node has at least the required properties and child definitions.
+     * This will recurse down to all the children of the given node.
+     *
+     * This method is only needed because of the fact that in 2.x, the Sequncer framework does not validate the integrity of the
+     * generated subgraph.
+     *
+     * @param sequencedNode a {@link Node} instance
+     * @throws RepositoryException if anything fails during this check
+     */
+    protected void validateSequencedNodeType( Node sequencedNode ) throws RepositoryException {
+        List<String> typeNames = getAllMixinAndTypeNames(sequencedNode);
+
+        for (PropertyDefinition propertyDef : collectAllRequiredProperties(typeNames)) {
+            if (propertyDef.isMandatory()) {
+                assertTrue("Property " + propertyDef.getName() + " not found under " + sequencedNode, sequencedNode.hasProperty(propertyDef.getName()));                
+            }
+            if (propertyDef.isMultiple()) {
+                assertArrayEquals(propertyDef.getDefaultValues(), sequencedNode.getProperty(propertyDef.getName()).getValues());
+            }
+        }
+
+        for (String childNodeName : collectAllRequiredChildren(typeNames)) {
+            assertTrue("Child " + childNodeName + "not found under " + sequencedNode, sequencedNode.hasNode(childNodeName));
+        }
+
+        for (NodeIterator childNodeIt = sequencedNode.getNodes(); childNodeIt.hasNext(); ) {
+            validateSequencedNodeType(childNodeIt.nextNode());
+        }
+    }
+
+    private List<PropertyDefinition> collectAllRequiredProperties( List<String> typeNames ) throws RepositoryException {
+        NodeTypeManager nodeTypeManager = session.getWorkspace().getNodeTypeManager();
+        List<PropertyDefinition> result = new ArrayList<PropertyDefinition>();
+        for (String typeName : typeNames) {
+            NodeType type = nodeTypeManager.getNodeType(typeName);
+            for (PropertyDefinition propertyDefinition : type.getPropertyDefinitions()) {
+                if (propertyDefinition.isMandatory()) {
+                    result.add(propertyDefinition);
+                }
+            }
+        }
+        return result;
+    }
+
+    private List<String> collectAllRequiredChildren( List<String> typeNames ) throws RepositoryException {
+        NodeTypeManager nodeTypeManager = session.getWorkspace().getNodeTypeManager();
+
+        List<String> result = new ArrayList<String>();
+        for (String typeName : typeNames) {
+            NodeType type = nodeTypeManager.getNodeType(typeName);
+            for (NodeDefinition childDefinition : type.getChildNodeDefinitions()) {
+                if (childDefinition.isMandatory()) {
+                    result.add(childDefinition.getName());
+                }
+            }
+        }
+        return result;
+    }
+
+    private List<String> getAllMixinAndTypeNames( Node sequencedNode ) throws RepositoryException {
+        List<String> types = new ArrayList<String>();
+
+        if (!sequencedNode.hasProperty("jcr:mixinTypes")) {
+            return types;
+        }
+        for (Value mixinValue : sequencedNode.getProperty("jcr:mixinTypes").getValues()) {
+            types.add(mixinValue.getString());
+        }
+        return types;
+    }
 }

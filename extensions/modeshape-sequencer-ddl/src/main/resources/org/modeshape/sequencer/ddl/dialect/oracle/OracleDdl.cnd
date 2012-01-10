@@ -137,14 +137,15 @@
   - ddl:datatypeScale (LONG)
   + oracleddl:parameter (oracleddl:functionParameter) = oracleddl:functionParameter sns
 [oracleddl:createIndexStatement]        > ddl:creatable, ddl:statement, oracleddl:indexOperand mixin
-  - oracleddl:tableName (string) mandatory
+  - oracleddl:tableName (string)
   - oracleddl:unique (boolean)
   - oracleddl:bitmap (boolean)
   + * (ddl:columnReference) = ddl:columnReference sns
 [oracleddl:createIndexTypeStatement]    > ddl:creatable, ddl:statement, oracleddl:indextypeOperand mixin
 [oracleddl:createJavaStatement]         > ddl:creatable, ddl:statement, oracleddl:javaOperand mixin
 [oracleddl:createLibraryStatement]      > ddl:creatable, ddl:statement, oracleddl:libraryOperand mixin
-[oracleddl:createMaterializedStatement] > ddl:creatable, ddl:statement, oracleddl:materializedOperand mixin
+[oracleddl:createMaterializedViewStatement] > ddl:creatable, ddl:statement, oracleddl:materializedOperand mixin
+[oracleddl:createMaterializedViewLogStatement] > ddl:creatable, ddl:statement, oracleddl:materializedOperand mixin
 [oracleddl:createOperatorStatement]     > ddl:creatable, ddl:statement, oracleddl:operatorOperand mixin
 [oracleddl:createOutlineStatement]      > ddl:creatable, ddl:statement, oracleddl:outlineOperand mixin
 [oracleddl:createPackageStatement]      > ddl:creatable, ddl:statement, oracleddl:packageOperand mixin

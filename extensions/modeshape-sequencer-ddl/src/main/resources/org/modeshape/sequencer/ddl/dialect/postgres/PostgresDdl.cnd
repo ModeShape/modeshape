@@ -187,6 +187,7 @@
 [postgresddl:truncateStatement]         > ddl:statement mixin
 [postgresddl:unlistenStatement]         > ddl:statement mixin
 [postgresddl:vacuumStatement]           > ddl:statement mixin
+[postgresddl:commitStatement]           > ddl:statement mixin
 
 // =============================================================================
 // GRANT STATEMENTS

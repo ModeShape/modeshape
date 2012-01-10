@@ -48,7 +48,7 @@ public class OracleDdlLexicon extends StandardDdlLexicon {
     public static final Name TYPE_CREATE_DISKGROUP_STATEMENT 		= new BasicName(Namespace.URI, "createDiskgroupStatement");
     public static final Name TYPE_CREATE_FUNCTION_STATEMENT 		= new BasicName(Namespace.URI, "createFunctionStatement");
     public static final Name TYPE_CREATE_INDEX_STATEMENT 			= new BasicName(Namespace.URI, "createIndexStatement");
-    public static final Name TYPE_CREATE_INDEXTYPE_STATEMENT 		= new BasicName(Namespace.URI, "createIndextypeStatement");
+    public static final Name TYPE_CREATE_INDEXTYPE_STATEMENT 		= new BasicName(Namespace.URI, "createIndexTypeStatement");
     public static final Name TYPE_CREATE_JAVA_STATEMENT 			= new BasicName(Namespace.URI, "createJavaStatement");
     public static final Name TYPE_CREATE_LIBRARY_STATEMENT 			= new BasicName(Namespace.URI, "createLibraryStatement");
     public static final Name TYPE_CREATE_MATERIALIZED_VIEW_STATEMENT 	      = new BasicName(Namespace.URI, "createMaterializedViewStatement");

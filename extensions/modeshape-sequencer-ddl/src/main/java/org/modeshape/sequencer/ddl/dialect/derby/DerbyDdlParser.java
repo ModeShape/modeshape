@@ -1,49 +1,6 @@
 package org.modeshape.sequencer.ddl.dialect.derby;
 
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.ALL_PRIVILEGES;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.COLUMN_ATTRIBUTE_TYPE;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.GRANTEE;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.GRANT_PRIVILEGE;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.NEW_NAME;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.PROPERTY_VALUE;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.SQL;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_COLUMN_DEFINITION;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_TABLE_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_DEFINITION;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_REFERENCE;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_TABLE_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_COLUMN_DEFINITION;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_TABLE_CONSTRAINT_DEFINITION;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_GRANT_ON_TABLE_STATEMENT;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_STATEMENT_OPTION;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.VALUE;
-import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.IS_TABLE_TYPE;
-import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.ORDER;
-import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.ROLE_NAME;
-import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TABLE_NAME;
-import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_CREATE_FUNCTION_STATEMENT;
-import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_CREATE_INDEX_STATEMENT;
-import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_CREATE_PROCEDURE_STATEMENT;
-import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_CREATE_ROLE_STATEMENT;
-import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_CREATE_SYNONYM_STATEMENT;
-import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_CREATE_TRIGGER_STATEMENT;
-import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_DECLARE_GLOBAL_TEMPORARY_TABLE_STATEMENT;
-import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_DROP_FUNCTION_STATEMENT;
-import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_DROP_INDEX_STATEMENT;
-import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_DROP_PROCEDURE_STATEMENT;
-import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_DROP_ROLE_STATEMENT;
-import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_DROP_SYNONYM_STATEMENT;
-import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_DROP_TRIGGER_STATEMENT;
-import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_FUNCTION_PARAMETER;
-import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_GRANT_ON_FUNCTION_STATEMENT;
-import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_GRANT_ON_PROCEDURE_STATEMENT;
-import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_GRANT_ROLES_STATEMENT;
-import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_INDEX_COLUMN_REFERENCE;
-import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_LOCK_TABLE_STATEMENT;
-import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_RENAME_INDEX_STATEMENT;
-import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.TYPE_RENAME_TABLE_STATEMENT;
-import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.UNIQUE_INDEX;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.*;
 import java.util.ArrayList;
 import java.util.List;
 import org.modeshape.common.text.ParsingException;
@@ -56,6 +13,7 @@ import org.modeshape.sequencer.ddl.StandardDdlParser;
 import org.modeshape.sequencer.ddl.DdlTokenStream.DdlTokenizer;
 import org.modeshape.sequencer.ddl.datatype.DataType;
 import org.modeshape.sequencer.ddl.datatype.DataTypeParser;
+import static org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlLexicon.*;
 import org.modeshape.sequencer.ddl.node.AstNode;
 
 /**
@@ -155,9 +113,9 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
         } else if (tokens.matches(STMT_CREATE_FUNCTION)) {
             return parseCreateFunction(tokens, parentNode);
         } else if (tokens.matches(STMT_CREATE_PROCEDURE)) {
-            return parseStatement(tokens, STMT_CREATE_PROCEDURE, parentNode, TYPE_CREATE_PROCEDURE_STATEMENT);
+            return parseCreateProcedure(tokens, parentNode);
         } else if (tokens.matches(STMT_CREATE_ROLE)) {
-            return parseStatement(tokens, STMT_CREATE_ROLE, parentNode, TYPE_CREATE_ROLE_STATEMENT);
+            return parseCreateRole(tokens, parentNode);
         } else if (tokens.matches(STMT_CREATE_SYNONYM)) {
             return parseCreateSynonym(tokens, parentNode);
         } else if (tokens.matches(STMT_CREATE_TRIGGER)) {
@@ -267,8 +225,17 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
 
         if (tokens.canConsume("TABLE")) {
             AstNode tableNode = nodeFactory().node("TABLE", functionNode, TYPE_CREATE_TABLE_STATEMENT);
+            tableNode.setProperty(DDL_START_LINE_NUMBER, getCurrentMarkedPosition().getLine());
+            tableNode.setProperty(DDL_START_CHAR_INDEX, getCurrentMarkedPosition().getIndexInContent());
+            tableNode.setProperty(DDL_START_COLUMN_NUMBER, getCurrentMarkedPosition().getColumn());
+
             parseColumnsAndConstraints(tokens, tableNode);
-            tableNode.setProperty(IS_TABLE_TYPE, true);
+
+            String expressionSource = "TABLE " + tokens.getMarkedContent();
+            tableNode.setProperty(DDL_EXPRESSION, expressionSource);
+            tableNode.setProperty(DDL_LENGTH, expressionSource.length());
+
+            functionNode.setProperty(IS_TABLE_TYPE, true);
         } else {
             // Assume DataType
             DataType datatype = getDatatypeParser().parse(tokens);
@@ -300,13 +267,12 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
                 String extName = parseName(tokens);
                 AstNode optionNode = nodeFactory().node("externalName", functionNode, TYPE_STATEMENT_OPTION);
                 optionNode.setProperty(VALUE, "EXTERNAL NAME" + SPACE + extName);
-            } else if (tokens.canConsume("PARAMETER", "STYLE")) {
-                AstNode optionNode = nodeFactory().node("parameterStyle", functionNode, TYPE_STATEMENT_OPTION);
+            } else if (tokens.canConsume("PARAMETER", "STYLE")) {                
                 if (tokens.canConsume("JAVA")) {
-                    optionNode.setProperty(VALUE, "PARAMETER STYLE" + SPACE + "JAVA");
+                    functionNode.setProperty(PARAMETER_STYLE, "PARAMETER STYLE" + SPACE + "JAVA");
                 } else {
                     tokens.consume("DERBY_JDBC_RESULT_SET");
-                    optionNode.setProperty(VALUE, "PARAMETER STYLE" + SPACE + "DERBY_JDBC_RESULT_SET");
+                    functionNode.setProperty(PARAMETER_STYLE, "PARAMETER STYLE" + SPACE + "DERBY_JDBC_RESULT_SET");
                 }
             } else if (tokens.canConsume("NO", "SQL")) {
                 AstNode optionNode = nodeFactory().node("sqlStatus", functionNode, TYPE_STATEMENT_OPTION);
@@ -382,7 +348,34 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
 
         String functionName = parseName(tokens);
 
-        AstNode functionNode = nodeFactory().node(functionName, parentNode, TYPE_CREATE_FUNCTION_STATEMENT);
+        AstNode functionNode = nodeFactory().node(functionName, parentNode, TYPE_CREATE_PROCEDURE_STATEMENT);
+
+        parseUntilTerminator(tokens);
+        markEndOfStatement(tokens, functionNode);
+
+        return functionNode;
+    }
+
+/**
+     * Parses DDL CREATE ROLE statement
+     *
+     * @param tokens the tokenized {@link DdlTokenStream} of the DDL input content; may not be null
+     * @param parentNode the parent {@link AstNode} node; may not be null
+     * @return the parsed CREATE ROLE statement node
+     * @throws ParsingException
+     */
+    protected AstNode parseCreateRole( DdlTokenStream tokens,
+                                            AstNode parentNode ) throws ParsingException {
+        assert tokens != null;
+        assert parentNode != null;
+
+        markStartOfStatement(tokens);
+
+        tokens.consume(CREATE, "ROLE");
+
+        String functionName = parseName(tokens);
+
+        AstNode functionNode = nodeFactory().node(functionName, parentNode, TYPE_CREATE_ROLE_STATEMENT);
 
         markEndOfStatement(tokens, functionNode);
 
@@ -677,8 +670,7 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
 
                 String columnName = parseName(tokens);
 
-                AstNode columnNode = nodeFactory().node(columnName, alterTableNode, TYPE_DROP_COLUMN_DEFINITION);
-                columnNode.setProperty(StandardDdlLexicon.NAME, columnName);
+                AstNode columnNode = nodeFactory().node(columnName, alterTableNode, TYPE_DROP_COLUMN_DEFINITION);                
 
                 if (tokens.canConsume(DropBehavior.CASCADE)) {
                     columnNode.setProperty(StandardDdlLexicon.DROP_BEHAVIOR, DropBehavior.CASCADE);
@@ -810,7 +802,7 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
         }
 
         if (unusedTokensSB.length() > 0) {
-            String msg = DdlSequencerI18n.unusedTokensParsingColumnDefinition.text(tableNode.getProperty(StandardDdlLexicon.NAME));
+            String msg = DdlSequencerI18n.unusedTokensParsingColumnDefinition.text(tableNode.getName());
             DdlParserProblem problem = new DdlParserProblem(Problems.WARNING, getCurrentMarkedPosition(), msg);
             problem.setUnusedSource(unusedTokensSB.toString());
             addProblem(problem, tableNode);
@@ -848,7 +840,7 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
         } while (localTokens.canConsume(COMMA));
 
         if (unusedTokensSB.length() > 0) {
-            String msg = DdlSequencerI18n.unusedTokensParsingColumnDefinition.text(tableNode.getProperty(StandardDdlLexicon.NAME));
+            String msg = DdlSequencerI18n.unusedTokensParsingColumnDefinition.text(tableNode.getName());
             DdlParserProblem problem = new DdlParserProblem(Problems.WARNING, getCurrentMarkedPosition(), msg);
             problem.setUnusedSource(unusedTokensSB.toString());
             addProblem(problem, tableNode);
@@ -885,7 +877,7 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
                 tokens.consume(R_PAREN);
                 sb.append(SPACE).append(R_PAREN);
             }
-            AstNode propNode = nodeFactory().node("GENERATED_COLUMN_SPEC", columnNode, COLUMN_ATTRIBUTE_TYPE);
+            AstNode propNode = nodeFactory().node(StandardDdlLexicon.COLUMN_ATTRIBUTE_TYPE.getString(), columnNode, TYPE_SIMPLE_PROPERTY);
             propNode.setProperty(PROPERTY_VALUE, sb.toString());
 
             return true;
