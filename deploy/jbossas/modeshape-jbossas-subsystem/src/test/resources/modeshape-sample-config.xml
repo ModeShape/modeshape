@@ -1,0 +1,4 @@
+<subsystem xmlns="urn:jboss:domain:modeshape:3.0">
+<repository name="sample" jndi-name="modeshape_repo1" root-node-id="cafebabe-cafe-babe-cafe-babecafebabe1" large-value-size="10239"/>
+<repository name="sample2" jndi-name="modeshape_repo2" />
+</subsystem>

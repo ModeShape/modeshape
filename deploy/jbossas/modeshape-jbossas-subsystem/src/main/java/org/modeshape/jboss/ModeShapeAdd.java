@@ -65,53 +65,6 @@ import org.modeshape.jboss.subsystem.JBossManagedI18n;
 class ModeShapeAdd extends AbstractAddStepHandler implements DescriptionProvider {
 
 	private static Element[] attributes = {
-		Element.REPOSITORY_ELEMENT,
-		Element.REPOSITORY_NAME_ATTRIBUTE,
-		Element.REPOSITORY_JNDI_NAME_ATTRIBUTE,
-		Element.REPOSITORY_ROOT_NODE_ID_ATTRIBUTE,
-		Element.REPOSITORY_LARGE_VALUE_SIZE_ID_ATTRIBUTE
-//		Element.MAX_THREADS_ELEMENT,
-//		Element.MAX_ACTIVE_PLANS_ELEMENT,
-//		Element.USER_REQUEST_SOURCE_CONCURRENCY_ELEMENT, 
-//		Element.TIME_SLICE_IN_MILLI_ELEMENT, 
-//		Element.MAX_ROWS_FETCH_SIZE_ELEMENT,
-//		Element.LOB_CHUNK_SIZE_IN_KB_ELEMENT,
-//		Element.QUERY_THRESHOLD_IN_SECS_ELEMENT,
-//		Element.MAX_SOURCE_ROWS_ELEMENT,
-//		Element.EXCEPTION_ON_MAX_SOURCE_ROWS_ELEMENT, 
-//		Element.DETECTING_CHANGE_EVENTS_ELEMENT,
-//		Element.QUERY_TIMEOUT,
-//		Element.WORKMANAGER,
-//		Element.AUTHORIZATION_VALIDATOR_MODULE_ATTRIBUTE,
-//		Element.POLICY_DECIDER_MODULE_ATTRIBUTE,
-//		
-//		// object replicator
-//		Element.OR_STACK_ATTRIBUTE,
-//		Element.OR_CLUSTER_NAME_ATTRIBUTE,
-//
-//		// Buffer Service
-//		Element.USE_DISK_ATTRIBUTE,
-//		Element.INLINE_LOBS,
-//		Element.PROCESSOR_BATCH_SIZE_ATTRIBUTE,
-//		Element.CONNECTOR_BATCH_SIZE_ATTRIBUTE,
-//		Element.MAX_PROCESSING_KB_ATTRIBUTE,
-//		Element.MAX_RESERVED_KB_ATTRIBUTE,
-//		Element.MAX_FILE_SIZE_ATTRIBUTE,
-//		Element.MAX_BUFFER_SPACE_ATTRIBUTE,
-//		Element.MAX_OPEN_FILES_ATTRIBUTE,
-//		Element.MEMORY_BUFFER_SPACE_ATTRIBUTE,
-//		Element.MEMORY_BUFFER_OFFHEAP_ATTRIBUTE,
-//		Element.MAX_STORAGE_OBJECT_SIZE_ATTRIBUTE,
-//		
-//		// prepared plan cache
-//		Element.PPC_MAX_ENTRIES_ATTRIBUTE,
-//		Element.PPC_MAX_AGE_IN_SECS_ATTRIBUTE,
-//		
-//		// resultset cache
-//		Element.RSC_NAME_ELEMENT,
-//		Element.RSC_CONTAINER_NAME_ELEMENT,
-//		Element.RSC_MAX_STALENESS_ELEMENT,
-//		Element.RSC_ENABLE_ATTRIBUTE
 	};
 	
 	@Override
@@ -121,7 +74,7 @@ class ModeShapeAdd extends AbstractAddStepHandler implements DescriptionProvider
         node.get(OPERATION_NAME).set(ADD);
         node.get(DESCRIPTION).set(bundle.getString("modeshape.add")); //$NON-NLS-1$
         
-        describeModeShape(node, REQUEST_PROPERTIES,  bundle);
+        describeModeShape(node, REQUEST_PROPERTIES,  bundle); 
 		
         return node;
 	}
