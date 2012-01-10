@@ -60,8 +60,10 @@ import org.modeshape.jboss.subsystem.JBossManagedI18n;
 public class RepositoryAdd extends AbstractAddStepHandler implements DescriptionProvider {
 
 	private static Element[] attributes = {
-		Element.REPOSITORY_ELEMENT,
-		Element.REPOSITORY_NAME_ATTRIBUTE
+		Element.REPOSITORY_JNDI_NAME_ATTRIBUTE,
+		Element.REPOSITORY_ROOT_NODE_ID_ATTRIBUTE,
+		Element.REPOSITORY_LARGE_VALUE_SIZE_ID_ATTRIBUTE
+		
 	};
 	
 	@Override
@@ -73,7 +75,7 @@ public class RepositoryAdd extends AbstractAddStepHandler implements Description
         node.get(DESCRIPTION).set("repository.add");  //$NON-NLS-1$
         
         describeRepository(node, REQUEST_PROPERTIES, bundle);
-        return node;
+        return node; 
 	}
 	
 	static void describeRepository(ModelNode node, String type, ResourceBundle bundle) {

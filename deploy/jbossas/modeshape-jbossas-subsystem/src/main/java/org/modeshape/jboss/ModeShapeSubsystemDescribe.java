@@ -66,28 +66,28 @@ public class ModeShapeSubsystemDescribe implements OperationStepHandler, Descrip
         PathAddress rootAddress = PathAddress.pathAddress(PathAddress.pathAddress(operation.require(ModelDescriptionConstants.OP_ADDR)).getLastElement());
         ModelNode subModel = Resource.Tools.readModel(context.readResource(PathAddress.EMPTY_ADDRESS));
 
-//        final ModelNode subsystemAdd = new ModelNode();
-//        subsystemAdd.get(OP).set(ADD);
-//        subsystemAdd.get(OP_ADDR).set(rootAddress.toModelNode());
-//
-//        TeiidAdd.populate(subModel, subsystemAdd);
-//        result.add(subsystemAdd);
-//        
-//        if (subModel.hasDefined(Element.TRANSPORT_ELEMENT.getLocalName())) {
-//            for (Property container : subModel.get(Element.TRANSPORT_ELEMENT.getLocalName()).asPropertyList()) {
-//                ModelNode address = rootAddress.toModelNode();
-//                address.add(Element.TRANSPORT_ELEMENT.getLocalName(), container.getName());
-//                
-//                final ModelNode addOperation = new ModelNode();
-//                addOperation.get(OP).set(ADD);
-//                addOperation.get(OP_ADDR).set(address);
-//                
-//                TransportAdd.populate(container.getValue(), addOperation);
-//                
-//                result.add(addOperation);
-//            }
-//        }
-//        
+        final ModelNode subsystemAdd = new ModelNode();
+        subsystemAdd.get(OP).set(ADD);
+        subsystemAdd.get(OP_ADDR).set(rootAddress.toModelNode());
+
+        ModeShapeAdd.populate(subModel, subsystemAdd);
+        result.add(subsystemAdd);
+        
+        if (subModel.hasDefined(Element.REPOSITORY_ELEMENT.getLocalName())) {
+            for (Property container : subModel.get(Element.REPOSITORY_ELEMENT.getLocalName()).asPropertyList()) {
+                ModelNode address = rootAddress.toModelNode();
+                address.add(Element.REPOSITORY_ELEMENT.getLocalName(), container.getName());
+                
+                final ModelNode addOperation = new ModelNode();
+                addOperation.get(OP).set(ADD);
+                addOperation.get(OP_ADDR).set(address);
+                
+                RepositoryAdd.populate(container.getValue(), addOperation);
+                
+                result.add(addOperation);
+            }
+        }
+        
 //        if (subModel.hasDefined(Element.TRANSLATOR_ELEMENT.getLocalName())) {
 //            for (Property container : subModel.get(Element.TRANSLATOR_ELEMENT.getLocalName()).asPropertyList()) {
 //                ModelNode address = rootAddress.toModelNode();

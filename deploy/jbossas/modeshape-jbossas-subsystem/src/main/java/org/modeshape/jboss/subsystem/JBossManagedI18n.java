@@ -33,7 +33,7 @@ import org.modeshape.common.i18n.I18n;
  */
 public final class JBossManagedI18n {
 
-	private static final String PLUGIN_ID = "org.teiid.jboss" ; //$NON-NLS-1$
+	private static final String PLUGIN_ID = "org.modeshape.jboss.subsystem" ; //$NON-NLS-1$
 	static final String BUNDLE_NAME = PLUGIN_ID + ".i18n"; //$NON-NLS-1$
 	   
     public static I18n repositoryEngineIsNotRunning;
