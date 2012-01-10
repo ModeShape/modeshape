@@ -32,6 +32,7 @@ import java.util.Comparator;
 import java.util.Set;
 import javax.jcr.Value;
 import javax.jcr.ValueFactory;
+import javax.jcr.query.qom.DescendantNode;
 import javax.jcr.query.qom.EquiJoinCondition;
 import org.junit.Before;
 import org.junit.Test;
@@ -319,6 +320,57 @@ public class JcrSql2QueryParserTest {
         assertThat(joinCondition.descendantSelectorName(), is(selectorName("lang")));
     }
 
+    @FixFor( "MODE-1366" )
+    @Test
+    public void shouldParseSelectStarFromSourceWithDescendantNodeCriteriaWithNoSnsIndexInPath() {
+        query = parse("SELECT * FROM [car:Car] WHERE ISDESCENDANTNODE([car:Car],[/foo/bar])");
+        // SELECT * ...
+        assertThat(query.columns().isEmpty(), is(true));
+        // FROM ...
+        NamedSelector selector = (NamedSelector)query.source();
+        assertThat(selector.name(), is(selectorName("car:Car")));
+        assertThat(selector.aliasOrName(), is(selectorName("car:Car")));
+        assertThat(selector.alias(), is(nullValue()));
+        // WHERE ...
+        DescendantNode desc = isDescendantNodeCriteria(query.constraint());
+        assertThat(desc.getSelectorName(), is("car:Car"));
+        assertThat(desc.getAncestorPath(), is("/foo/bar"));
+    }
+
+    @FixFor( "MODE-1366" )
+    @Test
+    public void shouldParseSelectStarFromSourceWithDescendantNodeCriteriaWithSnsIndexInPathAndSquareBrackets() {
+        query = parse("SELECT * FROM [car:Car] WHERE ISDESCENDANTNODE([car:Car],[/foo/bar[2]])");
+        // SELECT * ...
+        assertThat(query.columns().isEmpty(), is(true));
+        // FROM ...
+        NamedSelector selector = (NamedSelector)query.source();
+        assertThat(selector.name(), is(selectorName("car:Car")));
+        assertThat(selector.aliasOrName(), is(selectorName("car:Car")));
+        assertThat(selector.alias(), is(nullValue()));
+        // WHERE ...
+        DescendantNode desc = isDescendantNodeCriteria(query.constraint());
+        assertThat(desc.getSelectorName(), is("car:Car"));
+        assertThat(desc.getAncestorPath(), is("/foo/bar[2]"));
+    }
+
+    @FixFor( "MODE-1366" )
+    @Test
+    public void shouldParseSelectStarFromSourceWithDescendantNodeCriteriaWithSnsIndexInPath() {
+        query = parse("SELECT * FROM [car:Car] WHERE ISDESCENDANTNODE([car:Car],'/foo/bar[2]')");
+        // SELECT * ...
+        assertThat(query.columns().isEmpty(), is(true));
+        // FROM ...
+        NamedSelector selector = (NamedSelector)query.source();
+        assertThat(selector.name(), is(selectorName("car:Car")));
+        assertThat(selector.aliasOrName(), is(selectorName("car:Car")));
+        assertThat(selector.alias(), is(nullValue()));
+        // WHERE ...
+        DescendantNode desc = isDescendantNodeCriteria(query.constraint());
+        assertThat(desc.getSelectorName(), is("car:Car"));
+        assertThat(desc.getAncestorPath(), is("/foo/bar[2]"));
+    }
+
     @FixFor( "MODE-934" )
     @Test
     public void shouldParseQueryWithUnqualifiedPathInSelect() {
@@ -487,6 +539,11 @@ public class JcrSql2QueryParserTest {
     protected Comparison isComparison( Constraint constraint ) {
         assertThat(constraint, is(instanceOf(Comparison.class)));
         return (Comparison)constraint;
+    }
+
+    protected DescendantNode isDescendantNodeCriteria( Constraint constraint ) {
+        assertThat(constraint, is(instanceOf(DescendantNode.class)));
+        return (DescendantNode)constraint;
     }
 
     protected SameNodeJoinCondition isSameNodeJoinCondition( JoinCondition condition ) {

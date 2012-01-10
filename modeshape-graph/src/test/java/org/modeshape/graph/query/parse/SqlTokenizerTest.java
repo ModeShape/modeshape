@@ -26,13 +26,13 @@ package org.modeshape.graph.query.parse;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import java.util.LinkedList;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.text.Position;
 import org.modeshape.common.text.TokenStream.CharacterArrayStream;
 import org.modeshape.common.text.TokenStream.Tokens;
 import org.modeshape.graph.query.parse.SqlQueryParser.SqlTokenizer;
-import org.junit.Before;
-import org.junit.Test;
 
 public class SqlTokenizerTest {
 
@@ -258,6 +258,30 @@ public class SqlTokenizerTest {
     public void shouldCreateTokenForDoubleQuotedStringWithoutClosingQuote() {
         String content = "==\"this is a double-quoted \n string";
         tokenize(content);
+    }
+
+    @Test
+    public void shouldCreateTokenForSquareBracketQuotedString() {
+        String content = "[/foo/bar/baz]";
+        tokenize(content);
+        assertNextTokenIs(0, content.length(), SqlTokenizer.QUOTED_STRING);
+        assertNoMoreTokens();
+    }
+
+    @Test
+    public void shouldCreateTokenForSquareBracketQuotedStringWithEmbeddedUnquotedSquareBrackets() {
+        String content = "[/foo/bar[12]/baz[3]]";
+        tokenize(content);
+        assertNextTokenIs(0, content.length(), SqlTokenizer.QUOTED_STRING);
+        assertNoMoreTokens();
+    }
+
+    @Test
+    public void shouldCreateTokenForSquareBracketQuotedStringWithUnrealisticEmbeddedUnquotedSquareBrackets() {
+        String content = "[/foo/bar[12]/baz[[[3]]]]";
+        tokenize(content);
+        assertNextTokenIs(0, content.length(), SqlTokenizer.QUOTED_STRING);
+        assertNoMoreTokens();
     }
 
     @Test
