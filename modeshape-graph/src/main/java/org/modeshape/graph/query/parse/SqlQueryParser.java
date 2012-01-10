@@ -54,6 +54,7 @@ import org.modeshape.graph.query.model.DescendantNodeJoinCondition;
 import org.modeshape.graph.query.model.DynamicOperand;
 import org.modeshape.graph.query.model.EquiJoinCondition;
 import org.modeshape.graph.query.model.FullTextSearch;
+import org.modeshape.graph.query.model.FullTextSearch.Term;
 import org.modeshape.graph.query.model.FullTextSearchScore;
 import org.modeshape.graph.query.model.Join;
 import org.modeshape.graph.query.model.JoinCondition;
@@ -83,14 +84,13 @@ import org.modeshape.graph.query.model.Selector;
 import org.modeshape.graph.query.model.SelectorName;
 import org.modeshape.graph.query.model.SetCriteria;
 import org.modeshape.graph.query.model.SetQuery;
+import org.modeshape.graph.query.model.SetQuery.Operation;
 import org.modeshape.graph.query.model.Source;
 import org.modeshape.graph.query.model.StaticOperand;
 import org.modeshape.graph.query.model.Subquery;
 import org.modeshape.graph.query.model.TypeSystem;
-import org.modeshape.graph.query.model.UpperCase;
-import org.modeshape.graph.query.model.FullTextSearch.Term;
-import org.modeshape.graph.query.model.SetQuery.Operation;
 import org.modeshape.graph.query.model.TypeSystem.TypeFactory;
+import org.modeshape.graph.query.model.UpperCase;
 
 /**
  * A {@link QueryParser} implementation that parses a subset of SQL select and set queries.
@@ -1609,12 +1609,36 @@ public class SqlQueryParser implements QueryParser {
                     case ':':
                         tokens.addToken(input.position(input.index()), input.index(), input.index() + 1, SYMBOL);
                         break;
-                    case '\'':
                     case '[':
-                    case '\"':
                         int startIndex = input.index();
-                        char closingChar = c == '[' ? ']' : c;
+                        char closingChar = ']';
                         Position pos = input.position(startIndex);
+                        // found one opening character, so we expect to find one closing character ...
+                        int numExpectedClosingQuoteChars = 1;
+                        while (input.hasNext()) {
+                            c = input.next();
+                            if (c == '\\' && input.isNext(closingChar)) {
+                                c = input.next(); // consume the closingChar since it is escaped
+                            } else if (c == '[') {
+                                // Found an opening quote character (within the literal) ...
+                                ++numExpectedClosingQuoteChars;
+                            } else if (c == closingChar) {
+                                --numExpectedClosingQuoteChars;
+                                if (numExpectedClosingQuoteChars == 0) break;
+                            }
+                        }
+                        if (numExpectedClosingQuoteChars > 0) {
+                            String msg = GraphI18n.noMatchingBracketFound.text(pos.getLine(), pos.getColumn());
+                            throw new ParsingException(pos, msg);
+                        }
+                        int endIndex = input.index() + 1; // beyond last character read
+                        tokens.addToken(pos, startIndex, endIndex, QUOTED_STRING);
+                        break;
+                    case '\'':
+                    case '\"':
+                        startIndex = input.index();
+                        closingChar = c;
+                        pos = input.position(startIndex);
                         boolean foundClosingQuote = false;
                         while (input.hasNext()) {
                             c = input.next();
@@ -1629,12 +1653,10 @@ public class SqlQueryParser implements QueryParser {
                             String msg = CommonI18n.noMatchingDoubleQuoteFound.text(pos.getLine(), pos.getColumn());
                             if (closingChar == '\'') {
                                 msg = CommonI18n.noMatchingSingleQuoteFound.text(pos.getLine(), pos.getColumn());
-                            } else if (closingChar == ']') {
-                                msg = GraphI18n.noMatchingBracketFound.text(pos.getLine(), pos.getColumn());
                             }
                             throw new ParsingException(pos, msg);
                         }
-                        int endIndex = input.index() + 1; // beyond last character read
+                        endIndex = input.index() + 1; // beyond last character read
                         tokens.addToken(pos, startIndex, endIndex, QUOTED_STRING);
                         break;
                     case '-':
