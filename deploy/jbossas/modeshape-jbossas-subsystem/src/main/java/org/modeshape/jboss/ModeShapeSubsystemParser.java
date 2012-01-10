@@ -58,18 +58,80 @@ class ModeShapeSubsystemParser implements XMLStreamConstants,
 		if (!node.isDefined()) {
 			return;
 		}
-		writeElement(writer, Element.REPOSITORY_ELEMENT, node);
+
+		if (has(node, Element.REPOSITORY_ELEMENT.getLocalName())) {
+	    	ArrayList<String> repositories = new ArrayList<String>(node.get(Element.REPOSITORY_ELEMENT.getLocalName()).keys());
+	    	Collections.sort(repositories);
+	    	if (!repositories.isEmpty()) {
+	    		for (String repository:repositories) {
+	    	        writer.writeStartElement(Element.REPOSITORY_ELEMENT.getLocalName());
+	    	        writeRepositoryConfiguration(writer, node.get(Element.REPOSITORY_ELEMENT.getLocalName(), repository), repository);
+	    	        writer.writeEndElement();    			
+	    		}
+	    	}        
+    	}   
 		
 		writer.writeEndElement(); // End of subsystem element
-
+		
 	}
+	
+	 // write the elements according to the schema defined.
+    private void writeRepositoryConfiguration( XMLExtendedStreamWriter writer, ModelNode node, String repositoryName) throws XMLStreamException {
+    	
+    	writer.writeAttribute(Element.REPOSITORY_NAME_ATTRIBUTE.getLocalName(), repositoryName);
+    	writeAttribute(writer, Element.REPOSITORY_JNDI_NAME_ATTRIBUTE, node);
+    	writeAttribute(writer, Element.REPOSITORY_ROOT_NODE_ID_ATTRIBUTE, node);
+    	writeAttribute(writer, Element.REPOSITORY_LARGE_VALUE_SIZE_ID_ATTRIBUTE, node);;
+    	
+//    	// authentication
+//    	if (like(node, Element.AUTHENTICATION_ELEMENT)) {
+//			writer.writeStartElement(Element.AUTHENTICATION_ELEMENT.getLocalName());
+//			writeAttribute(writer, Element.AUTHENTICATION_SECURITY_DOMAIN_ATTRIBUTE, node);
+//			writeAttribute(writer, Element.AUTHENTICATION_MAX_SESSIONS_ALLOWED_ATTRIBUTE, node);
+//			writeAttribute(writer, Element.AUTHENTICATION_SESSION_EXPIRATION_TIME_LIMIT_ATTRIBUTE, node);
+//			writeAttribute(writer, Element.AUTHENTICATION_KRB5_DOMAIN_ATTRIBUTE, node);
+//			writer.writeEndElement();
+//    	}
+//    	
+//    	if (like(node, Element.PG_ELEMENT)) {
+//			writer.writeStartElement(Element.PG_ELEMENT.getLocalName());
+//			writeAttribute(writer, Element.PG_MAX_LOB_SIZE_ALLOWED_ELEMENT, node);			
+//			writer.writeEndElement();
+//    	}    	
+//    	
+//    	if (like(node, Element.SSL_ELEMENT)) {
+//			writer.writeStartElement(Element.SSL_ELEMENT.getLocalName());
+//			
+//			writeAttribute(writer, Element.SSL_MODE_ATTRIBUTE, node);
+//			writeAttribute(writer, Element.SSL_AUTH_MODE_ATTRIBUTE, node);
+//			writeAttribute(writer, Element.SSL_SSL_PROTOCOL_ATTRIBUTE, node);
+//			writeAttribute(writer, Element.SSL_KEY_MANAGEMENT_ALG_ATTRIBUTE, node);
+//			writeAttribute(writer, Element.SSL_ENABLED_CIPHER_SUITES_ATTRIBUTE, node);
+//
+//			if (like(node, Element.SSL_KETSTORE_ELEMENT)) {
+//				writer.writeStartElement(Element.SSL_KETSTORE_ELEMENT.getLocalName());
+//				writeAttribute(writer, Element.SSL_KETSTORE_NAME_ATTRIBUTE, node);
+//				writeAttribute(writer, Element.SSL_KETSTORE_PASSWORD_ATTRIBUTE, node);
+//				writeAttribute(writer, Element.SSL_KETSTORE_TYPE_ATTRIBUTE, node);
+//				writer.writeEndElement();
+//			}
+//			
+//			if (like(node, Element.SSL_TRUSTSTORE_ELEMENT)) {
+//				writer.writeStartElement(Element.SSL_TRUSTSTORE_ELEMENT.getLocalName());
+//				writeAttribute(writer, Element.SSL_TRUSTSTORE_NAME_ATTRIBUTE, node);
+//				writeAttribute(writer, Element.SSL_TRUSTSTORE_PASSWORD_ATTRIBUTE, node);
+//				writer.writeEndElement();
+//			}			
+//			writer.writeEndElement();
+//    	}
+    }
 
 	@Override
 	public void readElement(final XMLExtendedStreamReader reader,
 			final List<ModelNode> list) throws XMLStreamException {
 		final ModelNode address = new ModelNode();
 		address.add(SUBSYSTEM, ModeShapeExtension.MODESHAPE_SUBSYSTEM);
-		//address.protect();
+		address.protect();
 
 		final ModelNode bootServices = new ModelNode();
 		bootServices.get(OP).set(ADD);
@@ -140,6 +202,15 @@ class ModeShapeSubsystemParser implements XMLStreamConstants,
 				case REPOSITORY_NAME_ATTRIBUTE:
 					repositoryName = attrValue;
 					break;
+				case REPOSITORY_JNDI_NAME_ATTRIBUTE:
+    				node.get(element.getModelName()).set(attrValue);
+    				break;
+				case REPOSITORY_ROOT_NODE_ID_ATTRIBUTE:
+    				node.get(element.getModelName()).set(attrValue);
+    				break;
+				case REPOSITORY_LARGE_VALUE_SIZE_ID_ATTRIBUTE:
+    				node.get(element.getModelName()).set(attrValue);
+    				break;	
 				default:
 					throw ParseUtils.unexpectedAttribute(reader, i);
 				}
@@ -389,12 +460,10 @@ class ModeShapeSubsystemParser implements XMLStreamConstants,
 			final Element element, final ModelNode node)
 			throws XMLStreamException {
 		if (has(node, element.getModelName())) {
-			String value = node.get(element.getModelName()).asString();
-			if (!element.sameAsDefault(value)) {
-				writer.writeStartElement(element.getLocalName());
-				writer.writeCharacters(value);
-				writer.writeEndElement();
-			}
+			writer.writeStartElement(element.getLocalName());
+			writeAttribute(writer, element, node);
+			writer.writeEndElement();
+			
 		}
 	}
 
