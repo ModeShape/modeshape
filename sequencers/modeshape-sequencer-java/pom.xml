@@ -8,11 +8,11 @@
         <relativePath>../../modeshape-parent</relativePath>
     </parent>
     <!-- The groupId and version values are inherited from parent -->
-    <artifactId>modeshape-sequencer-classfile</artifactId>
+    <artifactId>modeshape-sequencer-java</artifactId>
     <packaging>jar</packaging>
-    <name>ModeShape Java Class File Sequencer</name>
+    <name>ModeShape Java Class and Java Source File Sequencer</name>
 
-    <description>ModeShape Sequencer that processes Java class files</description>
+    <description>ModeShape Sequencer that processes Java class and source files</description>
     <url>http://www.modeshape.org</url>
 
     <!--
