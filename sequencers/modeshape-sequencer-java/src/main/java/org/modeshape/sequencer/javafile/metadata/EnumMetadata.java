@@ -3,8 +3,8 @@
  * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors. 
+ * See the AUTHORS.txt file in the distribution for a full listing of
+ * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
@@ -14,21 +14,31 @@
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ * Lesser General Public License for more details
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this software; if not, write to the Free
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org
  */
-package org.modeshape.sequencer.classfile.testdata;
+package org.modeshape.sequencer.javafile.metadata;
+
+import java.util.LinkedList;
+import java.util.List;
 
 /**
- * Dummy enum, used for testing the sequencing.
+ * Metadata for Java enums.
  */
-public enum MockEnum {
+public class EnumMetadata extends TypeMetadata {
 
-    VALUE_A,
-    VALUE_B,
-    VALUE_C
+    public EnumMetadata(String name) {
+        super(name, Type.ENUM);
+    }
+
+    private final List<String> values = new LinkedList<String>();
+
+    public List<String> getValues() {
+        return values;
+    }  
 }
+

@@ -1,5 +1,5 @@
 {
-    "name" : "ClassFileSequencer Test Repository",
+    "name" : "Java Sequencers Test Repository",
     "sequencing" : {
         "removeDerivedContentWithOriginal" : true,
         "sequencers" : [
@@ -12,6 +12,11 @@
                 "name" : "Classes in different location",
                 "classname" : "org.modeshape.sequencer.classfile.ClassFileSequencer",
                 "pathExpression" : "default://(*.class)/jcr:content[@jcr:data] => /classes"
+            } ,
+            {
+                "name" : "Java Sequencer in different location",
+                "type" : "javasourcesequencer",
+                "pathExpression" : "default://(*.java)/jcr:content[@jcr:data] => /java"
             }
         ]
     }

@@ -21,30 +21,38 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org
  */
-package org.modeshape.sequencer.classfile.testdata;
-
-import java.io.Serializable;
+package org.modeshape.sequencer.javafile.metadata;
 
 /**
- * Dummy class, used for testing the sequencing.
- * 
- * @author Horia Chiorean
+ * Import metadata.
  */
-public final class MockClass implements Serializable {
+public class ImportMetadata {
 
-    private static final long serialVersionUID = 1L;
+    private Type type;    
+    private String name;
 
-    @SuppressWarnings( "unused" )
-    private static volatile String STATIC_VOLATILE_STRING_FIELD;
-    public static final Integer STATIC_FINAL_INTEGER_FIELD = 0;
-
-    protected Boolean booleanField;
-
-    public MockClass( Boolean booleanField ) {
-        this.booleanField = booleanField;
+    private ImportMetadata( String name, Type type ) {
+        this.name = name;
+        this.type = type;
     }
 
-    @Deprecated
-    synchronized void voidMethod() {
+    public String getName() {
+        return this.name;
+    }
+
+    public Type getType() {
+        return type;
+    }
+
+    public static ImportMetadata onDemand(String name) {
+        return new ImportMetadata(name, Type.ON_DEMAND);
+    }
+
+    public static ImportMetadata single(String name) {
+        return new ImportMetadata(name, Type.SINGLE);
+    }
+
+    public static enum Type {
+        ON_DEMAND, SINGLE
     }
 }

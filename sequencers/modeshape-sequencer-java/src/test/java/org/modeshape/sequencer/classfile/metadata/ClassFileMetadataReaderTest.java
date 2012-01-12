@@ -34,7 +34,7 @@ import static org.junit.Assert.assertThat;
 import org.junit.Test;
 import org.modeshape.common.util.HashCode;
 import org.modeshape.sequencer.classfile.ClassFileSequencer;
-import org.modeshape.sequencer.classfile.testdata.MockEnum;
+import org.modeshape.sequencer.testdata.MockEnum;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;

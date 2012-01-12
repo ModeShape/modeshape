@@ -77,8 +77,12 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
     }
 
     protected Node getSequencedNode(Node parentNode, String path) throws  Exception{
+       return getSequencedNode(parentNode, path, 2);
+    }
+    
+    protected Node getSequencedNode(Node parentNode, String path, int maxWaitTimeSeconds) throws  Exception{
         //TODO author=Horia Chiorean date=12/14/11 description=Change this hack once there is a proper way (events) of retrieving the sequenced node
-        long maxWaitTime = TimeUnit.SECONDS.toNanos(2);
+        long maxWaitTime = TimeUnit.SECONDS.toNanos(maxWaitTimeSeconds);
         long start = System.nanoTime();
         while (System.nanoTime() - start <= maxWaitTime) {
             try {

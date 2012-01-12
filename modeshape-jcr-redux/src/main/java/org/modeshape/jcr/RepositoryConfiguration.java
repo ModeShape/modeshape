@@ -378,7 +378,7 @@ public class RepositoryConfiguration {
         String classfileSequencer = "org.modeshape.sequencer.classfile.ClassFileSequencer";
         String ddlSequencer = "org.modeshape.sequencer.ddl.DdlSequencer";
         String imageSequencer = "org.modeshape.sequencer.image.ImageMetadataSequencer";
-        String javaSequencer = "org.modeshape.sequencer.java.JavaMetadataSequencer";
+        String javaSequencer = "org.modeshape.sequencer.javafile.JavaFileSequencer";
         String modelSequencer = "org.modeshape.sequencer.teiid.ModelSequencer";
         String vdbSequencer = "org.modeshape.sequencer.teiid.VdbSequencer";
         String msofficeSequencer = "org.modeshape.sequencer.msoffice.MSOfficeMetadataSequencer";

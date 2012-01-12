@@ -90,11 +90,9 @@ public class DefaultClassFileRecorder implements ClassFileRecorder {
 
     private Node getClassNode( ClassMetadata classMetadata, Node outputNode ) throws RepositoryException {
         String actualType = classMetadata.isEnumeration() ? ENUM : CLASS;
-        //if the output node is an existing node, create a series of nt:unstructured nodes as the package path
-        if (!outputNode.isNew()) {
-            for (String packageName : classMetadata.getClassName().split("\\.")) {
-                outputNode = outputNode.addNode(packageName);
-            }
+        //create a series of nt:unstructured nodes as the package path
+        for (String packageName : classMetadata.getClassName().split("\\.")) {
+            outputNode = outputNode.addNode(packageName);
         }
         outputNode.setPrimaryType(actualType);
         return outputNode;
