@@ -1,4 +1,4 @@
-ModeShape is copyright 2008-2011 Red Hat, Inc.
+ModeShape is copyright 2008-2012 Red Hat, Inc.
 Some portions may be licensed to Red Hat, Inc. under one or more
 contributor license agreements.  See the AUTHORS file in the
 distribution for a full listing of individual contributors.
