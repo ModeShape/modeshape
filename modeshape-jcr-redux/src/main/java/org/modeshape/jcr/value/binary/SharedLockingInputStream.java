@@ -24,10 +24,7 @@
 package org.modeshape.jcr.value.binary;
 
 import org.modeshape.jcr.value.BinaryKey;
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.channels.Channels;
 import java.util.concurrent.locks.Lock;
 
@@ -74,7 +71,7 @@ public final class SharedLockingInputStream extends InputStream {
             this.fileLock = FileLocks.get().readLock(file);
 
             // Now create a buffered stream ...
-            this.stream = new BufferedInputStream(Channels.newInputStream(fileLock.lockedFileChannel()), AbstractBinaryStore.bestBufferSize(file.length()));
+            this.stream = new BufferedInputStream(new FileInputStream(file), AbstractBinaryStore.bestBufferSize(file.length()));
         }
     }
 

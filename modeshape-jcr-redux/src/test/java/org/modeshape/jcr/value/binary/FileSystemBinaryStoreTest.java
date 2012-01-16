@@ -26,25 +26,16 @@ package org.modeshape.jcr.value.binary;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -297,6 +288,42 @@ public class FileSystemBinaryStoreTest {
             tempFile.delete();
         }
 
+    }
+
+    @Test
+    public void multipleThreadsShouldReadTheSameFile() throws Exception {
+        final String textBase = "The quick brown fox jumps over the lazy dog";
+        StringBuilder builder = new StringBuilder();
+        Random rand = new Random();
+        while (builder.length() <= MIN_BINARY_SIZE) {
+            builder.append(textBase.substring(0, rand.nextInt(textBase.length())));
+        }
+        final String text = builder.toString();
+        final Binary storedValue = store.storeValue(new ByteArrayInputStream(text.getBytes()));
+        ExecutorService executor = Executors.newFixedThreadPool(3);
+        Callable<String> readingTask = new Callable<String>() {
+            @Override
+            public String call() throws Exception {
+                File tempFile = File.createTempFile("test-binary-store", "bin");
+                try {
+                    FileOutputStream fos = new FileOutputStream(tempFile);
+                    InputStream is = storedValue.getStream();
+                    byte[] buff = new byte[100];
+                    int available;
+                    while ((available = is.read(buff)) != -1) {
+                        fos.write(buff, 0, available);
+                    }
+
+                    return IoUtil.read(tempFile);
+                } finally {
+                    tempFile.delete();
+                }
+            }
+        };
+        List<Future<String>> futures = executor.invokeAll(Arrays.asList(readingTask, readingTask, readingTask), 5, TimeUnit.SECONDS);
+        for (Future<String> future : futures) {
+            assertEquals(text, future.get());
+        }
     }
 
     protected Binary storeAndCheck( int contentIndex ) throws Exception {

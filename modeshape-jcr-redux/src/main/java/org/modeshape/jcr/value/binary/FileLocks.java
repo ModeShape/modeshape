@@ -321,10 +321,10 @@ public final class FileLocks {
                             return null;
                         }
                     }
-                    lockedReaders++;
                 } else {
                     assert this.lockedReaders != 0;
                 }
+                lockedReaders++;
             } finally {
                 fileLockLock.unlock();
             }
