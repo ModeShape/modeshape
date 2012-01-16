@@ -386,6 +386,7 @@ public class RepositoryConfiguration {
         String xsdSequencer = "org.modeshape.sequencer.xsd.XsdSequencer";
         String xmlSequencer = "org.modeshape.sequencer.xml.XmlSequencer";
         String zipSequencer = "org.modeshape.sequencer.zip.ZipSequencer";
+        String mp3Sequencer = "org.modeshape.sequencer.mp3.Mp3MetadataSequencer";
 
         aliases = new HashMap<String, String>();
         aliases.put("cnd", cndSequencer);
@@ -416,6 +417,8 @@ public class RepositoryConfiguration {
         aliases.put("xmlsequencer", xmlSequencer);
         aliases.put("zip", zipSequencer);
         aliases.put("zipsequencer", zipSequencer);
+        aliases.put("mp3", mp3Sequencer);
+        aliases.put("mp3sequencer", mp3Sequencer);
 
         SEQUENCER_ALIASES = Collections.unmodifiableMap(aliases);
 
