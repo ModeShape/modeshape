@@ -21,52 +21,30 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.cache.change;
+package org.modeshape.jcr.api.monitor;
 
 import java.util.Map;
-import java.util.Set;
-import org.modeshape.jcr.api.value.DateTime;
-import org.modeshape.jcr.cache.NodeKey;
+import java.util.concurrent.TimeUnit;
 
 /**
+ * The immutable representation of activities with measureable durations.
  * 
+ * @since 3.0
  */
-public interface ChangeSet extends Iterable<Change> {
+public interface DurationActivity extends Comparable<DurationActivity> {
 
     /**
-     * Return the number of individual changes.
+     * Get the duration of this activity.
      * 
-     * @return the number of changes
+     * @param unit the desired time unit for the duration
+     * @return the duration in the specified time unit
      */
-    public int size();
-
-    public String getUserId();
-
-    public Map<String, String> getUserData();
-
-    public DateTime getTimestamp();
+    public long getDuration( TimeUnit unit );
 
     /**
-     * Get the key of the process in which the changes were made.
+     * Get the payload for this activity.
      * 
-     * @return the process key; never null
+     * @return the payload; may be null
      */
-    public String getProcessKey();
-
-    /**
-     * Get the key of the repository in which the changes were made.
-     * 
-     * @return the repository key; never null
-     */
-    public String getRepositoryKey();
-
-    /**
-     * Get the name of the workspace in which the changes were made.
-     * 
-     * @return the workspace name; may be null only when workspaces are added or removed
-     */
-    public String getWorkspaceName();
-
-    public Set<NodeKey> changedNodes();
-
+    public Map<String, String> getPayload();
 }

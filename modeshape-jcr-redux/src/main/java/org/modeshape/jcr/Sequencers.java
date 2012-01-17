@@ -24,7 +24,15 @@
 package org.modeshape.jcr;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.jcr.NamespaceRegistry;
@@ -37,7 +45,9 @@ import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.HashCode;
 import org.modeshape.common.util.Logger;
 import org.modeshape.jcr.RepositoryConfiguration.Component;
+import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.api.sequencer.Sequencer;
+import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.change.Change;
 import org.modeshape.jcr.cache.change.ChangeSet;
@@ -50,7 +60,6 @@ import org.modeshape.jcr.core.ExecutionContext;
 import org.modeshape.jcr.sequencer.InvalidSequencerPathExpression;
 import org.modeshape.jcr.sequencer.SequencerPathExpression;
 import org.modeshape.jcr.sequencer.SequencerPathExpression.Matcher;
-import org.modeshape.jcr.value.DateTime;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.ValueFactory;
@@ -172,8 +181,9 @@ public class Sequencers implements ChangeSetListener {
             NamespaceRegistry registry = session.getWorkspace().getNamespaceRegistry();
             NodeTypeManager nodeTypeManager = session.getWorkspace().getNodeTypeManager();
 
-            if (! (nodeTypeManager instanceof org.modeshape.jcr.api.nodetype.NodeTypeManager)) {
-                throw new IllegalStateException("Invalid node type manager (expected modeshape NodeTypeManager): " + nodeTypeManager.getClass().getName());
+            if (!(nodeTypeManager instanceof org.modeshape.jcr.api.nodetype.NodeTypeManager)) {
+                throw new IllegalStateException("Invalid node type manager (expected modeshape NodeTypeManager): "
+                                                + nodeTypeManager.getClass().getName());
             }
 
             // Initialize each sequencer using the supplied session ...
@@ -274,6 +284,10 @@ public class Sequencers implements ChangeSetListener {
         shutdown = true;
     }
 
+    protected final RepositoryStatistics statistics() {
+        return repository.statistics();
+    }
+
     protected void submitWork( SequencingConfiguration sequencingConfig,
                                Matcher matcher,
                                String inputWorkspaceName,
@@ -284,6 +298,7 @@ public class Sequencers implements ChangeSetListener {
                                                              matcher.getSelectedPath(), matcher.getJcrInputPath(),
                                                              matcher.getOutputPath(), matcher.getOutputWorkspaceName(),
                                                              propertyName);
+        statistics().increment(ValueMetric.SEQUENCER_QUEUE_SIZE);
         workQueue.submit(workItem);
     }
 

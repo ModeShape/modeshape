@@ -87,10 +87,11 @@ import org.modeshape.jcr.RepositoryConfiguration.Component;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.RepositoryConfiguration.JaasSecurity;
 import org.modeshape.jcr.RepositoryConfiguration.Security;
-import org.modeshape.jcr.RepositoryStatistics.ValueMetric;
 import org.modeshape.jcr.Sequencers.SequencingWorkItem;
 import org.modeshape.jcr.api.AnonymousCredentials;
 import org.modeshape.jcr.api.Repository;
+import org.modeshape.jcr.api.Workspace;
+import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.cache.SessionCache;
@@ -226,9 +227,14 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
     /**
      * Get the component that can be used to obtain statistics for this repository.
+     * <p>
+     * Note that this provides un-checked access to the statistics, unlike {@link Workspace#getRepositoryMonitor()} in the public
+     * API which only exposes the statistics if the session's user has administrative privileges.
+     * </p>
      * 
      * @return the statistics component; never null
      * @throws IllegalStateException if the repository is not {@link #getState() running}
+     * @see Workspace#getRepositoryMonitor()
      */
     public RepositoryStatistics getRepositoryStatistics() {
         return statistics();

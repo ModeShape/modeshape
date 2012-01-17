@@ -26,6 +26,7 @@ package org.modeshape.jcr.value;
 import java.io.Serializable;
 import java.util.Iterator;
 import org.modeshape.common.annotation.Immutable;
+import org.modeshape.jcr.api.value.DateTime;
 
 /**
  * Representation of a property consisting of a name and value(s). Note that this property is immutable, meaning that the property

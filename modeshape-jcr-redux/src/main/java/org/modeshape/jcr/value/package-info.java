@@ -34,7 +34,7 @@
  *  <li>{@link org.modeshape.jcr.value.PropertyType#LONG Long} - A value represented with instances of the standard {@link java.lang.Long} class.</li>
  *  <li>{@link org.modeshape.jcr.value.PropertyType#DOUBLE Double} - A value represented with instances of the standard {@link java.lang.Double} class.</li>
  *  <li>{@link org.modeshape.jcr.value.PropertyType#DECIMAL Decimal} - A value represented with instances of the standard {@link java.math.BigDecimal} class.</li>
- *  <li>{@link org.modeshape.jcr.value.PropertyType#DATE Date} - A value represented with instances of the {@link org.modeshape.jcr.value.DateTime} interface.
+ *  <li>{@link org.modeshape.jcr.value.PropertyType#DATE Date} - A value represented with instances of the {@link org.modeshape.jcr.api.value.DateTime} interface.
  *  This interface hides the mishmash of Java date representations, and is designed to follow the anticipated
  *  <code>ZonedDateTime</code> that is part of JSR-310.</li>
  *  <li>{@link org.modeshape.jcr.value.PropertyType#BOOLEAN Boolean} - A value represented with instances of the standard {@link java.lang.Boolean} class.</li>
@@ -53,8 +53,8 @@
  * The design of properties and their values was centered around one key principle: when using a property value,
  * you often don't care what type the property value actually is, but instead care about converting it to a
  * property type that you know how to work with.  For example, you may be working with a property that represents
- * a date, and you want to work with the value as a {@link org.modeshape.jcr.value.DateTime} object, regardless of whether the values
- * are actually String, {@link org.modeshape.jcr.value.DateTime}, {@link org.modeshape.jcr.value.Binary}, or even {@link java.util.Calendar} or {@link java.util.Date}
+ * a date, and you want to work with the value as a {@link org.modeshape.jcr.api.value.DateTime} object, regardless of whether the values
+ * are actually String, {@link org.modeshape.jcr.api.value.DateTime}, {@link org.modeshape.jcr.value.Binary}, or even {@link java.util.Calendar} or {@link java.util.Date}
  * instances.  You know its should be a date, so you want to get a value that behaves as a date.
  * </p>
  * <p>
@@ -108,11 +108,11 @@
  * to a string, and all factories support converting that string back to its original form.
  * </p>
  * <p>
- * The factory for creating {@link org.modeshape.jcr.value.DateTime} objects would then be an implementation of <code>ValueFactory&lt;DateTime></code>,
+ * The factory for creating {@link org.modeshape.jcr.api.value.DateTime} objects would then be an implementation of <code>ValueFactory&lt;DateTime></code>,
  * a factory for creating {@link org.modeshape.jcr.value.Binary} objects would be an implementation of <code>ValueFactory&lt;Binary</code>,
  * and so on.  In some cases, we'd like to add additional forms of <code>create(...)</code> for specific values, and
  * we can do this by extending a typed {@link org.modeshape.jcr.value.ValueFactory}.  For example, the {@link org.modeshape.jcr.value.DateTimeFactory} adds
- * more methods for creating {@link org.modeshape.jcr.value.DateTime} objects for the current time, current time in UTC, from another time
+ * more methods for creating {@link org.modeshape.jcr.api.value.DateTime} objects for the current time, current time in UTC, from another time
  * and an offset, and from individual field values:
  * <pre>
  *   public interface DateTimeFactory extends ValueFactories&lt;DateTime> {

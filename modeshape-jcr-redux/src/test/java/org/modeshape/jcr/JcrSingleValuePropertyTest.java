@@ -44,7 +44,7 @@ import javax.jcr.nodetype.PropertyDefinitionTemplate;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.modeshape.jcr.value.DateTime;
+import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.value.ValueFactory;
 
 public class JcrSingleValuePropertyTest extends MultiUseAbstractTest {

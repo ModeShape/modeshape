@@ -35,6 +35,7 @@ import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.SecureHash;
 import org.modeshape.jcr.GraphI18n;
+import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.value.basic.StringValueFactory;
 
 /**

@@ -23,8 +23,8 @@
  */
 package org.modeshape.jcr.cache;
 
+import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.core.ExecutionContext;
-import org.modeshape.jcr.value.DateTime;
 
 /**
  * 

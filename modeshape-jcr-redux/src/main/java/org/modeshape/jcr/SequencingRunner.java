@@ -23,6 +23,9 @@
  */
 package org.modeshape.jcr;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
@@ -36,8 +39,10 @@ import org.modeshape.jcr.Sequencers.SequencingContext;
 import org.modeshape.jcr.Sequencers.SequencingWorkItem;
 import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.api.JcrTools;
+import org.modeshape.jcr.api.monitor.DurationMetric;
+import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.api.sequencer.Sequencer;
-import org.modeshape.jcr.value.DateTime;
+import org.modeshape.jcr.api.value.DateTime;
 
 final class SequencingRunner implements Runnable {
     private final JcrRepository repository;
@@ -54,6 +59,7 @@ final class SequencingRunner implements Runnable {
         JcrSession inputSession = null;
         JcrSession outputSession = null;
         final RunningState state = repository.runningState();
+        final RepositoryStatistics stats = state.statistics();
         try {
             // Create the required session(s) ...
             inputSession = state.loginInternalSession(work.getInputWorkspaceName());
@@ -116,6 +122,7 @@ final class SequencingRunner implements Runnable {
             DateTime now = outputSession.dateFactory().create();
             Sequencer.Context context = new SequencingContext(now);
             if (inputSession.isLive() && (inputSession == outputSession || outputSession.isLive())) {
+                final long start = System.nanoTime();
                 if (sequencer.execute(changedProperty, outputNode, context)) {
                     // Make sure that the sequencer did not change the primary type of the selected node ..
                     if (selectedNode == outputNode && !selectedNode.getPrimaryNodeType().getName().equals(primaryType)) {
@@ -124,6 +131,12 @@ final class SequencingRunner implements Runnable {
                     }
                     // Save the session
                     outputSession.save();
+                    long durationInNanos = System.nanoTime() - start;
+                    Map<String, String> payload = new HashMap<String, String>();
+                    payload.put("sequencerName", sequencer.getName());
+                    payload.put("sequencedPath", changedProperty.getPath());
+                    payload.put("outputPath", outputNode.getPath());
+                    stats.recordDuration(DurationMetric.SEQUENCER_EXECUTION_TIME, durationInNanos, TimeUnit.NANOSECONDS, payload);
                 }
             }
         } catch (Throwable t) {
@@ -147,6 +160,8 @@ final class SequencingRunner implements Runnable {
                              work.getOutputPath());
             }
         } finally {
+            stats.increment(ValueMetric.SEQUENCED_COUNT);
+            stats.decrement(ValueMetric.SEQUENCER_QUEUE_SIZE);
             if (inputSession != null && inputSession.isLive()) inputSession.logout();
             if (outputSession != null && outputSession != inputSession && outputSession.isLive()) outputSession.logout();
         }

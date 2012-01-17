@@ -67,8 +67,8 @@ import org.modeshape.jcr.JcrContentHandler.EnclosingSAXException;
 import org.modeshape.jcr.JcrNamespaceRegistry.Behavior;
 import org.modeshape.jcr.JcrRepository.RunningState;
 import org.modeshape.jcr.RepositoryNodeTypeManager.NodeTypes;
-import org.modeshape.jcr.RepositoryStatistics.DurationMetric;
-import org.modeshape.jcr.RepositoryStatistics.ValueMetric;
+import org.modeshape.jcr.api.monitor.DurationMetric;
+import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.DocumentAlreadyExistsException;
@@ -923,7 +923,7 @@ public class JcrSession implements Session {
             } else if (ModeShapePermissions.REGISTER_NAMESPACE.equals(action)
                        || ModeShapePermissions.REGISTER_TYPE.equals(action) || ModeShapePermissions.UNLOCK_ANY.equals(action)
                        || ModeShapePermissions.CREATE_WORKSPACE.equals(action)
-                       || ModeShapePermissions.DELETE_WORKSPACE.equals(action)) {
+                       || ModeShapePermissions.DELETE_WORKSPACE.equals(action) || ModeShapePermissions.MONITOR.equals(action)) {
                 hasPermission &= hasRole(sec, ModeShapeRoles.ADMIN, repositoryName, workspaceName);
             } else {
                 hasPermission &= hasRole(sec, ModeShapeRoles.ADMIN, repositoryName, workspaceName)
@@ -1191,7 +1191,8 @@ public class JcrSession implements Session {
         try {
             RunningState running = repository.runningState();
             long lifetime = System.nanoTime() - this.nanosCreated;
-            running.statistics().recordDuration(DurationMetric.SESSION_LIFETIME, lifetime, TimeUnit.NANOSECONDS, getUserID());
+            Map<String, String> payload = Collections.singletonMap("userId", getUserID());
+            running.statistics().recordDuration(DurationMetric.SESSION_LIFETIME, lifetime, TimeUnit.NANOSECONDS, payload);
             running.statistics().decrement(ValueMetric.SESSION_COUNT);
             running.removeSession(this);
         } catch (IllegalStateException e) {

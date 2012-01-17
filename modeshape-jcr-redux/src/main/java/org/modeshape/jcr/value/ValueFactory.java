@@ -34,6 +34,7 @@ import java.util.UUID;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.text.TextEncoder;
+import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.NodeKey;
 
 /**

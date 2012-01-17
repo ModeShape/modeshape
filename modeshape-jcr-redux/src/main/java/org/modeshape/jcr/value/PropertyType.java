@@ -39,6 +39,7 @@ import java.util.UUID;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.GraphI18n;
+import org.modeshape.jcr.api.value.DateTime;
 
 /**
  * The data types for property values.

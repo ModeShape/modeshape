@@ -49,7 +49,8 @@ import javax.jcr.version.VersionException;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.ImmediateFuture;
 import org.modeshape.jcr.JcrContentHandler.EnclosingSAXException;
-import org.modeshape.jcr.RepositoryStatistics.ValueMetric;
+import org.modeshape.jcr.api.monitor.RepositoryMonitor;
+import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.core.ExecutionContext;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
@@ -69,6 +70,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
     private final JcrLockManager lockManager;
     private final JcrNamespaceRegistry workspaceRegistry;
     private final JcrVersionManager versionManager;
+    private JcrRepositoryMonitor monitor;
 
     JcrWorkspace( JcrSession session,
                   String workspaceName ) {
@@ -358,6 +360,14 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
 
         // This is a bogus Future that always returns it's done ...
         return ImmediateFuture.create(Boolean.TRUE);
+    }
+
+    @Override
+    public RepositoryMonitor getRepositoryMonitor() throws RepositoryException {
+        if (monitor == null) {
+            this.monitor = new JcrRepositoryMonitor(session);
+        }
+        return monitor;
     }
 
 }

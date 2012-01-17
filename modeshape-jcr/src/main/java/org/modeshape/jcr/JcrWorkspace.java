@@ -90,6 +90,7 @@ import org.modeshape.jcr.JcrContentHandler.SaveMode;
 import org.modeshape.jcr.SessionCache.JcrNodePayload;
 import org.modeshape.jcr.SessionCache.JcrPropertyPayload;
 import org.modeshape.jcr.WorkspaceLockManager.ModeShapeLock;
+import org.modeshape.jcr.api.monitor.RepositoryMonitor;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -1079,6 +1080,11 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
             }
         });
         return future;
+    }
+
+    @Override
+    public RepositoryMonitor getRepositoryMonitor() {
+        throw new UnsupportedOperationException();
     }
 
 }
