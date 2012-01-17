@@ -24,11 +24,11 @@
 package org.modeshape.jcr;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
@@ -40,19 +40,18 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import javax.jcr.Session;
-import javax.jcr.Workspace;
-import javax.jcr.lock.Lock;
-import javax.jcr.observation.EventListener;
-import javax.jcr.query.Query;
-import javax.jcr.version.VersionManager;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.common.collection.Collections;
 import org.modeshape.common.text.Inflector;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.jcr.api.monitor.DurationMetric;
+import org.modeshape.jcr.api.monitor.RepositoryMonitor;
+import org.modeshape.jcr.api.monitor.ValueMetric;
+import org.modeshape.jcr.api.monitor.Window;
+import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.core.ExecutionContext;
-import org.modeshape.jcr.value.DateTime;
 import org.modeshape.jcr.value.DateTimeFactory;
 
 /**
@@ -65,7 +64,8 @@ import org.modeshape.jcr.value.DateTimeFactory;
  * <li><b>{@link ValueMetric#LISTENER_COUNT listeners}</b> - the number of listeners registered during the window;</li>
  * <li><b>{@link ValueMetric#SESSION_SCOPED_LOCK_COUNT session-scoped locks}</b> - the number of locks held by sessions during the
  * window;</li>
- * <li><b>{@link ValueMetric#NON_SCOPED_LOCK_COUNT non-scoped locks}</b> - the number of non-scoped locks held during the window;</li>
+ * <li><b>{@link ValueMetric#OPEN_SCOPED_LOCK_COUNT non-scoped locks}</b> - the number of non-scoped locks held during the window;
+ * </li>
  * <li><b>{@link ValueMetric#SESSION_SAVES save operations}</b> - the number of Session save operations performed the window;</li>
  * <li><b>{@link ValueMetric#NODE_CHANGES changed nodes}</b> - the number of nodes that were created, updated, or deleted during
  * the window;</li>
@@ -96,228 +96,11 @@ import org.modeshape.jcr.value.DateTimeFactory;
  * </p>
  */
 @ThreadSafe
-public class RepositoryStatistics {
+public class RepositoryStatistics implements RepositoryMonitor {
 
-    /**
-     * The metrics for which ModeShape captures statistics on durations.
-     * 
-     * @see RepositoryStatistics#getHistory(DurationMetric, Window)
-     * @see RepositoryStatistics#getLongestRunning(DurationMetric)
-     */
-    public static enum DurationMetric {
-        /**
-         * The metric that captures the duration of {@link Query#execute() query executions}. Note that the payload of the
-         * {@link DurationActivity} instances are the query strings.
-         */
-        QUERY_EXECUTION_TIME("query-execution-time"),
-        /**
-         * The metric that captures the duration of {@link Session sessions}. Note that the payload of the
-         * {@link DurationActivity} instances are the session usern IDs.
-         */
-        SESSION_LIFETIME("session-lifetime"),
-        /**
-         * The metric that captures the duration of sequencer executions. Note that the payload of the {@link DurationActivity}
-         * instances are strings containing the sequencer name and the input and output paths.
-         */
-        SEQUENCER_EXECUTION_TIME("sequencer-execution-time");
-
-        private static final Map<String, DurationMetric> BY_LITERAL;
-        private static final Map<String, DurationMetric> BY_NAME;
-        static {
-            Map<String, DurationMetric> byName = new HashMap<String, DurationMetric>();
-            Map<String, DurationMetric> byLiteral = new HashMap<String, DurationMetric>();
-            for (DurationMetric metric : DurationMetric.values()) {
-                byLiteral.put(metric.getLiteral().toLowerCase(), metric);
-                byName.put(metric.name().toLowerCase(), metric);
-            }
-            BY_LITERAL = Collections.unmodifiableMap(byLiteral);
-            BY_NAME = Collections.unmodifiableMap(byName);
-        }
-        private final String literal;
-
-        private DurationMetric( String literal ) {
-            this.literal = literal;
-        }
-
-        /**
-         * The literal string form of the duration metric.
-         * 
-         * @return the literal string form; never null or empty
-         */
-        public String getLiteral() {
-            return literal;
-        }
-
-        /**
-         * Get the {@link DurationMetric} that has the supplied literal.
-         * 
-         * @param literal the literal (can be of any case); may not be null
-         * @return the duration metric, or null if there is no DurationMetric enum value for the given literal string
-         */
-        public static DurationMetric fromLiteral( String literal ) {
-            if (literal == null) return null;
-            literal = literal.toLowerCase();
-            DurationMetric metric = BY_LITERAL.get(literal);
-            if (metric == null) BY_NAME.get(literal);
-            return metric;
-        }
-    }
-
-    /**
-     * The metrics for which ModeShape captures statistics on running values.
-     * 
-     * @see RepositoryStatistics#getHistory(ValueMetric, Window)
-     */
-    public static enum ValueMetric {
-        /**
-         * The metric that captures the number of {@link Session sessions} that are open during the window.
-         */
-        SESSION_COUNT("session-count"),
-        /**
-         * The metric that captures the number of {@link Query queries} that are executing during the window.
-         */
-        QUERY_COUNT("query-count"),
-        /**
-         * The metric that records the number of {@link Workspace workspaces} in existance during the window.
-         */
-        WORKSPACE_COUNT("workspace-count"),
-        /**
-         * The metric that records the number of {@link EventListener observation listeners} in existance during the window.
-         */
-        LISTENER_COUNT("listener-count"),
-        /**
-         * The metric that records the number of {@link Lock#isSessionScoped() session-scoped} {@link Lock JCR locks} in existance
-         * during the window.
-         */
-        SESSION_SCOPED_LOCK_COUNT("session-scoped-lock-count"),
-        /**
-         * The metric that records the number of {@link Lock#isSessionScoped() non-session-scoped} {@link Lock JCR locks} in
-         * existance during the window.
-         */
-        NON_SCOPED_LOCK_COUNT("non-scoped-lock-count"),
-        /**
-         * The metric that captures the number of {@link Session#save()} calls that have occurred during the window.
-         */
-        SESSION_SAVES("session-saves"),
-        /**
-         * The metric that captures the number of nodes that were created, updated, or deleted during the window as part of the
-         * {@link Session#save()}, {@link VersionManager#checkin(String)},
-         * {@link Workspace#importXML(String, java.io.InputStream, int) Workspace.import} and other calls that change content.
-         */
-        NODE_CHANGES("node-changes");
-
-        private static final Map<String, ValueMetric> BY_LITERAL;
-        private static final Map<String, ValueMetric> BY_NAME;
-        static {
-            Map<String, ValueMetric> byName = new HashMap<String, ValueMetric>();
-            Map<String, ValueMetric> byLiteral = new HashMap<String, ValueMetric>();
-            for (ValueMetric metric : ValueMetric.values()) {
-                byLiteral.put(metric.getLiteral().toLowerCase(), metric);
-                byName.put(metric.name().toLowerCase(), metric);
-            }
-            BY_LITERAL = Collections.unmodifiableMap(byLiteral);
-            BY_NAME = Collections.unmodifiableMap(byName);
-        }
-        private final String literal;
-
-        private ValueMetric( String literal ) {
-            this.literal = literal;
-        }
-
-        /**
-         * The literal string form of the value metric.
-         * 
-         * @return the literal string form; never null or empty
-         */
-        public String getLiteral() {
-            return literal;
-        }
-
-        /**
-         * Get the {@link ValueMetric} that has the supplied literal.
-         * 
-         * @param literal the literal (can be of any case); may not be null
-         * @return the value metric, or null if there is no ValueMetric enum value for the given literal string
-         */
-        public static ValueMetric fromLiteral( String literal ) {
-            if (literal == null) return null;
-            literal = literal.toLowerCase();
-            ValueMetric metric = BY_LITERAL.get(literal);
-            if (metric == null) BY_NAME.get(literal);
-            return metric;
-        }
-    }
-
-    /**
-     * The specification of the window for obtaining the history and statistics for a given metric.
-     * 
-     * @see RepositoryStatistics#getHistory(DurationMetric, Window)
-     * @see RepositoryStatistics#getHistory(ValueMetric, Window)
-     */
-    public static enum Window {
-        /**
-         * The window for accessing a metric's history and statistics for ten 5-second intervals during the last minute (60
-         * seconds).
-         */
-        PREVIOUS_60_SECONDS("previous-60-seconds"),
-        /**
-         * The window for accessing a metric's history and statistics for each minute during the last hour (60 minutes).
-         */
-        PREVIOUS_60_MINUTES("previous-60-minutes"),
-        /**
-         * The window for accessing a metric's history and statistics for each hour during the last day (24 hours).
-         */
-        PREVIOUS_24_HOURS("previous-24-hours"),
-        /**
-         * The window for accessing a metric's history and statistics for each day during the last week (7 days).
-         */
-        PREVIOUS_7_DAYS("previous-7-days"),
-        /**
-         * The window for accessing a metric's history and statistics for each week during the last year (52 weeks).
-         */
-        PREVIOUS_52_WEEKS("previous-52-wees");
-
-        private static final Map<String, Window> BY_LITERAL;
-        private static final Map<String, Window> BY_NAME;
-        static {
-            Map<String, Window> byLiteral = new HashMap<String, Window>();
-            Map<String, Window> byName = new HashMap<String, Window>();
-            for (Window window : Window.values()) {
-                byLiteral.put(window.getLiteral().toLowerCase(), window);
-                byName.put(window.name().toLowerCase(), window);
-            }
-            BY_LITERAL = Collections.unmodifiableMap(byLiteral);
-            BY_NAME = Collections.unmodifiableMap(byName);
-        }
-        private final String literal;
-
-        private Window( String literal ) {
-            this.literal = literal;
-        }
-
-        /**
-         * The literal string form of the window.
-         * 
-         * @return the literal string form; never null or empty
-         */
-        public String getLiteral() {
-            return literal;
-        }
-
-        /**
-         * Get the {@link Window} that has the supplied literal.
-         * 
-         * @param literal the literal (can be of any case); may not be null
-         * @return the window, or null if there is no Window enum value for the given literal string
-         */
-        public static Window fromLiteral( String literal ) {
-            if (literal == null) return null;
-            literal = literal.toLowerCase();
-            Window window = BY_LITERAL.get(literal);
-            if (window == null) BY_NAME.get(literal);
-            return window;
-        }
-    }
+    private static final Set<DurationMetric> ALL_DURATION_METRICS = Collections.unmodifiableSet(EnumSet.allOf(DurationMetric.class));
+    private static final Set<ValueMetric> ALL_VALUE_METRICS = Collections.unmodifiableSet(EnumSet.allOf(ValueMetric.class));
+    private static final Set<Window> ALL_WINDOWS = Collections.unmodifiableSet(EnumSet.allOf(Window.class));
 
     /**
      * The maximum number of longest-running queries to retain.
@@ -390,14 +173,11 @@ public class RepositoryStatistics {
                                                                                    MAXIMUM_LONG_RUNNING_SEQUENCING_COUNT));
         durations.put(DurationMetric.SESSION_LIFETIME, new DurationHistory(TimeUnit.MILLISECONDS,
                                                                            MAXIMUM_LONG_RUNNING_SESSION_COUNT));
-        values.put(ValueMetric.SESSION_COUNT, new ValueHistory(false));
-        values.put(ValueMetric.QUERY_COUNT, new ValueHistory(false));
-        values.put(ValueMetric.WORKSPACE_COUNT, new ValueHistory(false));
-        values.put(ValueMetric.LISTENER_COUNT, new ValueHistory(false));
-        values.put(ValueMetric.SESSION_SCOPED_LOCK_COUNT, new ValueHistory(false));
-        values.put(ValueMetric.NON_SCOPED_LOCK_COUNT, new ValueHistory(false));
-        values.put(ValueMetric.SESSION_SAVES, new ValueHistory(true));
-        values.put(ValueMetric.NODE_CHANGES, new ValueHistory(true));
+
+        for (ValueMetric metric : EnumSet.allOf(ValueMetric.class)) {
+            boolean resetUponRollup = !metric.isContinuous();
+            values.put(metric, new ValueHistory(resetUponRollup));
+        }
 
         this.rollupFuture.set(service.scheduleAtFixedRate(new Runnable() {
             @SuppressWarnings( "synthetic-access" )
@@ -470,15 +250,22 @@ public class RepositoryStatistics {
         throw new SystemFailureException("Should never happen");
     }
 
-    /**
-     * Get the statics for the specified value metric during the given window in time. The oldest statistics will be first, while
-     * the newest statistics will be last.
-     * 
-     * @param metric the value metric; may not be null
-     * @param windowInTime the window specifying which statistics are to be returned; may not be null
-     * @return the history of the metrics; never null but possibly empty if there are no statistics being captures for this
-     *         repository
-     */
+    @Override
+    public Set<DurationMetric> getAvailableDurationMetrics() {
+        return ALL_DURATION_METRICS;
+    }
+
+    @Override
+    public Set<ValueMetric> getAvailableValueMetrics() {
+        return ALL_VALUE_METRICS;
+    }
+
+    @Override
+    public Set<Window> getAvailableWindows() {
+        return ALL_WINDOWS;
+    }
+
+    @Override
     public History getHistory( ValueMetric metric,
                                Window windowInTime ) {
         assert metric != null;
@@ -488,15 +275,7 @@ public class RepositoryStatistics {
         return new History(stats, mostRecentTimeFor(windowInTime), windowInTime);
     }
 
-    /**
-     * Get the statics for the specified duration metric during the given window in time. The oldest statistics will be first,
-     * while the newest statistics will be last.
-     * 
-     * @param metric the duration metric; may not be null
-     * @param windowInTime the window specifying which statistics are to be returned; may not be null
-     * @return the history of the metrics; never null but possibly empty if there are no statistics being captures for this
-     *         repository
-     */
+    @Override
     public History getHistory( DurationMetric metric,
                                Window windowInTime ) {
         assert metric != null;
@@ -506,13 +285,7 @@ public class RepositoryStatistics {
         return new History(stats, mostRecentTimeFor(windowInTime), windowInTime);
     }
 
-    /**
-     * Get the longest-running activities recorded for the specified metric. The results contain the duration records in order of
-     * increasing duration, with the activity with the longest duration appearing last in the array.
-     * 
-     * @param metric the duration metric; may not be null
-     * @return the activities with the longest durations; never null but possibly empty if no such activities were performed
-     */
+    @Override
     public DurationActivity[] getLongestRunning( DurationMetric metric ) {
         assert metric != null;
         DurationHistory history = durations.get(metric);
@@ -526,7 +299,7 @@ public class RepositoryStatistics {
      * @param incrementalValue the positive or negative increment
      * @see #increment(ValueMetric)
      * @see #decrement(ValueMetric)
-     * @see #recordDuration(DurationMetric, long, TimeUnit, String)
+     * @see #recordDuration(DurationMetric, long, TimeUnit, Map)
      */
     void increment( ValueMetric metric,
                     long incrementalValue ) {
@@ -541,7 +314,7 @@ public class RepositoryStatistics {
      * @param metric the metric; may not be null
      * @see #increment(ValueMetric, long)
      * @see #decrement(ValueMetric)
-     * @see #recordDuration(DurationMetric, long, TimeUnit, String)
+     * @see #recordDuration(DurationMetric, long, TimeUnit, Map)
      */
     void increment( ValueMetric metric ) {
         assert metric != null;
@@ -556,7 +329,7 @@ public class RepositoryStatistics {
      * @param value the value for the metric
      * @see #increment(ValueMetric, long)
      * @see #decrement(ValueMetric)
-     * @see #recordDuration(DurationMetric, long, TimeUnit, String)
+     * @see #recordDuration(DurationMetric, long, TimeUnit, Map)
      */
     void set( ValueMetric metric,
               long value ) {
@@ -571,7 +344,7 @@ public class RepositoryStatistics {
      * @param metric the metric; may not be null
      * @see #increment(ValueMetric)
      * @see #increment(ValueMetric, long)
-     * @see #recordDuration(DurationMetric, long, TimeUnit, String)
+     * @see #recordDuration(DurationMetric, long, TimeUnit, Map)
      */
     void decrement( ValueMetric metric ) {
         assert metric != null;
@@ -593,7 +366,7 @@ public class RepositoryStatistics {
     void recordDuration( DurationMetric metric,
                          long duration,
                          TimeUnit timeUnit,
-                         String payload ) {
+                         Map<String, String> payload ) {
         assert metric != null;
         DurationHistory history = durations.get(metric);
         if (history != null) history.recordDuration(duration, timeUnit, payload);
@@ -776,43 +549,34 @@ public class RepositoryStatistics {
      * The {@link MetricHistory} specialization used for recording the statistics for activities with measured durations.
      */
     @Immutable
-    public static final class DurationActivity implements Comparable<DurationActivity> {
+    public static final class DurationActivity implements org.modeshape.jcr.api.monitor.DurationActivity {
         protected final long duration;
-        protected final String payload;
+        protected final Map<String, String> payload;
         protected final TimeUnit timeUnit;
 
         protected DurationActivity( long duration,
                                     TimeUnit timeUnit,
-                                    String payload ) {
+                                    Map<String, String> payload ) {
             this.duration = duration;
             this.payload = payload;
             this.timeUnit = timeUnit;
         }
 
-        /**
-         * Get the duration of this activity.
-         * 
-         * @param unit the desired time unit for the duration
-         * @return the duration in the specified time unit
-         */
+        @Override
         public long getDuration( TimeUnit unit ) {
             return unit.convert(duration, this.timeUnit);
         }
 
-        /**
-         * Get the payload for this activity.
-         * 
-         * @return the payload; may be null
-         */
-        public String getPayload() {
+        @Override
+        public Map<String, String> getPayload() {
             return payload;
         }
 
         @Override
-        public int compareTo( DurationActivity that ) {
+        public int compareTo( org.modeshape.jcr.api.monitor.DurationActivity that ) {
             if (this == that) return 0;
             // Return the opposite of natural ordering, so smallest durations come first ...
-            return (int)(this.duration - that.duration);
+            return (int)(this.duration - that.getDuration(timeUnit));
         }
 
         @Override
@@ -848,7 +612,7 @@ public class RepositoryStatistics {
          */
         void recordDuration( long value,
                              TimeUnit timeUnit,
-                             String payload ) {
+                             Map<String, String> payload ) {
             value = this.timeUnit.convert(value, timeUnit);
             this.durations.get().add(new DurationActivity(value, this.timeUnit, payload));
         }
@@ -976,7 +740,7 @@ public class RepositoryStatistics {
      * </p>
      */
     @Immutable
-    public static final class Statistics {
+    public static final class Statistics implements org.modeshape.jcr.api.monitor.Statistics {
 
         private final int count;
         private final long maximum;
@@ -996,58 +760,32 @@ public class RepositoryStatistics {
             this.variance = variance;
         }
 
-        /**
-         * Get the number of samples to which these statistics apply.
-         * 
-         * @return the number of samples; never negative
-         */
+        @Override
         public int getCount() {
             return count;
         }
 
-        /**
-         * Get the maximum of the sampled values.
-         * 
-         * @return the maximum value
-         */
+        @Override
         public long getMaximum() {
             return maximum;
         }
 
-        /**
-         * Get the minimum of the sampled values.
-         * 
-         * @return the minimum value
-         */
+        @Override
         public long getMinimum() {
             return minimum;
         }
 
-        /**
-         * The mean (or average) of the sampled values. This is returned as a double to reduce the lost of precision.
-         * 
-         * @return the mean or average value
-         */
+        @Override
         public double getMean() {
             return mean;
         }
 
-        /**
-         * Get the variance of the sampled values, which is the average of the squared differences from the {@link #getMean()
-         * mean}.
-         * 
-         * @return the variance; never negative
-         */
+        @Override
         public double getVariance() {
             return variance;
         }
 
-        /**
-         * Get the standard deviation of the sampled values, which is a measure of how spread out the numbers are and is the
-         * square root of the {@link #getVariance() variance}.
-         * 
-         * @return the standard deviation; never negative
-         */
+        @Override
         public double getStandardDeviation() {
             return variance <= 0.0d ? 0.0d : Math.sqrt(variance);
         }
@@ -1073,7 +811,7 @@ public class RepositoryStatistics {
      * @see RepositoryStatistics#getHistory(ValueMetric, Window)
      */
     @Immutable
-    public static final class History {
+    public static final class History implements org.modeshape.jcr.api.monitor.History {
         private final Statistics[] stats;
         private final DateTime endTime;
         private final Window window;
@@ -1086,21 +824,12 @@ public class RepositoryStatistics {
             this.window = window;
         }
 
-        /**
-         * Get the kind of window.
-         * 
-         * @return the window type; never null
-         */
+        @Override
         public Window getWindow() {
             return window;
         }
 
-        /**
-         * Get the total duration of this history window.
-         * 
-         * @param unit the desired time unit; if null, then {@link TimeUnit#SECONDS} is used
-         * @return the duration
-         */
+        @Override
         public long getTotalDuration( TimeUnit unit ) {
             if (unit == null) unit = TimeUnit.SECONDS;
             switch (window) {
@@ -1118,30 +847,17 @@ public class RepositoryStatistics {
             throw new SystemFailureException("Should never happen");
         }
 
-        /**
-         * Get the timestamp (including time zone information) at which this history window starts.
-         * 
-         * @return the time at which this window starts
-         */
+        @Override
         public DateTime getStartTime() {
             return endTime.minus(getTotalDuration(TimeUnit.SECONDS), TimeUnit.SECONDS);
         }
 
-        /**
-         * Get the timestamp (including time zone information) at which this history window ends.
-         * 
-         * @return the time at which this window ends
-         */
+        @Override
         public DateTime getEndTime() {
             return endTime;
         }
 
-        /**
-         * Get the statistics for that make up the history.
-         * 
-         * @return the statistics; never null, but the array may contain null if the window is longer than the lifetime of the
-         *         repository
-         */
+        @Override
         public Statistics[] getStats() {
             return stats;
         }

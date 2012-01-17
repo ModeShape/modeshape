@@ -48,11 +48,11 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.RepositoryStatistics.DurationActivity;
-import org.modeshape.jcr.RepositoryStatistics.DurationMetric;
 import org.modeshape.jcr.RepositoryStatistics.History;
 import org.modeshape.jcr.RepositoryStatistics.Statistics;
-import org.modeshape.jcr.RepositoryStatistics.ValueMetric;
-import org.modeshape.jcr.RepositoryStatistics.Window;
+import org.modeshape.jcr.api.monitor.DurationMetric;
+import org.modeshape.jcr.api.monitor.ValueMetric;
+import org.modeshape.jcr.api.monitor.Window;
 
 public class JcrRepositoryTest {
 

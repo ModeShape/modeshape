@@ -38,7 +38,7 @@ import org.modeshape.common.util.CheckArg;
  * Implementation of DateTime based upon the Joda-Time library.
  */
 @Immutable
-public class JodaDateTime implements org.modeshape.jcr.value.DateTime {
+public class JodaDateTime implements org.modeshape.jcr.api.value.DateTime {
 
     private static final DateTimeZone UTC_ZONE = DateTimeZone.forID("UTC");
 
@@ -287,7 +287,7 @@ public class JodaDateTime implements org.modeshape.jcr.value.DateTime {
     }
 
     @Override
-    public int compareTo( org.modeshape.jcr.value.DateTime that ) {
+    public int compareTo( org.modeshape.jcr.api.value.DateTime that ) {
         long diff = this.getMillisecondsInUtc() - that.getMillisecondsInUtc();
         return diff == 0 ? 0 : diff > 0 ? 1 : -1;
     }
@@ -300,8 +300,8 @@ public class JodaDateTime implements org.modeshape.jcr.value.DateTime {
     @Override
     public boolean equals( Object obj ) {
         if (obj == this) return true;
-        if (obj instanceof org.modeshape.jcr.value.DateTime) {
-            org.modeshape.jcr.value.DateTime that = (org.modeshape.jcr.value.DateTime)obj;
+        if (obj instanceof org.modeshape.jcr.api.value.DateTime) {
+            org.modeshape.jcr.api.value.DateTime that = (org.modeshape.jcr.api.value.DateTime)obj;
             return this.getMillisecondsInUtc() == that.getMillisecondsInUtc();
         }
         if (obj instanceof DateTime) {
@@ -317,7 +317,7 @@ public class JodaDateTime implements org.modeshape.jcr.value.DateTime {
     }
 
     @Override
-    public org.modeshape.jcr.value.DateTime toUtcTimeZone() {
+    public org.modeshape.jcr.api.value.DateTime toUtcTimeZone() {
         DateTimeZone utc = DateTimeZone.forID("UTC");
         if (this.instance.getZone().equals(utc)) return this;
         DateTime jodaTime = this.instance.withZone(utc);
@@ -325,19 +325,19 @@ public class JodaDateTime implements org.modeshape.jcr.value.DateTime {
     }
 
     @Override
-    public org.modeshape.jcr.value.DateTime toTimeZone( String timeZoneId ) {
+    public org.modeshape.jcr.api.value.DateTime toTimeZone( String timeZoneId ) {
         CheckArg.isNotNull(timeZoneId, "time zone identifier");
         DateTime jodaTime = this.instance.withZone(DateTimeZone.forID(timeZoneId));
         return new JodaDateTime(jodaTime);
     }
 
     @Override
-    public boolean isBefore( org.modeshape.jcr.value.DateTime other ) {
+    public boolean isBefore( org.modeshape.jcr.api.value.DateTime other ) {
         return this.compareTo(other) < 0;
     }
 
     @Override
-    public boolean isSameAs( org.modeshape.jcr.value.DateTime other ) {
+    public boolean isSameAs( org.modeshape.jcr.api.value.DateTime other ) {
         if (other == this) return true;
         if (other instanceof JodaDateTime) {
             JodaDateTime that = (JodaDateTime)other;
@@ -353,101 +353,101 @@ public class JodaDateTime implements org.modeshape.jcr.value.DateTime {
     }
 
     @Override
-    public boolean isAfter( org.modeshape.jcr.value.DateTime other ) {
+    public boolean isAfter( org.modeshape.jcr.api.value.DateTime other ) {
         return this.compareTo(other) > 0;
     }
 
     @Override
-    public org.modeshape.jcr.value.DateTime minus( long timeAmount,
+    public org.modeshape.jcr.api.value.DateTime minus( long timeAmount,
                                                    TimeUnit unit ) {
         CheckArg.isNotNull(unit, "unit");
         return new JodaDateTime(this.instance.minus(TimeUnit.MILLISECONDS.convert(timeAmount, unit)));
     }
 
     @Override
-    public org.modeshape.jcr.value.DateTime minusDays( int days ) {
+    public org.modeshape.jcr.api.value.DateTime minusDays( int days ) {
         return new JodaDateTime(this.instance.minusDays(days));
     }
 
     @Override
-    public org.modeshape.jcr.value.DateTime minusHours( int hours ) {
+    public org.modeshape.jcr.api.value.DateTime minusHours( int hours ) {
         return new JodaDateTime(this.instance.minusHours(hours));
     }
 
     @Override
-    public org.modeshape.jcr.value.DateTime minusMillis( int milliseconds ) {
+    public org.modeshape.jcr.api.value.DateTime minusMillis( int milliseconds ) {
         return new JodaDateTime(this.instance.minusMillis(milliseconds));
     }
 
     @Override
-    public org.modeshape.jcr.value.DateTime minusMinutes( int minutes ) {
+    public org.modeshape.jcr.api.value.DateTime minusMinutes( int minutes ) {
         return new JodaDateTime(this.instance.minusMinutes(minutes));
     }
 
     @Override
-    public org.modeshape.jcr.value.DateTime minusMonths( int months ) {
+    public org.modeshape.jcr.api.value.DateTime minusMonths( int months ) {
         return new JodaDateTime(this.instance.minusMonths(months));
     }
 
     @Override
-    public org.modeshape.jcr.value.DateTime minusSeconds( int seconds ) {
+    public org.modeshape.jcr.api.value.DateTime minusSeconds( int seconds ) {
         return new JodaDateTime(this.instance.minusSeconds(seconds));
     }
 
     @Override
-    public org.modeshape.jcr.value.DateTime minusWeeks( int weeks ) {
+    public org.modeshape.jcr.api.value.DateTime minusWeeks( int weeks ) {
         return new JodaDateTime(this.instance.minusWeeks(weeks));
     }
 
     @Override
-    public org.modeshape.jcr.value.DateTime minusYears( int years ) {
+    public org.modeshape.jcr.api.value.DateTime minusYears( int years ) {
         return new JodaDateTime(this.instance.minusYears(years));
     }
 
     @Override
-    public org.modeshape.jcr.value.DateTime plus( long timeAmount,
+    public org.modeshape.jcr.api.value.DateTime plus( long timeAmount,
                                                   TimeUnit unit ) {
         CheckArg.isNotNull(unit, "unit");
         return new JodaDateTime(this.instance.plus(TimeUnit.MILLISECONDS.convert(timeAmount, unit)));
     }
 
     @Override
-    public org.modeshape.jcr.value.DateTime plusDays( int days ) {
+    public org.modeshape.jcr.api.value.DateTime plusDays( int days ) {
         return new JodaDateTime(this.instance.plusDays(days));
     }
 
     @Override
-    public org.modeshape.jcr.value.DateTime plusHours( int hours ) {
+    public org.modeshape.jcr.api.value.DateTime plusHours( int hours ) {
         return new JodaDateTime(this.instance.plusHours(hours));
     }
 
     @Override
-    public org.modeshape.jcr.value.DateTime plusMillis( int milliseconds ) {
+    public org.modeshape.jcr.api.value.DateTime plusMillis( int milliseconds ) {
         return new JodaDateTime(this.instance.plusMillis(milliseconds));
     }
 
     @Override
-    public org.modeshape.jcr.value.DateTime plusMinutes( int minutes ) {
+    public org.modeshape.jcr.api.value.DateTime plusMinutes( int minutes ) {
         return new JodaDateTime(this.instance.plusMinutes(minutes));
     }
 
     @Override
-    public org.modeshape.jcr.value.DateTime plusMonths( int months ) {
+    public org.modeshape.jcr.api.value.DateTime plusMonths( int months ) {
         return new JodaDateTime(this.instance.plusMonths(months));
     }
 
     @Override
-    public org.modeshape.jcr.value.DateTime plusSeconds( int seconds ) {
+    public org.modeshape.jcr.api.value.DateTime plusSeconds( int seconds ) {
         return new JodaDateTime(this.instance.plusSeconds(seconds));
     }
 
     @Override
-    public org.modeshape.jcr.value.DateTime plusWeeks( int weeks ) {
+    public org.modeshape.jcr.api.value.DateTime plusWeeks( int weeks ) {
         return new JodaDateTime(this.instance.plusWeeks(weeks));
     }
 
     @Override
-    public org.modeshape.jcr.value.DateTime plusYears( int years ) {
+    public org.modeshape.jcr.api.value.DateTime plusYears( int years ) {
         return new JodaDateTime(this.instance.plusYears(years));
     }
 

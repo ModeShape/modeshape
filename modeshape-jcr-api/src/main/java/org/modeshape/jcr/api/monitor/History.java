@@ -21,52 +21,52 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.cache.change;
+package org.modeshape.jcr.api.monitor;
 
-import java.util.Map;
-import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import org.modeshape.jcr.api.value.DateTime;
-import org.modeshape.jcr.cache.NodeKey;
 
 /**
+ * An immutable history of a metric for a given window in time.
  * 
+ * @since 3.0
  */
-public interface ChangeSet extends Iterable<Change> {
+public interface History {
 
     /**
-     * Return the number of individual changes.
+     * Get the kind of window.
      * 
-     * @return the number of changes
+     * @return the window type; never null
      */
-    public int size();
-
-    public String getUserId();
-
-    public Map<String, String> getUserData();
-
-    public DateTime getTimestamp();
+    public Window getWindow();
 
     /**
-     * Get the key of the process in which the changes were made.
+     * Get the total duration of this history window.
      * 
-     * @return the process key; never null
+     * @param unit the desired time unit; if null, then {@link TimeUnit#SECONDS} is used
+     * @return the duration
      */
-    public String getProcessKey();
+    public long getTotalDuration( TimeUnit unit );
 
     /**
-     * Get the key of the repository in which the changes were made.
+     * Get the timestamp (including time zone information) at which this history window starts.
      * 
-     * @return the repository key; never null
+     * @return the time at which this window starts
      */
-    public String getRepositoryKey();
+    public DateTime getStartTime();
 
     /**
-     * Get the name of the workspace in which the changes were made.
+     * Get the timestamp (including time zone information) at which this history window ends.
      * 
-     * @return the workspace name; may be null only when workspaces are added or removed
+     * @return the time at which this window ends
      */
-    public String getWorkspaceName();
+    public DateTime getEndTime();
 
-    public Set<NodeKey> changedNodes();
-
+    /**
+     * Get the statistics for that make up the history.
+     * 
+     * @return the statistics; never null, but the array may contain null if the window is longer than the lifetime of the
+     *         repository
+     */
+    Statistics[] getStats();
 }

@@ -21,12 +21,11 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.value;
+package org.modeshape.jcr.api.value;
 
 import java.io.Serializable;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
-import org.modeshape.common.annotation.Immutable;
 
 /**
  * An immutable date-time class that represents an instance in time. This class is designed to hide the horrible implementations
@@ -34,8 +33,9 @@ import org.modeshape.common.annotation.Immutable;
  * href="http://jcp.org/en/jsr/detail?id=310">JSR-310</a>, which will be based upon <a
  * href="http://joda-time.sourceforge.net/">Joda-Time</a>. This class serves as a stable migration path toward the new JSR 310
  * classes.
+ * 
+ * @since 3.0
  */
-@Immutable
 public interface DateTime extends Comparable<DateTime>, Serializable {
 
     /**

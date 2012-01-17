@@ -23,6 +23,8 @@
  */
 package org.modeshape.jcr.value;
 
+import org.modeshape.jcr.api.value.DateTime;
+
 /**
  * A factory for creating {@link DateTime date-time instants}. This interface extends the {@link ValueFactory} generic interface
  * and adds specific methods for creating instants for the current time (and time zone) as well as various combinations of

@@ -25,6 +25,8 @@ package org.modeshape.jcr.api;
 
 import java.util.concurrent.Future;
 import javax.jcr.RepositoryException;
+import javax.jcr.Session;
+import org.modeshape.jcr.api.monitor.RepositoryMonitor;
 
 /**
  * An extension of JCR 2.0's Workspace interface, with a few ModeShape-specific enhancements.
@@ -76,5 +78,20 @@ public interface Workspace extends javax.jcr.Workspace {
      * @see #reindexAsync()
      */
     Future<Boolean> reindexAsync( String path ) throws RepositoryException;
+
+    /**
+     * A <code>RepositoryMonitor</code> object represents a monitoring view of the Session's Repository instance. This is useful
+     * for applications that embed a JCR repository and need a way to monitor the health, status and performance of that
+     * Repository instance. Each <code>RepositoryMonitor</code> object is associated one-to-one with a <code>Session</code> object
+     * and is defined by the authorization settings of that session object.
+     * <p>
+     * The <code>RepositoryMonitor</code> object can be acquired using a {@link Session} by calling
+     * <code>Session.getWorkspace().getRepositoryMonitor()</code> on a session object.
+     * </p>
+     * 
+     * @return the repository monitor; never null
+     * @throws RepositoryException if there is a problem obtaining the monitory
+     */
+    RepositoryMonitor getRepositoryMonitor() throws RepositoryException;
 
 }
