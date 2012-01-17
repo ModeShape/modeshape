@@ -24,8 +24,14 @@
 package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
+import static org.hamcrest.core.IsSame.sameInstance;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -64,7 +70,6 @@ import org.apache.jackrabbit.test.api.observation.PropertyRemovedTest;
 import org.apache.jackrabbit.test.api.observation.WorkspaceOperationTest;
 import org.junit.After;
 import org.junit.AfterClass;
-import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -150,7 +155,15 @@ public final class JcrObservationManagerTest extends TestSuite {
                               String[] uuids,
                               String[] nodeTypeNames,
                               boolean noLocal ) throws Exception {
-        return addListener(this.session, expectedEventsCount, numIterators, eventTypes, absPath, isDeep, uuids, nodeTypeNames, noLocal);
+        return addListener(this.session,
+                           expectedEventsCount,
+                           numIterators,
+                           eventTypes,
+                           absPath,
+                           isDeep,
+                           uuids,
+                           nodeTypeNames,
+                           noLocal);
     }
 
     TestListener addListener( Session session,
@@ -1961,7 +1974,7 @@ public final class JcrObservationManagerTest extends TestSuite {
         checkResults(listener);
     }
 
-    @FixFor(" MODE-1315 ")
+    @FixFor( " MODE-1315 " )
     @Test
     public void shouldReceiveEventWhenPropertyDeletedOnCustomNode() throws Exception {
         CndNodeTypeReader cndFactory = new CndNodeTypeReader(session);
@@ -1982,6 +1995,129 @@ public final class JcrObservationManagerTest extends TestSuite {
         Event receivedEvent = listener.getEvents().get(0);
         assertEquals(Event.PROPERTY_REMOVED, receivedEvent.getType());
         assertEquals(propertyPath, receivedEvent.getPath());
+    }
+
+    @FixFor( "MODE-1370" )
+    @Test
+    public void shouldReceiveUserDataWithEventWhenObservationSessionIsSameThatMadeChange() throws Exception {
+        // register listener
+        TestListener listener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
+
+        // add node
+        Node addedNode = getRoot().addNode("node1", UNSTRUCTURED);
+
+        // Add user-data to the observation manager ...
+        String userData = "my user data";
+        getRoot().getSession().getWorkspace().getObservationManager().setUserData(userData);
+        save();
+
+        // event handling
+        listener.waitForEvents();
+        removeListener(listener);
+
+        // tests
+        checkResults(listener);
+        assertTrue("Path for added node is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
+                   + addedNode.getPath(),
+                   containsPath(listener, addedNode.getPath()));
+
+        // Now check the userdata in the events ...
+        for (Event event : listener.events) {
+            String eventUserData = event.getUserData();
+            assertThat(eventUserData, is(userData));
+        }
+
+        // Now check the userdata ...
+        assertThat(listener.userData.size(), is(not(0)));
+        for (String receivedUserData : listener.userData) {
+            assertThat(receivedUserData, is(userData));
+        }
+    }
+
+    @FixFor( "MODE-1370" )
+    @Test
+    public void shouldReceiveUserDataWithEventWhenUserDataSetOnSessionThatMadeChange() throws Exception {
+        // Now register a listener
+        TestListener listener = new TestListener(1, 1, Event.NODE_ADDED);
+        session.getWorkspace()
+               .getObservationManager()
+               .addEventListener(listener, Event.NODE_ADDED, null, true, null, null, false);
+
+        // Create a new session ...
+        Session session2 = login(REPOSITORY, WORKSPACE, USER_ID, USER_ID.toCharArray());
+
+        // Add user-data to the observation manager for our session ...
+        String userData = "my user data";
+        session2.getWorkspace().getObservationManager().setUserData(userData);
+        // add node and save
+        Node addedNode = session2.getRootNode().addNode("node1", UNSTRUCTURED);
+        session2.save();
+
+        // event handling
+        listener.waitForEvents();
+        removeListener(listener);
+
+        // tests
+        checkResults(listener);
+        assertTrue("Path for added node is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
+                   + addedNode.getPath(),
+                   containsPath(listener, addedNode.getPath()));
+
+        // Now check the userdata in the events ...
+        for (Event event : listener.events) {
+            String eventUserData = event.getUserData();
+            assertThat(eventUserData, is(userData));
+        }
+
+        // Now check the userdata ...
+        assertThat(listener.userData.size(), is(not(0)));
+        for (String receivedUserData : listener.userData) {
+            assertThat(receivedUserData, is(userData));
+        }
+    }
+
+    @FixFor( "MODE-1370" )
+    @Test
+    public void shouldNotReceiveUserDataWithEventIfUserDataSetOnObservationSession() throws Exception {
+        // Add user-data to the observation manager using the observation session ...
+        String userData = "my user data";
+        ObservationManager om = session.getWorkspace().getObservationManager();
+        om.setUserData(userData);
+
+        // Now register a listener
+        TestListener listener = new TestListener(1, 1, Event.NODE_ADDED);
+        session.getWorkspace()
+               .getObservationManager()
+               .addEventListener(listener, Event.NODE_ADDED, null, true, null, null, false);
+
+        // Create a new session and do NOT set the user data ...
+        Session session2 = login(REPOSITORY, WORKSPACE, USER_ID, USER_ID.toCharArray());
+        assertThat(session2, is(not(sameInstance(session))));
+        // but add node and save ...
+        Node addedNode = session2.getRootNode().addNode("node1", UNSTRUCTURED);
+        session2.save();
+
+        // event handling
+        listener.waitForEvents();
+        removeListener(listener);
+
+        // tests
+        checkResults(listener);
+        assertTrue("Path for added node is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
+                   + addedNode.getPath(),
+                   containsPath(listener, addedNode.getPath()));
+
+        // Now check the userdata in the events ...
+        for (Event event : listener.events) {
+            String eventUserData = event.getUserData();
+            assertThat(eventUserData, is(nullValue()));
+        }
+
+        // Now check the userdata ...
+        assertThat(listener.userData.size(), is(1));
+        for (String receivedUserData : listener.userData) {
+            assertThat(receivedUserData, is(nullValue()));
+        }
     }
 
     protected void assertNoRepositoryNamespace( String uri,
@@ -2026,6 +2162,7 @@ public final class JcrObservationManagerTest extends TestSuite {
 
         private String errorMessage;
         private final List<Event> events;
+        private final List<String> userData;
         private int eventsProcessed = 0;
         private final int eventTypes;
         private final int expectedEventsCount;
@@ -2037,6 +2174,7 @@ public final class JcrObservationManagerTest extends TestSuite {
             this.eventTypes = eventTypes;
             this.expectedEventsCount = expectedEventsCount;
             this.events = new ArrayList<Event>();
+            this.userData = new ArrayList<String>();
             this.latch = new CountDownLatch(numIterators);
         }
 
@@ -2076,6 +2214,13 @@ public final class JcrObservationManagerTest extends TestSuite {
                         if (++position != itr.getPosition()) {
                             this.errorMessage = "EventIterator position was " + itr.getPosition() + " and should be " + position;
                             break;
+                        }
+
+                        try {
+                            String userData = event.getUserData();
+                            this.userData.add(userData);
+                        } catch (RepositoryException e) {
+                            this.errorMessage = e.getMessage();
                         }
 
                         // add event to collection and increment total
