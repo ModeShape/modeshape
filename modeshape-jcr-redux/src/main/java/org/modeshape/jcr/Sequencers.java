@@ -46,6 +46,7 @@ import org.modeshape.common.util.HashCode;
 import org.modeshape.common.util.Logger;
 import org.modeshape.jcr.RepositoryConfiguration.Component;
 import org.modeshape.jcr.api.monitor.ValueMetric;
+import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.NodeKey;
@@ -328,9 +329,13 @@ public class Sequencers implements ChangeSetListener {
     @Immutable
     protected static final class SequencingContext implements Sequencer.Context {
         private final DateTime now;
+        private final org.modeshape.jcr.api.ValueFactory valueFactory;
+        private final MimeTypeDetector mimeTypeDetector;
 
-        protected SequencingContext( DateTime now ) {
+        protected SequencingContext( DateTime now, org.modeshape.jcr.api.ValueFactory jcrValueFactory, MimeTypeDetector mimeTypeDetector ) {
             this.now = now;
+            this.valueFactory = jcrValueFactory;
+            this.mimeTypeDetector = mimeTypeDetector;
         }
 
         @Override
@@ -339,8 +344,13 @@ public class Sequencers implements ChangeSetListener {
         }
 
         @Override
-        public String toString() {
-            return now.toString();
+        public org.modeshape.jcr.api.ValueFactory valueFactory() {
+            return valueFactory;
+        }
+
+        @Override
+        public MimeTypeDetector mimeTypeDetector() {
+            return mimeTypeDetector;
         }
     }
 

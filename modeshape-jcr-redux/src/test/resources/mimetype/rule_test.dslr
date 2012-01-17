@@ -1,0 +1,25 @@
+#created on: Jan 4, 2008
+package org.jboss.dna.repository.rules
+
+#list any import classes here.
+
+#reference the expander(s) here
+expander rule_test.dsl
+
+#declare any global variables here
+global java.util.Set output
+
+rule "A"
+	when
+		mime type is text
+		before A
+	then
+		use A
+end
+
+rule "B"
+	when
+		filename matches "someInput.dsl"
+	then
+		use B
+end

@@ -1,0 +1,22 @@
+BEGIN:VCARD
+VERSION:2.1
+N:Mylka;Antoni;Jozef;Herr;jun.
+FN:Antoni Jozef Mylka jun.
+NICKNAME:Ant
+ORG:DFKI;Knowledge-Management
+TITLE:Intern
+NOTE;ENCODING=QUOTED-PRINTABLE:These are some notes about antoni.=0D=0A
+TEL;WORK;VOICE:49 631 234 341
+TEL;HOME;VOICE:48 691 342 341
+TEL;CELL;VOICE:48 91 3 175 234
+ADR;WORK:;3.10;Trippstadter Str. 122;Kaiserslautern;Rheinland-Pfalz;67663;Deutschland
+LABEL;WORK;ENCODING=QUOTED-PRINTABLE:3.10=0D=0ATrippstadter Str. 122=0D=0AKaiserslautern, Rheinland-Pfalz 67663=
+=0D=0ADeutschland
+ADR;HOME:;;Budryka 2/1110;Krakow;malopolskie;30-072;Polen
+LABEL;HOME;ENCODING=QUOTED-PRINTABLE:Budryka 2/1110=0D=0AKrak=F3w, ma=B3opolskie 30-072=0D=0APolen
+URL;WORK:http://antoni.mylka.com
+ROLE:Software-Developer
+BDAY:19800118
+EMAIL;PREF;INTERNET:antoni_mylka@somedomain.com
+REV:20080128T135515Z
+END:VCARD

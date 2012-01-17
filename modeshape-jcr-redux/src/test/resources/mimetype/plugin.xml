@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+<!--  (c) 2007 Varsity Gateway LLC.  All rights reserved. -->
+<plugin
+   id="com.metamatrix.metamodels.transformation"
+   name="%pluginName"
+   version="5.5.1"
+   provider-name="%providerName"
+   class="com.metamatrix.metamodels.transformation.TransformationPlugin">
+
+   <runtime>
+      <library name="metamodelsTransformation.jar">
+         <export name="*"/>
+      </library>
+   </runtime>
+   <requires>
+      <import plugin="org.eclipse.emf.mapping" export="true"/>
+      <import plugin="org.eclipse.emf.ecore" export="true"/>
+      <import plugin="org.eclipse.emf.edit" export="true"/>
+      <import plugin="org.eclipse.emf.ecore.edit" export="true"/>
+      <import plugin="org.eclipse.core.runtime" export="true"/>
+      <import plugin="com.metamatrix.core" export="true"/>
+      <import plugin="com.metamatrix.metamodels.core" export="true"/>
+   </requires>
+
+
+<!--
+   	Each extension below represents a single metamodel.  Each metmodel is
+   	registered using under the specified <uri> value which must be the same
+   	eNS_URI value defined in the EPackage class for that metamodel.
+   -->
+   <extension
+         id="transformation"
+         name="%metamodelName"
+         point="com.metamatrix.modeler.core.metamodel">
+      <uri>
+         http://www.metamatrix.com/metamodels/Transformation
+      </uri>
+      <alternateUri>
+         mtkplugin:///com.metamatrix.metamodels.Transformation
+      </alternateUri>
+      <packageClass
+            name="com.metamatrix.metamodels.transformation.TransformationPackage">
+      </packageClass>
+      <adapterClass
+            name="com.metamatrix.metamodels.transformation.provider.TransformationItemProviderAdapterFactory">
+      </adapterClass>
+      <properties
+            createAsPhysical="false"
+            requiresProxies="false"
+            participatoryOnly="true"
+            createAsVirtual="false"
+            supportsDiagrams="false"
+            supportsExtension="true">
+      </properties>
+   </extension>
+   <extension
+         point="org.eclipse.emf.ecore.generated_package">
+      <package
+            uri="http://www.metamatrix.com/metamodels/Transformation"
+            class="com.metamatrix.metamodels.transformation.TransformationPackage">
+      </package>
+   </extension>
+     
+   <extension
+         id="mapping"
+         name="%mappingMetamodelName"
+         point="com.metamatrix.modeler.core.metamodel">
+      <uri>
+         http://www.eclipse.org/emf/2002/Mapping
+      </uri>
+      <alternateUri>
+         mtkplugin:///www.eclipse.org/emf/2002/Mapping
+      </alternateUri>
+      <packageClass
+            name="org.eclipse.emf.mapping.MappingPackage">
+      </packageClass>
+      <adapterClass
+            name="org.eclipse.emf.mapping.provider.MappingItemProviderAdapterFactory">
+      </adapterClass>
+      <properties
+            createAsPhysical="false"
+            requiresProxies="false"
+            participatoryOnly="true"
+            createAsVirtual="false"
+            supportsDiagrams="false"
+            supportsExtension="false">
+      </properties>
+   </extension>
+
+</plugin>

@@ -30,6 +30,7 @@ import java.util.Calendar;
 import java.util.List;
 import javax.jcr.*;
 import javax.jcr.nodetype.NodeTypeExistsException;
+import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 
 /**
@@ -221,6 +222,22 @@ public abstract class Sequencer {
          * @return timestamp the "current" timestamp; never null
          */
         Calendar getTimestamp();
+
+
+        /**
+         * Returns a {@link org.modeshape.jcr.api.ValueFactory} instance which can be used to perform additional type conversions,
+         * from what {@link javax.jcr.ValueFactory} offers
+         * 
+         * @return a non-null value factory, using the output node's session as context
+         */
+        org.modeshape.jcr.api.ValueFactory valueFactory();
+
+        /**
+         * Returns a {@link MimeTypeDetector} implementation which can be used to determine content mime-type.
+         *
+         * @return a non-null value, using the output node's session as context
+         */
+        MimeTypeDetector mimeTypeDetector();
     }
 
 }

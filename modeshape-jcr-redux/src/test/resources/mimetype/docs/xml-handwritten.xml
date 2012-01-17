@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<example attribute="value">
+
+Example handwritten XML document.
+
+<subElement>
+	Nested text.
+</subElement>
+
+More text.
+
+</example>
