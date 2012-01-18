@@ -26,12 +26,9 @@ package org.modeshape.jcr;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
-import javax.jcr.Node;
-import javax.jcr.PropertyType;
-import javax.jcr.RepositoryException;
-import javax.jcr.ValueFactory;
-import javax.jcr.ValueFormatException;
+import javax.jcr.*;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.core.ExecutionContext;
@@ -44,7 +41,7 @@ import org.modeshape.jcr.value.ValueFactories;
 /**
  * The {@link ValueFactory} implementation for ModeShape.
  */
-class JcrValueFactory implements ValueFactory {
+class JcrValueFactory implements org.modeshape.jcr.api.ValueFactory {
 
     private static final JcrValue[] EMPTY_ARRAY = new JcrValue[0];
 
@@ -129,10 +126,6 @@ class JcrValueFactory implements ValueFactory {
         return valueFactories.getBinaryFactory().create(value);
     }
 
-    public Binary createBinary( byte[] bytes ) {
-        return valueFactories.getBinaryFactory().create(bytes);
-    }
-
     @Override
     public JcrValue createValue( Calendar value ) {
         DateTime dateTime = valueFactories.getDateFactory().create(value);
@@ -162,6 +155,16 @@ class JcrValueFactory implements ValueFactory {
     @Override
     public JcrValue createValue( BigDecimal value ) {
         return new JcrValue(valueFactories, PropertyType.DECIMAL, value);
+    }
+
+    @Override
+    public Binary createBinary( byte[] value )  {
+        return valueFactories.getBinaryFactory().create(value);
+    }
+
+    @Override
+    public JcrValue createValue( Date value ) throws ValueFormatException {
+        return new JcrValue(valueFactories, PropertyType.DATE, value);
     }
 
     protected org.modeshape.jcr.value.ValueFactory<?> valueFactoryFor( int jcrPropertyType ) {

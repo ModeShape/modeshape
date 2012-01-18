@@ -44,9 +44,9 @@ import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.JcrMixLexicon;
 import org.modeshape.jcr.JcrNtLexicon;
 import org.modeshape.jcr.ModeShapeLexicon;
-import org.modeshape.jcr.core.mimetype.ExtensionBasedMimeTypeDetector;
-import org.modeshape.jcr.core.mimetype.MimeTypeDetector;
-import org.modeshape.jcr.core.mimetype.MimeTypeDetectors;
+import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
+import org.modeshape.jcr.mimetype.ExtensionBasedMimeTypeDetector;
+import org.modeshape.jcr.mimetype.MimeTypeDetectors;
 import org.modeshape.jcr.core.text.TextExtractor;
 import org.modeshape.jcr.core.text.TextExtractors;
 import org.modeshape.jcr.value.BinaryFactory;
@@ -202,17 +202,12 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
         this.propertyFactory = propertyFactory == null ? new BasicPropertyFactory(this.valueFactories) : propertyFactory;
         this.classLoaderFactory = classLoaderFactory == null ? new StandardClassLoaderFactory() : classLoaderFactory;
         this.threadPools = threadPoolFactory == null ? new ThreadPools() : threadPoolFactory;
-        this.mimeTypeDetector = mimeTypeDetector != null ? mimeTypeDetector : createDefaultMimeTypeDetector();
+        this.mimeTypeDetector = mimeTypeDetector != null ? mimeTypeDetector : new MimeTypeDetectors();
         this.textExtractor = textExtractor != null ? textExtractor : createDefaultTextExtractor();
         this.data = data != null ? data : Collections.<String, String>emptyMap();
         this.processId = processId != null ? processId : UUID.randomUUID().toString();
     }
 
-    private MimeTypeDetector createDefaultMimeTypeDetector() {
-        MimeTypeDetectors detectors = new MimeTypeDetectors();
-        detectors.addDetector(ExtensionBasedMimeTypeDetector.CONFIGURATION);
-        return detectors;
-    }
 
     private TextExtractor createDefaultTextExtractor() {
         TextExtractors extractors = new TextExtractors();

@@ -1,0 +1,292 @@
+BEGIN:VCARD
+VERSION:3.0
+N:Brown;Gwendolina;;;
+FN:Gwendolina Brown
+EMAIL;type=INTERNET;type=WORK;type=pref:Gwendolina.Brown@sap.com
+CATEGORIES:Demo,Nepomuk(SAP)
+X-ABUID:07D43ED3-2026-4769-83C7-94726573A70D\:ABPerson
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Smalholtz;Peter;;;
+FN:Peter Smalholtz
+ORG:SAP;
+EMAIL;type=INTERNET;type=WORK;type=pref:Peter.Smalholtz@sap.com
+TEL;type=WORK;type=pref:§
+CATEGORIES:Demo,Nepomuk(SAP)
+X-ABUID:4B505D70-F921-4C8D-8878-34302A6480BC\:ABPerson
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Krull;Kristina;;;
+FN:Kristina Krull
+ORG:SAP;
+EMAIL;type=INTERNET;type=WORK;type=pref:Kristina.Krull@sap.com
+CATEGORIES:Demo,Nepomuk(SAP)
+X-ABUID:77FB9B89-A196-46EE-AC61-CCCBAC872235\:ABPerson
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Dreger;Rutger;;;
+FN:Rutger Dreger
+ORG:SAP;
+EMAIL;type=INTERNET;type=WORK;type=pref:Rutger.Dreger@sap.com
+CATEGORIES:Demo,Nepomuk(SAP)
+X-ABUID:4C5B2EFE-BF04-43D8-BAC1-56FE9FFA5F3D\:ABPerson
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Töcken;Frida;;;
+FN:Karlsruhe Travel
+ORG:Karlsruhe Travel;
+EMAIL;type=INTERNET;type=WORK;type=pref:Frida.Tocken@karlsruhetravel.com
+X-ABShowAs:COMPANY
+CATEGORIES:Demo,Nepomuk(SAP)
+X-ABUID:525660B1-1332-4980-93ED-A50AFEB5609B\:ABPerson
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Bernadotte;Ulla;;;
+FN:Ulla Bernadotte
+EMAIL;type=INTERNET;type=WORK;type=pref:Ullis@yahoo.com
+CATEGORIES:Demo,Nepomuk(SAP)
+X-ABUID:6BCC314A-2460-4B8D-ADBC-52A6DEA79AFC\:ABPerson
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Aubrey;Albert;;;
+FN:Albert Aubrey
+ORG:SAP;
+EMAIL;type=INTERNET;type=WORK;type=pref:Albert.Aubrey@sap.com
+CATEGORIES:Demo,Nepomuk(SAP)
+X-ABUID:DD3883AB-279D-488C-9147-3844BDA78968\:ABPerson
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Meyer;Helmut;;;
+FN:Helmut Meyer
+ORG:SAP;
+EMAIL;type=INTERNET;type=WORK;type=pref:Helmut.Meyer@sap.com
+CATEGORIES:Demo,Nepomuk(SAP)
+X-ABUID:5D61771B-EB5F-4955-AF20-696598E445FD\:ABPerson
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Andriotti;Marco;;;
+FN:Marco Andriotti
+ORG:SAP;
+EMAIL;type=INTERNET;type=WORK;type=pref:Marco.Andriotti@sap.com
+TEL;type=WORK;type=pref:+44 28 90930084
+item1.ADR;type=WORK;type=pref:;;Shore Road;Newtownabbey;;BT37 0QB;United Kingdom
+item1.X-ABADR:se
+CATEGORIES:Demo,Nepomuk(SAP)
+X-ABUID:29B73432-E9DF-4381-9EAA-E0328AB34DA7\:ABPerson
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Spaßlund;Ingrid;;;
+FN:Ingrid Spaßlund
+ORG:Nike;
+EMAIL;type=INTERNET;type=WORK;type=pref:Ingrid.Spasslund@nikesport.com
+CATEGORIES:Demo,Nepomuk(SAP)
+X-ABUID:47E30CAB-175F-4CA8-A193-D630ACC282C2\:ABPerson
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Atkins;Adam;;;
+FN:Adam Atkins
+ORG:SAP;
+EMAIL;type=INTERNET;type=WORK;type=pref:Adam.Atkins@sap.com
+CATEGORIES:Demo,Nepomuk(SAP)
+X-ABUID:C30E59B9-2C00-4160-91E4-9730FEF2A5EB\:ABPerson
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Williams;Martin;;;
+FN:Martin Williams
+ORG:SAP;
+EMAIL;type=INTERNET;type=WORK;type=pref:Martin.Williams@sap.com
+TEL;type=WORK;type=pref:+61 7 3259 9599
+item1.ADR;type=WORK;type=pref:;;133 Mary Street;Brisbane;;QLD 4000;Australia
+item1.X-ABADR:se
+CATEGORIES:Demo,Nepomuk(SAP)
+X-ABUID:DC826FA6-C7D0-4600-BFA0-45958CDCA851\:ABPerson
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Stern;Margit;;;
+FN:Margit Stern
+TEL;type=WORK;type=pref:+4978432748392
+item1.ADR;type=WORK;type=pref:;;Brotmannstraße 7;Siegertsbrunn;;85635;Deutschland
+item1.X-ABADR:se
+CATEGORIES:Demo,Nepomuk(SAP)
+X-ABUID:459248A9-DB7D-4C72-AC02-A765C277F942\:ABPerson
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Fuchs;Frederica;;;
+FN:Frederica Fuchs
+EMAIL;type=INTERNET;type=WORK;type=pref:Frederica_64@hotmail.com
+CATEGORIES:Demo,Nepomuk(SAP)
+X-ABUID:379703B2-D424-45BA-9ED8-F2E2E1F63351\:ABPerson
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Blümchen;Günther;;;
+FN:Günther Blümchen
+ORG:Oracle;
+EMAIL;type=INTERNET;type=WORK;type=pref:Guenther.Bluemchen@oracle.com
+TEL;type=WORK;type=pref:+1.650.506.7000
+item1.ADR;type=WORK;type=pref:;;500 Oracle Parkway;Redwood Shores;;CA 94065;United States of America
+item1.X-ABADR:se
+CATEGORIES:Demo,Nepomuk(SAP)
+X-ABUID:2BFC53C0-5B77-476E-AEC4-37A6B7C5A9E7\:ABPerson
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Kohler;Hans;;;
+FN:Hans Kohler
+ORG:SAP;
+EMAIL;type=INTERNET;type=WORK;type=pref:Hans.Kohler@sap.com
+CATEGORIES:Demo,Nepomuk(SAP)
+X-ABUID:16D88E45-BC2E-4B9B-A171-F838B4E09592\:ABPerson
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Lang;Fritz;;;
+FN:Fritz Lang
+ORG:SAP;
+EMAIL;type=INTERNET;type=WORK;type=pref:Fritz.Lang@sap.com
+CATEGORIES:Demo,Nepomuk(SAP)
+X-ABUID:3A73FE84-8A80-4512-ACA0-D0C9C5A06627\:ABPerson
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Stern;Claudia;;;
+FN:Claudia Stern
+ORG:SAP;
+EMAIL;type=INTERNET;type=WORK;type=pref:claudi-1@csc.kth.se
+TEL;type=WORK;type=pref:+49(721)123456
+TEL;type=CELL:+49(175)1234567
+item1.ADR;type=WORK;type=pref:;;Vincenz-Priessnitz-Str. 1;Karlsruhe;;76131;Germany
+item1.X-ABADR:se
+CATEGORIES:Demo,Nepomuk(SAP)
+X-ABUID:2E739C33-31EC-48F9-A5BC-C7D709C08959\:ABPerson
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Treutiger;Harald;;;
+FN:Harald Treutiger
+ORG:Siemens;
+EMAIL;type=INTERNET;type=WORK;type=pref:Harald.Treutiger@siemens.de
+TEL;type=WORK;type=pref:+94 (0800) 2255337
+item1.ADR;type=WORK;type=pref:;;Werner-von-Siemens-Straße 6;Augsburg;;86159;Deutschland
+item1.X-ABADR:se
+CATEGORIES:Demo,Nepomuk(SAP)
+X-ABUID:EDD1767A-549F-4E66-9FC4-FE2CF1ED6E46\:ABPerson
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Müller;Berit;;;
+FN:Berit Müller
+ORG:SAP;
+EMAIL;type=INTERNET;type=WORK;type=pref:Berit.Mueller@sap.com
+CATEGORIES:Demo,Nepomuk(SAP)
+X-ABUID:CD0506CF-0829-4762-9EC7-09A1B0606D44\:ABPerson
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Wolf;Mathilde;;;
+FN:Mathilde Wolf
+ORG:SAP;
+EMAIL;type=INTERNET;type=WORK;type=pref:Mathilde.Wolf@sap.com
+CATEGORIES:Demo,Nepomuk(SAP)
+X-ABUID:74C4AFF9-E27F-42C5-BB28-B7330BD89B8E\:ABPerson
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Hageman;Dirk;;;
+FN:Dirk Hageman
+ORG:SAP;
+EMAIL;type=INTERNET;type=WORK;type=pref:dirk-1@csc.kth.se
+TEL;type=WORK;type=pref:+49(721)847932
+TEL;type=CELL:+49(175)9876543
+item1.ADR;type=WORK;type=pref:;;Vincenz-Priessnitz-Str. 1;Karlsruhe;;76131;Germany
+item1.X-ABADR:se
+CATEGORIES:Demo,Nepomuk(SAP)
+X-ABUID:F3778FC5-87BB-4581-886C-350BF0B70BCB\:ABPerson
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Wimmerman;Daniel;;;
+FN:Daniel Wimmerman
+EMAIL;type=INTERNET;type=WORK;type=pref:Daniel.Wimmerman@sap.com
+CATEGORIES:Demo,Nepomuk(SAP)
+X-ABUID:B2273377-F134-47FF-A803-36BBE1287372\:ABPerson
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Kurtz;Daniel;;;
+FN:Daniel Kurtz
+ORG:SAP;
+EMAIL;type=INTERNET;type=WORK;type=pref:Daniel.Kurtz@sap.com
+CATEGORIES:Demo,Nepomuk(SAP)
+X-ABUID:F2BD97A3-9901-4587-B944-4B8CBBC5B959\:ABPerson
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Schnurrbart;Caspar;;;
+FN:Caspar Schnurrbart
+EMAIL;type=INTERNET;type=WORK;type=pref:Caspar.Schnurrbart@sap.com
+CATEGORIES:Demo,Nepomuk(SAP)
+X-ABUID:3A107906-899E-4C66-B781-FFB05E2B1369\:ABPerson
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Setter;Monika;;;
+FN:Monika Setter
+ORG:SAP;
+EMAIL;type=INTERNET;type=WORK;type=pref:Monika.Setter@sap.com
+CATEGORIES:Demo,Nepomuk(SAP)
+X-ABUID:6A48E535-67CC-41B3-987B-CFC098CDE5EC\:ABPerson
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Glans;Heinrich;;;
+FN:Heinrich Glans
+ORG:SAP;
+EMAIL;type=INTERNET;type=WORK;type=pref:Heinrich.Glans@sap.com
+CATEGORIES:Demo,Nepomuk(SAP)
+X-ABUID:AC03E8F2-D4C5-4603-93A6-306170553EFB\:ABPerson
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Fischer;Ambrosia;;;
+FN:Ambrosia Fischer
+ORG:SAP;
+EMAIL;type=INTERNET;type=WORK;type=pref:Ambrosia.Fischer@sap.com
+TEL;type=WORK;type=pref:+49(721)894763
+TEL;type=CELL:+49(175)74632934
+item1.ADR;type=WORK;type=pref:;;Vincenz-Priessnitz-Str. 1;Karlsruhe;;76131;Germany
+item1.X-ABADR:se
+CATEGORIES:Demo,Nepomuk(SAP)
+X-ABUID:E8167957-903A-4861-8B39-C92698E59425\:ABPerson
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Sprung;Markus;;;
+FN:Markus Sprung
+ORG:SAP;
+EMAIL;type=INTERNET;type=WORK;type=pref:Markus.Sprung@sap.com
+CATEGORIES:Demo,Nepomuk(SAP)
+X-ABUID:8365FAAF-0362-4AF9-A080-D4DAED8BBF94\:ABPerson
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Smith;Diana;;;
+FN:Diana Smith
+ORG:SAP;
+EMAIL;type=INTERNET;type=WORK;type=pref:Diana.Smith@sap.com
+CATEGORIES:Demo,Nepomuk(SAP)
+X-ABUID:A2BC9E71-2D15-4A86-A13D-621F2FCE1E86\:ABPerson
+END:VCARD
