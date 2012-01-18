@@ -492,16 +492,17 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
                 // Make sure the nodes have primary types that are either already registered, or pending registration ...
                 for (JcrNodeType nodeType : typesPendingRegistration) {
                     for (JcrNodeDefinition nodeDef : nodeType.getDeclaredChildNodeDefinitions()) {
-                        JcrNodeType[] requiredPrimaryTypes = new JcrNodeType[nodeDef.requiredPrimaryTypeNames().length];
+                        Name[] requiredPrimaryTypeNames = nodeDef.requiredPrimaryTypeNames();
+                        JcrNodeType[] requiredPrimaryTypes = new JcrNodeType[requiredPrimaryTypeNames.length];
                         int i = 0;
-                        for (Name primaryTypeName : nodeDef.requiredPrimaryTypeNames()) {
-                            requiredPrimaryTypes[i] = nodeTypes.findTypeInMapOrList(primaryTypeName, typesPendingRegistration);
-
-                            if (requiredPrimaryTypes[i] == null) {
-                                throw new RepositoryException(JcrI18n.invalidPrimaryTypeName.text(primaryTypeName,
-                                                                                                  nodeType.getName()));
+                        for (Name primaryTypeName : requiredPrimaryTypeNames) {
+                            JcrNodeType requiredPrimaryType = nodeTypes.findTypeInMapOrList(primaryTypeName,
+                                                                                            typesPendingRegistration);
+                            if (requiredPrimaryType == null) {
+                                String msg = JcrI18n.invalidPrimaryTypeName.text(primaryTypeName, nodeType.getName());
+                                throw new RepositoryException(msg);
                             }
-                            i++;
+                            requiredPrimaryTypes[i++] = requiredPrimaryType;
                         }
                     }
                 }
