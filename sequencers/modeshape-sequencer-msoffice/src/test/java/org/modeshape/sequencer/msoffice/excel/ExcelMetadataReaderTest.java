@@ -3,7 +3,7 @@
  * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of
+ * See the AUTHORS.txt file in the distribution for a full listing of 
  * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
@@ -21,24 +21,30 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org
  */
-package org.modeshape.jcr.api;
+
+package org.modeshape.sequencer.msoffice.excel;
+
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertThat;
+import org.junit.Test;
+import java.io.InputStream;
 
 /**
- * Class which should hold string constants defined by the JCR spec.
- *
+ * Unit test for {@link ExcelMetadataReader}
+ * 
+ * @author Michael Trezzi
  * @author Horia Chiorean
  */
-public final class JcrConstants {
-    public static final String JCR_MIMETYPE = "jcr:mimetype";
-    public static final String JCR_CONTENT = "jcr:content";
-    public static final String JCR_NAME = "jcr:name";
-    public static final String JCR_DATA = "jcr:data";
-    public static final String JCR_MIXIN_TYPES = "jcr:mixinTypes";
-    public static final String JCR_PRIMARY_TYPE = "jcr:primaryType";
-    public static final String JCR_MIME_TYPE = "jcr:mimeType";
+public class ExcelMetadataReaderTest {
 
-    public static final String NT_UNSTRUCTURED = "nt:unstructured";
+    @Test
+    public void shouldBeAbleToCreateMetadataForExcel() throws Exception {
+        InputStream inputStream = getClass().getClassLoader().getResourceAsStream("excel.xls");
 
-    private JcrConstants() {
+        ExcelMetadata excelMetadata = ExcelMetadataReader.instance(inputStream);
+        ExcelSheetMetadata sheet2 = excelMetadata.getSheet("MySheet2");
+        assertThat(sheet2, is(notNullValue()));
+        assertThat(excelMetadata.getSheet("Sheet1").getText().startsWith("This is a text"), is(true));
     }
 }

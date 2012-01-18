@@ -21,24 +21,42 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org
  */
-package org.modeshape.jcr.api;
+
+package org.modeshape.sequencer.msoffice.powerpoint;
+
+import java.util.Collections;
+import java.util.List;
+import org.apache.poi.hpsf.SummaryInformation;
+import org.modeshape.sequencer.msoffice.MSOfficeMetadata;
 
 /**
- * Class which should hold string constants defined by the JCR spec.
- *
- * @author Horia Chiorean
+ * Metadata for Microsoft Powerpoint decks.
  */
-public final class JcrConstants {
-    public static final String JCR_MIMETYPE = "jcr:mimetype";
-    public static final String JCR_CONTENT = "jcr:content";
-    public static final String JCR_NAME = "jcr:name";
-    public static final String JCR_DATA = "jcr:data";
-    public static final String JCR_MIXIN_TYPES = "jcr:mixinTypes";
-    public static final String JCR_PRIMARY_TYPE = "jcr:primaryType";
-    public static final String JCR_MIME_TYPE = "jcr:mimeType";
+public class PowerpointMetadata {
 
-    public static final String NT_UNSTRUCTURED = "nt:unstructured";
+    private List<SlideMetadata> slides = Collections.emptyList();
+    private MSOfficeMetadata metadata;
 
-    private JcrConstants() {
+    public MSOfficeMetadata getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata( MSOfficeMetadata metadata ) {
+        this.metadata = metadata;
+    }
+
+    public void setMetadata( SummaryInformation info ) {
+        if (info != null) {
+            metadata = new MSOfficeMetadata();
+            metadata.setSummaryInformation(info);
+        }
+    }
+
+    public List<SlideMetadata> getSlides() {
+        return slides;
+    }
+
+    public void setSlides( List<SlideMetadata> slides ) {
+        this.slides = slides;
     }
 }

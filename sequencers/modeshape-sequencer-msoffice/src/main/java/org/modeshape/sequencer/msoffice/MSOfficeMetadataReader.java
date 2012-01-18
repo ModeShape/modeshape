@@ -21,24 +21,21 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org
  */
-package org.modeshape.jcr.api;
+package org.modeshape.sequencer.msoffice;
+
+import org.apache.poi.poifs.eventfilesystem.POIFSReader;
+import java.io.InputStream;
 
 /**
- * Class which should hold string constants defined by the JCR spec.
- *
- * @author Horia Chiorean
+ * Utility for extracting metadata from Excel files
  */
-public final class JcrConstants {
-    public static final String JCR_MIMETYPE = "jcr:mimetype";
-    public static final String JCR_CONTENT = "jcr:content";
-    public static final String JCR_NAME = "jcr:name";
-    public static final String JCR_DATA = "jcr:data";
-    public static final String JCR_MIXIN_TYPES = "jcr:mixinTypes";
-    public static final String JCR_PRIMARY_TYPE = "jcr:primaryType";
-    public static final String JCR_MIME_TYPE = "jcr:mimeType";
+public class MSOfficeMetadataReader {
 
-    public static final String NT_UNSTRUCTURED = "nt:unstructured";
-
-    private JcrConstants() {
+    public static MSOfficeMetadata instance( InputStream stream ) throws Exception {
+        POIFSReader r = new POIFSReader();
+        MSOfficeMetadata MSOfficeMetadataListener = new MSOfficeMetadata();
+        r.registerListener(MSOfficeMetadataListener, "\005SummaryInformation");
+        r.read(stream);
+        return MSOfficeMetadataListener;
     }
 }

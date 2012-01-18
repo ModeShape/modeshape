@@ -3,7 +3,7 @@
  * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of
+ * See the AUTHORS.txt file in the distribution for a full listing of 
  * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
@@ -21,24 +21,31 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org
  */
-package org.modeshape.jcr.api;
+package org.modeshape.sequencer.msoffice.powerpoint;
+
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import org.junit.Test;
+import java.io.InputStream;
 
 /**
- * Class which should hold string constants defined by the JCR spec.
+ * Unit test for {@link PowerPointMetadataReader}
  *
+ * @author Michael Trezzi
  * @author Horia Chiorean
  */
-public final class JcrConstants {
-    public static final String JCR_MIMETYPE = "jcr:mimetype";
-    public static final String JCR_CONTENT = "jcr:content";
-    public static final String JCR_NAME = "jcr:name";
-    public static final String JCR_DATA = "jcr:data";
-    public static final String JCR_MIXIN_TYPES = "jcr:mixinTypes";
-    public static final String JCR_PRIMARY_TYPE = "jcr:primaryType";
-    public static final String JCR_MIME_TYPE = "jcr:mimeType";
+public class PowerPointMetadataReaderTest {
 
-    public static final String NT_UNSTRUCTURED = "nt:unstructured";
+    @Test
+    public void shouldBeAbleToCreateMetadataForPowerPoint() throws Exception {
+        InputStream is = getClass().getClassLoader().getResourceAsStream("powerpoint.ppt");
+        PowerpointMetadata powerpointMetadata = PowerPointMetadataReader.instance(is);
 
-    private JcrConstants() {
+        SlideMetadata slide = powerpointMetadata.getSlides().get(0);
+        assertThat(slide.getTitle(), is("Test Slide"));
+        assertThat(slide.getText(), is("This is some text"));
+        assertThat(slide.getNotes(), is("My notes"));
+        assertNotNull(slide.getThumbnail());
     }
 }

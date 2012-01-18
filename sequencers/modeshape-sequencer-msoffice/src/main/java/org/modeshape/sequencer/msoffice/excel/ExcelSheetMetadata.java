@@ -21,24 +21,28 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org
  */
-package org.modeshape.jcr.api;
+package org.modeshape.sequencer.msoffice.excel;
 
 /**
- * Class which should hold string constants defined by the JCR spec.
- *
- * @author Horia Chiorean
+ * Metadata for a sheet within a Microsoft Office Excel spreadsheet.
  */
-public final class JcrConstants {
-    public static final String JCR_MIMETYPE = "jcr:mimetype";
-    public static final String JCR_CONTENT = "jcr:content";
-    public static final String JCR_NAME = "jcr:name";
-    public static final String JCR_DATA = "jcr:data";
-    public static final String JCR_MIXIN_TYPES = "jcr:mixinTypes";
-    public static final String JCR_PRIMARY_TYPE = "jcr:primaryType";
-    public static final String JCR_MIME_TYPE = "jcr:mimeType";
+public class ExcelSheetMetadata {
+    private String name;
+    private String text;
 
-    public static final String NT_UNSTRUCTURED = "nt:unstructured";
+    public String getName() {
+        return name;
+    }
 
-    private JcrConstants() {
+    public void setName( String name ) {
+        this.name = name;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public void setText( String text ) {
+        this.text = text;
     }
 }

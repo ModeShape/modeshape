@@ -21,24 +21,46 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org
  */
-package org.modeshape.jcr.api;
+package org.modeshape.sequencer.msoffice.powerpoint;
 
 /**
- * Class which should hold string constants defined by the JCR spec.
- *
- * @author Horia Chiorean
+ * Metadata for Microsoft Office PowerPoint slides.
  */
-public final class JcrConstants {
-    public static final String JCR_MIMETYPE = "jcr:mimetype";
-    public static final String JCR_CONTENT = "jcr:content";
-    public static final String JCR_NAME = "jcr:name";
-    public static final String JCR_DATA = "jcr:data";
-    public static final String JCR_MIXIN_TYPES = "jcr:mixinTypes";
-    public static final String JCR_PRIMARY_TYPE = "jcr:primaryType";
-    public static final String JCR_MIME_TYPE = "jcr:mimeType";
+public class SlideMetadata {
+    private String title;
+    private String text;
+    private byte[] thumbnail;
+    private String notes;
 
-    public static final String NT_UNSTRUCTURED = "nt:unstructured";
+    public String getTitle() {
+        return title;
+    }
 
-    private JcrConstants() {
+    public void setTitle( String title ) {
+        this.title = title;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public void setText( String text ) {
+        this.text = text;
+    }
+
+    public byte[] getThumbnail() {
+        return thumbnail;
+    }
+
+    public void setThumbnail( byte[] thumbnail ) {
+        this.thumbnail = thumbnail;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes( String notes ) {
+        this.notes = notes;
     }
 }
