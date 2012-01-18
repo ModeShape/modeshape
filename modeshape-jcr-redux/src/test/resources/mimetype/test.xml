@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE magic PUBLIC "-//jMimeMagic//DTD magic config 1.0//EN" "magic_1_0.dtd">
+<magic>
+<info>
+<version>0.1</version>
+<author>arimus@users.sourceforge.net</author>
+<description>XML magic file</description>
+</info>
+<match-list>
+<match>
+	<mimetype>application/x-tar</mimetype>
+	<extension>tar</extension>
+	<description>POSIX tar archive</description>
+	<test offset="257" type="string" comparator="=">ustar\000</test>
+</match>
+<match>
+	<mimetype>application/x-tar</mimetype>
+	<extension>tar</extension>
+	<description>tar archive</description>
+	<test offset="257" type="string" comparator="=">ustar  \000GNU</test>
+</match>
+<match>
+	<mimetype>application/zip</mimetype>
+	<extension>zip</extension>
+	<description>archive data</description>
+	<test offset="0" type="string" comparator="=">PK\003\004</test>
+</match>
+<match>
+	<mimetype>application/x-gzip</mimetype>
+	<extension>gz</extension>
+	<description>gzip compressed data</description>
+	<test offset="0" type="string" comparator="=">\037\213</test>
+</match>
+<match>
+	<mimetype>application/x-bzip2</mimetype>
+	<extension>bz2</extension>
+	<description>bzip2 compressed data</description>
+	<test offset="0" type="string" comparator="=">BZh</test>
+</match>
+<match>
+	<mimetype>???</mimetype>
+	<extension>bat</extension>
+	<description>MS-DOS batch file text</description>
+	<test offset="0" type="string" comparator="=">@echo off</test>
+</match>
+</match-list>
+</magic>

@@ -26,6 +26,7 @@
 		<module>modeshape-jcr-redux</module>
 		<module>deploy/jbossas</module>
 
+        <module>sequencers/modeshape-sequencer-msoffice</module>
         <module>sequencers/modeshape-sequencer-images</module>
         <module>sequencers/modeshape-sequencer-java</module>
         <module>sequencers/modeshape-sequencer-ddl</module>

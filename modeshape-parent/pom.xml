@@ -231,8 +231,7 @@
 		<jdbc.oracle11g.version>11.1.0.7.0</jdbc.oracle11g.version>
 		<jdbc.sybase15.version>6.0.5</jdbc.sybase15.version>
 		<jdbc.mssql2008.version>2.0.1008.2</jdbc.mssql2008.version>
-		<java.version>1.6</java.version>
-		<java.version.jcr.graph>1.5</java.version.jcr.graph>
+		<modeshape.java.version>1.6</modeshape.java.version>
 		<javax.servlet.version>2.5</javax.servlet.version>
 		<javax.jacc.version>1.0.0.Final</javax.jacc.version>
 		<jboss.seam.version>2.2.2.Final</jboss.seam.version>
@@ -768,8 +767,8 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>${maven.compiler.plugin.version}</version>
 				<configuration>
-					<source>${java.version}</source>
-					<target>${java.version}</target>
+					<source>${modeshape.java.version}</source>
+					<target>${modeshape.java.version}</target>
 					<showDeprecation>false</showDeprecation>
 					<showWarnings>false</showWarnings>
 				</configuration>

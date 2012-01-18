@@ -284,19 +284,5 @@
         </includes>
       </resource>
     </resources>
-    <plugins>
-      <!-- Specify the compiler options and settings -->
-         <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <version>${maven.compiler.plugin.version}</version>
-            <configuration>
-                <source>${java.version.jcr.graph}</source>
-                <target>${java.version.jcr.graph}</target>
-                <showDeprecation>false</showDeprecation>
-                <showWarnings>false</showWarnings>
-            </configuration>
-      </plugin>
-		</plugins>
   </build>
 </project>

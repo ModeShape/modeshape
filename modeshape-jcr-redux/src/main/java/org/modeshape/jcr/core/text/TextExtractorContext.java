@@ -31,9 +31,9 @@ import java.util.Set;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.component.ClassLoaderFactory;
+import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.core.ExecutionContext;
 import org.modeshape.jcr.core.SecurityContext;
-import org.modeshape.jcr.core.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Path;
@@ -137,7 +137,7 @@ public class TextExtractorContext extends ExecutionContext {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.jcr.core.ExecutionContext#with(org.modeshape.jcr.core.mimetype.MimeTypeDetector)
+     * @see org.modeshape.jcr.core.ExecutionContext#with(org.modeshape.jcr.api.mimetype.MimeTypeDetector)
      */
     @Override
     public TextExtractorContext with( MimeTypeDetector mimeTypeDetector ) {
