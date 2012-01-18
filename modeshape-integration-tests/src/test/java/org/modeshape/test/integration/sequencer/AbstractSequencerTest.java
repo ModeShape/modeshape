@@ -23,14 +23,19 @@
  */
 package org.modeshape.test.integration.sequencer;
 
+import javax.jcr.*;
+import javax.jcr.nodetype.NodeDefinition;
+import javax.jcr.nodetype.NodeType;
+import javax.jcr.nodetype.NodeTypeManager;
+import javax.jcr.nodetype.PropertyDefinition;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import javax.jcr.RepositoryException;
-import javax.jcr.Session;
 import javax.jcr.observation.Event;
 import javax.jcr.observation.EventIterator;
 import javax.jcr.observation.EventListener;
@@ -186,4 +191,78 @@ public abstract class AbstractSequencerTest extends ModeShapeSingleUseTest {
 
     }
 
+    /**
+     * Class which can be used to validate sequenced node's types. This is used to bypass the limitation that the sequenced nodes
+     * are not type-validated against the cnd's of the sequencers.
+     */
+    public static class SequencedNodeValidator {
+        /**
+         * Checks that the type (including mixins) of the sequenced node has at least the required properties and child definitions.
+         * This will recurse down to all the children of the given node.
+         *
+         * This method is only needed because of the fact that in 2.x, the Sequncer framework does not validate the integrity of the
+         * generated subgraph.
+         *
+         * @param sequencedNode a {@link javax.jcr.Node} instance
+         * @throws RepositoryException if anything fails during this check
+         */
+        public static void validateSequencedNodeType( Node sequencedNode, NodeTypeManager nodeTypeManager ) throws RepositoryException {
+            List<String> typeNames = getAllMixinAndTypeNames(sequencedNode);
+
+            for (PropertyDefinition propertyDef : collectAllRequiredProperties(typeNames, nodeTypeManager)) {
+                if (propertyDef.isMandatory()) {
+                    assertTrue("Property " + propertyDef.getName() + " not found under " + sequencedNode, sequencedNode.hasProperty(propertyDef.getName()));
+                }
+                if (propertyDef.isMultiple()) {
+                    assertArrayEquals(propertyDef.getDefaultValues(), sequencedNode.getProperty(propertyDef.getName()).getValues());
+                }
+            }
+
+            for (String childNodeName : collectAllRequiredChildren(typeNames, nodeTypeManager)) {
+                assertTrue("Child " + childNodeName + "not found under " + sequencedNode, sequencedNode.hasNode(childNodeName));
+            }
+
+            for (NodeIterator childNodeIt = sequencedNode.getNodes(); childNodeIt.hasNext(); ) {
+                validateSequencedNodeType(childNodeIt.nextNode(), nodeTypeManager);
+            }
+        }
+
+        private static List<PropertyDefinition> collectAllRequiredProperties( List<String> typeNames, NodeTypeManager nodeTypeManager ) throws RepositoryException {
+            List<PropertyDefinition> result = new ArrayList<PropertyDefinition>();
+            for (String typeName : typeNames) {
+                NodeType type = nodeTypeManager.getNodeType(typeName);
+                for (PropertyDefinition propertyDefinition : type.getPropertyDefinitions()) {
+                    if (propertyDefinition.isMandatory()) {
+                        result.add(propertyDefinition);
+                    }
+                }
+            }
+            return result;
+        }
+
+        private static List<String> collectAllRequiredChildren( List<String> typeNames, NodeTypeManager nodeTypeManager ) throws RepositoryException {
+            List<String> result = new ArrayList<String>();
+            for (String typeName : typeNames) {
+                NodeType type = nodeTypeManager.getNodeType(typeName);
+                for (NodeDefinition childDefinition : type.getChildNodeDefinitions()) {
+                    if (childDefinition.isMandatory()) {
+                        result.add(childDefinition.getName());
+                    }
+                }
+            }
+            return result;
+        }
+
+        private static List<String> getAllMixinAndTypeNames( Node sequencedNode ) throws RepositoryException {
+            List<String> types = new ArrayList<String>();
+
+            if (!sequencedNode.hasProperty("jcr:mixinTypes")) {
+                return types;
+            }
+            for (Value mixinValue : sequencedNode.getProperty("jcr:mixinTypes").getValues()) {
+                types.add(mixinValue.getString());
+            }
+            return types;
+        }
+    }
 }
