@@ -518,7 +518,7 @@ public abstract class AbstractDdlIntegrationTest {
 
     protected Node getStatementsContainer() throws RepositoryException {
         Node statementsContainer = session.getRootNode().getNode("ddls" + ROOT_PATH);
-        AbstractSequencerTest.SequencedNodeValidator.validateSequencedNodeType(statementsContainer, session.getWorkspace().getNodeTypeManager());
+        AbstractSequencerTest.SequencedNodeValidator.validateSequencedNodeType(statementsContainer);
         return statementsContainer;
     }
 }

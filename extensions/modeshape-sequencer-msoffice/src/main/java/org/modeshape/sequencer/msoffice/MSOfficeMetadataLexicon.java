@@ -22,7 +22,6 @@ public class MSOfficeMetadataLexicon {
     public static final Name KEYWORDS = new BasicName(Namespace.URI, "keywords");
     public static final Name COMMENT = new BasicName(Namespace.URI, "comment");
     public static final Name TEMPLATE = new BasicName(Namespace.URI, "template");
-    public static final Name LAST_SAVED = new BasicName(Namespace.URI, "last_saved");
     public static final Name REVISION = new BasicName(Namespace.URI, "revision");
     public static final Name TOTAL_EDITING_TIME = new BasicName(Namespace.URI, "total_editing_time");
     public static final Name LAST_PRINTED = new BasicName(Namespace.URI, "last_printed");
@@ -36,7 +35,8 @@ public class MSOfficeMetadataLexicon {
     public static final Name SLIDE = new BasicName(Namespace.URI, "slide");
     public static final Name TEXT = new BasicName(Namespace.URI, "text");
     public static final Name NOTES = new BasicName(Namespace.URI, "notes");
-    public static final Name FULL_CONTENT = new BasicName(Namespace.URI, "full_contents");
+    public static final Name FULL_CONTENT = new BasicName(Namespace.URI, "full_content");
+    public static final Name SHEET = new BasicName(Namespace.URI, "sheet");
     public static final Name SHEET_NAME = new BasicName(Namespace.URI, "sheet_name");
     public static final Name HEADING_NODE = new BasicName(Namespace.URI, "heading");
     public static final Name HEADING_NAME = new BasicName(Namespace.URI, "heading_name");

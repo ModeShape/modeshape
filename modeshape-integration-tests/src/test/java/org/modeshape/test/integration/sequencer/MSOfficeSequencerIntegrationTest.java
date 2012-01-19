@@ -23,18 +23,21 @@
  */
 package org.modeshape.test.integration.sequencer;
 
+import javax.jcr.Node;
+import javax.jcr.RepositoryException;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertThat;
-import javax.jcr.Node;
 import org.junit.After;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import org.junit.Before;
 import org.junit.Test;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MSOfficeSequencerIntegrationTest extends AbstractSequencerTest {
     /**
-     * {@inheritDoc}
-     * 
      * @see org.modeshape.test.ModeShapeUnitTest#getPathToDefaultConfiguration()
      */
     @Override
@@ -56,13 +59,27 @@ public class MSOfficeSequencerIntegrationTest extends AbstractSequencerTest {
 
     @Test
     public void shouldStartEngineWithRegisteredMSOfficeNodeTypes() throws Exception {
-        assertNodeType("msoffice:metadata", false, false, true, false, null, 1, 19, "nt:unstructured", "mix:mimeType");
+        assertNodeType("msoffice:metadata", false, false, true, false, null, 3, 18, "nt:unstructured", "mix:mimeType");
     }
 
     @Test
     public void shouldSequenceWordDocument() throws Exception {
+        uploadAndAssertSequencedNode("word.doc");
+    }
+
+    @Test
+    public void shouldSequenceExcelDocument() throws Exception {
+        uploadAndAssertSequencedNode("excel.xls");
+    }
+
+    @Test
+    public void shouldSequencePowerpointDocument() throws Exception {
+        uploadAndAssertSequencedNode("powerpoint.ppt");
+    }
+
+    private void uploadAndAssertSequencedNode(String fileName) throws RepositoryException, IOException, InterruptedException {
         // print = true;
-        uploadFile("sequencers/msoffice/Small.doc", "/files/");
+        uploadFile("sequencers/msoffice/" +  fileName, "/files/");
 
         // Thread.sleep(10 * 1000);
         waitUntilSequencingFinishes();
@@ -72,7 +89,9 @@ public class MSOfficeSequencerIntegrationTest extends AbstractSequencerTest {
         printSubgraph(sequenced);
 
         // Find the sequenced node ...
-        Node doc = waitUntilSequencedNodeIsAvailable("/sequenced/msoffice/Small.doc", "nt:unstructured");
-        printSubgraph(doc);
+        Node node = waitUntilSequencedNodeIsAvailable("/sequenced/msoffice/" + fileName, "nt:unstructured");
+        assertNotNull(node);
+        printSubgraph(node);
+        SequencedNodeValidator.validateSequencedNodeType(node);
     }
 }

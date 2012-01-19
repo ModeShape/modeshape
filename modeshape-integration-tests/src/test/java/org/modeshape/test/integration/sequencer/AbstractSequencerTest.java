@@ -28,26 +28,23 @@ import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.PropertyDefinition;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import javax.jcr.observation.Event;
 import javax.jcr.observation.EventIterator;
 import javax.jcr.observation.EventListener;
+import static org.junit.Assert.*;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.text.Inflector;
+import static org.modeshape.graph.JcrLexicon.Namespace.*;
+import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.test.ModeShapeSingleUseTest;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public abstract class AbstractSequencerTest extends ModeShapeSingleUseTest {
 
     /**
      * Return a new listener that accumulates the nodes that have been deleted.
-     * 
+     *
      * @return the new listener
      * @throws RepositoryException
      */
@@ -76,7 +73,7 @@ public abstract class AbstractSequencerTest extends ModeShapeSingleUseTest {
 
         /**
          * {@inheritDoc}
-         * 
+         *
          * @see javax.jcr.observation.EventListener#onEvent(javax.jcr.observation.EventIterator)
          */
         @Override
@@ -113,10 +110,12 @@ public abstract class AbstractSequencerTest extends ModeShapeSingleUseTest {
         }
 
         public void register() throws RepositoryException {
-            if (isRegistered) return;
+            if (isRegistered) {
+                return;
+            }
             session.getWorkspace()
-                   .getObservationManager()
-                   .addEventListener(this, Event.NODE_REMOVED, path, true, null, null, false);
+                    .getObservationManager()
+                    .addEventListener(this, Event.NODE_REMOVED, path, true, null, null, false);
             isRegistered = true;
         }
 
@@ -128,7 +127,7 @@ public abstract class AbstractSequencerTest extends ModeShapeSingleUseTest {
         /**
          * Wait at most for the specified time until delete events for nodes the supplied paths have been received. If not all
          * events are seen after the supplied time, this method will cause a test failure.
-         * 
+         *
          * @param maxTimeToWait the maximum time to wait
          * @param unit the time unit for the maximum time to wait
          * @param paths the paths that are to be deleted (must not be descendants of the deleted nodes)
@@ -142,11 +141,11 @@ public abstract class AbstractSequencerTest extends ModeShapeSingleUseTest {
 
         /**
          * Wait at most for the specified time until delete events for nodes the supplied paths have been received.
-         * 
+         *
          * @param maxTimeToWait the maximum time to wait
          * @param unit the time unit for the maximum time to wait
          * @param failIfNotAllFound true if this method should cause a test failure should not all events be found, or false if
-         *        this method should return upon failure
+         * this method should return upon failure
          * @param paths the paths that are to be deleted (must not be descendants of the deleted nodes)
          * @return the set of paths that were not found after timeout; if empty, then all expected events were found
          */
@@ -157,9 +156,13 @@ public abstract class AbstractSequencerTest extends ModeShapeSingleUseTest {
             assert paths != null;
             Set<String> remainingPaths = new HashSet<String>();
             for (String path : paths) {
-                if (path != null) remainingPaths.add(path);
+                if (path != null) {
+                    remainingPaths.add(path);
+                }
             }
-            if (remainingPaths.isEmpty()) return remainingPaths;
+            if (remainingPaths.isEmpty()) {
+                return remainingPaths;
+            }
 
             long maxTimeToWaitInMillis = unit.toMillis(maxTimeToWait);
             long startTime = System.currentTimeMillis();
@@ -167,7 +170,9 @@ public abstract class AbstractSequencerTest extends ModeShapeSingleUseTest {
             while (waitedInMillis < maxTimeToWaitInMillis) {
                 for (List<String> list : deletedPaths) {
                     remainingPaths.removeAll(list);
-                    if (remainingPaths.isEmpty()) return remainingPaths;
+                    if (remainingPaths.isEmpty()) {
+                        return remainingPaths;
+                    }
                 }
                 waitedInMillis = System.currentTimeMillis() - startTime;
                 if (waitedInMillis < maxTimeToWaitInMillis) {
@@ -184,7 +189,7 @@ public abstract class AbstractSequencerTest extends ModeShapeSingleUseTest {
                 Inflector inflector = new Inflector();
                 String unitName = inflector.pluralize(unit.toString().toLowerCase(), (int)maxTimeToWait);
                 fail("Waited for " + maxTimeToWait + " " + unitName + " but didn't see events for deletion of: " + remainingPaths
-                     + ". Did see these deletions: " + deletedPaths);
+                             + ". Did see these deletions: " + deletedPaths);
             }
             return remainingPaths;
         }
@@ -206,35 +211,59 @@ public abstract class AbstractSequencerTest extends ModeShapeSingleUseTest {
          * @param sequencedNode a {@link javax.jcr.Node} instance
          * @throws RepositoryException if anything fails during this check
          */
-        public static void validateSequencedNodeType( Node sequencedNode, NodeTypeManager nodeTypeManager ) throws RepositoryException {
-            List<String> typeNames = getAllMixinAndTypeNames(sequencedNode);
+        public static void validateSequencedNodeType( Node sequencedNode ) throws RepositoryException {
+            NodeTypeManager nodeTypeManager = sequencedNode.getSession().getWorkspace().getNodeTypeManager();
 
-            for (PropertyDefinition propertyDef : collectAllRequiredProperties(typeNames, nodeTypeManager)) {
-                if (propertyDef.isMandatory()) {
-                    assertTrue("Property " + propertyDef.getName() + " not found under " + sequencedNode, sequencedNode.hasProperty(propertyDef.getName()));
+            List<String> typeNames = getAllMixinAndTypeNames(sequencedNode);
+            if (!typeNames.contains("nt:unstructured")) {
+                Map<String, Property> nodeProperties = collectProperties(sequencedNode);
+
+                for (PropertyDefinition propertyDef : collectAllPropertyDefinitions(typeNames, nodeTypeManager)) {
+                    boolean nodeHasProperty = nodeProperties.containsKey(propertyDef.getName());
+                    if (propertyDef.isMandatory())  {
+                        assertTrue("Property " + propertyDef.getName() + " not found under " + sequencedNode, nodeHasProperty);
+                    }
+                    if (propertyDef.isMultiple() && nodeHasProperty) {
+                        assertArrayEquals(propertyDef.getDefaultValues(), nodeProperties.get(propertyDef.getName()).getValues());
+                    }
+                    nodeProperties.remove(propertyDef.getName());
                 }
-                if (propertyDef.isMultiple()) {
-                    assertArrayEquals(propertyDef.getDefaultValues(), sequencedNode.getProperty(propertyDef.getName()).getValues());
-                }
+                assertTrue("Unidentified node properties found " + nodeProperties, nodeProperties.isEmpty());
             }
+
 
             for (String childNodeName : collectAllRequiredChildren(typeNames, nodeTypeManager)) {
                 assertTrue("Child " + childNodeName + "not found under " + sequencedNode, sequencedNode.hasNode(childNodeName));
             }
 
             for (NodeIterator childNodeIt = sequencedNode.getNodes(); childNodeIt.hasNext(); ) {
-                validateSequencedNodeType(childNodeIt.nextNode(), nodeTypeManager);
+                validateSequencedNodeType(childNodeIt.nextNode());
             }
         }
 
-        private static List<PropertyDefinition> collectAllRequiredProperties( List<String> typeNames, NodeTypeManager nodeTypeManager ) throws RepositoryException {
+        private static Map<String, Property> collectProperties( Node node ) throws RepositoryException {
+            Map<String, Property> propertyMap = new HashMap<String, Property>();
+            PropertyIterator propertyIterator = node.getProperties();
+            while (propertyIterator.hasNext()) {
+                Property property = propertyIterator.nextProperty();
+                if (property.getName().startsWith(PREFIX) || property.getName().startsWith(URI)) {
+                    continue;
+                }
+                propertyMap.put(property.getName(), property);
+            }
+            return propertyMap;
+        }
+
+        private static List<PropertyDefinition> collectAllPropertyDefinitions( List<String> typeNames, NodeTypeManager nodeTypeManager ) throws RepositoryException {
             List<PropertyDefinition> result = new ArrayList<PropertyDefinition>();
             for (String typeName : typeNames) {
                 NodeType type = nodeTypeManager.getNodeType(typeName);
                 for (PropertyDefinition propertyDefinition : type.getPropertyDefinitions()) {
-                    if (propertyDefinition.isMandatory()) {
-                        result.add(propertyDefinition);
+                    if (propertyDefinition.getName().startsWith(PREFIX) || propertyDefinition.getName().startsWith(URI) || 
+                            propertyDefinition.getName().equals("*")) {
+                        continue;
                     }
+                    result.add(propertyDefinition);
                 }
             }
             return result;
@@ -255,7 +284,7 @@ public abstract class AbstractSequencerTest extends ModeShapeSingleUseTest {
 
         private static List<String> getAllMixinAndTypeNames( Node sequencedNode ) throws RepositoryException {
             List<String> types = new ArrayList<String>();
-
+            types.add(sequencedNode.getPrimaryNodeType().getName());
             if (!sequencedNode.hasProperty("jcr:mixinTypes")) {
                 return types;
             }

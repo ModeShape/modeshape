@@ -53,16 +53,26 @@
   - msoffice:creating_application (string)
   - msoffice:thumbnail (binary)
 
+  //Word specific data
+  + msoffice:heading (msoffice:heading) sns
+
 // PowerPoint specific data
   + msoffice:slide (msoffice:pptslide) sns
 
 // Excel specific data
   - msoffice:full_content (string)
-  - msoffice:sheet_name (string) multiple
+  + msoffice:sheet (msoffice:xlssheet) sns
 
 [msoffice:pptslide]
   - msoffice:title (string)
   - msoffice:text (string)
+  - msoffice:notes (string)
   - msoffice:thumbnail (binary)
 
+[msoffice:xlssheet]
+  - msoffice:sheet_name (string)
+  - msoffice:text (string)
 
+[msoffice:heading]
+  - msoffice:heading_name (string)
+  - msoffice:heading_level (long)
