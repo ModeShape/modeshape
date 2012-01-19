@@ -112,7 +112,7 @@ public class MSOfficeMetadataSequencer implements StreamSequencer {
 
         Path docNode = pathFactory.createRelativePath(docName);
         Path metadataNode = pathFactory.create(docNode, MSOfficeMetadataLexicon.METADATA_NODE);
-
+        output.setProperty(metadataNode, JcrLexicon.MIMETYPE, mimeType);
         // process PowerPoint specific metadata
         if (mimeType.equals("application/vnd.ms-powerpoint") || mimeType.equals("application/mspowerpoint")) {
             try {
@@ -120,13 +120,14 @@ public class MSOfficeMetadataSequencer implements StreamSequencer {
                 List<SlideMetadata> ppt_metadata = deck.getHeadings();
                 recordMetadata(output, context, metadataNode, deck.getMetadata());
                 if (ppt_metadata != null) {
+                    BinaryFactory binary = context.getValueFactories().getBinaryFactory();
                     int index = 0;
                     for (SlideMetadata sm : ppt_metadata) {
                         Path pptPath = pathFactory.create(docNode, MSOfficeMetadataLexicon.SLIDE, ++index);
                         output.setProperty(pptPath, MSOfficeMetadataLexicon.TITLE, sm.getTitle());
                         output.setProperty(pptPath, MSOfficeMetadataLexicon.TEXT, sm.getText());
                         output.setProperty(pptPath, MSOfficeMetadataLexicon.NOTES, sm.getNotes());
-                        output.setProperty(pptPath, MSOfficeMetadataLexicon.THUMBNAIL, sm.getThumbnail());
+                        output.setProperty(pptPath, MSOfficeMetadataLexicon.THUMBNAIL, binary.create(sm.getThumbnail()));
                     }
                 }
             } catch (IOException e) {
@@ -163,7 +164,7 @@ public class MSOfficeMetadataSequencer implements StreamSequencer {
                     recordMetadata(output, context, metadataNode, excel_metadata.getMetadata());
                     output.setProperty(metadataNode, MSOfficeMetadataLexicon.FULL_CONTENT, excel_metadata.getText());
                     for (ExcelSheetMetadata sheet : excel_metadata.getSheets()) {
-                        Path sheetPath = pathFactory.create(docNode, sheet.getName());
+                        Path sheetPath = pathFactory.create(docNode, MSOfficeMetadataLexicon.SHEET);
                         output.setProperty(sheetPath, MSOfficeMetadataLexicon.SHEET_NAME, sheet.getName());
                         output.setProperty(sheetPath, MSOfficeMetadataLexicon.TEXT, sheet.getText());
                     }
