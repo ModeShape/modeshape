@@ -1,0 +1,6 @@
+# This line should be ignored completely
+foobarbaz
+foobarbaz
+foobarbaz
+# So should this one
+foobarbaz

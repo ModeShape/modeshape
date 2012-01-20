@@ -23,18 +23,25 @@
  */
 package org.modeshape.jcr;
 
-import java.io.IOException;
-import java.util.concurrent.atomic.AtomicInteger;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A simple sequencer that always fails with an exception.
+ *
+ * @author Horia Chiorean
  */
 public class TestSequencersHolder {
 
@@ -85,6 +92,68 @@ public class TestSequencersHolder {
             outputNode.addNode(DERIVED_NODE_NAME);
             return true;
         }
-
     }
+
+    /**
+     * A sequencer which has different property types and is used to test the setting of property values.
+     */
+    public static class SequencerWithProperties extends Sequencer {
+        public static boolean executed;
+
+        private List<Integer> intList;
+        private Set<Integer> intSet;
+        private Map<String, String> stringMap;
+
+        private Integer intProp;
+        private Integer[] integerArray;
+        private int[] intArray;
+
+        private Boolean booleanProp;
+        private boolean[] booleanArray;
+
+        private String stringProp;
+        private String[] stringArray;
+
+        private Long longProp;
+        private Long[] longArray;
+
+        private Double doubleProp;
+        private Double[] doubleArray;
+
+        private SequencerWithProperties subSequencer;
+        //because of type erasure, the runtime instance will have List(Document) instances.
+        private List subSequencerList;
+
+        /**
+         * The only purpose of this sequencer is to validate that various property types can be set, hence all the null checks.
+         *
+         * @see org.modeshape.jcr.SequencingTest#shouldSupportVariousPropertyTypes()
+         */
+        @Override
+        public boolean execute( Property inputProperty, Node outputNode, Context context ) throws Exception {
+            assertNotNull("intList not set", intList);
+            assertNotNull("intSet not set", intSet);
+            assertNotNull("stringMap not set", stringMap);
+            assertNotNull("intProp not set", intProp);
+            assertNotNull("integerArray not set", integerArray);
+            assertNotNull("intArray not set", intArray);
+            assertNotNull("intProp not set", intProp);
+            assertNotNull("integerArray not set", integerArray);
+            assertNotNull("booleanProp not set", booleanProp);
+            assertNotNull("stringProp not set", stringProp);
+            assertNotNull("stringArray not set", stringArray);
+            assertNotNull("longProp not set", longProp);
+            assertNotNull("longArray not set", longArray);
+            assertNotNull("doubleProp not set", doubleProp);
+            assertNotNull("doubleArray not set", doubleArray);
+            assertNotNull("subSequener not set", subSequencer);
+            assertNotNull("subSequencerList not set", subSequencerList);
+            assertFalse(subSequencerList.isEmpty());
+
+            executed = true;
+
+            return true;
+        }
+    }
+
 }

@@ -1184,16 +1184,16 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             for (Component component : securityConfig.getCustomProviders()) {
                 try {
                     ClassLoader cl = classLoader(component.getClasspath(), defaultClassLoader);
-                    AuthenticationProvider provider = component.createInstance(AuthenticationProvider.class, cl);
-                    if (provider != null) {
-                        authenticators = authenticators.with(provider);
-                        if (provider instanceof AnonymousProvider) {
-                            Object value = component.getDocument().get(FieldName.USE_ANONYMOUS_ON_FAILED_LOGINS);
-                            if (Boolean.TRUE.equals(value)) useAnonymouOnFailedLogins.set(true);
+                    AuthenticationProvider provider = component.createInstance(cl);
+                    authenticators = authenticators.with(provider);
+                    if (provider instanceof AnonymousProvider) {
+                        Object value = component.getDocument().get(FieldName.USE_ANONYMOUS_ON_FAILED_LOGINS);
+                        if (Boolean.TRUE.equals(value)) {
+                            useAnonymouOnFailedLogins.set(true);
                         }
                     }
                 } catch (Throwable t) {
-                    logger.error(JcrI18n.unableToInitializeAuthenticationProvider,
+                    logger.error(t, JcrI18n.unableToInitializeAuthenticationProvider,
                                  component.getName(),
                                  repositoryName(),
                                  t.getMessage());

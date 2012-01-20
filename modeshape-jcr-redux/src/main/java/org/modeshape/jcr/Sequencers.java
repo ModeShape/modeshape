@@ -123,23 +123,21 @@ public class Sequencers implements ChangeSetListener {
                 String name = component.getName();
                 try {
                     ClassLoader cl = context.getClassLoader(component.getClasspath());
-                    if (cl == null) cl = defaultClassLoader;
-                    Sequencer sequencer = component.createInstance(Sequencer.class, cl);
+                    if (cl == null) {
+                        cl = defaultClassLoader;
+                    }
+                    Sequencer sequencer = component.createInstance(cl);
                     // Set the repository name field ...
                     ReflectionUtil.setValue(sequencer, "repositoryName", repoName);
-                    if (sequencer != null) {
-                        // We'll initialize it later in #intialize() ...
+                    // We'll initialize it later in #intialize() ...
 
-                        // For each sequencer, figure out which workspaces apply ...
-                        sequencersByName.put(name, sequencer);
-                        // For each sequencer, create the path expressions ...
-                        Set<SequencerPathExpression> pathExpressions = buildPathExpressionSet(sequencer);
-                        pathExpressionsBySequencerName.put(name, pathExpressions);
-                    } else {
-                        logger.error(JcrI18n.unableToInitializeSequencer, name, repoName, "");
-                    }
+                    // For each sequencer, figure out which workspaces apply ...
+                    sequencersByName.put(name, sequencer);
+                    // For each sequencer, create the path expressions ...
+                    Set<SequencerPathExpression> pathExpressions = buildPathExpressionSet(sequencer);
+                    pathExpressionsBySequencerName.put(name, pathExpressions);
                 } catch (Throwable t) {
-                    logger.error(JcrI18n.unableToInitializeSequencer, name, repoName, t.getMessage());
+                    logger.error(t, JcrI18n.unableToInitializeSequencer, name, repoName, t.getMessage());
                 }
             }
             // Now process each workspace ...

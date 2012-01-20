@@ -1,0 +1,42 @@
+{
+    "name":"Test Config with various property types",
+    "sequencing":{
+        "removeDerivedContentWithOriginal":true,
+        "sequencers":[
+            {
+                "name":"Test sequencer",
+                "classname":"org.modeshape.jcr.TestSequencersHolder$SequencerWithProperties",
+                "pathExpression":"default://",
+                "intList":[1, 1, 2, 3],
+                "intSet":[1, 2, 3],
+                "stringMap":{
+                    "key1":"value1",
+                    "key2":"value2"
+                },
+                "intProp":3,
+                "integerArray":[1, 2, 3],
+                "intArray":[4, 5, 6],
+                "booleanProp":false,
+                "booleanArray":[true, false, true],
+                "stringProp" : "foo",
+                "stringArray" : ["foo", "bar"],
+                "longProp" : 1111111111111,
+                "longArray" : [1111111111111, 1111111111111],
+                "doubleProp" : 1.2,
+                "doubleArray" : [1.2, 3.4],
+                "subSequencer" : {
+                    "name" : "SubSequencer",
+                    "intSet":[4,5]
+                },
+                "subSequencerList" : [
+                    {
+                        "name" : "subSequencer1"
+                    },
+                    {
+                        "name" : "subSequencer2"
+                    }
+                ]
+            }
+        ]
+    }
+}
