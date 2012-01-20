@@ -175,6 +175,7 @@ public final class JcrI18n {
 
     public static I18n invalidAliasForComponent;
     public static I18n unableToSetFieldOnInstance;
+    public static I18n missingFieldOnInstance;
     public static I18n missingComponentClassnameOrAlias;
 
     public static I18n typeMissingWhenRegisteringEngineInJndi;

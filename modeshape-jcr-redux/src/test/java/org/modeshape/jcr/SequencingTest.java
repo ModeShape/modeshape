@@ -23,19 +23,19 @@
  */
 package org.modeshape.jcr;
 
+import javax.jcr.Node;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import javax.jcr.Node;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Json;
+import static org.junit.Assert.*;
 import org.junit.Test;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
+import java.io.InputStream;
 
 /**
  * Tests of various sequencing configurations.
@@ -49,6 +49,13 @@ public class SequencingTest extends SingleUseAbstractTest {
 
     protected void startRepositoryWithConfiguration( Document doc ) throws Exception {
         config = new RepositoryConfiguration(doc, REPO_NAME, cm);
+        repository = new JcrRepository(config);
+        repository.start();
+        session = repository.login();
+    }
+
+    protected void startRepositoryWithConfiguration( InputStream configInputStream ) throws Exception {
+        config = RepositoryConfiguration.read(configInputStream, REPO_NAME).with(cm);
         repository = new JcrRepository(config);
         repository.start();
         session = repository.login();
@@ -97,12 +104,12 @@ public class SequencingTest extends SingleUseAbstractTest {
                 found = true;
                 break;
             }
-            Thread.sleep(100L);
+            waitForSequencer();
         }
         assertThat("Failed to sequence '/foo' even after waiting 1 sec", found, is(true));
 
         // The session for the sequencer may not have been saved, so wait a bit ...
-        Thread.sleep(100L);
+        waitForSequencer();
 
         // Now verify that the test sequencer created a node ...
         Node fooOutput = session.getNode("/output/foo");
@@ -129,18 +136,23 @@ public class SequencingTest extends SingleUseAbstractTest {
                 found = true;
                 break;
             }
-            Thread.sleep(100L);
+            waitForSequencer();
         }
         assertThat("Failed to sequence '/foo' even after waiting 1 sec", found, is(true));
 
         // The session for the sequencer may not have been saved, so wait a bit ...
-        Thread.sleep(100L);
+        waitForSequencer();
 
         // Now verify that the test sequencer created a node ...
         Node foo2 = session.getNode("/foo");
         assertThat(foo2, is(sameInstance(foo)));
         Node derivedNode = session.getNode("/foo/" + TestSequencersHolder.DefaultSequencer.DERIVED_NODE_NAME);
         assertThat(derivedNode, is(notNullValue()));
+    }
+
+    //TODO author=Horia Chiorean date=1/20/12 description=This is really a temporary hack, until events will be available
+    private void waitForSequencer() throws InterruptedException {
+        Thread.sleep(100L);
     }
 
     @Test
@@ -162,12 +174,12 @@ public class SequencingTest extends SingleUseAbstractTest {
                 found = true;
                 break;
             }
-            Thread.sleep(100L);
+            waitForSequencer();
         }
         assertThat("Failed to sequence '/foo' even after waiting 1 sec", found, is(true));
 
         // The session for the sequencer may not have been saved, so wait a bit ...
-        Thread.sleep(100L);
+        waitForSequencer();
 
         // Now verify that there is NO output node, since the sequencer should have failed ...
         assertThat(session.getRootNode().hasNode("output/foo"), is(false));
@@ -197,8 +209,19 @@ public class SequencingTest extends SingleUseAbstractTest {
         session.save();
 
         // The session for the sequencer may not have been saved, so wait a bit ...
-        Thread.sleep(100L);
-        
+        waitForSequencer();
+
         assertEquals(0, TestSequencersHolder.FaultyDuringInitialize.EXECUTE_CALL_COUNTER.get());
+    }
+
+    @Test
+    public void shouldSupportVariousPropertyTypes() throws Exception {
+        startRepositoryWithConfiguration(getClass().getClassLoader().getResourceAsStream("config/repo-config-property-types.json"));
+        session.getRootNode().addNode("shouldTriggerSequencer");
+        session.save();
+
+        waitForSequencer();
+
+        assertTrue(TestSequencersHolder.SequencerWithProperties.executed);
     }
 }

@@ -23,25 +23,10 @@
  */
 package org.modeshape.jcr;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+import javax.security.auth.login.LoginException;
 import org.infinispan.config.Configuration;
 import org.infinispan.config.FluentConfiguration;
 import org.infinispan.manager.CacheContainer;
@@ -50,14 +35,8 @@ import org.infinispan.schematic.SchemaLibrary;
 import org.infinispan.schematic.SchemaLibrary.Problem;
 import org.infinispan.schematic.SchemaLibrary.Results;
 import org.infinispan.schematic.Schematic;
-import org.infinispan.schematic.document.Array;
-import org.infinispan.schematic.document.Changes;
-import org.infinispan.schematic.document.Document;
+import org.infinispan.schematic.document.*;
 import org.infinispan.schematic.document.Document.Field;
-import org.infinispan.schematic.document.EditableDocument;
-import org.infinispan.schematic.document.Editor;
-import org.infinispan.schematic.document.Json;
-import org.infinispan.schematic.document.ParsingException;
 import org.infinispan.transaction.lookup.GenericTransactionManagerLookup;
 import org.infinispan.transaction.lookup.TransactionManagerLookup;
 import org.infinispan.util.FileLookup;
@@ -71,11 +50,12 @@ import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.ObjectUtil;
 import org.modeshape.jcr.security.AnonymousProvider;
 import org.modeshape.jcr.security.JaasProvider;
-import org.modeshape.jcr.value.binary.BinaryStore;
-import org.modeshape.jcr.value.binary.DatabaseBinaryStore;
-import org.modeshape.jcr.value.binary.FileSystemBinaryStore;
-import org.modeshape.jcr.value.binary.InfinispanBinaryStore;
-import org.modeshape.jcr.value.binary.TransientBinaryStore;
+import org.modeshape.jcr.value.binary.*;
+import sun.reflect.generics.tree.ArrayTypeSignature;
+import java.io.*;
+import java.net.URL;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A representation of the configuration for a {@link JcrRepository JCR Repository}.
@@ -329,7 +309,7 @@ public class RepositoryConfiguration {
          * The default value of the {@link FieldName#ANONYMOUS_ROLES} field is a list with 'admin' as the role.
          */
         public static final Set<String> ANONYMOUS_ROLES = Collections.unmodifiableSet(new HashSet<String>(
-                                                                                                          Arrays.asList(new String[] {ModeShapeRoles.ADMIN})));
+                Arrays.asList(new String[] {ModeShapeRoles.ADMIN})));
 
         /**
          * The default value of the {@link FieldName#USE_ANONYMOUS_ON_FAILED_LOGINS} field is '{@value} '.
@@ -351,7 +331,7 @@ public class RepositoryConfiguration {
     }
 
     /**
-     * The set of field names that should be skipped when {@link Component#createInstance(Class, ClassLoader) instantiating a
+     * The set of field names that should be skipped when {@link Component#createInstance(ClassLoader) instantiating a
      * component}.
      */
     protected static final Set<String> COMPONENT_SKIP_PROPERTIES;
@@ -387,6 +367,8 @@ public class RepositoryConfiguration {
         String xmlSequencer = "org.modeshape.sequencer.xml.XmlSequencer";
         String zipSequencer = "org.modeshape.sequencer.zip.ZipSequencer";
         String mp3Sequencer = "org.modeshape.sequencer.mp3.Mp3MetadataSequencer";
+        String fixedWidthTextSequencer = "org.modeshape.sequencer.text.FixedWidthTextSequencer";
+        String delimitedTextSequencer = "org.modeshape.sequencer.text.DelimitedTextSequencer";
 
         aliases = new HashMap<String, String>();
         aliases.put("cnd", cndSequencer);
@@ -419,6 +401,10 @@ public class RepositoryConfiguration {
         aliases.put("zipsequencer", zipSequencer);
         aliases.put("mp3", mp3Sequencer);
         aliases.put("mp3sequencer", mp3Sequencer);
+        aliases.put("fixedwidthtext", fixedWidthTextSequencer);
+        aliases.put("fixedwidthtextsequencer", fixedWidthTextSequencer);
+        aliases.put("delimitedtext", delimitedTextSequencer);
+        aliases.put("delimitedtextsequencer", delimitedTextSequencer);
 
         SEQUENCER_ALIASES = Collections.unmodifiableMap(aliases);
 
@@ -453,7 +439,7 @@ public class RepositoryConfiguration {
 
     /**
      * Resolve the supplied URL to a JSON document, read the contents, and parse into a {@link RepositoryConfiguration}.
-     * 
+     *
      * @param url the URL; may not be null
      * @return the parsed repository configuration; never null
      * @throws ParsingException if the content could not be parsed as a valid JSON document
@@ -465,7 +451,7 @@ public class RepositoryConfiguration {
 
     /**
      * Read the supplied JSON file and parse into a {@link RepositoryConfiguration}.
-     * 
+     *
      * @param file the file; may not be null
      * @return the parsed repository configuration; never null
      * @throws ParsingException if the content could not be parsed as a valid JSON document
@@ -478,7 +464,7 @@ public class RepositoryConfiguration {
 
     /**
      * Read the supplied stream containing a JSON file, and parse into a {@link RepositoryConfiguration}.
-     * 
+     *
      * @param stream the file; may not be null
      * @param name the name of the resource; may not be null
      * @return the parsed repository configuration; never null
@@ -494,15 +480,15 @@ public class RepositoryConfiguration {
     /**
      * Read the repository configuration given by the supplied path to a file on the file system, the path a classpath resource
      * file, or a string containg the actual JSON content.
-     * 
+     *
      * @param resourcePathOrJsonContentString the path to a file on the file system, the path to a classpath resource file or the
-     *        JSON content string; may not be null
+     * JSON content string; may not be null
      * @return the parsed repository configuration; never null
      * @throws ParsingException if the content could not be parsed as a valid JSON document
      * @throws FileNotFoundException if the file could not be found
      */
     public static RepositoryConfiguration read( String resourcePathOrJsonContentString )
-        throws ParsingException, FileNotFoundException {
+            throws ParsingException, FileNotFoundException {
         FileLookup factory = FileLookupFactory.newInstance();
         InputStream stream = factory.lookupFile(resourcePathOrJsonContentString, Thread.currentThread().getContextClassLoader());
         if (stream == null) {
@@ -678,7 +664,9 @@ public class RepositoryConfiguration {
                                                                                     Default.CACHE_TRANSACTION_MANAGER_LOOKUP);
                 store = new InfinispanBinaryStore();
             }
-            if (store == null) store = TransientBinaryStore.get();
+            if (store == null) {
+                store = TransientBinaryStore.get();
+            }
             store.setMinimumBinarySizeInBytes(getMinimumBinarySizeInBytes());
             return store;
         }
@@ -694,7 +682,7 @@ public class RepositoryConfiguration {
 
     /**
      * Get the name of the workspace that should be used for sessions where the client does not specify the name of the workspace.
-     * 
+     *
      * @return the default workspace name; never null
      */
     public String getDefaultWorkspaceName() {
@@ -708,7 +696,7 @@ public class RepositoryConfiguration {
     /**
      * Obtain the names of the workspaces that were listed as being predefined. This includes the name
      * {@link #getDefaultWorkspaceName() default workspace}.
-     * 
+     *
      * @return the set of predefined (non-system) workspace names; never null
      */
     public Set<String> getPredefinedWorkspaceNames() {
@@ -718,7 +706,9 @@ public class RepositoryConfiguration {
             List<?> predefined = workspaces.getArray(FieldName.PREDEFINED);
             if (predefined != null) {
                 for (Object value : predefined) {
-                    if (value instanceof String) names.add((String)value);
+                    if (value instanceof String) {
+                        names.add((String)value);
+                    }
                 }
             }
         }
@@ -730,7 +720,7 @@ public class RepositoryConfiguration {
      * Obtain all of the workspace names specified by this repository, including the {@link #getPredefinedWorkspaceNames()
      * predefined workspaces} and the {@link #getDefaultWorkspaceName() default workspace}. The result does <i>not</i> contain the
      * names of any dynamically-created workspaces (e.g., those not specified in the configuration).
-     * 
+     *
      * @return the set of all workspace names defined by the configuration; never null
      */
     public Set<String> getAllWorkspaceNames() {
@@ -741,7 +731,7 @@ public class RepositoryConfiguration {
 
     /**
      * Get the configuration for the security-related aspects of this repository.
-     * 
+     *
      * @return the security configuration; never null
      */
     public Security getSecurity() {
@@ -761,7 +751,7 @@ public class RepositoryConfiguration {
 
         /**
          * Get the configuration information for the JAAS provider.
-         * 
+         *
          * @return the JAAS provider configuration information; null if JAAS is not configured
          */
         public JaasSecurity getJaas() {
@@ -776,7 +766,7 @@ public class RepositoryConfiguration {
 
         /**
          * Get the configuration information for the anonymous authentication provider.
-         * 
+         *
          * @return the anonymous provider configuration information; null if anonymous users are not allowed
          */
         public AnonymousSecurity getAnonymous() {
@@ -789,7 +779,9 @@ public class RepositoryConfiguration {
                     return null;
                 }
             }
-            if (anonymous == null) anonymous = Schematic.newDocument();
+            if (anonymous == null) {
+                anonymous = Schematic.newDocument();
+            }
             return new AnonymousSecurity(anonymous);
         }
 
@@ -798,7 +790,7 @@ public class RepositoryConfiguration {
          * {@link #getJaas()} and {@link #getAnonymous()} are not included in this list. However, should the JAAS and/or anonymous
          * providers be specified in this list (to change the ordering), the {@link #getJaas()} and/or {@link #getAnonymous()}
          * configuration components will be null.
-         * 
+         *
          * @return the immutable list of custom providers; never null but possibly empty
          */
         public List<Component> getCustomProviders() {
@@ -814,7 +806,9 @@ public class RepositoryConfiguration {
 
         private boolean isIncludedInCustomProviders( String classname ) {
             for (Component component : getCustomProviders()) {
-                if (classname.equals(component.getClassname())) return true;
+                if (classname.equals(component.getClassname())) {
+                    return true;
+                }
             }
             return false;
         }
@@ -835,7 +829,7 @@ public class RepositoryConfiguration {
 
         /**
          * Get the name of the JAAS policy.
-         * 
+         *
          * @return the policy name; never null and '{@value Default#JAAS_POLICY_NAME}' by default.
          */
         public String getPolicyName() {
@@ -859,13 +853,15 @@ public class RepositoryConfiguration {
 
         /**
          * Get the name of the ModeShape authorization roles that each anonymous user should be assigned.
-         * 
+         *
          * @return the set of role names; never null or empty, and '{@value Default#ANONYMOUS_ROLES}' by default.
          */
         public Set<String> getAnonymousRoles() {
             Set<String> names = new HashSet<String>();
             Collection<?> roles = anonymous.getArray(FieldName.ANONYMOUS_ROLES);
-            if (roles == null) roles = Default.ANONYMOUS_ROLES;
+            if (roles == null) {
+                roles = Default.ANONYMOUS_ROLES;
+            }
             if (roles != null) {
                 for (Object value : roles) {
                     if (value instanceof String) {
@@ -878,7 +874,7 @@ public class RepositoryConfiguration {
 
         /**
          * Get the username that each anonymous user should be assigned.
-         * 
+         *
          * @return the anonymous username; never null and '{@value Default#ANONYMOUS_USERNAME}' by default.
          */
         public String getAnonymousUsername() {
@@ -887,7 +883,7 @@ public class RepositoryConfiguration {
 
         /**
          * Determine whether users that fail all other authentication should be automatically logged in as an anonymous user.
-         * 
+         *
          * @return true if non-authenticated users should be given anonymous sessions, or false if authenication should fail; the
          *         default is '{@value Default#USE_ANONYMOUS_ON_FAILED_LOGINS}'.
          */
@@ -898,7 +894,7 @@ public class RepositoryConfiguration {
 
     /**
      * Get the configuration for the monitoring-related aspects of this repository.
-     * 
+     *
      * @return the monitoring configuration; never null
      */
     public MonitoringSystem getMonitoring() {
@@ -919,7 +915,7 @@ public class RepositoryConfiguration {
         /**
          * Determine whether monitoring is enabled. The default is to enable monitoring, but this can be used to turn off support
          * for monitoring should it not be necessary.
-         * 
+         *
          * @return true if monitoring is enabled, or false if it is disabled
          */
         public boolean enabled() {
@@ -937,7 +933,7 @@ public class RepositoryConfiguration {
 
     /**
      * Get the configuration for the query-related aspects of this repository.
-     * 
+     *
      * @return the query configuration; never null
      */
     public QuerySystem getQuery() {
@@ -958,7 +954,7 @@ public class RepositoryConfiguration {
         /**
          * Determine whether queries are enabled. The default is to enable queries, but this can be used to turn off support for
          * queries and improve performance.
-         * 
+         *
          * @return true if queries are enabled, or false if they are disabled
          */
         public boolean enabled() {
@@ -967,7 +963,7 @@ public class RepositoryConfiguration {
 
         /**
          * Get the location where ModeShape should place the indexes used by the query system.
-         * 
+         *
          * @return the location for the indexes; may be null if in-memory indexes should be used
          */
         public String getIndexLocation() {
@@ -976,7 +972,7 @@ public class RepositoryConfiguration {
 
         /**
          * Get the specification for when the indexes should be built when the system starts up.
-         * 
+         *
          * @return whether to rebuild the indexes upon repository startup
          */
         public QueryRebuild getRebuildUponStartup() {
@@ -987,7 +983,7 @@ public class RepositoryConfiguration {
 
         /**
          * Get the name of the thread pool that should be used for indexing work.
-         * 
+         *
          * @return the thread pool name; never null
          */
         public String getThreadPoolName() {
@@ -996,7 +992,7 @@ public class RepositoryConfiguration {
 
         /**
          * Get the ordered list of text extractors. All text extractors are configured with this list.
-         * 
+         *
          * @return the immutable list of text extractors; never null but possibly empty
          */
         public List<Component> getTextExtractors() {
@@ -1013,7 +1009,7 @@ public class RepositoryConfiguration {
 
     /**
      * Get the configuration for the sequencing-related aspects of this repository.
-     * 
+     *
      * @return the sequencing configuration; never null
      */
     public Sequencing getSequencing() {
@@ -1034,7 +1030,7 @@ public class RepositoryConfiguration {
         /**
          * Determine whether the derived content originally produced by a sequencer upon sequencing some specific input should be
          * removed if that input is updated and the sequencer re-run.
-         * 
+         *
          * @return true if the original derived content should be removed upon subsequent sequencing of the same input.
          */
         public boolean removeDerivedContentWithOriginal() {
@@ -1044,7 +1040,7 @@ public class RepositoryConfiguration {
 
         /**
          * Get the name of the thread pool that should be used for sequencing work.
-         * 
+         *
          * @return the thread pool name; never null
          */
         public String getThreadPoolName() {
@@ -1053,7 +1049,7 @@ public class RepositoryConfiguration {
 
         /**
          * Get the ordered list of sequencers. All sequencers are configured with this list.
-         * 
+         *
          * @return the immutable list of sequencers; never null but possibly empty
          */
         public List<Component> getSequencers() {
@@ -1069,7 +1065,7 @@ public class RepositoryConfiguration {
 
         /**
          * Get the ordered list of sequencers. All sequencers are configured with this list.
-         * 
+         *
          * @param problems the container for problems reading the sequencer information; may not be null
          */
         protected void validateSequencers( Problems problems ) {
@@ -1118,8 +1114,11 @@ public class RepositoryConfiguration {
         StringBuilder aliases = new StringBuilder();
         boolean first = true;
         for (String validAlias : classnamesByAlias.keySet()) {
-            if (first) first = false;
-            else aliases.append(", ");
+            if (first) {
+                first = false;
+            } else {
+                aliases.append(", ");
+            }
             aliases.append('"').append(validAlias).append('"');
         }
         return aliases.toString();
@@ -1131,14 +1130,18 @@ public class RepositoryConfiguration {
         Set<String> skipFields = new HashSet<String>(Arrays.asList(skipFieldNames));
         for (Field field : document.fields()) {
             String name = field.getName();
-            if (skipFields.contains(name)) continue;
+            if (skipFields.contains(name)) {
+                continue;
+            }
             props.put(name, field.getValue());
         }
         return props;
     }
 
     protected CacheContainer getCacheContainer() throws IOException, NamingException {
-        if (this.cacheContainer != null) return this.cacheContainer;
+        if (this.cacheContainer != null) {
+            return this.cacheContainer;
+        }
 
         CacheContainer container = null;
         // First try finding the cache configuration ...
@@ -1170,7 +1173,7 @@ public class RepositoryConfiguration {
 
     /**
      * {@inheritDoc}
-     * 
+     *
      * @see java.lang.Object#toString()
      */
     @Override
@@ -1187,24 +1190,24 @@ public class RepositoryConfiguration {
      * <p>
      * For example, the following code shows how an existing RepositoryConfiguration instance can be used to create a second
      * configuration that is a slightly-modified copy of the original.
-     * 
+     *
      * <pre>
      * </pre>
      * </p>
      * <p>
      * Also, the following code shows how an existing RepositoryConfiguration instance for a deployed repository can be updated:
-     * 
+     *
      * <pre>
      *   JcrEngine engine = ...
      *   Repository deployed = engine.getRepository("repo");
      *   RepositoryConfiguration deployedConfig = deployed.getConfiguration();
-     *   
+     *
      *   // Create an editor ...
      *   Editor editor = deployedConfig.edit();
-     *   
+     *
      *   // Modify the copy of the configuration (we'll do something trivial here) ...
      *   editor.setNumber(FieldName.LARGE_VALUE_SIZE_IN_BYTES,8096);
-     *   
+     *
      *   // Get the changes and validate them ...
      *   Changes changes = editor.getChanges();
      *   Results validationResults = deployedConfig.validate(changes);
@@ -1215,9 +1218,9 @@ public class RepositoryConfiguration {
      *       engine.update("repo",changes);
      *   }
      * </pre>
-     * 
+     *
      * </p>
-     * 
+     *
      * @return an editor for modifying a copy of this repository configuration.
      * @see #validate(Changes)
      */
@@ -1225,9 +1228,9 @@ public class RepositoryConfiguration {
         return Schematic.editDocument(this.doc, true);
     }
 
-    /***
+    /**
      * Validate this configuration against the JSON Schema.
-     * 
+     *
      * @return the validation results; never null
      * @see #validate(Changes)
      */
@@ -1254,10 +1257,10 @@ public class RepositoryConfiguration {
         return problems;
     }
 
-    /***
+    /**
      * Validate this configuration if the supplied changes were made to this. Note that this does <i>not</i> actually change this
      * configuration.
-     * 
+     *
      * @param changes the proposed changes to this configuration's underlying document; never null
      * @return the validation results; never null
      * @see #edit()
@@ -1273,7 +1276,7 @@ public class RepositoryConfiguration {
 
     /**
      * Create a copy of this configuration that uses the supplied Infinispan {@link CacheContainer} instance.
-     * 
+     *
      * @param cacheContainer the new cache container; may be null
      * @return the new configuration; never null
      */
@@ -1283,7 +1286,7 @@ public class RepositoryConfiguration {
 
     /**
      * Create a copy of this configuration that uses the supplied document name.
-     * 
+     *
      * @param docName the new document name; may be null
      * @return the new configuration; never null
      */
@@ -1344,13 +1347,23 @@ public class RepositoryConfiguration {
 
         @Override
         public boolean equals( Object obj ) {
-            if (obj == this) return true;
+            if (obj == this) {
+                return true;
+            }
             if (obj instanceof Component) {
                 Component that = (Component)obj;
-                if (!this.getClassname().equals(that.getClassname())) return false;
-                if (!this.getName().equals(that.getName())) return false;
-                if (!ObjectUtil.isEqualWithNulls(this.getClasspath(), that.getClasspath())) return false;
-                if (!this.getDocument().equals(that.getDocument())) return false;
+                if (!this.getClassname().equals(that.getClassname())) {
+                    return false;
+                }
+                if (!this.getName().equals(that.getName())) {
+                    return false;
+                }
+                if (!ObjectUtil.isEqualWithNulls(this.getClasspath(), that.getClasspath())) {
+                    return false;
+                }
+                if (!this.getDocument().equals(that.getDocument())) {
+                    return false;
+                }
                 return true;
             }
             return false;
@@ -1363,60 +1376,180 @@ public class RepositoryConfiguration {
 
         /**
          * Create an instance of this class.
-         * 
+         *
          * @param <Type>
-         * @param type
          * @param classLoader the class loader that should be used
          * @return the new instance, with all {@link #getDocument() document fields} set on it; never null
          * @see #getClasspath()
+         * @throws Exception if anything fails
          */
-        @SuppressWarnings( "unchecked" )
-        public <Type> Type createInstance( Class<Type> type,
-                                           ClassLoader classLoader ) {
-            try {
-                // Handle some of the built-in providers in a special way ...
-                if (AnonymousProvider.class.getName().equals(getClassname())) {
-                    Object roles = this.document.get(FieldName.ANONYMOUS_ROLES);
-                    Set<String> roleNames = new HashSet<String>();
-                    if (roles instanceof Array) {
-                        Array roleValues = (Array)roles;
-                        for (Object roleName : roleValues) {
-                            if (roleName instanceof String) roleNames.add(roleName.toString());
-                        }
-                    }
-                    Object usernameValue = this.document.get(FieldName.ANONYMOUS_USERNAME);
-                    String username = usernameValue instanceof String ? usernameValue.toString() : Default.ANONYMOUS_USERNAME;
-                    return (Type)new AnonymousProvider(username, roleNames);
-                } else if (JaasProvider.class.getName().equals(getClassname())) {
-                    Object value = this.document.get(FieldName.JAAS_POLICY_NAME);
-                    String policyName = value instanceof String ? value.toString() : Default.JAAS_POLICY_NAME;
-                    return (Type)new JaasProvider(policyName);
-                }
-
-                // Create the instance ...
-                Type instance = (Type)Util.getInstance(getClassname(), classLoader);
-
-                // And set the fields ...
-                for (Field field : getDocument().fields()) {
-                    String fieldName = field.getName();
-                    Object fieldValue = field.getValue();
-                    if (COMPONENT_SKIP_PROPERTIES.contains(fieldName)) continue;
-                    if (fieldValue instanceof Document) continue;
-                    try {
-                        ReflectionUtil.setValue(instance, fieldName, fieldValue);
-                    } catch (Throwable e) {
-                        Logger.getLogger(getClass()).error(e,
-                                                           JcrI18n.unableToSetFieldOnInstance,
-                                                           fieldName,
-                                                           fieldValue,
-                                                           getClassname());
-                    }
-                }
-
-                return instance;
-            } catch (Throwable t) {
-                return null;
+        public <Type> Type createInstance( ClassLoader classLoader ) throws Exception {
+            // Handle some of the built-in providers in a special way ...
+            if (AnonymousProvider.class.getName().equals(getClassname())) {
+                return createAnonymousProvider();
+            } else if (JaasProvider.class.getName().equals(getClassname())) {
+                return createJaasProvider();
             }
+            return createGenericComponent(classLoader);
+        }
+
+        private <Type> Type createGenericComponent( ClassLoader classLoader ) {
+            // Create the instance ...
+            Type instance = Util.getInstance(getClassname(), classLoader);
+            setTypeFields(instance, getDocument());
+            return instance;
+        }
+
+        @SuppressWarnings( "unchecked" )
+        private <Type> Type createJaasProvider() throws LoginException {
+            Object value = this.document.get(FieldName.JAAS_POLICY_NAME);
+            String policyName = value instanceof String ? value.toString() : Default.JAAS_POLICY_NAME;
+            return (Type)new JaasProvider(policyName);
+        }
+
+        @SuppressWarnings( "unchecked" )
+        private <Type> Type createAnonymousProvider() {
+            Object roles = this.document.get(FieldName.ANONYMOUS_ROLES);
+            Set<String> roleNames = new HashSet<String>();
+            if (roles instanceof Array) {
+                Array roleValues = (Array)roles;
+                for (Object roleName : roleValues) {
+                    if (roleName instanceof String) {
+                        roleNames.add(roleName.toString());
+                    }
+                }
+            }
+            Object usernameValue = this.document.get(FieldName.ANONYMOUS_USERNAME);
+            String username = usernameValue instanceof String ? usernameValue.toString() : Default.ANONYMOUS_USERNAME;
+            return (Type)new AnonymousProvider(username, roleNames);
+        }
+
+        private void setTypeFields( Object instance, Document document ) {
+            for (Field field : document.fields()) {
+                String fieldName = field.getName();
+                Object fieldValue = field.getValue();
+                if (COMPONENT_SKIP_PROPERTIES.contains(fieldName)) {
+                    continue;
+                }
+                try {
+                    //locate the field instance on which the value will be set
+                    java.lang.reflect.Field instanceField = findField(instance.getClass(), fieldName);
+                    if (instanceField == null) {
+                        Logger.getLogger(getClass()).error(JcrI18n.missingFieldOnInstance,
+                                                           fieldName,
+                                                           getClassname());
+                        continue;
+                    }
+
+                    Object convertedFieldValue = convertValueToType(instanceField.getType(), fieldValue);
+
+                    //if the value is a document, means there is a nested bean
+                    if (convertedFieldValue instanceof Document) {
+                        //only no-arg constructors are supported
+                        Object innerInstance = instanceField.getType().newInstance();
+                        setTypeFields(innerInstance, (Document)convertedFieldValue);
+                        convertedFieldValue = innerInstance;
+                    }
+
+                    ReflectionUtil.setValue(instance, fieldName, convertedFieldValue);
+                } catch (Throwable e) {
+                    Logger.getLogger(getClass()).error(e,
+                                                       JcrI18n.unableToSetFieldOnInstance,
+                                                       fieldName,
+                                                       fieldValue,
+                                                       getClassname());
+                }
+            }
+        }
+
+        /**
+         * Attempts "its best" to convert a generic Object value (coming from a Document) to a value which can be set
+         * on the  field of a component.
+         *
+         * Note: thanks to type erasure, generics are not supported.
+         * 
+         * @param expectedType the {@link Class} of the field on which the value should be set
+         * @param value a generic value coming from a document. Can be a simple value, another {@link Document} or {@link Array}
+         *
+         * @throws Exception if anything will fail during the conversion process
+         */
+        private Object convertValueToType(Class<?> expectedType, Object value) throws Exception {
+            //lists
+            if (List.class.isAssignableFrom(expectedType)) {
+                return valueToCollection(value, ArrayList.class);
+            }
+            //sets
+            if (Set.class.isAssignableFrom(expectedType)) {
+                return valueToCollection(value, HashSet.class);
+            }
+            //arrays
+            if (expectedType.isArray()) {
+                return valueToArray(expectedType.getComponentType(), value);
+            }
+
+            //maps
+            if (Map.class.isAssignableFrom(expectedType)) {
+                //only string keys are supported atm
+                return valueToMap(value);
+            }
+            
+            //return value as it is
+            return value;            
+        }
+
+        private Object valueToMap(Object value ) throws Exception {
+            if (value instanceof Document) {
+                Map mapValue = HashMap.class.newInstance();
+                for (Field documentField : ((Document) value).fields()) {
+                    mapValue.put(documentField.getName(), documentField.getValue());
+                }
+                return mapValue;
+            }
+            else {
+                throw new IllegalArgumentException("Invalid value passed for a java.util.Map :" + value);
+            }
+        }
+
+        private Object valueToArray( Class<?> arrayComponentType, Object value) throws Exception {
+            boolean valueIsArray = value instanceof Array;
+
+            int arraySize = valueIsArray ? ((Array)value).size() : 1;
+            Object array = java.lang.reflect.Array.newInstance(arrayComponentType, arraySize);
+
+            if (valueIsArray) {
+                for (int i = 0; i < ((Array) value).size(); i++) {
+                    java.lang.reflect.Array.set(array, i, ((Array) value).get(i));
+                }    
+            }
+            else {
+                java.lang.reflect.Array.set(array, 0, value);
+            }
+            return array;
+        }
+
+        private <T extends Collection> T valueToCollection ( Object value, Class<T> collectionClass) throws Exception {
+            boolean valueIsArray = value instanceof Array;
+            T collection = collectionClass.newInstance();
+
+            if (valueIsArray) {
+                for (Object arrayValue : (Array) value) {
+                    collection.add(arrayValue);
+                }
+            }
+            else {
+                collection.add(value);
+            }
+            return collection;
+        }
+
+        private java.lang.reflect.Field findField( Class<?> typeClass, String fieldName ) {
+            java.lang.reflect.Field field;
+            try {
+                field = typeClass.getDeclaredField(fieldName);
+            } catch (NoSuchFieldException e) {
+                field = findField(typeClass.getSuperclass(), fieldName);
+            }
+            return field;
         }
     }
 }
