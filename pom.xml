@@ -31,6 +31,7 @@
         <module>sequencers/modeshape-sequencer-java</module>
         <module>sequencers/modeshape-sequencer-ddl</module>
         <module>sequencers/modeshape-sequencer-mp3</module>
+        <module>sequencers/modeshape-sequencer-text</module>
 	</modules>
 	<properties>
 		<rootDir>${project.basedir}</rootDir>
@@ -62,7 +63,6 @@
     		<module>extensions/modeshape-sequencer-msoffice</module>
     		<module>extensions/modeshape-sequencer-sramp</module>
     		<module>extensions/modeshape-sequencer-teiid</module>
-    		<module>extensions/modeshape-sequencer-text</module>
     		<module>extensions/modeshape-sequencer-xml</module>
     		<module>extensions/modeshape-sequencer-xsd</module>
     		<module>extensions/modeshape-sequencer-wsdl</module>
@@ -75,7 +75,6 @@
     		<module>extensions/modeshape-connector-jcr</module>
     		<module>extensions/modeshape-connector-store-jpa</module>
     		<module>extensions/modeshape-connector-jdbc-metadata</module>
-    		<module>extensions/modeshape-mimetype-detector-aperture</module>
     		<module>extensions/modeshape-extractor-tika</module>
     		<!-- Order is important (web before JDBC before jbossas) -->
     		<module>web</module>

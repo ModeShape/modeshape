@@ -309,7 +309,7 @@ public class RepositoryConfiguration {
          * The default value of the {@link FieldName#ANONYMOUS_ROLES} field is a list with 'admin' as the role.
          */
         public static final Set<String> ANONYMOUS_ROLES = Collections.unmodifiableSet(new HashSet<String>(
-                Arrays.asList(new String[] {ModeShapeRoles.ADMIN})));
+                                                                                                          Arrays.asList(new String[] {ModeShapeRoles.ADMIN})));
 
         /**
          * The default value of the {@link FieldName#USE_ANONYMOUS_ON_FAILED_LOGINS} field is '{@value} '.
@@ -482,13 +482,13 @@ public class RepositoryConfiguration {
      * file, or a string containg the actual JSON content.
      *
      * @param resourcePathOrJsonContentString the path to a file on the file system, the path to a classpath resource file or the
-     * JSON content string; may not be null
+     *        JSON content string; may not be null
      * @return the parsed repository configuration; never null
      * @throws ParsingException if the content could not be parsed as a valid JSON document
      * @throws FileNotFoundException if the file could not be found
      */
     public static RepositoryConfiguration read( String resourcePathOrJsonContentString )
-            throws ParsingException, FileNotFoundException {
+        throws ParsingException, FileNotFoundException {
         FileLookup factory = FileLookupFactory.newInstance();
         InputStream stream = factory.lookupFile(resourcePathOrJsonContentString, Thread.currentThread().getContextClassLoader());
         if (stream == null) {
@@ -664,9 +664,7 @@ public class RepositoryConfiguration {
                                                                                     Default.CACHE_TRANSACTION_MANAGER_LOOKUP);
                 store = new InfinispanBinaryStore();
             }
-            if (store == null) {
-                store = TransientBinaryStore.get();
-            }
+            if (store == null) store = TransientBinaryStore.get();
             store.setMinimumBinarySizeInBytes(getMinimumBinarySizeInBytes());
             return store;
         }
@@ -706,9 +704,7 @@ public class RepositoryConfiguration {
             List<?> predefined = workspaces.getArray(FieldName.PREDEFINED);
             if (predefined != null) {
                 for (Object value : predefined) {
-                    if (value instanceof String) {
-                        names.add((String)value);
-                    }
+                    if (value instanceof String) names.add((String)value);
                 }
             }
         }
@@ -779,9 +775,7 @@ public class RepositoryConfiguration {
                     return null;
                 }
             }
-            if (anonymous == null) {
-                anonymous = Schematic.newDocument();
-            }
+            if (anonymous == null) anonymous = Schematic.newDocument();
             return new AnonymousSecurity(anonymous);
         }
 
@@ -806,9 +800,7 @@ public class RepositoryConfiguration {
 
         private boolean isIncludedInCustomProviders( String classname ) {
             for (Component component : getCustomProviders()) {
-                if (classname.equals(component.getClassname())) {
-                    return true;
-                }
+                if (classname.equals(component.getClassname())) return true;
             }
             return false;
         }
@@ -859,9 +851,7 @@ public class RepositoryConfiguration {
         public Set<String> getAnonymousRoles() {
             Set<String> names = new HashSet<String>();
             Collection<?> roles = anonymous.getArray(FieldName.ANONYMOUS_ROLES);
-            if (roles == null) {
-                roles = Default.ANONYMOUS_ROLES;
-            }
+            if (roles == null) roles = Default.ANONYMOUS_ROLES;
             if (roles != null) {
                 for (Object value : roles) {
                     if (value instanceof String) {
@@ -1114,11 +1104,8 @@ public class RepositoryConfiguration {
         StringBuilder aliases = new StringBuilder();
         boolean first = true;
         for (String validAlias : classnamesByAlias.keySet()) {
-            if (first) {
-                first = false;
-            } else {
-                aliases.append(", ");
-            }
+            if (first) first = false;
+            else aliases.append(", ");
             aliases.append('"').append(validAlias).append('"');
         }
         return aliases.toString();
@@ -1130,18 +1117,14 @@ public class RepositoryConfiguration {
         Set<String> skipFields = new HashSet<String>(Arrays.asList(skipFieldNames));
         for (Field field : document.fields()) {
             String name = field.getName();
-            if (skipFields.contains(name)) {
-                continue;
-            }
+            if (skipFields.contains(name)) continue;
             props.put(name, field.getValue());
         }
         return props;
     }
 
     protected CacheContainer getCacheContainer() throws IOException, NamingException {
-        if (this.cacheContainer != null) {
-            return this.cacheContainer;
-        }
+        if (this.cacheContainer != null) return this.cacheContainer;
 
         CacheContainer container = null;
         // First try finding the cache configuration ...
@@ -1228,7 +1211,7 @@ public class RepositoryConfiguration {
         return Schematic.editDocument(this.doc, true);
     }
 
-    /**
+    /***
      * Validate this configuration against the JSON Schema.
      *
      * @return the validation results; never null
@@ -1257,7 +1240,7 @@ public class RepositoryConfiguration {
         return problems;
     }
 
-    /**
+    /***
      * Validate this configuration if the supplied changes were made to this. Note that this does <i>not</i> actually change this
      * configuration.
      *
@@ -1347,23 +1330,13 @@ public class RepositoryConfiguration {
 
         @Override
         public boolean equals( Object obj ) {
-            if (obj == this) {
-                return true;
-            }
+            if (obj == this) return true;
             if (obj instanceof Component) {
                 Component that = (Component)obj;
-                if (!this.getClassname().equals(that.getClassname())) {
-                    return false;
-                }
-                if (!this.getName().equals(that.getName())) {
-                    return false;
-                }
-                if (!ObjectUtil.isEqualWithNulls(this.getClasspath(), that.getClasspath())) {
-                    return false;
-                }
-                if (!this.getDocument().equals(that.getDocument())) {
-                    return false;
-                }
+                if (!this.getClassname().equals(that.getClassname())) return false;
+                if (!this.getName().equals(that.getName())) return false;
+                if (!ObjectUtil.isEqualWithNulls(this.getClasspath(), that.getClasspath())) return false;
+                if (!this.getDocument().equals(that.getDocument())) return false;
                 return true;
             }
             return false;
@@ -1435,7 +1408,7 @@ public class RepositoryConfiguration {
                     //locate the field instance on which the value will be set
                     java.lang.reflect.Field instanceField = findField(instance.getClass(), fieldName);
                     if (instanceField == null) {
-                        Logger.getLogger(getClass()).error(JcrI18n.missingFieldOnInstance,
+                        Logger.getLogger(getClass()).warn(JcrI18n.missingFieldOnInstance,
                                                            fieldName,
                                                            getClassname());
                         continue;
@@ -1451,6 +1424,7 @@ public class RepositoryConfiguration {
                         convertedFieldValue = innerInstance;
                     }
 
+                    //this is very ! tricky because it does not throw an exception - ever
                     ReflectionUtil.setValue(instance, fieldName, convertedFieldValue);
                 } catch (Throwable e) {
                     Logger.getLogger(getClass()).error(e,
@@ -1470,24 +1444,26 @@ public class RepositoryConfiguration {
          * 
          * @param expectedType the {@link Class} of the field on which the value should be set
          * @param value a generic value coming from a document. Can be a simple value, another {@link Document} or {@link Array}
+         * @return  the converted value, which should be compatible with the expected type.
          *
          * @throws Exception if anything will fail during the conversion process
          */
+        @SuppressWarnings( "unchecked" )
         private Object convertValueToType(Class<?> expectedType, Object value) throws Exception {
-            //lists
+            //lists are converted to ArrayList
             if (List.class.isAssignableFrom(expectedType)) {
                 return valueToCollection(value, ArrayList.class);
             }
-            //sets
+            //sets are converted to HashSet
             if (Set.class.isAssignableFrom(expectedType)) {
                 return valueToCollection(value, HashSet.class);
             }
-            //arrays
+            //arrays are converted as-is
             if (expectedType.isArray()) {
                 return valueToArray(expectedType.getComponentType(), value);
             }
 
-            //maps
+            //maps are converted to hashmap
             if (Map.class.isAssignableFrom(expectedType)) {
                 //only string keys are supported atm
                 return valueToMap(value);
@@ -1497,6 +1473,7 @@ public class RepositoryConfiguration {
             return value;            
         }
 
+        @SuppressWarnings( "unchecked" )
         private Object valueToMap(Object value ) throws Exception {
             if (value instanceof Document) {
                 Map mapValue = HashMap.class.newInstance();
@@ -1527,6 +1504,7 @@ public class RepositoryConfiguration {
             return array;
         }
 
+        @SuppressWarnings( "unchecked" )
         private <T extends Collection> T valueToCollection ( Object value, Class<T> collectionClass) throws Exception {
             boolean valueIsArray = value instanceof Array;
             T collection = collectionClass.newInstance();

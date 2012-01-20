@@ -63,11 +63,14 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
      * @throws RepositoryException if anything fails
      */
     protected Node createNodeWithContentFromFile( String nodePath, String filePath ) throws RepositoryException {
-        Node file = rootNode.addNode(nodePath);
-        Node content = file.addNode(JcrConstants.JCR_CONTENT);
+        Node parent = rootNode;
+        for (String pathSegment: nodePath.split("/")) {
+            parent = parent.addNode(pathSegment);
+        }
+        Node content = parent.addNode(JcrConstants.JCR_CONTENT);
         content.setProperty(JcrConstants.JCR_DATA, ((javax.jcr.Session)session).getValueFactory().createBinary(resourceStream(filePath)));
         session.save();
-        return file;
+        return parent;
     }
     
     @Override
