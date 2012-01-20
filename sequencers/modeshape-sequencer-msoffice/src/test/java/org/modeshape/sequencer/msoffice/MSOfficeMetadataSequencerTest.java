@@ -23,61 +23,75 @@
  */
 package org.modeshape.sequencer.msoffice;
 
-import javax.jcr.Node;
-import javax.jcr.NodeIterator;
-import javax.jcr.RepositoryException;
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
-import org.junit.Test;
-import org.modeshape.jcr.api.JcrConstants;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.modeshape.jcr.api.JcrConstants.JCR_MIME_TYPE;
-import org.modeshape.jcr.api.mimetype.MimeTypeConstants;
 import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.MICROSOFT_EXCEL;
 import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.MICROSOFT_POWERPOINT;
 import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.MICROSOFT_WORD;
-import org.modeshape.jcr.sequencer.AbstractSequencerTest;
-import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.*;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.AUTHOR;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.COMMENT;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.EXCEL_SHEET_NODE;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.HEADING_LEVEL;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.HEADING_NAME;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.HEADING_NODE;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.KEYWORDS;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.METADATA_NODE;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.NOTES;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.SHEET_NAME;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.SLIDE_NODE;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.SUBJECT;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.TEXT;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.TITLE;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
+import javax.jcr.Node;
+import javax.jcr.NodeIterator;
+import javax.jcr.RepositoryException;
+import org.junit.Test;
+import org.modeshape.jcr.sequencer.AbstractSequencerTest;
 
 /**
  * Unit test for {@link MSOfficeMetadataSequencer}
- *
+ * 
  * @author Horia Chiorean
  */
 public class MSOfficeMetadataSequencerTest extends AbstractSequencerTest {
 
-    private static final Map<String, Integer> WORD_HEADINGS = new LinkedHashMap<String, Integer>() {{
-        put("Test Heading 1", 1);
-        put("Test Heading 1.1", 2);
-        put("Test Heading 1.2", 2);
-        put("Test Heading 1.2.1", 3);
-        put("Test Heading 2", 1);
-        put("Test Heading 2.1", 2);
-        put("Test Heading 2.2", 2);
-    }};
+    private static final Map<String, Integer> WORD_HEADINGS = new LinkedHashMap<String, Integer>() {
+        {
+            put("Test Heading 1", 1);
+            put("Test Heading 1.1", 2);
+            put("Test Heading 1.2", 2);
+            put("Test Heading 1.2.1", 3);
+            put("Test Heading 2", 1);
+            put("Test Heading 2.1", 2);
+            put("Test Heading 2.2", 2);
+        }
+    };
 
-    private static final Map<String,String> EXCEL_SHEETS = new LinkedHashMap<String,String>() {{
-        put("Sheet1", "This is a text");
-        put("MySheet2", null);
-        put("Sheet3", null);
-    }};
+    private static final Map<String, String> EXCEL_SHEETS = new LinkedHashMap<String, String>() {
+        {
+            put("Sheet1", "This is a text");
+            put("MySheet2", null);
+            put("Sheet3", null);
+        }
+    };
 
     @Test
     public void shouldSequenceWordFiles() throws Exception {
         createNodeWithContentFromFile("word.doc", "word.doc");
         Node sequencedNode = getSequencedNode(rootNode, "word.doc/" + METADATA_NODE);
         assertNotNull(sequencedNode);
-        
+
         assertEquals(METADATA_NODE, sequencedNode.getPrimaryNodeType().getName());
         assertEquals(MICROSOFT_WORD, sequencedNode.getProperty(JCR_MIME_TYPE).getString());
         assertMetadata(sequencedNode);
 
         NodeIterator headingsIterator = sequencedNode.getNodes();
         assertEquals(WORD_HEADINGS.size(), headingsIterator.getSize());
-        while(headingsIterator.hasNext()) {
+        while (headingsIterator.hasNext()) {
             Node heading = headingsIterator.nextNode();
             assertEquals(HEADING_NODE, heading.getPrimaryNodeType().getName());
             Integer headingLevel = WORD_HEADINGS.get(heading.getProperty(HEADING_NAME).getString());
@@ -92,7 +106,7 @@ public class MSOfficeMetadataSequencerTest extends AbstractSequencerTest {
         assertEquals("Test Document", sequencedNode.getProperty(TITLE).getString());
         assertEquals("Test Subject", sequencedNode.getProperty(SUBJECT).getString());
     }
-    
+
     @Test
     public void shouldSequenceExcelFiles() throws Exception {
         createNodeWithContentFromFile("excel.xls", "excel.xls");
@@ -105,7 +119,7 @@ public class MSOfficeMetadataSequencerTest extends AbstractSequencerTest {
 
         NodeIterator sheetsIterator = sequencedNode.getNodes();
         assertEquals(EXCEL_SHEETS.size(), sheetsIterator.getSize());
-        while(sheetsIterator.hasNext()) {
+        while (sheetsIterator.hasNext()) {
             Node sheet = sheetsIterator.nextNode();
             assertEquals(EXCEL_SHEET_NODE, sheet.getPrimaryNodeType().getName());
 
@@ -121,14 +135,14 @@ public class MSOfficeMetadataSequencerTest extends AbstractSequencerTest {
     @Test
     public void shouldSequencePowerpointFiles() throws Exception {
         createNodeWithContentFromFile("powerpoint.ppt", "powerpoint.ppt");
-        Node sequencedNode = getSequencedNode(rootNode, "powerpoint.ppt/" + METADATA_NODE);
+        Node sequencedNode = getSequencedNode(rootNode, "powerpoint.ppt/" + METADATA_NODE, 5);
         assertNotNull(sequencedNode);
 
         assertEquals(METADATA_NODE, sequencedNode.getPrimaryNodeType().getName());
         assertEquals(MICROSOFT_POWERPOINT, sequencedNode.getProperty(JCR_MIME_TYPE).getString());
         NodeIterator slidesIterator = sequencedNode.getNodes();
         assertEquals(1, slidesIterator.getSize());
-        
+
         Node slide = slidesIterator.nextNode();
         assertEquals(SLIDE_NODE, slide.getPrimaryNodeType().getName());
         assertEquals("Test Slide", slide.getProperty(TITLE).getString());

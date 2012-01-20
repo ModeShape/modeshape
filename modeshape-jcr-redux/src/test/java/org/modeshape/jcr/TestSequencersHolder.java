@@ -23,24 +23,22 @@
  */
 package org.modeshape.jcr;
 
-import javax.jcr.NamespaceRegistry;
-import javax.jcr.Node;
-import javax.jcr.Property;
-import javax.jcr.RepositoryException;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import org.modeshape.common.util.CheckArg;
-import org.modeshape.jcr.api.nodetype.NodeTypeManager;
-import org.modeshape.jcr.api.sequencer.Sequencer;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.jcr.NamespaceRegistry;
+import javax.jcr.Node;
+import javax.jcr.Property;
+import org.modeshape.common.util.CheckArg;
+import org.modeshape.jcr.api.nodetype.NodeTypeManager;
+import org.modeshape.jcr.api.sequencer.Sequencer;
 
 /**
  * A simple sequencer that always fails with an exception.
- *
+ * 
  * @author Horia Chiorean
  */
 public class TestSequencersHolder {
@@ -54,19 +52,22 @@ public class TestSequencersHolder {
                                 Sequencer.Context context ) throws Exception {
             EXECUTE_CALL_COUNTER.incrementAndGet();
             throw new IllegalArgumentException("We're expecting to get this exception");
-        }        
+        }
     }
 
     public static class FaultyDuringInitialize extends Sequencer {
         public static final AtomicInteger EXECUTE_CALL_COUNTER = new AtomicInteger();
 
         @Override
-        public void initialize( NamespaceRegistry registry, NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
+        public void initialize( NamespaceRegistry registry,
+                                NodeTypeManager nodeTypeManager ) {
             throw new RuntimeException("Expected during initialize");
         }
 
         @Override
-        public boolean execute( Property inputProperty, Node outputNode, Context context ) throws Exception {
+        public boolean execute( Property inputProperty,
+                                Node outputNode,
+                                Context context ) throws Exception {
             EXECUTE_CALL_COUNTER.incrementAndGet();
             return true;
         }
@@ -97,6 +98,7 @@ public class TestSequencersHolder {
     /**
      * A sequencer which has different property types and is used to test the setting of property values.
      */
+    @SuppressWarnings( "unused" )
     public static class SequencerWithProperties extends Sequencer {
         public static boolean executed;
 
@@ -121,16 +123,18 @@ public class TestSequencersHolder {
         private Double[] doubleArray;
 
         private SequencerWithProperties subSequencer;
-        //because of type erasure, the runtime instance will have List(Document) instances.
-        private List subSequencerList;
+        // because of type erasure, the runtime instance will have List(Document) instances.
+        private List<?> subSequencerList;
 
         /**
          * The only purpose of this sequencer is to validate that various property types can be set, hence all the null checks.
-         *
+         * 
          * @see org.modeshape.jcr.SequencingTest#shouldSupportVariousPropertyTypes()
          */
         @Override
-        public boolean execute( Property inputProperty, Node outputNode, Context context ) throws Exception {
+        public boolean execute( Property inputProperty,
+                                Node outputNode,
+                                Context context ) throws Exception {
             assertNotNull("intList not set", intList);
             assertNotNull("intSet not set", intSet);
             assertNotNull("stringMap not set", stringMap);

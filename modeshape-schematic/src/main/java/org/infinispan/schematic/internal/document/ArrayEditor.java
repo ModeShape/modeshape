@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -61,6 +62,26 @@ public class ArrayEditor implements EditableArray {
     @Override
     public ArrayEditor clone() {
         return new ArrayEditor((MutableArray)this.array.clone(), factory);
+    }
+
+    @Override
+    public ArrayEditor with( Map<String, Object> changedFields ) {
+        return new ArrayEditor((MutableArray)this.array.with(changedFields), factory);
+    }
+
+    @Override
+    public ArrayEditor with( ValueTransformer transformer ) {
+        return new ArrayEditor((MutableArray)this.array.with(transformer), factory);
+    }
+
+    @Override
+    public Document withVariablesReplaced( Properties properties ) {
+        return new ArrayEditor((MutableArray)this.array.withVariablesReplaced(properties), factory);
+    }
+
+    @Override
+    public Document withVariablesReplacedWithSystemProperties() {
+        return new ArrayEditor((MutableArray)this.array.withVariablesReplacedWithSystemProperties(), factory);
     }
 
     @Override
