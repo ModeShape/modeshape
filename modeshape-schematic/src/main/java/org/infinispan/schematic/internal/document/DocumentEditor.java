@@ -25,6 +25,7 @@ import java.text.ParseException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -76,6 +77,26 @@ public class DocumentEditor implements EditableDocument {
     @Override
     public DocumentEditor clone() {
         return new DocumentEditor((MutableDocument)this.document.clone(), factory);
+    }
+
+    @Override
+    public DocumentEditor with( Map<String, Object> changedFields ) {
+        return new DocumentEditor((MutableDocument)this.document.with(changedFields), factory);
+    }
+
+    @Override
+    public DocumentEditor with( ValueTransformer transformer ) {
+        return new DocumentEditor((MutableDocument)this.document.with(transformer), factory);
+    }
+
+    @Override
+    public Document withVariablesReplaced( Properties properties ) {
+        return new DocumentEditor((MutableDocument)this.document.withVariablesReplaced(properties), factory);
+    }
+
+    @Override
+    public Document withVariablesReplacedWithSystemProperties() {
+        return new DocumentEditor((MutableDocument)this.document.withVariablesReplacedWithSystemProperties(), factory);
     }
 
     @Override

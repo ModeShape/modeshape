@@ -94,13 +94,14 @@ public class SchemaDocumentCache implements Validator.SchemaDocumentResolver, Se
         if (!schemaRef.equals(id)) {
             // This is not the meta-schema, so we need to validate it ...
             SchemaDocument schemaOfSchema = get(schemaRef, problems);
-            schemaOfSchema.getValidator().validate(null, null, doc, Paths.rootPath(), problems, this);
+            Document schemaOfSchemaDoc = schemaOfSchema.getDocument();
+            schemaOfSchema.getValidator().validate(null, null, schemaOfSchemaDoc, Paths.rootPath(), problems, this);
         }
 
         // The schema was valid ...
         URI schemaRefUri = null;
         try {
-            schemaRefUri = new URI(schemaRef);
+            schemaRefUri = new URI(uri);
         } catch (URISyntaxException e) {
             problems.recordWarning(Paths.path("$schema"), "The URI of the referenced schema '" + uri + "' is not a valid URI");
         }

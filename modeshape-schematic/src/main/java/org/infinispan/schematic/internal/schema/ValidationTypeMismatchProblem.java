@@ -21,48 +21,37 @@
  */
 package org.infinispan.schematic.internal.schema;
 
-import org.infinispan.schematic.SchemaLibrary.Problem;
+import org.infinispan.schematic.SchemaLibrary.MismatchedTypeProblem;
 import org.infinispan.schematic.SchemaLibrary.ProblemType;
 import org.infinispan.schematic.document.Path;
 
-public class ValidationProblem implements Problem {
-    private final ProblemType type;
-    private final Path path;
-    private final String reason;
-    private final Throwable cause;
+public final class ValidationTypeMismatchProblem extends ValidationProblem implements MismatchedTypeProblem {
+    private final Object actualValue;
+    private final Object convertedValue;
 
-    public ValidationProblem( ProblemType type,
-                              Path path,
-                              String reason,
-                              Throwable cause ) {
-        this.type = type;
-        this.path = path;
-        this.reason = reason;
-        this.cause = cause;
+    public ValidationTypeMismatchProblem( ProblemType type,
+                                          Path path,
+                                          Object actualValue,
+                                          Object convertedValue,
+                                          String reason,
+                                          Throwable cause ) {
+        super(type, path, reason, cause);
+        this.actualValue = actualValue;
+        this.convertedValue = convertedValue;
     }
 
     @Override
-    public ProblemType getType() {
-        return type;
+    public Object getActualValue() {
+        return actualValue;
     }
 
     @Override
-    public Path getPath() {
-        return path;
-    }
-
-    @Override
-    public String getReason() {
-        return reason;
-    }
-
-    @Override
-    public Throwable getCause() {
-        return cause;
+    public Object getConvertedValue() {
+        return convertedValue;
     }
 
     @Override
     public String toString() {
-        return "" + type + " at " + path + ": " + reason;
+        return super.toString();
     }
 }

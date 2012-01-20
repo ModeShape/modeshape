@@ -156,6 +156,11 @@ public class Paths {
         }
 
         @Override
+        public String getFirst() {
+            return null;
+        }
+
+        @Override
         public int size() {
             return 0;
         }
@@ -244,6 +249,11 @@ public class Paths {
 
         @Override
         public String getLast() {
+            return fieldName;
+        }
+
+        @Override
+        public String getFirst() {
             return fieldName;
         }
 
@@ -342,6 +352,11 @@ public class Paths {
         @Override
         public String getLast() {
             return fieldNames.get(fieldNames.size() - 1);
+        }
+
+        @Override
+        public String getFirst() {
+            return fieldNames.get(0);
         }
 
         @Override

@@ -222,6 +222,51 @@ public class JsonReader {
     }
 
     /**
+     * Parse the number represented by the supplied (unquoted) JSON field value.
+     * 
+     * @param value the string representation of the value
+     * @return the number, or null if the value could not be parsed
+     */
+    public static Number parseNumber( String value ) {
+        // Try to parse as a number ...
+        char c = value.charAt(0);
+
+        if ((c >= '0' && c <= '9') || c == '.' || c == '-' || c == '+') {
+            // It's definitely a number ...
+            if (c == '0' && value.length() > 2) {
+                // it might be a hex number that starts with '0x'
+                char two = value.charAt(1);
+                if (two == 'x' || two == 'X') {
+                    try {
+                        // Parse the remainder of the hex number ...
+                        int integer = Integer.parseInt(value.substring(2), 16);
+                        return new Integer(integer);
+                    } catch (NumberFormatException e) {
+                        // Ignore and continue ...
+                    }
+                }
+            }
+            // Try parsing as a double ...
+            try {
+                if ((value.indexOf('.') > -1) || (value.indexOf('E') > -1) || (value.indexOf('e') > -1)) {
+                    return Double.parseDouble(value);
+                }
+                Long longObj = new Long(value);
+                long longValue = longObj.longValue();
+                int intValue = longObj.intValue();
+                if (longValue == intValue) {
+                    // Then it's just an integer ...
+                    return new Integer(intValue);
+                }
+                return longObj;
+            } catch (NumberFormatException e) {
+                // ignore ...
+            }
+        }
+        return null;
+    }
+
+    /**
      * The component that parses a tokenized JSON stream.
      * 
      * @author Randall Hauch <rhauch@redhat.com> (C) 2011 Red Hat Inc.
@@ -440,42 +485,7 @@ public class JsonReader {
          * @return the number, or null if the value could not be parsed
          */
         protected Number parseNumber( String value ) {
-            // Try to parse as a number ...
-            char c = value.charAt(0);
-
-            if ((c >= '0' && c <= '9') || c == '.' || c == '-' || c == '+') {
-                // It's definitely a number ...
-                if (c == '0' && value.length() > 2) {
-                    // it might be a hex number that starts with '0x'
-                    char two = value.charAt(1);
-                    if (two == 'x' || two == 'X') {
-                        try {
-                            // Parse the remainder of the hex number ...
-                            int integer = Integer.parseInt(value.substring(2), 16);
-                            return new Integer(integer);
-                        } catch (NumberFormatException e) {
-                            // Ignore and continue ...
-                        }
-                    }
-                }
-                // Try parsing as a double ...
-                try {
-                    if ((value.indexOf('.') > -1) || (value.indexOf('E') > -1) || (value.indexOf('e') > -1)) {
-                        return Double.parseDouble(value);
-                    }
-                    Long longObj = new Long(value);
-                    long longValue = longObj.longValue();
-                    int intValue = longObj.intValue();
-                    if (longValue == intValue) {
-                        // Then it's just an integer ...
-                        return new Integer(intValue);
-                    }
-                    return longObj;
-                } catch (NumberFormatException e) {
-                    // ignore ...
-                }
-            }
-            return null;
+            return JsonReader.parseNumber(value);
         }
 
         /**
@@ -899,12 +909,6 @@ public class JsonReader {
         }
 
         protected Date evaluateDate( String millisOrIso ) {
-            try {
-                Long millis = Long.parseLong(millisOrIso);
-                return values.createDate(millis.longValue());
-            } catch (NumberFormatException e) {
-                // not a long ...
-            }
             try {
                 return values.createDate(millisOrIso);
             } catch (ParseException e) {

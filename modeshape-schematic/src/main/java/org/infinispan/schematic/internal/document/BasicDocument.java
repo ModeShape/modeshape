@@ -26,6 +26,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import org.infinispan.schematic.document.Array;
@@ -40,6 +41,8 @@ import org.infinispan.schematic.document.MinKey;
 import org.infinispan.schematic.document.Null;
 import org.infinispan.schematic.document.ObjectId;
 import org.infinispan.schematic.document.Symbol;
+import org.infinispan.schematic.internal.schema.DocumentTransformer.PropertiesTransformer;
+import org.infinispan.schematic.internal.schema.DocumentTransformer.SystemPropertiesTransformer;
 
 public class BasicDocument extends LinkedHashMap<String, Object> implements MutableDocument {
 
@@ -431,6 +434,51 @@ public class BasicDocument extends LinkedHashMap<String, Object> implements Muta
             clone.put(field.getName(), value);
         }
         return clone;
+    }
+
+    @Override
+    public Document with( Map<String, Object> changedFields ) {
+        BasicDocument clone = new BasicDocument();
+        for (Field field : this.fields()) {
+            String name = field.getName();
+            Object newValue = changedFields.get(name);
+            if (newValue != null) {
+                clone.put(name, newValue);
+            } else {
+                Object oldValue = field.getValue();
+                clone.put(name, oldValue);
+            }
+        }
+        return clone;
+    }
+
+    @Override
+    public Document with( ValueTransformer transformer ) {
+        boolean transformed = false;
+        BasicDocument clone = new BasicDocument();
+        for (Field field : this.fields()) {
+            String name = field.getName();
+            Object oldValue = field.getValue();
+            Object newValue = null;
+            if (oldValue instanceof Document) {
+                newValue = ((Document)oldValue).with(transformer);
+            } else {
+                newValue = transformer.transform(name, oldValue);
+            }
+            if (newValue != oldValue) transformed = true;
+            clone.put(name, newValue);
+        }
+        return transformed ? clone : this;
+    }
+
+    @Override
+    public Document withVariablesReplaced( Properties properties ) {
+        return with(new PropertiesTransformer(properties));
+    }
+
+    @Override
+    public Document withVariablesReplacedWithSystemProperties() {
+        return with(new SystemPropertiesTransformer());
     }
 
 }

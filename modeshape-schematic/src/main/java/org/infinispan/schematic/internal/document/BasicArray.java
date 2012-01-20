@@ -31,6 +31,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -47,6 +48,8 @@ import org.infinispan.schematic.document.MinKey;
 import org.infinispan.schematic.document.Null;
 import org.infinispan.schematic.document.ObjectId;
 import org.infinispan.schematic.document.Symbol;
+import org.infinispan.schematic.internal.schema.DocumentTransformer.PropertiesTransformer;
+import org.infinispan.schematic.internal.schema.DocumentTransformer.SystemPropertiesTransformer;
 
 /**
  * A {@link Bson.Type#ARRAY ordered array of values} for use as a value within a {@link Document BSON Object}. Instances of this
@@ -823,6 +826,51 @@ public class BasicArray implements MutableArray {
             clone.addValue(value);
         }
         return clone;
+    }
+
+    @Override
+    public Array with( Map<String, Object> changedFields ) {
+        BasicArray clone = new BasicArray();
+        for (Field field : this.fields()) {
+            String name = field.getName();
+            Object newValue = changedFields.get(name);
+            if (newValue != null) {
+                clone.put(name, newValue);
+            } else {
+                Object oldValue = field.getValue();
+                clone.put(name, oldValue);
+            }
+        }
+        return clone;
+    }
+
+    @Override
+    public Array with( ValueTransformer transformer ) {
+        boolean transformed = false;
+        BasicArray clone = new BasicArray();
+        for (Field field : this.fields()) {
+            String name = field.getName();
+            Object oldValue = field.getValue();
+            Object newValue = null;
+            if (oldValue instanceof Document) {
+                newValue = ((Document)oldValue).with(transformer);
+            } else {
+                newValue = transformer.transform(name, oldValue);
+            }
+            if (newValue != oldValue) transformed = true;
+            clone.put(name, newValue);
+        }
+        return transformed ? clone : this;
+    }
+
+    @Override
+    public Array withVariablesReplaced( Properties properties ) {
+        return with(new PropertiesTransformer(properties));
+    }
+
+    @Override
+    public Array withVariablesReplacedWithSystemProperties() {
+        return with(new SystemPropertiesTransformer());
     }
 
     @Immutable

@@ -21,6 +21,7 @@
  */
 package org.infinispan.schematic.internal.schema;
 
+import org.infinispan.schematic.document.JsonSchema.Type;
 import org.infinispan.schematic.document.NotThreadSafe;
 import org.infinispan.schematic.document.Path;
 
@@ -60,5 +61,22 @@ public interface Problems {
      */
     void recordWarning( Path path,
                         String message );
+
+    /**
+     * Record a field value was encountered whose type was not the expected type but could be converted to the expected type.
+     * 
+     * @param path the path; may not be null
+     * @param message the message describing the warning; may not be null
+     * @param actualType the actual type of the field value; may not be null
+     * @param actualValue the actual field value
+     * @param requiredType the expected type; may not be null
+     * @param convertedValue the converted value
+     */
+    void recordTypeMismatch( Path path,
+                             String message,
+                             Type actualType,
+                             Object actualValue,
+                             Type requiredType,
+                             Object convertedValue );
 
 }

@@ -25,9 +25,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import org.infinispan.schematic.SchemaLibrary.MismatchedTypeProblem;
 import org.infinispan.schematic.SchemaLibrary.Problem;
 import org.infinispan.schematic.SchemaLibrary.ProblemType;
 import org.infinispan.schematic.SchemaLibrary.Results;
+import org.infinispan.schematic.document.JsonSchema.Type;
 import org.infinispan.schematic.document.NotThreadSafe;
 import org.infinispan.schematic.document.Path;
 
@@ -66,6 +68,18 @@ public class ValidationResult implements Results, Problems {
             if (problem.getType() == ProblemType.WARNING) return true;
         }
         return false;
+    }
+
+    @Override
+    public boolean hasOnlyTypeMismatchErrors() {
+        boolean foundMismatch = false;
+        for (Problem problem : problems) {
+            if (problem.getType() == ProblemType.ERROR) {
+                if (problem instanceof MismatchedTypeProblem) foundMismatch = true;
+                else return false;
+            }
+        }
+        return foundMismatch;
     }
 
     @Override
@@ -108,6 +122,16 @@ public class ValidationResult implements Results, Problems {
     public void recordWarning( Path path,
                                String reason ) {
         problems.add(new ValidationProblem(ProblemType.WARNING, path, reason, null));
+    }
+
+    @Override
+    public void recordTypeMismatch( Path path,
+                                    String reason,
+                                    Type actualType,
+                                    Object actualValue,
+                                    Type requiredType,
+                                    Object convertedValue ) {
+        problems.add(new ValidationTypeMismatchProblem(ProblemType.ERROR, path, actualValue, convertedValue, reason, null));
     }
 
     public void add( Problem problem ) {

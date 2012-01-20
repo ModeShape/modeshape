@@ -480,9 +480,17 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
             if (fieldValue != null) {
                 Type actual = Type.typeFor(fieldValue);
                 if (!type.isEquivalent(actual)) {
-                    problems.recordError(pathToDocument.with(fieldName), "Field value for '" + pathToDocument.with(fieldName)
-                                                                         + "' expected to be of type " + type
-                                                                         + " but was of type " + actual);
+                    // See if the value is convertable ...
+                    Object converted = type.convertValueFrom(fieldValue, actual);
+                    Path pathToField = pathToDocument.with(fieldName);
+                    String reason = "Field value for '" + pathToField + "' expected to be of type " + type + " but was of type "
+                                    + actual;
+                    if (converted != null) {
+                        // We could convert the value, so record this as a special error ...
+                        problems.recordTypeMismatch(pathToField, reason, actual, fieldValue, type, converted);
+                    } else {
+                        problems.recordError(pathToField, reason);
+                    }
                 }
             }
         }
@@ -1397,6 +1405,11 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
         private Path path;
         private String message;
         private Throwable exception;
+        private Object actualValue;
+        private Object convertedValue;
+        private Type actualType;
+        private Type requiredType;
+        private boolean mismatch = false;
 
         @Override
         public void recordError( Path path,
@@ -1405,6 +1418,11 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
             this.path = path;
             this.message = message;
             this.exception = null;
+            this.actualValue = null;
+            this.convertedValue = null;
+            this.actualType = null;
+            this.requiredType = null;
+            this.mismatch = false;
         }
 
         @Override
@@ -1415,6 +1433,11 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
             this.path = path;
             this.message = message;
             this.exception = exception;
+            this.actualValue = null;
+            this.convertedValue = null;
+            this.actualType = null;
+            this.requiredType = null;
+            this.mismatch = false;
         }
 
         @Override
@@ -1424,6 +1447,29 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
             this.path = path;
             this.message = message;
             this.exception = null;
+            this.actualValue = null;
+            this.convertedValue = null;
+            this.actualType = null;
+            this.requiredType = null;
+            this.mismatch = false;
+        }
+
+        @Override
+        public void recordTypeMismatch( Path path,
+                                        String message,
+                                        Type actualType,
+                                        Object actualValue,
+                                        Type requiredType,
+                                        Object convertedValue ) {
+            this.type = ProblemType.ERROR;
+            this.path = path;
+            this.message = message;
+            this.exception = null;
+            this.actualValue = actualValue;
+            this.convertedValue = convertedValue;
+            this.actualType = actualType;
+            this.requiredType = requiredType;
+            this.mismatch = true;
         }
 
         public boolean hasProblem() {
@@ -1433,7 +1479,16 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
         public void recordIn( Problems otherProblems ) {
             switch (type) {
                 case ERROR:
-                    otherProblems.recordError(this.path, this.message, this.exception);
+                    if (this.mismatch) {
+                        otherProblems.recordTypeMismatch(this.path,
+                                                         this.message,
+                                                         this.actualType,
+                                                         this.actualValue,
+                                                         this.requiredType,
+                                                         this.convertedValue);
+                    } else {
+                        otherProblems.recordError(this.path, this.message, this.exception);
+                    }
                     break;
                 case WARNING:
                     otherProblems.recordWarning(this.path, this.message);
