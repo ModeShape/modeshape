@@ -24,16 +24,16 @@
 		<module>modeshape-common</module>
 		<module>modeshape-schematic</module>
 		<module>modeshape-jcr-redux</module>
+    <module>sequencers/modeshape-sequencer-msoffice</module>
+    <module>sequencers/modeshape-sequencer-images</module>
+    <module>sequencers/modeshape-sequencer-java</module>
+    <module>sequencers/modeshape-sequencer-ddl</module>
+    <module>sequencers/modeshape-sequencer-mp3</module>
+    <module>sequencers/modeshape-sequencer-text</module>
+    <module>sequencers/modeshape-sequencer-sramp</module>
+    <module>sequencers/modeshape-sequencer-xsd</module>
 		<module>deploy/jbossas</module>
 
-        <module>sequencers/modeshape-sequencer-msoffice</module>
-        <module>sequencers/modeshape-sequencer-images</module>
-        <module>sequencers/modeshape-sequencer-java</module>
-        <module>sequencers/modeshape-sequencer-ddl</module>
-        <module>sequencers/modeshape-sequencer-mp3</module>
-        <module>sequencers/modeshape-sequencer-text</module>
-        <module>sequencers/modeshape-sequencer-sramp</module>
-        <module>sequencers/modeshape-sequencer-xsd</module>
 	</modules>
 	<properties>
 		<rootDir>${project.basedir}</rootDir>

@@ -23,16 +23,15 @@
  */
 package org.modeshape.sequencer.classfile;
 
+import static org.modeshape.sequencer.JavaSequencerHelper.CLASS_FILE_HELPER;
 import org.junit.Test;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
-import org.modeshape.sequencer.JavaSequencerHelper;
-import static org.modeshape.sequencer.JavaSequencerHelper.CLASS_FILE_HELPER;
 import org.modeshape.sequencer.testdata.MockClass;
 import org.modeshape.sequencer.testdata.MockEnum;
 
 /**
  * Unit test for {@link ClassFileSequencer}
- *
+ * 
  * @author Horia Chiorean
  */
 public class ClassFileSequencerTest extends AbstractSequencerTest {
@@ -42,11 +41,11 @@ public class ClassFileSequencerTest extends AbstractSequencerTest {
         String rootPath = MockEnum.class.getName().replaceAll("\\.", "/");
         createNodeWithContentFromFile("enum.class", rootPath + ".class");
 
-        //expected by sequencer in the same location
+        // expected by sequencer in the same location
         String expectedSequencedPathSameLocation = "enum.class/" + rootPath;
         CLASS_FILE_HELPER.assertSequencedMockEnum(getSequencedNode(rootNode, expectedSequencedPathSameLocation));
 
-        //expected by sequencer in a different location
+        // expected by sequencer in a different location
         String expectedSequencedPathNewLocation = "classes/enum.class/" + rootPath;
         CLASS_FILE_HELPER.assertSequencedMockEnum(getSequencedNode(rootNode, expectedSequencedPathNewLocation));
     }
@@ -56,11 +55,11 @@ public class ClassFileSequencerTest extends AbstractSequencerTest {
         String rootPath = MockClass.class.getName().replaceAll("\\.", "/");
         createNodeWithContentFromFile("mockclass.class", rootPath + ".class");
 
-        //expected by sequencer in the same location
+        // expected by sequencer in the same location
         String expectedSequencedPathSameLocation = "mockclass.class/" + rootPath;
         CLASS_FILE_HELPER.assertSequencedMockClass(getSequencedNode(rootNode, expectedSequencedPathSameLocation));
 
-        //expected by sequencer in a different location
+        // expected by sequencer in a different location
         String expectedSequencedPathNewLocation = "classes/mockclass.class/" + rootPath;
         CLASS_FILE_HELPER.assertSequencedMockClass(getSequencedNode(rootNode, expectedSequencedPathNewLocation));
     }

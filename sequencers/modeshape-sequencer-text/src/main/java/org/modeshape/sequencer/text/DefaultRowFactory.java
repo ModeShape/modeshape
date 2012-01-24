@@ -23,15 +23,16 @@
  */
 package org.modeshape.sequencer.text;
 
+import static org.modeshape.sequencer.text.TextSequencerLexicon.COLUMN;
+import static org.modeshape.sequencer.text.TextSequencerLexicon.DATA;
+import static org.modeshape.sequencer.text.TextSequencerLexicon.ROW;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.NotThreadSafe;
-import static org.modeshape.jcr.api.JcrConstants.NT_UNSTRUCTURED;
-import static org.modeshape.sequencer.text.TextSequencerLexicon.*;
-
 
 /**
  * A default implementation of the {@link RowFactory} class. This class records rows in the following subgraph:
+ * 
  * <pre>
  * &lt;graph root&gt;
  *     + text:row[1] (jcr:primaryType = nt:unstructured)
@@ -49,7 +50,8 @@ import static org.modeshape.sequencer.text.TextSequencerLexicon.*;
 public class DefaultRowFactory implements RowFactory {
 
     @Override
-    public void recordRow( Node outputNode, String[] columns ) throws RepositoryException {
+    public void recordRow( Node outputNode,
+                           String[] columns ) throws RepositoryException {
         Node rowNode = outputNode.addNode(ROW);
 
         for (String column : columns) {

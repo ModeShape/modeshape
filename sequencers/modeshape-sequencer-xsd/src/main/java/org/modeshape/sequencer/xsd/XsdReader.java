@@ -23,6 +23,19 @@
  */
 package org.modeshape.sequencer.xsd;
 
+import static org.modeshape.sequencer.sramp.SrampLexicon.DESCRIPTION;
+import static org.modeshape.sequencer.xsd.XsdLexicon.IMPORT;
+import java.io.InputStream;
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.PropertyType;
@@ -67,25 +80,12 @@ import org.modeshape.common.util.SizeMeasuringInputStream;
 import org.modeshape.common.util.SizeMeasuringReader;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.modeshape.sequencer.sramp.SrampLexicon;
-import static org.modeshape.sequencer.sramp.SrampLexicon.DESCRIPTION;
-import static org.modeshape.sequencer.xsd.XsdLexicon.IMPORT;
 import org.modeshape.sequencer.xsd.XsdResolvers.SymbolSpace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.xml.sax.InputSource;
-import java.io.InputStream;
-import java.io.Reader;
-import java.io.StringReader;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * A class that can parse XML Schema Documents and create a node structure based on the schema information.
@@ -103,7 +103,8 @@ public class XsdReader {
 
     private final Sequencer.Context context;
 
-    public XsdReader(Sequencer.Context context, XsdResolvers resolvers ) {
+    public XsdReader( Sequencer.Context context,
+                      XsdResolvers resolvers ) {
         CheckArg.isNotNull(context, "context");
         this.context = context;
         this.resolvers = resolvers != null ? resolvers : new XsdResolvers();
@@ -122,7 +123,7 @@ public class XsdReader {
 
     /**
      * Get the sequencing context in which this reader is being used.
-     *
+     * 
      * @return context the context; never null
      */
     public Sequencer.Context getContext() {
@@ -131,34 +132,40 @@ public class XsdReader {
 
     /**
      * Read the XML Schema Document from the supplied string, and produce the derived content.
-     *
+     * 
      * @param xsdContent the stream containing the XSD content; may not be null
-     * @param outputNode the parent node at which the derived content for the XSD should be written (usually this path represents the XSD
-     * file itself); may not be null
+     * @param outputNode the parent node at which the derived content for the XSD should be written (usually this path represents
+     *        the XSD file itself); may not be null
+     * @throws Exception if there is a probelm reading the XSD content
      */
-    public void read( String xsdContent, Node outputNode ) throws Exception {
+    public void read( String xsdContent,
+                      Node outputNode ) throws Exception {
         read(new InputSource(new StringReader(xsdContent)), outputNode);
     }
 
     /**
      * Read the XML Schema Document from the supplied stream, and produce the derived content.
-     *
+     * 
      * @param stream the stream containing the XSD content; may not be null
-     * @param outputNode the parent node at which the derived content for the XSD should be written (usually this path represents the XSD
-     * file itself); may not be null
+     * @param outputNode the parent node at which the derived content for the XSD should be written (usually this path represents
+     *        the XSD file itself); may not be null
+     * @throws Exception if there is a probelm reading the XSD content
      */
-    public void read( InputStream stream, Node outputNode ) throws Exception {
+    public void read( InputStream stream,
+                      Node outputNode ) throws Exception {
         read(new InputSource(stream), outputNode);
     }
 
     /**
      * Read the XML Schema Document from the supplied source, and produce the derived content. .
-     *
+     * 
      * @param source the input source containing the XSD content; may not be null
-     * @param outputNode the parent node at which the derived content for the XSD should be written (usually this path represents the XSD
-     * file itself); may not be null
+     * @param outputNode the parent node at which the derived content for the XSD should be written (usually this path represents
+     *        the XSD file itself); may not be null
+     * @throws Exception if there is a probelm reading the XSD content
      */
-    public void read( InputSource source, Node outputNode ) throws Exception {
+    public void read( InputSource source,
+                      Node outputNode ) throws Exception {
         LOGGER.debug("Processing XSD '{}'", outputNode);
         Reader reader = null;
         InputStream stream = null;
@@ -200,8 +207,17 @@ public class XsdReader {
 
     /**
      * Read an XSDSchema instance and create the node hierarchy under the given root node.
+     * 
+     * @param schema the schema object; may not be null
+     * @param encoding the encoding for the XSD; may be null if the encoding is not specified
+     * @param contentSize the size of the XML Schema Document content; may not be negative
+     * @param rootNode the root node that will be populated with the XML Schema Document information
+     * @throws Exception if there is a probelm reading the XSD content
      */
-    protected void process( XSDSchema schema, String encoding, long contentSize, Node rootNode ) throws Exception {
+    protected void process( XSDSchema schema,
+                            String encoding,
+                            long contentSize,
+                            Node rootNode ) throws Exception {
         assert schema != null;
 
         LOGGER.debug("Target namespace: '{0}'", schema.getTargetNamespace());
@@ -244,29 +260,33 @@ public class XsdReader {
         resolveReferences();
     }
 
-    protected void processImport( XSDImport xsdImport, Node parentNode ) throws RepositoryException {
+    protected void processImport( XSDImport xsdImport,
+                                  Node parentNode ) throws RepositoryException {
         LOGGER.debug("Import: '{}' with location '{}' ", xsdImport.getNamespace(), xsdImport.getSchemaLocation());
         Node importNode = parentNode.addNode(IMPORT, IMPORT);
         importNode.setProperty(XsdLexicon.NAMESPACE, xsdImport.getNamespace());
         importNode.setProperty(XsdLexicon.SCHEMA_LOCATION, xsdImport.getSchemaLocation());
-        processNonSchemaAttributes(xsdImport, importNode);    
+        processNonSchemaAttributes(xsdImport, importNode);
     }
 
-    protected void processInclude( XSDInclude xsdInclude, Node parentNode ) throws RepositoryException {
+    protected void processInclude( XSDInclude xsdInclude,
+                                   Node parentNode ) throws RepositoryException {
         LOGGER.debug("Include: '{}' ", xsdInclude.getSchemaLocation());
         Node includeNode = parentNode.addNode(XsdLexicon.INCLUDE, XsdLexicon.INCLUDE);
         includeNode.setProperty(XsdLexicon.SCHEMA_LOCATION, xsdInclude.getSchemaLocation());
         processNonSchemaAttributes(xsdInclude, includeNode);
     }
 
-    protected void processRedefine( XSDRedefine redefine, Node parentNode ) throws RepositoryException {
+    protected void processRedefine( XSDRedefine redefine,
+                                    Node parentNode ) throws RepositoryException {
         LOGGER.debug("Include: '{}' ", redefine.getSchemaLocation());
         Node redefineNode = parentNode.addNode(XsdLexicon.REDEFINE, XsdLexicon.REDEFINE);
         redefineNode.setProperty(XsdLexicon.SCHEMA_LOCATION, redefine.getSchemaLocation());
-        processNonSchemaAttributes(redefine, redefineNode);     
+        processNonSchemaAttributes(redefine, redefineNode);
     }
 
-    protected void processSimpleTypeDefinition( XSDSimpleTypeDefinition type, Node node ) throws RepositoryException {
+    protected void processSimpleTypeDefinition( XSDSimpleTypeDefinition type,
+                                                Node node ) throws RepositoryException {
         boolean isAnonymous = type.getName() == null;
         String nodeName = isAnonymous ? XsdLexicon.SIMPLE_TYPE : type.getName();
         // This is a normal simple type definition ...
@@ -276,25 +296,33 @@ public class XsdReader {
         typeNode.setProperty(XsdLexicon.NAMESPACE, type.getTargetNamespace());
         if (!isAnonymous) {
             typeNode.setProperty(XsdLexicon.NC_NAME, type.getName());
-            resolvers.get(SymbolSpace.TYPE_DEFINITIONS).register(type.getTargetNamespace(), type.getName(),
+            resolvers.get(SymbolSpace.TYPE_DEFINITIONS).register(type.getTargetNamespace(),
+                                                                 type.getName(),
                                                                  typeNode.getIdentifier());
         }
         processTypeFacets(type, typeNode, type.getBaseType());
         processNonSchemaAttributes(type, typeNode);
     }
 
-    protected void processTypeFacets( XSDSimpleTypeDefinition type, Node typeNode, XSDTypeDefinition baseType ) throws RepositoryException {
+    protected void processTypeFacets( XSDSimpleTypeDefinition type,
+                                      Node typeNode,
+                                      XSDTypeDefinition baseType ) throws RepositoryException {
         if (baseType == null) {
             baseType = type.getBaseType();
         }
         if (baseType == type) {
             // The base type is the anytype ...
-            baseType = type.getSchema().getSchemaForSchema().resolveSimpleTypeDefinition("http://www.w3.org/2001/XMLSchema", "anyType");
+            baseType = type.getSchema()
+                           .getSchemaForSchema()
+                           .resolveSimpleTypeDefinition("http://www.w3.org/2001/XMLSchema", "anyType");
         }
         if (baseType != null) {
             typeNode.setProperty(XsdLexicon.BASE_TYPE_NAME, baseType.getName());
             typeNode.setProperty(XsdLexicon.BASE_TYPE_NAMESPACE, baseType.getTargetNamespace());
-            setReference(typeNode, XsdLexicon.BASE_TYPE_REFERENCE, SymbolSpace.TYPE_DEFINITIONS, baseType.getTargetNamespace(),
+            setReference(typeNode,
+                         XsdLexicon.BASE_TYPE_REFERENCE,
+                         SymbolSpace.TYPE_DEFINITIONS,
+                         baseType.getTargetNamespace(),
                          baseType.getName());
         }
 
@@ -333,7 +361,8 @@ public class XsdReader {
         processAnnotation(type.getAnnotation(), typeNode);
     }
 
-    protected void processComplexTypeDefinition( XSDComplexTypeDefinition type, Node parentNode ) throws RepositoryException {
+    protected void processComplexTypeDefinition( XSDComplexTypeDefinition type,
+                                                 Node parentNode ) throws RepositoryException {
         LOGGER.debug("Complex type: '{}' in ns '{}' ", type.getName(), type.getTargetNamespace());
         boolean isAnonymous = type.getName() == null;
 
@@ -342,12 +371,16 @@ public class XsdReader {
         typeNode.setProperty(XsdLexicon.NAMESPACE, type.getTargetNamespace());
         if (!isAnonymous) {
             typeNode.setProperty(XsdLexicon.NC_NAME, type.getName());
-            resolvers.get(SymbolSpace.TYPE_DEFINITIONS).register(type.getTargetNamespace(), type.getName(), typeNode.getIdentifier());
+            resolvers.get(SymbolSpace.TYPE_DEFINITIONS).register(type.getTargetNamespace(),
+                                                                 type.getName(),
+                                                                 typeNode.getIdentifier());
         }
         XSDTypeDefinition baseType = type.getBaseType();
         if (baseType == type) {
             // The base type is the anytype ...
-            baseType = type.getSchema().getSchemaForSchema().resolveComplexTypeDefinition("http://www.w3.org/2001/XMLSchema", "anyType");
+            baseType = type.getSchema()
+                           .getSchemaForSchema()
+                           .resolveComplexTypeDefinition("http://www.w3.org/2001/XMLSchema", "anyType");
         }
         if (baseType != null) {
             typeNode.setProperty(XsdLexicon.BASE_TYPE_NAME, baseType.getName());
@@ -367,10 +400,11 @@ public class XsdReader {
         processComplexTypeContent(type.getContent(), typeNode);
 
         processAnnotation(type.getAnnotation(), typeNode);
-        processNonSchemaAttributes(type, typeNode);        
+        processNonSchemaAttributes(type, typeNode);
     }
 
-    protected Node processElementDeclaration( XSDElementDeclaration decl, Node parentNode ) throws RepositoryException {
+    protected Node processElementDeclaration( XSDElementDeclaration decl,
+                                              Node parentNode ) throws RepositoryException {
         if (decl == null) {
             return null;
         }
@@ -387,10 +421,16 @@ public class XsdReader {
             declarationNode = parentNode.addNode(resolved.getName(), XsdLexicon.ELEMENT_DECLARATION);
             declarationNode.setProperty(XsdLexicon.REF_NAME, resolved.getName());
             declarationNode.setProperty(XsdLexicon.REF_NAMESPACE, resolved.getTargetNamespace());
-            setReference(declarationNode, XsdLexicon.REF, SymbolSpace.ELEMENT_DECLARATION, resolved.getTargetNamespace(), resolved.getName());
+            setReference(declarationNode,
+                         XsdLexicon.REF,
+                         SymbolSpace.ELEMENT_DECLARATION,
+                         resolved.getTargetNamespace(),
+                         resolved.getName());
         }
         if (decl.isGlobal()) {
-            resolvers.get(SymbolSpace.ELEMENT_DECLARATION).register(decl.getTargetNamespace(), decl.getName(), declarationNode.getIdentifier());
+            resolvers.get(SymbolSpace.ELEMENT_DECLARATION).register(decl.getTargetNamespace(),
+                                                                    decl.getName(),
+                                                                    declarationNode.getIdentifier());
         }
 
         declarationNode.setProperty(XsdLexicon.ABSTRACT, decl.isAbstract());
@@ -400,7 +440,11 @@ public class XsdReader {
         if (type != null) {
             declarationNode.setProperty(XsdLexicon.TYPE_NAME, type.getName());
             declarationNode.setProperty(XsdLexicon.TYPE_NAMESPACE, type.getTargetNamespace());
-            setReference(declarationNode, XsdLexicon.TYPE_REFERENCE, SymbolSpace.TYPE_DEFINITIONS, type.getTargetNamespace(), type.getName());
+            setReference(declarationNode,
+                         XsdLexicon.TYPE_REFERENCE,
+                         SymbolSpace.TYPE_DEFINITIONS,
+                         type.getTargetNamespace(),
+                         type.getName());
         }
 
         if (decl.getAnonymousTypeDefinition() == type) {
@@ -426,17 +470,19 @@ public class XsdReader {
         return declarationNode;
     }
 
-    protected Node processAttributeDeclaration( XSDAttributeDeclaration decl, Node parentNode, boolean isUse ) throws RepositoryException {
+    protected Node processAttributeDeclaration( XSDAttributeDeclaration decl,
+                                                Node parentNode,
+                                                boolean isUse ) throws RepositoryException {
         if (decl == null) {
             return null;
         }
         LOGGER.debug("Attribute declaration: '{0}' in ns '{1}' ", decl.getName(), decl.getTargetNamespace());
-        
+
         Node attributeDeclarationNode = parentNode.addNode(decl.getName(), XsdLexicon.ATTRIBUTE_DECLARATION);
         attributeDeclarationNode.setProperty(XsdLexicon.NC_NAME, decl.getName());
         attributeDeclarationNode.setProperty(XsdLexicon.NAMESPACE, decl.getTargetNamespace());
-        if (decl.isGlobal() && !isUse) {           
-            resolvers.get(SymbolSpace.ATTRIBUTE_DECLARATIONS).register(decl.getTargetNamespace(), 
+        if (decl.isGlobal() && !isUse) {
+            resolvers.get(SymbolSpace.ATTRIBUTE_DECLARATIONS).register(decl.getTargetNamespace(),
                                                                        decl.getName(),
                                                                        attributeDeclarationNode.getIdentifier());
         }
@@ -450,7 +496,8 @@ public class XsdReader {
         return attributeDeclarationNode;
     }
 
-    protected void processComplexTypeContent( XSDComplexTypeContent content, Node parentNode ) throws RepositoryException {
+    protected void processComplexTypeContent( XSDComplexTypeContent content,
+                                              Node parentNode ) throws RepositoryException {
         if (content == null) {
             return;
         }
@@ -488,7 +535,8 @@ public class XsdReader {
         processNonSchemaAttributes(owner, parentNode);
     }
 
-    protected void processParticle( XSDParticle content, Node node ) throws RepositoryException {
+    protected void processParticle( XSDParticle content,
+                                    Node node ) throws RepositoryException {
         if (content == null) {
             return;
         }
@@ -515,7 +563,8 @@ public class XsdReader {
         }
     }
 
-    protected Node processModelGroupDefinition( XSDModelGroupDefinition defn, Node parentNode ) throws RepositoryException {
+    protected Node processModelGroupDefinition( XSDModelGroupDefinition defn,
+                                                Node parentNode ) throws RepositoryException {
         if (defn == null) {
             return null;
         }
@@ -524,7 +573,8 @@ public class XsdReader {
         return processModelGroup(group, parentNode);
     }
 
-    protected Node processModelGroup( XSDModelGroup group, Node parentNode ) throws RepositoryException {
+    protected Node processModelGroup( XSDModelGroup group,
+                                      Node parentNode ) throws RepositoryException {
         if (group == null) {
             return null;
         }
@@ -559,7 +609,8 @@ public class XsdReader {
         return primaryTypeName;
     }
 
-    protected void processAttributeGroupContent( XSDAttributeGroupContent content, Node parentNode ) throws RepositoryException {
+    protected void processAttributeGroupContent( XSDAttributeGroupContent content,
+                                                 Node parentNode ) throws RepositoryException {
         if (content == null) {
             return;
         }
@@ -574,7 +625,8 @@ public class XsdReader {
         assert false : "Invalid attribute group content type";
     }
 
-    protected void processAttributeGroupDefinition( XSDAttributeGroupDefinition defn, Node parentNode ) throws RepositoryException {
+    protected void processAttributeGroupDefinition( XSDAttributeGroupDefinition defn,
+                                                    Node parentNode ) throws RepositoryException {
         if (defn == null) {
             return;
         }
@@ -583,13 +635,17 @@ public class XsdReader {
             XSDAttributeGroupDefinition resolved = defn.getResolvedAttributeGroupDefinition();
             LOGGER.debug("Attribute Group definition (ref): '{}' in ns '{}' ", resolved.getName(), resolved.getTargetNamespace());
             attributeGroupNode = parentNode.addNode(resolved.getName(), XsdLexicon.ATTRIBUTE_GROUP);
-            setReference(attributeGroupNode, XsdLexicon.REF, SymbolSpace.ATTRIBUTE_GROUP_DEFINITIONS, resolved.getTargetNamespace()
-                    , resolved.getName());
+            setReference(attributeGroupNode,
+                         XsdLexicon.REF,
+                         SymbolSpace.ATTRIBUTE_GROUP_DEFINITIONS,
+                         resolved.getTargetNamespace(),
+                         resolved.getName());
         } else {
             LOGGER.debug("Attribute Group definition: '{}' in ns '{}' ", defn.getName(), defn.getTargetNamespace());
-            attributeGroupNode = parentNode.addNode(defn.getName(), XsdLexicon.ATTRIBUTE_GROUP);          
-            resolvers.get(SymbolSpace.ATTRIBUTE_GROUP_DEFINITIONS)
-                    .register(defn.getTargetNamespace(), defn.getName(), attributeGroupNode.getIdentifier());
+            attributeGroupNode = parentNode.addNode(defn.getName(), XsdLexicon.ATTRIBUTE_GROUP);
+            resolvers.get(SymbolSpace.ATTRIBUTE_GROUP_DEFINITIONS).register(defn.getTargetNamespace(),
+                                                                            defn.getName(),
+                                                                            attributeGroupNode.getIdentifier());
             attributeGroupNode.setProperty(XsdLexicon.NC_NAME, defn.getName());
             attributeGroupNode.setProperty(XsdLexicon.NAMESPACE, defn.getTargetNamespace());
 
@@ -605,12 +661,13 @@ public class XsdReader {
         processNonSchemaAttributes(defn, attributeGroupNode);
     }
 
-    protected Node processWildcard( XSDWildcard wildcard, Node parentNode ) throws RepositoryException {
+    protected Node processWildcard( XSDWildcard wildcard,
+                                    Node parentNode ) throws RepositoryException {
         if (wildcard == null) {
             return null;
         }
         LOGGER.debug("Any Attribute");
-        
+
         Node anyAttributeNode = parentNode.addNode(XsdLexicon.ANY_ATTRIBUTE, XsdLexicon.ANY_ATTRIBUTE);
 
         @SuppressWarnings( "unchecked" )
@@ -636,7 +693,8 @@ public class XsdReader {
         return anyAttributeNode;
     }
 
-    protected void processAttributeUse( XSDAttributeUse use, Node parentNode ) throws RepositoryException {
+    protected void processAttributeUse( XSDAttributeUse use,
+                                        Node parentNode ) throws RepositoryException {
         // Process the attribute declaration ...
         Node attributeDeclaration = processAttributeDeclaration(use.getAttributeDeclaration(), parentNode, true);
         if (use.getUse() != null) {
@@ -645,7 +703,8 @@ public class XsdReader {
         processNonSchemaAttributes(use, attributeDeclaration);
     }
 
-    protected void processNonSchemaAttributes( XSDConcreteComponent component, Node node ) throws RepositoryException {
+    protected void processNonSchemaAttributes( XSDConcreteComponent component,
+                                               Node node ) throws RepositoryException {
         if (component == null) {
             return;
         }
@@ -682,7 +741,9 @@ public class XsdReader {
         }
     }
 
-    protected String registerNamespace(NamespaceRegistry registry, String namespaceUri, String defaultPrefix ) throws RepositoryException {
+    protected String registerNamespace( NamespaceRegistry registry,
+                                        String namespaceUri,
+                                        String defaultPrefix ) throws RepositoryException {
         List<String> allNamespaces = Arrays.asList(registry.getURIs());
         if (allNamespaces.contains(namespaceUri)) {
             return registry.getPrefix(namespaceUri);
@@ -699,7 +760,8 @@ public class XsdReader {
         return generatedPrefix;
     }
 
-    protected void processAnnotation( XSDAnnotation annotation, Node node ) throws RepositoryException {
+    protected void processAnnotation( XSDAnnotation annotation,
+                                      Node node ) throws RepositoryException {
         if (annotation == null) {
             return;
         }
@@ -720,7 +782,8 @@ public class XsdReader {
         }
     }
 
-    protected void processAnnotations( List<XSDAnnotation> annotations, Node parentNode ) throws RepositoryException {
+    protected void processAnnotations( List<XSDAnnotation> annotations,
+                                       Node parentNode ) throws RepositoryException {
         assert annotations != null;
         StringBuilder sb = new StringBuilder();
         for (XSDAnnotation annotation : annotations) {
@@ -742,8 +805,10 @@ public class XsdReader {
         }
     }
 
-
-    protected void processFacet( XSDFacet facet, Node node, String propertyName, int propertyType ) throws RepositoryException {
+    protected void processFacet( XSDFacet facet,
+                                 Node node,
+                                 String propertyName,
+                                 int propertyType ) throws RepositoryException {
         if (facet == null) {
             return;
         }
@@ -776,7 +841,9 @@ public class XsdReader {
         return values;
     }
 
-    protected <Facet extends XSDFacet> void processFacetsList( List<Facet> facets, Node node, String propertyName ) throws RepositoryException {
+    protected <Facet extends XSDFacet> void processFacetsList( List<Facet> facets,
+                                                               Node node,
+                                                               String propertyName ) throws RepositoryException {
         if (facets == null) {
             return;
         }
@@ -796,8 +863,9 @@ public class XsdReader {
         }
     }
 
-    protected <Enumerator extends AbstractEnumerator> void processEnumerators( List<Enumerator> enumerators, Node node, String propertyName )
-            throws RepositoryException {
+    protected <Enumerator extends AbstractEnumerator> void processEnumerators( List<Enumerator> enumerators,
+                                                                               Node node,
+                                                                               String propertyName ) throws RepositoryException {
         if (enumerators == null) {
             return;
         }
@@ -813,7 +881,9 @@ public class XsdReader {
         }
     }
 
-    protected <Enumerator extends AbstractEnumerator> void processEnumerator( Enumerator enumerator, Node node, String propertyName ) throws RepositoryException {
+    protected <Enumerator extends AbstractEnumerator> void processEnumerator( Enumerator enumerator,
+                                                                              Node node,
+                                                                              String propertyName ) throws RepositoryException {
         if (enumerator != null && enumerator.getLiteral() != null) {
             node.setProperty(propertyName, enumerator.getLiteral());
         }
@@ -822,6 +892,8 @@ public class XsdReader {
     /**
      * Attempt to resolve any references that remain unresolved. This should be called if sharing an {@link XsdResolvers} with
      * multiple {@link org.modeshape.sequencer.xsd.XsdReader} instances.
+     * 
+     * @throws RepositoryException if there is a problem resolving references in the repository
      */
     public void resolveReferences() throws RepositoryException {
         if (resolveFutures.isEmpty()) return;
@@ -833,7 +905,11 @@ public class XsdReader {
         }
     }
 
-    protected String setReference( Node node, String propertyName, SymbolSpace kind, String namespace, String name ) throws RepositoryException {
+    protected String setReference( Node node,
+                                   String propertyName,
+                                   SymbolSpace kind,
+                                   String namespace,
+                                   String name ) throws RepositoryException {
         String typeIdentifier = resolvers.get(kind).lookupIdentifier(namespace, name);
         if (typeIdentifier != null) {
             // The referenced object was already processed ...
@@ -865,7 +941,11 @@ public class XsdReader {
         private final String refNamespace;
         private final String refName;
 
-        protected ResolveFuture( Node node, String propertyName, SymbolSpace kind, String namespace, String name ) {
+        protected ResolveFuture( Node node,
+                                 String propertyName,
+                                 SymbolSpace kind,
+                                 String namespace,
+                                 String name ) {
             this.node = node;
             this.propertyName = propertyName;
             this.refKind = kind;

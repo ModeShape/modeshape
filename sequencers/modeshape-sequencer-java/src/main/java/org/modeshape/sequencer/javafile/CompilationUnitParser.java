@@ -23,11 +23,11 @@
  */
 package org.modeshape.sequencer.javafile;
 
+import java.util.Map;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTParser;
-import java.util.Map;
 
 /**
  * The Parser, that process the a compilation unit.
@@ -45,8 +45,8 @@ public class CompilationUnitParser {
      */
     public static ASTNode runJLS3Conversion( char[] source,
                                              boolean resolveBindings ) {
-        //needed to be parse 1.5 code
-        Map options = createCompilerParameters();
+        // needed to be parse 1.5 code
+        Map<?, ?> options = createCompilerParameters();
 
         // Create parser
         ASTParser parser = ASTParser.newParser(AST.JLS3);
@@ -58,9 +58,9 @@ public class CompilationUnitParser {
         return parser.createAST(null);
     }
 
-    @SuppressWarnings("unchecked")
-    private static Map createCompilerParameters() {
-        Map options = JavaCore.getOptions();
+    @SuppressWarnings( "unchecked" )
+    private static Map<?, ?> createCompilerParameters() {
+        Map<Object, Object> options = JavaCore.getOptions();
         options.put(JavaCore.COMPILER_COMPLIANCE, JavaCore.VERSION_1_5);
         options.put(JavaCore.COMPILER_CODEGEN_TARGET_PLATFORM, JavaCore.VERSION_1_5);
         options.put(JavaCore.COMPILER_SOURCE, JavaCore.VERSION_1_5);
