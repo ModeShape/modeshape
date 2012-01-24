@@ -198,14 +198,20 @@ public abstract class Sequencer {
      * @param nodeTypeManager the node type manager with which the cnd will be registered
      * @param allowUpdate a boolean which indicates whether updates on existing node types are allowed or no.
      * See {@link NodeTypeManager#registerNodeType(javax.jcr.nodetype.NodeTypeDefinition, boolean)}
-     * @throws RepositoryException
-     * @throws NodeTypeExistsException
-     * @throws IOException
+     * @throws RepositoryException if anything fails
+     * @throws IOException if any stream related operations fail
      */
-    protected void registerNodeTypes( String cndFile, NodeTypeManager nodeTypeManager, boolean allowUpdate ) throws RepositoryException, NodeTypeExistsException, IOException {
+    protected void registerNodeTypes( String cndFile, NodeTypeManager nodeTypeManager, boolean allowUpdate ) throws RepositoryException, IOException {
         InputStream cndStream = getClass().getResourceAsStream(cndFile);
+        registerNodeTypes(cndStream, nodeTypeManager, allowUpdate);
+    }
+
+    /**
+     * See {@link Sequencer#registerNodeTypes(String, org.modeshape.jcr.api.nodetype.NodeTypeManager, boolean)}
+     */
+    protected void registerNodeTypes( InputStream cndStream, NodeTypeManager nodeTypeManager, boolean allowUpdate ) throws RepositoryException, IOException {
         if (cndStream == null) {
-            throw new IllegalArgumentException("Cannot locate the compact node definition file on classpath: " + cndFile);
+            throw new IllegalArgumentException("The stream to the given cnd file is null");
         }
         nodeTypeManager.registerNodeTypes(cndStream, allowUpdate);
     }
