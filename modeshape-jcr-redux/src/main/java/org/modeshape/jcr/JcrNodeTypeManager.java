@@ -845,62 +845,65 @@ public class JcrNodeTypeManager implements NodeTypeManager {
     }
 
     @Override
-    public void registerNodeTypes( File file,
-                                   boolean allowUpdate ) throws IOException, RepositoryException {
+    public NodeTypeIterator registerNodeTypes( File file,
+                                               boolean allowUpdate ) throws IOException, RepositoryException {
         String content = IoUtil.read(file);
         if (content.startsWith("<?xml")) {
-            registerNodeTypes(importFromXml(new InputSource(new FileInputStream(file))), allowUpdate);
-        } else {
-            CndImporter importer = new CndImporter(context(), true);
-            Problems problems = new SimpleProblems();
-            importer.importFrom(content, problems, file.getAbsolutePath());
-            if (problems.hasErrors()) {
-                // There are problems, so report the original problems ...
-                String msg = JcrI18n.errorsParsingNodeTypeDefinitions.text(file.getAbsolutePath());
-                throw new RepositoryException(messageFrom(problems, msg));
-            }
-            registerNodeTypes(importer.getNodeTypeDefinitions(), allowUpdate);
+            // This is Jackrabbit XML format ...
+            return registerNodeTypes(importFromXml(new InputSource(new FileInputStream(file))), allowUpdate);
         }
+        // Assume this is CND format ...
+        CndImporter importer = new CndImporter(context(), true);
+        Problems problems = new SimpleProblems();
+        importer.importFrom(content, problems, file.getAbsolutePath());
+        if (problems.hasErrors()) {
+            // There are problems, so report the original problems ...
+            String msg = JcrI18n.errorsParsingNodeTypeDefinitions.text(file.getAbsolutePath());
+            throw new RepositoryException(messageFrom(problems, msg));
+        }
+        return registerNodeTypes(importer.getNodeTypeDefinitions(), allowUpdate);
     }
 
     @Override
-    public void registerNodeTypes( InputStream stream,
-                                   boolean allowUpdate )
+    public NodeTypeIterator registerNodeTypes( InputStream stream,
+                                               boolean allowUpdate )
         throws IOException, javax.jcr.nodetype.InvalidNodeTypeDefinitionException, javax.jcr.nodetype.NodeTypeExistsException,
         UnsupportedRepositoryOperationException, RepositoryException {
 
         String content = IoUtil.read(stream);
         if (content.startsWith("<?xml")) {
-            registerNodeTypes(importFromXml(new InputSource(new StringReader(content))), allowUpdate);
-        } else {
-            CndImporter importer = new CndImporter(context(), true);
-            Problems problems = new SimpleProblems();
-            importer.importFrom(content, problems, "stream");
-            if (problems.hasErrors()) {
-                // There are problems, so report the original problems ...
-                String msg = JcrI18n.errorsParsingStreamOfNodeTypeDefinitions.text();
-                throw new RepositoryException(messageFrom(problems, msg));
-            }
-            registerNodeTypes(importer.getNodeTypeDefinitions(), allowUpdate);
+            // This is Jackrabbit XML format ...
+            return registerNodeTypes(importFromXml(new InputSource(new StringReader(content))), allowUpdate);
         }
+        // Assume this is CND format ...
+        CndImporter importer = new CndImporter(context(), true);
+        Problems problems = new SimpleProblems();
+        importer.importFrom(content, problems, "stream");
+        if (problems.hasErrors()) {
+            // There are problems, so report the original problems ...
+            String msg = JcrI18n.errorsParsingStreamOfNodeTypeDefinitions.text();
+            throw new RepositoryException(messageFrom(problems, msg));
+        }
+        return registerNodeTypes(importer.getNodeTypeDefinitions(), allowUpdate);
     }
 
     @Override
-    public void registerNodeTypes( URL url,
-                                   boolean allowUpdate ) throws IOException, RepositoryException {
+    public NodeTypeIterator registerNodeTypes( URL url,
+                                               boolean allowUpdate ) throws IOException, RepositoryException {
         String content = IoUtil.read(url.openStream());
         if (content.startsWith("<?xml")) {
-            registerNodeTypes(importFromXml(new InputSource(new StringReader(content))), allowUpdate);
-        } else {
-            CndImporter importer = new CndImporter(context(), true);
-            Problems problems = new SimpleProblems();
-            importer.importFrom(content, problems, url.toExternalForm());
-            if (problems.hasErrors()) {
-                // There are problems, so report the original problems ...
-                String msg = JcrI18n.errorsParsingNodeTypeDefinitions.text(url.toExternalForm());
-                throw new RepositoryException(messageFrom(problems, msg));
-            }
-            registerNodeTypes(importer.getNodeTypeDefinitions(), allowUpdate);
+            // This is Jackrabbit XML format ...
+            return registerNodeTypes(importFromXml(new InputSource(new StringReader(content))), allowUpdate);
         }
+        // Assume this is CND format ...
+        CndImporter importer = new CndImporter(context(), true);
+        Problems problems = new SimpleProblems();
+        importer.importFrom(content, problems, url.toExternalForm());
+        if (problems.hasErrors()) {
+            // There are problems, so report the original problems ...
+            String msg = JcrI18n.errorsParsingNodeTypeDefinitions.text(url.toExternalForm());
+            throw new RepositoryException(messageFrom(problems, msg));
+        }
+        return registerNodeTypes(importer.getNodeTypeDefinitions(), allowUpdate);
     }
 }

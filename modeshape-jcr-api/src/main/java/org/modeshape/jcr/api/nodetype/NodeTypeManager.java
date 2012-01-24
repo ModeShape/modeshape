@@ -31,6 +31,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.nodetype.InvalidNodeTypeDefinitionException;
 import javax.jcr.nodetype.NodeTypeExistsException;
+import javax.jcr.nodetype.NodeTypeIterator;
 
 /**
  * An extension of JCR 2.0's {@link javax.jcr.nodetype.NodeTypeManager} interface, with methods to support registering node type
@@ -39,52 +40,98 @@ import javax.jcr.nodetype.NodeTypeExistsException;
 public interface NodeTypeManager extends javax.jcr.nodetype.NodeTypeManager {
 
     /**
-     * Read the supplied stream containing node type definitions in the standard JCR 2.0 Compact Node Definition (CND) format or
-     * non-standard Jackrabbit XML format, and register the node types with this repository.
-     * 
+     * Registers or updates the node type definitions per the Compact Node Definition
+     * (CND) file given by the supplied stream. This method is used to register 
+     * or update a set of node types with mutual dependencies. Returns an iterator
+     * over the resulting <code>NodeType</code> objects.
+     * <p>
+     * The effect of the method is "all or nothing"; if an error occurs, no node
+     * types are registered or updated.
+     *
      * @param stream the stream containing the node type definitions in CND format
      * @param allowUpdate a boolean stating whether existing node type definitions should be modified/updated
+     * @return the registered node types.
      * @throws IOException if there is a problem reading from the supplied stream
-     * @throws InvalidNodeTypeDefinitionException if the <code>NodeTypeDefinition</code> is invalid.
-     * @throws NodeTypeExistsException if <code>allowUpdate</code> is <code>false</code> and the <code>NodeTypeDefinition</code>
-     *         specifies a node type name that is already registered.
-     * @throws UnsupportedRepositoryOperationException if this implementation does not support node type registration.
-     * @throws RepositoryException if another error occurs.
+     * @throws InvalidNodeTypeDefinitionException
+     *                                 if a <code>NodeTypeDefinition</code>
+     *                                 within the <code>Collection</code> is invalid or if the
+     *                                 <code>Collection</code> contains an object of a type other than
+     *                                 <code>NodeTypeDefinition</code>.
+     * @throws NodeTypeExistsException if <code>allowUpdate</code> is
+     *                                 <code>false</code> and a <code>NodeTypeDefinition</code> within the
+     *                                 <code>Collection</code> specifies a node type name that is already
+     *                                 registered.
+     * @throws UnsupportedRepositoryOperationException
+     *                                 if this implementation
+     *                                 does not support node type registration.
+     * @throws RepositoryException     if another error occurs.
      */
-    void registerNodeTypes( InputStream stream,
-                            boolean allowUpdate )
-        throws IOException, InvalidNodeTypeDefinitionException, NodeTypeExistsException, UnsupportedRepositoryOperationException,
-        RepositoryException;
+    NodeTypeIterator registerNodeTypes( InputStream stream,
+                                        boolean allowUpdate )
+        throws IOException, InvalidNodeTypeDefinitionException, NodeTypeExistsException, 
+        UnsupportedRepositoryOperationException, RepositoryException;
 
     /**
-     * Read the supplied file containing node type definitions in the standard JCR 2.0 Compact Node Definition (CND) format or
-     * non-standard Jackrabbit XML format, and register the node types with this repository.
-     * 
+     * Registers or updates the node type definitions per the Compact Node Definition
+     * (CND) file given by the supplied file. This method is used to register 
+     * or update a set of node types with mutual dependencies. Returns an iterator
+     * over the resulting <code>NodeType</code> objects.
+     * <p>
+     * The effect of the method is "all or nothing"; if an error occurs, no node
+     * types are registered or updated.
+     *
      * @param file the file containing the node types
      * @param allowUpdate a boolean stating whether existing node type definitions should be modified/updated
+     * @return the registered node types.
      * @throws IOException if there is a problem reading from the supplied stream
-     * @throws InvalidNodeTypeDefinitionException if the <code>NodeTypeDefinition</code> is invalid.
-     * @throws NodeTypeExistsException if <code>allowUpdate</code> is <code>false</code> and the <code>NodeTypeDefinition</code>
-     *         specifies a node type name that is already registered.
-     * @throws UnsupportedRepositoryOperationException if this implementation does not support node type registration.
-     * @throws RepositoryException if another error occurs.
+     * @throws InvalidNodeTypeDefinitionException
+     *                                 if a <code>NodeTypeDefinition</code>
+     *                                 within the <code>Collection</code> is invalid or if the
+     *                                 <code>Collection</code> contains an object of a type other than
+     *                                 <code>NodeTypeDefinition</code>.
+     * @throws NodeTypeExistsException if <code>allowUpdate</code> is
+     *                                 <code>false</code> and a <code>NodeTypeDefinition</code> within the
+     *                                 <code>Collection</code> specifies a node type name that is already
+     *                                 registered.
+     * @throws UnsupportedRepositoryOperationException
+     *                                 if this implementation
+     *                                 does not support node type registration.
+     * @throws RepositoryException     if another error occurs.
      */
-    void registerNodeTypes( File file,
-                            boolean allowUpdate ) throws IOException, RepositoryException;
+    NodeTypeIterator registerNodeTypes( File file,
+                                        boolean allowUpdate ) 
+        throws IOException, InvalidNodeTypeDefinitionException, NodeTypeExistsException, 
+        UnsupportedRepositoryOperationException, RepositoryException;
 
     /**
-     * Read the supplied stream containing node type definitions in the standard JCR 2.0 Compact Node Definition (CND) format or
-     * non-standard Jackrabbit XML format, and register the node types with this repository.
-     * 
+     * Registers or updates the node type definitions per the Compact Node Definition
+     * (CND) file given by the supplied URL. This method is used to register 
+     * or update a set of node types with mutual dependencies. Returns an iterator
+     * over the resulting <code>NodeType</code> objects.
+     * <p>
+     * The effect of the method is "all or nothing"; if an error occurs, no node
+     * types are registered or updated.
+     *
      * @param url the URL that can be resolved to the file containing the node type definitions in CND format
      * @param allowUpdate a boolean stating whether existing node type definitions should be modified/updated
+     * @return the registered node types.
      * @throws IOException if there is a problem reading from the supplied stream
-     * @throws InvalidNodeTypeDefinitionException if the <code>NodeTypeDefinition</code> is invalid.
-     * @throws NodeTypeExistsException if <code>allowUpdate</code> is <code>false</code> and the <code>NodeTypeDefinition</code>
-     *         specifies a node type name that is already registered.
-     * @throws UnsupportedRepositoryOperationException if this implementation does not support node type registration.
-     * @throws RepositoryException if another error occurs.
+     * @throws InvalidNodeTypeDefinitionException
+     *                                 if a <code>NodeTypeDefinition</code>
+     *                                 within the <code>Collection</code> is invalid or if the
+     *                                 <code>Collection</code> contains an object of a type other than
+     *                                 <code>NodeTypeDefinition</code>.
+     * @throws NodeTypeExistsException if <code>allowUpdate</code> is
+     *                                 <code>false</code> and a <code>NodeTypeDefinition</code> within the
+     *                                 <code>Collection</code> specifies a node type name that is already
+     *                                 registered.
+     * @throws UnsupportedRepositoryOperationException
+     *                                 if this implementation
+     *                                 does not support node type registration.
+     * @throws RepositoryException     if another error occurs.
      */
-    void registerNodeTypes( URL url,
-                            boolean allowUpdate ) throws IOException, RepositoryException;
+    NodeTypeIterator registerNodeTypes( URL url,
+                                        boolean allowUpdate ) 
+        throws IOException, InvalidNodeTypeDefinitionException, NodeTypeExistsException, 
+        UnsupportedRepositoryOperationException, RepositoryException;
 }
