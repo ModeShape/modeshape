@@ -59,6 +59,7 @@ import org.modeshape.jcr.sequencer.AbstractSequencerTest;
  */
 public class MSOfficeMetadataSequencerTest extends AbstractSequencerTest {
 
+    @SuppressWarnings( "serial" )
     private static final Map<String, Integer> WORD_HEADINGS = new LinkedHashMap<String, Integer>() {
         {
             put("Test Heading 1", 1);
@@ -71,6 +72,7 @@ public class MSOfficeMetadataSequencerTest extends AbstractSequencerTest {
         }
     };
 
+    @SuppressWarnings( "serial" )
     private static final Map<String, String> EXCEL_SHEETS = new LinkedHashMap<String, String>() {
         {
             put("Sheet1", "This is a text");

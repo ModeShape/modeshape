@@ -23,14 +23,46 @@
  */
 package org.modeshape.sequencer.msoffice;
 
-import javax.jcr.*;
+import static org.modeshape.jcr.api.JcrConstants.JCR_MIME_TYPE;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.AUTHOR;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.CHARACTERS;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.COMMENT;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.CREATED;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.CREATING_APPLICATION;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.EXCEL_SHEET;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.EXCEL_SHEET_NODE;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.FULL_CONTENT;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.HEADING_LEVEL;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.HEADING_NAME;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.HEADING_NODE;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.KEYWORDS;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.LAST_PRINTED;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.METADATA_NODE;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.NOTES;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.PAGES;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.REVISION;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.SAVED;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.SHEET_NAME;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.SLIDE;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.SLIDE_NODE;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.SUBJECT;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.TEMPLATE;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.TEXT;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.THUMBNAIL;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.TITLE;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.TOTAL_EDITING_TIME;
+import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.WORDS;
+import java.io.IOException;
+import java.io.InputStream;
+import javax.jcr.Binary;
+import javax.jcr.NamespaceRegistry;
+import javax.jcr.Node;
+import javax.jcr.Property;
+import javax.jcr.RepositoryException;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.jcr.api.JcrConstants;
-import static org.modeshape.jcr.api.JcrConstants.*;
 import org.modeshape.jcr.api.mimetype.MimeTypeConstants;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
-import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.*;
 import org.modeshape.sequencer.msoffice.excel.ExcelMetadata;
 import org.modeshape.sequencer.msoffice.excel.ExcelMetadataReader;
 import org.modeshape.sequencer.msoffice.excel.ExcelSheetMetadata;
@@ -41,8 +73,6 @@ import org.modeshape.sequencer.msoffice.word.WordMetadata;
 import org.modeshape.sequencer.msoffice.word.WordMetadataReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.io.IOException;
-import java.io.InputStream;
 
 /**
  * A sequencer that processes the content of an MS Office document, extracts the metadata for the file, and then writes that
@@ -87,14 +117,17 @@ import java.io.InputStream;
 public class MSOfficeMetadataSequencer extends Sequencer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MSOfficeMetadataSequencer.class);
-    
+
     @Override
-    public void initialize( NamespaceRegistry registry, NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
+    public void initialize( NamespaceRegistry registry,
+                            NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
         registerNodeTypes("msoffice.cnd", nodeTypeManager, true);
     }
 
     @Override
-    public boolean execute( Property inputProperty, Node outputNode, Context context ) throws Exception {
+    public boolean execute( Property inputProperty,
+                            Node outputNode,
+                            Context context ) throws Exception {
         Binary binaryValue = inputProperty.getBinary();
         CheckArg.isNotNull(binaryValue, "binary");
 
@@ -136,7 +169,9 @@ public class MSOfficeMetadataSequencer extends Sequencer {
         return MimeTypeConstants.MICROSOFT_EXCEL.equalsIgnoreCase(mimeType);
     }
 
-    private void sequenceExcel( Node sequencedNode, org.modeshape.jcr.api.ValueFactory valueFactory, InputStream stream ) throws IOException, RepositoryException {
+    private void sequenceExcel( Node sequencedNode,
+                                org.modeshape.jcr.api.ValueFactory valueFactory,
+                                InputStream stream ) throws IOException, RepositoryException {
         ExcelMetadata excelMetadata = ExcelMetadataReader.instance(stream);
         recordMetadata(sequencedNode, valueFactory, excelMetadata.getMetadata());
         sequencedNode.setProperty(FULL_CONTENT, excelMetadata.getText());
@@ -148,12 +183,13 @@ public class MSOfficeMetadataSequencer extends Sequencer {
         }
     }
 
-
     private boolean isWord( String mimeType ) {
         return MimeTypeConstants.MICROSOFT_WORD.equalsIgnoreCase(mimeType);
     }
 
-    private void sequenceWord( Node rootNode, org.modeshape.jcr.api.ValueFactory valueFactory, InputStream stream ) throws RepositoryException, IOException {
+    private void sequenceWord( Node rootNode,
+                               org.modeshape.jcr.api.ValueFactory valueFactory,
+                               InputStream stream ) throws RepositoryException, IOException {
         // Sometime in the future this will sequence WORD Table of contents.
         WordMetadata wordMetadata = WordMetadataReader.instance(stream);
         recordMetadata(rootNode, valueFactory, wordMetadata.getMetadata());
@@ -169,7 +205,9 @@ public class MSOfficeMetadataSequencer extends Sequencer {
         return MimeTypeConstants.MICROSOFT_POWERPOINT.equalsIgnoreCase(mimeType);
     }
 
-    private void sequencePowerpoint( Node rootNode, org.modeshape.jcr.api.ValueFactory valueFactory, InputStream stream ) throws IOException, RepositoryException {
+    private void sequencePowerpoint( Node rootNode,
+                                     org.modeshape.jcr.api.ValueFactory valueFactory,
+                                     InputStream stream ) throws IOException, RepositoryException {
         PowerpointMetadata deck = PowerPointMetadataReader.instance(stream);
         recordMetadata(rootNode, valueFactory, deck.getMetadata());
 
@@ -182,7 +220,9 @@ public class MSOfficeMetadataSequencer extends Sequencer {
         }
     }
 
-    private void recordMetadata( Node rootNode, org.modeshape.jcr.api.ValueFactory valueFactory, MSOfficeMetadata metadata ) throws RepositoryException {
+    private void recordMetadata( Node rootNode,
+                                 org.modeshape.jcr.api.ValueFactory valueFactory,
+                                 MSOfficeMetadata metadata ) throws RepositoryException {
         rootNode.setProperty(TITLE, metadata.getTitle());
         rootNode.setProperty(SUBJECT, metadata.getSubject());
         rootNode.setProperty(AUTHOR, metadata.getAuthor());
@@ -192,7 +232,7 @@ public class MSOfficeMetadataSequencer extends Sequencer {
         rootNode.setProperty(SAVED, valueFactory.createValue(metadata.getLastSaved()));
         rootNode.setProperty(REVISION, metadata.getRevision());
         rootNode.setProperty(TOTAL_EDITING_TIME, metadata.getTotalEditingTime());
-        rootNode.setProperty(LAST_PRINTED,valueFactory.createValue(metadata.getLastPrinted()));
+        rootNode.setProperty(LAST_PRINTED, valueFactory.createValue(metadata.getLastPrinted()));
         rootNode.setProperty(CREATED, valueFactory.createValue(metadata.getCreated()));
         rootNode.setProperty(PAGES, metadata.getPages());
         rootNode.setProperty(WORDS, metadata.getWords());

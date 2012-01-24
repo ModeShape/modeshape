@@ -28,8 +28,11 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-import javax.jcr.*;
-import javax.jcr.nodetype.NodeTypeExistsException;
+import javax.jcr.NamespaceException;
+import javax.jcr.NamespaceRegistry;
+import javax.jcr.Node;
+import javax.jcr.Property;
+import javax.jcr.RepositoryException;
 import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 
@@ -165,26 +168,26 @@ public abstract class Sequencer {
     }
 
     /**
-     * Registers a namespace using the given {@link NamespaceRegistry}, if the namespace has not been previously registered. 
+     * Registers a namespace using the given {@link NamespaceRegistry}, if the namespace has not been previously registered.
      * 
      * @param namespacePrefix a non-null {@code String}
      * @param namespaceUri a non-null {@code String}
      * @param namespaceRegistry a {@code NamespaceRegistry} instance.
      * @return true if the namespace has been registered, or false if it was already registered
-     * 
      * @throws RepositoryException if anything fails during the registration process
      */
-    protected boolean registerNamespace(String namespacePrefix, String namespaceUri, NamespaceRegistry namespaceRegistry) throws RepositoryException {
+    protected boolean registerNamespace( String namespacePrefix,
+                                         String namespaceUri,
+                                         NamespaceRegistry namespaceRegistry ) throws RepositoryException {
         if (namespacePrefix == null || namespaceUri == null) {
             throw new IllegalArgumentException("Neither the namespace prefix, nor the uri should be null");
         }
         try {
-            //if the call succeeds, means it was previously registered
+            // if the call succeeds, means it was previously registered
             namespaceRegistry.getPrefix(namespaceUri);
             return false;
-        }
-        catch (NamespaceException e) {
-            //namespace not registered yet
+        } catch (NamespaceException e) {
+            // namespace not registered yet
             namespaceRegistry.registerNamespace(namespacePrefix, namespaceUri);
             return true;
         }
@@ -193,29 +196,41 @@ public abstract class Sequencer {
     /**
      * Registers node types from a CND file, using the given {@link NodeTypeManager}. Any namespaces defined in the CND file will
      * be automatically registered as well.
-     *
+     * 
      * @param cndFile the relative path to the cnd file, which is loaded using via {@link Class#getResourceAsStream(String)}
      * @param nodeTypeManager the node type manager with which the cnd will be registered
-     * @param allowUpdate a boolean which indicates whether updates on existing node types are allowed or no.
-     * See {@link NodeTypeManager#registerNodeType(javax.jcr.nodetype.NodeTypeDefinition, boolean)}
+     * @param allowUpdate a boolean which indicates whether updates on existing node types are allowed or no. See
+     *        {@link NodeTypeManager#registerNodeType(javax.jcr.nodetype.NodeTypeDefinition, boolean)}
      * @throws RepositoryException if anything fails
      * @throws IOException if any stream related operations fail
      */
-    protected void registerNodeTypes( String cndFile, NodeTypeManager nodeTypeManager, boolean allowUpdate ) throws RepositoryException, IOException {
+    protected void registerNodeTypes( String cndFile,
+                                      NodeTypeManager nodeTypeManager,
+                                      boolean allowUpdate ) throws RepositoryException, IOException {
         InputStream cndStream = getClass().getResourceAsStream(cndFile);
         registerNodeTypes(cndStream, nodeTypeManager, allowUpdate);
     }
 
     /**
      * See {@link Sequencer#registerNodeTypes(String, org.modeshape.jcr.api.nodetype.NodeTypeManager, boolean)}
+     * 
+     * @param cndStream the input stream containing the CND file; may not be null
+     * @param nodeTypeManager the node type manager with which the node types in the CND file should be registered; may not be
+     *        null
+     * @param allowUpdate a boolean which indicates whether updates on existing node types are allowed or no. See
+     *        {@link NodeTypeManager#registerNodeType(javax.jcr.nodetype.NodeTypeDefinition, boolean)}
+     * @throws RepositoryException if anything fails
+     * @throws IOException if any stream related operations fail
      */
-    protected void registerNodeTypes( InputStream cndStream, NodeTypeManager nodeTypeManager, boolean allowUpdate ) throws RepositoryException, IOException {
+    protected void registerNodeTypes( InputStream cndStream,
+                                      NodeTypeManager nodeTypeManager,
+                                      boolean allowUpdate ) throws RepositoryException, IOException {
         if (cndStream == null) {
             throw new IllegalArgumentException("The stream to the given cnd file is null");
         }
         nodeTypeManager.registerNodeTypes(cndStream, allowUpdate);
     }
-    
+
     /**
      * The sequencer context represents the complete context of a sequencer invocation. Currently, this information includes the
      * current time of sequencer execution.
@@ -229,7 +244,6 @@ public abstract class Sequencer {
          */
         Calendar getTimestamp();
 
-
         /**
          * Returns a {@link org.modeshape.jcr.api.ValueFactory} instance which can be used to perform additional type conversions,
          * from what {@link javax.jcr.ValueFactory} offers
@@ -240,7 +254,7 @@ public abstract class Sequencer {
 
         /**
          * Returns a {@link MimeTypeDetector} implementation which can be used to determine content mime-type.
-         *
+         * 
          * @return a non-null value, using the output node's session as context
          */
         MimeTypeDetector mimeTypeDetector();
