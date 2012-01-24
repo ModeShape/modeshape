@@ -49,7 +49,7 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.modeshape.jcr.core.JaasSecurityContext.UserPasswordCallbackHandler;
+import org.modeshape.jcr.security.JaasSecurityContext.UserPasswordCallbackHandler;
 
 public class AuthenticationAndAuthorizationTest {
 

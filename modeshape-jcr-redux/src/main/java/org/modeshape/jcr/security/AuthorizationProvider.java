@@ -23,8 +23,8 @@
  */
 package org.modeshape.jcr.security;
 
+import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.ModeShapePermissions;
-import org.modeshape.jcr.core.ExecutionContext;
 import org.modeshape.jcr.value.Path;
 
 /**

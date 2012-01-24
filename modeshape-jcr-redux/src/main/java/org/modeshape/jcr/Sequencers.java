@@ -45,8 +45,8 @@ import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.HashCode;
 import org.modeshape.common.util.Logger;
 import org.modeshape.jcr.RepositoryConfiguration.Component;
-import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
+import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.NodeKey;
@@ -57,7 +57,6 @@ import org.modeshape.jcr.cache.change.PropertyAdded;
 import org.modeshape.jcr.cache.change.PropertyChanged;
 import org.modeshape.jcr.cache.change.WorkspaceAdded;
 import org.modeshape.jcr.cache.change.WorkspaceRemoved;
-import org.modeshape.jcr.core.ExecutionContext;
 import org.modeshape.jcr.sequencer.InvalidSequencerPathExpression;
 import org.modeshape.jcr.sequencer.SequencerPathExpression;
 import org.modeshape.jcr.sequencer.SequencerPathExpression.Matcher;
@@ -74,6 +73,7 @@ import org.modeshape.jcr.value.ValueFactory;
  * very frequently. Also, that structure is a bit backward compared to how the sequencers are defined in the configuration.
  * </p>
  */
+@Immutable
 public class Sequencers implements ChangeSetListener {
 
     private final JcrRepository.RunningState repository;
@@ -330,7 +330,9 @@ public class Sequencers implements ChangeSetListener {
         private final org.modeshape.jcr.api.ValueFactory valueFactory;
         private final MimeTypeDetector mimeTypeDetector;
 
-        protected SequencingContext( DateTime now, org.modeshape.jcr.api.ValueFactory jcrValueFactory, MimeTypeDetector mimeTypeDetector ) {
+        protected SequencingContext( DateTime now,
+                                     org.modeshape.jcr.api.ValueFactory jcrValueFactory,
+                                     MimeTypeDetector mimeTypeDetector ) {
             this.now = now;
             this.valueFactory = jcrValueFactory;
             this.mimeTypeDetector = mimeTypeDetector;

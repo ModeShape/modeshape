@@ -1,13 +1,15 @@
 {
     "name" : "My Repository",
     "jndiName" : "java:jcr/local/MyRepository",
-    "largeValueSizeInBytes" : 10240,
     "monitoring" : {
         "enabled" : true
     },
     "storage" : {
         "cacheName" : "some-cache",
-        "cacheConfiguration" : "infinispan.xml"
+        "cacheConfiguration" : "infinispan.xml",
+        "binaryStorage" : {
+            "minimumBinarySizeInBytes" : 10240
+        }
     },
     "workspaces" : {
         "predefined" : ["ws1","ws2"],
@@ -33,12 +35,25 @@
     },
     "query" : {
         "enabled" : true,
-        "indexLocation" : "/some/path",
         "rebuildUponStartup" : "ifMissing",
+        "indexStorage" : {
+            "type" : "ram"
+        },
+        "indexing" : {
+            "indexFormat" : "LUCENE_34",
+            "analyzer" : "org.foo.MyAnalyzer",
+            "similarity" : "org.foo.MySimilarity",
+            "batchSize" : 1,
+            "readerStrategy" : "shared",
+            "mode" : "sync",
+            "backend" : {
+                "type" : "lucene"
+            }
+        },
         "extractors" : [
             {
                 "name" : "General Extractor",
-                "type" : "Tika"
+                "type" : "tika"
             }
         ]
     },

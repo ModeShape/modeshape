@@ -50,6 +50,7 @@ import org.modeshape.common.annotation.GuardedBy;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.Logger;
+import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.api.value.DateTime;
@@ -61,9 +62,9 @@ import org.modeshape.jcr.cache.DocumentAlreadyExistsException;
 import org.modeshape.jcr.cache.DocumentNotFoundException;
 import org.modeshape.jcr.cache.LockFailureException;
 import org.modeshape.jcr.cache.MutableCachedNode;
-import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.NodeNotFoundException;
+import org.modeshape.jcr.cache.PathCache;
 import org.modeshape.jcr.cache.ReferentialIntegrityException;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.SessionCacheMonitor;
@@ -75,7 +76,6 @@ import org.modeshape.jcr.cache.document.SessionNode.ChangedChildren;
 import org.modeshape.jcr.cache.document.SessionNode.LockChange;
 import org.modeshape.jcr.cache.document.SessionNode.MixinChanges;
 import org.modeshape.jcr.cache.document.SessionNode.ReferrerChanges;
-import org.modeshape.jcr.core.ExecutionContext;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
@@ -596,8 +596,8 @@ public class WritableSessionCache extends AbstractSessionCache {
         SchematicDb database = workspaceCache.database();
         DocumentTranslator translator = workspaceCache.translator();
 
-        PathHelper sessionPaths = new PathHelper(this);
-        PathHelper workspacePaths = new PathHelper(workspaceCache);
+        PathCache sessionPaths = new PathCache(this);
+        PathCache workspacePaths = new PathCache(workspaceCache);
 
         // Make the changes (in order the nodes were added to the session) ...
         Set<NodeKey> referrers = null;
@@ -827,29 +827,6 @@ public class WritableSessionCache extends AbstractSessionCache {
         changes.setChangedNodes(changedNodes.keySet()); // don't need to make a copy
         changes.freeze(userId, userData, timestamp);
         return changes;
-    }
-
-    protected static class PathHelper {
-        private final NodeCache cache;
-        private final Map<NodeKey, Path> paths = new HashMap<NodeKey, Path>();
-
-        public PathHelper( NodeCache cache ) {
-            this.cache = cache;
-        }
-
-        public Path getPath( CachedNode node ) {
-            NodeKey key = node.getKey();
-            Path path = paths.get(key);
-            if (path == null) {
-                path = node.getPath(cache);
-                paths.put(key, path); // even if null
-            }
-            return path;
-        }
-
-        public boolean removePath( NodeKey key ) {
-            return paths.remove(key) != null;
-        }
     }
 
     protected SessionNode add( SessionNode newNode ) {

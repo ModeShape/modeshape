@@ -42,6 +42,7 @@ import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.query.model.Operator;
 import org.modeshape.graph.query.model.Order;
 import org.modeshape.graph.query.model.TypeSystem;
+import org.modeshape.jcr.Migrated;
 import org.modeshape.jcr.xpath.XPath.And;
 import org.modeshape.jcr.xpath.XPath.AnyKindTest;
 import org.modeshape.jcr.xpath.XPath.AttributeNameTest;
@@ -72,6 +73,7 @@ import org.modeshape.jcr.xpath.XPath.TextTest;
 /**
  * 
  */
+@Migrated
 public class XPathParserTest {
 
     private TypeSystem typeSystem;
@@ -105,54 +107,56 @@ public class XPathParserTest {
 
     @Test
     public void shouldParseXPathExpressions2() {
-        assertParsable("/jcr:root/a/b/c", pathExpr(axisStep(nameTest("jcr", "root")),
-                                                   axisStep(nameTest("a")),
-                                                   axisStep(nameTest("b")),
-                                                   axisStep(nameTest("c"))));
-        assertParsable("/jcr:root/a/b/c[*]", pathExpr(axisStep(nameTest("jcr", "root")),
-                                                      axisStep(nameTest("a")),
-                                                      axisStep(nameTest("b")),
-                                                      axisStep(nameTest("c"), wildcard())));
+        assertParsable("/jcr:root/a/b/c",
+                       pathExpr(axisStep(nameTest("jcr", "root")),
+                                axisStep(nameTest("a")),
+                                axisStep(nameTest("b")),
+                                axisStep(nameTest("c"))));
+        assertParsable("/jcr:root/a/b/c[*]",
+                       pathExpr(axisStep(nameTest("jcr", "root")),
+                                axisStep(nameTest("a")),
+                                axisStep(nameTest("b")),
+                                axisStep(nameTest("c"), wildcard())));
         assertParsable("/jcr:root/some[1]", pathExpr(axisStep(nameTest("jcr", "root")), axisStep(nameTest("some"), literal("1"))));
-        assertParsable("/jcr:root/element(*)", pathExpr(axisStep(nameTest("jcr", "root")), axisStep(element(wildcard(),
-                                                                                                            wildcard()))));
-        assertParsable("/jcr:root/element(name)", pathExpr(axisStep(nameTest("jcr", "root")), axisStep(element(nameTest("name"),
-                                                                                                               wildcard()))));
-        assertParsable("/jcr:root/element(*, *)", pathExpr(axisStep(nameTest("jcr", "root")), axisStep(element(wildcard(),
-                                                                                                               wildcard()))));
-        assertParsable("/jcr:root/element(*, my:type)", pathExpr(axisStep(nameTest("jcr", "root")),
-                                                                 axisStep(element(wildcard(), nameTest("my", "type")))));
+        assertParsable("/jcr:root/element(*)",
+                       pathExpr(axisStep(nameTest("jcr", "root")), axisStep(element(wildcard(), wildcard()))));
+        assertParsable("/jcr:root/element(name)",
+                       pathExpr(axisStep(nameTest("jcr", "root")), axisStep(element(nameTest("name"), wildcard()))));
+        assertParsable("/jcr:root/element(*, *)",
+                       pathExpr(axisStep(nameTest("jcr", "root")), axisStep(element(wildcard(), wildcard()))));
+        assertParsable("/jcr:root/element(*, my:type)",
+                       pathExpr(axisStep(nameTest("jcr", "root")), axisStep(element(wildcard(), nameTest("my", "type")))));
         assertParsable("/jcr:root/element(ex:name, my:type)",
-                       pathExpr(axisStep(nameTest("jcr", "root")), axisStep(element(nameTest("ex", "name"),
-                                                                                    nameTest("my", "type")))));
-        assertParsable("/jcr:root/element(name, my:type)", pathExpr(axisStep(nameTest("jcr", "root")),
-                                                                    axisStep(element(nameTest("name"), nameTest("my", "type")))));
-        assertParsable("/jcr:root/element(name, type)", pathExpr(axisStep(nameTest("jcr", "root")),
-                                                                 axisStep(element(nameTest("name"), nameTest("type")))));
-        assertParsable("/jcr:root/some[1]/element(nodes, my:type)[1]", pathExpr(axisStep(nameTest("jcr", "root")),
-                                                                                axisStep(nameTest("some"), literal("1")),
-                                                                                axisStep(element(nameTest("nodes"),
-                                                                                                 nameTest("my", "type")),
-                                                                                         literal("1"))));
-        assertParsable("/jcr:root/some[1]/element(*, my:type)[1]", pathExpr(axisStep(nameTest("jcr", "root")),
-                                                                            axisStep(nameTest("some"), literal("1")),
-                                                                            axisStep(element(wildcard(), nameTest("my", "type")),
-                                                                                     literal("1"))));
+                       pathExpr(axisStep(nameTest("jcr", "root")),
+                                axisStep(element(nameTest("ex", "name"), nameTest("my", "type")))));
+        assertParsable("/jcr:root/element(name, my:type)",
+                       pathExpr(axisStep(nameTest("jcr", "root")), axisStep(element(nameTest("name"), nameTest("my", "type")))));
+        assertParsable("/jcr:root/element(name, type)",
+                       pathExpr(axisStep(nameTest("jcr", "root")), axisStep(element(nameTest("name"), nameTest("type")))));
+        assertParsable("/jcr:root/some[1]/element(nodes, my:type)[1]",
+                       pathExpr(axisStep(nameTest("jcr", "root")),
+                                axisStep(nameTest("some"), literal("1")),
+                                axisStep(element(nameTest("nodes"), nameTest("my", "type")), literal("1"))));
+        assertParsable("/jcr:root/some[1]/element(*, my:type)[1]",
+                       pathExpr(axisStep(nameTest("jcr", "root")),
+                                axisStep(nameTest("some"), literal("1")),
+                                axisStep(element(wildcard(), nameTest("my", "type")), literal("1"))));
     }
 
     @Test
     public void shouldParseXPathExpressionWithOrderBy() {
-        assertParsable("//element(*, my:type) order by @a1,@a2", pathExpr(orderBy(asc(nameTest("a1")), asc(nameTest("a2"))),
-                                                                          descendantOrSelf(),
-                                                                          axisStep(element(wildcard(), nameTest("my", "type")))));
+        assertParsable("//element(*, my:type) order by @a1,@a2",
+                       pathExpr(orderBy(asc(nameTest("a1")), asc(nameTest("a2"))),
+                                descendantOrSelf(),
+                                axisStep(element(wildcard(), nameTest("my", "type")))));
         assertParsable("//element(*, my:type) order by @p:a1, @a2",
                        pathExpr(orderBy(asc(nameTest("p", "a1")), asc(nameTest("a2"))),
                                 descendantOrSelf(),
                                 axisStep(element(wildcard(), nameTest("my", "type")))));
-        assertParsable("/jcr:root/element(name, my:type) order by @p:a1", pathExpr(orderBy(asc(nameTest("p", "a1"))),
-                                                                                   axisStep(nameTest("jcr", "root")),
-                                                                                   axisStep(element(nameTest("name"),
-                                                                                                    nameTest("my", "type")))));
+        assertParsable("/jcr:root/element(name, my:type) order by @p:a1",
+                       pathExpr(orderBy(asc(nameTest("p", "a1"))),
+                                axisStep(nameTest("jcr", "root")),
+                                axisStep(element(nameTest("name"), nameTest("my", "type")))));
         assertParsable("/jcr:root order by @p:a1", pathExpr(orderBy(asc(nameTest("p", "a1"))), axisStep(nameTest("jcr", "root"))));
     }
 
@@ -174,9 +178,8 @@ public class XPathParserTest {
 
     @Test
     public void shouldParsePathExpressionWithSpaceInPath() {
-        assertThat(parser.parsePathExpr(tokenize("/a/b/c_x0020_d")), is(pathExpr(axisStep(nameTest("a")),
-                                                                                 axisStep(nameTest("b")),
-                                                                                 axisStep(nameTest("c d")))));
+        assertThat(parser.parsePathExpr(tokenize("/a/b/c_x0020_d")),
+                   is(pathExpr(axisStep(nameTest("a")), axisStep(nameTest("b")), axisStep(nameTest("c d")))));
     }
 
     @Test
@@ -186,22 +189,23 @@ public class XPathParserTest {
 
     @Test
     public void shouldParsePathExpressionWithAbbreviatedDescendantOrSelfWithRelativeNamePathPredicate() {
-        assertThat(parser.parsePathExpr(tokenize("//.[c]")), is(pathExpr(descendantOrSelf(), filterStep(contextItem(),
-                                                                                                        nameTest("c")))));
+        assertThat(parser.parsePathExpr(tokenize("//.[c]")),
+                   is(pathExpr(descendantOrSelf(), filterStep(contextItem(), nameTest("c")))));
     }
 
     @Test
     public void shouldParsePathExpressionWithAbbreviatedDescendantOrSelfWithRelativeNumericLiteralPredicate() {
-        assertThat(parser.parsePathExpr(tokenize("//.[3]")), is(pathExpr(descendantOrSelf(), filterStep(contextItem(),
-                                                                                                        literal("3")))));
+        assertThat(parser.parsePathExpr(tokenize("//.[3]")),
+                   is(pathExpr(descendantOrSelf(), filterStep(contextItem(), literal("3")))));
     }
 
     @Test
     public void shouldParsePathExpressionWithNameTestsAndWildcard() {
-        assertThat(parser.parsePathExpr(tokenize("/jcr:root/a/b/*")), is(pathExpr(axisStep(nameTest("jcr", "root")),
-                                                                                  axisStep(nameTest("a")),
-                                                                                  axisStep(nameTest("b")),
-                                                                                  axisStep(wildcard()))));
+        assertThat(parser.parsePathExpr(tokenize("/jcr:root/a/b/*")),
+                   is(pathExpr(axisStep(nameTest("jcr", "root")),
+                               axisStep(nameTest("a")),
+                               axisStep(nameTest("b")),
+                               axisStep(wildcard()))));
     }
 
     @Test
@@ -219,9 +223,8 @@ public class XPathParserTest {
 
     @Test
     public void shouldParseRelativePathExpressionWithAbbreviatedDescendantOrSelfWithNameTestAfter() {
-        assertThat(parser.parseRelativePathExpr(tokenize("a//b:c")), is(relativePathExpr(axisStep(nameTest("a")),
-                                                                                         descendantOrSelf(),
-                                                                                         axisStep(nameTest("b", "c")))));
+        assertThat(parser.parseRelativePathExpr(tokenize("a//b:c")),
+                   is(relativePathExpr(axisStep(nameTest("a")), descendantOrSelf(), axisStep(nameTest("b", "c")))));
     }
 
     @Test
@@ -426,10 +429,8 @@ public class XPathParserTest {
 
     @Test
     public void shouldParsePredicatesWithAttributeLessThanIntegerLiteral() {
-        assertThat(parser.parsePredicates(tokenize("[@ex:age<3]")), is(predicates(comparison(attributeNameTest(nameTest("ex",
-                                                                                                                        "age")),
-                                                                                             Operator.LESS_THAN,
-                                                                                             literal("3")))));
+        assertThat(parser.parsePredicates(tokenize("[@ex:age<3]")),
+                   is(predicates(comparison(attributeNameTest(nameTest("ex", "age")), Operator.LESS_THAN, literal("3")))));
     }
 
     @Test
@@ -910,25 +911,22 @@ public class XPathParserTest {
     @Test
     public void shouldParseOrderByMultipleAttributeNameClauses() {
         assertThat(parser.parseOrderBy(tokenize("order by @a1,@a2")), is(orderBy(asc(nameTest("a1")), asc(nameTest("a2")))));
-        assertThat(parser.parseOrderBy(tokenize("order by @a1 ascending , @a2 ascending")), is(orderBy(asc(nameTest("a1")),
-                                                                                                       asc(nameTest("a2")))));
-        assertThat(parser.parseOrderBy(tokenize("order by @a1 descending, @a2 ascending")), is(orderBy(desc(nameTest("a1")),
-                                                                                                       asc(nameTest("a2")))));
-        assertThat(parser.parseOrderBy(tokenize("order by @a1 ascending , @a2 descending")), is(orderBy(asc(nameTest("a1")),
-                                                                                                        desc(nameTest("a2")))));
-        assertThat(parser.parseOrderBy(tokenize("order by @a1 descending, @a2 descending")), is(orderBy(desc(nameTest("a1")),
-                                                                                                        desc(nameTest("a2")))));
-        assertThat(parser.parseOrderBy(tokenize("order by @pre:a1, @pre:a2")), is(orderBy(asc(nameTest("pre", "a1")),
-                                                                                          asc(nameTest("pre", "a2")))));
-        assertThat(parser.parseOrderBy(tokenize("order by @a1 ascending, @pre:a2 ascending")), is(orderBy(asc(nameTest("a1")),
-                                                                                                          asc(nameTest("pre",
-                                                                                                                       "a2")))));
-        assertThat(parser.parseOrderBy(tokenize("order by @a1 descending, @pre:a2 ascending")), is(orderBy(desc(nameTest("a1")),
-                                                                                                           asc(nameTest("pre",
-                                                                                                                        "a2")))));
-        assertThat(parser.parseOrderBy(tokenize("order by @a1 ascending, @pre:a2 descending")), is(orderBy(asc(nameTest("a1")),
-                                                                                                           desc(nameTest("pre",
-                                                                                                                         "a2")))));
+        assertThat(parser.parseOrderBy(tokenize("order by @a1 ascending , @a2 ascending")),
+                   is(orderBy(asc(nameTest("a1")), asc(nameTest("a2")))));
+        assertThat(parser.parseOrderBy(tokenize("order by @a1 descending, @a2 ascending")),
+                   is(orderBy(desc(nameTest("a1")), asc(nameTest("a2")))));
+        assertThat(parser.parseOrderBy(tokenize("order by @a1 ascending , @a2 descending")),
+                   is(orderBy(asc(nameTest("a1")), desc(nameTest("a2")))));
+        assertThat(parser.parseOrderBy(tokenize("order by @a1 descending, @a2 descending")),
+                   is(orderBy(desc(nameTest("a1")), desc(nameTest("a2")))));
+        assertThat(parser.parseOrderBy(tokenize("order by @pre:a1, @pre:a2")),
+                   is(orderBy(asc(nameTest("pre", "a1")), asc(nameTest("pre", "a2")))));
+        assertThat(parser.parseOrderBy(tokenize("order by @a1 ascending, @pre:a2 ascending")),
+                   is(orderBy(asc(nameTest("a1")), asc(nameTest("pre", "a2")))));
+        assertThat(parser.parseOrderBy(tokenize("order by @a1 descending, @pre:a2 ascending")),
+                   is(orderBy(desc(nameTest("a1")), asc(nameTest("pre", "a2")))));
+        assertThat(parser.parseOrderBy(tokenize("order by @a1 ascending, @pre:a2 descending")),
+                   is(orderBy(asc(nameTest("a1")), desc(nameTest("pre", "a2")))));
         assertThat(parser.parseOrderBy(tokenize("order by @a1 descending, @pre:a2 descending")),
                    is(orderBy(desc(nameTest("a1")), desc(nameTest("pre", "a2")))));
     }

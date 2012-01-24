@@ -42,7 +42,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.RepositoryNodeTypeManager.NodeTypes;
-import org.modeshape.jcr.core.ExecutionContext;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.NamespaceRegistry;

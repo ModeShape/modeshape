@@ -58,7 +58,6 @@ import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.PropertyTypeUtil;
 import org.modeshape.jcr.cache.SessionCache;
-import org.modeshape.jcr.core.ExecutionContext;
 import org.modeshape.jcr.value.DateTimeFactory;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;

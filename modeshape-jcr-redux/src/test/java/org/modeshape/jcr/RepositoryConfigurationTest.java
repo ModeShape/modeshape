@@ -48,37 +48,67 @@ public class RepositoryConfigurationTest {
 
     @Test
     public void shouldReportErrorWithExtraTopLevelProperties() {
-        assertNotValid(1, "{ \"notValid\" : false }");
+        assertNotValid(1, "{ 'name' = 'nm', 'notValid' : false }");
     }
 
     @Test
     public void shouldReportErrorWithExtraStorageProperties() {
-        assertNotValid(1, "{ \"storage\" : { \"notValid\" : false } }");
+        assertNotValid(1, "{ 'name' = 'nm', 'storage' : { 'notValid' : false } }");
     }
 
     @Test
     public void shouldReportErrorWithExtraWorkspacesProperties() {
-        assertNotValid(1, "{ \"workspaces\" : { \"notValid\" : false } }");
+        assertNotValid(1, "{ 'name' = 'nm', \"workspaces\" : { \"notValid\" : false } }");
     }
 
     @Test
     public void shouldReportErrorWithExtraSecurityProperties() {
-        assertNotValid(1, "{ \"security\" : { \"notValid\" : false } }");
+        assertNotValid(1, "{ 'name' = 'nm', \"security\" : { \"notValid\" : false } }");
     }
 
     @Test
     public void shouldReportErrorWithExtraQueryProperties() {
-        assertNotValid(1, "{ \"query\" : { \"notValid\" : false } }");
+        assertNotValid(1, "{ 'name' = 'nm', \"query\" : { \"notValid\" : false } }");
     }
 
     @Test
     public void shouldReportErrorWithExtraSequencingProperties() {
-        assertNotValid(1, "{ \"sequencing\" : { \"notValid\" : false } }");
+        assertNotValid(1, "{ 'name' = 'nm', \"sequencing\" : { \"notValid\" : false } }");
     }
 
     @Test
     public void shouldSuccessfullyValidateSampleRepositoryConfiguration() {
         assertValid("sample-repo-config.json");
+    }
+
+    @Test
+    public void shouldSuccessfullyValidateSampleRepositoryConfigurationWithIndexStorageInRam() {
+        assertValid("config/index-storage-config-ram.json");
+    }
+
+    @Test
+    public void shouldSuccessfullyValidateSampleRepositoryConfigurationWithIndexStorageOnFilesystem() {
+        assertValid("config/index-storage-config-filesystem.json");
+    }
+
+    @Test
+    public void shouldSuccessfullyValidateSampleRepositoryConfigurationWithIndexStorageOnFilesystemMaster() {
+        assertValid("config/index-storage-config-filesystem-master.json");
+    }
+
+    @Test
+    public void shouldSuccessfullyValidateSampleRepositoryConfigurationWithIndexStorageOnFilesystemSlave() {
+        assertValid("config/index-storage-config-filesystem-slave.json");
+    }
+
+    @Test
+    public void shouldSuccessfullyValidateSampleRepositoryConfigurationWithIndexStorageInInfinispan() {
+        assertValid("config/index-storage-config-infinispan.json");
+    }
+
+    @Test
+    public void shouldNotSuccessfullyValidateSampleRepositoryConfigurationWithIndexStorageOnFilesystemAndExtraProperties() {
+        assertNotValid(1, "config/invalid-index-storage-config-filesystem.json");
     }
 
     @Test

@@ -76,6 +76,7 @@ import org.modeshape.jcr.api.query.qom.QueryCommand;
 import org.modeshape.jcr.api.query.qom.QueryObjectModelConstants;
 import org.modeshape.jcr.api.query.qom.SetCriteria;
 import org.modeshape.jcr.api.query.qom.SetQuery;
+import org.modeshape.jcr.api.query.qom.SetQueryObjectModel;
 import org.modeshape.jcr.api.query.qom.Subquery;
 import org.modeshape.jcr.query.JcrQueryContext;
 
@@ -95,6 +96,11 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
 
     protected SelectorName selectorName( String name ) {
         return new SelectorName(name);
+    }
+
+    @Override
+    public SetQueryObjectModel createQuery( SetQuery command ) {
+        throw new UnsupportedOperationException();
     }
 
     /**

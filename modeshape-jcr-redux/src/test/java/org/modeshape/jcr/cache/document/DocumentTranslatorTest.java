@@ -34,11 +34,11 @@ import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
 import org.junit.Test;
+import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.SessionCache;
-import org.modeshape.jcr.core.ExecutionContext;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path.Segment;
 

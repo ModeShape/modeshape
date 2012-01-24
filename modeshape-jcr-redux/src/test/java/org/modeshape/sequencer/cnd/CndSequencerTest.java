@@ -23,25 +23,49 @@
  */
 package org.modeshape.sequencer.cnd;
 
-import javax.jcr.Node;
-import javax.jcr.NodeIterator;
-import javax.jcr.Value;
-import javax.jcr.version.OnParentVersionAction;
-import static junit.framework.Assert.*;
-import org.junit.Test;
-import org.modeshape.jcr.api.JcrConstants;
-import org.modeshape.jcr.sequencer.AbstractSequencerTest;
-import static org.modeshape.sequencer.cnd.CndSequencerLexicon.*;
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertNotNull;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.AUTO_CREATED;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.CHILD_NODE_DEFINITION;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.DEFAULT_PRIMARY_TYPE;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.DEFAULT_VALUES;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.HAS_ORDERABLE_CHILD_NODES;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.IS_ABSTRACT;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.IS_FULL_TEXT_SEARCHABLE;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.IS_MIXIN;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.IS_QUERYABLE;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.IS_QUERY_ORDERABLE;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.MANDATORY;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.MULTIPLE;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.NAME;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.NODE_TYPE;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.NODE_TYPE_NAME;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.ON_PARENT_VERSION;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.PROPERTY_DEFINITION;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.PROTECTED;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.REQUIRED_PRIMARY_TYPES;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.REQUIRED_TYPE;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.SAME_NAME_SIBLINGS;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.SUPERTYPES;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.VALUE_CONSTRAINTS;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import javax.jcr.Node;
+import javax.jcr.NodeIterator;
+import javax.jcr.Value;
+import javax.jcr.version.OnParentVersionAction;
+import org.junit.Test;
+import org.modeshape.jcr.api.JcrConstants;
+import org.modeshape.jcr.sequencer.AbstractSequencerTest;
 
 /**
  * Unit test for {@link CndSequencer}
- *
+ * 
  * @author Horia Chiorean
  */
 public class CndSequencerTest extends AbstractSequencerTest {
@@ -59,9 +83,11 @@ public class CndSequencerTest extends AbstractSequencerTest {
     }
 
     private void verifyEmbeddedImageNode( Node imagesNode ) throws Exception {
-        Node embeddedImageNode  = getSequencedNode(imagesNode, "image:embeddedImage");
-        new NodeDefinitionVerifier().name("image:embeddedImage").nodeTypeName("image:embeddedImage").mixin(true)
-                .verifyNode(embeddedImageNode);
+        Node embeddedImageNode = getSequencedNode(imagesNode, "image:embeddedImage");
+        new NodeDefinitionVerifier().name("image:embeddedImage")
+                                    .nodeTypeName("image:embeddedImage")
+                                    .mixin(true)
+                                    .verifyNode(embeddedImageNode);
         NodeIterator nodesIterator = embeddedImageNode.getNodes();
         Node propertyDefinition = nodesIterator.nextNode();
         new PropertyDefinitionVerifier().name("image:width").mandatory(false).requiredType("long").verify(propertyDefinition);
@@ -70,23 +96,44 @@ public class CndSequencerTest extends AbstractSequencerTest {
 
     private void verifyImageMetadataNode( Node imagesNode ) throws Exception {
         Node imageMetadataNode = getSequencedNode(imagesNode, "image:metadata");
-        new NodeDefinitionVerifier().name("image:metadata").superTypes("nt:unstructured", "mix:mimeType").nodeTypeName("image:metadata")
-                .verifyNode(imageMetadataNode);
+        new NodeDefinitionVerifier().name("image:metadata")
+                                    .superTypes("nt:unstructured", "mix:mimeType")
+                                    .nodeTypeName("image:metadata")
+                                    .verifyNode(imageMetadataNode);
 
         NodeIterator nodesIterator = imageMetadataNode.getNodes();
         Node propertyDefinition = nodesIterator.nextNode();
-        new PropertyDefinitionVerifier().name("image:formatName").mandatory(true).requiredType("string")
-                .valueConstraints("JPEG", "GIF", "PNG", "BMP", "PCX", "IFF", "RAS", "PBM", "PGM", "PPM", "PSD").verify(propertyDefinition);
+        new PropertyDefinitionVerifier().name("image:formatName")
+                                        .mandatory(true)
+                                        .requiredType("string")
+                                        .valueConstraints("JPEG",
+                                                          "GIF",
+                                                          "PNG",
+                                                          "BMP",
+                                                          "PCX",
+                                                          "IFF",
+                                                          "RAS",
+                                                          "PBM",
+                                                          "PGM",
+                                                          "PPM",
+                                                          "PSD")
+                                        .verify(propertyDefinition);
 
         propertyDefinition = nodesIterator.nextNode();
         new PropertyDefinitionVerifier().name("image:width").mandatory(false).requiredType("long").verify(propertyDefinition);
 
         propertyDefinition = nodesIterator.nextNode();
-        new PropertyDefinitionVerifier().name("image:progressive").mandatory(false).requiredType("boolean").verify(propertyDefinition);
+        new PropertyDefinitionVerifier().name("image:progressive")
+                                        .mandatory(false)
+                                        .requiredType("boolean")
+                                        .verify(propertyDefinition);
 
         Node childNodeDefinition = nodesIterator.nextNode();
-        new NodeDefinitionVerifier().name("image:subImage").sameNameSiblings(true).requiredPrimaryTypes("image:embeddedImage")
-                .defaultPrimaryType("image:embeddedImage").verifyChildNode(childNodeDefinition);
+        new NodeDefinitionVerifier().name("image:subImage")
+                                    .sameNameSiblings(true)
+                                    .requiredPrimaryTypes("image:embeddedImage")
+                                    .defaultPrimaryType("image:embeddedImage")
+                                    .verifyChildNode(childNodeDefinition);
 
         assertFalse(nodesIterator.hasNext());
     }
@@ -100,7 +147,7 @@ public class CndSequencerTest extends AbstractSequencerTest {
         assertFalse(nodeIterator.hasNext());
     }
 
-    private List<String> sortedListToLowerCase( List<String> valuesList ) {
+    protected List<String> sortedListToLowerCase( List<String> valuesList ) {
         List<String> result = new ArrayList<String>();
         for (String value : valuesList) {
             result.add(value.toLowerCase());
@@ -109,7 +156,7 @@ public class CndSequencerTest extends AbstractSequencerTest {
         return result;
     }
 
-    private List<String> sortedValuesToLowerCase( Value[] values ) throws Exception {
+    protected List<String> sortedValuesToLowerCase( Value[] values ) throws Exception {
         List<String> result = new ArrayList<String>();
         for (Value value : values) {
             result.add(value.getString().toLowerCase());
@@ -118,7 +165,7 @@ public class CndSequencerTest extends AbstractSequencerTest {
         return result;
     }
 
-    private class NodeDefinitionVerifier {
+    protected class NodeDefinitionVerifier {
         private String name;
         private boolean mixin = false;
         private boolean isAbstract = false;
@@ -206,7 +253,9 @@ public class CndSequencerTest extends AbstractSequencerTest {
         }
 
         void verifyNode( Node nodeDefinition ) throws Exception {
-            assertEquals(NODE_TYPE.toLowerCase(), nodeDefinition.getProperty(JcrConstants.JCR_PRIMARY_TYPE).getString().toLowerCase());
+            assertEquals(NODE_TYPE.toLowerCase(), nodeDefinition.getProperty(JcrConstants.JCR_PRIMARY_TYPE)
+                                                                .getString()
+                                                                .toLowerCase());
             assertEquals(mixin, nodeDefinition.getProperty(IS_MIXIN).getBoolean());
             assertEquals(isAbstract, nodeDefinition.getProperty(IS_ABSTRACT).getBoolean());
             assertEquals(isQueryable, nodeDefinition.getProperty(IS_QUERYABLE).getBoolean());
@@ -217,7 +266,9 @@ public class CndSequencerTest extends AbstractSequencerTest {
         }
 
         void verifyChildNode( Node childNodeDefinition ) throws Exception {
-            assertEquals(CHILD_NODE_DEFINITION.toLowerCase(), childNodeDefinition.getProperty(JcrConstants.JCR_PRIMARY_TYPE).getString().toLowerCase());
+            assertEquals(CHILD_NODE_DEFINITION.toLowerCase(), childNodeDefinition.getProperty(JcrConstants.JCR_PRIMARY_TYPE)
+                                                                                 .getString()
+                                                                                 .toLowerCase());
             assertNotNull(name);
             assertEquals(name, childNodeDefinition.getProperty(NAME).getString().toLowerCase());
             assertEquals(autoCreated, childNodeDefinition.getProperty(AUTO_CREATED).getBoolean());
@@ -227,7 +278,8 @@ public class CndSequencerTest extends AbstractSequencerTest {
             assertEquals(isProtected, childNodeDefinition.getProperty(PROTECTED).getBoolean());
             assertNotNull(defaultPrimaryType);
             assertEquals(defaultPrimaryType, childNodeDefinition.getProperty(DEFAULT_PRIMARY_TYPE).getString().toLowerCase());
-            assertEquals(requiredPrimaryTypes, sortedValuesToLowerCase(childNodeDefinition.getProperty(REQUIRED_PRIMARY_TYPES).getValues()));
+            assertEquals(requiredPrimaryTypes, sortedValuesToLowerCase(childNodeDefinition.getProperty(REQUIRED_PRIMARY_TYPES)
+                                                                                          .getValues()));
             assertEquals(sameNameSiblings, childNodeDefinition.getProperty(SAME_NAME_SIBLINGS).getBoolean());
             assertEquals(sameNameSiblings, childNodeDefinition.getProperty(SAME_NAME_SIBLINGS).getBoolean());
         }
@@ -246,24 +298,28 @@ public class CndSequencerTest extends AbstractSequencerTest {
         private boolean fullTextSearchable = true;
         private boolean queryOrderable = true;
 
-        private PropertyDefinitionVerifier() {
+        protected PropertyDefinitionVerifier() {
         }
 
+        @SuppressWarnings( "unused" )
         PropertyDefinitionVerifier autoCreated( boolean autoCreated ) {
             this.autoCreated = autoCreated;
             return this;
         }
 
+        @SuppressWarnings( "unused" )
         PropertyDefinitionVerifier defaultValues( String... defaultValues ) {
             this.defaultValues = sortedListToLowerCase(Arrays.asList(defaultValues));
             return this;
         }
 
+        @SuppressWarnings( "unused" )
         PropertyDefinitionVerifier fullTextSearchable( boolean fullTextSearchable ) {
             this.fullTextSearchable = fullTextSearchable;
             return this;
         }
 
+        @SuppressWarnings( "unused" )
         PropertyDefinitionVerifier isProtected( boolean isProtected ) {
             this.isProtected = isProtected;
             return this;
@@ -275,6 +331,7 @@ public class CndSequencerTest extends AbstractSequencerTest {
             return this;
         }
 
+        @SuppressWarnings( "unused" )
         PropertyDefinitionVerifier multiple( boolean multiple ) {
             this.multiple = multiple;
             return this;
@@ -285,11 +342,13 @@ public class CndSequencerTest extends AbstractSequencerTest {
             return this;
         }
 
+        @SuppressWarnings( "unused" )
         PropertyDefinitionVerifier onParentVersion( String onParentVersion ) {
             this.onParentVersion = onParentVersion.toLowerCase();
             return this;
         }
 
+        @SuppressWarnings( "unused" )
         PropertyDefinitionVerifier queryOrderable( boolean queryOrderable ) {
             this.queryOrderable = queryOrderable;
             return this;
@@ -305,9 +364,10 @@ public class CndSequencerTest extends AbstractSequencerTest {
             return this;
         }
 
-
         void verify( Node propertyDefinition ) throws Exception {
-            assertEquals(PROPERTY_DEFINITION.toLowerCase(), propertyDefinition.getProperty(JcrConstants.JCR_PRIMARY_TYPE).getString().toLowerCase());
+            assertEquals(PROPERTY_DEFINITION.toLowerCase(), propertyDefinition.getProperty(JcrConstants.JCR_PRIMARY_TYPE)
+                                                                              .getString()
+                                                                              .toLowerCase());
 
             assertNotNull(name);
             assertEquals(name, propertyDefinition.getProperty(NAME).getString().toLowerCase());

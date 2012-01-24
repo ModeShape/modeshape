@@ -22,6 +22,7 @@
 package org.infinispan.schematic;
 
 import org.infinispan.schematic.document.Document;
+import org.infinispan.schematic.document.JsonSchema.Type;
 import org.infinispan.schematic.document.Path;
 
 /**
@@ -215,6 +216,10 @@ public interface SchemaLibrary extends DocumentLibrary {
          * @return the converted field value
          */
         Object getConvertedValue();
+
+        Type getActualType();
+
+        Type getExpectedType();
     }
 
 }

@@ -23,10 +23,13 @@
  */
 package org.modeshape.jcr.value.binary;
 
-import org.modeshape.jcr.value.BinaryKey;
-import java.io.*;
-import java.nio.channels.Channels;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.concurrent.locks.Lock;
+import org.modeshape.jcr.value.BinaryKey;
 
 /**
  * A {@link InputStream} implementation around a file that creates a shared lock when reading the file, ensuring the file is not

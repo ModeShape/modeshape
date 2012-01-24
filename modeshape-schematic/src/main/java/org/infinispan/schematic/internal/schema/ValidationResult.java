@@ -43,6 +43,7 @@ import org.infinispan.schematic.document.Path;
 public class ValidationResult implements Results, Problems {
 
     private final List<Problem> problems = new ArrayList<Problem>();
+    private int successes;
 
     @Override
     public Iterator<Problem> iterator() {
@@ -105,6 +106,15 @@ public class ValidationResult implements Results, Problems {
         return problems.size();
     }
 
+    public int successCount() {
+        return successes;
+    }
+
+    @Override
+    public void recordSuccess() {
+        ++successes;
+    }
+
     @Override
     public void recordError( Path path,
                              String reason ) {
@@ -131,7 +141,36 @@ public class ValidationResult implements Results, Problems {
                                     Object actualValue,
                                     Type requiredType,
                                     Object convertedValue ) {
-        problems.add(new ValidationTypeMismatchProblem(ProblemType.ERROR, path, actualValue, convertedValue, reason, null));
+        problems.add(new ValidationTypeMismatchProblem(ProblemType.ERROR, path, actualValue, actualType, requiredType,
+                                                       convertedValue, reason, null));
+    }
+
+    public void recordIn( Problems otherProblems ) {
+        if (successes == 0 && problems.isEmpty()) return;
+
+        for (Problem problem : problems) {
+            for (int i = 0; i != successes; ++i) {
+                otherProblems.recordSuccess();
+            }
+            switch (problem.getType()) {
+                case ERROR:
+                    if (problem instanceof MismatchedTypeProblem) {
+                        MismatchedTypeProblem mismatch = (MismatchedTypeProblem)problem;
+                        otherProblems.recordTypeMismatch(mismatch.getPath(),
+                                                         mismatch.getReason(),
+                                                         mismatch.getActualType(),
+                                                         mismatch.getActualValue(),
+                                                         mismatch.getExpectedType(),
+                                                         mismatch.getConvertedValue());
+                    } else {
+                        otherProblems.recordError(problem.getPath(), problem.getReason(), problem.getCause());
+                    }
+                    break;
+                case WARNING:
+                    otherProblems.recordWarning(problem.getPath(), problem.getReason());
+                    break;
+            }
+        }
     }
 
     public void add( Problem problem ) {

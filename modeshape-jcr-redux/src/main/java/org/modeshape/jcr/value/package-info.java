@@ -162,7 +162,7 @@
  *    DateTime now = factories.getDateFactory.create();
  *    String stringValue = factories.getStringFactory().create(now);
  * </pre>
- * A {@link org.modeshape.jcr.value.ValueFactories} is provided as part of the {@link org.modeshape.jcr.core.ExecutionContext}.  In this way,
+ * A {@link org.modeshape.jcr.value.ValueFactories} is provided as part of the {@link org.modeshape.jcr.ExecutionContext}.  In this way,
  * the environment may use a different implementation of one or more factories.
  * </p>
  * 

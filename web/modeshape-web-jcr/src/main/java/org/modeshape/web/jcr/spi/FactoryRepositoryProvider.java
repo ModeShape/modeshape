@@ -30,6 +30,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
+import org.modeshape.jcr.api.Repositories;
 import org.modeshape.jcr.api.RepositoryFactory;
 import org.modeshape.jcr.api.ServletCredentials;
 
@@ -67,8 +68,9 @@ public class FactoryRepositoryProvider implements RepositoryProvider {
     private Repository getRepository( String repositoryName ) throws RepositoryException {
         RepositoryFactory factory = factory();
         if (factory == null) return null;
-
-        return factory.getRepositories(jcrUrl).getRepository(repositoryName);
+        Repositories repositories = factory.getRepositories(jcrUrl);
+        if (repositories == null) return null;
+        return repositories.getRepository(repositoryName);
     }
 
     @Override

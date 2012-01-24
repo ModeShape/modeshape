@@ -26,6 +26,7 @@ package org.modeshape.jcr.value.binary;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.jcr.text.TextExtractor;
 import org.modeshape.jcr.value.Binary;
 import org.modeshape.jcr.value.BinaryKey;
 
@@ -55,6 +56,13 @@ public interface BinaryStore {
      * @param minSizeInBytes the minimum number of bytes for a stored binary value; may not be negative
      */
     void setMinimumBinarySizeInBytes( long minSizeInBytes );
+
+    /**
+     * Set the text extractor that can be used for extracting text from binary content.
+     * 
+     * @param textExtractor the text extractor
+     */
+    void setTextExtractor( TextExtractor textExtractor );
 
     /**
      * Store the binary value and return the JCR representation. Note that if the binary content in the supplied stream is already
@@ -97,9 +105,18 @@ public interface BinaryStore {
      * @param minimumAge the minimum time that a binary value has been {@link #markAsUnused(Iterable) unused} before it can be
      *        removed; must be non-negative
      * @param unit the time unit for the minimum age; may not be null
-     * @throws BinaryStoreException
+     * @throws BinaryStoreException if there is a problem removing the unused values
      */
     void removeValuesUnusedLongerThan( long minimumAge,
                                        TimeUnit unit ) throws BinaryStoreException;
+
+    /**
+     * Get the text that can be extracted from this binary content.
+     * 
+     * @param binary the binary content; may not be null
+     * @return the extracted text, or null if none could be extracted
+     * @throws BinaryStoreException if the binary content could not be accessed
+     */
+    String getText( Binary binary ) throws BinaryStoreException;
 
 }

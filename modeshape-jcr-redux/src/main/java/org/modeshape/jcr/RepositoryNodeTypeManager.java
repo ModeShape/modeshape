@@ -55,7 +55,10 @@ import org.modeshape.common.collection.Multimap;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
+import org.modeshape.jcr.api.query.qom.QueryCommand;
+import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.change.Change;
 import org.modeshape.jcr.cache.change.ChangeSet;
@@ -63,7 +66,11 @@ import org.modeshape.jcr.cache.change.ChangeSetListener;
 import org.modeshape.jcr.cache.change.NodeAdded;
 import org.modeshape.jcr.cache.change.NodeRemoved;
 import org.modeshape.jcr.cache.change.PropertyChanged;
-import org.modeshape.jcr.core.ExecutionContext;
+import org.modeshape.jcr.query.QueryResults;
+import org.modeshape.jcr.query.model.TypeSystem;
+import org.modeshape.jcr.query.parse.BasicSqlQueryParser;
+import org.modeshape.jcr.query.parse.QueryParser;
+import org.modeshape.jcr.query.validate.Schemata;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.Path;
@@ -96,12 +103,10 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
     @GuardedBy( "nodeTypesLock" )
     private volatile NodeTypes nodeTypesCache;
 
-    // TODO: Query
-
-    // private final QueryParser queryParser;
-    // private final boolean includeColumnsForInheritedProperties;
-    // private final boolean includePseudoColumnsInSelectStar;
-    // private volatile NodeTypeSchemata schemata;
+    private final QueryParser queryParser;
+    private final boolean includeColumnsForInheritedProperties;
+    private final boolean includePseudoColumnsInSelectStar;
+    private volatile NodeTypeSchemata schemata;
 
     /**
      * List of ways to filter the returned property definitions
@@ -137,10 +142,9 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
         this.nodeTypesPath = pathFactory.createAbsolutePath(JcrLexicon.SYSTEM, JcrLexicon.NODE_TYPES);
         this.nodeTypesCache = new NodeTypes(this.context);
 
-        // TODO: Query
-        // this.includeColumnsForInheritedProperties = includeColumnsForInheritedProperties;
-        // this.includePseudoColumnsInSelectStar = includePseudoColumnsInSelectStar;
-        // queryParser = new SqlQueryParser();
+        this.includeColumnsForInheritedProperties = includeColumnsForInheritedProperties;
+        this.includePseudoColumnsInSelectStar = includePseudoColumnsInSelectStar;
+        queryParser = new BasicSqlQueryParser();
     }
 
     RepositoryNodeTypeManager with( JcrRepository.RunningState repository,
@@ -273,19 +277,17 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
         }
     }
 
-    // TODO: Query
-    // NodeTypeSchemata getRepositorySchemata() {
-    // // Try reading first, since this will work most of the time ...
-    // if (schemata != null) return schemata;
-    // // This is idempotent, so it's okay not to lock ...
-    // schemata = new NodeTypeSchemata(context, nodeTypeCache,
-    // includeColumnsForInheritedProperties, includePseudoColumnsInSelectStar);
-    // return schemata;
-    // }
-    //
+    NodeTypeSchemata getRepositorySchemata() {
+        // Try reading first, since this will work most of the time ...
+        if (schemata != null) return schemata;
+        // This is idempotent, so it's okay not to lock ...
+        schemata = new NodeTypeSchemata(context, nodeTypesCache, includeColumnsForInheritedProperties,
+                                        includePseudoColumnsInSelectStar);
+        return schemata;
+    }
+
     void signalNamespaceChanges() {
-        // TODO: Query
-        // this.schemata = null;
+        this.schemata = null;
     }
 
     /**
@@ -297,25 +299,26 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
      */
     boolean isNodeTypeInUse( Name nodeTypeName ) throws InvalidQueryException {
 
-        // TODO: Query
+        String nodeTypeString = nodeTypeName.getString(context.getNamespaceRegistry());
+        String expression = "SELECT * from [" + nodeTypeString + "] LIMIT 1";
+        TypeSystem typeSystem = context.getValueFactories().getTypeSystem();
+        // Parsing must be done now ...
+        QueryCommand command = queryParser.parseQuery(expression, typeSystem);
+        assert command != null : "Could not parse " + expression;
 
-        // String nodeTypeString = nodeTypeName.getString(context.getNamespaceRegistry());
-        // String expression = "SELECT * from [" + nodeTypeString + "] LIMIT 1";
-        // TypeSystem typeSystem = context.getValueFactories().getTypeSystem();
-        // // Parsing must be done now ...
-        // QueryCommand command = queryParser.parseQuery(expression, typeSystem);
-        // assert command != null : "Could not parse " + expression;
-        //
-        // Schemata schemata = getRepositorySchemata();
-        //
-        // Set<String> workspaceNames = repository.workspaceNames();
-        // for (String workspaceName : workspaceNames) {
-        // QueryResults result = repository.queryManager().query(workspaceName, command, schemata, null, null);
-        //
-        // if (result.getRowCount() > 0) {
-        // return true;
-        // }
-        // }
+        Schemata schemata = getRepositorySchemata();
+
+        RepositoryCache repoCache = repository.repositoryCache();
+        RepositoryQueryManager queryManager = repository.queryManager();
+        Set<String> workspaceNames = repoCache.getWorkspaceNames();
+        for (String workspaceName : workspaceNames) {
+            NodeCache nodeCache = repoCache.getWorkspaceCache(workspaceName);
+            QueryResults result = queryManager.query(context, nodeCache, workspaceName, command, schemata, null, null);
+
+            if (result.getRowCount() > 0) {
+                return true;
+            }
+        }
 
         return false;
     }
@@ -1180,6 +1183,10 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
 
         public JcrPropertyDefinition getPropertyDefinition( PropertyDefinitionId id ) {
             return propertyDefinitions.get(id);
+        }
+
+        public Collection<JcrPropertyDefinition> getAllPropertyDefinitions() {
+            return propertyDefinitions.values();
         }
 
         public JcrNodeDefinition getChildNodeDefinition( NodeDefinitionId id ) {

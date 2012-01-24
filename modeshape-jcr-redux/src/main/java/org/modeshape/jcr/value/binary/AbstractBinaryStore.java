@@ -26,6 +26,8 @@ package org.modeshape.jcr.value.binary;
 import java.util.concurrent.atomic.AtomicLong;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.jcr.text.NoOpTextExtractor;
+import org.modeshape.jcr.text.TextExtractor;
 
 /**
  * An abstract class for a {@link BinaryStore}, with common functionality needed by implementation classes.
@@ -53,6 +55,7 @@ public abstract class AbstractBinaryStore implements BinaryStore {
     }
 
     private final AtomicLong minBinarySizeInBytes = new AtomicLong(DEFAULT_MINIMUM_BINARY_SIZE_IN_BYTES);
+    private volatile TextExtractor extractor = NoOpTextExtractor.INSTANCE;
 
     @Override
     public long getMinimumBinarySizeInBytes() {
@@ -63,5 +66,19 @@ public abstract class AbstractBinaryStore implements BinaryStore {
     public void setMinimumBinarySizeInBytes( long minSizeInBytes ) {
         CheckArg.isNonNegative(minSizeInBytes, "minSizeInBytes");
         minBinarySizeInBytes.set(minSizeInBytes);
+    }
+
+    @Override
+    public void setTextExtractor( TextExtractor textExtractor ) {
+        this.extractor = textExtractor != null ? textExtractor : NoOpTextExtractor.INSTANCE;
+    }
+
+    /**
+     * Get the text extractor that can be used to extract text by this store.
+     * 
+     * @return the text extractor; never null
+     */
+    protected final TextExtractor extractor() {
+        return this.extractor;
     }
 }

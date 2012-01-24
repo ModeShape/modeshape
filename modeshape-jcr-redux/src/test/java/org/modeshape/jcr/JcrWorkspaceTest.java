@@ -128,17 +128,13 @@ public class JcrWorkspaceTest extends SingleUseAbstractTest {
         assertThat(workspace.getObservationManager(), is(notNullValue()));
     }
 
-    @Ignore
     @Test
     public void shouldProvideQueryManager() throws Exception {
-        // TODO: Query
         assertThat(workspace.getQueryManager(), notNullValue());
     }
 
-    @Ignore
     @Test
     public void shouldCreateQuery() throws Exception {
-        // TODO: Query
         String statement = "SELECT * FROM [nt:unstructured]";
 
         QueryManager queryManager = workspace.getQueryManager();
@@ -149,10 +145,8 @@ public class JcrWorkspaceTest extends SingleUseAbstractTest {
         assertThat(query.getStatement(), is(statement));
     }
 
-    @Ignore
     @Test
     public void shouldStoreQueryAsNode() throws Exception {
-        // TODO: Query
         String statement = "SELECT * FROM [nt:unstructured]";
 
         QueryManager queryManager = workspace.getQueryManager();
@@ -165,10 +159,8 @@ public class JcrWorkspaceTest extends SingleUseAbstractTest {
         assertThat(node.getProperty("jcr:statement").getString(), is(statement));
     }
 
-    @Ignore
     @Test
     public void shouldLoadStoredQuery() throws Exception {
-        // TODO: Query
         String statement = "SELECT * FROM [nt:unstructured]";
 
         QueryManager queryManager = workspace.getQueryManager();

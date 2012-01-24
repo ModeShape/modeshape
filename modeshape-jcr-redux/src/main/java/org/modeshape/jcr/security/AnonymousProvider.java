@@ -28,9 +28,8 @@ import java.util.Set;
 import javax.jcr.Credentials;
 import javax.jcr.GuestCredentials;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.api.AnonymousCredentials;
-import org.modeshape.jcr.core.ExecutionContext;
-import org.modeshape.jcr.core.SecurityContext;
 
 /**
  * An implementation of {@link AuthenticationProvider} that allows for anonymous authentication and <i>role-based</i>
@@ -51,7 +50,7 @@ public class AnonymousProvider implements AuthenticationProvider {
      * {@inheritDoc}
      * 
      * @see org.modeshape.jcr.security.AuthenticationProvider#authenticate(javax.jcr.Credentials, java.lang.String,
-     *      java.lang.String, org.modeshape.jcr.core.ExecutionContext, java.util.Map)
+     *      java.lang.String, org.modeshape.jcr.ExecutionContext, java.util.Map)
      */
     @Override
     public ExecutionContext authenticate( Credentials credentials,

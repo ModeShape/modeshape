@@ -25,6 +25,7 @@ package org.modeshape.jcr.cache.document;
 
 import java.util.UUID;
 import org.modeshape.common.annotation.Immutable;
+import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
@@ -32,7 +33,6 @@ import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.SessionCacheMonitor;
-import org.modeshape.jcr.core.ExecutionContext;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PathFactory;

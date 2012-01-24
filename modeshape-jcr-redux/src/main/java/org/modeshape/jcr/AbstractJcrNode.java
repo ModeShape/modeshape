@@ -2572,6 +2572,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @throws RepositoryException if there is a problem executing the query or finding the shared set
      */
     NodeIterator sharedSet() throws RepositoryException {
+        // This should be all of this node's parents that are in the this workspace ...
         // TODO: Query
         // TODO: Shared nodes
         return JcrEmptyNodeIterator.INSTANCE;

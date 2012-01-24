@@ -48,7 +48,6 @@ import javax.jcr.version.OnParentVersionAction;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.modeshape.jcr.core.ExecutionContext;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
 

@@ -37,10 +37,9 @@ import javax.security.auth.login.LoginException;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.ClassUtil;
 import org.modeshape.common.util.Logger;
+import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.api.JaasCredentials;
-import org.modeshape.jcr.core.ExecutionContext;
-import org.modeshape.jcr.core.JaasSecurityContext;
 
 /**
  * An implementation of {@link AuthenticationProvider} that uses a supplied JAAS policy to perform all authentication and
@@ -90,7 +89,7 @@ public class JaasProvider implements AuthenticationProvider {
      * {@inheritDoc}
      * 
      * @see org.modeshape.jcr.security.AuthenticationProvider#authenticate(javax.jcr.Credentials, java.lang.String,
-     *      java.lang.String, org.modeshape.jcr.core.ExecutionContext, java.util.Map)
+     *      java.lang.String, org.modeshape.jcr.ExecutionContext, java.util.Map)
      */
     @Override
     public ExecutionContext authenticate( final Credentials credentials,

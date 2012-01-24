@@ -34,6 +34,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.Callable;
@@ -59,7 +60,6 @@ import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import javax.jcr.query.Query;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.naming.NoInitialContextException;
@@ -86,12 +86,14 @@ import org.modeshape.jcr.RepositoryConfiguration.BinaryStorage;
 import org.modeshape.jcr.RepositoryConfiguration.Component;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.RepositoryConfiguration.JaasSecurity;
+import org.modeshape.jcr.RepositoryConfiguration.QuerySystem;
 import org.modeshape.jcr.RepositoryConfiguration.Security;
 import org.modeshape.jcr.Sequencers.SequencingWorkItem;
 import org.modeshape.jcr.api.AnonymousCredentials;
 import org.modeshape.jcr.api.Repository;
 import org.modeshape.jcr.api.Workspace;
 import org.modeshape.jcr.api.monitor.ValueMetric;
+import org.modeshape.jcr.api.query.Query;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.cache.SessionCache;
@@ -102,12 +104,17 @@ import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
 import org.modeshape.jcr.cache.change.WorkspaceAdded;
 import org.modeshape.jcr.cache.change.WorkspaceRemoved;
-import org.modeshape.jcr.core.ExecutionContext;
-import org.modeshape.jcr.core.SecurityContext;
+import org.modeshape.jcr.query.parse.FullTextSearchParser;
+import org.modeshape.jcr.query.parse.JcrQomQueryParser;
+import org.modeshape.jcr.query.parse.JcrSql2QueryParser;
+import org.modeshape.jcr.query.parse.JcrSqlQueryParser;
+import org.modeshape.jcr.query.parse.QueryParsers;
+import org.modeshape.jcr.query.xpath.XPathQueryParser;
 import org.modeshape.jcr.security.AnonymousProvider;
 import org.modeshape.jcr.security.AuthenticationProvider;
 import org.modeshape.jcr.security.AuthenticationProviders;
 import org.modeshape.jcr.security.JaasProvider;
+import org.modeshape.jcr.security.SecurityContext;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.binary.BinaryStore;
@@ -153,8 +160,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
          * The full-text search language defined as part of the abstract query model, in Section 6.7.19 of the JCR 2.0
          * specification.
          */
-        // TODO : Query
-        // public static final String SEARCH = FullTextSearchParser.LANGUAGE;
+        public static final String SEARCH = Query.FULL_TEXT_SEARCH;
     }
 
     protected static final Set<String> MISSING_JAAS_POLICIES = new CopyOnWriteArraySet<String>();
@@ -396,6 +402,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
     protected final RepositoryNodeTypeManager nodeTypeManager() {
         return runningState().nodeTypeManager();
+    }
+
+    protected final RepositoryQueryManager queryManager() {
+        return runningState().queryManager();
     }
 
     protected final RepositoryLockManager lockManager() {
@@ -692,8 +702,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         // TODO: Transactions
         descriptors.put(Repository.OPTION_TRANSACTIONS_SUPPORTED, valueFor(factories, false));
         descriptors.put(Repository.OPTION_VERSIONING_SUPPORTED, valueFor(factories, true));
-        // TODO: Query
-        // I think the value should be 'true', since MODE-613 is closed
         descriptors.put(Repository.QUERY_XPATH_DOC_ORDER, valueFor(factories, false)); // see MODE-613
         descriptors.put(Repository.QUERY_XPATH_POS_INDEX, valueFor(factories, true));
 
@@ -859,11 +867,16 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final ScheduledExecutorService statsRollupService;
         private final Sequencers sequencers;
         private final Executor sequencingQueue;
+        private final QueryParsers queryParsers;
+        private final RepositoryQueryManager repositoryQueryManager;
+        private final ExecutorService indexingExecutor;
+        private final TextExtractors extractors;
 
         protected RunningState() throws IOException, NamingException {
             this(null, null);
         }
 
+        @SuppressWarnings( "deprecation" )
         protected RunningState( JcrRepository.RunningState other,
                                 JcrRepository.ConfigurationChange change ) throws IOException, NamingException {
             this.config = repositoryConfiguration();
@@ -996,17 +1009,14 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.anonymousCredentialsIfSuppliedCredentialsFail = useAnonymouOnFailedLogins.get() ? new AnonymousCredentials() : null;
             }
 
-            if (other != null && !change.indexingChanged) {
-
-            } else {
-
-            }
-
             if (other != null && !change.extractorsChanged) {
-
+                List<Component> extractorComponents = config.getQuery().getTextExtractors();
+                this.extractors = new TextExtractors(this, extractorComponents);
             } else {
-
+                List<Component> extractorComponents = config.getQuery().getTextExtractors();
+                this.extractors = new TextExtractors(this, extractorComponents);
             }
+            this.binaryStore.setTextExtractor(this.extractors);
 
             if (other != null && !change.sequencingChanged) {
                 this.sequencingQueue = other.sequencingQueue;
@@ -1037,6 +1047,29 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 }
             }
 
+            if (other != null && !change.indexingChanged) {
+                this.indexingExecutor = other.indexingExecutor;
+                this.queryParsers = other.queryParsers;
+            } else {
+                String indexThreadPoolName = config.getQuery().getThreadPoolName();
+                this.indexingExecutor = (ExecutorService)this.context.getThreadPool(indexThreadPoolName);
+                this.queryParsers = new QueryParsers(new JcrSql2QueryParser(), new XPathQueryParser(),
+                                                     new FullTextSearchParser(), new JcrSqlQueryParser(), new JcrQomQueryParser());
+            }
+            QuerySystem query = config.getQuery();
+            Properties backendProps = query.getIndexingBackendProperties();
+            Properties indexingProps = query.getIndexingProperties();
+            Properties indexStorageProps = query.getIndexStorageProperties();
+            this.repositoryQueryManager = new RepositoryQueryManager(this, config.getQuery(), indexingExecutor, backendProps,
+                                                                     indexingProps, indexStorageProps);
+
+            // Check that we have parsers for all the required languages ...
+            assert this.queryParsers.getParserFor(Query.XPATH) != null;
+            assert this.queryParsers.getParserFor(Query.SQL) != null;
+            assert this.queryParsers.getParserFor(Query.JCR_SQL2) != null;
+            assert this.queryParsers.getParserFor(Query.JCR_JQOM) != null;
+            assert this.queryParsers.getParserFor(QueryLanguage.SEARCH) != null;
+
             if (other != null && !change.jndiChanged) {
                 // The repository is already registered (or not registered)
                 this.jndiName = other.jndiName;
@@ -1050,6 +1083,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     other.unbindFromJndi();
                 }
             }
+
         }
 
         /**
@@ -1092,6 +1126,14 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
         final RepositoryCache repositoryCache() {
             return cache;
+        }
+
+        final QueryParsers queryParsers() {
+            return queryParsers;
+        }
+
+        final RepositoryQueryManager queryManager() {
+            return repositoryQueryManager;
         }
 
         private final Cache<String, SchematicEntry> infinispanCache() {
@@ -1193,7 +1235,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                         }
                     }
                 } catch (Throwable t) {
-                    logger.error(t, JcrI18n.unableToInitializeAuthenticationProvider,
+                    logger.error(t,
+                                 JcrI18n.unableToInitializeAuthenticationProvider,
                                  component.getName(),
                                  repositoryName(),
                                  t.getMessage());

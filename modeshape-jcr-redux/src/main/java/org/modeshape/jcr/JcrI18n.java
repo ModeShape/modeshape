@@ -78,6 +78,7 @@ public final class JcrI18n {
     public static I18n unableToInitializeAuthenticationProvider;
     public static I18n errorInAuthenticationProvider;
     public static I18n unableToInitializeSequencer;
+    public static I18n unableToInitializeTextExtractor;
 
     public static I18n rootNodeHasNoParent;
     public static I18n rootNodeIsNotProperty;
@@ -341,6 +342,8 @@ public final class JcrI18n {
     public static I18n repositoryIsNotRunningOrHasBeenShutDown;
     public static I18n repositoryIsNotRunningOrHasBeenShutDownInEngineAtJndiLocation;
     public static I18n repositoryNotFoundInEngineAtJndiLocation;
+    public static I18n repositoriesNotFoundInEngineAtJndiLocation;
+    public static I18n potentialClasspathErrorAtJndiLocation;
     public static I18n errorStartingRepository;
     public static I18n storageRelatedConfigurationChangesWillTakeEffectAfterShutdown;
     public static I18n missingRepositoryNameInUrlContainingJndiLocationOfEngine;
@@ -370,6 +373,12 @@ public final class JcrI18n {
 
     public static I18n errorKillingRepository;
     public static I18n errorKillingEngine;
+
+    public static I18n errorExtractingTextFromBinary;
+    public static I18n errorAddingBinaryTextToIndex;
+    public static I18n missingQueryVariableValue;
+    public static I18n errorClosingLuceneReaderForIndex;
+    public static I18n ignoringIndexingProperty;
 
     static {
         try {

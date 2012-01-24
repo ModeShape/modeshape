@@ -1,0 +1,16 @@
+{
+    "name" : "Test Repository",
+    "storage" : {
+        "transactionManagerLookup" = "org.infinispan.transaction.lookup.DummyTransactionManagerLookup"
+    },
+    "query" : {
+        "indexStorage" : {
+            "type" : "filesystem-master",
+            "location" : "/path/on/filesystem/index",
+            "sourceLocation" : "/path/on/filesystem/source",
+            "refreshInSeconds" : 3600,
+            "lockingStrategy" : "simple",
+            "fileSystemAccessType" : "simple"
+        }
+    }
+}

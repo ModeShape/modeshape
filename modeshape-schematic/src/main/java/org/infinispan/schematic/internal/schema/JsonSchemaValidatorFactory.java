@@ -492,11 +492,20 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
                         problems.recordError(pathToField, reason);
                     }
                 }
+                problems.recordSuccess();
             }
+        }
+
+        @Override
+        public String toString() {
+            return "Type is '" + type + "'";
         }
     }
 
-    protected class UnionValidator implements Validator {
+    protected static interface ValidatorCollection extends Iterable<Validator> {
+    }
+
+    protected class UnionValidator implements Validator, ValidatorCollection {
         private static final long serialVersionUID = 1L;
         private final List<Validator> validators;
 
@@ -513,11 +522,32 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
                               Problems problems,
                               SchemaDocumentResolver resolver ) {
             // Try each validator with a new problems; the first one to return without any problems passes ...
+            ValidationResult problemsForMostSuccesses = null;
+            int mostSuccesses = -1;
             for (Validator validator : validators) {
                 ValidationResult newProblems = new ValidationResult();
                 validator.validate(fieldValue, fieldName, document, pathToDocument, newProblems, resolver);
-                if (!newProblems.hasErrors()) return;
+                if (!newProblems.hasErrors()) {
+                    problems.recordSuccess();
+                    return;
+                }
+                if (newProblems.successCount() > mostSuccesses) {
+                    mostSuccesses = newProblems.successCount();
+                    problemsForMostSuccesses = newProblems;
+                }
             }
+            // All unioned types had problems, but record the problems with the one that had the most successful validations ...
+            if (problemsForMostSuccesses != null) problemsForMostSuccesses.recordIn(problems);
+        }
+
+        @Override
+        public Iterator<Validator> iterator() {
+            return validators.iterator();
+        }
+
+        @Override
+        public String toString() {
+            return "Union of " + validators.size() + " validators";
         }
     }
 
@@ -540,8 +570,14 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
             if (resolved == null) {
                 problems.recordError(pathToDocument.with(fieldName), "Unable to find referenced schema '" + schemaUri + "'");
             } else {
+                problems.recordSuccess();
                 resolved.getValidator().validate(fieldValue, fieldName, document, pathToDocument, problems, resolver);
             }
+        }
+
+        @Override
+        public String toString() {
+            return "Resolves to schema '" + schemaUri + "'";
         }
     }
 
@@ -567,6 +603,8 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
                     problems.recordError(pathToParent.with(fieldName), "The '" + fieldName + "' field on '" + pathToParent
                                                                        + "' is required");
                 }
+            } else {
+                problems.recordSuccess();
             }
         }
 
@@ -599,7 +637,9 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
             if (fieldValue instanceof Number) {
                 Number actualNumber = (Number)fieldValue;
                 double actualValue = actualNumber.doubleValue();
-                if (evaluate(value, actualValue)) {
+                if (isValid(value, actualValue)) {
+                    problems.recordSuccess();
+                } else {
                     problems.recordError(pathToParent.with(fieldName), "The '" + fieldName + "' field on '" + pathToParent
                                                                        + "' is '" + actualNumber + "' but must be "
                                                                        + ruleDescription() + " '" + number + "'");
@@ -608,8 +648,15 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
             // otherwise the value is not a number and the minimum doesn't apply
         }
 
-        protected abstract boolean evaluate( double value,
-                                             double actualValue );
+        /**
+         * Evaluate whether the actual value and expected value violate the schema rule.
+         * 
+         * @param expectedValue the expected value
+         * @param actualValue the actual value
+         * @return true if the value is valid, or false if there is an error
+         */
+        protected abstract boolean isValid( double expectedValue,
+                                            double actualValue );
 
         protected abstract String ruleDescription();
 
@@ -628,9 +675,9 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
         }
 
         @Override
-        protected boolean evaluate( double value,
-                                    double actualValue ) {
-            return value >= actualValue;
+        protected boolean isValid( double minimum,
+                                   double actualValue ) {
+            return actualValue >= minimum;
         }
 
         @Override
@@ -639,6 +686,9 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
         }
     }
 
+    /**
+     * Validation rule that states fails if the actual value is equal to or less than the minimum value.
+     */
     protected static class ExclusiveMinimumValidator extends NumericValidator {
         private static final long serialVersionUID = 1L;
 
@@ -648,9 +698,9 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
         }
 
         @Override
-        protected boolean evaluate( double value,
-                                    double actualValue ) {
-            return value > actualValue;
+        protected boolean isValid( double minimum,
+                                   double actualValue ) {
+            return actualValue > minimum;
         }
 
         @Override
@@ -663,14 +713,14 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
         private static final long serialVersionUID = 1L;
 
         public MaximumValidator( String propertyName,
-                                 Number minimum ) {
-            super(propertyName, minimum);
+                                 Number maximum ) {
+            super(propertyName, maximum);
         }
 
         @Override
-        protected boolean evaluate( double value,
-                                    double actualValue ) {
-            return value <= actualValue;
+        protected boolean isValid( double maximum,
+                                   double actualValue ) {
+            return actualValue <= maximum;
         }
 
         @Override
@@ -683,14 +733,14 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
         private static final long serialVersionUID = 1L;
 
         public ExclusiveMaximumValidator( String propertyName,
-                                          Number minimum ) {
-            super(propertyName, minimum);
+                                          Number maximum ) {
+            super(propertyName, maximum);
         }
 
         @Override
-        protected boolean evaluate( double value,
-                                    double actualValue ) {
-            return value < actualValue;
+        protected boolean isValid( double maximum,
+                                   double actualValue ) {
+            return actualValue < maximum;
         }
 
         @Override
@@ -724,6 +774,8 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
                                                                        + "' had " + value.length()
                                                                        + " characters, but was expected to have at least "
                                                                        + minimumLength);
+                } else {
+                    problems.recordSuccess();
                 }
             }
         }
@@ -759,6 +811,8 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
                                                                        + "' had " + value.length()
                                                                        + " characters, but was expected to have no more than "
                                                                        + maximumLength);
+                } else {
+                    problems.recordSuccess();
                 }
             }
         }
@@ -795,6 +849,8 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
                     problems.recordError(pathToParent.with(fieldName), "The '" + fieldName + "' field on '" + pathToParent
                                                                        + "' had a value of " + value
                                                                        + " and was not divisible by " + denominator);
+                } else {
+                    problems.recordSuccess();
                 }
             } else if (fieldValue instanceof Long) {
                 long value = ((Long)fieldValue).longValue();
@@ -802,6 +858,8 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
                     problems.recordError(pathToParent.with(fieldName), "The '" + fieldName + "' field on '" + pathToParent
                                                                        + "' had a value of " + value
                                                                        + " and was not divisible by " + denominator);
+                } else {
+                    problems.recordSuccess();
                 }
             } else if (fieldValue instanceof Short) {
                 int value = ((Short)fieldValue).intValue();
@@ -809,6 +867,8 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
                     problems.recordError(pathToParent.with(fieldName), "The '" + fieldName + "' field on '" + pathToParent
                                                                        + "' had a value of " + value
                                                                        + " and was not divisible by " + denominator);
+                } else {
+                    problems.recordSuccess();
                 }
             } else if (fieldValue instanceof Float) {
                 float value = ((Float)fieldValue).floatValue();
@@ -816,6 +876,8 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
                     problems.recordError(pathToParent.with(fieldName), "The '" + fieldName + "' field on '" + pathToParent
                                                                        + "' had a value of " + value
                                                                        + " and was not divisible by " + denominator);
+                } else {
+                    problems.recordSuccess();
                 }
             } else if (fieldValue instanceof Double) {
                 double value = ((Double)fieldValue).floatValue();
@@ -823,6 +885,8 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
                     problems.recordError(pathToParent.with(fieldName), "The '" + fieldName + "' field on '" + pathToParent
                                                                        + "' had a value of " + value
                                                                        + " and was not divisible by " + denominator);
+                } else {
+                    problems.recordSuccess();
                 }
             }
         }
@@ -857,6 +921,8 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
                     problems.recordError(pathToParent.with(fieldName), "The '" + fieldName + "' field on '" + pathToParent
                                                                        + "' has '" + array.size() + "' values but should have "
                                                                        + ruleDescription() + " '" + number + "'");
+                } else {
+                    problems.recordSuccess();
                 }
             }
             // otherwise the value is not a number and the minimum doesn't apply
@@ -937,6 +1003,8 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
                     problems.recordError(pathToParent.with(fieldName), "The '" + fieldName + "' field on '" + pathToParent
                                                                        + "' must contain unique values, but contains " + numDups
                                                                        + " duplicate values");
+                } else {
+                    problems.recordSuccess();
                 }
             }
         }
@@ -972,6 +1040,8 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
                     problems.recordError(pathToParent.with(fieldName),
                                          "The '" + fieldName + "' field on '" + pathToParent
                                          + "' failed match the pattern specified by '" + pattern.pattern() + "'");
+                } else {
+                    problems.recordSuccess();
                 }
             }
         }
@@ -1004,14 +1074,18 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
             // This only applies if the value is a JSON array ...
             if (fieldValue instanceof List) {
                 for (Object value : (List<?>)fieldValue) {
-                    if (!values.contains(value)) {
+                    if (values.contains(value)) {
+                        problems.recordSuccess();
+                    } else {
                         problems.recordError(pathToParent.with(fieldName),
                                              "The '" + fieldName + "' field on '" + pathToParent + "' contains a value '" + value
                                              + "' in the array that is not part of the enumeration: " + values);
                     }
                 }
             } else if (fieldValue != null) {
-                if (!values.contains(fieldValue)) {
+                if (values.contains(fieldValue)) {
+                    problems.recordSuccess();
+                } else {
                     problems.recordError(pathToParent.with(fieldName), "The '" + fieldName + "' field on '" + pathToParent
                                                                        + "' has a value of '" + fieldValue
                                                                        + "' that is not part of the enumeration: " + values);
@@ -1044,10 +1118,14 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
                               Problems problems,
                               SchemaDocumentResolver resolver ) {
             Type type = Type.typeFor(fieldValue);
-            if (type != Type.NULL && disallowedTypes.contains(type)) {
-                problems.recordError(pathToParent.with(fieldName), "The '" + fieldName + "' field on '" + pathToParent
-                                                                   + "' contains a value '" + fieldValue + "' whose type '"
-                                                                   + type + "' is disallowed.");
+            if (type != Type.NULL) {
+                if (disallowedTypes.contains(type)) {
+                    problems.recordError(pathToParent.with(fieldName), "The '" + fieldName + "' field on '" + pathToParent
+                                                                       + "' contains a value '" + fieldValue + "' whose type '"
+                                                                       + type + "' is disallowed.");
+                } else {
+                    problems.recordSuccess();
+                }
             }
         }
 
@@ -1087,6 +1165,7 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
                 List<?> items = (List<?>)fieldValue;
                 Path path = pathToParent.with(fieldName);
                 int i = 1;
+                boolean success = true;
                 for (Object item : items) {
                     itemProblems.clear();
                     itemValidator.validate(item, fieldName, parent, pathToParent, itemProblems, resolver);
@@ -1094,9 +1173,11 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
                         problems.recordError(path, "The '" + fieldName + "' field on '" + pathToParent
                                                    + "' is an array, but the " + i + th(i)
                                                    + " item does not satisfy the schema for the " + i + th(i) + " item");
+                        success = false;
                     }
                     ++i;
                 }
+                if (success) problems.recordSuccess();
             }
         }
 
@@ -1145,6 +1226,7 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
                 int i = 0;
                 Iterator<?> itemIterator = items.iterator();
                 Iterator<Validator> itemValidatorIterator = itemValidators.iterator();
+                boolean success = true;
                 while (itemIterator.hasNext() && itemValidatorIterator.hasNext()) {
                     ++i;
                     Object item = itemIterator.next();
@@ -1167,6 +1249,7 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
                                                  + i
                                                  + th(i)
                                                  + " item does have a corresponding schema and does not satisfy the additional items schema)");
+                            success = false;
                         }
                     }
                 } else if (!additionalItemsAllowed) {
@@ -1176,8 +1259,10 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
                                              "The '" + fieldName + "' field on '" + pathToParent + "' is an array, but the " + i
                                              + th(i)
                                              + " item does have a corresponding schema (and no additional items were specified)");
+                        success = false;
                     }
                 }
+                if (success) problems.recordSuccess();
             }
         }
 
@@ -1222,15 +1307,27 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
         return "th";
     }
 
+    protected static RequiredValidator getRequiredValidator( Validator validator ) {
+        if (validator instanceof RequiredValidator) return (RequiredValidator)validator;
+        if (validator instanceof ValidatorCollection) {
+            for (Validator val : ((ValidatorCollection)validator)) {
+                if (val instanceof RequiredValidator) return (RequiredValidator)val;
+            }
+        }
+        return null;
+    }
+
     protected static class PropertyValidator implements Validator {
         private static final long serialVersionUID = 1L;
         private final String propertyName;
         private final Validator validator;
+        private final RequiredValidator required;
 
         public PropertyValidator( String propertyName,
                                   Validator validator ) {
             this.propertyName = propertyName;
             this.validator = validator;
+            this.required = getRequiredValidator(validator);
         }
 
         @Override
@@ -1245,6 +1342,13 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
             }
             if (fieldValue == null) {
                 fieldValue = parent.get(propertyName);
+            }
+            if (fieldValue == null) {
+                if (required != null) {
+                    // The field is required ...
+                    required.validate(fieldValue, fieldName, parent, pathToParent, problems, resolver);
+                }
+                return;
             }
             if (fieldValue instanceof Document) {
                 validator.validate(null, null, (Document)fieldValue, pathToParent.with(fieldName), problems, resolver);
@@ -1337,12 +1441,22 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
                               Path pathToParent,
                               Problems problems,
                               SchemaDocumentResolver resolver ) {
-            if (fieldValue == null) return;
-            if (!allowedPropertyNames.contains(fieldName)) {
-                // Then the field is not handled by an explicit schema, so it's not allowed ...
-                problems.recordError(pathToParent.with(fieldName),
-                                     "The '" + fieldName + "' field on '" + pathToParent
-                                     + "' is not defined in the schema and the schema does not allow additional properties.");
+            if (fieldValue == null) {
+                if (fieldName == null) {
+                    // Go through all of the fields in the document ...
+                    for (Field field : parent.fields()) {
+                        validate(field.getValue(), field.getName(), parent, pathToParent, problems, resolver);
+                    }
+                }
+            } else {
+                if (!allowedPropertyNames.contains(fieldName)) {
+                    // Then the field is not handled by an explicit schema, so it's not allowed ...
+                    problems.recordError(pathToParent.with(fieldName),
+                                         "The '" + fieldName + "' field on '" + pathToParent
+                                         + "' is not defined in the schema and the schema does not allow additional properties.");
+                } else {
+                    problems.recordSuccess();
+                }
             }
         }
 
@@ -1352,7 +1466,7 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
         }
     }
 
-    protected static class CompositeValidator implements Validator {
+    protected static class CompositeValidator implements Validator, ValidatorCollection {
         private static final long serialVersionUID = 1L;
 
         private final List<Validator> validators = new ArrayList<Validator>();
@@ -1389,6 +1503,11 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
         }
 
         @Override
+        public Iterator<Validator> iterator() {
+            return validators.iterator();
+        }
+
+        @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
             for (Validator validator : validators) {
@@ -1410,6 +1529,12 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
         private Type actualType;
         private Type requiredType;
         private boolean mismatch = false;
+        private boolean success = false;
+
+        @Override
+        public void recordSuccess() {
+            success = true;
+        }
 
         @Override
         public void recordError( Path path,
@@ -1423,6 +1548,7 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
             this.actualType = null;
             this.requiredType = null;
             this.mismatch = false;
+            this.success = false;
         }
 
         @Override
@@ -1438,6 +1564,7 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
             this.actualType = null;
             this.requiredType = null;
             this.mismatch = false;
+            this.success = false;
         }
 
         @Override
@@ -1452,6 +1579,7 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
             this.actualType = null;
             this.requiredType = null;
             this.mismatch = false;
+            this.success = false;
         }
 
         @Override
@@ -1470,6 +1598,7 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
             this.actualType = actualType;
             this.requiredType = requiredType;
             this.mismatch = true;
+            this.success = false;
         }
 
         public boolean hasProblem() {
@@ -1477,6 +1606,10 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
         }
 
         public void recordIn( Problems otherProblems ) {
+            if (success) {
+                otherProblems.recordSuccess();
+                return;
+            }
             switch (type) {
                 case ERROR:
                     if (this.mismatch) {
@@ -1498,6 +1631,7 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
 
         public void clear() {
             this.type = null;
+            this.success = false;
         }
     }
 }

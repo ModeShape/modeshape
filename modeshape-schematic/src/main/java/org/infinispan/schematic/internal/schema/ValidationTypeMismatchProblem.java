@@ -23,21 +23,28 @@ package org.infinispan.schematic.internal.schema;
 
 import org.infinispan.schematic.SchemaLibrary.MismatchedTypeProblem;
 import org.infinispan.schematic.SchemaLibrary.ProblemType;
+import org.infinispan.schematic.document.JsonSchema.Type;
 import org.infinispan.schematic.document.Path;
 
 public final class ValidationTypeMismatchProblem extends ValidationProblem implements MismatchedTypeProblem {
     private final Object actualValue;
     private final Object convertedValue;
+    private final Type actualType;
+    private final Type expectedType;
 
     public ValidationTypeMismatchProblem( ProblemType type,
                                           Path path,
                                           Object actualValue,
+                                          Type actualType,
+                                          Type expectedType,
                                           Object convertedValue,
                                           String reason,
                                           Throwable cause ) {
         super(type, path, reason, cause);
         this.actualValue = actualValue;
         this.convertedValue = convertedValue;
+        this.actualType = actualType;
+        this.expectedType = expectedType;
     }
 
     @Override
@@ -48,6 +55,16 @@ public final class ValidationTypeMismatchProblem extends ValidationProblem imple
     @Override
     public Object getConvertedValue() {
         return convertedValue;
+    }
+
+    @Override
+    public Type getActualType() {
+        return actualType;
+    }
+
+    @Override
+    public Type getExpectedType() {
+        return expectedType;
     }
 
     @Override

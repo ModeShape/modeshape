@@ -24,18 +24,24 @@
 package org.modeshape.jcr.api;
 
 import java.util.concurrent.Future;
+import javax.jcr.AccessDeniedException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import org.modeshape.jcr.api.monitor.RepositoryMonitor;
+import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 
 /**
  * An extension of JCR 2.0's Workspace interface, with a few ModeShape-specific enhancements.
  */
 public interface Workspace extends javax.jcr.Workspace {
 
+    @Override
+    NodeTypeManager getNodeTypeManager() throws RepositoryException;
+
     /**
      * Crawl and re-index the content in this workspace. This method blocks until the indexing is completed.
      * 
+     * @throws AccessDeniedException if the session does not have the privileges to reindex the workspace
      * @throws RepositoryException if there is a problem with this session or workspace
      * @see #reindexAsync()
      * @see #reindexAsync(String)
@@ -48,6 +54,7 @@ public interface Workspace extends javax.jcr.Workspace {
      * 
      * @param path the path of the content to be indexed
      * @throws IllegalArgumentException if the workspace or path are null, or if the depth is less than 1
+     * @throws AccessDeniedException if the session does not have the privileges to reindex this part of the workspace
      * @throws RepositoryException if there is a problem with this session or workspace
      * @see #reindex()
      * @see #reindexAsync()
@@ -59,6 +66,7 @@ public interface Workspace extends javax.jcr.Workspace {
      * Asynchronously crawl and re-index the content in this workspace.
      * 
      * @return a future representing the asynchronous operation; never null
+     * @throws AccessDeniedException if the session does not have the privileges to reindex the workspace
      * @throws RepositoryException if there is a problem with this session or workspace
      * @see #reindex()
      * @see #reindex(String)
@@ -72,6 +80,7 @@ public interface Workspace extends javax.jcr.Workspace {
      * @param path the path of the content to be indexed
      * @return a future representing the asynchronous operation; never null
      * @throws IllegalArgumentException if the workspace or path are null, or if the depth is less than 1
+     * @throws AccessDeniedException if the session does not have the privileges to reindex this part of the workspace
      * @throws RepositoryException if there is a problem with this session or workspace
      * @see #reindex()
      * @see #reindex(String)

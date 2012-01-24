@@ -24,11 +24,11 @@
 package org.modeshape.jcr.cache.document;
 
 import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.SessionCacheMonitor;
-import org.modeshape.jcr.core.ExecutionContext;
 
 /**
  * A read-only {@link SessionCache} implementation.

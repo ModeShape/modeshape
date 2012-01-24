@@ -60,7 +60,7 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
     private static final ConcurrentHashMap<String, FileSystemBinaryStore> INSTANCES = new ConcurrentHashMap<String, FileSystemBinaryStore>();
 
     private static final boolean LOCK_WHEN_REMOVING_UNUSED_FILES;
-    
+
     static {
         String osName = System.getProperty("os.name");
         LOCK_WHEN_REMOVING_UNUSED_FILES = (osName == null) || !osName.toLowerCase().contains("windows");
@@ -102,7 +102,9 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
             // Write the contents to a temporary file, and while we do grab the SHA-1 hash and the length ...
             HashingInputStream hashingStream = SecureHash.createHashingStream(Algorithm.SHA_1, stream);
             tmpFile = File.createTempFile(TEMP_FILE_PREFIX, TEMP_FILE_SUFFIX);
-            IoUtil.write(hashingStream, new BufferedOutputStream(new FileOutputStream(tmpFile)), AbstractBinaryStore.MEDIUM_BUFFER_SIZE);
+            IoUtil.write(hashingStream,
+                         new BufferedOutputStream(new FileOutputStream(tmpFile)),
+                         AbstractBinaryStore.MEDIUM_BUFFER_SIZE);
             hashingStream.close();
             byte[] sha1 = hashingStream.getHash();
             BinaryKey key = new BinaryKey(sha1);
@@ -377,6 +379,11 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
         if (removed) {
             pruneEmptyDirectories(trash, parentDirectory);
         }
+    }
+
+    @Override
+    public String getText( Binary binary ) throws BinaryStoreException {
+        return null;
     }
 
 }

@@ -55,7 +55,6 @@ public class JndiRepositoryFactory implements ObjectFactory {
     private static final String CONFIG_FILE = "configFile";
     private static final String CONFIG_FILES = "configFiles";
     private static final String REPOSITORY_NAME = "repositoryName";
-    private static final String TYPE = "type";
 
     private static final JcrEngine engine = new JcrEngine();
     protected static final Logger log = Logger.getLogger(JndiRepositoryFactory.class);

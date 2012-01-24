@@ -31,7 +31,6 @@ import java.util.List;
 import javax.jcr.*;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.value.DateTime;
-import org.modeshape.jcr.core.ExecutionContext;
 import org.modeshape.jcr.value.Binary;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Reference;

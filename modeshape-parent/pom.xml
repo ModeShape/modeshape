@@ -215,8 +215,10 @@
 		<jackrabbit.jcr.tck.version>2.1.0</jackrabbit.jcr.tck.version>
 		<picketbox.version>3.0.0.Final</picketbox.version>
 		<byteman.version>1.5.1</byteman.version>
+		<lucene.version>3.4.0</lucene.version>
 		<hibernate.version>3.5.2-Final</hibernate.version>
 		<hibernate.tools.version>3.2.4.GA</hibernate.tools.version>
+		<hibernate.search.version>4.0.0.Final</hibernate.search.version>
 		<infinispan.version>5.1.0.BETA3</infinispan.version>
 		<sun.xml.bind.jaxbimpl.version>2.1.12</sun.xml.bind.jaxbimpl.version>
 		<jdbc.mysql.version>5.0.7</jdbc.mysql.version>
@@ -1109,6 +1111,7 @@
         <version>${jboss.seam.version}</version>
         <scope>provided</scope>
       </dependency>
+
 
 			<!-- 
 		    Time and Date
