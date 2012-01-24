@@ -821,8 +821,8 @@ public class JcrNodeTypeManager implements NodeTypeManager {
 
     @SuppressWarnings( "deprecation" )
     @Override
-    public void registerNodeTypes( File file,
-                                   boolean allowUpdate ) throws IOException, RepositoryException {
+    public NodeTypeIterator registerNodeTypes( File file,
+                                               boolean allowUpdate ) throws IOException, RepositoryException {
         CheckArg.isNotNull(file, "file");
         String content = IoUtil.read(file);
         GraphNodeTypeReader reader = null;
@@ -833,7 +833,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         }
         try {
             reader.read(file);
-            registerNodeTypes(reader.getNodeTypeDefinitions(), allowUpdate);
+            return registerNodeTypes(reader.getNodeTypeDefinitions(), allowUpdate);
         } catch (IOException ioe) {
             throw new RepositoryException(ioe);
         } catch (RepositoryException t) {
@@ -847,8 +847,8 @@ public class JcrNodeTypeManager implements NodeTypeManager {
 
     @SuppressWarnings( "deprecation" )
     @Override
-    public void registerNodeTypes( InputStream stream,
-                                   boolean allowUpdate )
+    public NodeTypeIterator registerNodeTypes( InputStream stream,
+                                               boolean allowUpdate )
         throws IOException, javax.jcr.nodetype.InvalidNodeTypeDefinitionException, javax.jcr.nodetype.NodeTypeExistsException,
         UnsupportedRepositoryOperationException, RepositoryException {
         CheckArg.isNotNull(stream, "stream");
@@ -862,7 +862,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         }
         try {
             reader.read(content, "Node type definitions");
-            registerNodeTypes(reader.getNodeTypeDefinitions(), allowUpdate);
+            return registerNodeTypes(reader.getNodeTypeDefinitions(), allowUpdate);
         } catch (RepositoryException t) {
             throw t;
         } catch (RuntimeException t) {
@@ -874,8 +874,8 @@ public class JcrNodeTypeManager implements NodeTypeManager {
 
     @SuppressWarnings( "deprecation" )
     @Override
-    public void registerNodeTypes( URL url,
-                                   boolean allowUpdate ) throws IOException, RepositoryException {
+    public NodeTypeIterator registerNodeTypes( URL url,
+                                               boolean allowUpdate ) throws IOException, RepositoryException {
         CheckArg.isNotNull(url, "url");
         InputStream stream = url.openStream();
         if (stream == null) {
@@ -890,7 +890,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         }
         try {
             reader.read(url);
-            registerNodeTypes(reader.getNodeTypeDefinitions(), allowUpdate);
+            return registerNodeTypes(reader.getNodeTypeDefinitions(), allowUpdate);
         } catch (IOException ioe) {
             throw new RepositoryException(ioe);
         } catch (RepositoryException t) {
