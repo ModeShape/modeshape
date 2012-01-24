@@ -32,6 +32,8 @@
         <module>sequencers/modeshape-sequencer-ddl</module>
         <module>sequencers/modeshape-sequencer-mp3</module>
         <module>sequencers/modeshape-sequencer-text</module>
+        <module>sequencers/modeshape-sequencer-sramp</module>
+        <module>sequencers/modeshape-sequencer-xsd</module>
 	</modules>
 	<properties>
 		<rootDir>${project.basedir}</rootDir>
@@ -61,7 +63,6 @@
     		<module>extensions/modeshape-sequencer-jbpm-jpdl</module>
     		<module>extensions/modeshape-sequencer-java</module>
     		<module>extensions/modeshape-sequencer-msoffice</module>
-    		<module>extensions/modeshape-sequencer-sramp</module>
     		<module>extensions/modeshape-sequencer-teiid</module>
     		<module>extensions/modeshape-sequencer-xml</module>
     		<module>extensions/modeshape-sequencer-xsd</module>
