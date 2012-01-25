@@ -4,13 +4,13 @@
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
  * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors. 
+ * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- *
+ * 
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -23,12 +23,11 @@
  */
 package org.modeshape.jcr;
 
-import java.security.AccessControlException;
+import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Set;
-import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.InvalidItemStateException;
 import javax.jcr.PathNotFoundException;
@@ -36,235 +35,248 @@ import javax.jcr.RepositoryException;
 import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockException;
 import javax.jcr.lock.LockManager;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.graph.session.GraphSession.Node;
-import org.modeshape.jcr.SessionCache.JcrNodePayload;
-import org.modeshape.jcr.SessionCache.JcrPropertyPayload;
-import org.modeshape.jcr.WorkspaceLockManager.ModeShapeLock;
+import org.modeshape.jcr.RepositoryLockManager.ModeShapeLock;
+import org.modeshape.jcr.cache.CachedNode;
+import org.modeshape.jcr.cache.LockFailureException;
+import org.modeshape.jcr.cache.NodeCache;
+import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.cache.SessionCache;
 
 /**
- * A per-session lock manager for a given workspace. This class encapsulates the session-specific locking logic and checks that do
- * not occur in @{link WorkspaceLockManager}.
+ * A {@link LockManager} implementation owned and used by a {@link JcrSession session}. This object is relatively lightweight, and
+ * maintains the set of lock tokens owned by this session plus references to the session and the repository-wide lock manager.
  */
-public class JcrLockManager implements LockManager {
+@ThreadSafe
+class JcrLockManager implements LockManager {
 
     private final JcrSession session;
-    private final WorkspaceLockManager lockManager;
-    private final Set<String> lockTokens;
+    private final RepositoryLockManager lockManager;
+    private final ConcurrentMap<String, Object> lockTokens = new ConcurrentHashMap<String, Object>();
 
     JcrLockManager( JcrSession session,
-                    WorkspaceLockManager lockManager ) {
+                    RepositoryLockManager lockManager ) {
         this.session = session;
         this.lockManager = lockManager;
-        lockTokens = new HashSet<String>();
     }
 
+    boolean hasLockToken( String token ) {
+        return lockTokens.containsKey(token);
+    }
+
+    /**
+     * Unlocks all locks corresponding to the tokens held by the supplied session.
+     * 
+     * @throws RepositoryException if the session is not live
+     */
+    final void cleanLocks() throws RepositoryException {
+        lockManager.cleanLocks(session);
+    }
+
+    @Override
     public void addLockToken( String lockToken ) throws LockException {
-        CheckArg.isNotNull(lockToken, "lock token");
+        CheckArg.isNotNull(lockToken, "lockToken");
 
         // Trivial case of giving a token back to ourself
-        if (lockTokens.contains(lockToken)) {
+        if (lockTokens.putIfAbsent(lockToken, null) != null) {
+            // We already hold the token ...
             return;
         }
 
-        if (lockManager.isHeldBySession(session, lockToken)) {
-            throw new LockException(JcrI18n.lockTokenAlreadyHeld.text(lockToken));
+        // Change the lock to be held by a session ...
+        try {
+            if (!lockManager.setHeldBySession(session, lockToken, true)) {
+                throw new LockException(JcrI18n.lockTokenAlreadyHeld.text(lockToken));
+            }
+        } catch (LockException e) {
+            lockTokens.remove(lockToken);
+            throw e;
+        }
+    }
+
+    @Override
+    public void removeLockToken( String lockToken ) throws LockException {
+        CheckArg.isNotNull(lockToken, "lockToken");
+
+        // Trivial case of giving a token back to ourself
+        if (lockTokens.containsKey(lockToken)) {
+            // We don't already hold the token ...
+            throw new LockException(JcrI18n.invalidLockToken.text(lockToken));
         }
 
-        lockManager.setHeldBySession(session, lockToken, true);
-        lockTokens.add(lockToken);
-    }
+        // Change the lock to be no longer held by a session ...
+        try {
+            if (!lockManager.setHeldBySession(session, lockToken, false)) {
+                // Generally not expected, because if the lock exists we can always change the lock-held value to false
+                // even when it is already false ...
+                throw new LockException(JcrI18n.invalidLockToken.text(lockToken));
+            }
 
-    public Lock getLock( String absPath ) throws PathNotFoundException, LockException, AccessDeniedException, RepositoryException {
-        AbstractJcrNode node = session.getNode(absPath);
-        return getLock(node);
-    }
-
-    Lock getLock( AbstractJcrNode node ) throws PathNotFoundException, LockException, AccessDeniedException, RepositoryException {
-        WorkspaceLockManager.ModeShapeLock lock = lockFor(node);
-        if (lock != null) return lock.lockFor(node.cache);
-        throw new LockException(JcrI18n.notLocked.text(node.location()));
-    }
-
-    public String[] getLockTokens() {
-        Set<String> publicTokens = new HashSet<String>(lockTokens);
-
-        for (Iterator<String> iter = publicTokens.iterator(); iter.hasNext();) {
-            String token = iter.next();
-            WorkspaceLockManager.ModeShapeLock lock = lockManager.lockFor(token);
-            if (lock.isSessionScoped()) iter.remove();
+            // Now remove the tokens from our session ...
+            lockTokens.remove(lockToken);
+        } catch (LockFailureException e) {
+            lockTokens.remove(lockToken);
+            throw new LockException(JcrI18n.invalidLockToken.text(lockToken));
         }
-
-        return publicTokens.toArray(new String[publicTokens.size()]);
     }
 
     Set<String> lockTokens() {
-        return this.lockTokens;
+        return Collections.unmodifiableSet(lockTokens.keySet());
     }
 
-    public boolean holdsLock( String absPath ) throws PathNotFoundException, RepositoryException {
-        AbstractJcrNode node = session.getNode(absPath);
-        return holdsLock(node);
+    @Override
+    public String[] getLockTokens() {
+        // Make a copy (which can be done atomically) since getting the size and iterating over the (possibly-changing) values
+        // cannot be done atomically...
+        Set<String> tokens = new HashSet<String>(lockTokens.keySet());
+        return tokens.toArray(new String[tokens.size()]);
     }
 
-    boolean holdsLock( AbstractJcrNode node ) {
-        WorkspaceLockManager.ModeShapeLock lock = lockManager.lockFor(session, node.location());
-
-        return lock != null;
-
-    }
-
+    @Override
     public boolean isLocked( String absPath ) throws PathNotFoundException, RepositoryException {
-        AbstractJcrNode node = session.getNode(absPath);
-        return isLocked(node);
+        return getLowestLockAlongPath(session.node(session.absolutePathFor(absPath))) != null;
     }
 
-    boolean isLocked( AbstractJcrNode node ) throws PathNotFoundException, RepositoryException {
-        return lockFor(node) != null;
+    public boolean isLocked( AbstractJcrNode node ) throws PathNotFoundException, RepositoryException {
+        return getLowestLockAlongPath(node) != null;
     }
 
+    @Override
+    public Lock getLock( String absPath ) throws PathNotFoundException, LockException, AccessDeniedException, RepositoryException {
+        ModeShapeLock lock = getLowestLockAlongPath(session.node(session.absolutePathFor(absPath)));
+        if (lock != null) return lock.lockFor(session);
+        throw new LockException(JcrI18n.notLocked.text(absPath));
+    }
+
+    public Lock getLock( AbstractJcrNode node ) throws LockException, AccessDeniedException, RepositoryException {
+        ModeShapeLock lock = getLowestLockAlongPath(node);
+        if (lock != null) return lock.lockFor(session);
+        throw new LockException(JcrI18n.notLocked.text(node.getPath()));
+    }
+
+    public Lock getLockIfExists( AbstractJcrNode node ) throws AccessDeniedException, RepositoryException {
+        ModeShapeLock lock = getLowestLockAlongPath(node);
+        return lock == null ? null : lock.lockFor(session);
+    }
+
+    public ModeShapeLock getLowestLockAlongPath( final AbstractJcrNode node )
+        throws PathNotFoundException, AccessDeniedException, RepositoryException {
+        session.checkLive();
+
+        SessionCache sessionCache = session.cache();
+        NodeCache cache = sessionCache;
+        NodeKey nodeKey = node.key();
+        NodeKey key = nodeKey;
+        while (key != null) {
+            ModeShapeLock lock = lockManager.findLockFor(key);
+            if (lock != null && (lock.isDeep() || nodeKey.equals(lock.getLockedNodeKey()))) {
+                // There is a lock that applies to 'node', either because the lock is actually on 'node' or because
+                // an ancestor node is locked with a deep lock...
+                return lock;
+            }
+            // Otherwise, get the parent, but use the cache directly ...
+            CachedNode cachedNode = cache.getNode(key);
+            if (cachedNode == null) {
+                // The node has been removed, so get the node from the workspace cache ...
+                if (sessionCache == cache) {
+                    cache = sessionCache.getWorkspace();
+                    cachedNode = cache.getNode(key);
+                }
+                if (cachedNode == null) break;
+            }
+            key = cachedNode.getParentKey(cache);
+        }
+        return null;
+    }
+
+    @Override
+    public boolean holdsLock( String absPath ) throws PathNotFoundException, RepositoryException {
+        AbstractJcrNode node = session.node(session.absolutePathFor(absPath));
+        return lockManager.findLockFor(node.key()) != null;
+    }
+
+    /**
+     * Determine if this lock manager holds a lock on the supplied node.
+     * 
+     * @param node the node; may not be null
+     * @return true if this lock maanger does hold a lock on the node, or false otherwise
+     */
+    public boolean holdsLock( AbstractJcrNode node ) {
+        return lockManager.findLockFor(node.key()) != null;
+    }
+
+    @Override
     public Lock lock( String absPath,
                       boolean isDeep,
                       boolean isSessionScoped,
                       long timeoutHint,
                       String ownerInfo )
         throws LockException, PathNotFoundException, AccessDeniedException, InvalidItemStateException, RepositoryException {
-        AbstractJcrNode node = session.getNode(absPath);
+        AbstractJcrNode node = session.node(session.absolutePathFor(absPath));
         return lock(node, isDeep, isSessionScoped, timeoutHint, ownerInfo);
     }
 
-    Lock lock( AbstractJcrNode node,
-               boolean isDeep,
-               boolean isSessionScoped,
-               long timeoutHint,
-               String ownerInfo )
-        throws LockException, PathNotFoundException, AccessDeniedException, InvalidItemStateException, RepositoryException {
+    /**
+     * Attempt to obtain a lock on the supplied node.
+     * 
+     * @param node the node; may not be null
+     * @param isDeep true if the lock should be a deep lock
+     * @param isSessionScoped true if the lock should be scoped to the session
+     * @param timeoutHint desired lock timeout in seconds (servers are free to ignore this value); specify {@link Long#MAX_VALUE}
+     *        for no timeout.
+     * @param ownerInfo a string containing owner information supplied by the client, and recorded on the lock; if null, then the
+     *        session's user ID will be used
+     * @return the lock; never null
+     * @throws AccessDeniedException if the caller does not have privilege to lock the node
+     * @throws InvalidItemStateException if the node has been modified and cannot be locked
+     * @throws LockException if the lock could not be obtained
+     * @throws RepositoryException if an error occurs updating the graph state
+     */
+    public Lock lock( AbstractJcrNode node,
+                      boolean isDeep,
+                      boolean isSessionScoped,
+                      long timeoutHint,
+                      String ownerInfo )
+        throws LockException, AccessDeniedException, InvalidItemStateException, RepositoryException {
         if (!node.isLockable()) {
-            throw new LockException(JcrI18n.nodeNotLockable.text(node.getPath()));
-        }
-
-        if (node.isLocked()) {
-            throw new LockException(JcrI18n.alreadyLocked.text(node.location()));
+            throw new LockException(JcrI18n.nodeNotLockable.text(node.location()));
         }
 
         if (node.isModified()) {
-            throw new InvalidItemStateException();
+            throw new InvalidItemStateException(JcrI18n.changedNodeCannotBeLocked.text(node.location()));
         }
 
-        if (isDeep) {
-            LinkedList<Node<JcrNodePayload, JcrPropertyPayload>> nodesToVisit = new LinkedList<Node<JcrNodePayload, JcrPropertyPayload>>();
-            nodesToVisit.add(node.nodeInfo());
-
-            while (!nodesToVisit.isEmpty()) {
-                Node<JcrNodePayload, JcrPropertyPayload> graphNode = nodesToVisit.remove(nodesToVisit.size() - 1);
-                if (lockManager.lockFor(session, graphNode.getLocation()) != null) throw new LockException(
-                                                                                                           JcrI18n.parentAlreadyLocked.text(node.location,
-                                                                                                                                            graphNode.getLocation()));
-
-                for (Node<JcrNodePayload, JcrPropertyPayload> child : graphNode.getChildren()) {
-                    nodesToVisit.add(child);
-                }
-            }
-        }
-
-        WorkspaceLockManager.ModeShapeLock lock = lockManager.lock(session, node.location(), isDeep, isSessionScoped);
-
-        addLockToken(lock.getLockToken());
-        return lock.lockFor(session.cache());
-
+        // Try to obtain the lock ...
+        ModeShapeLock lock = lockManager.lock(session, node.node(), isDeep, isSessionScoped, timeoutHint, ownerInfo);
+        String token = lock.getLockToken();
+        lockTokens.put(token, token);
+        return lock.lockFor(session);
     }
 
-    public void removeLockToken( String lockToken ) throws LockException {
-        CheckArg.isNotNull(lockToken, "lockToken");
-        // A LockException is thrown if the lock associated with the specified lock token is session-scoped.
-
-        if (!lockTokens.contains(lockToken)) {
-            throw new LockException(JcrI18n.invalidLockToken.text(lockToken));
-        }
-
-        /*
-         * The JCR API library that we're using diverges from the spec in that it doesn't declare
-         * this method to throw a LockException.  We'll throw a runtime exception for now.
-         */
-
-        ModeShapeLock lock = lockManager.lockFor(lockToken);
-        if (lock == null) {
-            // The lock is no longer valid
-            lockTokens.remove(lockToken);
-            return;
-        }
-
-        if (lock.isSessionScoped()) {
-            throw new IllegalStateException(JcrI18n.cannotRemoveLockToken.text(lockToken));
-        }
-
-        lockManager.setHeldBySession(session, lockToken, false);
-        lockTokens.remove(lockToken);
-    }
-
+    @Override
     public void unlock( String absPath )
         throws PathNotFoundException, LockException, AccessDeniedException, InvalidItemStateException, RepositoryException {
-        AbstractJcrNode node = session.getNode(absPath);
+        AbstractJcrNode node = session.node(session.absolutePathFor(absPath));
         unlock(node);
     }
 
-    @SuppressWarnings( "unused" )
-    void unlock( AbstractJcrNode node )
+    public void unlock( AbstractJcrNode node )
         throws PathNotFoundException, LockException, AccessDeniedException, InvalidItemStateException, RepositoryException {
-        WorkspaceLockManager.ModeShapeLock lock = lockManager.lockFor(session, node.location());
 
-        if (lock == null) {
-            throw new LockException(JcrI18n.notLocked.text(node.location()));
+        if (node.isModified()) {
+            throw new InvalidItemStateException(JcrI18n.changedNodeCannotBeUnlocked.text(node.getPath()));
         }
 
-        if (lockTokens.contains(lock.getLockToken())) {
-            lockManager.unlock(session.getExecutionContext(), lock);
-            removeLockToken(lock.getLockToken());
-        } else {
-            try {
-                // See if the user has the permission to break someone else's lock
-                session.checkPermission(session.cache().workspaceName(), null, ModeShapePermissions.UNLOCK_ANY);
-
-                // This user doesn't have the lock token, so don't try to remove it
-                lockManager.unlock(session.getExecutionContext(), lock);
-            } catch (AccessControlException iae) {
-                throw new LockException(JcrI18n.lockTokenNotHeld.text(node.location()));
-            }
+        ModeShapeLock lock = lockManager.findLockFor(node.key());
+        if (lock != null && !lockTokens.containsKey(lock.getLockToken())) {
+            // Someone else holds the lock, so see if the user has the permission to break someone else's lock ...
+            session.checkPermission(session.workspaceName(), node.path(), ModeShapePermissions.UNLOCK_ANY);
         }
 
-    }
-
-    /**
-     * 
-     */
-    final void cleanLocks() {
-        lockManager.cleanLocks(session);
-    }
-
-    final WorkspaceLockManager.ModeShapeLock lockFor( AbstractJcrNode node ) throws RepositoryException {
-        // This can only happen in mocked testing.
-        if (session == null || session.workspace() == null) return null;
-
-        WorkspaceLockManager.ModeShapeLock lock = lockManager.lockFor(session, node.location());
-        if (lock != null) return lock;
-
-        AbstractJcrNode parent = node;
-        while (!parent.isRoot()) {
-            parent = parent.getParent();
-
-            WorkspaceLockManager.ModeShapeLock parentLock = lockManager.lockFor(session, parent.location());
-            if (parentLock != null && parentLock.isLive()) {
-                return parentLock.isDeep() ? parentLock : null;
-            }
-        }
-        return null;
-    }
-
-    final WorkspaceLockManager.ModeShapeLock lockFor( UUID nodeUuid ) {
-        // This can only happen in mocked testing.
-        if (session == null || session.workspace() == null) return null;
-
-        return lockManager.lockFor(nodeUuid);
+        // Remove the lock ...
+        String lockToken = lockManager.unlock(session, node.key());
+        lockTokens.remove(lockToken);
     }
 
 }

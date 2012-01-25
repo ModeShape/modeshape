@@ -29,12 +29,10 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.ItemExistsException;
 import javax.jcr.ItemNotFoundException;
@@ -46,27 +44,20 @@ import javax.jcr.Value;
 import javax.jcr.ValueFactory;
 import javax.jcr.ValueFormatException;
 import javax.jcr.nodetype.ConstraintViolationException;
-import javax.jcr.version.VersionException;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.collection.Collections;
 import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.text.XmlNameEncoder;
 import org.modeshape.common.util.Base64;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.Graph;
-import org.modeshape.graph.Location;
-import org.modeshape.graph.Results;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.NameFactory;
-import org.modeshape.graph.property.NamespaceRegistry;
-import org.modeshape.graph.property.Path;
-import org.modeshape.graph.property.PathFactory;
-import org.modeshape.graph.property.UuidFactory;
-import org.modeshape.graph.request.FunctionRequest;
-import org.modeshape.graph.request.Request;
-import org.modeshape.jcr.SessionCache.NodeEditor;
-import org.modeshape.jcr.SystemFunctions.InitializeVersionHistoryFunction;
+import org.modeshape.jcr.cache.MutableCachedNode;
+import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.cache.SessionCache;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.NameFactory;
+import org.modeshape.jcr.value.NamespaceRegistry;
+import org.modeshape.jcr.value.Path;
+import org.modeshape.jcr.value.PathFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -99,12 +90,11 @@ class JcrContentHandler extends DefaultHandler {
     private final ExecutionContext context;
     private final NameFactory nameFactory;
     private final PathFactory pathFactory;
-    private final org.modeshape.graph.property.ValueFactory<String> stringFactory;
+    private final org.modeshape.jcr.value.ValueFactory<String> stringFactory;
     private final NamespaceRegistry namespaces;
     private final ValueFactory jcrValueFactory;
     private final JcrNodeTypeManager nodeTypes;
     private final javax.jcr.NamespaceRegistry jcrNamespaceRegistry;
-    private final SaveMode saveMode;
     protected final int uuidBehavior;
     protected final boolean retentionInfoRetained;
     protected final boolean lifecycleInfoRetained;
@@ -120,26 +110,22 @@ class JcrContentHandler extends DefaultHandler {
 
     private SessionCache cache;
 
-    enum SaveMode {
-        WORKSPACE,
-        SESSION
-    }
+    private final boolean saveWhenCompleted;
 
     JcrContentHandler( JcrSession session,
-                       Path parentPath,
+                       AbstractJcrNode parent,
                        int uuidBehavior,
-                       SaveMode saveMode,
+                       boolean saveWhenCompleted,
                        boolean retentionInfoRetained,
                        boolean lifecycleInfoRetained ) throws PathNotFoundException, RepositoryException {
         assert session != null;
-        assert parentPath != null;
         assert uuidBehavior == ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW
                || uuidBehavior == ImportUUIDBehavior.IMPORT_UUID_COLLISION_REMOVE_EXISTING
                || uuidBehavior == ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING
                || uuidBehavior == ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW;
 
         this.session = session;
-        this.context = this.session.getExecutionContext();
+        this.context = this.session.context();
         this.namespaces = context.getNamespaceRegistry();
         this.nameFactory = context.getValueFactories().getNameFactory();
         this.pathFactory = context.getValueFactories().getPathFactory();
@@ -147,27 +133,11 @@ class JcrContentHandler extends DefaultHandler {
         this.uuidBehavior = uuidBehavior;
         this.retentionInfoRetained = retentionInfoRetained;
         this.lifecycleInfoRetained = lifecycleInfoRetained;
+        this.saveWhenCompleted = saveWhenCompleted;
 
-        this.saveMode = saveMode;
-        switch (this.saveMode) {
-            case SESSION:
-                cache = session.cache();
-                break;
-            case WORKSPACE:
-                cache = new SessionCache(session);
-                break;
-        }
-        assert cache != null;
+        this.cache = session.cache();
 
-        try {
-            this.currentNode = cache.findJcrNode(null, parentPath);
-        } catch (ItemNotFoundException e) {
-            throw new PathNotFoundException(e.getLocalizedMessage(), e);
-        }
-
-        if (!currentNode.isCheckedOut()) {
-            throw new VersionException(JcrI18n.nodeIsCheckedIn.text(currentNode.getPath()));
-        }
+        this.currentNode = parent;
 
         this.jcrValueFactory = session.getValueFactory();
         this.nodeTypes = session.nodeTypeManager();
@@ -176,6 +146,10 @@ class JcrContentHandler extends DefaultHandler {
         this.primaryTypeName = JcrLexicon.PRIMARY_TYPE.getString(this.namespaces);
         this.mixinTypesName = JcrLexicon.MIXIN_TYPES.getString(this.namespaces);
         this.uuidName = JcrLexicon.UUID.getString(this.namespaces);
+    }
+
+    protected final JcrSession session() {
+        return session;
     }
 
     protected final NamespaceRegistry namespaces() {
@@ -222,60 +196,23 @@ class JcrContentHandler extends DefaultHandler {
 
     protected void postProcessNodes() throws SAXException {
         try {
-            List<AbstractJcrNode> versionableNodes = null;
-            Graph.Batch systemChanges = null;
-            JcrVersionManager versions = null;
-            final UuidFactory uuidFactory = session.getExecutionContext().getValueFactories().getUuidFactory();
-            NodeEditor editor = null;
-
             for (AbstractJcrNode node : nodesForPostProcessing) {
-                editor = null;
+                MutableCachedNode mutable = node.mutable();
 
                 // ---------------
                 // mix:versionable
                 // ---------------
                 if (node.isNodeType(JcrMixLexicon.VERSIONABLE)) {
 
-                    if (versionableNodes == null) {
-                        versionableNodes = new LinkedList<AbstractJcrNode>();
-                        systemChanges = session.repository().createSystemGraph(this.context).batch();
-                        versions = node.versionManager();
-                    }
-
-                    assert systemChanges != null;
-                    assert versions != null;
-
-                    versionableNodes.add(node);
-
                     // Does the versionable node already have a reference to the version history?
-                    Property versionHistoryRef = node.getProperty(JcrLexicon.VERSION_HISTORY);
-                    UUID versionHistoryUuid = null;
-                    if (versionHistoryRef != null) {
-                        versionHistoryUuid = uuidFactory.create(versionHistoryRef.getString());
-                    }
+                    // If so, then we ignore it because we'll use our own key ...
 
                     // Does the versionable node already have a base version?
                     Property baseVersionRef = node.getProperty(JcrLexicon.BASE_VERSION);
-                    UUID baseVersionUuid = null;
                     if (baseVersionRef != null) {
-                        baseVersionUuid = uuidFactory.create(baseVersionRef.getString());
+                        NodeKey baseVersionKey = new NodeKey(stringFactory.create(baseVersionRef.getString()));
+                        session.setDesiredBaseVersionKey(node.key(), baseVersionKey);
                     }
-
-                    // Apply the 'InitializeVersionHistoryFunction' to each versionable node, using a single
-                    // batch operation against the system graph.
-                    UUID uuid = node.uuid();
-                    Path historyPath = versions.versionHistoryPathFor(uuid);
-                    Name primaryTypeName = node.getPrimaryTypeName();
-                    List<Name> mixinTypeNames = node.getMixinTypeNames();
-                    systemChanges.applyFunction(SystemFunctions.INITIALIZE_VERSION_HISTORY)
-                                 .withInput(InitializeVersionHistoryFunction.VERSIONED_NODE_UUID, uuid)
-                                 .withInput(InitializeVersionHistoryFunction.VERSION_HISTORY_UUID, versionHistoryUuid)
-                                 .withInput(InitializeVersionHistoryFunction.VERSION_UUID, baseVersionUuid)
-                                 // .withInput(InitializeVersionHistoryFunction.ORIGINAL_UUID, originalVersionUuid)
-                                 .withInput(InitializeVersionHistoryFunction.VERSION_HISTORY_PATH, historyPath)
-                                 .withInput(InitializeVersionHistoryFunction.PRIMARY_TYPE_NAME, primaryTypeName)
-                                 .withInput(InitializeVersionHistoryFunction.MIXIN_TYPE_NAME_LIST, mixinTypeNames)
-                                 .to(versions.versionStoragePath);
                 }
 
                 // ---------------
@@ -293,10 +230,8 @@ class JcrContentHandler extends DefaultHandler {
                     if (lifecycleInfoRetained && !isValidReference(node, JcrLexicon.LIFECYCLE_POLICY, false)) {
                         // The 'jcr:lifecyclePolicy' REFERENCE values is not valid or does not reference an existing node,
                         // so the 'jcr:lifecyclePolicy' and 'jcr:currentLifecycleState' properties should be removed...
-                        editor = node.editor();
-                        assert editor != null;
-                        editor.removeProperty(JcrLexicon.LIFECYCLE_POLICY);
-                        editor.removeProperty(JcrLexicon.CURRENT_LIFECYCLE_STATE);
+                        mutable.removeProperty(cache, JcrLexicon.LIFECYCLE_POLICY);
+                        mutable.removeProperty(cache, JcrLexicon.CURRENT_LIFECYCLE_STATE);
                     }
                 }
 
@@ -307,58 +242,12 @@ class JcrContentHandler extends DefaultHandler {
                     if (retentionInfoRetained && !isValidReference(node, JcrLexicon.RETENTION_POLICY, false)) {
                         // The 'jcr:retentionPolicy' REFERENCE values is not valid or does not reference an existing node,
                         // so the 'jcr:retentionPolicy', 'jcr:hold' and 'jcr:isDeep' properties should be removed ...
-                        if (editor == null) editor = node.editor();
-                        assert editor != null;
-                        editor.removeProperty(JcrLexicon.HOLD);
-                        editor.removeProperty(JcrLexicon.IS_DEEP);
-                        editor.removeProperty(JcrLexicon.RETENTION_POLICY);
+                        mutable.removeProperty(cache, JcrLexicon.HOLD);
+                        mutable.removeProperty(cache, JcrLexicon.IS_DEEP);
+                        mutable.removeProperty(cache, JcrLexicon.RETENTION_POLICY);
                     }
 
                 }
-            }
-
-            if (versionableNodes != null) {
-                assert systemChanges != null;
-                assert versions != null;
-
-                // Commit the system batch ...
-                assert systemChanges.isExecuteRequired();
-                Results systemResults = systemChanges.execute();
-
-                // Uncache the version storage ...
-                // cache().refresh(versions.versionStoragePath, false);
-
-                JcrValueFactory valueFactory = session.getValueFactory();
-                JcrValue trueValue = valueFactory.createValue(true);
-
-                // Loop through the requests looking for FunctionRequest instances, which should be in the same order as
-                // the AbstractJcrNode objects in the versionable nodes list. Each FunctionRequest should have the output
-                // of running the 'InitializeVersionHistoryFunction' to each versionable node, so now update the
-                // versionable node with the "mix:versionable" properites referencing the version history ...
-                Iterator<AbstractJcrNode> iter = versionableNodes.iterator();
-                for (Request request : systemResults.getRequests()) {
-                    if (request instanceof FunctionRequest && iter.hasNext()) {
-                        FunctionRequest func = (FunctionRequest)request;
-                        AbstractJcrNode versionableNode = iter.next();
-                        editor = versionableNode.editor();
-
-                        List<?> predecessorUuids = (List<?>)func.output(InitializeVersionHistoryFunction.PREDECESSOR_UUID_LIST);
-                        UUID baseVersionUuid = (UUID)func.output(InitializeVersionHistoryFunction.BASE_VERSION_UUID);
-                        UUID historyUuid = (UUID)func.output(InitializeVersionHistoryFunction.VERSION_HISTORY_UUID);
-                        // Path highestModifiedPath =
-                        // (Path)func.output(InitializeVersionHistoryFunction.PATH_OF_HIGHEST_MODIFIED_NODE);
-
-                        JcrValue history = valueFactory.createValue(historyUuid.toString(), PropertyType.REFERENCE);
-                        JcrValue baseVersion = valueFactory.createValue(baseVersionUuid.toString(), PropertyType.REFERENCE);
-                        JcrValue[] predecessors = valueFactory.createValues(predecessorUuids, PropertyType.REFERENCE);
-
-                        editor.setProperty(JcrLexicon.IS_CHECKED_OUT, trueValue, false, false);
-                        editor.setProperty(JcrLexicon.VERSION_HISTORY, history, false, false);
-                        editor.setProperty(JcrLexicon.BASE_VERSION, baseVersion, false, false);
-                        editor.setProperty(JcrLexicon.PREDECESSORS, predecessors, PropertyType.REFERENCE, false);
-                    }
-                }
-                editor = null;
             }
 
         } catch (RepositoryException e) {
@@ -378,7 +267,7 @@ class JcrContentHandler extends DefaultHandler {
         if (defn == null) return false;
         if (property.isMultiple()) {
             for (Value value : property.getValues()) {
-                if (!defn.canCastToTypeAndSatisfyConstraints(value)) {
+                if (!defn.canCastToTypeAndSatisfyConstraints(value, session)) {
                     // We know it's not valid, so return ...
                     return false;
                 }
@@ -387,7 +276,7 @@ class JcrContentHandler extends DefaultHandler {
             return true;
         }
         // Just a single value ...
-        return defn.canCastToTypeAndSatisfyConstraints(property.getValue());
+        return defn.canCastToTypeAndSatisfyConstraints(property.getValue(), session);
     }
 
     protected void validateReferenceConstraints() throws SAXException {
@@ -395,7 +284,7 @@ class JcrContentHandler extends DefaultHandler {
         try {
             for (AbstractJcrProperty refProp : refPropsRequiringConstraintValidation) {
                 // Make sure the reference is still there ...
-                if (refProp.propertyInfo() == null) continue;
+                if (refProp.property() == null) continue;
                 // It is still there, so validate it ...
                 if (!isValidReference(refProp)) {
                     JcrPropertyDefinition defn = refProp.getDefinition();
@@ -431,11 +320,11 @@ class JcrContentHandler extends DefaultHandler {
     public void endDocument() throws SAXException {
         postProcessNodes();
         validateReferenceConstraints();
-        if (saveMode == SaveMode.WORKSPACE) {
+        if (saveWhenCompleted) {
             try {
-                cache.save();
+                session.save();
             } catch (RepositoryException e) {
-                throw new EnclosingSAXException(e);
+                throw new SAXException(e);
             }
         }
         super.endDocument();
@@ -702,7 +591,7 @@ class JcrContentHandler extends DefaultHandler {
                     if (JcrLexicon.UUID.equals(name)) return;
 
                     // The node was already created, so set the property using the editor ...
-                    node.editor().setProperty(name, (JcrValue)valueFor(value, propertyType));
+                    node.setProperty(name, (JcrValue)valueFor(value, propertyType), false);
                 } else {
                     // The node hasn't been created yet, so just enqueue the property value into the map ...
                     List<Value> values = properties.get(name);
@@ -739,46 +628,44 @@ class JcrContentHandler extends DefaultHandler {
                 AbstractJcrNode parent = parentHandler.node();
                 assert parent != null;
 
-                // Figure out the UUID for the node ...
-                UUID uuid = null;
+                // Figure out the key for the node ...
+                NodeKey key = null;
                 List<Value> rawUuid = properties.get(JcrLexicon.UUID);
                 if (rawUuid != null) {
                     assert rawUuid.size() == 1;
-                    uuid = UUID.fromString(rawUuid.get(0).getString());
+                    key = parent.key().withId(rawUuid.get(0).getString());
 
                     try {
                         // Deal with any existing node ...
-                        AbstractJcrNode existingNodeWithUuid = cache().findJcrNode(Location.create(uuid));
+                        AbstractJcrNode existingNode = session().node(key, null);
                         switch (uuidBehavior) {
                             case ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING:
-                                parent = existingNodeWithUuid.getParent();
+                                parent = existingNode.getParent();
                                 // Destroy the existing node, but do so via the cache so that we don't record
                                 // the removal by UUID, since the new node has the same UUID and the import
                                 // may create references to the new node)
-                                existingNodeWithUuid.editor().destroy();
+                                existingNode.remove();
                                 break;
                             case ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW:
-                                uuid = UUID.randomUUID();
+                                key = cache().getRootKey().withRandomId();
                                 break;
                             case ImportUUIDBehavior.IMPORT_UUID_COLLISION_REMOVE_EXISTING:
-                                if (existingNodeWithUuid.path().isAtOrAbove(parent.path())) {
+                                if (existingNode.path().isAtOrAbove(parent.path())) {
                                     throw new ConstraintViolationException(
-                                                                           JcrI18n.cannotRemoveParentNodeOfTarget.text(existingNodeWithUuid.getPath(),
-                                                                                                                       uuid,
+                                                                           JcrI18n.cannotRemoveParentNodeOfTarget.text(existingNode.getPath(),
+                                                                                                                       key,
                                                                                                                        parent.getPath()));
                                 }
                                 // Destroy the existing node, but do so via the cache so that we don't record
                                 // the removal by UUID, since the new node has the same UUID and the import
                                 // may create references to the new node)
-                                existingNodeWithUuid.editor().destroy();
+                                existingNode.remove();
                                 break;
                             case ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW:
-                                throw new ItemExistsException(
-                                                              JcrI18n.itemAlreadyExistsWithUuid.text(uuid,
-                                                                                                     cache().session()
-                                                                                                            .workspace()
-                                                                                                            .getName(),
-                                                                                                     existingNodeWithUuid.getPath()));
+                                throw new ItemExistsException(JcrI18n.itemAlreadyExistsWithUuid.text(key,
+                                                                                                     session().workspace()
+                                                                                                              .getName(),
+                                                                                                     existingNode.getPath()));
                         }
                     } catch (ItemNotFoundException e) {
                         // there wasn't an existing item, so just continue
@@ -787,7 +674,7 @@ class JcrContentHandler extends DefaultHandler {
                 }
 
                 // See if the node was already autocreated by the parent
-                AbstractJcrNode existingNode = parent.getNode(nodeName);
+                AbstractJcrNode existingNode = parent.getNodeIfExists(nodeName);
                 boolean nodeAlreadyExists = existingNode != null && existingNode.getDefinition().isAutoCreated();
 
                 // Create the new node ...
@@ -796,34 +683,34 @@ class JcrContentHandler extends DefaultHandler {
                     List<Value> primaryTypeValueList = properties.get(JcrLexicon.PRIMARY_TYPE);
                     String typeName = primaryTypeValueList != null ? primaryTypeValueList.get(0).getString() : null;
                     Name primaryTypeName = nameFor(typeName);
-                    if (JcrNtLexicon.SHARE.equals(primaryTypeName) && uuid != null) {
-                        // Per Section 14.7 and 14.8 of the JCR 2.0 specification, shared nodes are imported in a special way ...
-                        child = parent.editor().createChild(nodeName, UUID.randomUUID(), ModeShapeLexicon.SHARE);
-                        SessionCache.NodeEditor newNodeEditor = child.editor();
-                        JcrValue uuidValue = (JcrValue)valueFor(uuid.toString(), PropertyType.STRING);
-                        newNodeEditor.setProperty(ModeShapeLexicon.SHARED_UUID, uuidValue, false, true);
-                        node = child;
-                        return;
+                    if (JcrNtLexicon.SHARE.equals(primaryTypeName) && key != null) {
+                        // TODO : Shareable nodes
+
+                        // // Per Section 14.7 and 14.8 of the JCR 2.0 specification, shared nodes are imported in a special way
+                        // ...
+                        // child = parent.editor().createChild(nodeName, UUID.randomUUID(), ModeShapeLexicon.SHARE);
+                        // SessionCache.NodeEditor newNodeEditor = child.editor();
+                        // JcrValue uuidValue = (JcrValue)valueFor(uuid.toString(), PropertyType.STRING);
+                        // newNodeEditor.setProperty(ModeShapeLexicon.SHARED_UUID, uuidValue, false, true);
+                        // node = child;
+                        // return;
                     }
                     // Otherwise, it's just a regular node...
-                    child = parent.editor().createChild(nodeName, uuid, primaryTypeName);
+                    child = parent.addChildNode(nodeName, primaryTypeName, key);
                 } else {
                     child = existingNode;
                 }
 
                 // Set the properties on the new node ...
-                SessionCache.NodeEditor newNodeEditor = child.editor();
 
                 // Set the mixin types first (before we set any properties that may require the mixins to be present) ...
                 List<Value> mixinTypeValueList = properties.get(JcrLexicon.MIXIN_TYPES);
                 if (mixinTypeValueList != null) {
                     for (Value value : mixinTypeValueList) {
-                        JcrNodeType mixinType = nodeTypeFor(value.getString());
-                        newNodeEditor.addMixin(mixinType);
+                        child.addMixin(value.getString());
                     }
                 }
 
-                boolean skipProtected = false;
                 for (Map.Entry<Name, List<Value>> entry : properties.entrySet()) {
                     Name propertyName = entry.getKey();
 
@@ -842,13 +729,12 @@ class JcrContentHandler extends DefaultHandler {
                     AbstractJcrProperty prop;
 
                     if (values.size() == 1 && !this.multiValuedPropertyNames.contains(propertyName)) {
-                        prop = newNodeEditor.setProperty(propertyName, (JcrValue)values.get(0), skipProtected, true);
+                        prop = child.setProperty(propertyName, (JcrValue)values.get(0), true);
                     } else {
-                        prop = newNodeEditor.setProperty(propertyName,
-                                                         values.toArray(new Value[values.size()]),
-                                                         PropertyType.UNDEFINED,
-                                                         skipProtected,
-                                                         true);
+                        prop = child.setProperty(propertyName,
+                                                 values.toArray(new JcrValue[values.size()]),
+                                                 PropertyType.UNDEFINED,
+                                                 true);
                     }
 
                     if (prop.getType() == PropertyType.REFERENCE && prop.getDefinition().getValueConstraints().length != 0) {
@@ -971,9 +857,10 @@ class JcrContentHandler extends DefaultHandler {
         /**
          * {@inheritDoc}
          * 
-         * @see org.modeshape.jcr.JcrContentHandler.NodeHandlerFactory#createFor(org.modeshape.graph.property.Name,
+         * @see org.modeshape.jcr.JcrContentHandler.NodeHandlerFactory#createFor(Name,
          *      org.modeshape.jcr.JcrContentHandler.NodeHandler,int)
          */
+        @Override
         public NodeHandler createFor( Name name,
                                       NodeHandler parentHandler,
                                       int uuidBehavior ) throws SAXException {
@@ -982,7 +869,7 @@ class JcrContentHandler extends DefaultHandler {
             }
             if (JcrLexicon.ROOT.equals(name)) {
                 try {
-                    JcrRootNode rootNode = cache().findJcrRootNode();
+                    JcrRootNode rootNode = session().getRootNode();
                     return new JcrRootHandler(rootNode);
                 } catch (RepositoryException re) {
                     throw new EnclosingSAXException(re);
@@ -1156,6 +1043,8 @@ class JcrContentHandler extends DefaultHandler {
                                 int start,
                                 int length ) throws SAXException {
             String value = new String(ch, start, length);
+            value = value.trim();
+            if (value.length() == 0) return;
             // Create a 'jcr:xmltext' child node with a single 'jcr:xmlcharacters' property ...
             current = nodeHandlerFactory.createFor(JcrLexicon.XMLTEXT, current, uuidBehavior);
             current.addPropertyValue(JcrLexicon.PRIMARY_TYPE,

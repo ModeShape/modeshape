@@ -24,7 +24,7 @@
 package org.modeshape.jcr;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -32,10 +32,10 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import javax.jcr.AccessDeniedException;
+import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
-import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 import javax.jcr.PropertyType;
 import javax.jcr.ReferentialIntegrityException;
@@ -46,105 +46,79 @@ import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
 import javax.jcr.version.VersionIterator;
-import org.modeshape.graph.Graph;
-import org.modeshape.graph.connector.RepositorySourceException;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.Path;
-import org.modeshape.graph.property.Path.Segment;
-import org.modeshape.graph.property.Reference;
+import org.modeshape.common.annotation.NotThreadSafe;
+import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.cache.SessionCache;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.Property;
 
 /**
  * Convenience wrapper around a version history {@link JcrNode node}.
  */
-class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
+@ThreadSafe
+final class JcrVersionHistoryNode extends JcrSystemNode implements VersionHistory {
 
-    private static final String[] EMPTY_STRING_ARRAY = new String[0];
+    JcrVersionHistoryNode( JcrSession session,
+                           NodeKey key ) {
+        super(session, key);
+    }
 
-    public JcrVersionHistoryNode( AbstractJcrNode node ) {
-        super(node.cache, node.nodeId, node.location);
-
-        assert !node.isRoot() : "Version histories should always be located in the /jcr:system/jcr:versionStorage subgraph";
+    @Override
+    Type type() {
+        return Type.VERSION_HISTORY;
     }
 
     /**
+     * Get the node that represents the version labels for this history. Each version label node (see Section 3.13.5.5 of the JCR
+     * 2.0 specification) contains a REFERENCE property for each label, where the name of the property is the label and the
+     * REFERENCE points to the 'nt:version' child node that has that label.
+     * 
      * @return a reference to the {@code jcr:versionLabels} child node of this history node.
      * @throws RepositoryException if an error occurs accessing this node
      */
-    private AbstractJcrNode versionLabels() throws RepositoryException {
-        Segment segment = segmentFrom(JcrLexicon.VERSION_LABELS);
-        return nodeInfo().getChild(segment).getPayload().getJcrNode();
+    protected final AbstractJcrNode versionLabels() throws RepositoryException {
+        return childNode(JcrLexicon.VERSION_LABELS, Type.NODE);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.version.VersionHistory#getAllVersions()
-     */
+    @Override
     public VersionIterator getAllVersions() throws RepositoryException {
         return new JcrVersionIterator(getNodes());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.version.VersionHistory#getRootVersion()
-     */
+    @Override
     public JcrVersionNode getRootVersion() throws RepositoryException {
-        // Copied from AbstractJcrNode.getNode(String) to avoid double conversion. Needs to be refactored.
-        Segment segment = context().getValueFactories().getPathFactory().createSegment(JcrLexicon.ROOT_VERSION);
-        try {
-            return (JcrVersionNode)nodeInfo().getChild(segment).getPayload().getJcrNode();
-        } catch (org.modeshape.graph.property.PathNotFoundException e) {
-            String msg = JcrI18n.childNotFoundUnderNode.text(segment, getPath(), cache.workspaceName());
-            throw new PathNotFoundException(msg);
-        } catch (RepositorySourceException e) {
-            throw new RepositoryException(e.getLocalizedMessage(), e);
-        }
+        return (JcrVersionNode)childNode(JcrLexicon.ROOT_VERSION, Type.VERSION);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.version.VersionHistory#getVersion(java.lang.String)
-     */
+    @Override
     public JcrVersionNode getVersion( String versionName ) throws VersionException, RepositoryException {
         try {
-            AbstractJcrNode version = getNode(versionName);
-            return (JcrVersionNode)version;
+            return (JcrVersionNode)getNode(versionName);
         } catch (PathNotFoundException pnfe) {
             throw new VersionException(JcrI18n.invalidVersionName.text(versionName, getPath()));
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.version.VersionHistory#getVersionByLabel(java.lang.String)
-     */
+    @Override
     public JcrVersionNode getVersionByLabel( String label ) throws VersionException, RepositoryException {
-        Property prop = versionLabels().getProperty(label);
-        if (prop == null) throw new VersionException(JcrI18n.invalidVersionLabel.text(label, getPath()));
-
-        AbstractJcrNode version = session().getNodeByUUID(prop.getString());
-
-        assert version != null;
-
-        return (JcrVersionNode)version;
+        try {
+            javax.jcr.Property prop = versionLabels().getProperty(label);
+            return (JcrVersionNode)prop.getNode();
+        } catch (PathNotFoundException e) {
+            throw new VersionException(JcrI18n.invalidVersionLabel.text(label, getPath()));
+        } catch (ItemNotFoundException e) {
+            throw new VersionException(JcrI18n.labeledNodeNotFound.text(label, getPath()));
+        }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.version.VersionHistory#getVersionLabels()
-     */
+    @Override
     public String[] getVersionLabels() throws RepositoryException {
         PropertyIterator iter = versionLabels().getProperties();
-
         String[] labels = new String[(int)iter.getSize()];
         for (int i = 0; iter.hasNext(); i++) {
             labels[i] = iter.nextProperty().getName();
         }
-
         return labels;
     }
 
@@ -152,155 +126,130 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
      * Returns the version labels that point to the given version
      * 
      * @param version the version for which the labels should be retrieved
-     * @return the version labels for that version
+     * @return the set of version labels for that version; never null
      * @throws RepositoryException if an error occurs accessing the repository
      */
-    @SuppressWarnings( "deprecation" )
-    private Collection<String> versionLabelsFor( Version version ) throws RepositoryException {
+    private Set<String> versionLabelsFor( Version version ) throws RepositoryException {
         if (!version.getParent().equals(this)) {
             throw new VersionException(JcrI18n.invalidVersion.text(version.getPath(), getPath()));
         }
 
-        String versionUuid = version.getUUID();
-
+        String versionId = version.getIdentifier();
         PropertyIterator iter = versionLabels().getProperties();
+        if (iter.getSize() == 0) return Collections.emptySet();
 
-        List<String> labels = new LinkedList<String>();
-        for (int i = 0; iter.hasNext(); i++) {
-            Property prop = iter.nextProperty();
-
-            if (versionUuid.equals(prop.getString())) {
+        Set<String> labels = new HashSet<String>();
+        while (iter.hasNext()) {
+            javax.jcr.Property prop = iter.nextProperty();
+            if (versionId.equals(prop.getString())) {
                 labels.add(prop.getName());
             }
         }
-
         return labels;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.version.VersionHistory#getVersionLabels(javax.jcr.version.Version)
-     */
+    @Override
     public String[] getVersionLabels( Version version ) throws RepositoryException {
-        return versionLabelsFor(version).toArray(EMPTY_STRING_ARRAY);
+        Set<String> labels = versionLabelsFor(version);
+        return labels.toArray(new String[labels.size()]);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.version.VersionHistory#getVersionableUUID()
-     */
+    @Override
     public String getVersionableUUID() throws RepositoryException {
         return getProperty(JcrLexicon.VERSIONABLE_UUID).getString();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.version.VersionHistory#hasVersionLabel(java.lang.String)
-     */
+    @Override
     public boolean hasVersionLabel( String label ) throws RepositoryException {
         return versionLabels().hasProperty(label);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.version.VersionHistory#hasVersionLabel(javax.jcr.version.Version, java.lang.String)
-     */
+    @Override
     public boolean hasVersionLabel( Version version,
                                     String label ) throws RepositoryException {
-        Collection<String> labels = versionLabelsFor(version);
-
-        return labels.contains(label);
+        return versionLabelsFor(version).contains(label);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.version.VersionHistory#removeVersion(java.lang.String)
-     */
-    @SuppressWarnings( "deprecation" )
+    @Override
     public void removeVersion( String versionName )
         throws ReferentialIntegrityException, AccessDeniedException, UnsupportedRepositoryOperationException, VersionException,
         RepositoryException {
 
         JcrVersionNode version = getVersion(versionName);
+        assert version.getParent() == this;
 
         /*
-         * Verify that the only references to this version are from its predecessors and successors in the version history.s
+         * Verify that the only references to this version are from its predecessors and successors in the version history.
          */
-        Path versionHistoryPath = version.path().getParent();
         for (PropertyIterator iter = version.getReferences(); iter.hasNext();) {
             AbstractJcrProperty prop = (AbstractJcrProperty)iter.next();
-
-            Path nodePath = prop.path().getParent();
+            AbstractJcrNode referrer = prop.getParent();
 
             // If the property's parent is the root node, fail.
-            if (nodePath.isRoot()) {
+            if (referrer.isRoot()) {
                 throw new ReferentialIntegrityException(JcrI18n.cannotRemoveVersion.text(prop.getPath()));
             }
-
-            if (!versionHistoryPath.equals(nodePath.getParent())) {
+            if (!this.equals(referrer)) {
                 throw new ReferentialIntegrityException(JcrI18n.cannotRemoveVersion.text(prop.getPath()));
             }
-
         }
 
-        String versionUuid = version.getUUID();
+        String versionId = version.getIdentifier();
 
         // Get the predecessors and successors for the version being removed ...
-        Property predecessors = version.getProperty(JcrLexicon.PREDECESSORS);
-        Property successors = version.getProperty(JcrLexicon.SUCCESSORS);
+        AbstractJcrProperty predecessors = version.getProperty(JcrLexicon.PREDECESSORS);
+        AbstractJcrProperty successors = version.getProperty(JcrLexicon.SUCCESSORS);
 
         // Remove the reference to the dead version from the successors property of all the predecessors
-        Set<Value> addedValues = new HashSet<Value>();
-        for (Value predecessorUuid : predecessors.getValues()) {
+        Set<JcrValue> addedValues = new HashSet<JcrValue>();
+        for (Value predecessorValue : predecessors.getValues()) {
             addedValues.clear();
-            List<Value> newNodeSuccessors = new ArrayList<Value>();
+            List<JcrValue> newNodeSuccessors = new ArrayList<JcrValue>();
 
             // Add each of the successors from the version's predecessor ...
-            AbstractJcrNode predecessor = session().getNodeByUUID(predecessorUuid.getString());
-            Value[] nodeSuccessors = predecessor.getProperty(JcrLexicon.SUCCESSORS).getValues();
-            addValuesNotInSet(nodeSuccessors, newNodeSuccessors, versionUuid, addedValues);
+            AbstractJcrNode predecessor = session().getNodeByIdentifier(predecessorValue.getString());
+            JcrValue[] nodeSuccessors = predecessor.getProperty(JcrLexicon.SUCCESSORS).getValues();
+            addValuesNotInSet(nodeSuccessors, newNodeSuccessors, versionId, addedValues);
 
             // Add each of the successors from the version being removed ...
-            addValuesNotInSet(successors.getValues(), newNodeSuccessors, versionUuid, addedValues);
+            addValuesNotInSet(successors.getValues(), newNodeSuccessors, versionId, addedValues);
 
             // Set the property ...
-            Value[] newSuccessors = newNodeSuccessors.toArray(new Value[newNodeSuccessors.size()]);
-            predecessor.editor().setProperty(JcrLexicon.SUCCESSORS, newSuccessors, PropertyType.REFERENCE, false);
+            JcrValue[] newSuccessors = newNodeSuccessors.toArray(new JcrValue[newNodeSuccessors.size()]);
+            predecessor.setProperty(JcrLexicon.SUCCESSORS, newSuccessors, PropertyType.REFERENCE, false);
             addedValues.clear();
         }
 
         // Remove the reference to the dead version from the predecessors property of all the successors
         for (Value successorUuid : successors.getValues()) {
             addedValues.clear();
-            List<Value> newNodePredecessors = new ArrayList<Value>();
+            List<JcrValue> newNodePredecessors = new ArrayList<JcrValue>();
 
             // Add each of the predecessors from the version's successor ...
-            AbstractJcrNode successor = session().getNodeByUUID(successorUuid.getString());
-            Value[] nodePredecessors = successor.getProperty(JcrLexicon.PREDECESSORS).getValues();
-            addValuesNotInSet(nodePredecessors, newNodePredecessors, versionUuid, addedValues);
+            AbstractJcrNode successor = session().getNodeByIdentifier(successorUuid.getString());
+            JcrValue[] nodePredecessors = successor.getProperty(JcrLexicon.PREDECESSORS).getValues();
+            addValuesNotInSet(nodePredecessors, newNodePredecessors, versionId, addedValues);
 
             // Add each of the predecessors from the version being removed ...
-            addValuesNotInSet(predecessors.getValues(), newNodePredecessors, versionUuid, addedValues);
+            addValuesNotInSet(predecessors.getValues(), newNodePredecessors, versionId, addedValues);
 
             // Set the property ...
-            Value[] newPredecessors = newNodePredecessors.toArray(new Value[newNodePredecessors.size()]);
-            successor.editor().setProperty(JcrLexicon.PREDECESSORS, newPredecessors, PropertyType.REFERENCE, false);
+            JcrValue[] newPredecessors = newNodePredecessors.toArray(new JcrValue[newNodePredecessors.size()]);
+            successor.setProperty(JcrLexicon.PREDECESSORS, newPredecessors, PropertyType.REFERENCE, false);
         }
 
-        session().recordRemoval(version.location); // do this first before we destroy the node!
-        version.editor().destroy();
+        // Use a separate system session to destroy the version ...
+        SessionCache system = session.createSystemCache(false);
+        mutable().removeChild(system, key);
+        system.destroy(key);
+        system.save();
     }
 
-    private void addValuesNotInSet( Value[] values,
-                                    List<Value> newValues,
+    private void addValuesNotInSet( JcrValue[] values,
+                                    List<JcrValue> newValues,
                                     String versionUuid,
-                                    Set<Value> exceptIn ) throws RepositoryException {
-        for (Value value : values) {
+                                    Set<JcrValue> exceptIn ) throws RepositoryException {
+        for (JcrValue value : values) {
             if (!versionUuid.equals(value.getString()) && !exceptIn.contains(value)) {
                 exceptIn.add(value);
                 newValues.add(value);
@@ -308,17 +257,12 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.version.VersionHistory#addVersionLabel(java.lang.String, java.lang.String, boolean)
-     */
-    @SuppressWarnings( "deprecation" )
+    @Override
     public void addVersionLabel( String versionName,
                                  String label,
                                  boolean moveLabel ) throws VersionException, RepositoryException {
         AbstractJcrNode versionLabels = versionLabels();
-        Version version = getVersion(versionName);
+        JcrVersionNode version = getVersion(versionName);
 
         try {
             // This throws a PNFE if the named property doesn't already exist
@@ -329,44 +273,43 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
             // This gets thrown if the label doesn't already exist
         }
 
-        Graph graph = cache.session().repository().createSystemGraph(context());
-        Reference ref = context().getValueFactories().getReferenceFactory().create(version.getUUID());
-        graph.set(label).on(versionLabels.location).to(ref);
-
-        versionLabels.refresh(false);
-
+        // Use a separate system session to set the REFERENCE property on the 'nt:versionLabels' child node ...
+        SessionCache system = session.createSystemCache(false);
+        Property ref = session.propertyFactory().create(nameFrom(label), version.key());
+        versionLabels.mutable().setProperty(system, ref);
+        system.save();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.version.VersionHistory#removeVersionLabel(java.lang.String)
-     */
+    @Override
     public void removeVersionLabel( String label ) throws VersionException, RepositoryException {
         AbstractJcrNode versionLabels = versionLabels();
 
+        Name propName = null;
         try {
             // This throws a PNFE if the named property doesn't already exist
-            versionLabels.getProperty(label);
+            propName = versionLabels.getProperty(label).name();
         } catch (PathNotFoundException pnfe) {
             // This gets thrown if the label doesn't already exist
             throw new VersionException(JcrI18n.invalidVersionLabel.text(label, getPath()));
         }
 
-        Graph graph = cache.session().repository().createSystemGraph(context());
-        graph.remove(label).on(versionLabels.location).and();
-
-        versionLabels.refresh(false);
+        // Use a separate system session to remove the REFERENCE property on the 'nt:versionLabels' child node ...
+        SessionCache system = session.createSystemCache(false);
+        versionLabels.mutable().removeProperty(system, propName);
+        system.save();
     }
 
+    @Override
     public NodeIterator getAllFrozenNodes() throws RepositoryException {
         return new FrozenNodeIterator(getAllVersions());
     }
 
+    @Override
     public NodeIterator getAllLinearFrozenNodes() throws RepositoryException {
         return new FrozenNodeIterator(getAllLinearVersions());
     }
 
+    @Override
     public VersionIterator getAllLinearVersions() throws RepositoryException {
         AbstractJcrNode existingNode = session().getNodeByIdentifier(getVersionableIdentifier());
         if (existingNode == null) return getAllVersions();
@@ -375,7 +318,6 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
 
         LinkedList<JcrVersionNode> versions = new LinkedList<JcrVersionNode>();
         JcrVersionNode baseVersion = existingNode.getBaseVersion();
-
         while (baseVersion != null) {
             versions.addFirst(baseVersion);
             baseVersion = baseVersion.getLinearPredecessor();
@@ -384,6 +326,7 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
         return new LinearVersionIterator(versions, versions.size());
     }
 
+    @Override
     public String getVersionableIdentifier() throws RepositoryException {
         // ModeShape uses a node's UUID as it's identifier
         return getVersionableUUID();
@@ -394,7 +337,8 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
      * all nodes of the {@link JcrVersionHistoryNode version history}, silently ignoring the {@code jcr:rootVersion} and
      * {@code jcr:versionLabels} children.
      */
-    class JcrVersionIterator implements VersionIterator {
+    @NotThreadSafe
+    static class JcrVersionIterator implements VersionIterator {
 
         private final NodeIterator nodeIterator;
         private Version next;
@@ -405,11 +349,7 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
             this.nodeIterator = nodeIterator;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.version.VersionIterator#nextVersion()
-         */
+        @Override
         public Version nextVersion() {
             Version next = this.next;
 
@@ -419,7 +359,6 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
             }
 
             next = nextVersionIfPossible();
-
             if (next == null) {
                 throw new NoSuchElementException();
             }
@@ -447,31 +386,19 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
             return null;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.RangeIterator#getPosition()
-         */
+        @Override
         public long getPosition() {
             return position;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.RangeIterator#getSize()
-         */
+        @Override
         public long getSize() {
             // The number of version nodes is the number of child nodes of the version history - 1
             // (the jcr:versionLabels node)
             return nodeIterator.getSize() - 1;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.RangeIterator#skip(long)
-         */
+        @Override
         public void skip( long count ) {
             // Walk through the list to make sure that we don't accidentally count jcr:rootVersion or jcr:versionLabels as a
             // skipped node
@@ -480,33 +407,19 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
             }
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.util.Iterator#hasNext()
-         */
+        @Override
         public boolean hasNext() {
             if (this.next != null) return true;
-
             this.next = nextVersionIfPossible();
-
             return this.next != null;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.util.Iterator#next()
-         */
+        @Override
         public Object next() {
             return nextVersion();
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.util.Iterator#remove()
-         */
+        @Override
         public void remove() {
             throw new UnsupportedOperationException();
         }
@@ -517,7 +430,8 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
      * {@link JcrVersionIterator} in that it expects an exact list of versions to iterate over whereas {@code JcrVersionIterator}
      * expects list of children for a {@code nt:versionHistory} node and filters out the label child.
      */
-    class LinearVersionIterator implements VersionIterator {
+    @NotThreadSafe
+    static class LinearVersionIterator implements VersionIterator {
 
         private final Iterator<? extends Version> versions;
         private final int size;
@@ -530,14 +444,17 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
             this.pos = 0;
         }
 
+        @Override
         public long getPosition() {
             return pos;
         }
 
+        @Override
         public long getSize() {
             return this.size;
         }
 
+        @Override
         public void skip( long skipNum ) {
             while (skipNum-- > 0 && versions.hasNext()) {
                 versions.next();
@@ -546,42 +463,51 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
 
         }
 
+        @Override
         public Version nextVersion() {
             return versions.next();
         }
 
+        @Override
         public boolean hasNext() {
             return versions.hasNext();
         }
 
+        @Override
         public Object next() {
             return nextVersion();
         }
 
+        @Override
         public void remove() {
             throw new UnsupportedOperationException();
         }
     }
 
-    class FrozenNodeIterator implements NodeIterator {
+    @NotThreadSafe
+    static final class FrozenNodeIterator implements NodeIterator {
         private final VersionIterator versions;
 
         FrozenNodeIterator( VersionIterator versionIter ) {
             this.versions = versionIter;
         }
 
+        @Override
         public boolean hasNext() {
             return versions.hasNext();
         }
 
+        @Override
         public Object next() {
             return nextNode();
         }
 
+        @Override
         public void remove() {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public Node nextNode() {
             try {
                 return versions.nextVersion().getFrozenNode();
@@ -591,14 +517,17 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
             }
         }
 
+        @Override
         public long getPosition() {
             return versions.getPosition();
         }
 
+        @Override
         public long getSize() {
             return versions.getSize();
         }
 
+        @Override
         public void skip( long skipNum ) {
             versions.skip(skipNum);
         }

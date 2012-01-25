@@ -38,31 +38,27 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
+import javax.jcr.nodetype.InvalidNodeTypeDefinitionException;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
-import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
-import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.Path.Segment;
-import org.modeshape.jcr.JcrRepository.Option;
-import org.modeshape.jcr.nodetype.InvalidNodeTypeDefinitionException;
 import org.modeshape.jcr.query.JcrQueryResult;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.Path.Segment;
 
 /**
  * This is a test suite that operates against a complete JcrRepository instance created and managed using the JcrEngine.
@@ -73,8 +69,8 @@ import org.modeshape.jcr.query.JcrQueryResult;
  * Also, because queries are read-only, the engine is set up once and used for the entire set of test methods.
  * </p>
  */
-@Migrated
-public class JcrQueryManagerTest {
+@Ignore
+public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
     protected static URI resourceUri( String name ) throws URISyntaxException {
         return resourceUrl(name).toURI();
@@ -102,51 +98,20 @@ public class JcrQueryManagerTest {
         return new String[] {};
     }
 
-    private static JcrConfiguration configuration;
-    private static JcrEngine engine;
-    private static JcrRepository repository;
-    private Session session;
     private boolean print;
 
     @SuppressWarnings( "deprecation" )
     @BeforeClass
     public static void beforeAll() throws Exception {
+        MultiUseAbstractTest.beforeAll();
         try {
-            configuration = new JcrConfiguration();
-            configuration.repositorySource("car-source")
-                         .usingClass(InMemoryRepositorySource.class)
-                         .setDescription("The automobile content");
-            configuration.repository("cars")
-                         .setSource("car-source")
-                         .registerNamespace("car", "http://www.modeshape.org/examples/cars/1.0")
-                         .addNodeTypes(resourceUrl("cars.cnd"))
-                         // Added ADMIN privilege to allow permanent namespace registration in one of the tests
-                         .setOption(Option.ANONYMOUS_USER_ROLES,
-                                    ModeShapeRoles.READONLY + "," + ModeShapeRoles.READWRITE + "," + ModeShapeRoles.ADMIN)
-                         .setOption(Option.JAAS_LOGIN_CONFIG_NAME, "modeshape-jcr");
-            engine = configuration.build();
-            engine.start();
-
-            // Initialize the JAAS configuration to allow for an admin login later
-            JaasTestUtil.initJaas("security/jaas.conf.xml");
-
-            // Start the repository ...
-            try {
-                repository = engine.getRepository("cars");
-            } catch (RuntimeException t) {
-                t.printStackTrace();
-                throw t;
-            } catch (Exception t) {
-                t.printStackTrace();
-                throw t;
-            }
-
             // Use a session to load the contents ...
-            Session session = repository.login();
+            JcrSession session = repository.login();
             try {
-                registerNodeTypes(session, "fincayra.cnd");
-                registerNodeTypes(session, "magnolia.cnd");
-                registerNodeTypes(session, "notionalTypes.cnd");
+                registerNodeTypes(session, "cnd/fincayra.cnd");
+                registerNodeTypes(session, "cnd/magnolia.cnd");
+                registerNodeTypes(session, "cnd/notionalTypes.cnd");
+                registerNodeTypes(session, "cnd/cars.cnd");
 
                 InputStream stream = resourceStream("io/cars-system-view.xml");
                 try {
@@ -187,7 +152,7 @@ public class JcrQueryManagerTest {
             }
 
             // Prime creating the schemata ...
-            repository.getRepositoryTypeManager().getRepositorySchemata();
+            repository.nodeTypeManager().getRepositorySchemata();
 
         } catch (RuntimeException e) {
             e.printStackTrace();
@@ -200,47 +165,28 @@ public class JcrQueryManagerTest {
 
     @AfterClass
     public static void afterAll() throws Exception {
-        try {
-            engine.shutdown();
-            engine.awaitTermination(3, TimeUnit.SECONDS);
-            engine = null;
-            configuration = null;
-        } finally {
-            JaasTestUtil.releaseJaas();
-        }
+        MultiUseAbstractTest.afterAll();
     }
 
     @Before
+    @Override
     public void beforeEach() throws Exception {
+        super.beforeEach();
         print = false;
-        // Obtain a session using the anonymous login capability, which we granted READ privilege
-        session = repository.login();
     }
 
-    @After
-    public void afterEach() throws Exception {
-        if (session != null) {
-            try {
-                session.logout();
-            } finally {
-                session = null;
-            }
-        }
-    }
-
-    protected static void registerNodeTypes( Session session,
+    protected static void registerNodeTypes( JcrSession session,
                                              String pathToClasspathResource ) throws RepositoryException, IOException {
-        CndNodeTypeReader cndReader = new CndNodeTypeReader(session);
-        cndReader.read(pathToClasspathResource);
-        session.getWorkspace().getNodeTypeManager().registerNodeTypes(cndReader.getNodeTypeDefinitions(), true);
+        URL url = resourceUrl(pathToClasspathResource);
+        session.getWorkspace().getNodeTypeManager().registerNodeTypes(url, true);
     }
 
     protected Name name( String name ) {
-        return engine.getExecutionContext().getValueFactories().getNameFactory().create(name);
+        return session.nameFactory().create(name);
     }
 
     protected Segment segment( String segment ) {
-        return engine.getExecutionContext().getValueFactories().getPathFactory().createSegment(segment);
+        return session.pathFactory().createSegment(segment);
     }
 
     protected List<Segment> segments( String... segments ) {
@@ -333,7 +279,7 @@ public class JcrQueryManagerTest {
 
     @Test
     public void shouldStartUp() {
-        assertThat(engine.getRepositoryService(), is(notNullValue()));
+        assertThat(session, is(notNullValue()));
     }
 
     @Test

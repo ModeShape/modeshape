@@ -30,17 +30,13 @@ import javax.jcr.NodeIterator;
 import org.junit.Before;
 import org.junit.Test;
 
-/**
- * 
- */
-@Migrated
 public class JcrEmptyNodeIteratorTest {
 
     private NodeIterator iter;
 
     @Before
     public void beforeEach() {
-        iter = new JcrEmptyNodeIterator();
+        iter = JcrEmptyNodeIterator.INSTANCE;
     }
 
     @Test

@@ -30,7 +30,6 @@ import java.text.StringCharacterIterator;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import javax.jcr.Binary;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Property;
@@ -43,10 +42,9 @@ import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.text.TextEncoder;
 import org.modeshape.common.text.XmlNameEncoder;
 import org.modeshape.common.util.Base64;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.ValueFactories;
-import org.modeshape.graph.property.ValueFactory;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.ValueFactories;
+import org.modeshape.jcr.value.ValueFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
@@ -73,7 +71,7 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
 
     JcrDocumentViewExporter( JcrSession session ) {
         super(session, Collections.<String>emptyList());
-        stringFactory = session.getExecutionContext().getValueFactories().getStringFactory();
+        stringFactory = session.stringFactory();
     }
 
     /**
@@ -94,7 +92,7 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
                             ContentHandler contentHandler,
                             boolean skipBinary,
                             boolean noRecurse ) throws RepositoryException, SAXException {
-        ExecutionContext executionContext = session.getExecutionContext();
+        ExecutionContext executionContext = session.context();
 
         if (node instanceof JcrSharedNode) {
             // This is a shared node, and per Section 14.7 of the JCR 2.0 specification, they have to be written out
@@ -202,7 +200,6 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
         String valueAsString;
         if (PropertyType.BINARY == prop.getType()) {
             StringBuffer buff = new StringBuffer(ENCODE_BUFFER_SIZE);
-            Binary binary = value.getBinary();
             try {
                 Base64.InputStream is = new Base64.InputStream(value.getBinary().getStream(), Base64.ENCODE);
 
@@ -213,17 +210,6 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
                 }
             } catch (IOException ioe) {
                 throw new RepositoryException(ioe);
-            } finally {
-                try {
-                    binary.dispose();
-                } finally {
-                    if (!prop.isModified()) {
-                        // Modified properties cannot be purged, but unmodified properties can and should be!
-                        if (binary instanceof org.modeshape.graph.property.Binary) {
-                            ((org.modeshape.graph.property.Binary)binary).purge();
-                        }
-                    }
-                }
             }
             valueAsString = buff.toString();
         } else {

@@ -31,45 +31,34 @@ import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.modeshape.graph.JcrLexicon;
 
 /**
  * @author jverhaeg
  */
-public class JcrWorkspaceTest extends AbstractSessionTest {
+public class JcrWorkspaceTest extends SingleUseAbstractTest {
 
-    @BeforeClass
-    public static void beforeAll() {
-        // Initialize the JAAS configuration to allow for an admin login later
-        JaasTestUtil.initJaas("security/jaas.conf.xml");
-    }
-
-    @AfterClass
-    public static void afterAll() {
-        JaasTestUtil.releaseJaas();
-    }
+    private JcrWorkspace workspace;
+    private String workspaceName;
 
     @Override
     @Before
     public void beforeEach() throws Exception {
         super.beforeEach();
-    }
 
-    @Override
-    protected void initializeContent() {
-        graph.create("/a").and().create("/a/b").and().create("/a/b/c").and().create("/b").and();
-        graph.set("booleanProperty").on("/a/b").to(true);
-        graph.set("jcr:primaryType").on("/a/b").to("nt:unstructured");
-        graph.set("stringProperty").on("/a/b/c").to("value");
+        Node root = session.getRootNode();
+        Node a = root.addNode("a");
+        Node ab = a.addNode("b", "nt:unstructured");
+        Node abc = ab.addNode("c");
+        Node b = root.addNode("b");
+        abc.setProperty("stringProperty", "value");
+        session.save();
+        assertThat(b, is(notNullValue()));
 
-        // Make sure the path to the namespaces exists ...
-        graph.create("/jcr:system").and().create("/jcr:system/mode:namespaces").ifAbsent().and();
-
+        workspace = session.getWorkspace();
+        workspaceName = workspace.getName();
     }
 
     @Test( expected = IllegalArgumentException.class )
@@ -117,7 +106,7 @@ public class JcrWorkspaceTest extends AbstractSessionTest {
 
     @Test
     public void shouldHaveSameContextIdAsSession() {
-        assertThat(workspace.context().getId(), is(session.getExecutionContext().getId()));
+        assertThat(workspace.context().getId(), is(session.context().getId()));
     }
 
     @Test
@@ -132,8 +121,10 @@ public class JcrWorkspaceTest extends AbstractSessionTest {
         assertThat(workspace.getNodeTypeManager(), is(notNullValue()));
     }
 
+    @Ignore
     @Test
     public void shouldGetObservationManager() throws Exception {
+        // TODO: Observation
         assertThat(workspace.getObservationManager(), is(notNullValue()));
     }
 

@@ -160,7 +160,7 @@ public class NodeTypeAssertion {
         assertThat(template.isMandatory(), is(definition.isMandatory()));
         assertThat(template.isProtected(), is(definition.isProtected()));
 
-        assertThat(template.getDefaultPrimaryType(), is(definition.getDefaultPrimaryType()));
+        assertThat(template.getDefaultPrimaryTypeName(), is(definition.getDefaultPrimaryTypeName()));
         assertThat(template.allowsSameNameSiblings(), is(definition.allowsSameNameSiblings()));
 
         // assertThat(template.getRequiredPrimaryTypeNames(), is(definition.getRequiredPrimaryTypeNames()));

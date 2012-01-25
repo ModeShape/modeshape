@@ -281,7 +281,7 @@
 			</sv:property>
 			<sv:property sv:name="car:alternateModels" sv:type="Reference">
 				<sv:value>7c513b8e-e77e-40f2-bf4d-147419037a75</sv:value>
-				<sv:value>30568ebe-6351-4e74-9502-71b136387142</sv:value>
+				<sv:value>c91ed7ba-39c5-4fcd-854c-8efbb1567b95</sv:value>
 			</sv:property>
 		</sv:node>
 		<sv:node sv:name="Lexus IS350">

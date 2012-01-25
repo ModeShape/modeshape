@@ -100,4 +100,21 @@ public interface ModeShapePermissions {
      */
     public static final String DELETE_WORKSPACE = "delete_workspace";
 
+    /**
+     * The {@link #MONITOR monitor} permission allows the user the ability to
+     * {@link org.modeshape.jcr.api.Workspace#getRepositoryMonitor() monitor the repository}.
+     */
+    public static final String MONITOR = "monitor";
+    /*
+     * The {@link #INDEX_WORKSPACE index_workspace} permission allows the user the ability to
+     * {@link org.modeshape.jcr.api.Workspace#reindex(String) reindex all or part of a workspaces}.
+     */
+    public static final String INDEX_WORKSPACE = "index_workspace";
+
+    static final String[] ALL_CHANGE_PERMISSIONS = new String[] {REGISTER_NAMESPACE, REGISTER_TYPE, UNLOCK_ANY, ADD_NODE,
+        SET_PROPERTY, REMOVE, CREATE_WORKSPACE, DELETE_WORKSPACE, INDEX_WORKSPACE};
+
+    static final String[] ALL_PERMISSIONS = new String[] {REGISTER_NAMESPACE, REGISTER_TYPE, UNLOCK_ANY, ADD_NODE, SET_PROPERTY,
+        REMOVE, READ, CREATE_WORKSPACE, DELETE_WORKSPACE, INDEX_WORKSPACE, MONITOR};
+
 }

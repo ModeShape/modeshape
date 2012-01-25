@@ -4,13 +4,13 @@
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
  * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors. 
+ * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- *
+ * 
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -23,550 +23,108 @@
  */
 package org.modeshape.jcr;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.security.AccessControlContext;
-import java.security.AccessControlException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import javax.jcr.AccessDeniedException;
 import javax.jcr.Credentials;
 import javax.jcr.LoginException;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import javax.jcr.SimpleCredentials;
-import javax.jcr.UnsupportedRepositoryOperationException;
-import javax.jcr.query.Query;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import javax.security.auth.login.Configuration;
+import javax.naming.NoInitialContextException;
 import javax.security.auth.login.LoginContext;
+import javax.transaction.TransactionManager;
+import org.infinispan.Cache;
+import org.infinispan.manager.CacheContainer;
+import org.infinispan.schematic.Schematic;
+import org.infinispan.schematic.SchematicDb;
+import org.infinispan.schematic.SchematicEntry;
+import org.infinispan.schematic.document.Array;
+import org.infinispan.schematic.document.Changes;
+import org.infinispan.schematic.document.Editor;
+import org.infinispan.schematic.document.Path;
+import org.infinispan.schematic.internal.document.Paths;
 import org.modeshape.common.annotation.Immutable;
-import org.modeshape.common.annotation.ThreadSafe;
-import org.modeshape.common.collection.LinkedListMultimap;
-import org.modeshape.common.collection.Multimap;
-import org.modeshape.common.collection.UnmodifiableProperties;
-import org.modeshape.common.component.ComponentConfig;
-import org.modeshape.common.component.ComponentLibrary;
-import org.modeshape.common.i18n.I18n;
-import org.modeshape.common.text.Inflector;
-import org.modeshape.common.util.CheckArg;
-import org.modeshape.common.util.ClassUtil;
+import org.modeshape.common.collection.Problems;
+import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.util.Logger;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.Graph;
-import org.modeshape.graph.Graph.Batch;
-import org.modeshape.graph.GraphI18n;
-import org.modeshape.graph.Location;
-import org.modeshape.graph.Subgraph;
-import org.modeshape.graph.Workspace;
-import org.modeshape.graph.connector.RepositoryConnection;
-import org.modeshape.graph.connector.RepositoryConnectionFactory;
-import org.modeshape.graph.connector.RepositoryContext;
-import org.modeshape.graph.connector.RepositorySource;
-import org.modeshape.graph.connector.RepositorySourceCapabilities;
-import org.modeshape.graph.connector.RepositorySourceException;
-import org.modeshape.graph.connector.federation.FederatedRepositorySource;
-import org.modeshape.graph.connector.federation.Projection;
-import org.modeshape.graph.connector.federation.ProjectionParser;
-import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
-import org.modeshape.graph.connector.xmlfile.XmlFileRepositorySource;
-import org.modeshape.graph.observe.Changes;
-import org.modeshape.graph.observe.NetChangeObserver;
-import org.modeshape.graph.observe.Observable;
-import org.modeshape.graph.observe.Observer;
-import org.modeshape.graph.property.DateTime;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.NamespaceRegistry;
-import org.modeshape.graph.property.Path;
-import org.modeshape.graph.property.PathFactory;
-import org.modeshape.graph.property.Property;
-import org.modeshape.graph.property.PropertyFactory;
-import org.modeshape.graph.property.ValueFactories;
-import org.modeshape.graph.property.ValueFactory;
-import org.modeshape.graph.property.basic.GraphNamespaceRegistry;
-import org.modeshape.graph.query.QueryBuilder;
-import org.modeshape.graph.query.QueryBuilder.ConstraintBuilder;
-import org.modeshape.graph.query.QueryResults;
-import org.modeshape.graph.query.model.QueryCommand;
-import org.modeshape.graph.query.model.Visitors;
-import org.modeshape.graph.query.parse.QueryParsers;
-import org.modeshape.graph.query.plan.PlanHints;
-import org.modeshape.graph.query.validate.Schemata;
-import org.modeshape.graph.request.ChangeRequest;
-import org.modeshape.graph.request.InvalidWorkspaceException;
-import org.modeshape.jcr.RepositoryQueryManager.PushDown;
+import org.modeshape.common.util.NamedThreadFactory;
+import org.modeshape.jcr.JcrEngine.State;
+import org.modeshape.jcr.RepositoryConfiguration.AnonymousSecurity;
+import org.modeshape.jcr.RepositoryConfiguration.BinaryStorage;
+import org.modeshape.jcr.RepositoryConfiguration.Component;
+import org.modeshape.jcr.RepositoryConfiguration.FieldName;
+import org.modeshape.jcr.RepositoryConfiguration.JaasSecurity;
+import org.modeshape.jcr.RepositoryConfiguration.QuerySystem;
+import org.modeshape.jcr.RepositoryConfiguration.Security;
+import org.modeshape.jcr.Sequencers.SequencingWorkItem;
 import org.modeshape.jcr.api.AnonymousCredentials;
 import org.modeshape.jcr.api.Repository;
-import org.modeshape.jcr.query.JcrQomQueryParser;
-import org.modeshape.jcr.query.JcrSql2QueryParser;
-import org.modeshape.jcr.query.JcrSqlQueryParser;
+import org.modeshape.jcr.api.Workspace;
+import org.modeshape.jcr.api.monitor.ValueMetric;
+import org.modeshape.jcr.api.query.Query;
+import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.cache.RepositoryCache;
+import org.modeshape.jcr.cache.SessionCache;
+import org.modeshape.jcr.cache.SessionCacheMonitor;
+import org.modeshape.jcr.cache.WorkspaceNotFoundException;
+import org.modeshape.jcr.cache.change.Change;
+import org.modeshape.jcr.cache.change.ChangeSet;
+import org.modeshape.jcr.cache.change.ChangeSetListener;
+import org.modeshape.jcr.cache.change.WorkspaceAdded;
+import org.modeshape.jcr.cache.change.WorkspaceRemoved;
+import org.modeshape.jcr.query.parse.FullTextSearchParser;
+import org.modeshape.jcr.query.parse.JcrQomQueryParser;
+import org.modeshape.jcr.query.parse.JcrSql2QueryParser;
+import org.modeshape.jcr.query.parse.JcrSqlQueryParser;
+import org.modeshape.jcr.query.parse.QueryParsers;
+import org.modeshape.jcr.query.xpath.XPathQueryParser;
 import org.modeshape.jcr.security.AnonymousProvider;
 import org.modeshape.jcr.security.AuthenticationProvider;
 import org.modeshape.jcr.security.AuthenticationProviders;
 import org.modeshape.jcr.security.JaasProvider;
-import org.modeshape.jcr.security.JaccSubjectResolver;
-import org.modeshape.jcr.security.SecurityContextProvider;
-import org.modeshape.jcr.security.ServletProvider;
-import org.modeshape.jcr.xpath.XPathQueryParser;
+import org.modeshape.jcr.security.SecurityContext;
+import org.modeshape.jcr.value.NamespaceRegistry;
+import org.modeshape.jcr.value.ValueFactories;
+import org.modeshape.jcr.value.binary.BinaryStore;
+import org.modeshape.jcr.value.binary.InfinispanBinaryStore;
+import org.modeshape.jcr.value.binary.UnusedBinaryChangeSetListener;
 
 /**
- * Creates JCR {@link Session sessions} to an underlying repository (which may be a federated repository).
- * <p>
- * This JCR repository must be configured with the ability to connect to a repository via a supplied
- * {@link RepositoryConnectionFactory repository connection factory} and repository source name. An {@link ExecutionContext
- * execution context} must also be supplied to enable working with the underlying ModeShape graph implementation to which this JCR
- * implementation delegates.
- * </p>
- * <p>
- * If {@link Credentials credentials} are used to login, implementations <em>must</em> also implement one of the following
- * methods:
  * 
- * <pre>
- * public {@link AccessControlContext} getAccessControlContext();
- * public {@link LoginContext} getLoginContext();
- * </pre>
- * 
- * Note, {@link Session#getAttributeNames() attributes} on credentials are not supported. JCR {@link SimpleCredentials} are also
- * not supported.
- * </p>
  */
-@SuppressWarnings( "deprecation" )
-@ThreadSafe
-public class JcrRepository implements Repository {
-
-    /**
-     * A flag that controls whether the repository uses a shared repository (or workspace) for the "/jcr:system" content in all of
-     * the workspaces. In production, this needs to be "true" for proper JCR functionality, but in some debugging cases it can be
-     * set to false to simplify the architecture by removing the federated connector layer.
-     * <p>
-     * This should be changed to 'false' only in advanced situations, and never for production. Note that this also disables query
-     * execution.
-     * </p>
-     */
-    static final boolean WORKSPACES_SHARE_SYSTEM_BRANCH = true;
-
-    /**
-     * The user name for anonymous sessions
-     * 
-     * @see Option#ANONYMOUS_USER_ROLES
-     */
-    static final String ANONYMOUS_USER_NAME = "<anonymous>";
-    private static final Logger LOGGER = Logger.getLogger(JcrRepository.class);
-    private static Properties bundleProperties = null;
-
-    /**
-     * The available options for the {@code JcrRepository}.
-     */
-    public enum Option {
-
-        /**
-         * Flag that defines whether or not the node types should be exposed as content under the "
-         * {@code /jcr:system/jcr:nodeTypes}" node. Value is either "<code>true</code>" or "<code>false</code>" (default).
-         * 
-         * @see DefaultOption#PROJECT_NODE_TYPES
-         */
-        PROJECT_NODE_TYPES,
-        /**
-         * The {@link Configuration#getAppConfigurationEntry(String) JAAS application configuration name} that specifies which
-         * login modules should be used to validate credentials.
-         */
-        JAAS_LOGIN_CONFIG_NAME,
-
-        /**
-         * The name of the source (and optionally the workspace in the source) where the "/jcr:system" branch should be stored.
-         * The format is "<code>name of workspace@name of source</code>", or simply "<code>name of source</code>" if the default
-         * workspace is to be used. If this option is not used, a transient in-memory source will be used.
-         * <p>
-         * Note that all leading and trailing whitespace is removed for both the source name and workspace name. Thus, a value of
-         * "<code>@</code>" implies a zero-length workspace name and zero-length source name.
-         * </p>
-         * <p>
-         * Also, any use of the '@' character in source and workspace names must be escaped with a preceding backslash.
-         * </p>
-         */
-        SYSTEM_SOURCE_NAME,
-
-        /**
-         * The depth of the subgraphs that should be loaded from the connectors during normal read operations. The default value
-         * is 1.
-         */
-        READ_DEPTH,
-
-        /**
-         * The depth of the subgraphs that should be loaded from the connectors during indexing operations. The default value is
-         * 4.
-         */
-        INDEX_READ_DEPTH,
-
-        /**
-         * A comma-delimited list of default roles provided for anonymous access. A null or empty value for this option means that
-         * anonymous access is disabled.
-         */
-        ANONYMOUS_USER_ROLES,
-
-        /**
-         * The query system represents node types as tables that can be queried, but there are two ways to define the columns for
-         * each of those tables. One approach is that each table only has columns representing the (single-valued) property
-         * definitions explicitly defined by the node type. The other approach also adds columns for each of the (single-valued)
-         * property definitions inherited by the node type from all of the {@link javax.jcr.nodetype.NodeType#getSupertypes()}.
-         * <p>
-         * The default value is 'true'.
-         * </p>
-         */
-        TABLES_INCLUDE_COLUMNS_FOR_INHERITED_PROPERTIES,
-
-        /**
-         * A boolean flag that specifies whether this repository is expected to execute searches and queries. If client
-         * applications will never perform searches or queries, then maintaining the query indexes is an unnecessary overhead, and
-         * can be disabled. Note that this is merely a hint, and that searches and queries might still work when this is set to
-         * 'false'.
-         * <p>
-         * The default is 'true', meaning that clients can execute searches and queries.
-         * </p>
-         */
-        QUERY_EXECUTION_ENABLED,
-
-        /**
-         * The system may maintain a set of indexes that improve the performance of searching and querying the content. These size
-         * of these indexes depend upon the size of the content being stored, and thus may consume a significant amount of space.
-         * This option defines a location on the file system where this repository may (if needed) store indexes so they don't
-         * consume large amounts of memory.
-         * <p>
-         * If specified, the value must be a valid path to a writable directory on the file system. If the path specifies a
-         * non-existant location, the repository may attempt to create the missing directories. The path may be absolute or
-         * relative to the location where this VM was started. If the specified location is not a readable and writable directory
-         * (or cannot be created as such), then this will generate an exception when the repository is created.
-         * </p>
-         * <p>
-         * The default value is null, meaning the search indexes may not be stored on the local file system and, if needed, will
-         * be stored within memory.
-         * </p>
-         */
-        QUERY_INDEX_DIRECTORY,
-
-        /**
-         * A boolean flag that specifies whether updates to the indexes (if used) should be made synchronously, meaning that a
-         * call to {@link Session#save()} will not return until the search indexes have been completely updated. The benefit of
-         * synchronous updates is that a search or query performed immediately after a <code>save()</code> will operate upon
-         * content that was just changed. The downside is that the <code>save()</code> operation will take longer.
-         * <p>
-         * With asynchronous updates, however, the only work done during a <code>save()</code> invocation is that required to
-         * persist the changes in the underlying repository source, while changes to the search indexes are made in a different
-         * thread that may not run immediately. In this case, there may be an indeterminate lag before searching or querying after
-         * a <code>save()</code> will operate upon the changed content.
-         * </p>
-         * <p>
-         * The default is value 'false', meaning the updates are performed <i>asynchronously</i>.
-         * </p>
-         */
-        QUERY_INDEXES_UPDATED_SYNCHRONOUSLY,
-
-        /**
-         * A boolean flag that specifies whether referential integrity checks should be performed upon {@link Session#save()}. By
-         * default, this option is enabled, meaning that referential integrity checks <i>are</i> performed to ensure that nodes
-         * referenced by other nodes cannot be removed.
-         * <p>
-         * If no {@link PropertyType#REFERENCE} properties are used within your content, these referential integrity checks will
-         * never find referring nodes. In these cases, you may be able to improve performance by skipping these checks.
-         * </p>
-         * <p>
-         * The default value is 'true', meaning that these checks are performed.
-         * </p>
-         */
-        PERFORM_REFERENTIAL_INTEGRITY_CHECKS,
-
-        /**
-         * A boolean flag that indicates whether a complete list of workspace names should be exposed in the custom repository
-         * descriptor {@link org.modeshape.jcr.api.Repository#REPOSITORY_WORKSPACES}.
-         * <p>
-         * If this option is set to {@code true}, then any code that can access the repository can retrieve a complete list of
-         * workspace names through the {@link javax.jcr.Repository#getDescriptor(String)} method without
-         * {@link javax.jcr.Repository#login logging in}.
-         * </p>
-         * <p>
-         * Since some ModeShape installations may consider the list of workspace names to be restricted information and limit the
-         * ability of some or all users to see a complete list of workspace names, this option can be set to {@code false} to
-         * disable this capability. If this option is set to {@code false}, the
-         * {@link org.modeshape.jcr.api.Repository#REPOSITORY_WORKSPACES} descriptor will not be set. In other words, the
-         * following code will print {@code false}.
-         * </p>
-         * 
-         * <pre>
-         * Repository repo = ...;
-         * System.out.println(repo.getDescriptorKeys().contains(org.modeshape.jcr.api.Repository#REPOSITORY_WORKSPACES));
-         * </pre>
-         * <p>
-         * The default value is 'true', meaning that the descriptor is populated.
-         * </p>
-         */
-        EXPOSE_WORKSPACE_NAMES_IN_DESCRIPTOR,
-
-        /**
-         * A String property that when specified tells the {@link JcrEngine} where to put the {@link Repository} in to JNDI.
-         * Assumes that you have write access to the JNDI tree. If no value set, then the {@link Repository} will not be bound to
-         * JNDI.
-         */
-        REPOSITORY_JNDI_LOCATION,
-
-        /**
-         * The structure of the version history. There are two values allowed:
-         * <ul>
-         * <li>"<strong>flat</strong>" will store all "<code>nt:versionHistory</code>" nodes with a name matching the UUID of the
-         * versioned node and directly under the <code>/jcr:system/jcr:versionStorage</code> node. For example, given a "
-         * <code>mix:versionable</code>" node with the UUID <code>fae2b929-c5ef-4ce5-9fa1-514779ca0ae3</code>, the corresponding "
-         * <code>nt:versionHistory</code>" node will be at
-         * <code>/jcr:system/jcr:versionStorage/fae2b929-c5ef-4ce5-9fa1-514779ca0ae3</code>.</li>
-         * <li>"<strong>hierarchical</strong>" will store all "<code>nt:versionHistory</code>" nodes under a hiearchical structure
-         * created by the first 8 characters of the UUID string. For example, given a "<code>mix:versionable</code>" node with the
-         * UUID <code>fae2b929-c5ef-4ce5-9fa1-514779ca0ae3</code>, the corresponding "<code>nt:versionHistory</code>" node will be
-         * at <code>/jcr:system/jcr:versionStorage/fa/e2/b9/29/c5ef-4ce5-9fa1-514779ca0ae3</code>.</li>
-         * </ul>
-         * <p>
-         * The "hierarchical" structure is used by default and in cases where the option's value does not case-independently match
-         * the {@link VersionHistoryOption#FLAT} or {@link VersionHistoryOption#HIERARCHICAL} values.
-         * </p>
-         */
-        VERSION_HISTORY_STRUCTURE,
-
-        /**
-         * A boolean option that dictates whether content derived from other content (e.g., by sequencers) should be automatically
-         * removed when the content from which it was derived is removed from the repository.
-         * <p>
-         * For example, consider that a file is uploaded and sequenced, and that the content derived from the file is stored in
-         * the repository. When that file is removed, this option dictates whether the derived content should also be removed
-         * automatically.
-         * </p>
-         * <p>
-         * A value of 'true' will ensure that all content derived from deleted content is also deleted. A value of 'false' will
-         * leave the derived content. The default value is 'true'.
-         * </p>
-         */
-        REMOVE_DERIVED_CONTENT_WITH_ORIGINAL,
-
-        /**
-         * Indicates whether a failed attempt to {@link #login} should automatically attempt to use anonymous access instead. If
-         * anonymous access is not enabled, then failed login attempts will still cause an {@link LoginException} to be thrown.
-         * The default value is 'false'.
-         * 
-         * @see #ANONYMOUS_USER_ROLES
-         */
-        USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN,
-
-        /**
-         * Indicates under what circumstances the query index should be automatically rebuilt on startup. If this is set to
-         * 'always', the content for the entire JCR repository will be loaded and re-indexed each time that the repository is
-         * started. If this is set to 'ifMissing', re-indexing will only occur if there is no existing index. The default value is
-         * 'ifMissing'.
-         */
-        REBUILD_QUERY_INDEX_ON_STARTUP,
-
-        /**
-         * Indicates whether the query indexes should be rebuilt on startup synchronously ('true') or asynchronously ('false').
-         * Rebuilding the query indexes can be an expensive operation on workspaces with large amounts of content, so setting this
-         * value to 'false' can cause a significant decrease in repository startup time. However, if this value is set to 'false',
-         * the query indexes may not accurately reflect the content in the repository while the rebuild is occurring. The default
-         * value is 'true'.
-         */
-        QUERY_INDEXES_REBUILT_SYNCHRONOUSLY,
-
-        /**
-         * Indicates whether {@link org.modeshape.jcr.api.SecurityContextCredentials} should be supported by the
-         * {@link Repository#login(Credentials)} and {@link Repository#login(Credentials, String)} methods. By default, this
-         * support is <strong>disabled</strong> and not recommended; instead, use custom {@link AuthenticationProvider}s.
-         * 
-         * @deprecated Use custom AuthenticationProvider implementations instead
-         */
-        @Deprecated
-        USE_SECURITY_CONTEXT_CREDENTIALS, ;
-
-        /**
-         * Determine the option given the option name. This does more than {@link Option#valueOf(String)}, since this method first
-         * tries to match the supplied string to the option's {@link Option#name() name}, then the uppercase version of the
-         * supplied string to the option's name, and finally if the supplied string is a camel-case version of the name (e.g.,
-         * "projectNodeTypes").
-         * 
-         * @param option the string version of the option's name
-         * @return the matching Option instance, or null if an option could not be matched using the supplied value
-         */
-        public static Option findOption( String option ) {
-            if (option == null) return null;
-            try {
-                return Option.valueOf(option);
-            } catch (IllegalArgumentException e) {
-                // Try an uppercased version ...
-                try {
-                    return Option.valueOf(option.toUpperCase());
-                } catch (IllegalArgumentException e2) {
-                    // Try a camel-case version ...
-                    String underscored = Inflector.getInstance().underscore(option, '_');
-                    if (underscored == null) {
-                        throw e2;
-                    }
-                    try {
-                        return Option.valueOf(underscored.toUpperCase());
-                    } catch (IllegalArgumentException e3) {
-                        return null;
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * The possible values for the {@link Option#REBUILD_QUERY_INDEX_ON_STARTUP} option.
-     */
-    public static class RebuildQueryIndexOnStartupOption {
-        /**
-         * The value that indicates that the query index for each workspace should be rebuilt even if it already exists and
-         * appears to be valid.
-         */
-        public static final String ALWAYS = "always";
-
-        /**
-         * The value that indicates that the query index for each workspace should be rebuilt only if it does not already exist.
-         */
-        public static final String IF_MISSING = "ifMissing";
-    }
-
-    /**
-     * The possible values for the {@link Option#VERSION_HISTORY_STRUCTURE} option.
-     */
-    public static class VersionHistoryOption {
-        /**
-         * The value that signals that all "<code>nt:versionHistory</code>" nodes with a name matching the UUID of the versioned
-         * node are stored directly under the <code>/jcr:system/jcr:versionStorage</code> node. For example, given a "
-         * <code>mix:versionable</code>" node with the UUID <code>fae2b929-c5ef-4ce5-9fa1-514779ca0ae3</code>, the corresponding "
-         * <code>nt:versionHistory</code>" node will be at
-         * <code>/jcr:system/jcr:versionStorage/fae2b929-c5ef-4ce5-9fa1-514779ca0ae3</code>.
-         */
-        public static final String FLAT = "flat";
-
-        /**
-         * The value that signals that all "<code>nt:versionHistory</code>" nodes be stored under a 4-tier hiearchical structure
-         * created by the first 8 characters of the UUID string broken into 2-character pairs. For example, given a "
-         * <code>mix:versionable</code>" node with the UUID <code>fae2b929-c5ef-4ce5-9fa1-514779ca0ae3</code>, the corresponding "
-         * <code>nt:versionHistory</code>" node will be at
-         * <code>/jcr:system/jcr:versionStorage/fa/e2/b9/29/c5ef-4ce5-9fa1-514779ca0ae3</code>.
-         */
-        public static final String HIERARCHICAL = "hierarchical";
-    }
-
-    /**
-     * The default values for each of the {@link Option}.
-     */
-    public static class DefaultOption {
-        /**
-         * The default value for the {@link Option#PROJECT_NODE_TYPES} option is {@value} .
-         */
-        public static final String PROJECT_NODE_TYPES = Boolean.TRUE.toString();
-
-        /**
-         * The default value for the {@link Option#JAAS_LOGIN_CONFIG_NAME} option is {@value} .
-         */
-        public static final String JAAS_LOGIN_CONFIG_NAME = "modeshape-jcr";
-
-        /**
-         * The default value for the {@link Option#READ_DEPTH} option is {@value} .
-         */
-        public static final String READ_DEPTH = "1";
-
-        /**
-         * The default value for the {@link Option#INDEX_READ_DEPTH} option is {@value} .
-         */
-        public static final String INDEX_READ_DEPTH = "4";
-
-        /**
-         * The default value for the {@link Option#ANONYMOUS_USER_ROLES} option is {@value} .
-         */
-        public static final String ANONYMOUS_USER_ROLES = ModeShapeRoles.ADMIN;
-
-        /**
-         * The default value for the {@link Option#TABLES_INCLUDE_COLUMNS_FOR_INHERITED_PROPERTIES} option is {@value} .
-         */
-        public static final String TABLES_INCLUDE_COLUMNS_FOR_INHERITED_PROPERTIES = Boolean.TRUE.toString();
-
-        /**
-         * The default value for the {@link Option#QUERY_EXECUTION_ENABLED} option is {@value} .
-         */
-        public static final String QUERY_EXECUTION_ENABLED = Boolean.TRUE.toString();
-
-        /**
-         * The default value for the {@link Option#QUERY_INDEXES_UPDATED_SYNCHRONOUSLY} option is {@value} .
-         */
-        public static final String QUERY_INDEXES_UPDATED_SYNCHRONOUSLY = Boolean.TRUE.toString();
-
-        /**
-         * The default value for the {@link Option#QUERY_INDEX_DIRECTORY} option is {@value} .
-         */
-        public static final String QUERY_INDEX_DIRECTORY = null;
-
-        /**
-         * The default value for the {@link Option#PERFORM_REFERENTIAL_INTEGRITY_CHECKS} option is {@value} .
-         */
-        public static final String PERFORM_REFERENTIAL_INTEGRITY_CHECKS = Boolean.TRUE.toString();
-
-        /**
-         * The default value for the {@link Option#REPOSITORY_JNDI_LOCATION} option is {@value}
-         */
-        public static final String REPOSITORY_JNDI_LOCATION = "";
-
-        /**
-         * The default value for the {@link Option#EXPOSE_WORKSPACE_NAMES_IN_DESCRIPTOR} option is {@value} .
-         */
-        public static final String EXPOSE_WORKSPACE_NAMES_IN_DESCRIPTOR = Boolean.TRUE.toString();
-
-        /**
-         * The default value for the {@link Option#VERSION_HISTORY_STRUCTURE} option is {@value} .
-         */
-        public static final String VERSION_HISTORY_STRUCTURE = VersionHistoryOption.HIERARCHICAL;
-
-        /**
-         * The default value for the {@link Option#REMOVE_DERIVED_CONTENT_WITH_ORIGINAL} option is {@value} .
-         */
-        public static final String REMOVE_DERIVED_CONTENT_WITH_ORIGINAL = Boolean.TRUE.toString();
-
-        /**
-         * The default value for the {@link Option#USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN} option is {@value} .
-         */
-        public static final String USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN = Boolean.FALSE.toString();
-
-        /**
-         * The default value for the {@link Option#REBUILD_QUERY_INDEX_ON_STARTUP} option is {@value} .
-         */
-        public static final String REBUILD_QUERY_INDEX_ON_STARTUP = RebuildQueryIndexOnStartupOption.IF_MISSING;
-
-        /**
-         * The default value for the {@link Option#QUERY_INDEXES_REBUILT_SYNCHRONOUSLY} option is {@value} .
-         */
-        public static final String QUERY_INDEXES_REBUILT_SYNCHRONOUSLY = Boolean.TRUE.toString();
-
-        /**
-         * The default value for the {@link Option#USE_SECURITY_CONTEXT_CREDENTIALS} option is {@value} .
-         */
-        public static final String USE_SECURITY_CONTEXT_CREDENTIALS = Boolean.FALSE.toString();
-    }
-
-    /**
-     * The static unmodifiable map of default options, which are initialized in the static initializer.
-     */
-    protected static final Map<Option, String> DEFAULT_OPTIONS;
+public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
     /**
      * The set of supported query language string constants.
@@ -578,12 +136,14 @@ public class JcrRepository implements Repository {
         /**
          * The standard JCR 1.0 XPath query language.
          */
+        @SuppressWarnings( "deprecation" )
         public static final String XPATH = Query.XPATH;
 
         /**
          * The SQL dialect that is based upon an enhanced version of the JCR-SQL query language defined by the JCR 1.0.1
          * specification.
          */
+        @SuppressWarnings( "deprecation" )
         public static final String JCR_SQL = Query.SQL;
 
         /**
@@ -600,743 +160,295 @@ public class JcrRepository implements Repository {
          * The full-text search language defined as part of the abstract query model, in Section 6.7.19 of the JCR 2.0
          * specification.
          */
-        public static final String SEARCH = FullTextSearchParser.LANGUAGE;
+        public static final String SEARCH = Query.FULL_TEXT_SEARCH;
     }
 
-    static {
-        // Initialize the unmodifiable map of default options ...
-        EnumMap<Option, String> defaults = new EnumMap<Option, String>(Option.class);
-        defaults.put(Option.PROJECT_NODE_TYPES, DefaultOption.PROJECT_NODE_TYPES);
-        defaults.put(Option.JAAS_LOGIN_CONFIG_NAME, DefaultOption.JAAS_LOGIN_CONFIG_NAME);
-        defaults.put(Option.READ_DEPTH, DefaultOption.READ_DEPTH);
-        defaults.put(Option.INDEX_READ_DEPTH, DefaultOption.INDEX_READ_DEPTH);
-        defaults.put(Option.ANONYMOUS_USER_ROLES, DefaultOption.ANONYMOUS_USER_ROLES);
-        defaults.put(Option.TABLES_INCLUDE_COLUMNS_FOR_INHERITED_PROPERTIES,
-                     DefaultOption.TABLES_INCLUDE_COLUMNS_FOR_INHERITED_PROPERTIES);
-        defaults.put(Option.QUERY_EXECUTION_ENABLED, DefaultOption.QUERY_EXECUTION_ENABLED);
-        defaults.put(Option.QUERY_INDEXES_UPDATED_SYNCHRONOUSLY, DefaultOption.QUERY_INDEXES_UPDATED_SYNCHRONOUSLY);
-        defaults.put(Option.QUERY_INDEX_DIRECTORY, DefaultOption.QUERY_INDEX_DIRECTORY);
-        defaults.put(Option.PERFORM_REFERENTIAL_INTEGRITY_CHECKS, DefaultOption.PERFORM_REFERENTIAL_INTEGRITY_CHECKS);
-        defaults.put(Option.EXPOSE_WORKSPACE_NAMES_IN_DESCRIPTOR, DefaultOption.EXPOSE_WORKSPACE_NAMES_IN_DESCRIPTOR);
-        defaults.put(Option.VERSION_HISTORY_STRUCTURE, DefaultOption.VERSION_HISTORY_STRUCTURE);
-        defaults.put(Option.REPOSITORY_JNDI_LOCATION, DefaultOption.REPOSITORY_JNDI_LOCATION);
-        defaults.put(Option.REMOVE_DERIVED_CONTENT_WITH_ORIGINAL, DefaultOption.REMOVE_DERIVED_CONTENT_WITH_ORIGINAL);
-        defaults.put(Option.USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN, DefaultOption.USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN);
-        defaults.put(Option.REBUILD_QUERY_INDEX_ON_STARTUP, DefaultOption.REBUILD_QUERY_INDEX_ON_STARTUP);
-        defaults.put(Option.QUERY_INDEXES_REBUILT_SYNCHRONOUSLY, DefaultOption.QUERY_INDEXES_REBUILT_SYNCHRONOUSLY);
-        defaults.put(Option.USE_SECURITY_CONTEXT_CREDENTIALS, DefaultOption.USE_SECURITY_CONTEXT_CREDENTIALS);
+    protected static final Set<String> MISSING_JAAS_POLICIES = new CopyOnWriteArraySet<String>();
 
-        DEFAULT_OPTIONS = Collections.<Option, String>unmodifiableMap(defaults);
-    }
+    private static final boolean AUTO_START_REPO_UPON_LOGIN = true;
 
-    private final String sourceName;
-    private final Map<String, Object> descriptors = new HashMap<String, Object>();
-    private final ExecutionContext executionContext;
-    private final RepositoryConnectionFactory connectionFactory;
-    private final RepositoryNodeTypeManager repositoryTypeManager;
-    private final RepositoryLockManager repositoryLockManager;
-    private final Map<Option, String> options;
-    private final String systemSourceName;
-    private final String systemWorkspaceName;
-    private final Projection systemSourceProjection;
-    private final FederatedRepositorySource federatedSource;
-    private final GraphNamespaceRegistry persistentRegistry;
-    private final RepositoryObservationManager repositoryObservationManager;
-    private final QueryParsers queryParsers;
-    private final Credentials anonymousCredentialsIfSuppliedCredentialsFail;
-    private final AuthenticationProvider authenticator;
-    private Set<String> cachedWorkspaceNames = new HashSet<String>();
+    private static final String INTERNAL_WORKER_USERNAME = "<modeshape-worker>";
 
-    // Until the federated connector supports queries, we have to use a search engine ...
-    private final RepositoryQueryManager queryManager;
-
-    /* The location of the XML file containing the initial content for newly-created workspaces */
-    private final String initialContentForNewWorkspaces;
-
-    // package-scoped to facilitate testing
-    final WeakHashMap<JcrSession, Object> activeSessions = new WeakHashMap<JcrSession, Object>();
-
-    private final ExecutorService backgroundService = Executors.newCachedThreadPool();
+    protected final Logger logger;
+    private final AtomicReference<RepositoryConfiguration> config = new AtomicReference<RepositoryConfiguration>();
+    private final AtomicReference<String> repositoryName = new AtomicReference<String>();
+    private final Map<String, Object> descriptors;
+    private final AtomicReference<RunningState> runningState = new AtomicReference<RunningState>();
+    private final AtomicReference<State> state = new AtomicReference<State>(State.NOT_RUNNING);
+    private final Lock stateLock = new ReentrantLock();
+    private final AtomicBoolean allowAutoStartDuringLogin = new AtomicBoolean(AUTO_START_REPO_UPON_LOGIN);
 
     /**
-     * Creates a JCR repository that uses the supplied {@link RepositoryConnectionFactory repository connection factory} to
-     * establish {@link Session sessions} to the underlying repository source upon {@link #login() login}.
+     * Create a Repository instance given the {@link RepositoryConfiguration configuration}.
      * 
-     * @param executionContext the execution context in which this repository is to operate
-     * @param connectionFactory the factory for repository connections
-     * @param repositorySourceName the name of the repository source (in the connection factory) that should be used
-     * @param repositoryObservable the repository library observable associated with this repository (never <code>null</code>)
-     * @param repositorySourceCapabilities the capabilities of the repository source; may be null if the capabilities are not
-     *        known
-     * @param descriptors the {@link #getDescriptorKeys() descriptors} for this repository; may be <code>null</code>.
-     * @param options the optional {@link Option settings} for this repository; may be null
-     * @param initialContentForNewWorkspaces the URL, file system path, or classpath resource path to the XML file containing the
-     *        initial content for newly-created workspaces; may be null
-     * @param authenticationProviders the component library of AuthenticationProvider implementations; may be null or empty
-     * @throws RepositoryException if there is a problem setting up this repository
-     * @throws IllegalArgumentException If <code>executionContext</code>, <code>connectionFactory</code>,
-     *         <code>repositorySourceName</code>, or <code>repositoryObservable</code> is <code>null</code>.
+     * @param configuration the repository configuration; may not be null
+     * @throws ConfigurationException if there is a problem with the configuration
      */
-    JcrRepository( ExecutionContext executionContext,
-                   RepositoryConnectionFactory connectionFactory,
-                   String repositorySourceName,
-                   Observable repositoryObservable,
-                   RepositorySourceCapabilities repositorySourceCapabilities,
-                   Map<String, String> descriptors,
-                   Map<Option, String> options,
-                   String initialContentForNewWorkspaces,
-                   ComponentLibrary<AuthenticationProvider, ComponentConfig> authenticationProviders ) throws RepositoryException {
-        CheckArg.isNotNull(executionContext, "executionContext");
-        CheckArg.isNotNull(connectionFactory, "connectionFactory");
-        CheckArg.isNotNull(repositorySourceName, "repositorySourceName");
-        CheckArg.isNotNull(repositoryObservable, "repositoryObservable");
+    protected JcrRepository( RepositoryConfiguration configuration ) throws ConfigurationException {
+        ModeShape.getName(); // force log message right up front
+        this.config.set(configuration);
+        RepositoryConfiguration config = this.config.get();
 
-        // Set up the options ...
-        if (options == null) {
-            this.options = DEFAULT_OPTIONS;
-        } else {
-            // Initialize with defaults, then add supplied options ...
-            EnumMap<Option, String> localOptions = new EnumMap<Option, String>(DEFAULT_OPTIONS);
-            localOptions.putAll(options);
-            this.options = Collections.unmodifiableMap(localOptions);
+        // Validate the configuration to make sure there are no errors ...
+        Problems results = configuration.validate();
+        if (results.hasErrors()) {
+            String msg = JcrI18n.errorsInRepositoryConfiguration.text(this.repositoryName,
+                                                                      results.errorCount(),
+                                                                      results.toString());
+            throw new ConfigurationException(results, msg);
         }
 
-        // Set up the system source ...
-        String systemSourceNameValue = this.options.get(Option.SYSTEM_SOURCE_NAME);
-        String systemSourceName = null;
-        String systemWorkspaceName = null;
-        RepositoryConnectionFactory connectionFactoryWithSystem = connectionFactory;
-        if (systemSourceNameValue != null) {
-            // Find an existing source with the given name containing the named workspace ...
-            try {
-                SourceWorkspacePair pair = new SourceWorkspacePair(systemSourceNameValue);
-                // Look for a source with the given name ...
-                RepositoryConnection conn = connectionFactory.createConnection(pair.getSourceName());
-                if (conn != null) {
-                    // We found a source that we can use for the system ...
-                    systemSourceName = pair.getSourceName();
-                    if (pair.getWorkspaceName() != null) {
-                        // There should be the named workspace ...
-                        Graph temp = Graph.create(conn, executionContext);
-                        temp.useWorkspace(pair.getWorkspaceName());
-                        // found it ...
-                        systemWorkspaceName = pair.getWorkspaceName();
-                    }
-                } else {
-                    I18n msg = JcrI18n.systemSourceNameOptionValueDoesNotReferenceExistingSource;
-                    LOGGER.warn(msg, systemSourceNameValue, systemSourceName);
-                }
-            } catch (InvalidWorkspaceException e) {
-                // Bad workspace name ...
-                systemSourceName = null;
-                I18n msg = JcrI18n.systemSourceNameOptionValueDoesNotReferenceValidWorkspace;
-                LOGGER.warn(msg, systemSourceNameValue, systemSourceName);
-            } catch (IllegalArgumentException e) {
-                // Invalid format ...
-                systemSourceName = null;
-                I18n msg = JcrI18n.systemSourceNameOptionValueIsNotFormattedCorrectly;
-                LOGGER.warn(msg, systemSourceNameValue);
-            }
-        }
-        InMemoryRepositorySource transientSystemSource = null;
-        if (systemSourceName == null) {
-            // Create the in-memory repository source that we'll use for the "/jcr:system" branch in this repository.
-            // All workspaces will be set up with a federation connector that projects this system repository into
-            // "/jcr:system", and all other content is projected to the repositories actual source (and workspace).
-            // (The federation connector refers to this configuration as an "offset mirror".)
-            systemWorkspaceName = "jcr:system";
-            systemSourceName = "jcr:system source";
-            transientSystemSource = new InMemoryRepositorySource();
-            transientSystemSource.setName(systemSourceName);
-            transientSystemSource.setDefaultWorkspaceName(systemWorkspaceName);
-            connectionFactoryWithSystem = new DelegatingConnectionFactory(connectionFactory, transientSystemSource);
-        }
+        this.repositoryName.set(config.getName());
+        assert this.config != null;
+        assert this.repositoryName != null;
+        this.logger = Logger.getLogger(getClass());
+        this.logger.debug("Initializing '{0}' repository", this.repositoryName);
 
-        // Set up the query parsers, which we have to have even though queries might be disabled ...
-        this.queryParsers = new QueryParsers(new JcrSql2QueryParser(), new XPathQueryParser(), new FullTextSearchParser(),
-                                             new JcrSqlQueryParser(), new JcrQomQueryParser());
-        assert this.queryParsers.getParserFor(Query.XPATH) != null;
-        assert this.queryParsers.getParserFor(Query.SQL) != null;
-        assert this.queryParsers.getParserFor(Query.JCR_SQL2) != null;
-        assert this.queryParsers.getParserFor(Query.JCR_JQOM) != null;
-        assert this.queryParsers.getParserFor(QueryLanguage.SEARCH) != null;
+        // Set up the descriptors ...
+        this.descriptors = new HashMap<String, Object>();
+        initializeDescriptors();
+    }
 
-        this.systemWorkspaceName = systemWorkspaceName;
-        this.systemSourceName = systemSourceName;
-        this.connectionFactory = connectionFactoryWithSystem;
-        assert this.systemSourceName != null;
-        assert this.connectionFactory != null;
-        this.sourceName = repositorySourceName;
-        this.initialContentForNewWorkspaces = initialContentForNewWorkspaces;
+    RepositoryConfiguration repositoryConfiguration() {
+        return config.get();
+    }
 
-        // Set up the "/jcr:system" branch ...
-        Graph systemGraph = Graph.create(this.systemSourceName, this.connectionFactory, executionContext);
-        systemGraph.useWorkspace(systemWorkspaceName);
-        initializeSystemContent(systemGraph);
+    /**
+     * Get the state of this JCR repository instance.
+     * 
+     * @return the state; never null
+     */
+    public State getState() {
+        return state.get();
+    }
 
-        // Create the namespace registry and corresponding execution context.
-        // Note that this persistent registry has direct access to the system workspace.
-        Name uriProperty = ModeShapeLexicon.URI;
-        Name genProperty = ModeShapeLexicon.GENERATED;
-        PathFactory pathFactory = executionContext.getValueFactories().getPathFactory();
-        Path systemPath = pathFactory.create(JcrLexicon.SYSTEM);
-        final Path namespacesPath = pathFactory.create(systemPath, ModeShapeLexicon.NAMESPACES);
-        PropertyFactory propertyFactory = executionContext.getPropertyFactory();
-        Property namespaceType = propertyFactory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.NAMESPACE);
+    /**
+     * Get the name of this JCR repository instance.
+     * 
+     * @return the name; never null
+     */
+    public String getName() {
+        return repositoryName.get();
+    }
 
-        // Now create the registry implementation ...
-        this.persistentRegistry = new GraphNamespaceRegistry(systemGraph, namespacesPath, uriProperty, genProperty, namespaceType);
-        this.executionContext = executionContext.with(persistentRegistry);
+    /**
+     * Get the component that can be used to obtain statistics for this repository.
+     * <p>
+     * Note that this provides un-checked access to the statistics, unlike {@link Workspace#getRepositoryMonitor()} in the public
+     * API which only exposes the statistics if the session's user has administrative privileges.
+     * </p>
+     * 
+     * @return the statistics component; never null
+     * @throws IllegalStateException if the repository is not {@link #getState() running}
+     * @see Workspace#getRepositoryMonitor()
+     */
+    public RepositoryStatistics getRepositoryStatistics() {
+        return statistics();
+    }
 
-        // Add the built-ins, ensuring we overwrite any badly-initialized values ...
-        this.persistentRegistry.register(JcrNamespaceRegistry.STANDARD_BUILT_IN_NAMESPACES_BY_PREFIX);
+    /**
+     * Start this repository instance.
+     * 
+     * @throws FileNotFoundException if the Infinispan configuration file is specified but could not be found
+     * @throws IOException if there is a problem with the specified Infinispan configuration file
+     * @throws NamingException if there is a problem looking in JNDI for the Infinispan CacheContainer
+     */
+    void start() throws IOException, NamingException {
+        doStart();
+    }
 
-        // Set up the repository type manager ...
-        Path parentOfTypeNodes = null;
-
-        if (Boolean.valueOf(this.options.get(Option.PROJECT_NODE_TYPES))) {
-            parentOfTypeNodes = pathFactory.create(systemPath, JcrLexicon.NODE_TYPES);
-        }
-
+    /**
+     * Terminate all active sessions.
+     * 
+     * @return a future representing the asynchronous session termination process.
+     */
+    Future<Boolean> shutdown() {
+        // Create a simple executor that will do the backgrounding for us ...
+        final ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
-            boolean includeInheritedProperties = Boolean.valueOf(this.options.get(Option.TABLES_INCLUDE_COLUMNS_FOR_INHERITED_PROPERTIES));
-            boolean includePseudoColumnInSelectStar = true;
-
-            // Create the manager for this repository's node types, initializing it from the system graph and registering the
-            // standard types ...
-            this.repositoryTypeManager = new RepositoryNodeTypeManager(this, parentOfTypeNodes, includeInheritedProperties,
-                                                                       includePseudoColumnInSelectStar);
-            if (!this.repositoryTypeManager.refreshFromSystem()) {
-                // Read in the built-in node types ...
-                CndNodeTypeReader nodeTypeReader = new CndNodeTypeReader(this.executionContext);
-                nodeTypeReader.readBuiltInTypes();
-                this.repositoryTypeManager.registerNodeTypes(nodeTypeReader, false, true);
-            }
-        } catch (RepositoryException re) {
-            throw new IllegalStateException("Could not load node type definition files", re);
-        } catch (IOException ioe) {
-            throw new IllegalStateException("Could not access node type definition files", ioe);
-        }
-        if (WORKSPACES_SHARE_SYSTEM_BRANCH) {
-
-            // Create the projection for the system repository ...
-            ProjectionParser projectionParser = ProjectionParser.getInstance();
-            String rule = "/jcr:system => /jcr:system";
-            Projection.Rule[] systemProjectionRules = projectionParser.rulesFromString(this.executionContext, rule);
-            this.systemSourceProjection = new Projection(systemSourceName, systemWorkspaceName, true, systemProjectionRules);
-
-            // Define the federated repository source. Use the same name as the repository, since this federated source
-            // will not be in the connection factory ...
-            this.federatedSource = new FederatedRepositorySource();
-            this.federatedSource.setName("JCR " + repositorySourceName);
-            this.federatedSource.initialize(new FederatedRepositoryContext(this.connectionFactory));
-
-            // Set up the workspaces corresponding to all those available in the source (except the system)
-            Graph graph = Graph.create(sourceName, connectionFactory, executionContext);
-            String defaultWorkspaceName = graph.getCurrentWorkspaceName();
-            for (String workspaceName : graph.getWorkspaces()) {
-                boolean isDefault = workspaceName.equals(defaultWorkspaceName);
-                addWorkspace(workspaceName, isDefault);
-            }
-        } else {
-            this.federatedSource = null;
-            this.systemSourceProjection = null;
-        }
-
-        if (descriptors == null) descriptors = new HashMap<String, String>();
-        // Determine if it's possible to manage workspaces with the underlying source ...
-        if (repositorySourceCapabilities != null && repositorySourceCapabilities.supportsCreatingWorkspaces()) {
-            // Don't overwrite (so they workspace management can be disabled) ...
-            if (!descriptors.containsKey(Repository.OPTION_WORKSPACE_MANAGEMENT_SUPPORTED)) {
-                descriptors.put(Repository.OPTION_WORKSPACE_MANAGEMENT_SUPPORTED, Boolean.TRUE.toString());
-            }
-        } else {
-            // Not possible, so overwrite any value that might have been added ...
-            descriptors.put(Repository.OPTION_WORKSPACE_MANAGEMENT_SUPPORTED, Boolean.FALSE.toString());
-        }
-
-        // Initialize required JCR descriptors.
-        this.descriptors.putAll(initializeDescriptors(executionContext.getValueFactories(), descriptors));
-
-        // If the repository is to support searching ...
-        if (Boolean.valueOf(this.options.get(Option.QUERY_EXECUTION_ENABLED)) && WORKSPACES_SHARE_SYSTEM_BRANCH) {
-            // Determine whether the federated source and original source support queries and searches ...
-            RepositorySourceCapabilities fedCapabilities = federatedSource != null ? federatedSource.getCapabilities() : null;
-            final boolean canQuerySource = repositorySourceCapabilities != null
-                                           && repositorySourceCapabilities.supportsSearches()
-                                           && repositorySourceCapabilities.supportsQueries();
-            final boolean canQueryFederated = fedCapabilities != null && fedCapabilities.supportsSearches()
-                                              && fedCapabilities.supportsQueries();
-
-            // We can query the federated source if it supports queries and searches
-            // AND the original source supports queries and searches ...
-            if (canQuerySource && canQueryFederated) {
-                this.queryManager = new PushDown(repositoryName(), this.sourceName, this.executionContext, connectionFactory);
-            } else {
-                // Otherwise create a repository query manager that maintains its own search engine ...
-                String indexDirectory = this.options.get(Option.QUERY_INDEX_DIRECTORY);
-                boolean updateIndexesSynchronously = Boolean.valueOf(this.options.get(Option.QUERY_INDEXES_UPDATED_SYNCHRONOUSLY));
-                boolean forceIndexRebuild = RebuildQueryIndexOnStartupOption.ALWAYS.equalsIgnoreCase(this.options.get(Option.REBUILD_QUERY_INDEX_ON_STARTUP));
-                boolean rebuildIndexesSynchronously = Boolean.TRUE.equals(Boolean.valueOf(this.options.get(Option.QUERY_INDEXES_REBUILT_SYNCHRONOUSLY)));
-
-                int maxDepthToRead = Integer.valueOf(this.options.get(Option.INDEX_READ_DEPTH));
-                this.queryManager = new RepositoryQueryManager.SelfContained(repositoryName(), this.executionContext,
-                                                                             this.sourceName, connectionFactory,
-                                                                             repositoryObservable, repositoryTypeManager,
-                                                                             indexDirectory, updateIndexesSynchronously,
-                                                                             forceIndexRebuild, rebuildIndexesSynchronously,
-                                                                             maxDepthToRead, this.backgroundService);
-            }
-        } else {
-            this.queryManager = new RepositoryQueryManager.Disabled(repositoryName(), this.sourceName);
-        }
-
-        LOGGER.trace("Finished creating the RepositoryQueryManager");
-
-        // Initialize the observer, which receives events from all repository sources
-        this.repositoryObservationManager = new RepositoryObservationManager(repositoryObservable);
-        if (transientSystemSource != null) {
-            // The transient RepositorySource for the system content is not in the RepositoryLibrary, so we need to observe it ...
-            final Observer observer = this.repositoryObservationManager;
-            final ExecutionContext context = executionContext;
-            transientSystemSource.initialize(new RepositoryContext() {
-                public Observer getObserver() {
-                    return observer;
-                }
-
-                public ExecutionContext getExecutionContext() {
-                    return context;
-                }
-
-                public Subgraph getConfiguration( int depth ) {
-                    return null; // not needed for the in-memory transient repository
-                }
-
-                public RepositoryConnectionFactory getRepositoryConnectionFactory() {
-                    return null; // not needed for the in-memory transient repository
+            // Submit a runnable to terminate all sessions ...
+            Future<Boolean> future = executor.submit(new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+                    return doShutdown();
                 }
             });
+            return future;
+        } finally {
+            // Now shutdown the executor and return the future ...
+            executor.shutdown();
         }
+    }
 
-        // Prepare to create the authenticators and authorizers ...
-        AuthenticationProviders authenticators = new AuthenticationProviders();
-
-        // Set up the JAAS providers ...
-        String policyName = this.options.get(Option.JAAS_LOGIN_CONFIG_NAME);
-        if (policyName != null && policyName.trim().length() != 0) {
-
-            // Per MODE-1270, see if the JACC API is available (if so, we're running in an J2EE container
-            // and need to provide a way to properly resolve the JAAS Subject)...
-            JaasProvider.SubjectResolver subjectResolver = null;
-            try {
-                // Try to find the JACC PolicyContext class, which is entirely optional and provided only in J2EE containers ...
-                ClassUtil.loadClassStrict("javax.security.jacc.PolicyContext");
-                subjectResolver = new JaccSubjectResolver();
-                LOGGER.debug("Enabling optional JACC approach for resolving the JAAS Subject (typically in J2EE containers)");
-            } catch (ClassNotFoundException cnfe) {
-                // Must not be able to load the class ...
-                LOGGER.debug("Failed to find 'javax.security.jacc.PolicyContext', so assuming not in a J2EE container.");
-            }
-            try {
-                JaasProvider jaasProvider = new JaasProvider(policyName, subjectResolver);
-                authenticators = authenticators.with(jaasProvider);
-                LOGGER.debug("Enabling JAAS authentication and authorization.");
-            } catch (java.lang.SecurityException e) {
-                LOGGER.warn(JcrI18n.loginConfigNotFound, policyName, Option.JAAS_LOGIN_CONFIG_NAME, repositoryName());
-            } catch (javax.security.auth.login.LoginException e) {
-                LOGGER.warn(JcrI18n.loginConfigNotFound, policyName, Option.JAAS_LOGIN_CONFIG_NAME, repositoryName());
-            }
-        }
-
+    /**
+     * Apply the supplied changes to this repository's configuration, and if running change the services to reflect the updated
+     * configuration. Note that this method assumes the proposed changes have already been validated; see
+     * {@link RepositoryConfiguration#validate(Changes)}.
+     * 
+     * @param changes the changes for the configuration
+     * @throws FileNotFoundException if the Infinispan configuration file is changed but could not be found
+     * @throws IOException if there is a problem with the specified Infinispan configuration file
+     * @throws NamingException if there is a problem looking in JNDI for the Infinispan CacheContainer
+     * @see JcrEngine#update(String, Changes)
+     */
+    void apply( Changes changes ) throws IOException, NamingException {
+        final RepositoryConfiguration oldConfiguration = this.config.get();
+        Editor copy = oldConfiguration.edit();
+        ConfigurationChange configChanges = new ConfigurationChange();
+        copy.apply(changes, configChanges);
         try {
-            // Try to set up the HTTP servlet request class, which is available only in servlet containers ...
-            ClassUtil.loadClassStrict("javax.servlet.http.HttpServletRequest");
-            ServletProvider servletProvider = new ServletProvider();
-            authenticators = authenticators.with(servletProvider);
-            LOGGER.debug("Enabling servlet authentication and authorization.");
-        } catch (ClassNotFoundException cnfe) {
-            // Must not be able to load the class ...
-            LOGGER.debug("Failed to find 'javax.servlet.http.HttpServletRequest' class, so not loading ModeShape's optional ServletProvider");
-        }
+            stateLock.lock();
+            // Always update the configuration ...
+            RunningState oldState = this.runningState.get();
+            this.config.set(new RepositoryConfiguration(copy, copy.getString(FieldName.NAME)));
+            if (oldState != null) {
+                assert state.get() == State.RUNNING;
+                // Repository is running, so create a new running state ...
+                this.runningState.set(new RunningState(oldState, configChanges));
 
-        // Set up the anonymous provider (if appropriate) ...
-        String rawAnonRoles = this.options.get(Option.ANONYMOUS_USER_ROLES);
-        if (rawAnonRoles != null) {
-            final Set<String> roles = new HashSet<String>();
-            for (String role : rawAnonRoles.split("\\s*,\\s*")) {
-                roles.add(role);
+                // Handle a few special cases that the running state doesn't really handle itself ...
+                if (!configChanges.storageChanged && configChanges.predefinedWorkspacesChanged) workspacesChanged();
+                if (configChanges.nameChanged) repositoryNameChanged();
             }
-            if (roles.size() > 0) {
-                AnonymousProvider anonProvider = new AnonymousProvider(ANONYMOUS_USER_NAME, roles);
-                authenticators = authenticators.with(anonProvider);
-                LOGGER.debug("Enabling anonymous authentication and authorization.");
+        } finally {
+            stateLock.unlock();
+        }
+    }
+
+    protected final RunningState doStart() throws IOException, NamingException {
+        try {
+            stateLock.lock();
+            RunningState state = this.runningState.get();
+            if (state == null) {
+                // start the repository by creating the running state ...
+                this.state.set(State.STARTING);
+                state = new RunningState();
+                this.runningState.compareAndSet(null, state);
+                workspacesChanged();
+                this.state.set(State.RUNNING);
+                state.postInitialize();
             }
+            return state;
+        } catch (IOException e) {
+            // Only way to get exception is because we tried to create the running state (e.g., it was not running when we
+            // entered)
+            this.state.set(State.NOT_RUNNING);
+            throw e;
+        } catch (NamingException e) {
+            // Only way to get exception is because we tried to create the running state (e.g., it was not running when we
+            // entered)
+            this.state.set(State.NOT_RUNNING);
+            throw e;
+        } catch (RuntimeException e) {
+            // Only way to get exception is because we tried to create the running state (e.g., it was not running when we
+            // entered)
+            this.state.set(State.NOT_RUNNING);
+            throw e;
+        } finally {
+            stateLock.unlock();
         }
+    }
 
-        // Set up the SecurityContext provider (for backward compatibility) unless configured otherwise ...
-        // Set up the JAAS providers ...
-        boolean useSecurityContextCredentials = Boolean.parseBoolean(this.options.get(Option.USE_SECURITY_CONTEXT_CREDENTIALS));
-        if (useSecurityContextCredentials) {
-            SecurityContextProvider provider = new SecurityContextProvider();
-            authenticators = authenticators.with(provider);
-        }
+    protected final boolean doShutdown() {
+        if (this.state.get() == State.NOT_RUNNING) return true;
+        try {
+            stateLock.lock();
+            RunningState running = this.runningState.get();
+            if (running != null) {
+                // Prevent future 'login(...)' calls from restarting the repository ...
+                this.allowAutoStartDuringLogin.set(false);
 
-        // Set up any custom AuthenticationProvider classes ...
-        if (authenticationProviders != null) {
-            for (AuthenticationProvider provider : authenticationProviders.getInstances()) {
-                if (provider != null) authenticators = authenticators.with(provider);
+                this.state.set(State.STOPPING);
+
+                // Terminate each of the still-open sessions ...
+                running.terminateSessions();
+
+                // Now shutdown the running state ...
+                running.shutdown();
+
+                // Null out the running state ...
+                this.runningState.set(null);
             }
+            this.state.set(State.NOT_RUNNING);
+        } finally {
+            stateLock.unlock();
         }
-
-        // Set up the authenticator and authorizer ...
-        this.anonymousCredentialsIfSuppliedCredentialsFail = Boolean.valueOf(this.options.get(Option.USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN)) ? new AnonymousCredentials() : null;
-        this.authenticator = authenticators;
-        LOGGER.debug("Finished initializing the authentication providers for the '{0}' repository.", repositoryName());
-
-        repositoryLockManager = new RepositoryLockManager(this);
-
-        // Create a system observer to update the namespace registry cache ...
-        final GraphNamespaceRegistry persistentRegistry = this.persistentRegistry;
-        final JcrSystemObserver namespaceObserver = new JcrSystemObserver() {
-            /**
-             * {@inheritDoc}
-             * 
-             * @see org.modeshape.jcr.JcrSystemObserver#getObservedPath()
-             */
-            public Path getObservedPath() {
-                return namespacesPath;
-            }
-
-            /**
-             * {@inheritDoc}
-             * 
-             * @see org.modeshape.graph.observe.Observer#notify(org.modeshape.graph.observe.Changes)
-             */
-            public void notify( Changes changes ) {
-                // These changes apply to anything at or below the namespaces path ...
-                persistentRegistry.refresh();
-            }
-        };
-
-        LOGGER.trace("Registering some observers for the '{0}' repository's system content.", repositoryName());
-
-        // Define the set of "/jcr:system" observers ...
-        // This observer picks up notification of changes to the system graph in a cluster. It's a NOP if there is no cluster.
-        repositoryObservationManager.register(new SystemChangeObserver(Arrays.asList(new JcrSystemObserver[] {
-            repositoryLockManager, namespaceObserver, repositoryTypeManager})));
-
-        LOGGER.trace("Finished registering some observers for the '{0}' repository's system content.", repositoryName());
-
-        if (Boolean.valueOf(this.options.get(Option.REMOVE_DERIVED_CONTENT_WITH_ORIGINAL))) {
-            // Add an observer that moves/removes derived content when the original is moved/removed ...
-            repositoryObservationManager.register(new DerivedContentSynchronizer());
-        }
-
-        // If the JNDI Location is set and not trivial, attempt the bind.
-        String jndiLocation = this.options.get(Option.REPOSITORY_JNDI_LOCATION);
-        if (!jndiLocation.equals("")) {
-            try {
-                LOGGER.debug("Binding the '{0}' repository into JNDI at '{1}'", repositoryName(), jndiLocation);
-                InitialContext ic = new InitialContext();
-                ic.rebind(jndiLocation, this);
-            } catch (NamingException e) {
-                I18n msg = JcrI18n.unableToBindToJndi;
-                LOGGER.error(msg, jndiLocation);
-                throw new RepositoryException(msg.text(jndiLocation), e);
-            }
-        }
-
-        // Make sure the workspace names are in the descriptor ...
-        updateWorkspaceNames();
-        LOGGER.debug("Completed initializing the '{0}' repository.", repositoryName());
+        return true;
     }
 
-    protected ExecutorService backgroundService() {
-        return backgroundService;
+    private final Cache<String, SchematicEntry> infinispanCache() {
+        return database().getCache();
     }
 
-    protected String repositoryName() {
-        return getDescriptor(org.modeshape.jcr.api.Repository.REPOSITORY_NAME);
+    protected final SchematicDb database() {
+        return runningState().database();
     }
 
-    protected void updateWorkspaceNames() {
-        if (!Boolean.valueOf(this.options.get(Option.EXPOSE_WORKSPACE_NAMES_IN_DESCRIPTOR)).booleanValue()) return;
+    protected final String repositoryName() {
+        return repositoryName.get();
+    }
 
-        ValueFactories factories = this.getExecutionContext().getValueFactories();
-        List<JcrValue> values = new LinkedList<JcrValue>();
-        this.cachedWorkspaceNames = readWorkspaceNamesFromSource();
-        for (String name : this.cachedWorkspaceNames) {
-            values.add(new JcrValue(factories, null, PropertyType.STRING, name));
+    protected final RepositoryCache repositoryCache() {
+        return runningState().repositoryCache();
+    }
+
+    protected final RepositoryStatistics statistics() {
+        return runningState().statistics();
+    }
+
+    protected final TransactionManager txnManager() {
+        return infinispanCache().getAdvancedCache().getTransactionManager();
+    }
+
+    protected final RepositoryNodeTypeManager nodeTypeManager() {
+        return runningState().nodeTypeManager();
+    }
+
+    protected final RepositoryQueryManager queryManager() {
+        return runningState().queryManager();
+    }
+
+    protected final RepositoryLockManager lockManager() {
+        return runningState().lockManager();
+    }
+
+    protected final NamespaceRegistry persistentRegistry() {
+        return runningState().persistentRegistry();
+    }
+
+    protected final String systemWorkspaceName() {
+        return runningState().systemWorkspaceName();
+    }
+
+    protected final String systemWorkspaceKey() {
+        return runningState().systemWorkspaceKey();
+    }
+
+    protected final JcrRepository.RunningState runningState() {
+        RunningState running = runningState.get();
+        if (running == null) {
+            throw new IllegalStateException(JcrI18n.repositoryIsNotRunningOrHasBeenShutDown.text(repositoryName()));
         }
-        descriptors.put(Repository.REPOSITORY_WORKSPACES, values.toArray(new JcrValue[values.size()]));
+        return running;
     }
 
-    protected void addWorkspace( String workspaceName,
-                                 boolean isDefault ) {
-        synchronized (this.federatedSource) {
-            if (this.federatedSource == null) return;
-            assert this.systemSourceProjection != null;
-            if (!this.federatedSource.hasWorkspace(workspaceName)) {
-                if (workspaceName.equals(systemWorkspaceName)) return;
-                // Add the workspace to the federated source ...
-                ProjectionParser projectionParser = ProjectionParser.getInstance();
-                Projection.Rule[] mirrorRules = projectionParser.rulesFromString(this.executionContext, "/ => /");
-                List<Projection> projections = new ArrayList<Projection>(2);
-                projections.add(new Projection(sourceName, workspaceName, false, mirrorRules));
-                projections.add(this.systemSourceProjection);
-                this.federatedSource.addWorkspace(workspaceName, projections, isDefault);
-            }
-        }
-        updateWorkspaceNames();
+    final SessionCache createSystemSession( ExecutionContext context,
+                                            boolean readOnly ) {
+        return repositoryCache().createSession(context, systemWorkspaceName(), readOnly);
     }
 
     /**
-     * Create a new workspace with the supplied name.
+     * Get the immutable configuration for this repository.
      * 
-     * @param workspaceName the name of the workspace to be destroyed; may not be null
-     * @param clonedFromWorkspaceNamed the name of the workspace that is to be cloned, or null if the new workspace is to be empty
-     * @throws InvalidWorkspaceException if the workspace cannot be created because one already exists
-     * @throws UnsupportedRepositoryOperationException if this repository does not support workspace management
+     * @return the configuration; never null
      */
-    protected void createWorkspace( String workspaceName,
-                                    String clonedFromWorkspaceNamed )
-        throws InvalidWorkspaceException, UnsupportedRepositoryOperationException {
-        assert workspaceName != null;
-        if (!Boolean.parseBoolean(getDescriptor(Repository.OPTION_WORKSPACE_MANAGEMENT_SUPPORTED))) {
-            throw new UnsupportedRepositoryOperationException();
-        }
-        if (workspaceName.equals(systemWorkspaceName)) {
-            // Cannot create a workspace that has the same name as the system workspace ...
-            String msg = GraphI18n.workspaceAlreadyExistsInRepository.text(workspaceName, systemSourceName);
-            throw new InvalidWorkspaceException(msg);
-        }
-        // Create a graph to the underlying source ...
-        Graph graph = Graph.create(sourceName, connectionFactory, executionContext);
-        // Create the workspace (which will fail if workspaces cannot be created) ...
-        Workspace graphWorkspace = null;
-        if (clonedFromWorkspaceNamed != null) {
-            graphWorkspace = graph.createWorkspace().clonedFrom(clonedFromWorkspaceNamed).named(workspaceName);
-        } else {
-            graphWorkspace = graph.createWorkspace().named(workspaceName);
-        }
-
-        // Ensure the workspace contains the initial content (if there is any) ...
-        if (initialContentForNewWorkspaces != null) {
-            XmlFileRepositorySource initialContentSource = new XmlFileRepositorySource();
-            initialContentSource.setName("Initial content for " + sourceName);
-            initialContentSource.setContentLocation(initialContentForNewWorkspaces);
-            Graph initialContentGraph = Graph.create(initialContentSource, executionContext);
-            graph.merge(initialContentGraph); // uses its own batch
-        }
-        String actualName = graphWorkspace.getName();
-        addWorkspace(actualName, false); // this updates the workspace names
+    public RepositoryConfiguration getConfiguration() {
+        return this.config.get();
     }
 
-    /**
-     * Destroy the workspace with the supplied name.
-     * 
-     * @param workspaceName the name of the workspace to be destroyed; may not be null
-     * @param currentWorkspace the workspace performing the operation; may not be null
-     * @throws InvalidWorkspaceException if the workspace cannot be destroyed
-     * @throws UnsupportedRepositoryOperationException if this repository does not support workspace management
-     * @throws NoSuchWorkspaceException if the workspace does not exist
-     * @throws RepositorySourceException if there is an error destroying this workspace
-     */
-    protected void destroyWorkspace( String workspaceName,
-                                     JcrWorkspace currentWorkspace )
-        throws InvalidWorkspaceException, UnsupportedRepositoryOperationException, NoSuchWorkspaceException,
-        RepositorySourceException {
-        assert workspaceName != null;
-        assert currentWorkspace != null;
-        if (!Boolean.parseBoolean(getDescriptor(Repository.OPTION_WORKSPACE_MANAGEMENT_SUPPORTED))) {
-            throw new UnsupportedRepositoryOperationException();
-        }
-        if (workspaceName.equals(systemWorkspaceName)) {
-            // Cannot create a workspace that has the same name as the system workspace ...
-            String msg = GraphI18n.workspaceAlreadyExistsInRepository.text(workspaceName, sourceName);
-            throw new InvalidWorkspaceException(msg);
-        }
-        if (currentWorkspace.getName().equals(workspaceName)) {
-            String msg = GraphI18n.currentWorkspaceCannotBeDeleted.text(workspaceName, sourceName);
-            throw new InvalidWorkspaceException(msg);
-        }
-        // Make sure the workspace exists ...
-        Graph graph = Graph.create(sourceName, connectionFactory, executionContext);
-        graph.useWorkspace(currentWorkspace.getName());
-        if (!graph.getWorkspaces().contains(workspaceName)) {
-            // Cannot create a workspace that has the same name as the system workspace ...
-            String msg = GraphI18n.workspaceDoesNotExistInRepository.text(workspaceName, sourceName);
-            throw new NoSuchWorkspaceException(msg);
-        }
-
-        // Remove the federated workspace ...
-        if (federatedSource != null) {
-            synchronized (federatedSource) {
-                federatedSource.removeWorkspace(workspaceName);
-            }
-        }
-
-        // And now destroy the workspace ...
-        graph.destroyWorkspace().named(workspaceName);
-        updateWorkspaceNames();
-    }
-
-    protected void initializeSystemContent( Graph systemGraph ) {
-        // Make sure the "/jcr:system" node exists ...
-        ExecutionContext context = systemGraph.getContext();
-        PathFactory pathFactory = context.getValueFactories().getPathFactory();
-        Path systemPath = pathFactory.create(pathFactory.createRootPath(), JcrLexicon.SYSTEM);
-        Property systemPrimaryType = context.getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.SYSTEM);
-        systemGraph.create(systemPath, systemPrimaryType).ifAbsent().and();
-
-        // Make sure the required jcr:versionStorage node exists...
-        Path versionPath = pathFactory.createAbsolutePath(JcrLexicon.SYSTEM, JcrLexicon.VERSION_STORAGE);
-        Property versionPrimaryType = context.getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE,
-                                                                          ModeShapeLexicon.VERSION_STORAGE);
-        systemGraph.create(versionPath, versionPrimaryType).ifAbsent().and();
-
-        // Right now, the other nodes will be created as needed
-    }
-
-    JcrGraph createWorkspaceGraph( String workspaceName,
-                                   ExecutionContext workspaceContext ) {
-        JcrGraph graph = null;
-        if (WORKSPACES_SHARE_SYSTEM_BRANCH) {
-            // Connect via the federated source ...
-            assert this.federatedSource != null;
-            graph = JcrGraph.create(this.federatedSource, workspaceContext);
-        } else {
-            // Otherwise, just create a graph directly to the connection factory ...
-            graph = JcrGraph.create(this.sourceName, this.connectionFactory, workspaceContext);
-        }
-        graph.useWorkspace(workspaceName);
-        return graph;
-    }
-
-    JcrGraph createSystemGraph( ExecutionContext sessionContext ) {
-        assert this.systemSourceName != null;
-        assert this.connectionFactory != null;
-        assert sessionContext != null;
-        // The default workspace should be the system workspace ...
-        JcrGraph result = JcrGraph.create(this.systemSourceName, this.connectionFactory, sessionContext);
-        if (this.systemWorkspaceName != null) {
-            result.useWorkspace(systemWorkspaceName);
-        }
-        return result;
-    }
-
-    QueryParsers queryParsers() {
-        return queryParsers;
-    }
-
-    /**
-     * Get the query manager for this repository.
-     * 
-     * @return the query manager; never null
-     */
-    RepositoryQueryManager queryManager() {
-        return queryManager;
-    }
-
-    /**
-     * Returns the repository-level node type manager
-     * 
-     * @return the repository-level node type manager
-     */
-    RepositoryNodeTypeManager getRepositoryTypeManager() {
-        return repositoryTypeManager;
-    }
-
-    /**
-     * Returns the repository-level lock manager
-     * 
-     * @return the repository-level lock manager
-     */
-    RepositoryLockManager getRepositoryLockManager() {
-        return repositoryLockManager;
-    }
-
-    /**
-     * Get the options as configured for this repository.
-     * 
-     * @return the unmodifiable options; never null
-     */
-    public Map<Option, String> getOptions() {
-        return options;
-    }
-
-    /**
-     * Get the name of the repository source that this repository is using.
-     * 
-     * @return the name of the RepositorySource
-     */
-    String getRepositorySourceName() {
-        return sourceName;
-    }
-
-    String getSystemSourceName() {
-        return systemSourceName;
-    }
-
-    String getSystemWorkspaceName() {
-        return systemWorkspaceName;
-    }
-
-    /**
-     * Get the name of the source that we want to observe.
-     * 
-     * @return the name of the source that should be observed; never null
-     */
-    String getObservableSourceName() {
-        if (!WORKSPACES_SHARE_SYSTEM_BRANCH) {
-            return sourceName;
-        }
-        return federatedSource.getName();
-    }
-
-    /**
-     * @return executionContext
-     */
-    ExecutionContext getExecutionContext() {
-        return executionContext;
-    }
-
-    /**
-     * @return persistentRegistry
-     */
-    NamespaceRegistry getPersistentRegistry() {
-        return persistentRegistry;
-    }
-
-    /**
-     * The observer to which all source events are sent.
-     * 
-     * @return the current observer, or null if there is no observer
-     */
-    Observer getObserver() {
-        return this.repositoryObservationManager;
-    }
-
-    /**
-     * The repository observable that listeners can be registered with.
-     * 
-     * @return the repository observable (never <code>null</code>)
-     */
-    Observable getRepositoryObservable() {
-        return this.repositoryObservationManager;
-    }
-
-    protected boolean isQueryExecutionEnabled() {
-        return Boolean.valueOf(getOptions().get(Option.QUERY_EXECUTION_ENABLED));
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws IllegalArgumentException if <code>key</code> is <code>null</code>.
-     * @see Repository#getDescriptor(java.lang.String)
-     */
+    @Override
     public String getDescriptor( String key ) {
+        if (key == null) return null;
         if (!isSingleValueDescriptor(key)) return null;
 
         JcrValue value = (JcrValue)descriptors.get(key);
@@ -1347,27 +459,22 @@ public class JcrRepository implements Repository {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws IllegalArgumentException if {@code key} is null or empty
-     * @see Repository#getDescriptorValue(String)
-     */
+    @Override
     public JcrValue getDescriptorValue( String key ) {
+        if (key == null) return null;
         if (!isSingleValueDescriptor(key)) return null;
         return (JcrValue)descriptors.get(key);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws IllegalArgumentException if {@code key} is null or empty
-     * @see Repository#getDescriptorValues(String)
-     */
+    @Override
     public JcrValue[] getDescriptorValues( String key ) {
         Object value = descriptors.get(key);
         if (value instanceof JcrValue[]) {
-            return (JcrValue[])value;
+            // Make a defensive copy of the array; the elements are immutable ...
+            JcrValue[] values = (JcrValue[])value;
+            JcrValue[] newValues = new JcrValue[values.length];
+            System.arraycopy(values, 0, newValues, 0, values.length);
+            return newValues;
         }
         if (value instanceof JcrValue) {
             return new JcrValue[] {(JcrValue)value};
@@ -1375,60 +482,34 @@ public class JcrRepository implements Repository {
         return null;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws IllegalArgumentException if {@code key} is null or empty
-     * @see Repository#isSingleValueDescriptor(String)
-     */
+    @Override
     public boolean isSingleValueDescriptor( String key ) {
-        CheckArg.isNotEmpty(key, "key");
+        if (key == null) return true;
         return descriptors.get(key) instanceof JcrValue;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws IllegalArgumentException if {@code key} is null or empty
-     * @see Repository#isStandardDescriptor(String)
-     */
+    @Override
     public boolean isStandardDescriptor( String key ) {
         return STANDARD_DESCRIPTORS.contains(key);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Repository#getDescriptorKeys()
-     */
+    @Override
     public String[] getDescriptorKeys() {
         return descriptors.keySet().toArray(new String[descriptors.size()]);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Repository#login()
-     */
-    public synchronized Session login() throws RepositoryException {
+    @Override
+    public synchronized JcrSession login() throws RepositoryException {
         return login(null, null);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Repository#login(javax.jcr.Credentials)
-     */
-    public synchronized Session login( Credentials credentials ) throws RepositoryException {
+    @Override
+    public synchronized JcrSession login( Credentials credentials ) throws RepositoryException {
         return login(credentials, null);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Repository#login(java.lang.String)
-     */
-    public synchronized Session login( String workspaceName ) throws RepositoryException {
+    @Override
+    public synchronized JcrSession login( String workspaceName ) throws RepositoryException {
         return login(null, workspaceName);
     }
 
@@ -1449,337 +530,236 @@ public class JcrRepository implements Repository {
      *         </ul>
      * @see javax.jcr.Repository#login(javax.jcr.Credentials, java.lang.String)
      */
-    public synchronized Session login( final Credentials credentials,
-                                       String workspaceName ) throws RepositoryException {
-        Map<String, Object> sessionAttributes = new HashMap<String, Object>();
+    @Override
+    public synchronized JcrSession login( final Credentials credentials,
+                                          String workspaceName ) throws RepositoryException {
+        final String repoName = this.repositoryName();
+
+        // Get the running state ...
+        RunningState running = this.runningState.get();
+        if (running == null) {
+            if (this.allowAutoStartDuringLogin.get()) {
+                // Try starting ...
+                try {
+                    running = doStart();
+                } catch (Throwable t) {
+                    throw new RepositoryException(JcrI18n.errorStartingRepository.text(repoName, t.getMessage()));
+                }
+                if (running == null) {
+                    throw new RepositoryException(JcrI18n.repositoryIsNotRunningOrHasBeenShutDown.text(repoName));
+                }
+            } else {
+                throw new RepositoryException(JcrI18n.repositoryIsNotRunningOrHasBeenShutDown.text(repoName));
+            }
+        }
+
+        workspaceName = validateWorkspaceName(running, workspaceName);
+        final AuthenticationProviders authenticators = running.authenticators();
+        final Credentials anonCredentials = running.anonymousCredentials();
+        final Map<String, Object> attributes = new HashMap<String, Object>();
 
         // Try to authenticate with the provider(s) ...
-        ExecutionContext sessionContext = authenticator.authenticate(credentials,
-                                                                     repositoryName(),
-                                                                     workspaceName,
-                                                                     executionContext,
-                                                                     sessionAttributes);
+        ExecutionContext context = running.context();
+        ExecutionContext sessionContext = authenticators.authenticate(credentials, repoName, workspaceName, context, attributes);
 
-        if (sessionContext == null && credentials != null && anonymousCredentialsIfSuppliedCredentialsFail != null) {
+        if (sessionContext == null && credentials != null && anonCredentials != null) {
             // Failed non-anonymous authentication, so try anonymous authentication ...
-            if (LOGGER.isDebugEnabled()) LOGGER.debug(JcrI18n.usingAnonymousUser.text());
-            sessionAttributes.clear();
-            sessionContext = authenticator.authenticate(anonymousCredentialsIfSuppliedCredentialsFail,
-                                                        repositoryName(),
-                                                        workspaceName,
-                                                        executionContext,
-                                                        sessionAttributes);
+            if (logger.isDebugEnabled()) logger.debug(JcrI18n.usingAnonymousUser.text());
+            attributes.clear();
+            sessionContext = authenticators.authenticate(anonCredentials, repoName, workspaceName, context, attributes);
         }
 
         if (sessionContext == null) {
             // Failed authentication ...
-            throw new javax.jcr.LoginException(JcrI18n.loginFailed.text(repositoryName(), workspaceName));
+            throw new javax.jcr.LoginException(JcrI18n.loginFailed.text(repoName, workspaceName));
         }
 
         // We have successfully authenticated ...
-        return sessionForContext(sessionContext, workspaceName, sessionAttributes);
-    }
-
-    /**
-     * Creates a new {@link JcrSession session} based on the given {@link ExecutionContext context} and its associated security
-     * context.
-     * 
-     * @param execContext the execution context to use for the new session; may not be null and must have a non-null
-     *        {@link ExecutionContext#getSecurityContext() security context}
-     * @param workspaceName the name of the workspace to connect to; null indicates that the default workspace should be used
-     * @param sessionAttributes the session attributes for this session; may be null
-     * @return a valid session for the user to access the repository
-     * @throws RepositoryException if an error occurs creating the session
-     */
-    JcrSession sessionForContext( ExecutionContext execContext,
-                                  String workspaceName,
-                                  Map<String, Object> sessionAttributes ) throws RepositoryException {
-        CheckArg.isNotNull(execContext.getSecurityContext(), "execContext.securityContext");
-        // Ensure valid workspace name by talking directly to the source ...
-        boolean isDefault = false;
-        Graph graph = Graph.create(sourceName, connectionFactory, executionContext);
-        if (workspaceName == null) {
-            try {
-                // Get the correct workspace name given the desired workspace name (which may be null) ...
-                workspaceName = graph.getCurrentWorkspace().getName();
-            } catch (RepositorySourceException e) {
-                throw new RepositoryException(JcrI18n.errorObtainingDefaultWorkspaceName.text(sourceName, e.getMessage()), e);
-            }
-            isDefault = true;
-        } else {
-            // There is a non-null workspace name ...
-            try {
-                // Verify that the workspace exists (or can be created) ...
-                Set<String> workspaces = graph.getWorkspaces();
-                if (!workspaces.contains(workspaceName)) {
-                    if (WORKSPACES_SHARE_SYSTEM_BRANCH) {
-                        // Make sure there isn't a federated workspace ...
-                        this.federatedSource.removeWorkspace(workspaceName);
-                    }
-                    // Per JCR 1.0 6.1.1, if the workspaceName is not recognized, a NoSuchWorkspaceException is thrown
-                    // JCR 2.0 does not explicitely state the behavior if the workspace name is not found, though the JavaDoc
-                    // does.
-                    throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(sourceName, workspaceName));
-                }
-
-                graph.useWorkspace(workspaceName);
-            } catch (InvalidWorkspaceException e) {
-                throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(sourceName, workspaceName), e);
-            } catch (RepositorySourceException e) {
-                String msg = JcrI18n.errorVerifyingWorkspaceName.text(sourceName, workspaceName, e.getMessage());
-                throw new NoSuchWorkspaceException(msg, e);
-            }
-        }
-
-        if (WORKSPACES_SHARE_SYSTEM_BRANCH) {
-            addWorkspace(workspaceName, isDefault);
-        } else {
-            // We're not sharing a '/jcr:system' branch, so we need to make sure there is one in the source.
-            // Note that this doesn't always work with some connectors (e.g., the FileSystem or SVN connectors)
-            // that don't allow arbitrary nodes.
-            try {
-                initializeSystemContent(graph);
-            } catch (RepositorySourceException e) {
-                Logger.getLogger(getClass())
-                      .debug(e,
-                             "Workspaces do not share a common /jcr:system branch, but the connector was unable to create one in this session. Errors may result.");
-            }
-        }
-
-        // Create the workspace, which will create its own session ...
-        if (sessionAttributes == null) {
-            sessionAttributes = Collections.emptyMap();
-        } else {
-            sessionAttributes = Collections.unmodifiableMap(sessionAttributes);
-        }
-        JcrWorkspace workspace = new JcrWorkspace(this, workspaceName, execContext, sessionAttributes);
-
-        JcrSession session = (JcrSession)workspace.getSession();
-
-        // Need to make sure that the user has access to this session
         try {
+            boolean readOnly = false; // assume not
+            JcrSession session = new JcrSession(this, workspaceName, sessionContext, attributes, readOnly);
+
+            // Need to make sure that the user has access to this session
             session.checkPermission(workspaceName, null, ModeShapePermissions.READ);
-        } catch (AccessControlException ace) {
-            throw new LoginException(JcrI18n.workspaceNameIsInvalid.text(sourceName, workspaceName), ace);
-        }
 
-        synchronized (this.activeSessions) {
-            activeSessions.put(session, null);
-        }
-
-        return session;
-    }
-
-    void close() {
-        if (this.federatedSource != null) {
-            this.federatedSource.close();
-        }
-
-        this.repositoryObservationManager.shutdown();
-    }
-
-    /**
-     * @return a list of all workspace names, without regard to the access permissions of any particular user
-     */
-    Set<String> workspaceNames() {
-        return cachedWorkspaceNames;
-    }
-
-    /**
-     * @return a list of all workspace names, without regard to the access permissions of any particular user
-     */
-    private Set<String> readWorkspaceNamesFromSource() {
-        return Graph.create(sourceName, connectionFactory, executionContext).getWorkspaces();
-    }
-
-    /**
-     * Marks the given session as inactive (by removing it from the {@link #activeSessions active sessions map}.
-     * 
-     * @param session the session to be marked as inactive
-     */
-    void sessionLoggedOut( JcrSession session ) {
-        synchronized (this.activeSessions) {
-            this.activeSessions.remove(session);
+            running.addSession(session, false);
+            return session;
+        } catch (AccessDeniedException ace) {
+            throw new LoginException(JcrI18n.loginFailed.text(repoName, workspaceName), ace);
+        } catch (WorkspaceNotFoundException e) {
+            throw new NoSuchWorkspaceException(e.getMessage(), e);
         }
     }
 
-    /**
-     * Returns the set of active sessions in this repository
-     * 
-     * @return the set of active sessions in this repository
-     */
-    Set<JcrSession> activeSessions() {
-        Set<JcrSession> activeSessions;
-
-        synchronized (this.activeSessions) {
-            activeSessions = new HashSet<JcrSession>(this.activeSessions.keySet());
+    private String validateWorkspaceName( RunningState runningState,
+                                          String workspaceName ) throws RepositoryException {
+        if (workspaceName == null) {
+            return runningState.defaultWorkspaceName();
         }
-        // There can and will be elements in this set that are no longer live but haven't yet been gc'ed.
-        // Filter those out
-        for (Iterator<JcrSession> iter = activeSessions.iterator(); iter.hasNext();) {
-            JcrSession session = iter.next();
-            if (session != null && !session.isLive()) {
-                iter.remove();
+        if (runningState.systemWorkspaceName().equals(workspaceName)) {
+            throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(repositoryName(), workspaceName));
+        }
+        return workspaceName;
+    }
+
+    protected static class ConfigurationChange implements org.infinispan.schematic.document.Editor.Observer {
+
+        private final Path SECURITY_PATH = Paths.path(FieldName.SECURITY);
+        private final Path QUERY_PATH = Paths.path(FieldName.QUERY);
+        private final Path SEQUENCING_PATH = Paths.path(FieldName.SEQUENCING);
+        private final Path EXTRACTORS_PATH = Paths.path(FieldName.QUERY, FieldName.EXTRACTORS);
+        private final Path STORAGE_PATH = Paths.path(FieldName.STORAGE);
+        private final Path BINARY_STORAGE_PATH = Paths.path(FieldName.STORAGE, FieldName.BINARY_STORAGE);
+        private final Path WORKSPACES_PATH = Paths.path(FieldName.WORKSPACES);
+        private final Path PREDEFINED_PATH = Paths.path(FieldName.WORKSPACES, FieldName.PREDEFINED);
+        private final Path JNDI_PATH = Paths.path(FieldName.JNDI_NAME);
+        private final Path MINIMUM_BINARY_SIZE_IN_BYTES_PATH = Paths.path(FieldName.STORAGE,
+                                                                          FieldName.BINARY_STORAGE,
+                                                                          FieldName.MINIMUM_BINARY_SIZE_IN_BYTES);
+        private final Path NAME_PATH = Paths.path(FieldName.NAME);
+        private final Path MONITORING_PATH = Paths.path(FieldName.MONITORING);
+
+        private final Path[] IGNORE_PATHS = new Path[] {STORAGE_PATH, BINARY_STORAGE_PATH};
+
+        protected boolean securityChanged = false;
+        protected boolean sequencingChanged = false;
+        protected boolean extractorsChanged = false;
+        protected boolean storageChanged = false;
+        protected boolean binaryStorageChanged = false;
+        protected boolean indexingChanged = false;
+        protected boolean workspacesChanged = false;
+        protected boolean predefinedWorkspacesChanged = false;
+        protected boolean jndiChanged = false;
+        protected boolean largeValueChanged = false;
+        protected boolean nameChanged = false;
+        protected boolean monitoringChanged = false;
+
+        @Override
+        public void setArrayValue( Path path,
+                                   Array.Entry entry ) {
+            checkForChanges(path);
+        }
+
+        @Override
+        public void addArrayValue( Path path,
+                                   Array.Entry entry ) {
+            checkForChanges(path);
+        }
+
+        @Override
+        public void removeArrayValue( Path path,
+                                      Array.Entry entry ) {
+            checkForChanges(path);
+        }
+
+        @Override
+        public void clear( Path path ) {
+            checkForChanges(path);
+        }
+
+        @Override
+        public void put( Path parentPath,
+                         String field,
+                         Object newValue ) {
+            checkForChanges(parentPath.with(field));
+        }
+
+        @Override
+        public void remove( Path path,
+                            String field ) {
+            checkForChanges(path.with(field));
+        }
+
+        private void checkForChanges( Path path ) {
+            for (Path ignorePath : IGNORE_PATHS) {
+                if (path.equals(ignorePath)) return;
             }
-        }
 
-        return activeSessions;
-    }
-
-    /**
-     * Get the component that exposes the metrics of a repository, which is for internal use only. This mechanism will almost
-     * certainly change or be replaced in an upcoming release.
-     * 
-     * @return the metrics interface; never null
-     */
-    public Metrics getMetrics() {
-        return new Metrics();
-    }
-
-    /**
-     * Terminate all active sessions.
-     */
-    void terminateAllSessions() {
-        synchronized (this.activeSessions) {
-            for (JcrSession session : this.activeSessions.keySet()) {
-                session.terminate(false); // don't remove from active sessions, as we're blocked and iterating on it ...
-            }
-            this.activeSessions.clear();
+            if (!largeValueChanged && path.equals(MINIMUM_BINARY_SIZE_IN_BYTES_PATH)) largeValueChanged = true;
+            else if (!binaryStorageChanged && path.startsWith(BINARY_STORAGE_PATH)) binaryStorageChanged = true;
+            else if (!storageChanged && path.startsWith(STORAGE_PATH)) storageChanged = true;
+            if (!sequencingChanged && path.startsWith(SEQUENCING_PATH)) sequencingChanged = true;
+            if (!extractorsChanged && path.startsWith(EXTRACTORS_PATH)) extractorsChanged = true;
+            if (!securityChanged && path.startsWith(SECURITY_PATH)) securityChanged = true;
+            if (!workspacesChanged && path.startsWith(WORKSPACES_PATH) && !path.startsWith(PREDEFINED_PATH)) workspacesChanged = true;
+            if (!predefinedWorkspacesChanged && path.startsWith(PREDEFINED_PATH)) predefinedWorkspacesChanged = true;
+            if (!indexingChanged && path.startsWith(QUERY_PATH) && !path.startsWith(EXTRACTORS_PATH)) indexingChanged = true;
+            if (!jndiChanged && path.equals(JNDI_PATH)) jndiChanged = true;
+            if (!nameChanged && path.equals(NAME_PATH)) nameChanged = true;
+            if (!monitoringChanged && path.equals(MONITORING_PATH)) monitoringChanged = true;
         }
     }
 
-    protected static Properties getBundleProperties() {
-        if (bundleProperties == null) {
-            // This is idempotent, so we don't need to lock ...
-            InputStream stream = null;
-            try {
-                stream = JcrRepository.class.getClassLoader().getResourceAsStream("org/modeshape/jcr/repository.properties");
-                assert stream != null;
-                Properties props = new Properties();
-                props.load(stream);
-                bundleProperties = new UnmodifiableProperties(props);
-            } catch (IOException e) {
-                throw new IllegalStateException(JcrI18n.failedToReadPropertiesFromManifest.text(e.getLocalizedMessage()), e);
-            } finally {
-                if (stream != null) {
-                    try {
-                        stream.close();
-                    } catch (IOException e) {
-                    } finally {
-                        stream = null;
-                    }
-                }
-            }
-        }
-        return bundleProperties;
-    }
+    @SuppressWarnings( "deprecation" )
+    private void initializeDescriptors() {
+        ValueFactories factories = new ExecutionContext().getValueFactories();
 
-    protected static String getBundleProperty( String propertyName,
-                                               boolean required ) {
-        String value = getBundleProperties().getProperty(propertyName);
-        if (value == null && required) {
-            throw new IllegalStateException(JcrI18n.failedToReadPropertyFromManifest.text(propertyName));
-        }
-        return value;
-    }
+        descriptors.put(Repository.LEVEL_1_SUPPORTED, valueFor(factories, true));
+        descriptors.put(Repository.LEVEL_2_SUPPORTED, valueFor(factories, true));
+        descriptors.put(Repository.OPTION_LOCKING_SUPPORTED, valueFor(factories, true));
+        descriptors.put(Repository.OPTION_OBSERVATION_SUPPORTED, valueFor(factories, true));
+        descriptors.put(Repository.OPTION_QUERY_SQL_SUPPORTED, valueFor(factories, true));
+        // TODO: Transactions
+        descriptors.put(Repository.OPTION_TRANSACTIONS_SUPPORTED, valueFor(factories, false));
+        descriptors.put(Repository.OPTION_VERSIONING_SUPPORTED, valueFor(factories, true));
+        descriptors.put(Repository.QUERY_XPATH_DOC_ORDER, valueFor(factories, false)); // see MODE-613
+        descriptors.put(Repository.QUERY_XPATH_POS_INDEX, valueFor(factories, true));
 
-    /**
-     * Combines the given custom descriptors with the default repository descriptors.
-     * 
-     * @param factories the value factories to use to create the descriptor values
-     * @param customDescriptors the custom descriptors; may be null
-     * @return the custom descriptors (if any) combined with the default repository descriptors; never null or empty
-     */
-    private static Map<String, Object> initializeDescriptors( ValueFactories factories,
-                                                              Map<String, String> customDescriptors ) {
-        if (customDescriptors == null) customDescriptors = Collections.emptyMap();
-        Map<String, Object> repoDescriptors = new HashMap<String, Object>(customDescriptors.size() + 60);
+        descriptors.put(Repository.WRITE_SUPPORTED, valueFor(factories, true));
+        // TODO: Change in 3.0
+        descriptors.put(Repository.IDENTIFIER_STABILITY, valueFor(factories, Repository.IDENTIFIER_STABILITY_METHOD_DURATION));
+        descriptors.put(Repository.OPTION_XML_IMPORT_SUPPORTED, valueFor(factories, true));
+        descriptors.put(Repository.OPTION_XML_EXPORT_SUPPORTED, valueFor(factories, true));
+        descriptors.put(Repository.OPTION_UNFILED_CONTENT_SUPPORTED, valueFor(factories, false));
+        descriptors.put(Repository.OPTION_SIMPLE_VERSIONING_SUPPORTED, valueFor(factories, false));
+        descriptors.put(Repository.OPTION_ACTIVITIES_SUPPORTED, valueFor(factories, false));
+        descriptors.put(Repository.OPTION_BASELINES_SUPPORTED, valueFor(factories, false));
+        descriptors.put(Repository.OPTION_ACCESS_CONTROL_SUPPORTED, valueFor(factories, false));
+        descriptors.put(Repository.OPTION_JOURNALED_OBSERVATION_SUPPORTED, valueFor(factories, false));
+        descriptors.put(Repository.OPTION_RETENTION_SUPPORTED, valueFor(factories, false));
+        descriptors.put(Repository.OPTION_LIFECYCLE_SUPPORTED, valueFor(factories, false));
+        descriptors.put(Repository.OPTION_NODE_AND_PROPERTY_WITH_SAME_NAME_SUPPORTED, valueFor(factories, true));
+        // TODO: Change in 3.0
+        descriptors.put(Repository.OPTION_UPDATE_PRIMARY_NODE_TYPE_SUPPORTED, valueFor(factories, false));
+        descriptors.put(Repository.OPTION_UPDATE_MIXIN_NODE_TYPES_SUPPORTED, valueFor(factories, true));
+        descriptors.put(Repository.OPTION_SHAREABLE_NODES_SUPPORTED, valueFor(factories, true));
+        descriptors.put(Repository.OPTION_NODE_TYPE_MANAGEMENT_SUPPORTED, valueFor(factories, true));
+        descriptors.put(Repository.NODE_TYPE_MANAGEMENT_INHERITANCE,
+                        valueFor(factories, Repository.NODE_TYPE_MANAGEMENT_INHERITANCE_MULTIPLE));
+        descriptors.put(Repository.NODE_TYPE_MANAGEMENT_PRIMARY_ITEM_NAME_SUPPORTED, valueFor(factories, true));
+        descriptors.put(Repository.NODE_TYPE_MANAGEMENT_ORDERABLE_CHILD_NODES_SUPPORTED, valueFor(factories, true));
+        descriptors.put(Repository.NODE_TYPE_MANAGEMENT_RESIDUAL_DEFINITIONS_SUPPORTED, valueFor(factories, true));
+        descriptors.put(Repository.NODE_TYPE_MANAGEMENT_AUTOCREATED_DEFINITIONS_SUPPORTED, valueFor(factories, true));
+        descriptors.put(Repository.NODE_TYPE_MANAGEMENT_SAME_NAME_SIBLINGS_SUPPORTED, valueFor(factories, true));
+        descriptors.put(Repository.NODE_TYPE_MANAGEMENT_PROPERTY_TYPES, valueFor(factories, true));
+        descriptors.put(Repository.NODE_TYPE_MANAGEMENT_OVERRIDES_SUPPORTED, valueFor(factories, true));
+        descriptors.put(Repository.NODE_TYPE_MANAGEMENT_MULTIVALUED_PROPERTIES_SUPPORTED, valueFor(factories, true));
+        descriptors.put(Repository.NODE_TYPE_MANAGEMENT_MULTIPLE_BINARY_PROPERTIES_SUPPORTED, valueFor(factories, true));
+        descriptors.put(Repository.NODE_TYPE_MANAGEMENT_VALUE_CONSTRAINTS_SUPPORTED, valueFor(factories, true));
+        // TODO: Change in 3.0
+        descriptors.put(Repository.NODE_TYPE_MANAGEMENT_UPDATE_IN_USE_SUPORTED, valueFor(factories, false));
+        descriptors.put(Repository.QUERY_LANGUAGES,
+                        new JcrValue[] {valueFor(factories, Query.XPATH), valueFor(factories, Query.JCR_SQL2),
+                            valueFor(factories, Query.SQL), valueFor(factories, Query.JCR_JQOM)});
+        descriptors.put(Repository.QUERY_STORED_QUERIES_SUPPORTED, valueFor(factories, true));
+        descriptors.put(Repository.QUERY_FULL_TEXT_SEARCH_SUPPORTED, valueFor(factories, true));
+        descriptors.put(Repository.QUERY_JOINS, valueFor(factories, Repository.QUERY_JOINS_INNER_OUTER));
+        descriptors.put(Repository.SPEC_NAME_DESC, valueFor(factories, JcrI18n.SPEC_NAME_DESC.text()));
+        descriptors.put(Repository.SPEC_VERSION_DESC, valueFor(factories, "2.0"));
 
-        for (Map.Entry<String, String> entry : customDescriptors.entrySet()) {
-            repoDescriptors.put(entry.getKey(), valueFor(factories, entry.getValue()));
-        }
+        descriptors.put(Repository.REP_NAME_DESC, valueFor(factories, ModeShape.getName()));
+        descriptors.put(Repository.REP_VENDOR_DESC, valueFor(factories, ModeShape.getVendor()));
+        descriptors.put(Repository.REP_VENDOR_URL_DESC, valueFor(factories, ModeShape.getUrl()));
+        descriptors.put(Repository.REP_VERSION_DESC, valueFor(factories, ModeShape.getVersion()));
+        descriptors.put(Repository.OPTION_WORKSPACE_MANAGEMENT_SUPPORTED, valueFor(factories, true));
 
-        repoDescriptors.put(Repository.LEVEL_1_SUPPORTED, valueFor(factories, true));
-        repoDescriptors.put(Repository.LEVEL_2_SUPPORTED, valueFor(factories, true));
-        repoDescriptors.put(Repository.OPTION_LOCKING_SUPPORTED, valueFor(factories, true));
-        repoDescriptors.put(Repository.OPTION_OBSERVATION_SUPPORTED, valueFor(factories, true));
-        repoDescriptors.put(Repository.OPTION_QUERY_SQL_SUPPORTED, valueFor(factories, true));
-        repoDescriptors.put(Repository.OPTION_TRANSACTIONS_SUPPORTED, valueFor(factories, false));
-        repoDescriptors.put(Repository.OPTION_VERSIONING_SUPPORTED, valueFor(factories, true));
-        repoDescriptors.put(Repository.QUERY_XPATH_DOC_ORDER, valueFor(factories, false)); // see MODE-613
-        repoDescriptors.put(Repository.QUERY_XPATH_POS_INDEX, valueFor(factories, true));
-
-        repoDescriptors.put(Repository.WRITE_SUPPORTED, valueFor(factories, true));
-        repoDescriptors.put(Repository.IDENTIFIER_STABILITY, valueFor(factories, Repository.IDENTIFIER_STABILITY_METHOD_DURATION));
-        repoDescriptors.put(Repository.OPTION_XML_IMPORT_SUPPORTED, valueFor(factories, true));
-        repoDescriptors.put(Repository.OPTION_XML_EXPORT_SUPPORTED, valueFor(factories, true));
-        repoDescriptors.put(Repository.OPTION_UNFILED_CONTENT_SUPPORTED, valueFor(factories, false));
-        repoDescriptors.put(Repository.OPTION_SIMPLE_VERSIONING_SUPPORTED, valueFor(factories, false));
-        repoDescriptors.put(Repository.OPTION_ACTIVITIES_SUPPORTED, valueFor(factories, false));
-        repoDescriptors.put(Repository.OPTION_BASELINES_SUPPORTED, valueFor(factories, false));
-        repoDescriptors.put(Repository.OPTION_ACCESS_CONTROL_SUPPORTED, valueFor(factories, false));
-        repoDescriptors.put(Repository.OPTION_JOURNALED_OBSERVATION_SUPPORTED, valueFor(factories, false));
-        repoDescriptors.put(Repository.OPTION_RETENTION_SUPPORTED, valueFor(factories, false));
-        repoDescriptors.put(Repository.OPTION_LIFECYCLE_SUPPORTED, valueFor(factories, false));
-        repoDescriptors.put(Repository.OPTION_NODE_AND_PROPERTY_WITH_SAME_NAME_SUPPORTED, valueFor(factories, true));
-        repoDescriptors.put(Repository.OPTION_UPDATE_PRIMARY_NODE_TYPE_SUPPORTED, valueFor(factories, false));
-        repoDescriptors.put(Repository.OPTION_UPDATE_MIXIN_NODE_TYPES_SUPPORTED, valueFor(factories, true));
-        repoDescriptors.put(Repository.OPTION_SHAREABLE_NODES_SUPPORTED, valueFor(factories, true));
-        repoDescriptors.put(Repository.OPTION_NODE_TYPE_MANAGEMENT_SUPPORTED, valueFor(factories, true));
-        repoDescriptors.put(Repository.NODE_TYPE_MANAGEMENT_INHERITANCE,
-                            valueFor(factories, Repository.NODE_TYPE_MANAGEMENT_INHERITANCE_MULTIPLE));
-        repoDescriptors.put(Repository.NODE_TYPE_MANAGEMENT_PRIMARY_ITEM_NAME_SUPPORTED, valueFor(factories, true));
-        repoDescriptors.put(Repository.NODE_TYPE_MANAGEMENT_ORDERABLE_CHILD_NODES_SUPPORTED, valueFor(factories, true));
-        repoDescriptors.put(Repository.NODE_TYPE_MANAGEMENT_RESIDUAL_DEFINITIONS_SUPPORTED, valueFor(factories, true));
-        repoDescriptors.put(Repository.NODE_TYPE_MANAGEMENT_AUTOCREATED_DEFINITIONS_SUPPORTED, valueFor(factories, true));
-        repoDescriptors.put(Repository.NODE_TYPE_MANAGEMENT_SAME_NAME_SIBLINGS_SUPPORTED, valueFor(factories, true));
-        repoDescriptors.put(Repository.NODE_TYPE_MANAGEMENT_PROPERTY_TYPES, valueFor(factories, true));
-        repoDescriptors.put(Repository.NODE_TYPE_MANAGEMENT_OVERRIDES_SUPPORTED, valueFor(factories, true));
-        repoDescriptors.put(Repository.NODE_TYPE_MANAGEMENT_MULTIVALUED_PROPERTIES_SUPPORTED, valueFor(factories, true));
-        repoDescriptors.put(Repository.NODE_TYPE_MANAGEMENT_MULTIPLE_BINARY_PROPERTIES_SUPPORTED, valueFor(factories, true));
-        repoDescriptors.put(Repository.NODE_TYPE_MANAGEMENT_VALUE_CONSTRAINTS_SUPPORTED, valueFor(factories, true));
-        repoDescriptors.put(Repository.NODE_TYPE_MANAGEMENT_UPDATE_IN_USE_SUPORTED, valueFor(factories, false));
-        repoDescriptors.put(Repository.QUERY_LANGUAGES,
-                            new JcrValue[] {valueFor(factories, Query.XPATH), valueFor(factories, JcrSql2QueryParser.LANGUAGE),
-                                valueFor(factories, Query.SQL), valueFor(factories, Query.JCR_JQOM)});
-        repoDescriptors.put(Repository.QUERY_STORED_QUERIES_SUPPORTED, valueFor(factories, true));
-        repoDescriptors.put(Repository.QUERY_FULL_TEXT_SEARCH_SUPPORTED, valueFor(factories, true));
-        repoDescriptors.put(Repository.QUERY_JOINS, valueFor(factories, Repository.QUERY_JOINS_INNER_OUTER));
-        repoDescriptors.put(Repository.SPEC_NAME_DESC, valueFor(factories, JcrI18n.SPEC_NAME_DESC.text()));
-        repoDescriptors.put(Repository.SPEC_VERSION_DESC, valueFor(factories, "2.0"));
-
-        if (!repoDescriptors.containsKey(Repository.REP_NAME_DESC)) {
-            repoDescriptors.put(Repository.REP_NAME_DESC,
-                                valueFor(factories, JcrRepository.getBundleProperty(Repository.REP_NAME_DESC, true)));
-        }
-        if (!repoDescriptors.containsKey(Repository.REP_VENDOR_DESC)) {
-            repoDescriptors.put(Repository.REP_VENDOR_DESC,
-                                valueFor(factories, JcrRepository.getBundleProperty(Repository.REP_VENDOR_DESC, true)));
-        }
-        if (!repoDescriptors.containsKey(Repository.REP_VENDOR_URL_DESC)) {
-            repoDescriptors.put(Repository.REP_VENDOR_URL_DESC,
-                                valueFor(factories, JcrRepository.getBundleProperty(Repository.REP_VENDOR_URL_DESC, true)));
-        }
-        if (!repoDescriptors.containsKey(Repository.REP_VERSION_DESC)) {
-            repoDescriptors.put(Repository.REP_VERSION_DESC,
-                                valueFor(factories, JcrRepository.getBundleProperty(Repository.REP_VERSION_DESC, true)));
-        }
-
-        if (!repoDescriptors.containsKey(Repository.REP_VERSION_DESC)) {
-            repoDescriptors.put(Repository.REP_VERSION_DESC,
-                                valueFor(factories, JcrRepository.getBundleProperty(Repository.REP_VERSION_DESC, true)));
-        }
-        if (!repoDescriptors.containsKey(Repository.OPTION_WORKSPACE_MANAGEMENT_SUPPORTED)) {
-            repoDescriptors.put(Repository.OPTION_WORKSPACE_MANAGEMENT_SUPPORTED, valueFor(factories, true));
-        }
-
-        return Collections.unmodifiableMap(repoDescriptors);
+        descriptors.put(Repository.REPOSITORY_NAME, valueFor(factories, repositoryName()));
     }
 
     private static JcrValue valueFor( ValueFactories valueFactories,
                                       int type,
                                       Object value ) {
-        return new JcrValue(valueFactories, null, type, value);
+        return new JcrValue(valueFactories, type, value);
     }
 
     private static JcrValue valueFor( ValueFactories valueFactories,
@@ -1792,464 +772,719 @@ public class JcrRepository implements Repository {
         return valueFor(valueFactories, PropertyType.BOOLEAN, value);
     }
 
-    protected class FederatedRepositoryContext implements RepositoryContext {
-        private final RepositoryConnectionFactory connectionFactory;
-
-        protected FederatedRepositoryContext( RepositoryConnectionFactory nonFederatingConnectionFactory ) {
-            this.connectionFactory = nonFederatingConnectionFactory;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.connector.RepositoryContext#getConfiguration(int)
-         */
-        public Subgraph getConfiguration( int depth ) {
-            throw new UnsupportedOperationException();
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.connector.RepositoryContext#getExecutionContext()
-         */
-        public ExecutionContext getExecutionContext() {
-            return JcrRepository.this.getExecutionContext();
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.connector.RepositoryContext#getObserver()
-         */
-        public Observer getObserver() {
-            return JcrRepository.this.getObserver();
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.connector.RepositoryContext#getRepositoryConnectionFactory()
-         */
-        public RepositoryConnectionFactory getRepositoryConnectionFactory() {
-            return connectionFactory;
+    protected void workspacesChanged() {
+        RunningState running = runningState();
+        if (running != null) {
+            Set<String> workspaceNames = running.repositoryCache().getWorkspaceNames();
+            ValueFactories factories = running.context().getValueFactories();
+            JcrValue[] values = new JcrValue[workspaceNames.size()];
+            int i = 0;
+            for (String workspaceName : workspaceNames) {
+                values[i++] = valueFor(factories, workspaceName);
+            }
+            descriptors.put(Repository.REPOSITORY_WORKSPACES, values);
         }
     }
 
-    protected class DelegatingConnectionFactory implements RepositoryConnectionFactory {
-        private final RepositoryConnectionFactory delegate;
-        private final RepositorySource source;
+    private void repositoryNameChanged() {
+        descriptors.put(Repository.REPOSITORY_NAME, repositoryName());
+    }
 
-        protected DelegatingConnectionFactory( RepositoryConnectionFactory delegate,
-                                               RepositorySource source ) {
-            assert delegate != null;
-            this.delegate = delegate;
-            this.source = source;
+    /**
+     * Clean up the repository content's garbage.
+     * 
+     * @see JcrEngine.GarbageCollectionTask#run()
+     */
+    void cleanUp() {
+        RunningState running = runningState.get();
+        if (running != null) {
+            running.cleanUpLocks();
+            running.cleanUpBinaryValues();
+        }
+    }
+
+    Collection<Cache<?, ?>> caches() {
+        RunningState running = runningState.get();
+        if (running == null) return Collections.emptyList();
+
+        List<Cache<?, ?>> caches = new ArrayList<Cache<?, ?>>();
+        caches.add(running.database().getCache());
+        // Add the binary store's cache, if there is one ...
+        BinaryStore store = running.binaryStore();
+        if (store instanceof InfinispanBinaryStore) {
+            InfinispanBinaryStore ispnStore = (InfinispanBinaryStore)store;
+            Cache<?, ?> binaryCache = ispnStore.getCache();
+            if (binaryCache != null) caches.add(binaryCache);
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.connector.RepositoryConnectionFactory#createConnection(java.lang.String)
-         */
-        public RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException {
-            if (this.source.getName().equals(sourceName)) {
-                return this.source.getConnection();
+        return caches;
+    }
+
+    protected class WorkspaceListener implements ChangeSetListener {
+        @Override
+        public void notify( ChangeSet changeSet ) {
+
+            if (changeSet == null || !repositoryCache().getKey().equals(changeSet.getRepositoryKey())) return;
+            String workspaceName = changeSet.getWorkspaceName();
+            if (workspaceName == null) {
+                // Look for changes to the workspaces ...
+                boolean changed = false;
+                for (Change change : changeSet) {
+                    if (change instanceof WorkspaceAdded) {
+                        changed = true;
+                    } else if (change instanceof WorkspaceRemoved) {
+                        changed = true;
+                    }
+                }
+                if (changed) workspacesChanged();
             }
-            return delegate.createConnection(sourceName);
         }
     }
 
     @Immutable
-    protected static class SourceWorkspacePair {
-        private final String sourceName;
-        private final String workspaceName;
+    protected class RunningState {
 
-        protected SourceWorkspacePair( String sourceAndWorkspaceName ) {
-            assert sourceAndWorkspaceName != null;
-            sourceAndWorkspaceName = sourceAndWorkspaceName.trim();
-            assert sourceAndWorkspaceName.length() != 0;
-            sourceAndWorkspaceName = sourceAndWorkspaceName.trim();
-            // Look for the first '@' not preceded by a '\' ...
-            int maxIndex = sourceAndWorkspaceName.length() - 1;
-            int index = sourceAndWorkspaceName.indexOf('@');
-            while (index > 0 && index < maxIndex && sourceAndWorkspaceName.charAt(index - 1) == '\\') {
-                index = sourceAndWorkspaceName.indexOf('@', index + 1);
-            }
-            if (index > 0) {
-                // There is a workspace and source name ...
-                workspaceName = sourceAndWorkspaceName.substring(0, index).trim().replaceAll("\\\\@", "@");
-                if (index < maxIndex) sourceName = sourceAndWorkspaceName.substring(index + 1).trim().replaceAll("\\\\@", "@");
-                else throw new IllegalArgumentException("The source name is invalid");
-            } else if (index == 0) {
-                // The '@' was used, but the workspace is empty
-                if (sourceAndWorkspaceName.length() == 1) {
-                    sourceName = "";
-                } else {
-                    sourceName = sourceAndWorkspaceName.substring(1).trim().replaceAll("\\\\@", "@");
-                }
-                workspaceName = "";
+        private final RepositoryConfiguration config;
+        private final SchematicDb database;
+        private final RepositoryCache cache;
+        private final AuthenticationProviders authenticators;
+        private final Credentials anonymousCredentialsIfSuppliedCredentialsFail;
+        private final String defaultWorkspaceName;
+        private final String systemWorkspaceName;
+        private final String systemWorkspaceKey;
+        private final RepositoryNodeTypeManager nodeTypes;
+        private final RepositoryLockManager lockManager;
+        private final TransactionManager txnMgr;
+        private final String jndiName;
+        private final SystemNamespaceRegistry persistentRegistry;
+        private final ExecutionContext context;
+        private final ExecutionContext internalWorkerContext;
+        private final ReadWriteLock activeSessionLock = new ReentrantReadWriteLock();
+        private final WeakHashMap<JcrSession, Object> activeSessions = new WeakHashMap<JcrSession, Object>();
+        private final WeakHashMap<JcrSession, Object> internalSessions = new WeakHashMap<JcrSession, Object>();
+        private final RepositoryStatistics statistics;
+        private final BinaryStore binaryStore;
+        private final ScheduledExecutorService statsRollupService;
+        private final Sequencers sequencers;
+        private final Executor sequencingQueue;
+        private final QueryParsers queryParsers;
+        private final RepositoryQueryManager repositoryQueryManager;
+        private final ExecutorService indexingExecutor;
+        private final TextExtractors extractors;
+
+        protected RunningState() throws IOException, NamingException {
+            this(null, null);
+        }
+
+        @SuppressWarnings( "deprecation" )
+        protected RunningState( JcrRepository.RunningState other,
+                                JcrRepository.ConfigurationChange change ) throws IOException, NamingException {
+            this.config = repositoryConfiguration();
+            ExecutionContext tempContext = new ExecutionContext();
+
+            // Set up monitoring (doing this early in the process so it is avialable to other components to use) ...
+            if (other != null && !change.monitoringChanged) {
+                this.statistics = other.statistics;
+                this.statsRollupService = other.statsRollupService;
             } else {
-                // There is just a source name...
-                workspaceName = null;
-                sourceName = sourceAndWorkspaceName.replaceAll("\\\\@", "@");
+                this.statistics = other != null ? other.statistics : new RepositoryStatistics(tempContext);
+                if (this.config.getMonitoring().enabled()) {
+                    // Start the Cron service, with a minimum of a single thread ...
+                    ThreadFactory cronThreadFactory = new NamedThreadFactory("modeshape-stats");
+                    this.statsRollupService = new ScheduledThreadPoolExecutor(1, cronThreadFactory);
+                    this.statistics.start(this.statsRollupService);
+                } else {
+                    this.statsRollupService = null;
+                }
             }
-            assert this.sourceName != null;
-        }
 
-        /**
-         * @return sourceName
-         */
-        public String getSourceName() {
-            return sourceName;
-        }
+            logger.debug("Starting '{0}' repository", repositoryName());
+            this.systemWorkspaceName = RepositoryConfiguration.SYSTEM_WORKSPACE_NAME;
+            this.systemWorkspaceKey = NodeKey.keyForWorkspaceName(this.systemWorkspaceName);
 
-        /**
-         * @return workspaceName
-         */
-        public String getWorkspaceName() {
-            return workspaceName;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.lang.Object#toString()
-         */
-        @Override
-        public String toString() {
-            if (sourceName == null) return "";
-            if (workspaceName != null) {
-                return workspaceName + '@' + sourceName;
+            if (other != null && !change.workspacesChanged) {
+                this.defaultWorkspaceName = other.defaultWorkspaceName;
+            } else {
+                // Set up some of the defaults ...
+                this.defaultWorkspaceName = config.getDefaultWorkspaceName();
             }
-            return sourceName;
+
+            if (other != null) {
+                if (change.storageChanged) {
+                    // Can't change where we're storing the content while we're running, so take effect upon next startup
+                    logger.warn(JcrI18n.storageRelatedConfigurationChangesWillTakeEffectAfterShutdown, getName());
+                }
+                if (change.binaryStorageChanged) {
+                    // Can't change where we're storing the content while we're running, so take effect upon next startup
+                    logger.warn(JcrI18n.storageRelatedConfigurationChangesWillTakeEffectAfterShutdown, getName());
+                }
+                // reuse the existing storage-related components ...
+                this.database = other.database;
+                this.txnMgr = other.txnMgr;
+                this.cache = other.cache;
+                this.context = other.context;
+                if (change.largeValueChanged) {
+                    // We can update the value used in the repository cache dynamically ...
+                    BinaryStorage binaryStorage = config.getBinaryStorage();
+                    this.cache.setLargeValueSizeInBytes(binaryStorage.getMinimumBinarySizeInBytes());
+                    this.context.getBinaryStore().setMinimumBinarySizeInBytes(binaryStorage.getMinimumBinarySizeInBytes());
+                }
+                if (change.workspacesChanged) {
+                    // Make sure that all the predefined workspaces are available ...
+                    for (String workspaceName : config.getPredefinedWorkspaceNames()) {
+                        this.cache.createWorkspace(workspaceName);
+                    }
+                }
+                this.binaryStore = other.binaryStore;
+                this.internalWorkerContext = other.internalWorkerContext;
+                this.nodeTypes = other.nodeTypes.with(this, true, true);
+                this.lockManager = other.lockManager.with(this);
+                this.cache.register(this.lockManager);
+                other.cache.unregister(other.lockManager);
+                this.persistentRegistry = other.persistentRegistry;
+            } else {
+                // find the Schematic database and Infinispan Cache ...
+                CacheContainer container = config.getCacheContainer();
+                String cacheName = config.getCacheName();
+                this.database = Schematic.get(container, cacheName);
+                assert this.database != null;
+                this.txnMgr = this.database.getCache().getAdvancedCache().getTransactionManager();
+
+                // Set up the binary store ...
+                BinaryStorage binaryStorageConfig = config.getBinaryStorage();
+                binaryStore = binaryStorageConfig.getBinaryStore();
+                tempContext = tempContext.with(binaryStore);
+
+                // Now create the registry implementation and the execution context that uses it ...
+                this.persistentRegistry = new SystemNamespaceRegistry(this);
+                this.context = tempContext.with(persistentRegistry);
+                this.persistentRegistry.setContext(this.context);
+                this.internalWorkerContext = this.context.with(new InternalSecurityContext(INTERNAL_WORKER_USERNAME));
+
+                // Set up the repository cache ...
+                SessionCacheMonitor monitor = statsRollupService != null ? new SessionMonitor(this.statistics) : null;
+                this.cache = new RepositoryCache(context, database, config, txnMgr, new SystemContentInitializer(), monitor);
+                assert this.cache != null;
+
+                // Set up the node type manager ...
+                this.nodeTypes = new RepositoryNodeTypeManager(this, true, true);
+                this.cache.register(this.nodeTypes);
+
+                // Set up the lock manager ...
+                this.lockManager = new RepositoryLockManager(this);
+                this.cache.register(this.lockManager);
+
+                // Set up the unused binary value listener ...
+                this.cache.register(new UnusedBinaryChangeSetListener(binaryStore));
+
+                // Refresh several of the components information from the repository cache ...
+                this.persistentRegistry.refreshFromSystem();
+                this.lockManager.refreshFromSystem();
+                if (!this.nodeTypes.refreshFromSystem()) {
+                    try {
+                        // Read in the built-in node types ...
+                        CndImporter importer = new CndImporter(context, true);
+                        importer.importBuiltIns(new SimpleProblems());
+                        this.nodeTypes.registerNodeTypes(importer.getNodeTypeDefinitions(), false, true, true);
+                    } catch (RepositoryException re) {
+                        throw new IllegalStateException("Could not load node type definition files", re);
+                    } catch (IOException ioe) {
+                        throw new IllegalStateException("Could not access node type definition files", ioe);
+                    }
+                }
+                // Add the built-ins, ensuring we overwrite any badly-initialized values ...
+                this.persistentRegistry.register(JcrNamespaceRegistry.STANDARD_BUILT_IN_NAMESPACES_BY_PREFIX);
+
+                // Record the number of workspaces that are available/predefined ...
+                this.statistics.set(ValueMetric.WORKSPACE_COUNT, cache.getWorkspaceNames().size());
+            }
+
+            if (other != null && !change.securityChanged) {
+                this.authenticators = other.authenticators;
+                this.anonymousCredentialsIfSuppliedCredentialsFail = other.anonymousCredentialsIfSuppliedCredentialsFail;
+            } else {
+                // Set up the security ...
+                AtomicBoolean useAnonymouOnFailedLogins = new AtomicBoolean();
+                this.authenticators = createAuthenticationProviders(useAnonymouOnFailedLogins);
+                this.anonymousCredentialsIfSuppliedCredentialsFail = useAnonymouOnFailedLogins.get() ? new AnonymousCredentials() : null;
+            }
+
+            if (other != null && !change.extractorsChanged) {
+                List<Component> extractorComponents = config.getQuery().getTextExtractors();
+                this.extractors = new TextExtractors(this, extractorComponents);
+            } else {
+                List<Component> extractorComponents = config.getQuery().getTextExtractors();
+                this.extractors = new TextExtractors(this, extractorComponents);
+            }
+            this.binaryStore.setTextExtractor(this.extractors);
+
+            if (other != null && !change.sequencingChanged) {
+                this.sequencingQueue = other.sequencingQueue;
+                this.sequencers = other.sequencers.with(this);
+                if (!sequencers.isEmpty()) this.cache.register(this.sequencers);
+                this.cache.unregister(other.sequencers);
+            } else {
+                // There are changes to the sequencers ...
+                Sequencers.WorkQueue queue = null;
+                List<Component> sequencerComponents = config.getSequencing().getSequencers();
+                if (sequencerComponents.isEmpty()) {
+                    // There are no sequencers ...
+                    this.sequencingQueue = null;
+                    this.sequencers = new Sequencers(this, sequencerComponents, cache.getWorkspaceNames(), queue);
+                } else {
+                    // Create an in-memory queue of sequencing work items ...
+                    String threadPool = config.getSequencing().getThreadPoolName();
+                    final Executor sequencingQueue = this.context.getThreadPool(threadPool);
+                    this.sequencingQueue = sequencingQueue;
+                    queue = new Sequencers.WorkQueue() {
+                        @Override
+                        public void submit( final SequencingWorkItem work ) {
+                            sequencingQueue.execute(new SequencingRunner(JcrRepository.this, work));
+                        }
+                    };
+                    this.sequencers = new Sequencers(this, sequencerComponents, cache.getWorkspaceNames(), queue);
+                    this.cache.register(this.sequencers);
+                }
+            }
+
+            if (other != null && !change.indexingChanged) {
+                this.indexingExecutor = other.indexingExecutor;
+                this.queryParsers = other.queryParsers;
+            } else {
+                String indexThreadPoolName = config.getQuery().getThreadPoolName();
+                this.indexingExecutor = (ExecutorService)this.context.getThreadPool(indexThreadPoolName);
+                this.queryParsers = new QueryParsers(new JcrSql2QueryParser(), new XPathQueryParser(),
+                                                     new FullTextSearchParser(), new JcrSqlQueryParser(), new JcrQomQueryParser());
+            }
+            QuerySystem query = config.getQuery();
+            Properties backendProps = query.getIndexingBackendProperties();
+            Properties indexingProps = query.getIndexingProperties();
+            Properties indexStorageProps = query.getIndexStorageProperties();
+            this.repositoryQueryManager = new RepositoryQueryManager(this, config.getQuery(), indexingExecutor, backendProps,
+                                                                     indexingProps, indexStorageProps);
+
+            // Check that we have parsers for all the required languages ...
+            assert this.queryParsers.getParserFor(Query.XPATH) != null;
+            assert this.queryParsers.getParserFor(Query.SQL) != null;
+            assert this.queryParsers.getParserFor(Query.JCR_SQL2) != null;
+            assert this.queryParsers.getParserFor(Query.JCR_JQOM) != null;
+            assert this.queryParsers.getParserFor(QueryLanguage.SEARCH) != null;
+
+            if (other != null && !change.jndiChanged) {
+                // The repository is already registered (or not registered)
+                this.jndiName = other.jndiName;
+            } else {
+                // The JNDI location has changed, so register the new one ...
+                this.jndiName = config.getJndiName();
+                bindIntoJndi();
+
+                // And unregister the old name ...
+                if (other != null) {
+                    other.unbindFromJndi();
+                }
+            }
+
         }
-    }
-
-    protected class RepositoryObservationManager implements Observable, Observer {
-
-        private final ExecutorService observerService = Executors.newSingleThreadExecutor();
-        private final CopyOnWriteArrayList<Observer> observers = new CopyOnWriteArrayList<Observer>();
-        private final Observable repositoryObservable;
-        private final String sourceName;
-        private final String systemSourceName;
-        private final String repositorySourceName;
-        private final String processId;
 
         /**
-         * @param repositoryObservable the repository library observable this observer should register with
+         * Perform any initialization code that requires the repository to be in a running state.
          */
-        protected RepositoryObservationManager( Observable repositoryObservable ) {
-            this.repositoryObservable = repositoryObservable;
-            this.repositoryObservable.register(this);
-            this.sourceName = getObservableSourceName();
-            this.systemSourceName = getSystemSourceName();
-            this.repositorySourceName = getRepositorySourceName();
-            this.processId = getExecutionContext().getProcessId();
+        protected final void postInitialize() {
+            this.sequencers.initialize();
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.observe.Observer#notify(org.modeshape.graph.observe.Changes)
-         */
-        public void notify( Changes changes ) {
-            final Changes acceptableChanges = filter(changes);
-            if (acceptableChanges != null) {
+        protected final Sequencers sequencers() {
+            return sequencers;
+        }
 
-                // We're still in the thread where the connector published its changes,
-                // so we need to create a runnable that will send these changes to all
-                // of the observers <i>at this moment</i>. Because 'observers' is
-                // a CopyOnWriteArrayList, we can't old onto the list (because the list's content
-                // might change). Instead, hold onto the Iterator over the listeners,
-                // and that will be a snapshot of the listeners <i>at this moment</i>
-                if (observers.isEmpty()) return;
-                final Iterator<Observer> observerIterator = observers.iterator();
+        private final ClassLoader classLoader() {
+            return database.getCache().getConfiguration().getClassLoader();
+        }
 
-                Runnable sender = new Runnable() {
-                    public void run() {
-                        while (observerIterator.hasNext()) {
-                            Observer observer = observerIterator.next();
-                            assert observer != null;
-                            observer.notify(acceptableChanges);
+        private final ClassLoader classLoader( String classLoaderName,
+                                               ClassLoader defaultLoader ) {
+            if (classLoaderName != null) {
+                classLoaderName = classLoaderName.trim();
+                if (classLoaderName.length() == 0) classLoaderName = null;
+            }
+            if (classLoaderName == null) return defaultLoader;
+            ClassLoader loader = context.getClassLoader(classLoaderName);
+            return loader != null ? loader : defaultLoader;
+        }
+
+        final String name() {
+            return repositoryName();
+        }
+
+        final ExecutionContext context() {
+            return context;
+        }
+
+        final ExecutionContext internalWorkerContext() {
+            return internalWorkerContext;
+        }
+
+        final RepositoryCache repositoryCache() {
+            return cache;
+        }
+
+        final QueryParsers queryParsers() {
+            return queryParsers;
+        }
+
+        final RepositoryQueryManager queryManager() {
+            return repositoryQueryManager;
+        }
+
+        private final Cache<String, SchematicEntry> infinispanCache() {
+            return database().getCache();
+        }
+
+        protected final SchematicDb database() {
+            return database;
+        }
+
+        protected final BinaryStore binaryStore() {
+            return binaryStore;
+        }
+
+        protected final TransactionManager txnManager() {
+            return infinispanCache().getAdvancedCache().getTransactionManager();
+        }
+
+        protected final RepositoryNodeTypeManager nodeTypeManager() {
+            return nodeTypes;
+        }
+
+        protected final RepositoryLockManager lockManager() {
+            return lockManager;
+        }
+
+        protected final String systemWorkspaceName() {
+            return systemWorkspaceName;
+        }
+
+        protected final String systemWorkspaceKey() {
+            return systemWorkspaceKey;
+        }
+
+        protected final String defaultWorkspaceName() {
+            return defaultWorkspaceName;
+        }
+
+        protected final NamespaceRegistry persistentRegistry() {
+            return persistentRegistry;
+        }
+
+        protected final AuthenticationProviders authenticators() {
+            return authenticators;
+        }
+
+        protected final RepositoryStatistics statistics() {
+            return statistics;
+        }
+
+        protected final Credentials anonymousCredentials() {
+            return anonymousCredentialsIfSuppliedCredentialsFail;
+        }
+
+        private AuthenticationProviders createAuthenticationProviders( AtomicBoolean useAnonymouOnFailedLogins ) {
+            // Prepare to create the authenticators and authorizers ...
+            AuthenticationProviders authenticators = new AuthenticationProviders();
+            Security securityConfig = config.getSecurity();
+
+            // Set up the JAAS providers ...
+            JaasSecurity jaasSecurity = securityConfig.getJaas();
+            if (jaasSecurity != null) {
+                String policyName = jaasSecurity.getPolicyName();
+                if (policyName != null && policyName.trim().length() != 0) {
+                    try {
+                        JaasProvider jaasProvider = new JaasProvider(policyName);
+                        authenticators = authenticators.with(jaasProvider);
+                    } catch (java.lang.SecurityException e) {
+                        if (MISSING_JAAS_POLICIES.add(policyName)) {
+                            logger.warn(JcrI18n.loginConfigNotFound,
+                                        policyName,
+                                        RepositoryConfiguration.FieldName.SECURITY + "/"
+                                        + RepositoryConfiguration.FieldName.JAAS_POLICY_NAME,
+                                        repositoryName());
+                        }
+                    } catch (javax.security.auth.login.LoginException e) {
+                        if (MISSING_JAAS_POLICIES.add(policyName)) {
+                            logger.warn(JcrI18n.loginConfigNotFound,
+                                        policyName,
+                                        RepositoryConfiguration.FieldName.SECURITY + "/"
+                                        + RepositoryConfiguration.FieldName.JAAS_POLICY_NAME,
+                                        repositoryName());
                         }
                     }
-                };
-
-                // Now let the executor service run this in another thread ...
-                this.observerService.execute(sender);
-            }
-        }
-
-        private Changes filter( Changes changes ) {
-            // We only care about events that come from the repository source, the system source,
-            // or the repository source name (for remote events only) ...
-            String changedSourceName = changes.getSourceName();
-            if (sourceName.equals(changedSourceName)) {
-                // These are changes made locally by this repository ...
-                return changes;
-            }
-            if (repositorySourceName.equals(changedSourceName)) {
-                // These may be events generated locally or from a remote engine in the cluster ...
-                if (this.processId.equals(changes.getProcessId())) {
-                    // These events were made locally and are being handled above, so we can ignore these ...
-                    return null;
                 }
-                // Otherwise, the changes were received from another engine in the cluster and
-                // we do want to respond to these changes. However, the source name of the changes
-                // needs to be altered to match the 'sourceName' ...
-                return new Changes(changes.getProcessId(), changes.getContextId(), changes.getUserName(), sourceName,
-                                   changes.getTimestamp(), changes.getChangeRequests(), changes.getData());
             }
-            assert !changedSourceName.equals(repositorySourceName);
-            if (systemSourceName.equals(changedSourceName)) {
-                // These are changes made locally by this repository ...
-                return changes;
+
+            // Set up any custom AuthenticationProvider classes ...
+            ClassLoader defaultClassLoader = classLoader();
+            for (Component component : securityConfig.getCustomProviders()) {
+                try {
+                    ClassLoader cl = classLoader(component.getClasspath(), defaultClassLoader);
+                    AuthenticationProvider provider = component.createInstance(cl);
+                    authenticators = authenticators.with(provider);
+                    if (provider instanceof AnonymousProvider) {
+                        Object value = component.getDocument().get(FieldName.USE_ANONYMOUS_ON_FAILED_LOGINS);
+                        if (Boolean.TRUE.equals(value)) {
+                            useAnonymouOnFailedLogins.set(true);
+                        }
+                    }
+                } catch (Throwable t) {
+                    logger.error(t,
+                                 JcrI18n.unableToInitializeAuthenticationProvider,
+                                 component.getName(),
+                                 repositoryName(),
+                                 t.getMessage());
+                }
             }
-            return null;
+
+            // And last set up the anonymous provider ...
+            AnonymousSecurity anonSecurity = securityConfig.getAnonymous();
+            if (anonSecurity != null) {
+                // Set up the anonymous provider (if appropriate) ...
+                Set<String> anonRoles = anonSecurity.getAnonymousRoles();
+                if (!anonRoles.isEmpty()) {
+                    String anonUsername = anonSecurity.getAnonymousUsername();
+                    AnonymousProvider anonProvider = new AnonymousProvider(anonUsername, anonRoles);
+                    authenticators = authenticators.with(anonProvider);
+                    logger.debug("Enabling anonymous authentication and authorization.");
+                }
+                if (anonSecurity.useAnonymousOnFailedLogings()) {
+                    useAnonymouOnFailedLogins.set(true);
+                }
+            }
+
+            return authenticators;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.observe.Observable#register(org.modeshape.graph.observe.Observer)
-         */
-        public boolean register( Observer observer ) {
-            if (observer == null) return false;
-            return this.observers.addIfAbsent(observer);
+        final SessionCache createSystemSession( ExecutionContext context,
+                                                boolean readOnly ) {
+            return cache.createSession(context, systemWorkspaceName(), readOnly);
         }
 
-        /**
-         * Must be called to shutdown the service that is used to notify the observers.
-         */
-        void shutdown() {
-            synchronized (this) {
-                this.repositoryObservable.unregister(this);
-                this.observers.clear();
-                this.observerService.shutdown();
+        protected void shutdown() {
+            // Unregister from JNDI ...
+            unbindFromJndi();
+
+            if (this.sequencingQueue != null) {
+                // Shutdown the sequencers ...
+                sequencers().shutdown();
+                this.context().releaseThreadPool(sequencingQueue);
+            }
+
+            // Now wait until all the internal sessions are gone ...
+            if (!internalSessions.isEmpty()) {
+                try {
+                    int counter = 200; // this will block at most for 10 sec (200*50ms)
+                    while (counter > 0 && !internalSessions.isEmpty()) {
+                        Thread.sleep(50L);
+                        --counter;
+                    }
+                } catch (InterruptedException e) {
+                    // do nothing ...
+                }
             }
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.observe.Observable#unregister(org.modeshape.graph.observe.Observer)
-         */
-        public boolean unregister( Observer observer ) {
-            if (observer == null) return false;
-            return this.observers.remove(observer);
+        protected void bindIntoJndi() {
+            if (jndiName != null && jndiName.trim().length() != 0) {
+                try {
+                    InitialContext ic = new InitialContext();
+                    ic.bind(jndiName, JcrRepository.this);
+                } catch (NoInitialContextException e) {
+                    // No JNDI here ...
+                    logger.debug("No JNDI found, so not registering '{0}' repository", getName());
+                } catch (NamingException e) {
+                    logger.error(e, JcrI18n.unableToBindToJndi, config.getName(), jndiName, e.getMessage());
+                }
+            }
         }
-    }
 
-    /**
-     * This component is used internally to expose the metrics of a repository, and should not be used outside of the ModeShape
-     * codebase, as it will almost certainly change or be replaced in upcoming releases.
-     */
-    public class Metrics {
-        /**
-         * Get the number of currently-active sessions in this repository.
-         * 
-         * @return the number of current, active sessions; always non-negative.
-         */
-        public int getActiveSessionCount() {
-            synchronized (activeSessions) {
+        protected void unbindFromJndi() {
+            if (jndiName != null && jndiName.trim().length() != 0) {
+                try {
+                    InitialContext ic = new InitialContext();
+                    ic.unbind(jndiName);
+                } catch (NoInitialContextException e) {
+                    // No JNDI here ...
+                    logger.debug("No JNDI found, so not registering '{0}' repository", getName());
+                } catch (NamingException e) {
+                    // Maybe it wasn't registered ??
+                    logger.debug(e,
+                                 "Error while unregistering the '{0}' repository from the '{1}' name in JNDI",
+                                 config.getName(),
+                                 jndiName);
+                }
+            }
+        }
+
+        void addSession( JcrSession session,
+                         boolean internal ) {
+            Map<JcrSession, Object> sessions = internal ? internalSessions : activeSessions;
+            Lock lock = this.activeSessionLock.writeLock();
+            try {
+                lock.lock();
+                sessions.put(session, null);
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        int activeSessinCount() {
+            Lock lock = this.activeSessionLock.writeLock();
+            try {
+                lock.lock();
                 return activeSessions.size();
+            } finally {
+                lock.unlock();
             }
         }
-    }
 
-    /**
-     * Observer that forwards changes to the system workspace in the system repository source to registered
-     * {@link JcrSystemObserver JcrSystemObservers}. This method is intended to support consistency of internal data structures in
-     * a cluster and only forwards changes from <i>other</i> processes.
-     */
-    class SystemChangeObserver implements Observer {
+        void removeSession( JcrSession session ) {
+            Lock lock = this.activeSessionLock.writeLock();
+            try {
+                lock.lock();
+                if (activeSessions.remove(session) == null) {
+                    internalSessions.remove(session);
+                }
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        void terminateSessions() {
+            Lock lock = this.activeSessionLock.writeLock();
+            try {
+                lock.lock();
+                for (JcrSession session : this.activeSessions.keySet()) {
+                    session.terminate(false); // don't remove from active sessions, as we're blocked and iterating on it ...
+                }
+                this.activeSessions.clear();
+            } finally {
+                lock.unlock();
+            }
+        }
 
         /**
-         * Immutable collection of objects observing changes to the system graph
+         * @see JcrRepository#cleanUp()
          */
-        private final Collection<JcrSystemObserver> jcrSystemObservers;
-        private final String processId;
-        private final String systemSourceName;
-        private final String systemWorkspaceName;
-
-        SystemChangeObserver( Collection<JcrSystemObserver> jcrSystemObservers ) {
-            this.jcrSystemObservers = Collections.unmodifiableCollection(jcrSystemObservers);
-            processId = getExecutionContext().getProcessId();
-            systemSourceName = getSystemSourceName();
-            systemWorkspaceName = getSystemWorkspaceName();
-
-            assert processId != null;
-            assert systemSourceName != null;
-            assert systemWorkspaceName != null;
-        }
-
-        public void notify( Changes changes ) {
-            // Don't process changes from outside the system graph
-            if (!changes.getSourceName().equals(systemSourceName)) {
-                /*
-                 * It's permissable for the system source to be the same as the source for the workspaces.
-                 * In that case, the RepositoryObservationManager would have already translated the system
-                 * source name into the observeable source name (from getObservableSourceName()), obscuring
-                 * the actual source.
-                 * 
-                 * So if the change source name doesn't equal the system source name BUT the system source name
-                 * is the same as the repository (read: workspace) source name, don't give up yet.  The difference
-                 * may be due to RepositoryObservationManager.  Rely on the systemWorkspaceName check below to
-                 * be sure.
-                 */
-                if (!systemSourceName.equals(getRepositorySourceName())) return;
+        void cleanUpLocks() {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Starting lock cleanup in the '{0}' repository", repositoryName());
             }
-
-            // Don't process changes from this repository
-            if (changes.getProcessId().equals(processId)) return;
-
-            Multimap<JcrSystemObserver, ChangeRequest> systemChanges = LinkedListMultimap.create();
-
-            for (ChangeRequest change : changes.getChangeRequests()) {
-                // Don't process changes from outside the system workspace
-                if (!systemWorkspaceName.equals(change.changedWorkspace())) continue;
-
-                Path changedPath = change.changedLocation().getPath();
-                if (changedPath == null) continue;
-
-                for (JcrSystemObserver jcrSystemObserver : jcrSystemObservers) {
-                    if (changedPath.isAtOrBelow(jcrSystemObserver.getObservedPath())) {
-                        systemChanges.put(jcrSystemObserver, change);
-                    }
-                }
-            }
-
-            // Parcel out the new change objects
-            for (JcrSystemObserver jcrSystemObserver : systemChanges.keySet()) {
-                List<ChangeRequest> changesForObserver = (List<ChangeRequest>)systemChanges.get(jcrSystemObserver);
-                Changes filteredChanges = new Changes(changes.getProcessId(), changes.getContextId(), changes.getUserName(),
-                                                      systemSourceName, changes.getTimestamp(), changesForObserver,
-                                                      changes.getData());
-                jcrSystemObserver.notify(filteredChanges);
-            }
-        }
-    }
-
-    class DerivedContentSynchronizer extends NetChangeObserver {
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.observe.NetChangeObserver#notify(org.modeshape.graph.observe.NetChangeObserver.NetChanges)
-         */
-        @Override
-        protected void notify( NetChanges netChanges ) {
-            // Go through the changes and look for moves or removes, and accumulate the paths that we should search for ...
-            Map<String, Map<Path, Path>> pathsByWorkspaceName = null;
-            for (NetChange change : netChanges.getNetChanges()) {
-                String workspaceName = change.getRepositoryWorkspaceName();
-
-                // Don't watch the system workspace ...
-                if (getSystemWorkspaceName().equals(workspaceName)) continue;
-
-                // Go through each net change, and only process node/property adds and property changes ...
-                if (change.includes(ChangeType.NODE_REMOVED, ChangeType.NODE_MOVED)) {
-                    if (pathsByWorkspaceName == null) pathsByWorkspaceName = new HashMap<String, Map<Path, Path>>();
-                    Map<Path, Path> paths = pathsByWorkspaceName.get(change.getRepositoryWorkspaceName());
-                    if (paths == null) {
-                        paths = new HashMap<Path, Path>();
-                        pathsByWorkspaceName.put(change.getRepositoryWorkspaceName(), paths);
-                    }
-                    Path newPath = null;
-                    if (change.includes(ChangeType.NODE_MOVED)) {
-                        newPath = change.getLocation().getPath();
-                    }
-                    paths.put(change.getPath(), newPath);
-                }
-            }
-
-            if (pathsByWorkspaceName == null) {
-                // No removes or deletes ...
-                return;
-            }
-
-            // We should have at least one query ...
-            final ExecutionContext context = getExecutionContext();
-            QueryBuilder builder = new QueryBuilder(context.getValueFactories().getTypeSystem());
-            DateTime timestamp = netChanges.getTimestamp();
-            Schemata schemata = getRepositoryTypeManager().getRepositorySchemata();
-            Map<String, Object> variables = null;
-            QueryCommand query = null;
-            String workspaceName = null;
-            PathFactory pathFactory = context.getValueFactories().getPathFactory();
-            ValueFactory<String> strings = context.getValueFactories().getStringFactory();
 
             try {
-
-                // Query for 'mode:derived' nodes that were derived from any content at/under these paths ...
-                for (Map.Entry<String, Map<Path, Path>> entry : pathsByWorkspaceName.entrySet()) {
-                    workspaceName = entry.getKey();
-                    Map<Path, Path> newPathByOld = entry.getValue();
-                    Set<Path> paths = newPathByOld.keySet();
-
-                    // Build a query for each workspace ...
-                    ConstraintBuilder constraint = builder.select("jcr:path", "mode:derivedFrom", "mode:derivedAt")
-                                                          .from("mode:derived")
-                                                          .where();
-                    constraint = constraint.propertyValue("mode:derived", "mode:derivedAt")
-                                           .isLessThanOrEqualTo()
-                                           .literal(timestamp)
-                                           .and()
-                                           .openParen();
-                    boolean first = true;
-                    for (Path path : paths) {
-                        if (first) first = false;
-                        else constraint = constraint.or();
-                        constraint = constraint.propertyValue("mode:derived", "mode:derivedFrom")
-                                               .isEqualTo()
-                                               .literal(strings.create(path))
-                                               .or()
-                                               .propertyValue("mode:derived", "mode:derivedFrom")
-                                               .isLike(strings.create(path) + "/%");
+                // Get the IDs for the active sessions ...
+                Set<String> activeSessionIds = new HashSet<String>();
+                Lock lock = this.activeSessionLock.writeLock();
+                try {
+                    lock.lock();
+                    Iterator<Map.Entry<JcrSession, Object>> iter = this.activeSessions.entrySet().iterator();
+                    while (iter.hasNext()) {
+                        JcrSession session = iter.next().getKey();
+                        if (session.isLive()) activeSessionIds.add(session.sessionId());
                     }
-                    constraint = constraint.closeParen();
-                    query = constraint.end().query();
-
-                    // Submit the query ...
-                    PlanHints hints = new PlanHints();
-                    QueryResults results = queryManager().query(workspaceName, query, schemata, hints, variables);
-                    int locIndex = results.getColumns().getLocationIndex("mode:derived");
-                    int fromIndex = results.getColumns().getColumnIndexForName("mode:derivedFrom");
-                    Batch batch = createWorkspaceGraph(workspaceName, context).batch();
-                    for (Object[] tuple : results.getTuples()) {
-                        Location derivedLocation = (Location)tuple[locIndex];
-                        Path derivedFrom = pathFactory.create(tuple[fromIndex]);
-                        // Find out which of the changed paths this corresponds. Note that we have to walk the changed paths
-                        // because the changed paths may be ancestors) ..
-                        for (Path path : paths) {
-                            if (derivedFrom.isAtOrBelow(path)) {
-                                // The derived location should only be below one of the changed paths ...
-                                Path changedToPath = newPathByOld.get(path);
-                                if (changedToPath != null) {
-                                    // This is a move, so figure out the new derivedFrom path ...
-                                    Path relative = derivedFrom.relativeTo(path);
-                                    Path newDerivedFrom = relative.resolveAgainst(changedToPath);
-                                    batch.set(ModeShapeLexicon.DERIVED_FROM).on(derivedLocation).to(newDerivedFrom).and();
-                                } else {
-                                    // The changed node was deleted ...
-                                    batch.delete(derivedLocation).and();
-                                }
-                                break;
-                            }
-                        }
-                    }
-                    builder.clear();
-
-                    // Execute the batch ...
-                    batch.execute();
+                } finally {
+                    lock.unlock();
                 }
-            } catch (RepositoryException e) {
-                String queryStr = Visitors.readable(query);
-                Logger.getLogger(JcrRepository.this.getClass()).error(e,
-                                                                      JcrI18n.failedToQueryForDerivedContent,
-                                                                      workspaceName,
-                                                                      queryStr);
+
+                // Create a system session and delegate to its logic ...
+                SessionCache systemSession = createSystemSession(context(), false);
+                SystemContent system = new SystemContent(systemSession);
+                system.cleanUpLocks(activeSessionIds);
+                system.save();
+            } catch (Throwable e) {
+                logger.error(e, JcrI18n.errorDuringGarbageCollection, e.getMessage());
+            }
+
+            if (logger.isDebugEnabled()) {
+                logger.debug("Finishing lock cleanup in the '{0}' repository", repositoryName());
+            }
+        }
+
+        /**
+         * @see JcrRepository#cleanUp()
+         */
+        void cleanUpBinaryValues() {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Starting binary value cleanup in the '{0}' repository", repositoryName());
+            }
+            try {
+                this.binaryStore.removeValuesUnusedLongerThan(RepositoryConfiguration.UNUSED_BINARY_VALUE_AGE_IN_MILLIS,
+                                                              TimeUnit.MILLISECONDS);
+            } catch (Throwable e) {
+                logger.error(e, JcrI18n.errorDuringGarbageCollection, e.getMessage());
+            }
+
+            if (logger.isDebugEnabled()) {
+                logger.debug("Finishing binary value cleanup in the '{0}' repository", repositoryName());
+            }
+        }
+
+        protected Session loginInternalSession() throws RepositoryException {
+            return loginInternalSession(defaultWorkspaceName());
+        }
+
+        protected JcrSession loginInternalSession( String workspaceName ) throws RepositoryException {
+            try {
+                boolean readOnly = false; // assume not
+                RunningState running = runningState();
+                ExecutionContext sessionContext = running.internalWorkerContext();
+                Map<String, Object> attributes = Collections.emptyMap();
+                JcrSession session = new JcrSession(JcrRepository.this, workspaceName, sessionContext, attributes, readOnly);
+                running.addSession(session, true);
+                return session;
+            } catch (WorkspaceNotFoundException e) {
+                throw new NoSuchWorkspaceException(e.getMessage(), e);
             }
         }
     }
+
+    protected static class SessionMonitor implements SessionCacheMonitor {
+        private final RepositoryStatistics statistics;
+
+        protected SessionMonitor( RepositoryStatistics statistics ) {
+            this.statistics = statistics;
+        }
+
+        @Override
+        public void performChange( long changedNodesCount ) {
+            // ValueMetric.SESSION_SAVES are tracked in JcrSession.save() ...
+            this.statistics.increment(ValueMetric.NODE_CHANGES, changedNodesCount);
+        }
+    }
+
+    private final class InternalSecurityContext implements SecurityContext {
+        private final String username;
+
+        protected InternalSecurityContext( String username ) {
+            this.username = username;
+        }
+
+        @Override
+        public boolean isAnonymous() {
+            return false;
+        }
+
+        @Override
+        public String getUserName() {
+            return username;
+        }
+
+        @Override
+        public boolean hasRole( String roleName ) {
+            return true;
+        }
+
+        @Override
+        public void logout() {
+            // do nothing
+        }
+    }
+
 }

@@ -23,98 +23,92 @@
  */
 package org.modeshape.jcr;
 
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.jcr.AbstractJcrNode.Type;
+import org.modeshape.jcr.cache.NodeKey;
 
 /**
- * A concrete {@link NodeIterator} that returns the first node and then delegates to the supplied node iterator.
+ * A concrete {@link NodeIterator} that returns the nodes in the session given the supplied keys and optional expected node type.
  */
 class JcrNodeIterator implements NodeIterator {
 
     private final long size;
-    private final AbstractJcrNode firstNode;
-    private final NodeIterator nextNodes;
-    private boolean visitedFirst = false;
+    private final Iterator<NodeKey> keyIter;
+    private final JcrSession session;
+    private final Type expectedType;
+    private Node nextNode;
+    private long position = 0L;
 
-    protected JcrNodeIterator( AbstractJcrNode firstNode,
-                               NodeIterator nextNodes ) {
-        assert firstNode != null;
-        assert nextNodes != null;
-        this.firstNode = firstNode;
-        this.nextNodes = nextNodes;
-        this.size = 1 + nextNodes.getSize();
+    protected JcrNodeIterator( JcrSession session,
+                               Iterator<NodeKey> iter,
+                               long size,
+                               Type expectedType ) {
+        this.session = session;
+        this.keyIter = iter;
+        this.size = size;
+        this.expectedType = expectedType; // may be null
+        assert session != null;
+        assert session != null;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.NodeIterator#nextNode()
-     */
+    @Override
     public Node nextNode() {
-        if (!visitedFirst) {
-            visitedFirst = true;
-            return firstNode;
+        if (hasNext()) {
+            assert nextNode != null;
+            try {
+                ++position;
+                return nextNode;
+            } finally {
+                nextNode = null;
+            }
         }
-        return nextNodes.nextNode();
+        throw new NoSuchElementException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.RangeIterator#getPosition()
-     */
+    @Override
     public long getPosition() {
-        return visitedFirst ? nextNodes.getPosition() + 1 : 0;
+        return position;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.RangeIterator#getSize()
-     */
+    @Override
     public long getSize() {
         return size;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.RangeIterator#skip(long)
-     */
+    @Override
     public void skip( long skipNum ) {
         CheckArg.isNonNegative(skipNum, "skipNum");
         if (skipNum == 0L) return;
-        if (visitedFirst) {
-            nextNodes.skip(skipNum);
+        for (long i = 0; i != skipNum; i++) {
+            if (!hasNext()) return;
+            next();
         }
-        visitedFirst = true;
-        nextNodes.skip(skipNum - 1);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.Iterator#hasNext()
-     */
+    @Override
     public boolean hasNext() {
-        return visitedFirst ? nextNodes.hasNext() : true;
+        while (nextNode == null && keyIter.hasNext()) {
+            NodeKey key = keyIter.next();
+            try {
+                nextNode = session.node(key, expectedType);
+            } catch (ItemNotFoundException e) {
+                // Might have been removed from the session, so just skip this ...
+            }
+        }
+        return nextNode != null;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.Iterator#next()
-     */
+    @Override
     public Object next() {
         return nextNode();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.Iterator#remove()
-     */
+    @Override
     public void remove() {
         throw new UnsupportedOperationException();
     }

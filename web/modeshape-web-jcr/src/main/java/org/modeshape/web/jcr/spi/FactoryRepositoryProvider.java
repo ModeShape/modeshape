@@ -23,6 +23,8 @@
  */
 package org.modeshape.web.jcr.spi;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
 import javax.jcr.Repository;
@@ -30,7 +32,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
-import org.modeshape.jcr.api.Repositories;
+import org.modeshape.common.SystemFailureException;
 import org.modeshape.jcr.api.RepositoryFactory;
 import org.modeshape.jcr.api.ServletCredentials;
 
@@ -61,21 +63,30 @@ public class FactoryRepositoryProvider implements RepositoryProvider {
     public Set<String> getJcrRepositoryNames() {
         RepositoryFactory factory = factory();
         if (factory == null) return null;
-
-        return factory.getRepositories(jcrUrl).getRepositoryNames();
+        return factory.getRepositoryNames();
     }
 
     private Repository getRepository( String repositoryName ) throws RepositoryException {
         RepositoryFactory factory = factory();
         if (factory == null) return null;
-        Repositories repositories = factory.getRepositories(jcrUrl);
-        if (repositories == null) return null;
-        return repositories.getRepository(repositoryName);
+        return factory.getRepository(repositoryName);
     }
 
     @Override
     public void startup( ServletContext context ) {
         this.jcrUrl = context.getInitParameter(JCR_URL);
+
+        // Look up the repository with the given name ...
+        RepositoryFactory factory = factory();
+        if (factory != null) {
+            Map<String, String> params = new HashMap<String, String>();
+            params.put(org.modeshape.jcr.api.RepositoryFactory.URL, jcrUrl);
+            try {
+                factory.getRepository(params);
+            } catch (RepositoryException e) {
+                throw new SystemFailureException(e);
+            }
+        }
     }
 
     @Override

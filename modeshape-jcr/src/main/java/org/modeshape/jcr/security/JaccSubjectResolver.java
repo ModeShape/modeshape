@@ -47,6 +47,7 @@ public class JaccSubjectResolver implements SubjectResolver {
      * 
      * @see org.modeshape.jcr.security.JaasProvider.SubjectResolver#resolveSubject()
      */
+    @Override
     public Subject resolveSubject() {
         try {
             return (Subject)PolicyContext.getContext(SUBJECT_CONTEXT_KEY);

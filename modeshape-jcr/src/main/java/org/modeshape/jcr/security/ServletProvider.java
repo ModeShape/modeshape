@@ -26,8 +26,7 @@ package org.modeshape.jcr.security;
 import java.util.Map;
 import javax.jcr.Credentials;
 import javax.servlet.http.HttpServletRequest;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.SecurityContext;
+import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.api.ServletCredentials;
 
 /**
@@ -43,8 +42,9 @@ public class ServletProvider implements AuthenticationProvider {
      * {@inheritDoc}
      * 
      * @see org.modeshape.jcr.security.AuthenticationProvider#authenticate(javax.jcr.Credentials, java.lang.String,
-     *      java.lang.String, org.modeshape.graph.ExecutionContext, java.util.Map)
+     *      java.lang.String, org.modeshape.jcr.ExecutionContext, java.util.Map)
      */
+    @Override
     public ExecutionContext authenticate( Credentials credentials,
                                           String repositoryName,
                                           String workspaceName,
@@ -70,10 +70,21 @@ public class ServletProvider implements AuthenticationProvider {
         }
 
         /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.jcr.security.SecurityContext#isAnonymous()
+         */
+        @Override
+        public boolean isAnonymous() {
+            return false;
+        }
+
+        /**
          * {@inheritDoc SecurityContext#getUserName()}
          * 
          * @see SecurityContext#getUserName()
          */
+        @Override
         public final String getUserName() {
             return username;
         }
@@ -83,6 +94,7 @@ public class ServletProvider implements AuthenticationProvider {
          * 
          * @see SecurityContext#hasRole(String)
          */
+        @Override
         public final boolean hasRole( String roleName ) {
             return request != null && request.isUserInRole(roleName);
         }
@@ -90,8 +102,9 @@ public class ServletProvider implements AuthenticationProvider {
         /**
          * {@inheritDoc}
          * 
-         * @see org.modeshape.graph.SecurityContext#logout()
+         * @see org.modeshape.jcr.security.SecurityContext#logout()
          */
+        @Override
         public void logout() {
             request = null;
         }

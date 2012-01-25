@@ -27,24 +27,27 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.util.List;
+import javax.jcr.Binary;
+import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.PropertyType;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
+import javax.jcr.nodetype.NodeTypeManager;
+import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.nodetype.PropertyDefinition;
+import javax.jcr.nodetype.PropertyDefinitionTemplate;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.modeshape.graph.property.DateTime;
-import org.modeshape.graph.property.DateTimeFactory;
-import org.modeshape.jcr.nodetype.PropertyDefinitionTemplate;
+import org.modeshape.jcr.api.value.DateTime;
+import org.modeshape.jcr.value.DateTimeFactory;
 
 /**
  * @author jverhaeg
  */
-@Migrated
-public class JcrMultiValuePropertyTest extends AbstractJcrTest {
+public class JcrMultiValuePropertyTest extends MultiUseAbstractTest {
 
     private Property prop;
     private byte[][] binaryValue;
@@ -66,85 +69,92 @@ public class JcrMultiValuePropertyTest extends AbstractJcrTest {
      */
     @BeforeClass
     public static void beforeAll() throws Exception {
-        AbstractJcrTest.beforeAll();
+        MultiUseAbstractTest.beforeAll();
+
+        NodeTypeManager mgr = session.getWorkspace().getNodeTypeManager();
 
         // Define the node definition that will have all the different kinds of properties ...
-        JcrNodeTypeTemplate nodeType = new JcrNodeTypeTemplate(context);
+        NodeTypeTemplate nodeType = mgr.createNodeTypeTemplate();
         nodeType.setMixin(true);
         nodeType.setName("mixinWithAllPropTypes");
+        @SuppressWarnings( "unchecked" )
         List<PropertyDefinitionTemplate> propDefns = nodeType.getPropertyDefinitionTemplates();
 
         // Add a property for each type ...
-        JcrPropertyDefinitionTemplate binaryDefn = new JcrPropertyDefinitionTemplate(context);
+        PropertyDefinitionTemplate binaryDefn = mgr.createPropertyDefinitionTemplate();
         binaryDefn.setName("binaryProperty");
         binaryDefn.setRequiredType(PropertyType.BINARY);
         binaryDefn.setMultiple(true);
         propDefns.add(binaryDefn);
 
-        JcrPropertyDefinitionTemplate booleanDefn = new JcrPropertyDefinitionTemplate(context);
+        PropertyDefinitionTemplate booleanDefn = mgr.createPropertyDefinitionTemplate();
         booleanDefn.setName("booleanProperty");
         booleanDefn.setRequiredType(PropertyType.BOOLEAN);
         booleanDefn.setMultiple(true);
         propDefns.add(booleanDefn);
 
-        JcrPropertyDefinitionTemplate dateDefn = new JcrPropertyDefinitionTemplate(context);
+        PropertyDefinitionTemplate dateDefn = mgr.createPropertyDefinitionTemplate();
         dateDefn.setName("dateProperty");
         dateDefn.setRequiredType(PropertyType.DATE);
         dateDefn.setMultiple(true);
         propDefns.add(dateDefn);
 
-        JcrPropertyDefinitionTemplate doubleDefn = new JcrPropertyDefinitionTemplate(context);
+        PropertyDefinitionTemplate doubleDefn = mgr.createPropertyDefinitionTemplate();
         doubleDefn.setName("doubleProperty");
         doubleDefn.setRequiredType(PropertyType.DOUBLE);
         doubleDefn.setMultiple(true);
         propDefns.add(doubleDefn);
 
-        JcrPropertyDefinitionTemplate longDefn = new JcrPropertyDefinitionTemplate(context);
+        PropertyDefinitionTemplate longDefn = mgr.createPropertyDefinitionTemplate();
         longDefn.setName("longProperty");
         longDefn.setRequiredType(PropertyType.LONG);
         longDefn.setMultiple(true);
         propDefns.add(longDefn);
 
-        JcrPropertyDefinitionTemplate nameDefn = new JcrPropertyDefinitionTemplate(context);
+        PropertyDefinitionTemplate nameDefn = mgr.createPropertyDefinitionTemplate();
         nameDefn.setName("nameProperty");
         nameDefn.setRequiredType(PropertyType.NAME);
         nameDefn.setMultiple(true);
         propDefns.add(nameDefn);
 
-        JcrPropertyDefinitionTemplate pathDefn = new JcrPropertyDefinitionTemplate(context);
+        PropertyDefinitionTemplate pathDefn = mgr.createPropertyDefinitionTemplate();
         pathDefn.setName("pathProperty");
         pathDefn.setRequiredType(PropertyType.PATH);
         pathDefn.setMultiple(true);
         propDefns.add(pathDefn);
 
-        JcrPropertyDefinitionTemplate refDefn = new JcrPropertyDefinitionTemplate(context);
+        PropertyDefinitionTemplate refDefn = mgr.createPropertyDefinitionTemplate();
         refDefn.setName("referenceProperty");
         refDefn.setRequiredType(PropertyType.REFERENCE);
         refDefn.setMultiple(true);
         propDefns.add(refDefn);
 
-        JcrPropertyDefinitionTemplate stringDefn = new JcrPropertyDefinitionTemplate(context);
+        PropertyDefinitionTemplate stringDefn = mgr.createPropertyDefinitionTemplate();
         stringDefn.setName("stringProperty");
         stringDefn.setRequiredType(PropertyType.STRING);
         stringDefn.setMultiple(true);
         propDefns.add(stringDefn);
 
-        JcrPropertyDefinitionTemplate undefinedDefn = new JcrPropertyDefinitionTemplate(context);
+        PropertyDefinitionTemplate undefinedDefn = mgr.createPropertyDefinitionTemplate();
         undefinedDefn.setName("undefinedProperty");
         undefinedDefn.setRequiredType(PropertyType.UNDEFINED);
         undefinedDefn.setMultiple(true);
         propDefns.add(undefinedDefn);
 
         // Add the node type ...
-        rntm.registerNodeType(nodeType);
+        mgr.registerNodeType(nodeType, true);
+
+        // Import the node types and the data ...
+        registerNodeTypes("cars.cnd");
+        importContent("/", "io/cars-system-view-with-uuids.xml", ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);
     }
 
     @Override
     @Before
     public void beforeEach() throws Exception {
         super.beforeEach();
-        context.getNamespaceRegistry().register("acme", "http://example.com");
-        dateFactory = context.getValueFactories().getDateFactory();
+        session.getWorkspace().getNamespaceRegistry().registerNamespace("acme", "http://example.com");
+        dateFactory = session.dateFactory();
 
         binaryValue = new byte[][] {"This is a binary value1".getBytes(), "This is a binary value2".getBytes()};
         dateValue = new DateTime[] {dateFactory.create(), dateFactory.create().plusDays(1)};
@@ -156,10 +166,10 @@ public class JcrMultiValuePropertyTest extends AbstractJcrTest {
         pathValue = new String[] {"/Cars/Hybrid/Toyota Highlander/acme:SomethingElse", "/Cars/acme:Wow"};
 
         // Add the mixin to the 'Cars' node ...
-        cars = cache.findJcrNode(null, path("/Cars"));
+        cars = session.getNode("/Cars");
         cars.addMixin("mixinWithAllPropTypes");
 
-        altima = cache.findJcrNode(null, path("/Cars/Hybrid/Nissan Altima"));
+        altima = session.getNode("/Cars/Hybrid/Nissan Altima");
         altima.addMixin("mix:referenceable");
 
         // Set each property ...
@@ -178,7 +188,7 @@ public class JcrMultiValuePropertyTest extends AbstractJcrTest {
     protected Value[] values( boolean[] values ) throws Exception {
         Value[] result = new Value[values.length];
         for (int i = 0; i != values.length; ++i) {
-            result[i] = new JcrValue(context.getValueFactories(), cache, PropertyType.BOOLEAN, values[i]);
+            result[i] = session.getValueFactory().createValue(values[i]);
         }
         return result;
     }
@@ -186,7 +196,7 @@ public class JcrMultiValuePropertyTest extends AbstractJcrTest {
     protected Value[] values( long[] values ) throws Exception {
         Value[] result = new Value[values.length];
         for (int i = 0; i != values.length; ++i) {
-            result[i] = new JcrValue(context.getValueFactories(), cache, PropertyType.LONG, values[i]);
+            result[i] = session.getValueFactory().createValue(values[i]);
         }
         return result;
     }
@@ -194,7 +204,7 @@ public class JcrMultiValuePropertyTest extends AbstractJcrTest {
     protected Value[] values( double[] values ) throws Exception {
         Value[] result = new Value[values.length];
         for (int i = 0; i != values.length; ++i) {
-            result[i] = new JcrValue(context.getValueFactories(), cache, PropertyType.DOUBLE, values[i]);
+            result[i] = session.getValueFactory().createValue(values[i]);
         }
         return result;
     }
@@ -202,7 +212,8 @@ public class JcrMultiValuePropertyTest extends AbstractJcrTest {
     protected Value[] values( byte[][] values ) throws Exception {
         Value[] result = new Value[values.length];
         for (int i = 0; i != values.length; ++i) {
-            result[i] = new JcrValue(context.getValueFactories(), cache, PropertyType.BINARY, values[i]);
+            Binary binary = session.getValueFactory().createBinary(values[i]);
+            result[i] = session.getValueFactory().createValue(binary);
         }
         return result;
     }
@@ -210,7 +221,7 @@ public class JcrMultiValuePropertyTest extends AbstractJcrTest {
     protected Value[] values( DateTime[] values ) throws Exception {
         Value[] result = new Value[values.length];
         for (int i = 0; i != values.length; ++i) {
-            result[i] = new JcrValue(context.getValueFactories(), cache, PropertyType.DATE, values[i].toCalendar());
+            result[i] = session.getValueFactory().createValue(values[i].toCalendar());
         }
         return result;
     }
@@ -218,7 +229,7 @@ public class JcrMultiValuePropertyTest extends AbstractJcrTest {
     protected Value[] values( Node[] values ) throws Exception {
         Value[] result = new Value[values.length];
         for (int i = 0; i != values.length; ++i) {
-            result[i] = new JcrValue(context.getValueFactories(), cache, PropertyType.REFERENCE, values[i]);
+            result[i] = session.getValueFactory().createValue(values[i]);
         }
         return result;
     }
@@ -227,7 +238,7 @@ public class JcrMultiValuePropertyTest extends AbstractJcrTest {
                               String[] values ) throws Exception {
         Value[] result = new Value[values.length];
         for (int i = 0; i != values.length; ++i) {
-            result[i] = new JcrValue(context.getValueFactories(), cache, type, values[i]);
+            result[i] = session.getValueFactory().createValue(values[i]);
         }
         return result;
     }

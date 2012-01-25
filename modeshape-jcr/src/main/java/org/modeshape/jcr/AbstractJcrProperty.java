@@ -24,27 +24,30 @@
 package org.modeshape.jcr;
 
 import java.util.Iterator;
+import java.util.Set;
 import javax.jcr.InvalidItemStateException;
 import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.ItemVisitor;
 import javax.jcr.Node;
-import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
+import javax.jcr.ValueFormatException;
 import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.version.VersionException;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.graph.property.Binary;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.Path;
-import org.modeshape.graph.property.ValueFactory;
-import org.modeshape.graph.session.GraphSession.PropertyInfo;
-import org.modeshape.jcr.SessionCache.JcrPropertyPayload;
-import org.modeshape.jcr.SessionCache.NodeEditor;
+import org.modeshape.jcr.RepositoryNodeTypeManager.NodeTypes;
+import org.modeshape.jcr.cache.CachedNode;
+import org.modeshape.jcr.cache.MutableCachedNode;
+import org.modeshape.jcr.cache.SessionCache;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.Path;
+import org.modeshape.jcr.value.PropertyFactory;
+import org.modeshape.jcr.value.ValueFactory;
 
 /**
  * An abstract {@link Property JCR Property} implementation.
@@ -52,24 +55,121 @@ import org.modeshape.jcr.SessionCache.NodeEditor;
 @NotThreadSafe
 abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, Comparable<Property> {
 
-    protected final AbstractJcrNode node;
-    protected final Name name;
+    @Immutable
+    private final static class CachedDefinition {
+        protected final PropertyDefinitionId propDefnId;
+        protected final int nodeTypesVersion;
 
-    AbstractJcrProperty( SessionCache cache,
-                         AbstractJcrNode node,
-                         Name name ) {
-        super(cache);
+        protected CachedDefinition( PropertyDefinitionId propDefnId,
+                                    int nodeTypesVersion ) {
+            this.propDefnId = propDefnId;
+            this.nodeTypesVersion = nodeTypesVersion;
+        }
+    }
+
+    private final AbstractJcrNode node;
+    private final Name name;
+    private int propertyType;
+    private volatile CachedDefinition cachedDefn;
+
+    AbstractJcrProperty( AbstractJcrNode node,
+                         Name name,
+                         int propertyType ) {
+        super(node.session());
         assert node != null;
         assert name != null;
         this.node = node;
         this.name = name;
+        this.propertyType = propertyType;
     }
 
-    final NodeEditor editor() throws ItemNotFoundException, InvalidItemStateException, RepositoryException {
-        return node.editor();
+    final void setPropertyDefinitionId( PropertyDefinitionId propDefnId,
+                                        int nodeTypesVersion ) {
+        this.cachedDefn = new CachedDefinition(propDefnId, nodeTypesVersion);
     }
 
-    public abstract boolean isMultiple();
+    final void releasePropertyDefinitionId() {
+        this.cachedDefn = null;
+    }
+
+    /**
+     * Get the property definition ID.
+     * 
+     * @return the cached property definition ID; never null
+     * @throws ItemNotFoundException if the node that contains this property doesn't exist anymore
+     * @throws ConstraintViolationException if no valid property definition could be found
+     * @throws InvalidItemStateException if the node has been removed in this session's transient state
+     */
+    final PropertyDefinitionId propertyDefinitionId()
+        throws ItemNotFoundException, ConstraintViolationException, InvalidItemStateException {
+        CachedDefinition defn = cachedDefn;
+        NodeTypes nodeTypes = session.nodeTypes();
+        if (defn == null || nodeTypes.getVersion() > defn.nodeTypesVersion) {
+            Name primaryType = node.getPrimaryTypeName();
+            Set<Name> mixinTypes = node.getMixinTypeNames();
+            PropertyDefinitionId id = node.propertyDefinitionFor(property(), primaryType, mixinTypes, nodeTypes).getId();
+            setPropertyDefinitionId(id, nodeTypes.getVersion());
+            return id;
+        }
+        return defn.propDefnId;
+    }
+
+    /**
+     * Get the definition for this property.
+     * 
+     * @return the cached property definition ID; never null
+     * @throws ItemNotFoundException if the node that contains this property doesn't exist anymore
+     * @throws ConstraintViolationException if no valid property definition could be found
+     * @throws InvalidItemStateException if the node has been removed in this session's transient state
+     */
+    final JcrPropertyDefinition propertyDefinition()
+        throws ItemNotFoundException, ConstraintViolationException, InvalidItemStateException {
+        CachedDefinition defn = cachedDefn;
+        NodeTypes nodeTypes = session.nodeTypes();
+        if (defn == null || nodeTypes.getVersion() > defn.nodeTypesVersion) {
+            Name primaryType = node.getPrimaryTypeName();
+            Set<Name> mixinTypes = node.getMixinTypeNames();
+            JcrPropertyDefinition propDefn = node.propertyDefinitionFor(property(), primaryType, mixinTypes, nodeTypes);
+            PropertyDefinitionId id = propDefn.getId();
+            setPropertyDefinitionId(id, nodeTypes.getVersion());
+            return propDefn;
+        }
+        return nodeTypes.getPropertyDefinition(defn.propDefnId);
+    }
+
+    final CachedNode cachedNode() throws ItemNotFoundException, InvalidItemStateException {
+        return node.node();
+    }
+
+    final MutableCachedNode mutable() {
+        return node.mutable();
+    }
+
+    final SessionCache sessionCache() {
+        return node.sessionCache();
+    }
+
+    final PropertyFactory propertyFactory() {
+        return node.session().propertyFactory();
+    }
+
+    final org.modeshape.jcr.value.Property property() throws ItemNotFoundException, InvalidItemStateException {
+        return cachedNode().getProperty(name, sessionCache());
+    }
+
+    final JcrValue createValue( Object value ) {
+        return new JcrValue(session().context().getValueFactories(), this.propertyType, value);
+    }
+
+    final JcrValue createValue( Object value,
+                                int propertyType ) {
+        return new JcrValue(session().context().getValueFactories(), this.propertyType, value);
+    }
+
+    @Override
+    public JcrSession getSession() {
+        return node.getSession();
+    }
 
     /**
      * Checks that this property's parent node is not already locked by another session. If the parent node is not locked or the
@@ -87,147 +187,93 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
         if (this.getParent().isLocked() && !getParent().getLock().isLockOwningSession()) {
             Lock parentLock = this.getParent().getLock();
             if (parentLock != null && parentLock.getLockToken() == null) {
-                throw new LockException(JcrI18n.lockTokenNotHeld.text(this.getParent().location()));
+                throw new LockException(JcrI18n.lockTokenNotHeld.text(node.location()));
             }
         }
     }
 
     /**
-     * {@inheritDoc}
+     * Verifies that this node is either not versionable or that it is versionable but checked out.
      * 
-     * @throws IllegalArgumentException if <code>visitor</code> is <code>null</code>.
-     * @see javax.jcr.Item#accept(javax.jcr.ItemVisitor)
+     * @throws VersionException if the node is versionable but is checked in and cannot be modified
+     * @throws RepositoryException if there is an error accessing the repository
      */
+    protected final void checkForCheckedOut() throws VersionException, RepositoryException {
+        if (!node.isCheckedOut()) {
+            throw new VersionException(JcrI18n.nodeIsCheckedIn.text(getPath()));
+        }
+    }
+
+    @Override
     public final void accept( ItemVisitor visitor ) throws RepositoryException {
         CheckArg.isNotNull(visitor, "visitor");
         checkSession();
         visitor.visit(this);
     }
 
-    final PropertyInfo<JcrPropertyPayload> propertyInfo() throws PathNotFoundException, RepositoryException {
-        return node.nodeInfo().getProperty(name);
-    }
-
     final Name name() {
         return name;
     }
 
-    final JcrPropertyPayload payload() throws RepositoryException {
-        return propertyInfo().getPayload();
-    }
-
-    final org.modeshape.graph.property.Property property() throws RepositoryException {
-        return propertyInfo().getProperty();
-    }
-
-    JcrValue createValue( Object value ) throws RepositoryException {
-        return new JcrValue(context().getValueFactories(), this.cache, payload().getPropertyType(), value);
-    }
-
-    final JcrValue createValue( Object value,
-                                int propertyType ) {
-        return new JcrValue(context().getValueFactories(), this.cache, propertyType, value);
+    @Override
+    Path path() throws RepositoryException {
+        return session().pathFactory().create(node.path(), name);
     }
 
     @Override
-    Path path() throws RepositoryException {
-        return context().getValueFactories().getPathFactory().create(node.path(), name);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#getType()
-     */
     public int getType() throws RepositoryException {
         checkSession();
-        return payload().getPropertyType();
+        return propertyType;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#getDefinition()
-     */
+    @Override
     public final JcrPropertyDefinition getDefinition() throws RepositoryException {
         checkSession();
-        return cache.session().nodeTypeManager().getPropertyDefinition(payload().getPropertyDefinitionId());
+        return propertyDefinition();
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * This method returns the string form of the {@link org.modeshape.graph.property.Property#getName()}, computed dynamically
-     * each time this method is called to ensure that the property namespace prefix is used.
-     * </p>
-     * 
-     * @see javax.jcr.Item#getName()
-     */
+    @Override
     public final String getName() {
         return name.getString(namespaces());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#getParent()
-     */
+    @Override
     public final AbstractJcrNode getParent() {
         return node;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#getPath()
-     */
+    @Override
     public final String getPath() throws RepositoryException {
         return path().getString(namespaces());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#isModified()
-     */
+    @Override
     public final boolean isModified() {
         try {
             checkSession();
-            return propertyInfo().isModified();
+            CachedNode node = cachedNode();
+            return node instanceof MutableCachedNode && ((MutableCachedNode)node).isPropertyModified(sessionCache(), name);
         } catch (RepositoryException re) {
             throw new IllegalStateException(re);
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#isNew()
-     */
+    @Override
     public final boolean isNew() {
         try {
             checkSession();
-            return propertyInfo().isNew();
+            CachedNode node = cachedNode();
+            return node instanceof MutableCachedNode && ((MutableCachedNode)node).isPropertyNew(sessionCache(), name);
         } catch (RepositoryException re) {
             throw new IllegalStateException(re);
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @return false
-     * @see javax.jcr.Item#isNode()
-     */
+    @Override
     public final boolean isNode() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#isSame(javax.jcr.Item)
-     */
     @Override
     public final boolean isSame( Item otherItem ) throws RepositoryException {
         checkSession();
@@ -241,26 +287,20 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws UnsupportedOperationException always
-     * @see javax.jcr.Item#refresh(boolean)
-     */
+    @Override
     public void refresh( boolean keepChanges ) {
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#remove()
-     */
+    @Override
     public void remove() throws VersionException, LockException, ConstraintViolationException, RepositoryException {
         checkSession();
+        checkForLock();
+        checkForCheckedOut();
+        session.checkPermission(path(), ModeShapePermissions.REMOVE);
         AbstractJcrNode parentNode = getParent();
         if (parentNode.isLocked()) {
-            Lock parentLock = parentNode.lockManager().getLock(parentNode);
+            Lock parentLock = parentNode.getLock();
             if (parentLock != null && !parentLock.isLockOwningSession()) {
                 throw new LockException(JcrI18n.lockTokenNotHeld.text(getPath()));
             }
@@ -270,14 +310,16 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
             throw new VersionException(JcrI18n.nodeIsCheckedIn.text(getPath()));
         }
 
-        editor().removeProperty(name);
+        node.removeProperty(this);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#save()
-     */
+    @Override
+    public abstract JcrValue[] getValues() throws ValueFormatException, RepositoryException;
+
+    @Override
+    public abstract JcrValue getValue() throws ValueFormatException, RepositoryException;
+
+    @Override
     public void save() throws RepositoryException {
         checkSession();
         // This is not a correct implementation, but it's good enough to work around some TCK requirements for version tests
@@ -285,11 +327,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
         getParent().save();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Comparable#compareTo(java.lang.Object)
-     */
+    @Override
     public int compareTo( Property that ) {
         if (that == this) return 0;
         try {
@@ -299,24 +337,19 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#toString()
-     */
     @Override
     public String toString() {
+        ValueFactory<String> stringFactory = session().context().getValueFactories().getStringFactory();
+        StringBuilder sb = new StringBuilder();
         try {
-            ValueFactory<String> stringFactory = session().getExecutionContext().getValueFactories().getStringFactory();
-            StringBuilder sb = new StringBuilder();
+            org.modeshape.jcr.value.Property property = cachedNode().getProperty(name, sessionCache());
             sb.append(getName()).append('=');
-            org.modeshape.graph.property.Property property = propertyInfo().getProperty();
             if (isMultiple()) {
                 sb.append('[');
                 Iterator<?> iter = property.iterator();
                 if (iter.hasNext()) {
                     Object value = iter.next();
-                    if (value instanceof Binary) {
+                    if (value instanceof javax.jcr.Binary) {
                         sb.append("**binary-value-not-shown**");
                     } else {
                         sb.append(stringFactory.create(value));
@@ -326,15 +359,16 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
                 sb.append(']');
             } else {
                 Object value = property.getFirstValue();
-                if (value instanceof Binary) {
+                if (value instanceof javax.jcr.Binary) {
                     sb.append("**binary-value-not-shown**");
                 } else {
                     sb.append(stringFactory.create(value));
                 }
             }
-            return sb.toString();
         } catch (RepositoryException e) {
-            return super.toString();
+            // The node likely does not exist ...
+            sb.append(" on deleted node " + node.key());
         }
+        return sb.toString();
     }
 }

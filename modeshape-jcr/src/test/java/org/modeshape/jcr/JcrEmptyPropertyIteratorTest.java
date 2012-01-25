@@ -30,17 +30,13 @@ import javax.jcr.PropertyIterator;
 import org.junit.Before;
 import org.junit.Test;
 
-/**
- * 
- */
-@Migrated
 public class JcrEmptyPropertyIteratorTest {
 
     private PropertyIterator iter;
 
     @Before
     public void beforeEach() {
-        iter = new JcrEmptyPropertyIterator();
+        iter = JcrEmptyPropertyIterator.INSTANCE;
     }
 
     @Test

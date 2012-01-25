@@ -35,9 +35,9 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.ClassUtil;
 import org.modeshape.common.util.Logger;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.JaasSecurityContext;
+import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.api.JaasCredentials;
 
@@ -61,41 +61,37 @@ public class JaasProvider implements AuthenticationProvider {
      *            <p>
      */
     public JaasProvider( String policyName ) throws LoginException {
-        this(policyName, null);
-    }
-
-    /**
-     * Create a JAAS provider for authentication and authorization, using the supplied name for the login configuration.
-     * 
-     * @param policyName
-     * @param subjectResolver the component that can resolve the JAAS subject if not accessible via the AccessControl context; may
-     *        be null
-     * @exception LoginException if the caller-specified <code>name</code> does not appear in the <code>Configuration</code> and
-     *            there is no <code>Configuration</code> entry for "<i>other</i>", or if the
-     *            <i>auth.login.defaultCallbackHandler</i> security property was set, but the implementation class could not be
-     *            loaded.
-     *            <p>
-     */
-    public JaasProvider( String policyName,
-                         SubjectResolver subjectResolver ) throws LoginException {
         CheckArg.isNotNull(policyName, "policyName");
         this.policyName = policyName;
-        this.subjectResolver = subjectResolver;
 
-        // verify that the logic context is valid ...
+        // verify that the login context is valid ...
+        new LoginContext(policyName);
+
+        // Per MODE-1270, see if the JACC API is available (if so, we're running in an J2EE container
+        // and need to provide a way to properly resolve the JAAS Subject)...
+        JaasProvider.SubjectResolver subjectResolver = null;
         try {
-            new LoginContext(policyName);
-        } catch (LoginException e) {
-
+            // Try to find the JACC PolicyContext class, which is entirely optional and provided only in J2EE containers
+            // ...
+            ClassUtil.loadClassStrict("javax.security.jacc.PolicyContext");
+            subjectResolver = new JaccSubjectResolver();
+            Logger.getLogger(getClass())
+                  .debug("Enabling optional JACC approach for resolving the JAAS Subject (typically in J2EE containers)");
+        } catch (ClassNotFoundException cnfe) {
+            // Must not be able to load the class ...
+            Logger.getLogger(getClass())
+                  .debug("Failed to find 'javax.security.jacc.PolicyContext', so assuming not in a J2EE container.");
         }
+        this.subjectResolver = subjectResolver;
     }
 
     /**
      * {@inheritDoc}
      * 
      * @see org.modeshape.jcr.security.AuthenticationProvider#authenticate(javax.jcr.Credentials, java.lang.String,
-     *      java.lang.String, org.modeshape.graph.ExecutionContext, java.util.Map)
+     *      java.lang.String, org.modeshape.jcr.ExecutionContext, java.util.Map)
      */
+    @Override
     public ExecutionContext authenticate( final Credentials credentials,
                                           String repositoryName,
                                           String workspaceName,
@@ -140,6 +136,7 @@ public class JaasProvider implements AuthenticationProvider {
                 try {
                     final Method method = credentials.getClass().getMethod("getLoginContext");
                     Object result = AccessController.doPrivileged(new PrivilegedExceptionAction<Object>() {
+                        @Override
                         public Object run() throws Exception {
                             return method.invoke(credentials);
                         }

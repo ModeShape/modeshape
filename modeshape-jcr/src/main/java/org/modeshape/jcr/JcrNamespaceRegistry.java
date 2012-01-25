@@ -37,12 +37,9 @@ import javax.xml.XMLConstants;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.xml.XmlCharacters;
-import org.modeshape.graph.JcrLexicon;
-import org.modeshape.graph.JcrMixLexicon;
-import org.modeshape.graph.JcrNtLexicon;
-import org.modeshape.graph.property.NamespaceRegistry;
-import org.modeshape.graph.property.Path;
-import org.modeshape.graph.property.NamespaceRegistry.Namespace;
+import org.modeshape.jcr.value.NamespaceRegistry;
+import org.modeshape.jcr.value.NamespaceRegistry.Namespace;
+import org.modeshape.jcr.value.Path;
 
 /**
  * A thread-safe JCR {@link javax.jcr.NamespaceRegistry} implementation that has the standard JCR namespaces pre-registered and
@@ -92,7 +89,6 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
         namespaces.put(XML_SCHEMA_NAMESPACE_PREFIX, XML_SCHEMA_NAMESPACE_URI);
         namespaces.put(XML_SCHEMA_INSTANCE_NAMESPACE_PREFIX, XML_SCHEMA_INSTANCE_NAMESPACE_URI);
         namespaces.put(ModeShapeLexicon.Namespace.PREFIX, ModeShapeLexicon.Namespace.URI);
-        namespaces.put(ModeShapeIntLexicon.Namespace.PREFIX, ModeShapeIntLexicon.Namespace.URI);
         // Set up the reverse map for the standard namespaces ...
         Map<String, String> prefixes = new HashMap<String, String>();
         for (Map.Entry<String, String> entry : namespaces.entrySet()) {
@@ -112,8 +108,8 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
     private final NamespaceRegistry workspaceRegistry;
     private final JcrSession session;
 
-    JcrNamespaceRegistry( NamespaceRegistry workspaceRegistry,
-                          JcrSession session ) {
+    protected JcrNamespaceRegistry( NamespaceRegistry workspaceRegistry,
+                                    JcrSession session ) {
         this(Behavior.WORKSPACE, null, workspaceRegistry, session);
     }
 
@@ -141,11 +137,7 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
         session.checkLive();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.NamespaceRegistry#getPrefix(java.lang.String)
-     */
+    @Override
     public String getPrefix( String uri ) throws NamespaceException, RepositoryException {
         checkSession();
         if (behavior == Behavior.WORKSPACE) {
@@ -153,7 +145,6 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
             String prefix = STANDARD_BUILT_IN_PREFIXES_BY_NAMESPACE.get(uri);
             if (prefix != null) return prefix;
         }
-        // Now check the underlying registry ...
         String prefix = registry.getPrefixForNamespaceUri(uri, false);
         if (prefix == null) {
             throw new NamespaceException(JcrI18n.noNamespaceWithUri.text(uri));
@@ -161,11 +152,7 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
         return prefix;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.NamespaceRegistry#getPrefixes()
-     */
+    @Override
     public String[] getPrefixes() throws RepositoryException {
         checkSession();
         Set<Namespace> namespaces = registry.getNamespaces();
@@ -177,11 +164,7 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
         return prefixes;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.NamespaceRegistry#getURI(java.lang.String)
-     */
+    @Override
     public String getURI( String prefix ) throws NamespaceException, RepositoryException {
         checkSession();
         if (behavior == Behavior.WORKSPACE) {
@@ -189,7 +172,6 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
             String uri = STANDARD_BUILT_IN_NAMESPACES_BY_PREFIX.get(prefix);
             if (uri != null) return uri;
         }
-        // Now check the underlying registry ...
         String uri = registry.getNamespaceForPrefix(prefix);
         if (uri == null) {
             throw new NamespaceException(JcrI18n.noNamespaceWithPrefix.text(prefix));
@@ -197,11 +179,7 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
         return uri;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.NamespaceRegistry#getURIs()
-     */
+    @Override
     public String[] getURIs() throws RepositoryException {
         checkSession();
         Set<Namespace> namespaces = registry.getNamespaces();
@@ -213,11 +191,7 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
         return uris;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.NamespaceRegistry#registerNamespace(java.lang.String, java.lang.String)
-     */
+    @Override
     public synchronized void registerNamespace( String prefix,
                                                 String uri ) throws NamespaceException, RepositoryException {
         CheckArg.isNotNull(prefix, "prefix");
@@ -295,11 +269,7 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.NamespaceRegistry#unregisterNamespace(java.lang.String)
-     */
+    @Override
     public synchronized void unregisterNamespace( String prefix )
         throws NamespaceException, AccessDeniedException, RepositoryException {
         CheckArg.isNotNull(prefix, "prefix");

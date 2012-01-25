@@ -23,16 +23,15 @@
  */
 package org.modeshape.jcr;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import javax.jcr.PropertyType;
 import org.modeshape.common.annotation.Immutable;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.NameFactory;
-import org.modeshape.graph.property.ValueFormatException;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.NameFactory;
+import org.modeshape.jcr.value.ValueFormatException;
 
 /**
- * An immutable identifier for a property definition. Although instances can be serialized, the property definitions are often
+ * An immutable identifier for a property definition. Although instances cannot be serialized, the property definitions are often
  * stored within the graph as {@link #getString() string values} on a property. These string values can later be
  * {@link #fromString(String, NameFactory) parsed} to reconstruct the identifier. Note that this string representation does not
  * use namespace prefixes, so they are long-lasting and durable.
@@ -48,16 +47,11 @@ import org.modeshape.graph.property.ValueFormatException;
  * PropertyDefinition.isMultiple)."</quote>
  * </p>
  * <p>
- * This class is {@link Serializable} and designed to be used as a key in a {@link HashMap}.
+ * This class is {@link Immutable} and designed to be used as a key in a {@link HashMap}.
  * </p>
  */
 @Immutable
-final class PropertyDefinitionId implements Serializable {
-
-    /**
-     * Current version is {@value} .
-     */
-    private static final long serialVersionUID = 1L;
+final class PropertyDefinitionId {
 
     /**
      * The string-form of the name that can be used to represent a residual property definition.
@@ -178,21 +172,11 @@ final class PropertyDefinitionId implements Serializable {
         return new PropertyDefinitionId(nodeTypeName, propertyDefinitionName, propertyType, true);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#hashCode()
-     */
     @Override
     public int hashCode() {
         return this.stringRepresentation.hashCode();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
     @Override
     public boolean equals( Object obj ) {
         if (obj == this) return true;
@@ -203,11 +187,6 @@ final class PropertyDefinitionId implements Serializable {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#toString()
-     */
     @Override
     public String toString() {
         return this.stringRepresentation;

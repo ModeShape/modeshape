@@ -28,12 +28,11 @@ import javax.jcr.nodetype.ItemDefinition;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.version.OnParentVersionAction;
 import org.modeshape.common.annotation.NotThreadSafe;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.NamespaceRegistry;
-import org.modeshape.graph.property.Path;
-import org.modeshape.graph.property.Path.Segment;
-import org.modeshape.graph.property.ValueFormatException;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.NamespaceRegistry;
+import org.modeshape.jcr.value.Path;
+import org.modeshape.jcr.value.Path.Segment;
+import org.modeshape.jcr.value.ValueFormatException;
 
 /**
  * ModeShape convenience implementation to support the JCR 2 NodeDefinitionTemplate and PropertyDefinitionTemplate classes.
@@ -94,57 +93,33 @@ abstract class JcrItemDefinitionTemplate implements ItemDefinition {
         return context;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.ItemDefinition#getDeclaringNodeType()
-     */
+    @Override
     public NodeType getDeclaringNodeType() {
         return null;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.ItemDefinition#getName()
-     */
+    @Override
     public String getName() {
         if (name == null) return null;
         return name.getString(context.getNamespaceRegistry());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.ItemDefinition#getOnParentVersion()
-     */
+    @Override
     public int getOnParentVersion() {
         return onParentVersion;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.ItemDefinition#isAutoCreated()
-     */
+    @Override
     public boolean isAutoCreated() {
         return autoCreated;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.ItemDefinition#isMandatory()
-     */
+    @Override
     public boolean isMandatory() {
         return mandatory;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.ItemDefinition#isProtected()
-     */
+    @Override
     public boolean isProtected() {
         return isProtected;
     }

@@ -29,7 +29,7 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import javax.jcr.Credentials;
 import org.modeshape.common.util.Logger;
-import org.modeshape.graph.ExecutionContext;
+import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
 
 /**
@@ -56,8 +56,9 @@ public class AuthenticationProviders implements AuthenticationProvider {
      * {@inheritDoc}
      * 
      * @see org.modeshape.jcr.security.AuthenticationProvider#authenticate(javax.jcr.Credentials, java.lang.String,
-     *      java.lang.String, org.modeshape.graph.ExecutionContext, java.util.Map)
+     *      java.lang.String, org.modeshape.jcr.ExecutionContext, java.util.Map)
      */
+    @Override
     public ExecutionContext authenticate( Credentials credentials,
                                           String repositoryName,
                                           String workspaceName,
@@ -71,15 +72,21 @@ public class AuthenticationProviders implements AuthenticationProvider {
                 result = provider.authenticate(credentials, repositoryName, workspaceName, repositoryContext, sessionAttributes);
                 if (result != null) return result;
             } catch (Exception e) {
+                // This should not happen, so log it ...
                 if (e instanceof PrivilegedActionException) {
                     e = ((PrivilegedActionException)e).getException();
+                    Logger.getLogger(AuthenticationProviders.class).error(e,
+                                                                          JcrI18n.mustBeInPrivilegedAction,
+                                                                          repositoryName,
+                                                                          workspaceName,
+                                                                          provider.getClass().getName());
+                } else {
+                    Logger.getLogger(AuthenticationProviders.class).error(e,
+                                                                          JcrI18n.errorInAuthenticationProvider,
+                                                                          provider.getClass().getName(),
+                                                                          repositoryName,
+                                                                          e.getMessage());
                 }
-                // This should not happen, so log it ...
-                Logger.getLogger(AuthenticationProviders.class).warn(e,
-                                                                     JcrI18n.mustBeInPrivilegedAction,
-                                                                     repositoryName,
-                                                                     workspaceName,
-                                                                     provider.getClass().getName());
             }
         }
         return null;

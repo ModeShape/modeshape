@@ -31,35 +31,37 @@ import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.version.Version;
-import org.modeshape.graph.property.Name;
+import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.value.Name;
 
 /**
  * Convenience wrapper around a version {@link JcrNode node}.
  */
-class JcrVersionNode extends JcrNode implements Version {
+class JcrVersionNode extends JcrSystemNode implements Version {
 
     private static final Version[] EMPTY_VERSION_ARRAY = new Version[0];
 
-    JcrVersionNode( AbstractJcrNode node ) {
-        super(node.cache, node.nodeId, node.location);
-
-        assert !node.isRoot() : "Versions should always be located in the /jcr:system/jcr:versionStorage subgraph";
+    JcrVersionNode( JcrSession session,
+                    NodeKey key ) {
+        super(session, key);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.version.Version#getContainingHistory()
-     */
+    @Override
+    Type type() {
+        return Type.VERSION;
+    }
+
+    @Override
+    public JcrVersionHistoryNode getParent() throws ItemNotFoundException, RepositoryException {
+        return (JcrVersionHistoryNode)super.getParent();
+    }
+
+    @Override
     public JcrVersionHistoryNode getContainingHistory() throws RepositoryException {
-        return new JcrVersionHistoryNode(getParent());
+        return getParent();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.version.Version#getCreated()
-     */
+    @Override
     public Calendar getCreated() throws RepositoryException {
         return getProperty(JcrLexicon.CREATED).getDate();
     }
@@ -72,15 +74,12 @@ class JcrVersionNode extends JcrNode implements Version {
      *         for root versions in a version history.
      * @throws RepositoryException if an error occurs accessing the repository
      */
+    @Override
     public AbstractJcrNode getFrozenNode() throws RepositoryException {
-        return getNode(JcrLexicon.FROZEN_NODE);
+        return childNode(JcrLexicon.FROZEN_NODE, Type.SYSTEM);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.version.Version#getPredecessors()
-     */
+    @Override
     public Version[] getPredecessors() throws RepositoryException {
         return getNodesForProperty(JcrLexicon.PREDECESSORS);
     }
@@ -94,6 +93,7 @@ class JcrVersionNode extends JcrNode implements Version {
      * 
      * @see javax.jcr.version.Version#getSuccessors()
      */
+    @Override
     public Version[] getSuccessors() throws RepositoryException {
         return getNodesForProperty(JcrLexicon.SUCCESSORS);
     }
@@ -102,36 +102,29 @@ class JcrVersionNode extends JcrNode implements Version {
         assert JcrLexicon.SUCCESSORS.equals(propertyName) || JcrLexicon.PREDECESSORS.equals(propertyName);
 
         Property references = getProperty(propertyName);
-
         if (references == null) return EMPTY_VERSION_ARRAY;
 
         Value[] values = references.getValues();
-
         List<JcrVersionNode> versions = new ArrayList<JcrVersionNode>(values.length);
-
-        for (int i = 0; i < values.length; i++) {
-            String uuid = values[i].getString();
-
-            AbstractJcrNode node = session().getNodeByUUID(uuid);
+        for (Value value : values) {
+            String id = value.getString();
+            AbstractJcrNode node = session().getNodeByIdentifier(id);
             versions.add((JcrVersionNode)node);
         }
-
         return versions.toArray(EMPTY_VERSION_ARRAY);
-
     }
 
     private final JcrVersionNode getFirstNodeForProperty( Name propertyName ) throws RepositoryException {
         assert JcrLexicon.SUCCESSORS.equals(propertyName) || JcrLexicon.PREDECESSORS.equals(propertyName);
 
         Property references = getProperty(propertyName);
-
         if (references == null) return null;
 
         Value[] values = references.getValues();
         if (values.length == 0) return null;
 
-        String uuid = values[0].getString();
-        AbstractJcrNode node = session().getNodeByUUID(uuid);
+        String id = values[0].getString();
+        AbstractJcrNode node = session().getNodeByIdentifier(id);
 
         return (JcrVersionNode)node;
     }
@@ -141,9 +134,9 @@ class JcrVersionNode extends JcrNode implements Version {
 
         Value[] successors = other.getProperty(JcrLexicon.SUCCESSORS).getValues();
 
-        String uuidString = uuid().toString();
+        String id = getIdentifier();
         for (int i = 0; i < successors.length; i++) {
-            if (uuidString.equals(successors[i].getString())) {
+            if (id.equals(successors[i].getString())) {
                 return true;
             }
         }
@@ -151,10 +144,12 @@ class JcrVersionNode extends JcrNode implements Version {
         return false;
     }
 
+    @Override
     public JcrVersionNode getLinearPredecessor() throws RepositoryException {
         return getFirstNodeForProperty(JcrLexicon.PREDECESSORS);
     }
 
+    @Override
     public JcrVersionNode getLinearSuccessor() throws RepositoryException {
         return getFirstNodeForProperty(JcrLexicon.SUCCESSORS);
     }

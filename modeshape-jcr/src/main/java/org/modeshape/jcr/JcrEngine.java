@@ -6,8 +6,8 @@
  * See the AUTHORS.txt file in the distribution for a full listing of 
  * individual contributors.
  *
- * Unless otherwise indicated, all code in ModeShape is licensed
- * to you under the terms of the GNU Lesser General Public License as
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
  * 
@@ -23,17 +23,17 @@
  */
 package org.modeshape.jcr;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -42,877 +42,597 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-import javax.jcr.PropertyType;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
-import org.modeshape.cnd.CndImporter;
+import org.infinispan.schematic.document.Changes;
+import org.infinispan.schematic.document.Editor;
 import org.modeshape.common.annotation.ThreadSafe;
-import org.modeshape.common.collection.Problem;
-import org.modeshape.common.collection.Problem.Status;
 import org.modeshape.common.collection.Problems;
-import org.modeshape.common.collection.SimpleProblems;
-import org.modeshape.common.component.ComponentConfig;
-import org.modeshape.common.component.ComponentLibrary;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.common.util.IoUtil;
+import org.modeshape.common.util.ImmediateFuture;
 import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.NamedThreadFactory;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.Graph;
-import org.modeshape.graph.JcrMixLexicon;
-import org.modeshape.graph.JcrNtLexicon;
-import org.modeshape.graph.Location;
-import org.modeshape.graph.Node;
-import org.modeshape.graph.Subgraph;
-import org.modeshape.graph.connector.RepositoryConnectionFactory;
-import org.modeshape.graph.connector.RepositorySource;
-import org.modeshape.graph.connector.RepositorySourceCapabilities;
-import org.modeshape.graph.connector.xmlfile.XmlFileRepositorySource;
-import org.modeshape.graph.io.GraphBatchDestination;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.NamespaceRegistry;
-import org.modeshape.graph.property.Path;
-import org.modeshape.graph.property.PathFactory;
-import org.modeshape.graph.property.PathNotFoundException;
-import org.modeshape.graph.property.Property;
-import org.modeshape.graph.property.ValueFactories;
-import org.modeshape.graph.property.basic.GraphNamespaceRegistry;
-import org.modeshape.jcr.JcrRepository.Option;
 import org.modeshape.jcr.api.Repositories;
-import org.modeshape.jcr.security.AuthenticationProvider;
-import org.modeshape.repository.ModeShapeConfiguration;
-import org.modeshape.repository.ModeShapeConfigurationException;
-import org.modeshape.repository.ModeShapeEngine;
 
 /**
- * The basic component that encapsulates the ModeShape services, including the {@link Repository} instances.
+ * A container for repositories.
  */
 @ThreadSafe
-public class JcrEngine extends ModeShapeEngine implements Repositories {
+public class JcrEngine implements Repositories {
 
-    final static int LOCK_SWEEP_INTERVAL_IN_MILLIS = 30000;
-    final static int LOCK_EXTENSION_INTERVAL_IN_MILLIS = LOCK_SWEEP_INTERVAL_IN_MILLIS * 2;
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
-    private static final Logger log = Logger.getLogger(ModeShapeEngine.class);
+    private final Map<String, JcrRepository> repositories = new HashMap<String, JcrRepository>();
+    private ExecutorService repositoryStarterService;
+    private ScheduledExecutorService cron;
+    private volatile State state = State.NOT_RUNNING;
 
-    private final Map<String, JcrRepositoryHolder> repositories;
-    private final Lock repositoriesLock;
-    private final Map<String, Object> descriptors = new HashMap<String, Object>();
-    private final ExecutorService repositoryStarterService;
+    public enum State {
+        NOT_RUNNING,
+        STARTING,
+        RUNNING,
+        STOPPING;
+    }
 
-    /**
-     * Provides the ability to schedule lock clean-up
-     */
-    private final ScheduledExecutorService scheduler = new ScheduledThreadPoolExecutor(2);
+    public JcrEngine() {
+    }
 
-    JcrEngine( ExecutionContext context,
-               ModeShapeConfiguration.ConfigurationDefinition configuration ) {
-        super(context, configuration);
-        this.repositories = new HashMap<String, JcrRepositoryHolder>();
-        this.repositoriesLock = new ReentrantLock();
-        initDescriptors();
-
-        // Create an executor service that we'll use to start the repositories ...
-        ThreadFactory threadFactory = new NamedThreadFactory("modeshape-start-repo");
-        this.repositoryStarterService = Executors.newCachedThreadPool(threadFactory);
+    protected final boolean checkRunning() {
+        if (state == State.RUNNING) return true;
+        throw new IllegalStateException(JcrI18n.engineIsNotRunning.text());
     }
 
     /**
-     * Clean up session-scoped locks created by session that are no longer active by iterating over the {@link JcrRepository
-     * repositories} and calling their {@link RepositoryLockManager#cleanUpLocks() clean-up method}.
-     * <p>
-     * It should not be possible for a session to be terminated without cleaning up its locks, but this method will help clean-up
-     * dangling locks should a session terminate abnormally.
-     * </p>
-     */
-    void cleanUpLocks() {
-        Collection<JcrRepositoryHolder> repos = null;
-
-        try {
-            // Make a copy of the repositories to minimize the time that the lock needs to be held.
-            repositoriesLock.lock();
-            repos = new ArrayList<JcrRepositoryHolder>(repositories.values());
-        } finally {
-            repositoriesLock.unlock();
-        }
-
-        for (JcrRepositoryHolder repository : repos) {
-            repository.cleanUpLocks();
-        }
-    }
-
-    @Override
-    protected void preShutdown() {
-        repositoryStarterService.shutdown();
-        scheduler.shutdown();
-        super.preShutdown();
-
-        try {
-            this.repositoriesLock.lock();
-            // Shut down all of the repositories ...
-            for (JcrRepositoryHolder holder : repositories.values()) {
-                holder.close();
-            }
-            this.repositories.clear();
-        } finally {
-            this.repositoriesLock.unlock();
-        }
-    }
-
-    /**
-     * Blocks until the shutdown has completed, or the timeout occurs, or the current thread is interrupted, whichever happens
-     * first.
+     * Get the running state of this engine.
      * 
-     * @param timeout the maximum time to wait for each component in this engine
-     * @param unit the time unit of the timeout argument
-     * @return <tt>true</tt> if this service complete shut down and <tt>false</tt> if the timeout elapsed before it was shut down
-     *         completely
-     * @throws InterruptedException if interrupted while waiting
+     * @return the current state; never null
      */
-    @Override
-    public boolean awaitTermination( long timeout,
-                                     TimeUnit unit ) throws InterruptedException {
-        if (!scheduler.awaitTermination(timeout, unit)) return false;
-
-        return super.awaitTermination(timeout, unit);
+    public State getState() {
+        return state;
     }
 
     /**
-     * {@inheritDoc}
+     * Start this engine to make it available for use. This method does nothing if the engine is already running.
      * 
-     * @see org.modeshape.repository.ModeShapeEngine#checkConfiguration(org.modeshape.graph.Subgraph)
-     */
-    @Override
-    protected void checkConfiguration( Subgraph configuration ) {
-        super.checkConfiguration(configuration);
-
-        // Get the list of sources ...
-        Set<String> sourceNames = new HashSet<String>();
-        for (Location child : configuration.getNode(ModeShapeLexicon.SOURCES)) {
-            String name = child.getPath().getLastSegment().getName().getLocalName();
-            sourceNames.add(name);
-        }
-        // Verify all of the repositories reference valid sources ...
-        for (Location child : configuration.getNode(ModeShapeLexicon.REPOSITORIES)) {
-            String repositoryName = readable(child.getPath().getLastSegment().getName());
-            Node repositoryNode = configuration.getNode(child);
-            Property property = repositoryNode.getProperty(ModeShapeLexicon.SOURCE_NAME);
-            if (property == null) {
-                getProblems().addError(JcrI18n.repositoryReferencesNonExistantSource, repositoryName, "null");
-            } else {
-                String sourceName = string(property.getFirstValue());
-                if (!sourceNames.contains(sourceName)) {
-                    getProblems().addError(JcrI18n.repositoryReferencesNonExistantSource, repositoryName, sourceName);
-                }
-            }
-        }
-    }
-
-    /**
-     * Start this engine to make it available for use.
-     * 
-     * @throws IllegalStateException if this method is called when already shut down.
-     * @throws JcrConfigurationException if there is an error in the configuration or any of the services that prevents proper
-     *         startup
-     * @see #start(boolean)
      * @see #shutdown()
      */
-    @Override
     public void start() {
-        super.start();
-
-        final JcrEngine engine = this;
-        Runnable cleanUpTask = new Runnable() {
-
-            public void run() {
-                engine.cleanUpLocks();
-            }
-
-        };
+        if (state == State.RUNNING) return;
+        final Lock lock = this.lock.writeLock();
         try {
-            scheduler.scheduleAtFixedRate(cleanUpTask,
-                                          LOCK_SWEEP_INTERVAL_IN_MILLIS,
-                                          LOCK_SWEEP_INTERVAL_IN_MILLIS,
-                                          TimeUnit.MILLISECONDS);
-            checkProblemsOnStartup();
+            lock.lock();
+            this.state = State.STARTING;
+
+            // Create an executor service that we'll use to start the repositories ...
+            ThreadFactory threadFactory = new NamedThreadFactory("modeshape-start-repo");
+            repositoryStarterService = Executors.newCachedThreadPool(threadFactory);
+
+            // Start the Cron service, with a minimum of a single thread ...
+            ThreadFactory cronThreadFactory = new NamedThreadFactory("modeshape-cron");
+            cron = new ScheduledThreadPoolExecutor(1, cronThreadFactory);
+
+            // Add a Cron job that cleans up each repository ...
+            cron.scheduleAtFixedRate(new GarbageCollectionTask(),
+                                     RepositoryConfiguration.GARBAGE_COLLECTION_SWEEP_PERIOD,
+                                     RepositoryConfiguration.GARBAGE_COLLECTION_SWEEP_PERIOD,
+                                     TimeUnit.MILLISECONDS);
+
+            state = State.RUNNING;
         } catch (RuntimeException e) {
-            try {
-                super.shutdown();
-            } catch (Throwable t) {
-                // Don't care about these ...
-            }
+            state = State.NOT_RUNNING;
             throw e;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    protected class GarbageCollectionTask implements Runnable {
+        @Override
+        public void run() {
+            for (JcrRepository repository : repositories()) {
+                // Okay to call, even if not running ...
+                repository.cleanUp();
+            }
         }
     }
 
     /**
-     * Start this engine to make it available for use, and optionally start each of the repositories in the configuration. Any
-     * errors starting the repositories will be logged as problems.
+     * Shutdown this engine to stop all repositories, terminate any ongoing background operations (such as sequencing), and
+     * reclaim any resources that were acquired by this engine. This method may be called multiple times, but only the first time
+     * has an effect.
      * <p>
-     * This method starts each repository in parallel, and returns only after all repositories have been started (or failed
-     * startup).
-     * </p>
+     * This is equivalent to calling <code>shutdown(true)</code>
      * 
-     * @param validateRepositoryConfigs true if the configurations of each repository should be validated and each repository
-     *        started/initialized, or false otherwise
-     * @throws IllegalStateException if this method is called when already shut down.
-     * @throws JcrConfigurationException if there is an error in the configuration or any of the services that prevents proper
-     *         startup
+     * @return a future that allows the caller to block until the engine is shutdown; any error during shutdown will be thrown
+     *         when {@link Future#get() getting} the result from the future, where the exception is wrapped in a
+     *         {@link ExecutionException}. The value returned from the future will always be true if the engine shutdown (or was
+     *         not running), or false if the engine is still running.
      * @see #start()
-     * @see #shutdown()
      */
-    public void start( boolean validateRepositoryConfigs ) {
-        start(validateRepositoryConfigs, -1, TimeUnit.SECONDS);
+    public Future<Boolean> shutdown() {
+        return shutdown(true);
     }
 
     /**
-     * Start this engine to make it available for use, and optionally start each of the repositories in the configuration. Any
-     * errors starting the repositories will be logged as problems.
-     * <p>
-     * This method starts each repository in parallel, and returns after the supplied timeout or after all repositories have been
-     * started (or failed startup), whichever comes first.
-     * </p>
+     * Shutdown this engine, optionally stopping all still-running repositories.
      * 
-     * @param validateRepositoryConfigs true if the configurations of each repository should be validated and each repository
-     *        started/initialized, or false otherwise
-     * @param timeout the maximum time to wait; can be 0 or a positive number, but use a negative number to wait indefinitely
-     *        until all repositories are started (or failed)
-     * @param timeoutUnit the time unit of the {@code timeout} argument; may not be null, but ignored if <code>timeout</code> is
-     *        negative
-     * @throws IllegalStateException if this method is called when already shut down.
-     * @throws JcrConfigurationException if there is an error in the configuration or any of the services that prevents proper
-     *         startup
+     * @param forceShutdownOfAllRepositories true if the engine should be shutdown even if there are currently-running
+     *        repositories, or false if the engine should not be shutdown if at least one repository is still running.
+     * @return a future that allows the caller to block until the engine is shutdown; any error during shutdown will be thrown
+     *         when {@link Future#get() getting} the repository from the future, where the exception is wrapped in a
+     *         {@link ExecutionException}. The value returned from the future will always be true if the engine shutdown (or was
+     *         not running), or false if the engine is still running.
      * @see #start()
-     * @see #shutdown()
      */
-    public void start( boolean validateRepositoryConfigs,
-                       long timeout,
-                       TimeUnit timeoutUnit ) {
-        start();
-        if (validateRepositoryConfigs) {
-            Set<String> repositoryNames = getRepositoryNames();
-            if (repositoryNames.isEmpty()) return;
-
-            final CountDownLatch latch = new CountDownLatch(repositoryNames.size());
-
+    public Future<Boolean> shutdown( boolean forceShutdownOfAllRepositories ) {
+        if (!forceShutdownOfAllRepositories) {
+            // Check to see if there are any still running ...
+            final Lock lock = this.lock.readLock();
             try {
-                repositoriesLock.lock();
-                // Put in a holder with a future for each repository
-                // (this should proceed quickly, as nothing waits for the initialization) ...
-                for (final String repositoryName : repositoryNames) {
-                    RepositoryInitializer initializer = new RepositoryInitializer(repositoryName, latch);
-                    Future<JcrRepository> future = repositoryStarterService.submit(initializer);
-                    JcrRepositoryHolder holder = new JcrRepositoryHolder(repositoryName, future);
-                    this.repositories.put(repositoryName, holder);
+                lock.lock();
+                for (JcrRepository repository : repositories.values()) {
+                    switch (repository.getState()) {
+                        case NOT_RUNNING:
+                        case STOPPING:
+                            break;
+                        case RUNNING:
+                        case STARTING:
+                            // This repository is still running, so fail
+                            return ImmediateFuture.create(Boolean.FALSE);
+                    }
                 }
+                // If we got to here, there are no more running repositories ...
             } finally {
-                repositoriesLock.unlock();
+                lock.unlock();
             }
 
-            // Now wait for the all the startups to complete ...
-            try {
-                if (timeout < 0L) {
-                    latch.await();
-                } else {
-                    latch.await(timeout, timeoutUnit);
+        }
+        // Create a simple executor that will do the backgrounding for us ...
+        final ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            // Submit a runnable to shutdown the repositories ...
+            Future<Boolean> future = executor.submit(new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+                    return doShutdown();
                 }
-            } catch (InterruptedException e) {
-                this.problems.addError(e, JcrI18n.startingAllRepositoriesWasInterrupted, e.getMessage());
-            }
+            });
+            return future;
+        } finally {
+            // Now shutdown the executor and return the future ...
+            executor.shutdown();
         }
     }
 
     /**
-     * {@inheritDoc}
+     * Do the work of shutting down this engine and its repositories.
      * 
-     * @see org.modeshape.repository.ModeShapeEngine#newConfigurationException(java.lang.String)
+     * @return true if the engine was shutdown (or was not running), and false if the engine is still running and could not be
+     *         shutdown
      */
-    @Override
-    protected ModeShapeConfigurationException newConfigurationException( String msg ) {
-        return new JcrConfigurationException(msg);
+    protected boolean doShutdown() {
+        if (state == State.NOT_RUNNING) return true;
+        final Lock lock = this.lock.writeLock();
+        try {
+            lock.lock();
+            state = State.STOPPING;
+
+            if (!repositories.isEmpty()) {
+                // Now go through all of the repositories and request they all be shutdown ...
+                Queue<Future<Boolean>> repoFutures = new LinkedList<Future<Boolean>>();
+                Queue<String> repoNames = new LinkedList<String>();
+                for (JcrRepository repository : repositories.values()) {
+                    if (repository != null) {
+                        repoNames.add(repository.getName());
+                        repoFutures.add(repository.shutdown());
+                    }
+                }
+
+                // Now block while each is shutdown ...
+                while (repoFutures.peek() != null) {
+                    String repoName = repoNames.poll();
+                    try {
+                        // Get the results from the future (this will return only when the shutdown has completed) ...
+                        repoFutures.poll().get();
+
+                        // We've successfully shut down, so remove it from the map ...
+                        repositories.remove(repoName);
+                    } catch (ExecutionException e) {
+                        Logger.getLogger(getClass()).error(e, JcrI18n.failedToShutdownDeployedRepository, repoName);
+                    } catch (InterruptedException e) {
+                        Logger.getLogger(getClass()).error(e, JcrI18n.failedToShutdownDeployedRepository, repoName);
+                    }
+                }
+            }
+
+            if (repositories.isEmpty()) {
+                // All repositories were properly shutdown, so now stop the service for starting and shutting down the repos ...
+                repositoryStarterService.shutdown();
+
+                // Do not clear the set of repositories, so that restarting will work just fine ...
+                this.state = State.NOT_RUNNING;
+                repositoryStarterService = null;
+            } else {
+                // Could not shut down all repositories, so keep running ..
+                this.state = State.RUNNING;
+            }
+        } catch (RuntimeException e) {
+            this.state = State.RUNNING;
+            throw e;
+        } finally {
+            lock.unlock();
+        }
+        return true;
     }
 
     /**
-     * Get the version of this engine.
+     * Get the deployed {@link Repository} instance with the given the name.
      * 
-     * @return version
-     */
-    public String getEngineVersion() {
-        return JcrRepository.getBundleProperty(Repository.REP_VERSION_DESC, true);
-    }
-
-    /**
-     * Get the {@link Repository} implementation for the named repository.
-     * 
-     * @param repositoryName the name of the repository, which corresponds to the name of a configured {@link RepositorySource}
+     * @param repositoryName the name of the deployed repository
      * @return the named repository instance
      * @throws IllegalArgumentException if the repository name is null, blank or invalid
-     * @throws RepositoryException if there is no repository with the specified name
-     * @throws IllegalStateException if this engine was not {@link #start() started}
+     * @throws NoSuchRepositoryException if there is no repository with the specified name
+     * @throws IllegalStateException if this engine is not {@link #getState() running}
+     * @see #deploy(RepositoryConfiguration)
+     * @see #undeploy(String)
      */
-    public final JcrRepository getRepository( String repositoryName ) throws RepositoryException {
+    @Override
+    public final JcrRepository getRepository( String repositoryName ) throws NoSuchRepositoryException {
         CheckArg.isNotEmpty(repositoryName, "repositoryName");
         checkRunning();
 
-        JcrRepositoryHolder holder = null;
+        final Lock lock = this.lock.readLock();
         try {
-            repositoriesLock.lock();
-            holder = repositories.get(repositoryName);
-            if (holder != null) {
-                // The repository was already placed in the map and thus initialization has been started
-                // and may be finished. But this call will block until the repository has completed initialization...
-                return holder.getRepository();
+            lock.lock();
+            JcrRepository repository = repositories.get(repositoryName);
+            if (repository == null) {
+                throw new NoSuchRepositoryException(JcrI18n.repositoryDoesNotExist.text(repositoryName));
             }
-            if (!getRepositoryNames().contains(repositoryName)) {
-                // The repository name is not a valid repository ...
-                String msg = JcrI18n.repositoryDoesNotExist.text(repositoryName);
-                throw new RepositoryException(msg);
-            }
-            // Now create the initializer and holder ...
-            RepositoryInitializer initializer = new RepositoryInitializer(repositoryName);
-            Future<JcrRepository> future = repositoryStarterService.submit(initializer);
-            holder = new JcrRepositoryHolder(repositoryName, future);
-            repositories.put(repositoryName, holder);
+            return repository;
         } finally {
-            repositoriesLock.unlock();
+            lock.unlock();
         }
-        JcrRepository repo = holder.getRepository();
-        return repo;
+    }
+
+    @Override
+    public Set<String> getRepositoryNames() {
+        checkRunning();
+
+        final Lock lock = this.lock.readLock();
+        try {
+            lock.lock();
+            Set<String> names = new HashSet<String>();
+            for (JcrRepository repository : repositories.values()) {
+                names.add(repository.getName());
+            }
+            return names;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    protected Set<String> getRepositoryKeys() {
+        checkRunning();
+
+        final Lock lock = this.lock.readLock();
+        try {
+            lock.lock();
+            return new HashSet<String>(repositories.keySet());
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**
-     * Get the names of each of the JCR repositories.
+     * Get the state of the deployed {@link Repository} instance with the given the name.
      * 
-     * @return the immutable names of the repositories that exist at the time this method is called
+     * @param repositoryName the name of the deployed repository
+     * @return the state of the repository instance; never null
+     * @throws IllegalArgumentException if the repository name is null, blank or invalid
+     * @throws NoSuchRepositoryException if there is no repository with the specified name
+     * @throws IllegalStateException if this engine is not {@link #getState() running}
+     * @see #deploy(RepositoryConfiguration)
+     * @see #undeploy(String)
      */
-    public Set<String> getRepositoryNames() {
-        checkRunning();
-        Set<String> results = new HashSet<String>();
-        // Read the names of the JCR repositories from the configuration (not from the Repository objects used so far) ...
-        PathFactory pathFactory = getExecutionContext().getValueFactories().getPathFactory();
-        Path repositoriesPath = pathFactory.create(configuration.getPath(), ModeShapeLexicon.REPOSITORIES);
-        Graph configuration = getConfigurationGraph();
-        for (Location child : configuration.getChildren().of(repositoriesPath)) {
-            Name repositoryName = child.getPath().getLastSegment().getName();
-            results.add(readable(repositoryName));
-        }
-        return Collections.unmodifiableSet(results);
+    public final State getRepositoryState( String repositoryName ) throws NoSuchRepositoryException {
+        return getRepository(repositoryName).getState();
     }
 
-    protected JcrRepository doCreateJcrRepository( String repositoryName ) throws RepositoryException, PathNotFoundException {
-        RepositoryConnectionFactory connectionFactory = getRepositoryConnectionFactory();
-        Map<String, String> descriptors = new HashMap<String, String>();
-        Map<Option, String> options = new HashMap<Option, String>();
-
-        // Read the subgraph that represents the repository ...
-        PathFactory pathFactory = getExecutionContext().getValueFactories().getPathFactory();
-        Path repositoriesPath = pathFactory.create(configuration.getPath(), ModeShapeLexicon.REPOSITORIES);
-        Path repositoryPath = pathFactory.create(repositoriesPath, repositoryName);
-        Name repoName = getExecutionContext().getValueFactories().getNameFactory().create(repositoryName);
-        Graph configuration = null;
-        Subgraph subgraph = getConfigurationSubgraph(false);
-
-        // Read the options ...
-        Path optionsPath = pathFactory.createRelativePath(ModeShapeLexicon.REPOSITORIES, repoName, ModeShapeLexicon.OPTIONS);
-        Node optionsNode = subgraph.getNode(optionsPath);
-        if (optionsNode != null) {
-            for (Location optionLocation : optionsNode.getChildren()) {
-                Node optionNode = subgraph.getNode(optionLocation);
-                Path.Segment segment = optionLocation.getPath().getLastSegment();
-                Property valueProperty = optionNode.getProperty(ModeShapeLexicon.VALUE);
-                if (valueProperty == null) {
-                    log.warn(JcrI18n.noOptionValueProvided, segment.getName().getLocalName());
-                    continue;
-                }
-                Option option = Option.findOption(segment.getName().getLocalName());
-                if (option == null) {
-                    log.warn(JcrI18n.invalidOptionProvided, segment.getName().getLocalName());
-                    continue;
-                }
-                String value = valueProperty.getFirstValue() != null ? valueProperty.getFirstValue().toString() : "";
-                options.put(option, value);
-            }
+    /**
+     * Asynchronously start the deployed {@link Repository} instance with the given the name, and return a future that will return
+     * the Repository instance. If the Repository is already running, this method returns a future that returns immediately.
+     * <p>
+     * Note that the caller does not have to wait for the startup process to complete. However, to do so the caller merely calls
+     * {@link Future#get() get()} or {@link Future#get(long, TimeUnit) get(long,TimeUnit)} on the future to return the repository
+     * instance. Note that any exceptions thrown during the startup process will be wrapped in an {@link ExecutionException}
+     * thrown by the Future's <code>get</code> methods.
+     * </p>
+     * 
+     * @param repositoryName the name of the deployed repository
+     * @return the state of the repository instance; never null
+     * @throws IllegalArgumentException if the repository name is null, blank or invalid
+     * @throws NoSuchRepositoryException if there is no repository with the specified name
+     * @throws IllegalStateException if this engine is not {@link #getState() running}
+     * @see #deploy(RepositoryConfiguration)
+     * @see #undeploy(String)
+     */
+    public final Future<JcrRepository> startRepository( String repositoryName ) throws NoSuchRepositoryException {
+        final JcrRepository repository = getRepository(repositoryName);
+        if (repository.getState() == State.RUNNING) {
+            return ImmediateFuture.create(repository);
         }
 
-        // Disable the derived content removal option if not explicitly set and no sequencers ...
-        if (!options.containsKey(Option.REMOVE_DERIVED_CONTENT_WITH_ORIGINAL) && getSequencingService().getSequencers().isEmpty()) {
-            options.put(Option.REMOVE_DERIVED_CONTENT_WITH_ORIGINAL, Boolean.FALSE.toString());
-        }
-
-        // Read the descriptors ...
-        Path descriptorsPath = pathFactory.createRelativePath(ModeShapeLexicon.REPOSITORIES,
-                                                              repoName,
-                                                              ModeShapeLexicon.DESCRIPTORS);
-        Node descriptorsNode = subgraph.getNode(descriptorsPath);
-        if (descriptorsNode != null) {
-            for (Location descriptorLocation : descriptorsNode.getChildren()) {
-                Node optionNode = subgraph.getNode(descriptorLocation);
-                Path.Segment segment = descriptorLocation.getPath().getLastSegment();
-                Property valueProperty = optionNode.getProperty(ModeShapeLexicon.VALUE);
-                if (valueProperty == null) continue;
-                descriptors.put(segment.getName().getLocalName(), valueProperty.getFirstValue().toString());
-            }
-        }
-
-        // Read the namespaces ...
-        ExecutionContext context = getExecutionContext();
-        Path namespacesPath = pathFactory.createRelativePath(ModeShapeLexicon.REPOSITORIES, repoName, ModeShapeLexicon.NAMESPACES);
-        Node namespacesNode = subgraph.getNode(namespacesPath);
-        descriptors.put(org.modeshape.jcr.api.Repository.REPOSITORY_NAME, repositoryName);
-        if (namespacesNode != null) {
-            configuration = getConfigurationGraph();
-            GraphNamespaceRegistry registry = new GraphNamespaceRegistry(configuration, namespacesNode.getLocation().getPath(),
-                                                                         ModeShapeLexicon.URI, ModeShapeLexicon.GENERATED);
-            context = context.with(registry);
-        }
-
-        // Get the name of the source ...
-        Path repoPath = pathFactory.createRelativePath(ModeShapeLexicon.REPOSITORIES, repoName);
-        Node repoNode = subgraph.getNode(repoPath);
-        if (repoNode == null) {
-            // There is no repository with the supplied name ...
-            throw new PathNotFoundException(Location.create(repoPath), repositoriesPath,
-                                            JcrI18n.repositoryDoesNotExist.text(readable(repoName)));
-        }
-        Property property = repoNode.getProperty(ModeShapeLexicon.SOURCE_NAME);
-        if (property == null || property.isEmpty()) {
-            if (configuration == null) configuration = getConfigurationGraph();
-            String readableName = readable(ModeShapeLexicon.SOURCE_NAME);
-            String readablePath = readable(subgraph.getLocation());
-            String msg = JcrI18n.propertyNotFoundOnNode.text(readableName, readablePath, configuration.getCurrentWorkspaceName());
-            throw new RepositoryException(msg);
-        }
-        String sourceName = context.getValueFactories().getStringFactory().create(property.getFirstValue());
-
-        // Verify the source exists ...
-        RepositorySource source = getRepositorySource(sourceName);
-        if (source == null) {
-            throw new RepositoryException(JcrI18n.repositoryReferencesNonExistantSource.text(repositoryName, sourceName));
-        }
-
-        // Read the initial content ...
-        String initialContentForNewWorkspaces = null;
-        for (Location initialContentLocation : repoNode.getChildren(ModeShapeLexicon.INITIAL_CONTENT)) {
-            Node initialContent = subgraph.getNode(initialContentLocation);
-            if (initialContent == null) continue;
-
-            // Determine where to load the initial content from ...
-            Property contentReference = initialContent.getProperty(ModeShapeLexicon.CONTENT);
-            if (contentReference == null || contentReference.isEmpty()) {
-                if (configuration == null) configuration = getConfigurationGraph();
-                String readableName = readable(ModeShapeLexicon.CONTENT);
-                String readablePath = readable(initialContentLocation);
-                String msg = JcrI18n.propertyNotFoundOnNode.text(readableName,
-                                                                 readablePath,
-                                                                 configuration.getCurrentWorkspaceName());
-                throw new RepositoryException(msg);
-            }
-            String contentRef = string(contentReference.getFirstValue());
-
-            // Determine which workspaces this should apply to ...
-            Property workspaces = initialContent.getProperty(ModeShapeLexicon.WORKSPACES);
-            if (workspaces == null || workspaces.isEmpty()) {
-                if (configuration == null) configuration = getConfigurationGraph();
-                String readableName = readable(ModeShapeLexicon.WORKSPACES);
-                String readablePath = readable(initialContentLocation);
-                String msg = JcrI18n.propertyNotFoundOnNode.text(readableName,
-                                                                 readablePath,
-                                                                 configuration.getCurrentWorkspaceName());
-                throw new RepositoryException(msg);
-            }
-
-            // Load the initial content into a transient source ...
-            XmlFileRepositorySource initialContentSource = new XmlFileRepositorySource();
-            initialContentSource.setName("Initial content for " + repositoryName);
-            initialContentSource.setContentLocation(contentRef);
-            Graph initialContentGraph = Graph.create(initialContentSource, context);
-            Graph sourceGraph = Graph.create(sourceName, connectionFactory, context);
-
-            // And initialize the source with the content (if not already there) ...
-            for (Object value : workspaces) {
-                String workspaceName = string(value);
-                if (workspaceName != null && workspaceName.trim().length() != 0) {
-                    // Load the content into the workspace with this name ...
-                    sourceGraph.useWorkspace(workspaceName);
-                    try {
-                        sourceGraph.merge(initialContentGraph);
-                    } catch (RuntimeException e) {
-                        throw new RepositoryException(JcrI18n.unableToImportInitialContent.text(readable(repoName), contentRef),
-                                                      e);
-                    }
-                }
-            }
-
-            // Determine if this initial content should apply to new workspaces ...
-            Property applyToNewWorkspaces = initialContent.getProperty(ModeShapeLexicon.APPLY_TO_NEW_WORKSPACES);
-            if (applyToNewWorkspaces != null && !applyToNewWorkspaces.isEmpty() && isTrue(applyToNewWorkspaces.getFirstValue())) {
-                initialContentForNewWorkspaces = contentRef; // may overwrite the value if seen more than once!
-            }
-        }
-
-        // Set up the authenticators ...
-        ComponentLibrary<AuthenticationProvider, ComponentConfig> authenticators = new ComponentLibrary<AuthenticationProvider, ComponentConfig>();
-        for (Location authProvidersLocation : repoNode.getChildren(ModeShapeLexicon.AUTHENTICATION_PROVIDERS)) {
-            Node authProviders = subgraph.getNode(authProvidersLocation);
-            if (authProviders == null) continue;
-
-            for (Location authProviderLocation : authProviders.getChildren()) {
-                Node authProvider = subgraph.getNode(authProviderLocation);
-                if (authProvider == null) continue;
-
-                Set<Name> skipProperties = new HashSet<Name>();
-                skipProperties.add(ModeShapeLexicon.READABLE_NAME);
-                skipProperties.add(ModeShapeLexicon.DESCRIPTION);
-                skipProperties.add(ModeShapeLexicon.CLASSNAME);
-                skipProperties.add(ModeShapeLexicon.CLASSPATH);
-                skipProperties.add(ModeShapeLexicon.PATH_EXPRESSION);
-                Set<String> skipNamespaces = new HashSet<String>();
-                skipNamespaces.add(JcrLexicon.Namespace.URI);
-                skipNamespaces.add(JcrNtLexicon.Namespace.URI);
-                skipNamespaces.add(JcrMixLexicon.Namespace.URI);
-
-                String name = stringValueOf(authProvider, ModeShapeLexicon.READABLE_NAME);
-                if (name == null) name = stringValueOf(authProvider);
-                String desc = stringValueOf(authProvider, ModeShapeLexicon.DESCRIPTION);
-                String classname = stringValueOf(authProvider, ModeShapeLexicon.CLASSNAME);
-                String[] classpath = stringValuesOf(authProvider, ModeShapeLexicon.CLASSPATH);
-                Map<String, Object> properties = new HashMap<String, Object>();
-                for (Property authProp : authProvider.getProperties()) {
-                    Name propertyName = authProp.getName();
-                    if (skipNamespaces.contains(propertyName.getNamespaceUri())) continue;
-                    if (skipProperties.contains(propertyName)) continue;
-                    if (authProp.isSingle()) {
-                        properties.put(propertyName.getLocalName(), authProp.getFirstValue());
-                    } else {
-                        properties.put(propertyName.getLocalName(), authProp.getValuesAsArray());
-                    }
-                }
+        // Create an initializer that will start the repository ...
+        return repositoryStarterService.submit(new Callable<JcrRepository>() {
+            @Override
+            public JcrRepository call() throws Exception {
+                // Instantiate (and start) the repository ...
                 try {
-                    ComponentConfig config = new ComponentConfig(name, desc, properties, classname, classpath);
-                    authenticators.add(config);
-                } catch (Throwable t) {
-                    this.problems.addError(t,
-                                           JcrI18n.unableToInitializeAuthenticationProvider,
-                                           name,
-                                           repositoryName,
-                                           t.getMessage());
+                    repository.start();
+                    return repository;
+                } catch (Exception e) {
+                    // Something went wrong, so undeploy the repository ...
+                    throw e;
                 }
             }
+        });
+    }
+
+    /**
+     * Asynchronously shutdown the deployed {@link Repository} instance with the given the name, and return a future that will
+     * return whether the Repository instance is shutdown. If the Repository is not running, the resulting future will return
+     * immediately.
+     * <p>
+     * Note that the caller does not have to wait for the shutdown to completed. However, to do so the caller merely calls
+     * {@link Future#get() get()} or {@link Future#get(long, TimeUnit) get(long,TimeUnit)} on the future to return a boolean flag
+     * specifying whether the Repository instance is shutdown (not running). Note that any exceptions thrown during the shutdown
+     * will be wrapped in an {@link ExecutionException} thrown by the Future's <code>get</code> methods.
+     * </p>
+     * 
+     * @param repositoryName the name of the deployed repository
+     * @return a future wrapping the asynchronous shutdown process; never null, and {@link Future#get()} will return whether the
+     * @throws IllegalArgumentException if the repository name is null, blank or invalid
+     * @throws NoSuchRepositoryException if there is no repository with the specified name
+     * @throws IllegalStateException if this engine is not {@link #getState() running}
+     * @see #deploy(RepositoryConfiguration)
+     * @see #undeploy(String)
+     */
+    public final Future<Boolean> shutdownRepository( String repositoryName ) throws NoSuchRepositoryException {
+        return getRepository(repositoryName).shutdown();
+    }
+
+    /**
+     * Get an instantaneous snapshot of the JCR repositories and their state. Note that the results are accurate only when this
+     * methods returns.
+     * 
+     * @return the immutable map of repository states keyed by repository names; never null
+     */
+    public Map<String, State> getRepositories() {
+        checkRunning();
+        Map<String, State> results = new HashMap<String, State>();
+        final Lock lock = this.lock.readLock();
+        try {
+            lock.lock();
+            for (JcrRepository repository : repositories.values()) {
+                results.put(repository.getName(), repository.getState());
+            }
+        } finally {
+            lock.unlock();
+        }
+        return Collections.unmodifiableMap(results);
+    }
+
+    /**
+     * Returns a copy of the repositories. Note that when returned, not all repositories may be active.
+     * 
+     * @return a copy of the repositories; never null
+     */
+    protected Collection<JcrRepository> repositories() {
+        if (this.state == State.RUNNING) {
+            final Lock lock = this.lock.readLock();
+            try {
+                lock.lock();
+                return new ArrayList<JcrRepository>(repositories.values());
+            } finally {
+                lock.unlock();
+            }
+        }
+        return Collections.emptyList();
+    }
+
+    /**
+     * Deploy a new repository with the given configuration. This method will fail if this engine already contains a repository
+     * with the specified name.
+     * 
+     * @param repositoryConfiguration the configuration for the repository
+     * @return the deployed repository instance, which must be {@link #startRepository(String) started} before it can be used;
+     *         never null
+     * @throws ConfigurationException if the configuration is not valid
+     * @throws RepositoryException if there is already a deployed repository with the specified name, or if there is a problem
+     *         deploying the repository
+     * @throws IllegalArgumentException if the configuration is null
+     * @see #deploy(RepositoryConfiguration)
+     * @see #update(String, Changes)
+     * @see #undeploy(String)
+     */
+    public JcrRepository deploy( final RepositoryConfiguration repositoryConfiguration )
+        throws ConfigurationException, RepositoryException {
+        return deploy(repositoryConfiguration, null);
+    }
+
+    /**
+     * Deploy a new repository with the given configuration. This method will fail if this engine already contains a repository
+     * with the specified name.
+     * 
+     * @param repositoryConfiguration the configuration for the repository
+     * @param repositoryKey the key by which this repository is known to this engine; may be null if the
+     *        {@link RepositoryConfiguration#getName() repository's name} should be used
+     * @return the deployed repository instance, which must be {@link #startRepository(String) started} before it can be used;
+     *         never null
+     * @throws ConfigurationException if the configuration is not valid
+     * @throws RepositoryException if there is already a deployed repository with the specified name, or if there is a problem
+     *         deploying the repository
+     * @throws IllegalArgumentException if the configuration is null
+     * @see #deploy(RepositoryConfiguration)
+     * @see #update(String, Changes)
+     * @see #undeploy(String)
+     */
+    protected JcrRepository deploy( final RepositoryConfiguration repositoryConfiguration,
+                                    final String repositoryKey ) throws ConfigurationException, RepositoryException {
+        CheckArg.isNotNull(repositoryConfiguration, "repositoryConfiguration");
+        checkRunning();
+
+        final String repoName = repositoryKey != null ? repositoryKey : repositoryConfiguration.getName();
+        Problems problems = repositoryConfiguration.validate();
+        if (problems.hasErrors()) {
+            throw new ConfigurationException(problems, JcrI18n.repositoryConfigurationIsNotValid.text(repoName));
         }
 
-        // Find the capabilities ...
-        RepositorySourceCapabilities capabilities = source.getCapabilities();
-        // Create the repository ...
-        JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName,
-                                                     getRepositoryService().getRepositoryLibrary(), capabilities, descriptors,
-                                                     options, initialContentForNewWorkspaces, authenticators);
-
-        // Register all the the node types ...
-        Path nodeTypesPath = pathFactory.createRelativePath(ModeShapeLexicon.REPOSITORIES, repoName, JcrLexicon.NODE_TYPES);
-        Node nodeTypesNode = subgraph.getNode(nodeTypesPath);
-        if (nodeTypesNode != null) {
-            boolean needToRefreshSubgraph = false;
-            if (configuration == null) configuration = getConfigurationGraph();
-
-            // Expand any references to a CND file
-            Property resourceProperty = nodeTypesNode.getProperty(ModeShapeLexicon.RESOURCE);
-            if (resourceProperty != null) {
-                ClassLoader classLoader = this.context.getClassLoader();
-                for (Object resourceValue : resourceProperty) {
-                    String resources = this.context.getValueFactories().getStringFactory().create(resourceValue);
-
-                    for (String resource : resources.split("\\s*,\\s*")) {
-                        Graph.Batch batch = configuration.batch();
-                        GraphBatchDestination destination = new GraphBatchDestination(batch);
-
-                        Path nodeTypesAbsPath = pathFactory.create(repositoryPath, JcrLexicon.NODE_TYPES);
-                        CndImporter importer = new CndImporter(destination, nodeTypesAbsPath, true, false);
-                        InputStream is = IoUtil.getResourceAsStream(resource, classLoader, getClass());
-                        Problems cndProblems = new SimpleProblems();
-                        if (is == null) {
-                            String msg = JcrI18n.unableToFindNodeTypeDefinitionsOnClasspathOrFileOrUrl.text(resource);
-                            throw new RepositoryException(msg);
-                        }
-                        try {
-                            logger().debug("Loading CND file at '{0}'", resource);
-                            importer.importFrom(is, cndProblems, resource);
-                            logger().debug("Finished loading CND file at '{0}'", resource);
-                            batch.execute();
-                            logger().debug("Finished executing changes for node types found in CND file at '{0}'", resource);
-                            needToRefreshSubgraph = true;
-                        } catch (IOException ioe) {
-                            String msg = JcrI18n.errorLoadingNodeTypeDefintions.text(resource, ioe.getMessage());
-                            throw new RepositoryException(msg, ioe);
-                        }
-                        if (!cndProblems.isEmpty()) {
-                            // Add any warnings or information to this engine's list ...
-                            getProblems().addAll(cndProblems);
-                            if (cndProblems.hasErrors()) {
-                                String msg = null;
-                                Throwable cause = null;
-                                for (Problem problem : cndProblems) {
-                                    if (problem.getStatus() == Status.ERROR) {
-                                        msg = problem.getMessageString();
-                                        cause = problem.getThrowable();
-                                        break;
-                                    }
-                                }
-                                throw new RepositoryException(JcrI18n.errorLoadingNodeTypeDefintions.text(resource, msg), cause);
-                            }
-                        }
-                    }
-                }
+        // Now try to deploy the repository ...
+        JcrRepository repository = null;
+        final Lock lock = this.lock.writeLock();
+        try {
+            lock.lock();
+            if (this.repositories.containsKey(repoName)) {
+                throw new RepositoryException(JcrI18n.repositoryIsAlreadyDeployed.text(repoName));
             }
 
-            Set<NamespaceRegistry.Namespace> namespaces = configuration.getContext().getNamespaceRegistry().getNamespaces();
-            logger().trace("Registring {0} namespaces found in CND files", namespaces.size());
-            // Load any namespaces from the configuration into the repository's context ...
-            NamespaceRegistry repoRegistry = repository.getExecutionContext().getNamespaceRegistry();
-            repoRegistry.register(namespaces);
-            logger().trace("Completed registring {0} namespaces found in CND files", namespaces.size());
-
-            // Re-read the subgraph, in case any new nodes were added
-            Subgraph nodeTypesSubgraph = subgraph;
-            if (needToRefreshSubgraph) {
-                nodeTypesSubgraph = configuration.getSubgraphOfDepth(4).at(nodeTypesNode.getLocation().getPath());
-            }
-
-            logger().info(JcrI18n.registeringNodeTypesDefinedInConfiguration, repositoryName);
-            repository.getRepositoryTypeManager().registerNodeTypes(nodeTypesSubgraph, nodeTypesNode.getLocation(), false, true);
-            logger().info(JcrI18n.completedRegisteringNodeTypesDefinedInConfiguration, repositoryName);
+            // Instantiate (but do not start!) the repository, store it in our map, and return it ...
+            repository = new JcrRepository(repositoryConfiguration);
+            this.repositories.put(repoName, repository);
+        } finally {
+            lock.unlock();
         }
-
         return repository;
     }
 
-    protected final String readable( Name name ) {
-        return name.getString(context.getNamespaceRegistry());
-    }
-
-    protected final String readable( Path path ) {
-        return path.getString(context.getNamespaceRegistry());
-    }
-
-    protected final String readable( Location location ) {
-        return location.getString(context.getNamespaceRegistry());
-    }
-
-    protected final String string( Object value ) {
-        return context.getValueFactories().getStringFactory().create(value);
-    }
-
-    protected final boolean isTrue( Object value ) {
-        return context.getValueFactories().getBooleanFactory().create(value);
-    }
-
-    private String stringValueOf( Node node ) {
-        return node.getLocation().getPath().getLastSegment().getString(context.getNamespaceRegistry());
-    }
-
-    private String stringValueOf( Node node,
-                                  Name propertyName ) {
-        Property property = node.getProperty(propertyName);
-        if (property == null) {
-            // Check whether the property exists with no namespace ...
-            property = node.getProperty(context.getValueFactories().getNameFactory().create(propertyName.getLocalName()));
-            if (property == null) return null;
-        }
-        if (property.isEmpty()) return null;
-        return context.getValueFactories().getStringFactory().create(property.getFirstValue());
-    }
-
-    private String[] stringValuesOf( Node node,
-                                     Name propertyName ) {
-        Property property = node.getProperty(propertyName);
-        if (property == null) {
-            // Check whether the property exists with no namespace ...
-            property = node.getProperty(context.getValueFactories().getNameFactory().create(propertyName.getLocalName()));
-            if (property == null) return null;
-        }
-        return context.getValueFactories().getStringFactory().create(property.getValuesAsArray());
-    }
-
     /**
-     * @return descriptors
-     */
-    public Map<String, Object> initDescriptors() {
-        ValueFactories factories = this.getExecutionContext().getValueFactories();
-        descriptors.put(Repository.SPEC_NAME_DESC, valueFor(factories, JcrI18n.SPEC_NAME_DESC.text()));
-        descriptors.put(Repository.SPEC_VERSION_DESC, valueFor(factories, "2.0"));
-
-        if (!descriptors.containsKey(Repository.REP_NAME_DESC)) {
-            descriptors.put(Repository.REP_NAME_DESC,
-                            valueFor(factories, JcrRepository.getBundleProperty(Repository.REP_NAME_DESC, true)));
-        }
-        if (!descriptors.containsKey(Repository.REP_VENDOR_DESC)) {
-            descriptors.put(Repository.REP_VENDOR_DESC,
-                            valueFor(factories, JcrRepository.getBundleProperty(Repository.REP_VENDOR_DESC, true)));
-        }
-        if (!descriptors.containsKey(Repository.REP_VENDOR_URL_DESC)) {
-            descriptors.put(Repository.REP_VENDOR_URL_DESC,
-                            valueFor(factories, JcrRepository.getBundleProperty(Repository.REP_VENDOR_URL_DESC, true)));
-        }
-        if (!descriptors.containsKey(Repository.REP_VERSION_DESC)) {
-            descriptors.put(Repository.REP_VERSION_DESC, valueFor(factories, getEngineVersion()));
-        }
-        return descriptors;
-    }
-
-    private static JcrValue valueFor( ValueFactories valueFactories,
-                                      int type,
-                                      Object value ) {
-        return new JcrValue(valueFactories, null, type, value);
-    }
-
-    private static JcrValue valueFor( ValueFactories valueFactories,
-                                      String value ) {
-        return valueFor(valueFactories, PropertyType.STRING, value);
-    }
-
-    /**
-     * This method is equivalent to calling {@link #shutdown()} followed by {@link #awaitTermination(long, TimeUnit)}, except that
-     * after those methods are called any remaining JCR sessions are terminated automatically. This is useful when shutting down
-     * while there are long-running JCR sessions (such as for event listeners).
+     * Update the configuration of a deployed repository by applying the set of changes to that repository's configuration. The
+     * changes can be built by obtaining the configuration for the deployed instance, obtaining an editor (which actually contains
+     * a copy of the configuration) and using it to make changes, and then getting the changes from the editor. The benefit of
+     * this approach is that the changes can be made in an isolated copy of the configuration and all of the changes applied en
+     * masse.
+     * <p>
+     * The basic outline for modifying a repository's configuration is as follows:
+     * <ol>
+     * <li>Get the current configuration for the repository that is to be changed</li>
+     * <li>Get an editor from that configuration</li>
+     * <li>Use the editor to capture and validate the changes you want to make</li>
+     * <li>Update the repository's configuration with the changes from the editor</li>
+     * </ol>
+     * Here's some code that shows how this is done:
      * 
-     * @param timeout the maximum time to wait for each component in this engine
-     * @param unit the time unit of the timeout argument
-     * @throws InterruptedException if interrupted while waiting
+     * <pre>
+     *   JcrEngine engine = ...
+     *   Repository deployed = engine.{@link JcrEngine#getRepository(String) getRepository("repo")};
+     *   RepositoryConfiguration deployedConfig = deployed.{@link JcrRepository#getConfiguration() getConfiguration()};
+     *   
+     *   // Create an editor, which is actually manipulating a copy of the configuration document ...
+     *   Editor editor = deployedConfig.{@link RepositoryConfiguration#edit() edit()};
+     *   
+     *   // Modify the copy of the configuration (we'll do something trivial here) ...
+     *   editor.setNumber(FieldName.LARGE_VALUE_SIZE_IN_BYTES,8096);
+     *   
+     *   // Get our changes and validate them ...
+     *   Changes changes = editor.{@link Editor#getChanges() getChanges()};
+     *   Results validationResults = deployedConfig.{@link RepositoryConfiguration#validate(Changes) validate(changes)};
+     *   if ( validationResults.hasErrors() ) {
+     *       // you've done something wrong with your editor
+     *   } else {
+     *       // Update the deployed repository's configuration with these changes ...
+     *       Future&lt;Boolean> future = engine.{@link JcrEngine#update(String, Changes) update("repo",changes)};
+     *           
+     *       // Optionally block while the repository instance is changed to 
+     *       // reflect the new configuration ...
+     *       JcrRepository updated = future.get();
+     *   }
+     * </pre>
+     * 
+     * </p>
+     * <p>
+     * Note that this method blocks while the changes to the configuration are validated and applied, but before the repository
+     * has changed to reflect the new configuration, which is done asynchronously. The resulting future represents that
+     * asynchronous process, and the future can be used to block until that updating is completed.
+     * </p>
+     * 
+     * @param repositoryName the name of the repository
+     * @param changes the changes that should be applied to the repository's configuration
+     * @return a future that allows the caller to block until the repository has completed all of its changes.
+     * @throws ConfigurationException if the configuration is not valid with the supplied changes
+     * @throws NoSuchRepositoryException if there is no repository with the specified name
+     * @throws RepositoryException if there is a problem updating the repository
+     * @throws IllegalArgumentException if any of the parameters are null or invalid
+     * @see #deploy(RepositoryConfiguration)
+     * @see #undeploy(String)
      */
-    public void shutdownAndAwaitTermination( long timeout,
-                                             TimeUnit unit ) throws InterruptedException {
-        shutdown();
-        awaitTermination(timeout, unit);
-        for (JcrRepositoryHolder repository : repositories.values()) {
-            if (repository != null) repository.terminateAllSessions();
-        }
-    }
+    public Future<JcrRepository> update( final String repositoryName,
+                                         final Changes changes )
+        throws ConfigurationException, NoSuchRepositoryException, RepositoryException {
 
-    protected Logger getLogger() {
-        return log;
-    }
-
-    protected Problems problems() {
-        return problems;
-    }
-
-    protected class JcrRepositoryHolder {
-        private final String repositoryName;
-        private JcrRepository repository;
-        private Future<JcrRepository> future;
-        private Throwable error;
-
-        protected JcrRepositoryHolder( String repositoryName,
-                                       Future<JcrRepository> future ) {
-            this.repositoryName = repositoryName;
-            this.future = future;
-            assert this.future != null;
-        }
-
-        public String getName() {
-            return repositoryName;
-        }
-
-        public synchronized JcrRepository getRepository() throws RepositoryException {
+        final Lock lock = this.lock.writeLock();
+        try {
+            lock.lock();
+            // Get the repository ...
+            final JcrRepository repository = this.repositories.get(repositoryName);
             if (repository == null) {
-                if (future != null) {
-                    try {
-                        // Otherwise it is still initializing, so wait for it ...
-                        this.repository = future.get();
-                    } catch (Throwable e) {
-                        error = e.getCause();
-                        String msg = JcrI18n.errorStartingRepositoryCheckConfiguration.text(repositoryName, error.getMessage());
-                        throw new RepositoryException(msg, error);
-                    } finally {
-                        this.future = null;
-                    }
-                }
-                if (repository == null) {
-                    // There is no future, but the repository could not be initialized correctly ...
-                    String msg = JcrI18n.errorStartingRepositoryCheckConfiguration.text(repositoryName, error.getMessage());
-                    throw new RepositoryException(msg, error);
-                }
+                // There is no repository with this name ...
+                throw new NoSuchRepositoryException(JcrI18n.repositoryDoesNotExist.text(repositoryName));
             }
-            return this.repository;
-        }
 
-        public synchronized void close() {
-            if (future != null) {
-                try {
-                    future.cancel(false);
-                } finally {
-                    future = null;
-                }
+            // Determine if the changes would result in a valid repository configuration ...
+            RepositoryConfiguration config = repository.getConfiguration();
+            Problems problems = config.validate(changes);
+            if (problems.hasErrors()) {
+                throw new ConfigurationException(problems, JcrI18n.repositoryConfigurationIsNotValid.text(repositoryName));
             }
-            if (repository != null) {
-                try {
-                    repository.close();
-                } finally {
-                    repository = null;
+
+            // Create an initializer that will start the repository ...
+            Future<JcrRepository> future = repositoryStarterService.submit(new Callable<JcrRepository>() {
+                @Override
+                public JcrRepository call() throws Exception {
+                    // Apply the changes to the repository ...
+                    repository.apply(changes);
+                    return repository;
                 }
-            }
-        }
+            });
 
-        public synchronized void terminateAllSessions() {
-            // only need to do this on repositories that have been used; i.e., not including just-initialized repositories
-            if (repository != null) repository.terminateAllSessions();
-        }
-
-        public synchronized void cleanUpLocks() {
-            // only need to do this on repositories that have been used; i.e., not including just-initialized repositories
-            if (repository != null) {
-                try {
-                    repository.getRepositoryLockManager().cleanUpLocks();
-                } catch (Throwable t) {
-                    getLogger().error(t, JcrI18n.errorCleaningUpLocks, repository.getRepositorySourceName());
-                }
-            }
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.lang.Object#toString()
-         */
-        @Override
-        public String toString() {
-            return repositoryName;
+            // And return the future
+            return future;
+        } finally {
+            lock.unlock();
         }
     }
 
-    protected class RepositoryInitializer implements Callable<JcrRepository> {
-        private final String repositoryName;
-        private final CountDownLatch latch;
+    /**
+     * Stop and undeploy the named {@link Repository}.
+     * 
+     * @param repositoryName the name of the deployed repository
+     * @return a future that allows the caller to block until the repository is shutdown; if the repository could not shutdown,
+     *         {@link Future#get() getting} the repository from the future will throw the exception wrapped in a
+     *         {@link ExecutionException}
+     * @throws IllegalArgumentException if the repository name is null, blank or invalid
+     * @throws NoSuchRepositoryException if there is no repository with the specified name
+     * @throws IllegalStateException if this engine was not {@link #start() started}
+     */
+    public Future<Boolean> undeploy( final String repositoryName ) throws NoSuchRepositoryException {
+        CheckArg.isNotEmpty(repositoryName, "repositoryName");
+        checkRunning();
 
-        protected RepositoryInitializer( String repositoryName ) {
-            this(repositoryName, null);
-        }
-
-        protected RepositoryInitializer( String repositoryName,
-                                         CountDownLatch latch ) {
-            this.repositoryName = repositoryName;
-            this.latch = latch;
-        }
-
-        public JcrRepository call() throws Exception {
-            JcrRepository repository = null;
-            try {
-                repository = doCreateJcrRepository(repositoryName);
-                getLogger().info(JcrI18n.completedStartingRepository, repositoryName);
-                return repository;
-            } catch (RepositoryException t) {
-                // Record this in the problems ...
-                problems().addError(t, JcrI18n.errorStartingRepositoryCheckConfiguration, repositoryName, t.getMessage());
-                throw t;
-            } catch (Throwable t) {
-                // Record this in the problems ...
-                problems().addError(t, JcrI18n.errorStartingRepositoryCheckConfiguration, repositoryName, t.getMessage());
-                String msg = JcrI18n.errorStartingRepositoryCheckConfiguration.text(repositoryName, t.getMessage());
-                throw new RepositoryException(msg, t);
-            } finally {
-                if (latch != null) latch.countDown();
+        // Now try to undeploy the repository ...
+        final Lock lock = this.lock.writeLock();
+        try {
+            lock.lock();
+            final JcrRepository repository = this.repositories.remove(repositoryName);
+            if (repository == null) {
+                // There is no repository with this name ...
+                throw new NoSuchRepositoryException(JcrI18n.repositoryDoesNotExist.text(repositoryName));
             }
+            // There is an existing repository, so start to shut it down (note that it may fail) ...
+            return repository.shutdown();
+        } finally {
+            lock.unlock();
         }
     }
-
 }

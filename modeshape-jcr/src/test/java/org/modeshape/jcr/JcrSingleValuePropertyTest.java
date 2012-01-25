@@ -31,21 +31,23 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.List;
 import javax.jcr.Binary;
+import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.PropertyType;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
+import javax.jcr.nodetype.NodeTypeManager;
+import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.nodetype.PropertyDefinition;
+import javax.jcr.nodetype.PropertyDefinitionTemplate;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.modeshape.graph.property.DateTime;
-import org.modeshape.graph.property.ValueFactory;
-import org.modeshape.jcr.nodetype.PropertyDefinitionTemplate;
+import org.modeshape.jcr.api.value.DateTime;
+import org.modeshape.jcr.value.ValueFactory;
 
-@Migrated
-public class JcrSingleValuePropertyTest extends AbstractJcrTest {
+public class JcrSingleValuePropertyTest extends MultiUseAbstractTest {
 
     private Property prop;
     private byte[] binaryValue;
@@ -67,78 +69,86 @@ public class JcrSingleValuePropertyTest extends AbstractJcrTest {
      */
     @BeforeClass
     public static void beforeAll() throws Exception {
-        AbstractJcrTest.beforeAll();
+        MultiUseAbstractTest.beforeAll();
 
+        // Import the node types and the data ...
+        registerNodeTypes("cars.cnd");
+        importContent("/", "io/cars-system-view-with-uuids.xml", ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);
+
+        // Now define a namespace we'll use in the tests ...
+        session.getWorkspace().getNamespaceRegistry().registerNamespace("acme", "http://example.com");
+
+        NodeTypeManager mgr = session.getWorkspace().getNodeTypeManager();
         // Define the node definition that will have all the different kinds of properties ...
-        JcrNodeTypeTemplate nodeType = new JcrNodeTypeTemplate(context);
+        NodeTypeTemplate nodeType = mgr.createNodeTypeTemplate();
         nodeType.setMixin(true);
         nodeType.setName("mixinWithAllPropTypes");
+        @SuppressWarnings( "unchecked" )
         List<PropertyDefinitionTemplate> propDefns = nodeType.getPropertyDefinitionTemplates();
 
         // Add a property for each type ...
-        JcrPropertyDefinitionTemplate binaryDefn = new JcrPropertyDefinitionTemplate(context);
+        PropertyDefinitionTemplate binaryDefn = mgr.createPropertyDefinitionTemplate();
         binaryDefn.setName("binaryProperty");
         binaryDefn.setRequiredType(PropertyType.BINARY);
         propDefns.add(binaryDefn);
 
-        JcrPropertyDefinitionTemplate booleanDefn = new JcrPropertyDefinitionTemplate(context);
+        PropertyDefinitionTemplate booleanDefn = mgr.createPropertyDefinitionTemplate();
         booleanDefn.setName("booleanProperty");
         booleanDefn.setRequiredType(PropertyType.BOOLEAN);
         propDefns.add(booleanDefn);
 
-        JcrPropertyDefinitionTemplate dateDefn = new JcrPropertyDefinitionTemplate(context);
+        PropertyDefinitionTemplate dateDefn = mgr.createPropertyDefinitionTemplate();
         dateDefn.setName("dateProperty");
         dateDefn.setRequiredType(PropertyType.DATE);
         propDefns.add(dateDefn);
 
-        JcrPropertyDefinitionTemplate doubleDefn = new JcrPropertyDefinitionTemplate(context);
+        PropertyDefinitionTemplate doubleDefn = mgr.createPropertyDefinitionTemplate();
         doubleDefn.setName("doubleProperty");
         doubleDefn.setRequiredType(PropertyType.DOUBLE);
         propDefns.add(doubleDefn);
 
-        JcrPropertyDefinitionTemplate longDefn = new JcrPropertyDefinitionTemplate(context);
+        PropertyDefinitionTemplate longDefn = mgr.createPropertyDefinitionTemplate();
         longDefn.setName("longProperty");
         longDefn.setRequiredType(PropertyType.LONG);
         propDefns.add(longDefn);
 
-        JcrPropertyDefinitionTemplate nameDefn = new JcrPropertyDefinitionTemplate(context);
+        PropertyDefinitionTemplate nameDefn = mgr.createPropertyDefinitionTemplate();
         nameDefn.setName("nameProperty");
         nameDefn.setRequiredType(PropertyType.NAME);
         propDefns.add(nameDefn);
 
-        JcrPropertyDefinitionTemplate pathDefn = new JcrPropertyDefinitionTemplate(context);
+        PropertyDefinitionTemplate pathDefn = mgr.createPropertyDefinitionTemplate();
         pathDefn.setName("pathProperty");
         pathDefn.setRequiredType(PropertyType.PATH);
         propDefns.add(pathDefn);
 
-        JcrPropertyDefinitionTemplate refDefn = new JcrPropertyDefinitionTemplate(context);
+        PropertyDefinitionTemplate refDefn = mgr.createPropertyDefinitionTemplate();
         refDefn.setName("referenceProperty");
         refDefn.setRequiredType(PropertyType.REFERENCE);
         propDefns.add(refDefn);
 
-        JcrPropertyDefinitionTemplate stringDefn = new JcrPropertyDefinitionTemplate(context);
+        PropertyDefinitionTemplate stringDefn = mgr.createPropertyDefinitionTemplate();
         stringDefn.setName("stringProperty");
         stringDefn.setRequiredType(PropertyType.STRING);
         propDefns.add(stringDefn);
 
-        JcrPropertyDefinitionTemplate undefinedDefn = new JcrPropertyDefinitionTemplate(context);
+        PropertyDefinitionTemplate undefinedDefn = mgr.createPropertyDefinitionTemplate();
         undefinedDefn.setName("undefinedProperty");
         undefinedDefn.setRequiredType(PropertyType.UNDEFINED);
         propDefns.add(undefinedDefn);
 
         // Add the node type ...
-        rntm.registerNodeType(nodeType);
+        mgr.registerNodeType(nodeType, true);
     }
 
     @Override
     @Before
     public void beforeEach() throws Exception {
         super.beforeEach();
-        context.getNamespaceRegistry().register("acme", "http://example.com");
-        stringFactory = context.getValueFactories().getStringFactory();
+        stringFactory = session.stringFactory();
 
         binaryValue = "This is a binary value".getBytes();
-        dateValue = context.getValueFactories().getDateFactory().create();
+        dateValue = session.dateFactory().create();
         doubleValue = 3.14159d;
         longValue = 100L;
         booleanValue = true;
@@ -147,10 +157,10 @@ public class JcrSingleValuePropertyTest extends AbstractJcrTest {
         pathValue = "/Cars/Hybrid/Toyota Highlander/acme:SomethingElse";
 
         // Add the mixin to the 'Cars' node ...
-        cars = cache.findJcrNode(null, path("/Cars"));
+        cars = session.getNode("/Cars");
         cars.addMixin("mixinWithAllPropTypes");
 
-        altima = cache.findJcrNode(null, path("/Cars/Hybrid/Nissan Altima"));
+        altima = session.getNode("/Cars/Hybrid/Nissan Altima");
         altima.addMixin("mix:referenceable");
 
         // Set each property ...
@@ -200,8 +210,8 @@ public class JcrSingleValuePropertyTest extends AbstractJcrTest {
         prop = cars.getProperty("referenceProperty");
         assertThat(prop.getNode(), is((Node)altima));
         assertThat(prop.getType(), is(PropertyType.REFERENCE));
-        assertThat(prop.getString(), is(altima.getIdentifier()));
-        assertThat(prop.getLength(), is((long)altima.getIdentifier().length()));
+        assertThat(prop.getString(), is(altima.key().toString()));
+        assertThat(prop.getLength(), is((long)altima.key().toString().length()));
         checkValue(prop);
     }
 
@@ -278,7 +288,7 @@ public class JcrSingleValuePropertyTest extends AbstractJcrTest {
         assertThat(prop.getString(), is(nameValue));
         assertThat(prop.getLength(), is((long)nameValue.length()));
         // Change the namespace registry ...
-        context.getNamespaceRegistry().register("acme2", "http://example.com");
+        session.setNamespacePrefix("acme2", "http://example.com");
         assertThat(prop.getString(), is("acme2:SomeName"));
         checkValue(prop);
     }
@@ -289,7 +299,7 @@ public class JcrSingleValuePropertyTest extends AbstractJcrTest {
         assertThat(prop.getType(), is(PropertyType.PATH));
         assertThat(prop.getString(), is(pathValue));
         // Change the namespace registry ...
-        context.getNamespaceRegistry().register("acme2", "http://example.com");
+        session.setNamespacePrefix("acme2", "http://example.com");
         assertThat(prop.getString(), is("/Cars/Hybrid/Toyota Highlander/acme2:SomethingElse"));
         checkValue(prop);
     }

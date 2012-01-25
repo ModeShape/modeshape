@@ -26,93 +26,23 @@ package org.modeshape.jcr;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import java.io.PrintStream;
-import java.util.Collections;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
-import javax.jcr.SimpleCredentials;
-import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
-import org.mockito.MockitoAnnotations;
 import org.modeshape.common.statistic.Stopwatch;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.connector.RepositoryConnection;
-import org.modeshape.graph.connector.RepositoryConnectionFactory;
-import org.modeshape.graph.connector.RepositorySourceException;
-import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
-import org.modeshape.graph.observe.MockObservable;
-import org.modeshape.graph.property.PathFactory;
-import org.modeshape.jcr.JcrRepository.Option;
 
 /**
  * Support class for performance testing of various operations over subtrees of the content graph
  */
-@Migrated
-public abstract class AbstractJcrAccessTest {
 
-    private InMemoryRepositorySource source;
-    private JcrSession session;
-    private JcrRepository repository;
+public abstract class AbstractJcrAccessTest extends SingleUseAbstractTest {
 
-    @BeforeClass
-    public static void beforeAll() {
-        // Initialize the JAAS configuration to allow for an admin login later
-        JaasTestUtil.initJaas("security/jaas.conf.xml");
-    }
-
-    @AfterClass
-    public static void afterAll() {
-        JaasTestUtil.releaseJaas();
-    }
-
+    @Override
     @Before
     public void beforeEach() throws Exception {
-        MockitoAnnotations.initMocks(this);
-
-        String workspaceName = "workspace1";
-
-        // Set up the source ...
-        source = new InMemoryRepositorySource();
-        source.setName(workspaceName);
-        source.setDefaultWorkspaceName(workspaceName);
-
-        // Set up the execution context ...
-        ExecutionContext context = new ExecutionContext();
-        // Register the test namespace
-        context.getNamespaceRegistry().register(TestLexicon.Namespace.PREFIX, TestLexicon.Namespace.URI);
-
-        // Stub out the connection factory ...
-        RepositoryConnectionFactory connectionFactory = new RepositoryConnectionFactory() {
-            /**
-             * {@inheritDoc}
-             * 
-             * @see org.modeshape.graph.connector.RepositoryConnectionFactory#createConnection(java.lang.String)
-             */
-            @SuppressWarnings( "synthetic-access" )
-            public RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException {
-                return source.getConnection();
-            }
-        };
-
-        Map<Option, String> options = Collections.emptyMap();
-        repository = new JcrRepository(context, connectionFactory, "unused", new MockObservable(), null, null, options, null,
-                                       null);
-
-        session = (JcrSession)repository.login(new SimpleCredentials("superuser", "superuser".toCharArray()));
-    }
-
-    @After
-    public void after() throws Exception {
-        if (session != null && session.isLive()) {
-            session.logout();
-        }
-    }
-
-    protected JcrSession session() {
-        return this.session;
+        super.beforeEach();
+        session.getWorkspace().getNamespaceRegistry().registerNamespace(TestLexicon.Namespace.PREFIX, TestLexicon.Namespace.URI);
     }
 
     private String getRandomString( int length ) {
@@ -168,8 +98,7 @@ public abstract class AbstractJcrAccessTest {
         if (output != null) output.println(description + " (" + totalNumber + " nodes):");
         long totalNumberCreated = 0;
 
-        PathFactory pathFactory = session.getExecutionContext().getValueFactories().getPathFactory();
-        Node parentNode = session.getNode(pathFactory.create(initialPath));
+        Node parentNode = session.getNode(initialPath);
 
         if (stopwatch != null) stopwatch.start();
 
@@ -209,8 +138,7 @@ public abstract class AbstractJcrAccessTest {
         if (output != null) output.println(description + " (" + totalNumber + " nodes):");
         long totalNumberTraversed = 0;
 
-        PathFactory pathFactory = session.getExecutionContext().getValueFactories().getPathFactory();
-        Node parentNode = session.getNode(pathFactory.create(initialPath));
+        Node parentNode = session.getNode(initialPath);
 
         if (stopwatch != null) stopwatch.start();
 

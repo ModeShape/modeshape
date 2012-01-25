@@ -24,14 +24,13 @@
 package org.modeshape.jcr;
 
 import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.nodetype.NodeDefinitionTemplate;
 import javax.jcr.nodetype.NodeType;
 import org.modeshape.common.annotation.NotThreadSafe;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.NameFactory;
-import org.modeshape.graph.property.NamespaceRegistry;
-import org.modeshape.graph.property.ValueFormatException;
-import org.modeshape.jcr.nodetype.NodeDefinitionTemplate;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.NameFactory;
+import org.modeshape.jcr.value.NamespaceRegistry;
+import org.modeshape.jcr.value.ValueFormatException;
 
 /**
  * ModeShape implementation of the JCR 2 NodeDefinitionTemplate interface
@@ -61,24 +60,7 @@ class JcrNodeDefinitionTemplate extends JcrItemDefinitionTemplate implements Nod
         return context == super.getContext() ? this : new JcrNodeDefinitionTemplate(this, context);
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Passing a null or blank name is equivalent to "unsetting" (or removing) the primary item name.
-     * </p>
-     * 
-     * @see org.modeshape.jcr.nodetype.NodeDefinitionTemplate#setDefaultPrimaryType(String)
-     */
-    public void setDefaultPrimaryType( String defaultPrimaryType ) throws ConstraintViolationException {
-        setDefaultPrimaryTypeName(defaultPrimaryType);
-    }
-
-    /**
-     * Set the name of the primary type that should be used by default when creating children using this node definition
-     * 
-     * @param defaultPrimaryType the default primary type for this child node, or null if there is to be no default primary type
-     * @throws ConstraintViolationException
-     */
+    @Override
     public void setDefaultPrimaryTypeName( String defaultPrimaryType ) throws ConstraintViolationException {
         if (defaultPrimaryType == null || defaultPrimaryType.trim().length() == 0) {
             this.defaultPrimaryType = null;
@@ -91,22 +73,7 @@ class JcrNodeDefinitionTemplate extends JcrItemDefinitionTemplate implements Nod
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.nodetype.NodeDefinitionTemplate#setRequiredPrimaryTypes(java.lang.String[])
-     * @deprecated As of ModeShape 2.0, use {@link #setRequiredPrimaryTypeNames(String[])} instead
-     */
-    @SuppressWarnings( "dep-ann" )
-    public void setRequiredPrimaryTypes( String[] requiredPrimaryTypes ) throws ConstraintViolationException {
-        setRequiredPrimaryTypeNames(requiredPrimaryTypes);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see NodeDefinitionTemplate#setRequiredPrimaryTypeNames(String[])
-     */
+    @Override
     public void setRequiredPrimaryTypeNames( String[] requiredPrimaryTypes ) throws ConstraintViolationException {
         if (requiredPrimaryTypes == null) {
             throw new ConstraintViolationException(JcrI18n.badNodeTypeName.text("requiredPrimaryTypes"));
@@ -125,53 +92,34 @@ class JcrNodeDefinitionTemplate extends JcrItemDefinitionTemplate implements Nod
         this.requiredPrimaryTypes = rpts;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.nodetype.NodeDefinitionTemplate#setSameNameSiblings(boolean)
-     */
+    @Override
     public void setSameNameSiblings( boolean allowSameNameSiblings ) {
         this.allowSameNameSiblings = allowSameNameSiblings;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.NodeDefinition#allowsSameNameSiblings()
-     */
+    @Override
     public boolean allowsSameNameSiblings() {
         return allowSameNameSiblings;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.NodeDefinition#getDefaultPrimaryType()
-     */
+    @Override
     public NodeType getDefaultPrimaryType() {
         return null;
     }
 
+    @Override
     public String getDefaultPrimaryTypeName() {
         if (defaultPrimaryType == null) return null;
         return defaultPrimaryType.getString(getContext().getNamespaceRegistry());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.NodeDefinition#getRequiredPrimaryTypes()
-     */
+    @Override
     public NodeType[] getRequiredPrimaryTypes() {
         // This method should return null since it's not attached to a registered node type ...
         return null;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.NodeDefinition#getRequiredPrimaryTypeNames()
-     */
+    @Override
     public String[] getRequiredPrimaryTypeNames() {
         if (requiredPrimaryTypes == null) return null;
 
@@ -183,51 +131,26 @@ class JcrNodeDefinitionTemplate extends JcrItemDefinitionTemplate implements Nod
         return rpts;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.NodeDefinitionTemplate#setName(java.lang.String)
-     */
     @Override
     public void setName( String name ) throws ConstraintViolationException {
         super.setName(name);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.NodeDefinitionTemplate#setAutoCreated(boolean)
-     */
     @Override
     public void setAutoCreated( boolean autoCreated ) {
         super.setAutoCreated(autoCreated);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.NodeDefinitionTemplate#setMandatory(boolean)
-     */
     @Override
     public void setMandatory( boolean mandatory ) {
         super.setMandatory(mandatory);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.NodeDefinitionTemplate#setOnParentVersion(int)
-     */
     @Override
     public void setOnParentVersion( int onParentVersion ) {
         super.setOnParentVersion(onParentVersion);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.NodeDefinitionTemplate#setProtected(boolean)
-     */
     @Override
     public void setProtected( boolean isProtected ) {
         super.setProtected(isProtected);

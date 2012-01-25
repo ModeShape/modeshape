@@ -30,7 +30,6 @@ import java.util.UUID;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
-import javax.jcr.Property;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
@@ -39,245 +38,211 @@ import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.version.VersionException;
 import org.modeshape.common.annotation.NotThreadSafe;
-import org.modeshape.graph.Location;
-import org.modeshape.graph.property.Binary;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.Path;
-import org.modeshape.graph.property.ValueFactories;
+import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.value.Binary;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.Path;
+import org.modeshape.jcr.value.Property;
+import org.modeshape.jcr.value.Reference;
+import org.modeshape.jcr.value.ValueFactories;
+import org.modeshape.jcr.value.basic.NodeKeyReference;
+import org.modeshape.jcr.value.basic.UuidReference;
 
 /**
- * ModeShape implementation of a {@link Property JCR Property} with a single value.
+ * ModeShape implementation of a {@link javax.jcr.Property JCR Property} with a single value.
  * 
  * @see JcrMultiValueProperty
  */
 @NotThreadSafe
 final class JcrSingleValueProperty extends AbstractJcrProperty {
 
-    JcrSingleValueProperty( SessionCache cache,
-                            AbstractJcrNode node,
-                            Name name ) {
-        super(cache, node, name);
+    JcrSingleValueProperty( AbstractJcrNode node,
+                            Name name,
+                            int propertyType ) {
+        super(node, name, propertyType);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.AbstractJcrProperty#isMultiple()
-     */
     @Override
     public boolean isMultiple() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#getBoolean()
-     */
+    @Override
     public boolean getBoolean() throws RepositoryException {
         checkSession();
         try {
             return context().getValueFactories().getBooleanFactory().create(property().getFirstValue());
-        } catch (org.modeshape.graph.property.ValueFormatException e) {
+        } catch (org.modeshape.jcr.value.ValueFormatException e) {
             throw new ValueFormatException(e.getMessage(), e);
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#getDate()
-     */
+    @Override
     public Calendar getDate() throws RepositoryException {
         checkSession();
         try {
             return context().getValueFactories().getDateFactory().create(property().getFirstValue()).toCalendar();
-        } catch (org.modeshape.graph.property.ValueFormatException e) {
+        } catch (org.modeshape.jcr.value.ValueFormatException e) {
             throw new ValueFormatException(e.getMessage(), e);
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#getDouble()
-     */
+    @Override
     public double getDouble() throws RepositoryException {
         checkSession();
         try {
             return context().getValueFactories().getDoubleFactory().create(property().getFirstValue());
-        } catch (org.modeshape.graph.property.ValueFormatException e) {
+        } catch (org.modeshape.jcr.value.ValueFormatException e) {
             throw new ValueFormatException(e.getMessage(), e);
         }
     }
 
+    @Override
     public BigDecimal getDecimal() throws ValueFormatException, RepositoryException {
         checkSession();
         try {
             return context().getValueFactories().getDecimalFactory().create(property().getFirstValue());
-        } catch (org.modeshape.graph.property.ValueFormatException e) {
+        } catch (org.modeshape.jcr.value.ValueFormatException e) {
             throw new ValueFormatException(e.getMessage(), e);
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#getLength()
-     */
+    @Override
     public long getLength() throws RepositoryException {
         checkSession();
         return createValue(property().getFirstValue()).getLength();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws ValueFormatException always
-     * @see javax.jcr.Property#getLengths()
-     */
+    @Override
     public long[] getLengths() throws ValueFormatException {
         throw new ValueFormatException(JcrI18n.invalidMethodForSingleValuedProperty.text());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#getLong()
-     */
+    @Override
     public long getLong() throws RepositoryException {
         checkSession();
         try {
             return context().getValueFactories().getLongFactory().create(property().getFirstValue());
-        } catch (org.modeshape.graph.property.ValueFormatException e) {
+        } catch (org.modeshape.jcr.value.ValueFormatException e) {
             throw new ValueFormatException(e.getMessage(), e);
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#getNode()
-     */
+    @Override
     public final Node getNode() throws ItemNotFoundException, ValueFormatException, RepositoryException {
         checkSession();
         ValueFactories factories = context().getValueFactories();
         Object value = property().getFirstValue();
         try {
-            try {
-                // REFERENCE and WEAKREFERENCE values will be convertable to UUIDs ...
-                UUID uuid = factories.getUuidFactory().create(value);
-                return session().getNodeByIdentifier(uuid.toString());
-            } catch (org.modeshape.graph.property.ValueFormatException e) {
-                // It's not a UUID, so just continue ...
+            if (value instanceof Reference) {
+                NodeKey key = null;
+                if (value instanceof NodeKeyReference) {
+                    // REFERENCE and WEAKREFERENCE values are node keys ...
+                    key = ((NodeKeyReference)value).getNodeKey();
+                } else if (value instanceof UuidReference) {
+                    // REFERENCE and WEAKREFERENCE values should be node keys, so create a key from the
+                    // supplied UUID and this node's key ...
+                    UUID uuid = ((UuidReference)value).getUuid();
+                    key = getParent().key().withId(uuid.toString());
+                } else {
+                    assert false : "Unknown type of Reference value";
+                }
+                return session().node(key, null);
             }
             // STRING, PATH and NAME values will be convertable to a graph Path object ...
             Path path = factories.getPathFactory().create(value);
             // We're throwing a PathNotFoundException here because that's what the TCK unit tests expect.
             // See https://issues.apache.org/jira/browse/JCR-2648 for details
-            return path.isAbsolute() ? session().getNode(path) : getParent().getNode(path);
-        } catch (org.modeshape.graph.property.ValueFormatException e) {
+            return path.isAbsolute() ? session().node(path) : session().node(getParent().node(), path);
+        } catch (org.modeshape.jcr.value.ValueFormatException e) {
             throw new ValueFormatException(e.getMessage(), e);
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#getProperty()
-     */
-    public Property getProperty() throws ItemNotFoundException, ValueFormatException, RepositoryException {
+    @Override
+    public AbstractJcrProperty getProperty() throws ItemNotFoundException, ValueFormatException, RepositoryException {
         checkSession();
         Path path = null;
         try {
             // Convert this property to a PATH to a property ...
-            path = context().getValueFactories().getPathFactory().create(property().getFirstValue());
-        } catch (org.modeshape.graph.property.ValueFormatException e) {
+            path = session().pathFactory().create(property().getFirstValue());
+        } catch (org.modeshape.jcr.value.ValueFormatException e) {
             throw new ValueFormatException(e.getMessage(), e);
         }
         // Find the parent node of the referenced property ...
         AbstractJcrNode referencedNode = null;
-        Path nodePath = path.getParent();
         if (path.isAbsolute()) {
-            referencedNode = cache.findJcrNode(Location.create(nodePath));
+            referencedNode = session().node(path);
         } else {
-            referencedNode = cache.findJcrNode(node.internalId(), node.path(), nodePath);
+            referencedNode = session().node(cachedNode(), path);
         }
         // Now get the property from the referenced node ...
         Name propertyName = path.getLastSegment().getName();
         if (!referencedNode.hasProperty(propertyName)) {
             String readablePath = path.getString(namespaces());
-            String workspaceName = session().workspace().getName();
+            String workspaceName = session().workspaceName();
             String msg = null;
             if (path.isAbsolute()) {
                 msg = JcrI18n.pathNotFound.text(readablePath, workspaceName);
             } else {
-                msg = JcrI18n.pathNotFoundRelativeTo.text(readablePath, node.getPath(), workspaceName);
+                msg = JcrI18n.pathNotFoundRelativeTo.text(readablePath, getParent().getPath(), workspaceName);
             }
             throw new PathNotFoundException(msg);
         }
         return referencedNode.getProperty(propertyName);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#getStream()
-     */
+    @Override
     public InputStream getStream() throws RepositoryException {
         checkSession();
         try {
             Binary binary = context().getValueFactories().getBinaryFactory().create(property().getFirstValue());
             return new SelfClosingInputStream(binary);
-        } catch (org.modeshape.graph.property.ValueFormatException e) {
+        } catch (org.modeshape.jcr.value.ValueFormatException e) {
             throw new ValueFormatException(e.getMessage(), e);
         }
     }
 
+    @Override
     public javax.jcr.Binary getBinary() throws ValueFormatException, RepositoryException {
         checkSession();
         try {
             Binary binary = context().getValueFactories().getBinaryFactory().create(property().getFirstValue());
-            return new JcrBinary(binary);
-        } catch (org.modeshape.graph.property.ValueFormatException e) {
+            return binary;
+        } catch (org.modeshape.jcr.value.ValueFormatException e) {
             throw new ValueFormatException(e.getMessage(), e);
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#getString()
-     */
+    @Override
     public String getString() throws RepositoryException {
         checkSession();
         try {
             return context().getValueFactories().getStringFactory().create(property().getFirstValue());
-        } catch (org.modeshape.graph.property.ValueFormatException e) {
+        } catch (org.modeshape.jcr.value.ValueFormatException e) {
             throw new ValueFormatException(e.getMessage(), e);
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#getValue()
-     */
-    public Value getValue() throws RepositoryException {
+    @Override
+    public JcrValue getValue() throws RepositoryException {
         checkSession();
         return createValue(property().getFirstValue());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#setValue(javax.jcr.Value)
-     */
+    @Override
     public void setValue( Value value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
         checkSession();
         checkForLock();
+        checkForCheckedOut();
         JcrValue jcrValue = null;
+
+        if (value == null) {
+            // Then we're to delete the property ...
+            mutable().removeProperty(sessionCache(), name());
+            return;
+        }
 
         if (value instanceof JcrValue) {
             jcrValue = (JcrValue)value;
@@ -286,14 +251,9 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
             }
 
             // Force a conversion as per SetValueValueFormatExceptionTest in JR TCK
-            jcrValue.asType(this.getType());
-
-            editor().setProperty(name(), jcrValue);
-            return;
-        }
-        if (value == null) {
-            // Then we're to delete the property ...
-            editor().removeProperty(name());
+            Object literal = jcrValue.asType(this.getType()).value();
+            Property newProp = session().propertyFactory().create(name(), literal);
+            mutable().setProperty(sessionCache(), newProp);
             return;
         }
 
@@ -338,107 +298,102 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
         assert jcrValue != null;
 
-        checkSession();
-        checkForLock();
         if (jcrValue.value() == null) {
             throw new ValueFormatException(JcrI18n.valueMayNotContainNull.text(getName()));
         }
 
-        editor().setProperty(name(), jcrValue);
+        // Force a conversion as per SetValueValueFormatExceptionTest in JR TCK
+        Object literal = jcrValue.asType(this.getType()).value();
+        Property newProp = session().propertyFactory().create(name(), literal);
+        mutable().setProperty(sessionCache(), newProp);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#setValue(java.lang.String)
-     */
+    @Override
     public void setValue( String value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
         if (value == null) {
             this.remove();
             return;
         }
+        checkSession();
+        checkForLock();
+        checkForCheckedOut();
         setValue(createValue(value, PropertyType.STRING).asType(this.getType()));
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#setValue(java.io.InputStream)
-     */
+    @Override
     public void setValue( InputStream value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
         if (value == null) {
             this.remove();
             return;
         }
+        checkSession();
+        checkForLock();
+        checkForCheckedOut();
         setValue(createValue(context().getValueFactories().getBinaryFactory().create(value), PropertyType.BINARY).asType(this.getType()));
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#setValue(long)
-     */
+    @Override
     public void setValue( long value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        checkSession();
+        checkForLock();
+        checkForCheckedOut();
         setValue(createValue(new Long(value), PropertyType.LONG).asType(this.getType()));
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#setValue(double)
-     */
+    @Override
     public void setValue( double value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        checkSession();
+        checkForLock();
+        checkForCheckedOut();
         setValue(createValue(new Double(value), PropertyType.DOUBLE).asType(this.getType()));
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#setValue(java.util.Calendar)
-     */
+    @Override
     public void setValue( Calendar value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
         if (value == null) {
             this.remove();
             return;
         }
+        checkSession();
+        checkForLock();
+        checkForCheckedOut();
         setValue(createValue(context().getValueFactories().getDateFactory().create(value), PropertyType.DATE).asType(this.getType()));
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#setValue(boolean)
-     */
+    @Override
     public void setValue( boolean value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        checkSession();
+        checkForLock();
+        checkForCheckedOut();
         setValue(createValue(new Boolean(value), PropertyType.BOOLEAN).asType(this.getType()));
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#setValue(javax.jcr.Node)
-     */
+    @Override
     public void setValue( Node value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
         if (value == null) {
             this.remove();
             return;
         }
+        checkSession();
+        checkForLock();
+        checkForCheckedOut();
 
         if (!value.isNodeType(JcrMixLexicon.REFERENCEABLE.getString(this.context().getNamespaceRegistry()))) {
             throw new ValueFormatException(JcrI18n.nodeNotReferenceable.text());
         }
 
-        String uuid = value.getIdentifier();
-        setValue(createValue(uuid, PropertyType.REFERENCE).asType(this.getType()));
+        String id = value.getIdentifier();
+        setValue(createValue(id, PropertyType.REFERENCE).asType(this.getType()));
     }
 
+    @Override
     public void setValue( javax.jcr.Binary value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
         // Get the Graph Binary object out of the value ...
@@ -446,49 +401,44 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
             this.remove();
             return;
         }
+        checkSession();
+        checkForLock();
+        checkForCheckedOut();
+
         Binary binary = null;
-        if (value instanceof JcrBinary) {
-            binary = ((JcrBinary)value).binary();
+        if (value instanceof Binary) {
+            binary = (Binary)value;
         } else {
             // Otherwise, this isn't our instance, so copy the data ...
-            binary = session().getExecutionContext().getValueFactories().getBinaryFactory().create(getStream(), value.getSize());
+            binary = context().getValueFactories().getBinaryFactory().create(value.getStream());
         }
         setValue(createValue(binary, PropertyType.BINARY).asType(this.getType()));
     }
 
+    @Override
     public void setValue( BigDecimal value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
         if (value == null) {
             this.remove();
             return;
         }
+        checkSession();
+        checkForLock();
+        checkForCheckedOut();
         setValue(createValue(value, PropertyType.DECIMAL).asType(this.getType()));
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws ValueFormatException always
-     * @see javax.jcr.Property#getValues()
-     */
-    public Value[] getValues() throws ValueFormatException {
+    @Override
+    public JcrValue[] getValues() throws ValueFormatException {
         throw new ValueFormatException(JcrI18n.invalidMethodForSingleValuedProperty.text());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#setValue(javax.jcr.Value[])
-     */
+    @Override
     public void setValue( Value[] values ) throws ValueFormatException {
         throw new ValueFormatException(JcrI18n.invalidMethodForSingleValuedProperty.text());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#setValue(java.lang.String[])
-     */
+    @Override
     public void setValue( String[] values ) throws ValueFormatException {
         throw new ValueFormatException(JcrI18n.invalidMethodForSingleValuedProperty.text());
     }

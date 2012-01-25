@@ -23,13 +23,12 @@
  */
 package org.modeshape.jcr;
 
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.basic.BasicName;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.basic.BasicName;
 
 /**
  * Namespace and names for ModeShape testing.
  */
-@Migrated
 public class TestLexicon {
 
     public static class Namespace {

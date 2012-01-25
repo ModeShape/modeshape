@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.modeshape</groupId>
+    <artifactId>modeshape-parent</artifactId>
+    <version>3.0-SNAPSHOT</version>
+    <relativePath>../../modeshape-parent</relativePath>
+  </parent>
+  <!-- The groupId and version values are inherited from parent -->
+  <artifactId>modeshape-unit-test</artifactId>
+  <packaging>jar</packaging>
+  <name>ModeShape Unit Test Framework</name>
+  <description>A simple framework for creating unit tests for ModeShape and which automatically brings in many libraries for testing ModeShape.</description>
+  <url>http://www.modeshape.org</url>
+  <!--
+    Define the dependencies. Note that all version and scopes default to those defined in the dependencyManagement section of the
+    parent pom.
+  -->
+  <dependencies>
+    <dependency>
+      <groupId>javax.jcr</groupId>
+      <artifactId>jcr</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.modeshape</groupId>
+      <artifactId>modeshape-jcr-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.modeshape</groupId>
+      <artifactId>modeshape-common</artifactId>
+    </dependency>   
+    <dependency>
+    	<groupId>org.modeshape</groupId>
+    	<artifactId>modeshape-jcr</artifactId>
+    </dependency>
+    <!-- 
+    Dependencies for all the test-related JARs, brought in automatically
+    -->
+    <dependency>
+      <groupId>org.modeshape</groupId>
+      <artifactId>modeshape-common</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+    </dependency>
+    <dependency>
+      <groupId>org.modeshape</groupId>
+      <artifactId>modeshape-jcr</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+    </dependency>
+    <dependency>
+      <groupId>org.infinispan</groupId>
+      <artifactId>infinispan-core</artifactId>
+      <version>${infinispan.version}</version>
+      <type>test-jar</type>
+    </dependency>
+    <dependency>
+      <groupId>org.modeshape</groupId>
+      <artifactId>modeshape-jdbc-local</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest-library</artifactId>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-all</artifactId>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+      <scope>runtime</scope>
+    </dependency>   
+
+    <!-- 
+    Bring in the more popular Infinispan CacheLoader libraries, plus the H2 database.
+    These are commonly needed when running ModeShape with more typical configurations.
+    However, simply use an "<exclusions>" section to intensionally exclude any of these
+    libraries.
+    -->
+    <dependency>
+       <groupId>org.infinispan</groupId>
+       <artifactId>infinispan-cachestore-bdbje</artifactId>
+       <version>${infinispan.version}</version>
+       <scope>test</scope>
+    </dependency>
+    <dependency>
+       <groupId>org.infinispan</groupId>
+       <artifactId>infinispan-cachestore-jdbm</artifactId>
+       <version>${infinispan.version}</version>
+       <scope>test</scope>
+    </dependency>
+    <dependency>
+       <groupId>org.infinispan</groupId>
+       <artifactId>infinispan-cachestore-jdbc</artifactId>
+       <version>${infinispan.version}</version>
+       <scope>test</scope>
+    </dependency>
+    <dependency>
+       <groupId>com.h2database</groupId>
+       <artifactId>h2</artifactId>
+       <version>1.1.117</version>
+       <scope>test</scope>
+    </dependency>
+
+  </dependencies>
+  <build>
+    <plugins>
+			<!--
+				Adding OSGI metadata to the JAR without changing the packaging type.
+			-->
+			<plugin>
+				<artifactId>maven-jar-plugin</artifactId>
+				<configuration>
+					<archive>
+						<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+					</archive>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.felix</groupId>
+				<artifactId>maven-bundle-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>bundle-manifest</id>
+						<phase>process-classes</phase>
+						<goals>
+							<goal>manifest</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+    </plugins>
+  </build>
+</project>

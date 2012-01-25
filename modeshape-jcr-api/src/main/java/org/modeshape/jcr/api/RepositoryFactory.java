@@ -29,7 +29,13 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Repository;
 
-public interface RepositoryFactory extends javax.jcr.RepositoryFactory {
+public interface RepositoryFactory extends javax.jcr.RepositoryFactory, Repositories {
+
+    /** The name of the key for the ModeShape JCR URL in the parameter map */
+    public static final String URL = "org.modeshape.jcr.URL";
+
+    /** The name of the URL parameter that specifies the repository name. */
+    public static final String REPOSITORY_NAME_PARAM = "repositoryName";
 
     /**
      * Shutdown this engine to stop all repositories created by calls to {@link #getRepository(Map)}, terminate any ongoing
@@ -79,17 +85,4 @@ public interface RepositoryFactory extends javax.jcr.RepositoryFactory {
      */
     public boolean shutdown( long timeout,
                              TimeUnit unit ) throws InterruptedException;
-
-    /**
-     * Returns the {@link Repositories} instance referenced by the {@code jcrUrl} parameter.
-     * <p>
-     * If the {@code jcrUrl} parameter contains a valid, ModeShape-compatible URL for a {@code Repositories} instance that has not
-     * yet been started, that {@code Repositories instance} will be created and started as a side effect of this method.
-     * </p>
-     * 
-     * @param jcrUrl the ModeShape-compatible URL that specifies the {@code JcrEngine} to be used; may not be null
-     * @return the {@code Repositories} instance specified by the given url if one exists, otherwise {@code null}
-     */
-    public Repositories getRepositories( String jcrUrl );
-
 }

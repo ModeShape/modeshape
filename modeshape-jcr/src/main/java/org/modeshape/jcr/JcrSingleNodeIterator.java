@@ -28,12 +28,14 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
 
 /**
  * A concrete {@link NodeIterator} that delegates to the supplied iterator.
  */
-class JcrSingleNodeIterator implements NodeIterator {
+@NotThreadSafe
+final class JcrSingleNodeIterator implements NodeIterator {
 
     private final long size;
     private final Iterator<AbstractJcrNode> iterator;
@@ -44,67 +46,39 @@ class JcrSingleNodeIterator implements NodeIterator {
         this.size = 1;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.NodeIterator#nextNode()
-     */
+    @Override
     public Node nextNode() {
         return this.iterator.next();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.RangeIterator#getPosition()
-     */
+    @Override
     public long getPosition() {
         return 0;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.RangeIterator#getSize()
-     */
+    @Override
     public long getSize() {
         return size;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.RangeIterator#skip(long)
-     */
+    @Override
     public void skip( long skipNum ) {
         CheckArg.isNonNegative(skipNum, "skipNum");
         if (skipNum == 0L) return;
         throw new NoSuchElementException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.Iterator#hasNext()
-     */
+    @Override
     public boolean hasNext() {
         return iterator.hasNext();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.Iterator#next()
-     */
+    @Override
     public Object next() {
         return iterator.next();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.Iterator#remove()
-     */
+    @Override
     public void remove() {
         throw new UnsupportedOperationException();
     }

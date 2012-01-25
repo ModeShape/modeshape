@@ -4,13 +4,13 @@
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
  * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors. 
+ * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- *
+ * 
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -23,148 +23,75 @@
  */
 package org.modeshape.jcr;
 
-import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.ConstraintViolationException;
-import org.modeshape.common.annotation.Immutable;
-import org.modeshape.graph.Location;
-import org.modeshape.graph.session.GraphSession.NodeId;
+import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.value.Path;
 
 /**
- * A concrete implementation of a root {@link Node JCR Node}.
- * 
- * @see JcrNode
- * @see JcrSharedNode
+ * The {@link Node} implementation for the root node.
  */
-@Immutable
 final class JcrRootNode extends AbstractJcrNode {
 
-    JcrRootNode( SessionCache cache,
-                 NodeId nodeId,
-                 Location location ) {
-        super(cache, nodeId, location);
+    private final String NAME_STR = "";
+    private final String PATH = "/";
+
+    private NodeDefinitionId rootNodeDefnId;
+
+    protected JcrRootNode( JcrSession session,
+                           NodeKey rootNodeKey ) {
+        super(session, rootNodeKey);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.AbstractJcrNode#isRoot()
-     */
     @Override
-    boolean isRoot() {
+    NodeDefinitionId nodeDefinitionId() throws RepositoryException {
+        if (rootNodeDefnId == null) {
+            // Idempotent so we can do this without a lock ...
+            rootNodeDefnId = session.workspace().nodeTypeManager().getRootNodeDefinition().getId();
+        }
+        return rootNodeDefnId;
+    }
+
+    @Override
+    public JcrNodeDefinition getDefinition() throws RepositoryException {
+        return session.workspace().nodeTypeManager().getRootNodeDefinition();
+    }
+
+    @Override
+    final boolean isRoot() {
         return true;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @return 0;
-     * @see javax.jcr.Item#getDepth()
-     */
     @Override
-    public int getDepth() {
-        return 0;
+    public boolean isNew() {
+        return false; // the root node is never false
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @return 1;
-     * @see javax.jcr.Node#getIndex()
-     */
-    public int getIndex() {
-        return 1;
+    @Override
+    Type type() {
+        return Type.ROOT;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @return "";
-     * @see javax.jcr.Item#getName()
-     */
+    @Override
     public String getName() {
-        return "";
+        return NAME_STR;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws ItemNotFoundException always
-     * @see javax.jcr.Item#getParent()
-     */
     @Override
-    public AbstractJcrNode getParent() throws ItemNotFoundException {
-        throw new ItemNotFoundException(JcrI18n.rootNodeHasNoParent.text());
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @return "/";
-     * @see javax.jcr.Item#getPath()
-     */
     public String getPath() {
-        return "/";
+        return PATH;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.AbstractJcrItem#getAncestor(int)
-     */
     @Override
-    public final Item getAncestor( int depth ) throws RepositoryException {
-        if (depth == 0) return this;
-        if (depth < 0) {
-            throw new ItemNotFoundException(JcrI18n.noNegativeDepth.text(depth));
-        }
-        throw new ItemNotFoundException(JcrI18n.tooDeep.text(depth));
+    public AbstractJcrNode getParent() throws ItemNotFoundException, RepositoryException {
+        throw new ItemNotFoundException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.AbstractJcrNode#doRemove()
-     */
     @Override
-    protected void doRemove() throws ConstraintViolationException, RepositoryException {
-        String msg = JcrI18n.unableToRemoveRootNode.text(cache.workspaceName());
+    protected void doRemove( Path path ) throws ConstraintViolationException, RepositoryException {
+        String msg = JcrI18n.unableToRemoveRootNode.text(workspaceName());
         throw new ConstraintViolationException(msg);
     }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#remove()
-     */
-    @Override
-    public void remove() throws ConstraintViolationException {
-        String msg = JcrI18n.unableToRemoveRootNode.text(cache.workspaceName());
-        throw new ConstraintViolationException(msg);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.AbstractJcrNode#removeShare()
-     */
-    @Override
-    public void removeShare() throws ConstraintViolationException, RepositoryException {
-        String msg = JcrI18n.unableToRemoveRootNode.text(cache.workspaceName());
-        throw new ConstraintViolationException(msg);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.AbstractJcrNode#removeSharedSet()
-     */
-    @Override
-    public void removeSharedSet() throws ConstraintViolationException, RepositoryException {
-        String msg = JcrI18n.unableToRemoveRootNode.text(cache.workspaceName());
-        throw new ConstraintViolationException(msg);
-    }
-
 }

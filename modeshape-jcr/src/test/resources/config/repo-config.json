@@ -1,0 +1,13 @@
+{
+    "name" : "CND Sequencer Test Repository",
+    "sequencing" : {
+        "removeDerivedContentWithOriginal" : true,
+        "sequencers" : [
+            {
+                "name" : "CND sequencer",
+                "type" : "cnd",
+                "pathExpression" : "default://(*.cnd)/jcr:content[@jcr:data]"
+            }
+        ]
+    }
+}

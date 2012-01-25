@@ -23,28 +23,32 @@
  */
 package org.modeshape.jcr;
 
-import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.net.URL;
 import java.security.Principal;
 import java.util.Properties;
+import javax.jcr.Credentials;
+import javax.jcr.ImportUUIDBehavior;
+import javax.jcr.NamespaceRegistry;
 import javax.jcr.Session;
 import org.apache.jackrabbit.test.RepositoryStub;
-import org.modeshape.common.collection.Problem;
-import org.modeshape.common.collection.Problems;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.Graph;
-import org.modeshape.graph.property.Path;
+import org.infinispan.manager.CacheContainer;
+import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 
 /**
  * Concrete implementation of {@link RepositoryStub} based on ModeShape-specific configuration.
  */
-@Migrated
 public class ModeShapeRepositoryStub extends RepositoryStub {
 
     public static final String MODE_SHAPE_SKIP_IMPORT = "javax.jcr.tck.modeSkipImport";
     public static final String MODE_SHAPE_NODE_TYPE_PATH = "javax.jcr.tck.modeNodeTypePath";
 
-    private static final String REPOSITORY_SOURCE_NAME = "Test Repository Source";
+    /**
+     * System views can distinguis multi-valued properties that happen to have only one value. Document views cannot experss this,
+     * so import using the system view.
+     */
+    // public static final String MODE_SHAPE_IMPORTED_CONTENT = "/tck/documentViewForTckTests.xml";
+    public static final String MODE_SHAPE_IMPORTED_CONTENT = "/tck/systemViewForTckTests.xml";
 
     private static String currentConfigurationName = "default";
     private static boolean reloadRepositoryInstance = false;
@@ -53,6 +57,11 @@ public class ModeShapeRepositoryStub extends RepositoryStub {
     private String repositoryConfigurationName;
     private JcrRepository repository;
     private JcrEngine engine;
+
+    static {
+        // Initialize the JAAS configuration to allow for an admin login later
+        JaasTestUtil.initJaas("security/jaas.conf.xml");
+    }
 
     public ModeShapeRepositoryStub( Properties env ) {
         super(env);
@@ -63,68 +72,86 @@ public class ModeShapeRepositoryStub extends RepositoryStub {
     private void configureRepository() {
         repositoryConfigurationName = currentConfigurationName;
 
-        // Initialize the JAAS configuration to allow for an admin login later
-        JaasTestUtil.initJaas("security/jaas.conf.xml");
+        // Clean up from a previous invocation ...
+        if (engine != null) {
+            CacheContainer container = null;
+            if (repository != null) {
+                container = repository.database().getCache().getCacheManager();
+            }
+            try {
+                // Terminate any existing engine and destry any content used by the repositories ...
+                TestingUtil.killEngine(engine);
+            } finally {
+                engine = null;
+                if (container != null) {
+                    try {
+                        org.infinispan.test.TestingUtil.killCacheManagers(container);
+                    } finally {
+                        container = null;
+                    }
+                }
+            }
+        }
+        // Read the configuration file and setup the engine ...
+        RepositoryConfiguration configuration = null;
 
-        // Create the in-memory (ModeShape) repository
-        JcrConfiguration configuration = new JcrConfiguration();
         try {
             configProps = new Properties();
             String propsFileName = "/tck/" + repositoryConfigurationName + "/repositoryOverlay.properties";
             InputStream propsStream = getClass().getResourceAsStream(propsFileName);
             configProps.load(propsStream);
 
-            String configFileName = "/tck/" + repositoryConfigurationName + "/configRepository.xml";
-            configuration.loadFrom(getClass().getResourceAsStream(configFileName));
-
-            if (engine != null) {
-                try {
-                    // Terminate any existing engine ...
-                    engine.shutdown();
-                } finally {
-                    engine = null;
-                }
+            String configFileName = "/tck/" + repositoryConfigurationName + "/repo-config.json";
+            InputStream configStream = getClass().getResourceAsStream(configFileName);
+            configuration = RepositoryConfiguration.read(configStream, configFileName);
+            if (configuration == null) {
+                throw new IllegalStateException(
+                                                "Problems starting JCR repository: unable to find ModeShape configuration file \""
+                                                + configFileName + "\" on the classpath");
             }
 
-            engine = configuration.build();
+            engine = new JcrEngine();
             engine.start();
 
-            Problems problems = engine.getProblems();
-            // Print all of the problems from the engine configuration ...
-            for (Problem problem : problems) {
-                System.err.println(problem);
+            // Deploy and start the repository, and block until started...
+            repository = engine.deploy(configuration);
+            engine.startRepository(repository.getName()).get();
+
+            // Set up the repository content (for all workspaces) ...
+            Session session = repository.login(superuser);
+            Credentials superuser = getSuperuserCredentials();
+            try {
+                // Register the test namespaces in the repository ...
+                NamespaceRegistry registry = session.getWorkspace().getNamespaceRegistry();
+                registry.registerNamespace(TestLexicon.Namespace.PREFIX, TestLexicon.Namespace.URI);
+
+                // Register the node types needed in our tests ...
+                String cndFileName = "/tck/tck_test_types.cnd";
+                URL cndUrl = getClass().getResource(cndFileName);
+                NodeTypeManager nodeTypeManager = (NodeTypeManager)session.getWorkspace().getNodeTypeManager();
+                nodeTypeManager.registerNodeTypes(cndUrl, true);
+
+                // This needs to check configProps directly to avoid an infinite loop
+                String skipImport = (String)configProps.get(MODE_SHAPE_SKIP_IMPORT);
+                if (!Boolean.valueOf(skipImport)) {
+
+                    // Set up some sample nodes in the "default" workspace to match the expected test configuration ...
+                    InputStream xmlStream = getClass().getResourceAsStream(MODE_SHAPE_IMPORTED_CONTENT);
+                    session.getWorkspace().importXML("/", xmlStream, ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING);
+
+                    // Switch workspaces ...
+                    session.logout();
+                    session = repository.login(superuser, "otherWorkspace");
+
+                    // Set up some sample nodes in the "otherWorkspace" workspace to match the expected test configuration ...
+                    xmlStream = getClass().getResourceAsStream(MODE_SHAPE_IMPORTED_CONTENT);
+                    session.getWorkspace().importXML("/", xmlStream, ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING);
+                    session.save();
+                }
+            } finally {
+                session.logout();
             }
-            if (problems.hasErrors()) {
-                throw new IllegalStateException("Problems starting JCR repository");
-            }
 
-            ExecutionContext executionContext = engine.getExecutionContext();
-            executionContext.getNamespaceRegistry().register(TestLexicon.Namespace.PREFIX, TestLexicon.Namespace.URI);
-
-            repository = engine.getRepository(REPOSITORY_SOURCE_NAME);
-
-            // This needs to check configProps directly to avoid an infinite loop
-            String skipImport = (String)configProps.get(MODE_SHAPE_SKIP_IMPORT);
-            if (!Boolean.valueOf(skipImport)) {
-
-                // Set up some sample nodes in the graph to match the expected test configuration
-                Graph graph = Graph.create(repository.getRepositorySourceName(),
-                                           engine.getRepositoryConnectionFactory(),
-                                           executionContext);
-                Path destinationPath = executionContext.getValueFactories().getPathFactory().createRootPath();
-
-                InputStream xmlStream = getClass().getResourceAsStream("/tck/repositoryForTckTests.xml");
-                graph.importXmlFrom(xmlStream).into(destinationPath);
-
-                Session session = repository.login();
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                session.exportDocumentView("/", baos, false, false);
-                System.out.println(new String(baos.toByteArray()));
-
-                graph.createWorkspace().named("otherWorkspace");
-                graph.useWorkspace("otherWorkspace");
-                graph.clone("/testroot").fromWorkspace("default").as("testroot").into("/").failingIfAnyUuidsMatch();
-            }
         } catch (Exception ex) {
             // The TCK tries to quash this exception. Print it out to be more obvious.
             ex.printStackTrace();

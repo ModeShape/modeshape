@@ -23,97 +23,108 @@
  */
 package org.modeshape.jcr;
 
-import java.io.File;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.Properties;
+import java.util.Queue;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import javax.jcr.RepositoryException;
+import java.util.concurrent.Future;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import javax.jcr.query.InvalidQueryException;
-import org.apache.lucene.analysis.en.EnglishAnalyzer;
-import org.apache.lucene.util.Version;
-import org.modeshape.common.collection.Problems;
-import org.modeshape.common.collection.SimpleProblems;
-import org.modeshape.common.i18n.I18n;
-import org.modeshape.common.text.TextEncoder;
-import org.modeshape.common.text.UrlEncoder;
-import org.modeshape.common.util.Logger;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.Graph;
-import org.modeshape.graph.GraphI18n;
-import org.modeshape.graph.connector.RepositoryConnectionFactory;
-import org.modeshape.graph.observe.Changes;
-import org.modeshape.graph.observe.Observable;
-import org.modeshape.graph.observe.Observer;
-import org.modeshape.graph.property.Path;
-import org.modeshape.graph.query.QueryContext;
-import org.modeshape.graph.query.QueryEngine;
-import org.modeshape.graph.query.QueryResults;
-import org.modeshape.graph.query.QueryResults.Columns;
-import org.modeshape.graph.query.model.QueryCommand;
-import org.modeshape.graph.query.model.TypeSystem;
-import org.modeshape.graph.query.optimize.Optimizer;
-import org.modeshape.graph.query.optimize.OptimizerRule;
-import org.modeshape.graph.query.optimize.RuleBasedOptimizer;
-import org.modeshape.graph.query.plan.CanonicalPlanner;
-import org.modeshape.graph.query.plan.PlanHints;
-import org.modeshape.graph.query.plan.PlanNode;
-import org.modeshape.graph.query.plan.Planner;
-import org.modeshape.graph.query.process.AbstractAccessComponent;
-import org.modeshape.graph.query.process.ProcessingComponent;
-import org.modeshape.graph.query.process.Processor;
-import org.modeshape.graph.query.process.QueryProcessor;
-import org.modeshape.graph.query.process.SelectComponent.Analyzer;
-import org.modeshape.graph.query.validate.Schemata;
-import org.modeshape.graph.request.AccessQueryRequest;
-import org.modeshape.graph.request.FullTextSearchRequest;
-import org.modeshape.graph.request.InvalidWorkspaceException;
-import org.modeshape.graph.request.processor.RequestProcessor;
-import org.modeshape.graph.search.SearchEngine;
-import org.modeshape.graph.search.SearchEngineIndexer;
-import org.modeshape.graph.search.SearchEngineProcessor;
-import org.modeshape.jcr.query.RewritePseudoColumns;
-import org.modeshape.search.lucene.IndexRules;
-import org.modeshape.search.lucene.LuceneConfiguration;
-import org.modeshape.search.lucene.LuceneConfigurations;
-import org.modeshape.search.lucene.LuceneSearchEngine;
+import javax.transaction.Synchronization;
+import org.hibernate.search.backend.TransactionContext;
+import org.hibernate.search.cfg.spi.SearchConfiguration;
+import org.hibernate.search.engine.spi.SearchFactoryImplementor;
+import org.hibernate.search.spi.SearchFactoryBuilder;
+import org.modeshape.common.annotation.GuardedBy;
+import org.modeshape.common.util.CheckArg;
+import org.modeshape.jcr.JcrRepository.RunningState;
+import org.modeshape.jcr.RepositoryConfiguration.QuerySystem;
+import org.modeshape.jcr.api.query.qom.QueryCommand;
+import org.modeshape.jcr.cache.CachedNode;
+import org.modeshape.jcr.cache.ChildReference;
+import org.modeshape.jcr.cache.ChildReferences;
+import org.modeshape.jcr.cache.NodeCache;
+import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.cache.PathCache;
+import org.modeshape.jcr.cache.RepositoryCache;
+import org.modeshape.jcr.query.QueryIndexing;
+import org.modeshape.jcr.query.QueryResults;
+import org.modeshape.jcr.query.lucene.LuceneQueryEngine;
+import org.modeshape.jcr.query.lucene.basic.BasicLuceneConfiguration;
+import org.modeshape.jcr.query.optimize.Optimizer;
+import org.modeshape.jcr.query.optimize.RuleBasedOptimizer;
+import org.modeshape.jcr.query.plan.CanonicalPlanner;
+import org.modeshape.jcr.query.plan.PlanHints;
+import org.modeshape.jcr.query.plan.Planner;
+import org.modeshape.jcr.query.validate.Schemata;
+import org.modeshape.jcr.value.Path;
+import org.modeshape.jcr.value.Path.Segment;
 
 /**
- * 
+ * The query manager a the repository. Each instance lazily starts up the {@link LuceneQueryEngine}, which can be expensive.
  */
-abstract class RepositoryQueryManager {
+class RepositoryQueryManager {
 
-    protected final String sourceName;
-    protected final String repositoryName;
+    private final RunningState runningState;
+    private final ExecutorService indexingExecutorService;
+    private final SearchConfiguration config;
+    private final Lock engineInitLock = new ReentrantLock();
+    @GuardedBy( "engineInitLock" )
+    private volatile LuceneQueryEngine queryEngine;
 
-    RepositoryQueryManager( String repositoryName,
-                            String sourceName ) {
-        this.sourceName = sourceName;
-        this.repositoryName = repositoryName;
+    RepositoryQueryManager( RunningState runningState,
+                            QuerySystem querySystem,
+                            ExecutorService indexingExecutorService,
+                            Properties backendProps,
+                            Properties indexingProps,
+                            Properties indexStorageProps ) {
+        this.runningState = runningState;
+        this.indexingExecutorService = indexingExecutorService;
+        // Set up the query engine ...
+        String repoName = runningState.name();
+        this.config = new BasicLuceneConfiguration(repoName, backendProps, indexingProps, indexStorageProps);
     }
 
-    public abstract QueryResults query( String workspaceName,
-                                        QueryCommand query,
-                                        Schemata schemata,
-                                        PlanHints hints,
-                                        Map<String, Object> variables ) throws InvalidQueryException;
+    public QueryResults query( ExecutionContext context,
+                               NodeCache nodeCache,
+                               String workspaceName,
+                               QueryCommand query,
+                               Schemata schemata,
+                               PlanHints hints,
+                               Map<String, Object> variables ) throws InvalidQueryException {
+        return queryEngine().query(context,
+                                   nodeCache,
+                                   workspaceName,
+                                   (org.modeshape.jcr.query.model.QueryCommand)query,
+                                   schemata,
+                                   hints,
+                                   variables);
+    }
 
-    public abstract QueryResults search( String workspaceName,
-                                         String searchExpression,
-                                         int maxRowCount,
-                                         int offset ) throws InvalidQueryException;
+    public QueryIndexing getIndexes() {
+        return queryEngine().getQueryIndexing();
+    }
 
-    /**
-     * Crawl and index the content in the named workspace.
-     * 
-     * @throws IllegalArgumentException if the workspace is null
-     * @throws InvalidWorkspaceException if there is no workspace with the supplied name
-     */
-    public void reindexContent() {
-        // do nothing by default
+    protected final LuceneQueryEngine queryEngine() {
+        if (queryEngine == null) {
+            try {
+                engineInitLock.lock();
+                if (queryEngine == null) {
+                    Planner planner = new CanonicalPlanner();
+                    Optimizer optimizer = new RuleBasedOptimizer();
+                    SearchFactoryImplementor searchFactory = new SearchFactoryBuilder().configuration(config)
+                                                                                       .buildSearchFactory();
+                    queryEngine = new LuceneQueryEngine(runningState.context(), runningState.name(), planner, optimizer,
+                                                        searchFactory);
+                }
+            } finally {
+                engineInitLock.unlock();
+            }
+        }
+        return queryEngine;
     }
 
     /**
@@ -121,10 +132,9 @@ abstract class RepositoryQueryManager {
      * 
      * @param workspace the workspace
      * @throws IllegalArgumentException if the workspace is null
-     * @throws InvalidWorkspaceException if there is no workspace with the supplied name
      */
     public void reindexContent( JcrWorkspace workspace ) {
-        // do nothing by default
+        reindexContent(workspace, Path.ROOT_PATH, Integer.MAX_VALUE);
     }
 
     /**
@@ -134,471 +144,159 @@ abstract class RepositoryQueryManager {
      * @param path the path of the content to be indexed
      * @param depth the depth of the content to be indexed
      * @throws IllegalArgumentException if the workspace or path are null, or if the depth is less than 1
-     * @throws InvalidWorkspaceException if there is no workspace with the supplied name
      */
     public void reindexContent( JcrWorkspace workspace,
-                                String path,
+                                Path path,
                                 int depth ) {
-        // do nothing by default
-    }
+        CheckArg.isPositive(depth, "depth");
+        JcrSession session = workspace.getSession();
+        NodeCache cache = session.cache().getWorkspace();
+        String workspaceName = workspace.getName();
 
-    static class PushDown extends RepositoryQueryManager {
-        private final ExecutionContext context;
-        private final RepositoryConnectionFactory connectionFactory;
-
-        PushDown( String repositoryName,
-                  String sourceName,
-                  ExecutionContext context,
-                  RepositoryConnectionFactory connectionFactory ) {
-            super(repositoryName, sourceName);
-            this.context = context;
-            this.connectionFactory = connectionFactory;
+        // Look for the node ...
+        CachedNode node = cache.getNode(cache.getRootKey());
+        for (Segment segment : path) {
+            // Look for the child by name ...
+            ChildReference ref = node.getChildReferences(cache).getChild(segment);
+            if (ref == null) return;
+            node = cache.getNode(ref);
         }
 
-        private Graph workspaceGraph( String workspaceName ) {
-            Graph graph = Graph.create(this.sourceName, connectionFactory, context);
-
-            if (workspaceName != null) {
-                graph.useWorkspace(workspaceName);
-            }
-
-            return graph;
-        }
-
-        @Override
-        public QueryResults query( String workspaceName,
-                                   QueryCommand query,
-                                   Schemata schemata,
-                                   PlanHints hints,
-                                   Map<String, Object> variables ) {
-            Graph.BuildQuery builder = workspaceGraph(workspaceName).query(query, schemata);
-            if (variables != null) builder.using(variables);
-            if (hints != null) builder.using(hints);
-            return builder.execute();
-        }
-
-        @Override
-        public QueryResults search( String workspaceName,
-                                    String searchExpression,
-                                    int maxRowCount,
-                                    int offset ) {
-            return workspaceGraph(workspaceName).search(searchExpression, maxRowCount, offset);
+        // If the node is in the system workspace ...
+        String systemWorkspaceKey = runningState.repositoryCache().getSystemWorkspaceKey();
+        if (node.getKey().getWorkspaceKey().equals(systemWorkspaceKey)) {
+            reindexSystemContent(node, depth);
+        } else {
+            // It's just a regular node in the workspace ...
+            reindexContent(workspaceName, cache, node, depth, path.isRoot());
         }
 
     }
 
-    static class Disabled extends RepositoryQueryManager {
+    protected void reindexContent( final String workspaceName,
+                                   NodeCache cache,
+                                   CachedNode node,
+                                   int depth,
+                                   boolean lookForSystemNode ) {
+        // Get the path for the first node (we already have it, but we need to populate the cache) ...
+        final PathCache paths = new PathCache(cache);
+        Path nodePath = paths.getPath(node);
 
-        Disabled( String repositoryName,
-                  String sourceName ) {
-            super(repositoryName, sourceName);
+        // Index the first node ...
+        final int maxPathSize = nodePath.size() + depth;
+        final QueryIndexing indexes = getIndexes();
+        final TransactionContext txnCtx = NO_TRANSACTION;
+        indexes.updateIndex(workspaceName, node.getKey(), nodePath, node.getProperties(cache), txnCtx);
+
+        if (depth == 1) return;
+
+        // Create a queue for processing the subgraph
+        final Queue<NodeKey> queue = new LinkedList<NodeKey>();
+
+        if (lookForSystemNode) {
+            // We need to look for the system node, and index it differently ...
+            ChildReferences childRefs = node.getChildReferences(cache);
+            ChildReference systemRef = childRefs.getChild(JcrLexicon.SYSTEM);
+            NodeKey systemKey = systemRef != null ? systemRef.getKey() : null;
+            for (ChildReference childRef : node.getChildReferences(cache)) {
+                NodeKey childKey = childRef.getKey();
+                if (childKey.equals(systemKey)) {
+                    // This is the "/jcr:system" node ...
+                    node = cache.getNode(childKey);
+                    reindexSystemContent(node, depth - 1);
+                } else {
+                    queue.add(childKey);
+                }
+            }
+        } else {
+            // Add all children to the queue ...
+            for (ChildReference childRef : node.getChildReferences(cache)) {
+                queue.add(childRef.getKey());
+            }
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.jcr.RepositoryQueryManager#query(java.lang.String, org.modeshape.graph.query.model.QueryCommand,
-         *      org.modeshape.graph.query.validate.Schemata, org.modeshape.graph.query.plan.PlanHints, java.util.Map)
-         */
-        @Override
-        public QueryResults query( String workspaceName,
-                                   QueryCommand query,
-                                   Schemata schemata,
-                                   PlanHints hints,
-                                   Map<String, Object> variables ) throws InvalidQueryException {
-            throw new InvalidQueryException(JcrI18n.queryIsDisabledInRepository.text(this.sourceName));
-        }
+        // Now, process the queue until empty ...
+        while (true) {
+            NodeKey key = queue.poll();
+            if (key == null) break;
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.jcr.RepositoryQueryManager#search(java.lang.String, java.lang.String, int, int)
-         */
-        @Override
-        public QueryResults search( String workspaceName,
-                                    String searchExpression,
-                                    int maxRowCount,
-                                    int offset ) throws InvalidQueryException {
-            throw new InvalidQueryException(JcrI18n.queryIsDisabledInRepository.text(this.sourceName));
+            // Look up the node and find the path ...
+            node = cache.getNode(key);
+            nodePath = paths.getPath(node);
+
+            // Index the node ...
+            indexes.updateIndex(workspaceName, node.getKey(), nodePath, node.getProperties(cache), txnCtx);
+
+            // Check the depth ...
+            if (nodePath.size() <= maxPathSize) {
+                // Add the children to the queue ...
+                for (ChildReference childRef : node.getChildReferences(cache)) {
+                    queue.add(childRef.getKey());
+                }
+            }
         }
     }
 
-    static class SelfContained extends RepositoryQueryManager {
-        private static final Logger LOGGER = Logger.getLogger(RepositoryQueryManager.class);
+    protected void reindexSystemContent( CachedNode nodeInSystemBranch,
+                                         int depth ) {
+        RepositoryCache repoCache = runningState.repositoryCache();
+        String workspaceName = repoCache.getSystemWorkspaceName();
+        NodeCache systemWorkspaceCache = repoCache.getWorkspaceCache(workspaceName);
+        reindexContent(workspaceName, systemWorkspaceCache, nodeInSystemBranch, depth, false);
+    }
 
-        private final ExecutionContext context;
-        private final String sourceName;
-        private final LuceneConfiguration configuration;
-        private final SearchEngine searchEngine;
-        private final Observer searchObserver;
-        private final ExecutorService service;
-        private final QueryEngine queryEngine;
-        private final RepositoryConnectionFactory connectionFactory;
-        private final int maxDepthPerRead;
-
-        SelfContained( String repositoryName,
-                       ExecutionContext context,
-                       String nameOfSourceToBeSearchable,
-                       RepositoryConnectionFactory connectionFactory,
-                       Observable observable,
-                       final RepositoryNodeTypeManager nodeTypeManager,
-                       String indexDirectory,
-                       boolean updateIndexesSynchronously,
-                       final boolean forceIndexRebuild,
-                       boolean rebuildIndexSynchronously,
-                       int maxDepthPerRead,
-                       ExecutorService backgrounder ) throws RepositoryException {
-            super(repositoryName, nameOfSourceToBeSearchable);
-
-            this.context = context;
-            this.sourceName = nameOfSourceToBeSearchable;
-            this.connectionFactory = connectionFactory;
-            this.maxDepthPerRead = maxDepthPerRead;
-
-            // Define the configuration ...
-            TextEncoder encoder = new UrlEncoder();
-            if (indexDirectory != null) {
-                File indexDir = new File(indexDirectory);
-                if (indexDir.exists()) {
-                    // The location does exist ...
-                    if (!indexDir.isDirectory()) {
-                        // The path is not a directory ...
-                        I18n msg = JcrI18n.searchIndexDirectoryOptionSpecifiesFileNotDirectory;
-                        throw new RepositoryException(msg.text(indexDirectory, sourceName));
-                    }
-                    if (!indexDir.canWrite()) {
-                        // But we cannot write to it ...
-                        I18n msg = JcrI18n.searchIndexDirectoryOptionSpecifiesDirectoryThatCannotBeWrittenTo;
-                        throw new RepositoryException(msg.text(indexDirectory, sourceName));
-                    }
-                    if (!indexDir.canRead()) {
-                        // But we cannot read from it ...
-                        I18n msg = JcrI18n.searchIndexDirectoryOptionSpecifiesDirectoryThatCannotBeRead;
-                        throw new RepositoryException(msg.text(indexDirectory, sourceName));
-                    }
-                    // The directory is usable
-                } else {
-                    // The location doesn't exist,so try to make it ...
-                    if (!indexDir.mkdirs()) {
-                        I18n msg = JcrI18n.searchIndexDirectoryOptionSpecifiesDirectoryThatCannotBeCreated;
-                        throw new RepositoryException(msg.text(indexDirectory, sourceName));
-                    }
-                    // We successfully create the directory (or directories)
-                }
-                configuration = LuceneConfigurations.using(indexDir, encoder, encoder);
-            } else {
-                // Use in-memory as a fall-back ...
-                configuration = LuceneConfigurations.inMemory();
-            }
-            assert configuration != null;
-
-            // Set up the indexing rules ...
-            IndexRules.Factory indexRulesFactory = new IndexRules.Factory() {
-                public IndexRules getRules() {
-                    return nodeTypeManager.getRepositorySchemata().getIndexRules();
-                }
-            };
-
-            // Set up the search engine ...
-            org.apache.lucene.analysis.Analyzer analyzer = new EnglishAnalyzer(Version.LUCENE_30);
-            boolean verifyWorkspaces = false;
-            searchEngine = new LuceneSearchEngine(nameOfSourceToBeSearchable, connectionFactory, verifyWorkspaces,
-                                                  maxDepthPerRead, configuration, indexRulesFactory, analyzer);
-
-            // Set up an original source observer to keep the index up to date ...
-            if (updateIndexesSynchronously) {
-                this.service = null;
-                this.searchObserver = new Observer() {
-                    @SuppressWarnings( "synthetic-access" )
-                    public void notify( Changes changes ) {
-                        if (changes.getSourceName().equals(sourceName)) {
-                            process(changes);
-                        }
-                    }
-                };
-            } else {
-                // It's asynchronous, so create a single-threaded executor and an observer that enqueues the results
-                ThreadFactory threadFactory = new ThreadFactory() {
-                    /**
-                     * {@inheritDoc}
-                     * 
-                     * @see java.util.concurrent.ThreadFactory#newThread(java.lang.Runnable)
-                     */
-                    public Thread newThread( Runnable r ) {
-                        Thread thread = new Thread(r, "modeshape-indexing");
-                        thread.setPriority(Thread.NORM_PRIORITY + 3);
-                        return thread;
-                    }
-                };
-                // this.service = Executors.newCachedThreadPool(threadFactory);
-                this.service = Executors.newSingleThreadExecutor(threadFactory);
-                this.searchObserver = new Observer() {
-                    @SuppressWarnings( "synthetic-access" )
-                    public void notify( final Changes changes ) {
-                        if (changes.getSourceName().equals(sourceName)) {
-                            service.submit(new Runnable() {
-                                public void run() {
-                                    process(changes);
-                                }
-                            });
-                        }
-                    }
-                };
-            }
-            observable.register(this.searchObserver);
-
-            // Set up the query engine ...
-            Planner planner = new CanonicalPlanner();
-
-            // Create a custom optimizer that has our rules first ...
-            Optimizer optimizer = new RuleBasedOptimizer() {
-                /**
-                 * {@inheritDoc}
-                 * 
-                 * @see org.modeshape.graph.query.optimize.RuleBasedOptimizer#populateRuleStack(java.util.LinkedList,
-                 *      org.modeshape.graph.query.plan.PlanHints)
-                 */
-                @Override
-                protected void populateRuleStack( LinkedList<OptimizerRule> ruleStack,
-                                                  PlanHints hints ) {
-                    super.populateRuleStack(ruleStack, hints);
-                    ruleStack.addFirst(RewritePseudoColumns.INSTANCE);
-                }
-            };
-
-            // Create a custom processor that knows how to submit the access query requests ...
-            Processor processor = new QueryProcessor() {
-
-                /**
-                 * {@inheritDoc}
-                 * 
-                 * @see org.modeshape.graph.query.process.QueryProcessor#createAccessComponent(org.modeshape.graph.query.model.QueryCommand,
-                 *      org.modeshape.graph.query.QueryContext, org.modeshape.graph.query.plan.PlanNode,
-                 *      org.modeshape.graph.query.QueryResults.Columns,
-                 *      org.modeshape.graph.query.process.SelectComponent.Analyzer)
-                 */
-                @Override
-                protected ProcessingComponent createAccessComponent( QueryCommand originalQuery,
-                                                                     QueryContext context,
-                                                                     PlanNode accessNode,
-                                                                     Columns resultColumns,
-                                                                     Analyzer analyzer ) {
-                    return new AccessQueryProcessor((GraphQueryContext)context, resultColumns, accessNode);
-                }
-            };
-            this.queryEngine = new QueryEngine(planner, optimizer, processor);
-
-            // Index any existing content ...
-            if (rebuildIndexSynchronously) {
-                if (forceIndexRebuild) {
-                    LOGGER.debug("Reindexing synchronously");
-                } else {
-                    LOGGER.debug("Reindexing synchronously (if missing)");
-                }
-                doReindexContent(forceIndexRebuild);
-            } else {
-                if (forceIndexRebuild) {
-                    LOGGER.debug("Beginning to asynchronously reindex content");
-                } else {
-                    LOGGER.debug("Beginning to asynchronously reindex content (if missing)");
-                }
-                backgrounder.submit(new Runnable() {
-
-                    public void run() {
-                        doReindexContent(forceIndexRebuild);
-                    }
-
-                });
-                LOGGER.trace("Returning after beginning to asynchrnously reindex content");
-            }
-        }
-
-        protected void process( Changes changes ) {
-            try {
-                searchEngine.index(context, changes.getChangeRequests());
-            } catch (RuntimeException e) {
-                LOGGER.error(e, JcrI18n.errorUpdatingQueryIndexes, e.getLocalizedMessage());
-            }
-        }
-
-        @Override
-        public QueryResults query( String workspaceName,
-                                   QueryCommand query,
-                                   Schemata schemata,
-                                   PlanHints hints,
-                                   Map<String, Object> variables ) {
-            TypeSystem typeSystem = context.getValueFactories().getTypeSystem();
-            SearchEngineProcessor processor = searchEngine.createProcessor(context, null, true);
-            try {
-                QueryContext context = new GraphQueryContext(schemata, typeSystem, hints, new SimpleProblems(), variables,
-                                                             processor, workspaceName);
-                return queryEngine.execute(context, query);
-            } finally {
-                processor.close();
-            }
-        }
-
-        @Override
-        public QueryResults search( String workspaceName,
-                                    String searchExpression,
-                                    int maxRowCount,
-                                    int offset ) {
-            SearchEngineProcessor processor = searchEngine.createProcessor(context, null, true);
-            FullTextSearchRequest request = new FullTextSearchRequest(searchExpression, workspaceName, maxRowCount, offset);
-            processor.process(request);
-            return new org.modeshape.graph.query.process.QueryResults(request.getResultColumns(), request.getStatistics(),
-                                                                      request.getTuples());
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.jcr.RepositoryQueryManager#reindexContent()
-         */
-        @Override
-        public void reindexContent() {
-            doReindexContent(true);
-        }
-
-        protected void doReindexContent( boolean force ) {
-            LOGGER.info(JcrI18n.indexRebuildingStarted, repositoryName);
-
-            // Get the workspace names ...
-            Set<String> workspaces = Graph.create(sourceName, connectionFactory, context).getWorkspaces();
-
-            // Index the existing content (this obtains a connection and possibly locks the source) ...
-            SearchEngineIndexer indexer = new SearchEngineIndexer(context, searchEngine, connectionFactory, maxDepthPerRead);
-            try {
-                for (String workspace : workspaces) {
-                    indexer.reindex(workspace, force);
-                }
-            } finally {
-                try {
-                    indexer.close();
-                } finally {
-                    LOGGER.info(JcrI18n.indexRebuildingComplete, repositoryName);
-                }
-            }
-
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.jcr.RepositoryQueryManager#reindexContent(org.modeshape.jcr.JcrWorkspace)
-         */
-        @Override
-        public void reindexContent( JcrWorkspace workspace ) {
-            LOGGER.info(JcrI18n.indexRebuildingOfWorkspaceStarted, repositoryName, workspace.getName());
-
-            SearchEngineIndexer indexer = new SearchEngineIndexer(context, searchEngine, connectionFactory, maxDepthPerRead);
-            try {
-                /*
-                 * Instead of using indexer.reindex(String, boolean) and respecting the dontForceIndexRebuild parameter,
-                 * we always reindex the entire workspace in response to this explicit request.
-                 */
-                indexer.index(workspace.getName());
-            } finally {
-                try {
-                    indexer.close();
-                } finally {
-                    LOGGER.info(JcrI18n.indexRebuildingOfWorkspaceComplete, repositoryName, workspace.getName());
-                }
-            }
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.jcr.RepositoryQueryManager#reindexContent(org.modeshape.jcr.JcrWorkspace, java.lang.String, int)
-         */
-        @Override
-        public void reindexContent( JcrWorkspace workspace,
-                                    String path,
-                                    int depth ) {
-            Path at = workspace.context().getValueFactories().getPathFactory().create(path);
-            SearchEngineIndexer indexer = new SearchEngineIndexer(context, searchEngine, connectionFactory, maxDepthPerRead);
-            try {
-                indexer.index(workspace.getName(), at, depth);
-            } finally {
-                indexer.close();
-            }
-        }
-
-        protected class GraphQueryContext extends QueryContext {
-            private final RequestProcessor processor;
-            private final String workspaceName;
-
-            protected GraphQueryContext( Schemata schemata,
-                                         TypeSystem typeSystem,
-                                         PlanHints hints,
-                                         Problems problems,
-                                         Map<String, Object> variables,
-                                         RequestProcessor processor,
-                                         String workspaceName ) {
-                super(schemata, typeSystem, hints, problems, variables);
-                this.processor = processor;
-                this.workspaceName = workspaceName;
-            }
-
-            /**
-             * @return processor
-             */
-            public RequestProcessor getProcessor() {
-                return processor;
-            }
-
-            /**
-             * @return workspaceName
-             */
-            public String getWorkspaceName() {
-                return workspaceName;
-            }
-        }
-
-        protected static class AccessQueryProcessor extends AbstractAccessComponent {
-            private final AccessQueryRequest accessRequest;
-
-            protected AccessQueryProcessor( GraphQueryContext context,
-                                            Columns columns,
-                                            PlanNode accessNode ) {
-                super(context, columns, accessNode);
-                accessRequest = new AccessQueryRequest(context.getWorkspaceName(), sourceName, getColumns(), andedConstraints,
-                                                       limit, context.getSchemata(), context.getVariables());
-            }
-
-            /**
-             * Get the access query request.
-             * 
-             * @return the access query request; never null
-             */
-            public AccessQueryRequest getAccessRequest() {
-                return accessRequest;
-            }
-
-            /**
-             * {@inheritDoc}
-             * 
-             * @see org.modeshape.graph.query.process.ProcessingComponent#execute()
-             */
+    /**
+     * Asynchronously crawl and index the content in the named workspace.
+     * 
+     * @param workspace the workspace
+     * @return the future for the asynchronous operation; never null
+     * @throws IllegalArgumentException if the workspace is null
+     */
+    public Future<Boolean> reindexContentAsync( final JcrWorkspace workspace ) {
+        return indexingExecutorService.submit(new Callable<Boolean>() {
             @Override
-            public List<Object[]> execute() {
-                GraphQueryContext context = (GraphQueryContext)getContext();
-                context.getProcessor().process(accessRequest);
-                if (accessRequest.getError() != null) {
-                    I18n msg = GraphI18n.errorWhilePerformingQuery;
-                    getContext().getProblems().addError(accessRequest.getError(),
-                                                        msg,
-                                                        accessNode.getString(),
-                                                        accessRequest.workspace(),
-                                                        sourceName,
-                                                        accessRequest.getError().getLocalizedMessage());
-                    return emptyTuples();
-                }
-                return accessRequest.getTuples();
+            public Boolean call() throws Exception {
+                reindexContent(workspace);
+                return Boolean.TRUE;
             }
+        });
+    }
 
+    /**
+     * Asynchronously crawl and index the content starting at the supplied path in the named workspace, to the designated depth.
+     * 
+     * @param workspace the workspace
+     * @param path the path of the content to be indexed
+     * @param depth the depth of the content to be indexed
+     * @return the future for the asynchronous operation; never null
+     * @throws IllegalArgumentException if the workspace or path are null, or if the depth is less than 1
+     */
+    public Future<Boolean> reindexContentAsync( final JcrWorkspace workspace,
+                                                final Path path,
+                                                final int depth ) {
+        return indexingExecutorService.submit(new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                reindexContent(workspace, path, depth);
+                return Boolean.TRUE;
+            }
+        });
+    }
+
+    protected static final TransactionContext NO_TRANSACTION = new TransactionContext() {
+        @Override
+        public boolean isTransactionInProgress() {
+            return false;
         }
 
-    }
+        @Override
+        public Object getTransactionIdentifier() {
+            throw new UnsupportedOperationException("Should not be called since we're just reading content");
+        }
+
+        @Override
+        public void registerSynchronization( Synchronization synchronization ) {
+            throw new UnsupportedOperationException("Should not be called since we're just reading content");
+        }
+    };
 }

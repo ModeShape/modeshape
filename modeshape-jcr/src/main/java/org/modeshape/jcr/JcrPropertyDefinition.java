@@ -27,7 +27,6 @@ import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 import java.util.regex.Pattern;
 import javax.jcr.Node;
 import javax.jcr.PropertyType;
@@ -35,21 +34,20 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.PropertyDefinition;
 import org.modeshape.common.annotation.Immutable;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.Location;
-import org.modeshape.graph.ModeShapeIntLexicon;
-import org.modeshape.graph.property.Binary;
-import org.modeshape.graph.property.DateTime;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.NameFactory;
-import org.modeshape.graph.property.Path;
-import org.modeshape.graph.property.PathFactory;
-import org.modeshape.graph.property.ValueFactories;
-import org.modeshape.graph.property.ValueFactory;
-import org.modeshape.graph.property.ValueFormatException;
-import org.modeshape.graph.property.basic.JodaDateTime;
-import org.modeshape.graph.query.model.Operator;
+import org.modeshape.jcr.api.query.qom.Operator;
 import org.modeshape.jcr.api.query.qom.QueryObjectModelConstants;
+import org.modeshape.jcr.api.value.DateTime;
+import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.NameFactory;
+import org.modeshape.jcr.value.NamespaceRegistry;
+import org.modeshape.jcr.value.Path;
+import org.modeshape.jcr.value.PathFactory;
+import org.modeshape.jcr.value.Property;
+import org.modeshape.jcr.value.ValueFactories;
+import org.modeshape.jcr.value.ValueFactory;
+import org.modeshape.jcr.value.ValueFormatException;
+import org.modeshape.jcr.value.basic.JodaDateTime;
 
 /**
  * ModeShape implementation of the {@link PropertyDefinition} interface. This implementation is immutable and has all fields
@@ -79,26 +77,27 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         return op;
     }
 
-    private final Value[] defaultValues;
+    private final Object[] rawDefaultValues;
+    private final JcrValue[] defaultValues;
     private final int requiredType;
     private final String[] valueConstraints;
     private final boolean multiple;
     private final boolean fullTextSearchable;
-    private final boolean isPrivate;
     private final boolean queryOrderable;
     private final String[] queryOperators;
-
-    private PropertyDefinitionId id;
+    private final NodeKey key;
+    private final PropertyDefinitionId id;
     private ConstraintChecker checker = null;
 
     JcrPropertyDefinition( ExecutionContext context,
                            JcrNodeType declaringNodeType,
+                           NodeKey prototypeKey,
                            Name name,
                            int onParentVersion,
                            boolean autoCreated,
                            boolean mandatory,
                            boolean protectedItem,
-                           Value[] defaultValues,
+                           JcrValue[] defaultValues,
                            int requiredType,
                            String[] valueConstraints,
                            boolean multiple,
@@ -117,8 +116,20 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
             QueryObjectModelConstants.JCR_OPERATOR_GREATER_THAN_OR_EQUAL_TO, QueryObjectModelConstants.JCR_OPERATOR_LESS_THAN,
             QueryObjectModelConstants.JCR_OPERATOR_LESS_THAN_OR_EQUAL_TO, QueryObjectModelConstants.JCR_OPERATOR_LIKE,
             QueryObjectModelConstants.JCR_OPERATOR_NOT_EQUAL_TO};
-        this.isPrivate = name != null && ModeShapeIntLexicon.Namespace.URI.equals(name.getNamespaceUri());
         assert this.valueConstraints != null;
+        this.id = this.declaringNodeType == null ? null : new PropertyDefinitionId(this.declaringNodeType.getInternalName(),
+                                                                                   this.name, this.requiredType, this.multiple);
+        this.key = this.id == null ? prototypeKey : prototypeKey.withId("/jcr:system/jcr:nodeTypes/" + this.id.getString());
+
+        if (this.defaultValues != null) {
+            this.rawDefaultValues = new Object[this.defaultValues.length];
+            int i = 0;
+            for (JcrValue defaultValue : this.defaultValues) {
+                rawDefaultValues[i++] = defaultValue.value();
+            }
+        } else {
+            this.rawDefaultValues = null;
+        }
     }
 
     /**
@@ -127,92 +138,63 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
      * @return the property definition ID; never null
      */
     public PropertyDefinitionId getId() {
-        if (id == null) {
-            // This is idempotent, so no need to lock
-            id = new PropertyDefinitionId(this.declaringNodeType.getInternalName(), this.name, this.requiredType, this.multiple);
-        }
         return id;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.PropertyDefinition#getDefaultValues()
-     */
-    public Value[] getDefaultValues() {
+    @Override
+    final NodeKey key() {
+        return key;
+    }
+
+    @Override
+    public JcrValue[] getDefaultValues() {
         return defaultValues;
     }
 
     /**
-     * {@inheritDoc}
+     * Get the default values array consisting of values that can be placed inside {@link Property} instances.
      * 
-     * @see javax.jcr.nodetype.PropertyDefinition#getRequiredType()
+     * @return the default values, or null if there are none
      */
+    Object[] getRawDefaultValues() {
+        return rawDefaultValues;
+    }
+
+    /**
+     * Return whether this definition has default values.
+     * 
+     * @return true if there default values, or false otherwise
+     */
+    public boolean hasDefaultValues() {
+        return defaultValues != null;
+    }
+
+    @Override
     public int getRequiredType() {
         return requiredType;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.PropertyDefinition#getValueConstraints()
-     */
+    @Override
     public String[] getValueConstraints() {
         return valueConstraints;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.PropertyDefinition#isMultiple()
-     */
+    @Override
     public boolean isMultiple() {
         return multiple;
     }
 
-    /**
-     * Return whether this property definition is considered private.
-     * 
-     * @return true if the definition is private, or false otherwise
-     */
-    public boolean isPrivate() {
-        return isPrivate;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.PropertyDefinition#isFullTextSearchable()
-     */
+    @Override
     public boolean isFullTextSearchable() {
         return fullTextSearchable;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.PropertyDefinition#isQueryOrderable()
-     */
+    @Override
     public boolean isQueryOrderable() {
         return queryOrderable;
     }
 
-    /**
-     * Same as {@link #getAvailableQueryOperators()}.
-     * 
-     * @return the query operators
-     * @deprecated Use the standard JCR {@link #getAvailableQueryOperators()} method instead
-     */
-    @Deprecated
-    public String[] getQueryOperators() {
-        return queryOperators;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.PropertyDefinition#getAvailableQueryOperators()
-     */
+    @Override
     public String[] getAvailableQueryOperators() {
         return queryOperators;
     }
@@ -226,7 +208,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
      *         <code>declaringNodeType</code>.
      */
     JcrPropertyDefinition with( JcrNodeType declaringNodeType ) {
-        return new JcrPropertyDefinition(this.context, declaringNodeType, this.name, this.getOnParentVersion(),
+        return new JcrPropertyDefinition(this.context, declaringNodeType, key(), this.name, this.getOnParentVersion(),
                                          this.isAutoCreated(), this.isMandatory(), this.isProtected(), this.getDefaultValues(),
                                          this.getRequiredType(), this.getValueConstraints(), this.isMultiple(),
                                          this.isFullTextSearchable(), this.isQueryOrderable(), this.getAvailableQueryOperators());
@@ -241,17 +223,12 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
      *         <code>context</code>.
      */
     JcrPropertyDefinition with( ExecutionContext context ) {
-        return new JcrPropertyDefinition(context, this.declaringNodeType, this.name, this.getOnParentVersion(),
+        return new JcrPropertyDefinition(context, this.declaringNodeType, key(), this.name, this.getOnParentVersion(),
                                          this.isAutoCreated(), this.isMandatory(), this.isProtected(), this.getDefaultValues(),
                                          this.getRequiredType(), this.getValueConstraints(), this.isMultiple(),
                                          this.isFullTextSearchable(), this.isQueryOrderable(), this.getAvailableQueryOperators());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#toString()
-     */
     @Override
     public String toString() {
         ValueFactory<String> strings = context.getValueFactories().getStringFactory();
@@ -266,7 +243,8 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         return sb.toString();
     }
 
-    boolean satisfiesConstraints( Value value ) {
+    boolean satisfiesConstraints( Value value,
+                                  JcrSession session ) {
         if (value == null) return false;
         if (valueConstraints == null || valueConstraints.length == 0) {
             return true;
@@ -287,14 +265,15 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         }
 
         try {
-            return checker.matches(value);
+            return checker.matches(value, session);
         } catch (ValueFormatException vfe) {
             // The value was so wonky that we couldn't even convert it to an appropriate type
             return false;
         }
     }
 
-    boolean satisfiesConstraints( Value[] values ) {
+    boolean satisfiesConstraints( Value[] values,
+                                  JcrSession session ) {
         if (valueConstraints == null || valueConstraints.length == 0) {
             if (requiredType != PropertyType.UNDEFINED) {
                 for (Value value : values) {
@@ -325,7 +304,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         try {
             for (Value value : values) {
                 if (requiredType != PropertyType.UNDEFINED && value.getType() != requiredType) return false;
-                if (!checker.matches(value)) return false;
+                if (!checker.matches(value, session)) return false;
             }
             return true;
         } catch (ValueFormatException vfe) {
@@ -422,16 +401,18 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
      * type specified in <code>value.getType()</code>.
      * 
      * @param value the value to be validated
+     * @param session the session in which the constraints are to be checked; may not be null
      * @return <code>true</code> if the value can be cast to the required type for the property definition (if it exists) and
      *         satisfies the constraints for the property (if any exist).
      * @see PropertyDefinition#getValueConstraints()
-     * @see #satisfiesConstraints(Value)
+     * @see #satisfiesConstraints(Value,JcrSession)
      */
-    boolean canCastToTypeAndSatisfyConstraints( Value value ) {
+    boolean canCastToTypeAndSatisfyConstraints( Value value,
+                                                JcrSession session ) {
         try {
             assert value instanceof JcrValue : "Illegal implementation of Value interface";
             ((JcrValue)value).asType(getRequiredType()); // throws ValueFormatException if there's a problem
-            return satisfiesConstraints(value);
+            return satisfiesConstraints(value, session);
         } catch (javax.jcr.ValueFormatException vfe) {
             // Cast failed
             return false;
@@ -446,14 +427,16 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
      * type specified in <code>value.getType()</code>.
      * 
      * @param values the values to be validated
+     * @param session the session in which the constraints are to be checked; may not be null
      * @return <code>true</code> if the value can be cast to the required type for the property definition (if it exists) and
      *         satisfies the constraints for the property (if any exist).
      * @see PropertyDefinition#getValueConstraints()
-     * @see #satisfiesConstraints(Value)
+     * @see #satisfiesConstraints(Value,JcrSession)
      */
-    boolean canCastToTypeAndSatisfyConstraints( Value[] values ) {
+    boolean canCastToTypeAndSatisfyConstraints( Value[] values,
+                                                JcrSession session ) {
         for (Value value : values) {
-            if (!canCastToTypeAndSatisfyConstraints(value)) return false;
+            if (!canCastToTypeAndSatisfyConstraints(value, session)) return false;
         }
         return true;
     }
@@ -535,11 +518,13 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
          * checker.
          * 
          * @param value the value to test
+         * @param session the session in which the constraints are to be checked; may not be nul
          * @return whether or not the value satisfies the constraints used to create this constraint checker
          * @see PropertyDefinition#getValueConstraints()
-         * @see JcrPropertyDefinition#satisfiesConstraints(Value)
+         * @see JcrPropertyDefinition#satisfiesConstraints(Value,JcrSession)
          */
-        public abstract boolean matches( Value value );
+        public abstract boolean matches( Value value,
+                                         JcrSession session );
     }
 
     private interface Range<T> {
@@ -639,6 +624,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
             final Comparable<T> upper = rval == null ? null : parseValue(rval.trim());
 
             return new Range<T>() {
+                @Override
                 public boolean accepts( T value ) {
                     if (lower != null && (includeLower ? lower.compareTo(value) > 0 : lower.compareTo(value) >= 0)) {
                         return false;
@@ -649,55 +635,38 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
                     return true;
                 }
 
-                /**
-                 * {@inheritDoc}
-                 * 
-                 * @see org.modeshape.jcr.JcrPropertyDefinition.Range#getMaximum()
-                 */
+                @Override
                 public Comparable<T> getMaximum() {
                     return upper;
                 }
 
-                /**
-                 * {@inheritDoc}
-                 * 
-                 * @see org.modeshape.jcr.JcrPropertyDefinition.Range#getMinimum()
-                 */
+                @Override
                 public Comparable<T> getMinimum() {
                     return lower;
                 }
             };
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see ConstraintChecker#matches(javax.jcr.Value)
-         */
-        public boolean matches( Value value ) {
+        @Override
+        public boolean matches( Value value,
+                                JcrSession session ) {
             assert value != null;
-
             T convertedValue = valueFactory.create(((JcrValue)value).value());
-
             for (int i = 0; i < constraints.length; i++) {
                 if (constraints[i].accepts(convertedValue)) {
                     return true;
                 }
             }
-
             return false;
         }
     }
 
     @Immutable
     private static class BinaryConstraintChecker extends LongConstraintChecker {
-        private final ValueFactories valueFactories;
 
         protected BinaryConstraintChecker( String[] valueConstraints,
                                            ExecutionContext context ) {
             super(valueConstraints, context);
-
-            this.valueFactories = context.getValueFactories();
         }
 
         @Override
@@ -706,10 +675,17 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         }
 
         @Override
-        public boolean matches( Value value ) {
-            Binary binary = valueFactories.getBinaryFactory().create(((JcrValue)value).value());
-            Value sizeValue = ((JcrValue)value).sessionCache().session().getValueFactory().createValue(binary.getSize());
-            return super.matches(sizeValue);
+        public boolean matches( Value value,
+                                JcrSession session ) {
+            try {
+                JcrValue jcrValue = (JcrValue)value;
+                long thatSize = value.getBinary().getSize();
+                JcrValue sizeValue = new JcrValue(jcrValue.factories(), PropertyType.LONG, thatSize);
+                return super.matches(sizeValue, session);
+            } catch (RepositoryException e) {
+                assert false : "Unexpected condition";
+                return false;
+            }
         }
     }
 
@@ -721,6 +697,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
             super(valueConstraints, context);
         }
 
+        @Override
         public int getType() {
             return PropertyType.LONG;
         }
@@ -744,6 +721,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
             super(valueConstraints, context);
         }
 
+        @Override
         public int getType() {
             return PropertyType.DATE;
         }
@@ -767,6 +745,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
             super(valueConstraints, context);
         }
 
+        @Override
         public int getType() {
             return PropertyType.DOUBLE;
         }
@@ -790,6 +769,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
             super(valueConstraints, context);
         }
 
+        @Override
         public int getType() {
             return PropertyType.DECIMAL;
         }
@@ -807,8 +787,6 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
 
     @Immutable
     private static class ReferenceConstraintChecker implements ConstraintChecker {
-        // private final ExecutionContext context;
-
         private final Name[] constraints;
 
         protected ReferenceConstraintChecker( String[] valueConstraints,
@@ -824,27 +802,28 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
             }
         }
 
+        @Override
         public int getType() {
             return PropertyType.REFERENCE;
         }
 
-        public boolean matches( Value value ) {
+        @Override
+        public boolean matches( Value value,
+                                JcrSession session ) {
             assert value instanceof JcrValue;
 
             JcrValue jcrValue = (JcrValue)value;
-            SessionCache cache = jcrValue.sessionCache();
-
             Node node = null;
             try {
-                UUID uuid = cache.factories().getUuidFactory().create(jcrValue.value());
-                node = cache.findJcrNode(Location.create(uuid));
+                node = session.getNodeByIdentifier(jcrValue.getString());
             } catch (RepositoryException re) {
                 return false;
             }
 
+            NamespaceRegistry namespaces = session.namespaces();
             for (int i = 0; i < constraints.length; i++) {
                 try {
-                    if (node.isNodeType(constraints[i].getString(cache.session().namespaces()))) {
+                    if (node.isNodeType(constraints[i].getString(namespaces))) {
                         return true;
                     }
                 } catch (RepositoryException re) {
@@ -872,21 +851,19 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
             }
         }
 
+        @Override
         public int getType() {
             return PropertyType.NAME;
         }
 
-        public boolean matches( Value value ) {
+        @Override
+        public boolean matches( Value value,
+                                JcrSession session ) {
             assert value instanceof JcrValue;
 
             JcrValue jcrValue = (JcrValue)value;
             // Need to use the session execution context to handle the remaps
-            Name name = jcrValue.sessionCache()
-                                .session()
-                                .getExecutionContext()
-                                .getValueFactories()
-                                .getNameFactory()
-                                .create(jcrValue.value());
+            Name name = session.context().getValueFactories().getNameFactory().create(jcrValue.value());
 
             for (int i = 0; i < constraints.length; i++) {
                 if (constraints[i].equals(name)) {
@@ -913,11 +890,14 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
             }
         }
 
+        @Override
         public int getType() {
             return PropertyType.STRING;
         }
 
-        public boolean matches( Value value ) {
+        @Override
+        public boolean matches( Value value,
+                                JcrSession session ) {
             assert value != null;
 
             String convertedValue = valueFactory.create(((JcrValue)value).value());
@@ -943,30 +923,31 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
             this.context = context;
         }
 
+        @Override
         public int getType() {
             return PropertyType.PATH;
         }
 
-        public boolean matches( Value valueToMatch ) {
+        @Override
+        public boolean matches( Value valueToMatch,
+                                JcrSession session ) {
             assert valueToMatch instanceof JcrValue;
-
-            JcrValue jcrValue = (JcrValue)valueToMatch;
 
             /*
              * Need two path factories here.  One uses the permanent namespace mappings to parse the constraints.
              * The other also looks at the transient mappings to parse the checked value
              */
             PathFactory repoPathFactory = context.getValueFactories().getPathFactory();
-            PathFactory sessionPathFactory = jcrValue.sessionCache().context().getValueFactories().getPathFactory();
+            PathFactory sessionPathFactory = session.pathFactory();
             Path value = sessionPathFactory.create(((JcrValue)valueToMatch).value());
             value = value.getNormalizedPath();
 
             for (int i = 0; i < constraints.length; i++) {
                 boolean matchesDescendants = constraints[i].endsWith("*");
-                Path constraintPath = repoPathFactory.create(matchesDescendants ? constraints[i].substring(0,
-                                                                                                           constraints[i].length() - 2) : constraints[i]);
-
-                if (matchesDescendants && value.isDecendantOf(constraintPath)) {
+                String pathStr = constraints[i];
+                if (matchesDescendants) pathStr = pathStr.substring(0, pathStr.length() - 2);
+                Path constraintPath = repoPathFactory.create(pathStr);
+                if (matchesDescendants && value.isDescendantOf(constraintPath)) {
                     return true;
                 }
 

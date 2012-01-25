@@ -24,14 +24,25 @@
 package org.modeshape.jcr;
 
 import org.modeshape.common.annotation.Immutable;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.basic.BasicName;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.basic.BasicName;
 
 /**
  * Lexicon of names from the standard JCR "<code>http://www.jcp.org/jcr/mix/1.0</code>" namespace.
  */
 @Immutable
-public class JcrMixLexicon extends org.modeshape.graph.JcrMixLexicon {
+public class JcrMixLexicon {
+
+    public static class Namespace {
+        public static final String URI = "http://www.jcp.org/jcr/mix/1.0";
+        public static final String PREFIX = "mix";
+    }
+
+    public static final Name REFERENCEABLE = new BasicName(Namespace.URI, "referenceable");
+    public static final Name VERSIONABLE = new BasicName(Namespace.URI, "versionable");
+    public static final Name LOCKABLE = new BasicName(Namespace.URI, "lockable");
+    public static final Name CREATED = new BasicName(Namespace.URI, "created");
+    public static final Name LAST_MODIFIED = new BasicName(Namespace.URI, "lastModified");
 
     /**
      * The name for the "mix:etag" mixin.

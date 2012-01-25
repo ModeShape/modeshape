@@ -40,15 +40,14 @@ import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.collection.Collections;
-import org.modeshape.graph.Location;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.Path;
-import org.modeshape.graph.query.QueryResults;
-import org.modeshape.graph.query.QueryResults.Columns;
-import org.modeshape.graph.query.model.Column;
-import org.modeshape.graph.query.validate.Schemata;
-import org.modeshape.graph.query.validate.Schemata.Table;
 import org.modeshape.jcr.JcrI18n;
+import org.modeshape.jcr.query.QueryResults.Columns;
+import org.modeshape.jcr.query.QueryResults.Location;
+import org.modeshape.jcr.query.model.Column;
+import org.modeshape.jcr.query.validate.Schemata;
+import org.modeshape.jcr.query.validate.Schemata.Table;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.Path;
 
 /**
  * The results of a query. This is not thread-safe because it relies upon JcrSession, which is not thread-safe. Also, although the
@@ -102,31 +101,19 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
         return results.getColumns().getColumnTypes();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.query.QueryResult#getColumnNames()
-     */
+    @Override
     public String[] getColumnNames() /*throws RepositoryException*/{
         List<String> names = getColumnNameList();
         return names.toArray(new String[names.size()]); // make a defensive copy ...
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.api.query.QueryResult#getColumnTypes()
-     */
+    @Override
     public String[] getColumnTypes() {
         List<String> types = getColumnTypeList();
         return types.toArray(new String[types.size()]); // make a defensive copy ...
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.api.query.QueryResult#getSelectorNames()
-     */
+    @Override
     public String[] getSelectorNames() {
         if (columnTables == null) {
             // Discover the types ...
@@ -143,11 +130,7 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
         return columnTables.toArray(new String[columnTables.size()]);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.query.QueryResult#getNodes()
-     */
+    @Override
     public NodeIterator getNodes() throws RepositoryException {
         // Find all of the nodes in the results. We have to do this pre-emptively, since this
         // is the only method to throw RepositoryException ...
@@ -167,11 +150,7 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
         return new QueryResultNodeIterator(nodes);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.query.QueryResult#getRows()
-     */
+    @Override
     public RowIterator getRows() /*throws RepositoryException*/{
         // We can actually delay the loading of the nodes until the rows are accessed ...
         final int numRows = results.getRowCount();
@@ -191,11 +170,6 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
         return results.getPlan();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#toString()
-     */
     @Override
     public String toString() {
         return results.toString();
@@ -217,68 +191,40 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
             this.size = nodes.size();
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.NodeIterator#nextNode()
-         */
+        @Override
         public Node nextNode() {
             Node node = nodes.next();
             ++position;
             return node;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.RangeIterator#getPosition()
-         */
+        @Override
         public long getPosition() {
             return position;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.RangeIterator#getSize()
-         */
+        @Override
         public long getSize() {
             return size;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.RangeIterator#skip(long)
-         */
+        @Override
         public void skip( long skipNum ) {
             for (long i = 0L; i != skipNum; ++i)
                 nextNode();
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.util.Iterator#hasNext()
-         */
+        @Override
         public boolean hasNext() {
             return nodes.hasNext();
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.util.Iterator#next()
-         */
+        @Override
         public Object next() {
             return nextNode();
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.util.Iterator#remove()
-         */
+        @Override
         public void remove() {
             throw new UnsupportedOperationException();
         }
@@ -326,11 +272,7 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
             return this.selectorNames.contains(selectorName);
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.query.RowIterator#nextRow()
-         */
+        @Override
         public Row nextRow() {
             if (nextRow == null) {
                 // Didn't call 'hasNext()' ...
@@ -344,29 +286,17 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
             return result;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.RangeIterator#getPosition()
-         */
+        @Override
         public long getPosition() {
             return position;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.RangeIterator#getSize()
-         */
+        @Override
         public long getSize() {
             return numRows;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.RangeIterator#skip(long)
-         */
+        @Override
         public void skip( long skipNum ) {
             for (long i = 0L; i != skipNum; ++i) {
                 tuples.next();
@@ -374,11 +304,7 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
             position += skipNum;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.util.Iterator#hasNext()
-         */
+        @Override
         public boolean hasNext() {
             if (nextRow != null) {
                 return true;
@@ -418,20 +344,12 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
             return columns.getPropertyNameForColumnName(columnName);
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.util.Iterator#next()
-         */
+        @Override
         public Object next() {
             return nextRow();
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.util.Iterator#remove()
-         */
+        @Override
         public void remove() {
             throw new UnsupportedOperationException();
         }
@@ -482,11 +400,6 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
             scoreIndex = columns.getFullTextSearchScoreIndexFor(selectorName);
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see QueryResultRowIterator#getNextRow(java.lang.Object[])
-         */
         @Override
         protected Row getNextRow( Object[] tuple ) throws RepositoryException {
             Location location = (Location)tuple[locationIndex];
@@ -517,11 +430,7 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
             assert this.tuple != null;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.query.Row#getNode(java.lang.String)
-         */
+        @Override
         public Node getNode( String selectorName ) throws RepositoryException {
             if (!iterator.hasSelector(selectorName)) {
                 throw new RepositoryException(JcrI18n.selectorNotUsedInQuery.text(selectorName, iterator.query));
@@ -529,11 +438,7 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
             return node;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.query.Row#getValue(java.lang.String)
-         */
+        @Override
         public Value getValue( String columnName ) throws ItemNotFoundException, RepositoryException {
             // Get the property name for the column. Note that if the column is aliased, the property name will be different;
             // otherwise, the property name will be the same as the column name ...
@@ -579,11 +484,7 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
             return value;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.query.Row#getValues()
-         */
+        @Override
         public Value[] getValues() throws RepositoryException {
             if (values == null) {
                 int i = 0;
@@ -595,14 +496,17 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
             return values;
         }
 
+        @Override
         public Node getNode() {
             return node;
         }
 
+        @Override
         public String getPath() throws RepositoryException {
             return node.getPath();
         }
 
+        @Override
         public String getPath( String selectorName ) throws RepositoryException {
             if (!iterator.hasSelector(selectorName)) {
                 throw new RepositoryException(JcrI18n.selectorNotUsedInQuery.text(selectorName, iterator.query));
@@ -610,6 +514,7 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
             return node.getPath();
         }
 
+        @Override
         public double getScore() throws RepositoryException {
             int index = iterator.scoreIndex;
             if (index == -1) {
@@ -619,6 +524,7 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
             return score instanceof Float ? ((Float)score).doubleValue() : (Double)score;
         }
 
+        @Override
         public double getScore( String selectorName ) throws RepositoryException {
             if (!iterator.hasSelector(selectorName)) {
                 throw new RepositoryException(JcrI18n.selectorNotUsedInQuery.text(selectorName, iterator.query));
@@ -644,11 +550,7 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
             assert this.tuple != null;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.query.Row#getNode(java.lang.String)
-         */
+        @Override
         public Node getNode( String selectorName ) throws RepositoryException {
             int nodeIndex = iterator.columns.getSelectorNames().indexOf(selectorName);
             if (nodeIndex == -1) {
@@ -657,11 +559,7 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
             return nodes[nodeIndex];
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.query.Row#getValue(java.lang.String)
-         */
+        @Override
         public Value getValue( String columnName ) throws ItemNotFoundException, RepositoryException {
             String selectorName = iterator.columns.getSelectorNameForColumnName(columnName);
             int nodeIndex = iterator.columns.getSelectorNames().indexOf(selectorName);
@@ -716,11 +614,7 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
             return value;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.query.Row#getValues()
-         */
+        @Override
         public Value[] getValues() throws RepositoryException {
             if (values == null) {
                 int i = 0;
@@ -732,25 +626,30 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
             return values;
         }
 
+        @Override
         public Node getNode() throws RepositoryException {
             throw new RepositoryException(
                                           JcrI18n.multipleSelectorsAppearInQueryRequireSpecifyingSelectorName.text(iterator.query));
         }
 
+        @Override
         public String getPath() throws RepositoryException {
             throw new RepositoryException(
                                           JcrI18n.multipleSelectorsAppearInQueryRequireSpecifyingSelectorName.text(iterator.query));
         }
 
+        @Override
         public double getScore() throws RepositoryException {
             throw new RepositoryException(
                                           JcrI18n.multipleSelectorsAppearInQueryRequireSpecifyingSelectorName.text(iterator.query));
         }
 
+        @Override
         public String getPath( String selectorName ) throws RepositoryException {
             return getNode(selectorName).getPath();
         }
 
+        @Override
         public double getScore( String selectorName ) throws RepositoryException {
             if (!iterator.hasSelector(selectorName)) {
                 throw new RepositoryException(JcrI18n.selectorNotUsedInQuery.text(selectorName, iterator.query));
