@@ -54,7 +54,7 @@ import org.modeshape.jcr.JcrRepository;
  * A <code>ManagedEngine</code> instance is a JBoss managed object for a
  * {@link JcrEngine}.
  */
-public final class EngineService implements Service<JcrEngine>, ModeShapeManagedObject, Serializable {
+public final class EngineService implements Service<JcrEngine>, Serializable {
 
 	private static final long serialVersionUID = 1L;
 
