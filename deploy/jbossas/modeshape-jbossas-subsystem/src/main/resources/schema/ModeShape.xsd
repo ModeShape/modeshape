@@ -310,7 +310,7 @@
                                     </xs:documentation>
                                 </xs:annotation>
                                 <xs:complexType>
-                                    <xs:attribute name="sequencer" type="xs:string">
+                                    <xs:attribute name="type" type="xs:string">
                                         <xs:annotation>
                                             <xs:documentation>A shortcut for 'classname' of built-in
                                                 sequencers, where the package name is not required. Values
@@ -342,6 +342,12 @@
                                         <xs:annotation>
                                             <xs:documentation>The fully-qualified name of the
                                                 org.modeshape.graph.text.TextExtractor implementation class.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                    <xs:attribute name="classloader" type="xs:string">
+                                        <xs:annotation>
+                                            <xs:documentation>The optional name of the classloader that should be used to load the sequencer class. If empty or not provided, the classpath accessible to ModeShape will be used.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:attribute>

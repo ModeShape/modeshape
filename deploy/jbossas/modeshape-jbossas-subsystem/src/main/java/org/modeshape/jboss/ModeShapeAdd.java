@@ -30,14 +30,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REQ
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import java.util.ServiceLoader;
-import java.util.concurrent.Executor;
 
-import javax.resource.spi.XATerminator;
-import javax.resource.spi.work.WorkManager;
-import javax.transaction.TransactionManager;
-
-import org.jboss.as.clustering.jgroups.ChannelFactory;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -45,27 +38,23 @@ import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.server.AbstractDeploymentChainStep;
 import org.jboss.as.server.DeploymentProcessorTarget;
-import org.jboss.as.server.deployment.Phase;
-import org.jboss.as.server.services.path.RelativePathService;
 import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.ModelType;
 import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
-import org.jboss.modules.ModuleLoadException;
 import org.jboss.msc.service.ServiceBuilder;
-import org.jboss.msc.service.ServiceBuilder.DependencyType;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
-import org.jboss.msc.service.ValueService;
-import org.jboss.msc.value.InjectedValue;
+import org.modeshape.jboss.service.EngineService;
 import org.modeshape.jboss.subsystem.JBossManagedI18n;
+import org.modeshape.jcr.JcrEngine;
+import org.modeshape.jcr.JcrRepository;
 
 class ModeShapeAdd extends AbstractAddStepHandler implements DescriptionProvider {
 
 	private static Element[] attributes = {
 	};
+	
+	final JBossLifeCycleListener shutdownListener = new JBossLifeCycleListener();
 	
 	@Override
 	public ModelNode getModelDescription(Locale locale) {
@@ -103,21 +92,19 @@ class ModeShapeAdd extends AbstractAddStepHandler implements DescriptionProvider
 		ClassLoader classloader = Thread.currentThread().getContextClassLoader();
 		try {
 			Thread.currentThread().setContextClassLoader(Module.getCallerModule().getClassLoader());
-		//	initilaizeTeiidEngine(context, operation, newControllers);
+			initializeModeShapeEngine(context, operation, newControllers);
 		} finally {
 			Thread.currentThread().setContextClassLoader(classloader);
 		}
 	}
 
-//	private void initilaizeTeiidEngine(final OperationContext context, final ModelNode operation, final List<ServiceController<?>> newControllers)
-//			throws OperationFailedException {
-//		ServiceTarget target = context.getServiceTarget();
-//		
-//		final JBossLifeCycleListener shutdownListener = new JBossLifeCycleListener();
-//		
-//		final String asyncThreadPoolName = Element.ASYNC_THREAD_POOL_ELEMENT.asString(operation); 
-//		
-//		// translator repository
+	private void initializeModeShapeEngine(final OperationContext context, final ModelNode operation, final List<ServiceController<?>> newControllers)
+			throws OperationFailedException {
+		ServiceTarget target = context.getServiceTarget();
+		
+		final JBossLifeCycleListener shutdownListener = new JBossLifeCycleListener();
+		
+//		// Sequencing service
 //    	final TranslatorRepository translatorRepo = new TranslatorRepository();
 //    	ValueService<TranslatorRepository> translatorService = new ValueService<TranslatorRepository>(new org.jboss.msc.value.Value<TranslatorRepository>() {
 //			@Override
@@ -127,180 +114,37 @@ class ModeShapeAdd extends AbstractAddStepHandler implements DescriptionProvider
 //    	});
 //    	ServiceController<TranslatorRepository> service = target.addService(TeiidServiceNames.TRANSLATOR_REPO, translatorService).install();
 //    	newControllers.add(service);
-//    	
-//    	// system function tree
-//		SystemFunctionManager systemFunctionManager = new SystemFunctionManager();
-//		if (Element.ALLOW_ENV_FUNCTION_ELEMENT.isDefined(operation)) {
-//			systemFunctionManager.setAllowEnvFunction(Element.ALLOW_ENV_FUNCTION_ELEMENT.asBoolean(operation));
-//		}
-//		else {
-//			systemFunctionManager.setAllowEnvFunction(false);
-//		}
-//		systemFunctionManager.setClassloader(Module.getCallerModule().getClassLoader()); 
-//    	
-//    	// VDB repository
-//    	final VDBRepository vdbRepository = new VDBRepository();
-//    	vdbRepository.setSystemFunctionManager(systemFunctionManager);
-//    	VDBRepositoryService vdbRepositoryService = new VDBRepositoryService(vdbRepository);
-//    	newControllers.add(target.addService(TeiidServiceNames.VDB_REPO, vdbRepositoryService).install());
-//		
-//    	// VDB Status manager
-//    	final VDBStatusCheckerExecutorService statusChecker = new VDBStatusCheckerExecutorService(vdbRepository);
-//    	ValueService<VDBStatusChecker> statusService = new ValueService<VDBStatusChecker>(new org.jboss.msc.value.Value<VDBStatusChecker>() {
-//			@Override
-//			public VDBStatusChecker getValue() throws IllegalStateException, IllegalArgumentException {
-//				return statusChecker;
-//			}
-//    	});
-//    	ServiceBuilder<VDBStatusChecker> statusBuilder = target.addService(TeiidServiceNames.VDB_STATUS_CHECKER, statusService);
-//    	statusBuilder.addDependency(TeiidServiceNames.executorServiceName(asyncThreadPoolName), Executor.class,  statusChecker.executorInjector);
-//    	newControllers.add(statusBuilder.install());    	
-//    	
-//    	// System VDB Service
-//    	SystemVDBDeployer systemVDB = new SystemVDBDeployer();
-//    	systemVDB.setVDBRepository(vdbRepository);
-//    	SystemVDBService systemVDBService = new SystemVDBService(systemVDB);
-//    	newControllers.add(target.addService(TeiidServiceNames.SYSTEM_VDB, systemVDBService).install());
-//    	
-//    	newControllers.add(RelativePathService.addService(TeiidServiceNames.DATA_DIR, "teiid-data", "jboss.server.data.dir", target)); //$NON-NLS-1$ //$NON-NLS-2$
-//    	final ObjectsSerializerService serializer = new ObjectsSerializerService();
-//    	ServiceBuilder<ObjectSerializer> objectSerializerService = target.addService(TeiidServiceNames.OBJECT_SERIALIZER, serializer);
-//    	objectSerializerService.addDependency(TeiidServiceNames.DATA_DIR, String.class, serializer.getPathInjector());
-//    	newControllers.add(objectSerializerService.install());
-//
-//    	// TODO: remove verbose service by moving the buffer service from runtime project
-//    	newControllers.add(RelativePathService.addService(TeiidServiceNames.BUFFER_DIR, "teiid-buffer", "jboss.server.temp.dir", target)); //$NON-NLS-1$ //$NON-NLS-2$
-//    	final BufferServiceImpl bufferManager = buildBufferManager(operation);
-//    	BufferManagerService bufferService = new BufferManagerService(bufferManager);
-//    	ServiceBuilder<BufferServiceImpl> bufferServiceBuilder = target.addService(TeiidServiceNames.BUFFER_MGR, bufferService);
-//    	bufferServiceBuilder.addDependency(TeiidServiceNames.BUFFER_DIR, String.class, bufferService.pathInjector);
-//    	newControllers.add(bufferServiceBuilder.install());
-//    	
-//    	PolicyDecider policyDecider;
-//    	if (Element.POLICY_DECIDER_MODULE_ATTRIBUTE.isDefined(operation)) {
-//    		policyDecider = buildService(PolicyDecider.class, Element.POLICY_DECIDER_MODULE_ATTRIBUTE.asString(operation));    		
-//    	}
-//    	else {
-//    		DataRolePolicyDecider drpd = new DataRolePolicyDecider();
-//    		drpd.setAllowCreateTemporaryTablesByDefault(true);
-//    		drpd.setAllowFunctionCallsByDefault(true);
-//    		policyDecider = drpd;
-//    	}
-//    	
-//    	final AuthorizationValidator authValidator;
-//    	if (Element.AUTHORIZATION_VALIDATOR_MODULE_ATTRIBUTE.isDefined(operation)) {
-//    		authValidator = buildService(AuthorizationValidator.class, Element.AUTHORIZATION_VALIDATOR_MODULE_ATTRIBUTE.asString(operation));
-//    		authValidator.setEnabled(true);
-//    	}
-//    	else {
-//    		DefaultAuthorizationValidator dap = new DefaultAuthorizationValidator();
-//    		dap.setPolicyDecider(policyDecider);
-//    		dap.setEnabled(true);
-//    		authValidator = dap;
-//    	}
-//    	
-//    	ValueService<AuthorizationValidator> authValidatorService = new ValueService<AuthorizationValidator>(new org.jboss.msc.value.Value<AuthorizationValidator>() {
-//			@Override
-//			public AuthorizationValidator getValue() throws IllegalStateException, IllegalArgumentException {
-//				return authValidator;
-//			}
-//    	});    	
-//    	newControllers.add(target.addService(TeiidServiceNames.AUTHORIZATION_VALIDATOR, authValidatorService).install());
-//    	
-//    	// resultset cache
-//    	final SessionAwareCache<CachedResults> resultsetCache = buildResultsetCache(operation, bufferManager.getBufferManager());
-//    	ValueService<SessionAwareCache<CachedResults>> resultSetService = new ValueService<SessionAwareCache<CachedResults>>(new org.jboss.msc.value.Value<SessionAwareCache<CachedResults>>() {
-//			@Override
-//			public SessionAwareCache<CachedResults> getValue() throws IllegalStateException, IllegalArgumentException {
-//				return resultsetCache;
-//			}
-//    	});
-//    	newControllers.add(target.addService(TeiidServiceNames.CACHE_RESULTSET, resultSetService).install());
-//    	
-//    	// prepared-plan cache
-//    	final SessionAwareCache<PreparedPlan> preparedPlanCache = buildPreparedPlanCache(operation, bufferManager.getBufferManager());
-//    	ValueService<SessionAwareCache<PreparedPlan>> preparedPlanService = new ValueService<SessionAwareCache<PreparedPlan>>(new org.jboss.msc.value.Value<SessionAwareCache<PreparedPlan>>() {
-//			@Override
-//			public SessionAwareCache<PreparedPlan> getValue() throws IllegalStateException, IllegalArgumentException {
-//				return preparedPlanCache;
-//			}
-//    	});
-//    	newControllers.add(target.addService(TeiidServiceNames.CACHE_PREPAREDPLAN, preparedPlanService).install());
-//    	
-//    	// Object Replicator
-//    	if (Element.OR_STACK_ATTRIBUTE.isDefined(operation)) {
-//    		String stack = Element.OR_STACK_ATTRIBUTE.asString(operation);
-//    		
-//    		String clusterName = "teiid-rep"; //$NON-NLS-1$ 
-//    		if (Element.OR_CLUSTER_NAME_ATTRIBUTE.isDefined(operation)) {
-//    			clusterName = Element.OR_CLUSTER_NAME_ATTRIBUTE.asString(operation);
-//    		}
-//    		
-//    		JGroupsObjectReplicatorService replicatorService = new JGroupsObjectReplicatorService(clusterName);
-//    		replicatorService.setBufferManager(bufferManager.getBufferManager());
-//			ServiceBuilder<JGroupsObjectReplicator> serviceBuilder = target.addService(TeiidServiceNames.OBJECT_REPLICATOR, replicatorService);
-//			serviceBuilder.addDependency(ServiceName.JBOSS.append("jgroups", stack), ChannelFactory.class, replicatorService.channelFactoryInjector); //$NON-NLS-1$
-//			newControllers.add(serviceBuilder.install());
-//    	}
-//    	
-//    	// Query Engine
-//    	final RuntimeEngineDeployer engine = buildQueryEngine(operation);
-//    	String workManager = "default"; //$NON-NLS-1$
-//    	if (Element.WORKMANAGER.isDefined(operation)) {
-//    		workManager = Element.WORKMANAGER.asString(operation);
-//    	}
-//    	
-//        ServiceBuilder<DQPCore> engineBuilder = target.addService(TeiidServiceNames.ENGINE, engine);
-//        engineBuilder.addDependency(ServiceName.JBOSS.append("connector", "workmanager", workManager), WorkManager.class, engine.getWorkManagerInjector()); //$NON-NLS-1$ //$NON-NLS-2$
-//        engineBuilder.addDependency(ServiceName.JBOSS.append("txn", "XATerminator"), XATerminator.class, engine.getXaTerminatorInjector()); //$NON-NLS-1$ //$NON-NLS-2$
-//        engineBuilder.addDependency(ServiceName.JBOSS.append("txn", "TransactionManager"), TransactionManager.class, engine.getTxnManagerInjector()); //$NON-NLS-1$ //$NON-NLS-2$
-//        engineBuilder.addDependency(TeiidServiceNames.BUFFER_MGR, BufferServiceImpl.class, engine.getBufferServiceInjector());
-//        engineBuilder.addDependency(TeiidServiceNames.SYSTEM_VDB, SystemVDBDeployer.class,  new InjectedValue<SystemVDBDeployer>());
-//        engineBuilder.addDependency(TeiidServiceNames.TRANSLATOR_REPO, TranslatorRepository.class, engine.getTranslatorRepositoryInjector());
-//        engineBuilder.addDependency(TeiidServiceNames.VDB_REPO, VDBRepository.class, engine.getVdbRepositoryInjector());
-//        engineBuilder.addDependency(TeiidServiceNames.AUTHORIZATION_VALIDATOR, AuthorizationValidator.class, engine.getAuthorizationValidatorInjector());
-//        engineBuilder.addDependency(TeiidServiceNames.CACHE_RESULTSET, SessionAwareCache.class, engine.getResultSetCacheInjector());
-//        engineBuilder.addDependency(TeiidServiceNames.CACHE_PREPAREDPLAN, SessionAwareCache.class, engine.getPreparedPlanCacheInjector());
-//        engineBuilder.addDependency(DependencyType.OPTIONAL, TeiidServiceNames.OBJECT_REPLICATOR, ObjectReplicator.class, engine.getObjectReplicatorInjector());
-//        
-//        engineBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
-//        ServiceController<DQPCore> controller = engineBuilder.install(); 
-//        newControllers.add(controller);
-//        ServiceContainer container =  controller.getServiceContainer();
-//        container.addTerminateListener(shutdownListener);
-//            	
-//    	// Register VDB deployer
-//        context.addStep(new AbstractDeploymentChainStep() {
-//			@Override
-//			public void execute(DeploymentProcessorTarget processorTarget) {
-//				// vdb deployers
-//				processorTarget.addDeploymentProcessor(Phase.STRUCTURE, Phase.STRUCTURE_WAR_DEPLOYMENT_INIT,new DynamicVDBRootMountDeployer());
-//				processorTarget.addDeploymentProcessor(Phase.STRUCTURE, Phase.STRUCTURE_WAR_DEPLOYMENT_INIT|0x0001,new VDBStructureDeployer());
-//				processorTarget.addDeploymentProcessor(Phase.PARSE, Phase.PARSE_WEB_DEPLOYMENT|0x0001, new VDBParserDeployer());
-//				processorTarget.addDeploymentProcessor(Phase.DEPENDENCIES, Phase.DEPENDENCIES_WAR_MODULE|0x0001, new VDBDependencyDeployer());
-//				processorTarget.addDeploymentProcessor(Phase.INSTALL, Phase.INSTALL_WAR_DEPLOYMENT|0x1000, new VDBDeployer(translatorRepo, asyncThreadPoolName, statusChecker));
-//				
-//				// translator deployers
-//				processorTarget.addDeploymentProcessor(Phase.STRUCTURE, Phase.STRUCTURE_JDBC_DRIVER|0x0001,new TranslatorStructureDeployer());
-//				processorTarget.addDeploymentProcessor(Phase.DEPENDENCIES, Phase.DEPENDENCIES_MODULE|0x0001, new TranslatorDependencyDeployer());
-//				processorTarget.addDeploymentProcessor(Phase.INSTALL, Phase.INSTALL_JDBC_DRIVER|0x0001, new TranslatorDeployer());
-//			}
-//        	
-//        }, OperationContext.Stage.RUNTIME);
-//	}
+    	
+    	
+    	// Jcr Engine
+    	final EngineService engine = buildModeShapeEngine(operation);
+    	
+        ServiceBuilder<JcrEngine> engineBuilder = target.addService(ModeShapeServiceNames.ENGINE, engine);
+        engineBuilder.addDependency(ModeShapeServiceNames.REPOSITORY, JcrRepository.class, engine.getJcrRepositoryInjector());
+ //       engineBuilder.addDependency(DependencyType.OPTIONAL, TeiidServiceNames.OBJECT_REPLICATOR, ObjectReplicator.class, engine.getObjectReplicatorInjector());
+        
+        engineBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
+        ServiceController<JcrEngine> controller = engineBuilder.install(); 
+        newControllers.add(controller);
+        ServiceContainer container =  controller.getServiceContainer();
+        container.addTerminateListener(shutdownListener);
+     
+    	    	
+    	// Register Sequencer deployer
+        context.addStep(new AbstractDeploymentChainStep() {
+			@Override
+			public void execute(DeploymentProcessorTarget processorTarget) {
+				
+			//  sequencer deployers
+			//	processorTarget.addDeploymentProcessor(Phase.STRUCTURE, Phase.STRUCTURE_JDBC_DRIVER|0x0001,new TranslatorStructureDeployer());
+			//	processorTarget.addDeploymentProcessor(Phase.DEPENDENCIES, Phase.DEPENDENCIES_MODULE|0x0001, new TranslatorDependencyDeployer());
+			//	processorTarget.addDeploymentProcessor(Phase.INSTALL, Phase.INSTALL_JDBC_DRIVER|0x0001, new TranslatorDeployer());
+			}
+        	
+        }, OperationContext.Stage.RUNTIME);
+	}
 	
-//    private <T> T buildService(Class<T> type, String moduleName) throws OperationFailedException {
-//        final ModuleIdentifier moduleId;
-//        final Module module;
-//        try {
-//            moduleId = ModuleIdentifier.create(moduleName);
-//            module = Module.getCallerModuleLoader().loadModule(moduleId);
-//        } catch (ModuleLoadException e) {
-//            throw new OperationFailedException(e, new ModelNode().set(IntegrationPlugin.Util.getString("failed_load_module", moduleName))); //$NON-NLS-1$
-//        }
-//        ServiceLoader<T> services = module.loadService(type);
-//        return services.iterator().next();
-//    }
+  
 //	
 //		
 //    private BufferServiceImpl  buildBufferManager(ModelNode node) {
@@ -421,8 +265,10 @@ class ModeShapeAdd extends AbstractAddStepHandler implements DescriptionProvider
 //	}	    
 //    
 //    
-//	private RuntimeEngineDeployer buildQueryEngine(ModelNode node) {
-//		RuntimeEngineDeployer engine = new RuntimeEngineDeployer();
+	private EngineService buildModeShapeEngine(ModelNode node) {
+		EngineService engine = new EngineService(new JcrEngine());
+//		
+//		engine.
 //    	
 //    	if (Element.MAX_THREADS_ELEMENT.isDefined(node)) {
 //    		engine.setMaxThreads(Element.MAX_THREADS_ELEMENT.asInt(node));
@@ -457,8 +303,8 @@ class ModeShapeAdd extends AbstractAddStepHandler implements DescriptionProvider
 //    	if (Element.QUERY_TIMEOUT.isDefined(node)) {
 //    		engine.setQueryTimeout(Element.QUERY_TIMEOUT.asLong(node));
 //    	}
-//		return engine;
-//	}    
+		return engine;
+	}    
 //	
 //	static class VDBStatusCheckerExecutorService extends VDBStatusChecker{
 //		final InjectedValue<Executor> executorInjector = new InjectedValue<Executor>();

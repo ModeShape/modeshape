@@ -21,29 +21,32 @@
  */
 package org.modeshape.jboss;
 
-import org.jboss.msc.service.ServiceName;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
-public class ModeShapeServiceNames {
-	public static ServiceName ENGINE = ServiceName.JBOSS.append("modeshape", "engine"); //$NON-NLS-1$ //$NON-NLS-2$
-	public static ServiceName REPOSITORY = ServiceName.JBOSS.append("modeshape", "repositories");//$NON-NLS-1$ //$NON-NLS-2$
-		
-//	public static ServiceName translatorServiceName(String name) {
-//		return ServiceName.of(TRANSLATOR_BASE, name);
-//	}
-//	
-//	public static ServiceName vdbServiceName(String vdbName, int version) {
-//		return VDB_SVC_BASE.append(vdbName, String.valueOf(version)); 
-//	}
-//	
-//	public static ServiceName executorServiceName(String poolName) {
-//		return ServiceName.JBOSS.append("thread", "executor", poolName); //$NON-NLS-1$ //$NON-NLS-2$
-//	}
-//	
-//	public static ServiceName transportServiceName(String name) {
-//		return ServiceName.of(TRANSPORT_BASE, name);
-//	}
-//	
-//	public static ServiceName dsListenerServiceName(String name) {
-//		return ServiceName.of(DS_LISTENER_BASE, name);
-//	}
+import org.jboss.msc.service.ServiceContainer.TerminateListener;
+import org.modeshape.jboss.service.ContainerLifeCycleListener;
+
+class JBossLifeCycleListener implements TerminateListener, ContainerLifeCycleListener {
+
+	private boolean shutdownInProgress = false;
+	private List<ContainerLifeCycleListener.LifeCycleEventListener> listeners = Collections.synchronizedList(new ArrayList<ContainerLifeCycleListener.LifeCycleEventListener>());
+	
+	@Override
+	public boolean isShutdownInProgress() {
+		return shutdownInProgress;
+	}
+
+	@Override
+	public void handleTermination(Info info) {
+		if (info.getShutdownInitiated() > 0) {
+			this.shutdownInProgress = true;
+		}
+	}
+
+	@Override
+	public void addListener(LifeCycleEventListener listener) {
+		listeners.add(listener);
+	}
 }

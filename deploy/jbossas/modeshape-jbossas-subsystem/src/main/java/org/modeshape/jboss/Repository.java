@@ -21,30 +21,17 @@
  */
 package org.modeshape.jboss;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
-import org.jboss.as.network.SocketBinding;
-import org.jboss.as.security.plugins.SecurityDomainContext;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
+import org.modeshape.jcr.JcrRepository;
 
 
-public class Repository implements Service {
+public class Repository implements Service<JcrRepository> {
 
 	@Override
-	public Object getValue() throws IllegalStateException,
+	public JcrRepository getValue() throws IllegalStateException,
 			IllegalArgumentException {
 		// TODO Auto-generated method stub
 		return null;

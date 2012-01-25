@@ -19,6 +19,10 @@
 		those defined in the dependencyManagement section of the parent pom.
 	-->
 	<dependencies>
+	<dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>modeshape-jcr-redux</artifactId>
+    </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>modeshape-common</artifactId>

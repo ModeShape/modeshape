@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 abstract class ModeShapeOperationHandler extends BaseOperationHandler {
-	List transports = new ArrayList();
+//	List repositories = new ArrayList();
 	
 	protected ModeShapeOperationHandler(String operationName){
 		super(operationName);
