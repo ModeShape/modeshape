@@ -38,7 +38,7 @@ import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.text.TextEncoder;
 import org.modeshape.common.text.XmlNameEncoder;
 import org.modeshape.common.xml.StreamingContentHandler;
-import org.modeshape.graph.property.Name;
+import org.modeshape.jcr.value.Name;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -116,7 +116,7 @@ abstract class AbstractJcrExporter {
         String prefixedName = prefixedNames.get(baseName);
 
         if (prefixedName == null) {
-            prefixedName = baseName.getString(session.getExecutionContext().getNamespaceRegistry());
+            prefixedName = baseName.getString(session.namespaces());
 
             prefixedNames.put(baseName, prefixedName);
         }
@@ -158,13 +158,7 @@ abstract class AbstractJcrExporter {
             }
         }
 
-        try {
-            exportNode(exportRootNode, contentHandler, skipBinary, noRecurse);
-        } finally {
-            // Refresh the session to release all nodes that have been cached and any binary values that were purged,
-            // but keep any transient changes made within the session ...
-            exportRootNode.refresh(true);
-        }
+        exportNode(exportRootNode, contentHandler, skipBinary, noRecurse);
 
         for (int i = 0; i < namespacePrefixes.length; i++) {
             if (!restrictedPrefixes.contains(namespacePrefixes[i])) {
@@ -187,16 +181,15 @@ abstract class AbstractJcrExporter {
      *        and not any of its child nodes.
      * @throws RepositoryException if an exception occurs accessing the content repository, generating the XML document, or
      *         writing it to the output stream <code>os</code>.
+     * @throws IOException if there is a problem writing to the supplied stream
      */
     public void exportView( Node node,
                             OutputStream os,
                             boolean skipBinary,
-                            boolean noRecurse ) throws RepositoryException {
+                            boolean noRecurse ) throws IOException, RepositoryException {
         try {
             exportView(node, new StreamingContentHandler(os, UNEXPORTABLE_NAMESPACES), skipBinary, noRecurse);
             os.flush();
-        } catch (IOException ioe) {
-            throw new RepositoryException(ioe);
         } catch (SAXException se) {
             throw new RepositoryException(se);
         }

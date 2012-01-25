@@ -26,24 +26,39 @@ package org.modeshape.jcr;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
+import javax.jcr.ImportUUIDBehavior;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
-/**
- * 
- */
-@Migrated
-public class JcrNodeTest extends AbstractJcrTest {
+public class JcrNodeTest extends MultiUseAbstractTest {
 
     private AbstractJcrNode hybrid;
     private AbstractJcrNode altima;
+
+    @BeforeClass
+    public static final void beforeAll() throws Exception {
+        MultiUseAbstractTest.beforeAll();
+
+        // Import the node types and the data ...
+        registerNodeTypes("cars.cnd");
+        importContent("/", "io/cars-system-view-with-uuids.xml", ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);
+    }
+
+    @AfterClass
+    public static final void afterAll() throws Exception {
+        MultiUseAbstractTest.afterAll();
+    }
 
     @Override
     @Before
     public void beforeEach() throws Exception {
         super.beforeEach();
-        hybrid = cache.findJcrNode(null, path("/Cars/Hybrid"));
-        altima = cache.findJcrNode(null, path("/Cars/Hybrid/Nissan Altima"));
+        hybrid = session.getNode("/Cars/Hybrid");
+        altima = session.getNode("/Cars/Hybrid/Nissan Altima");
+        assertThat(hybrid, is(notNullValue()));
+        assertThat(altima, is(notNullValue()));
     }
 
     @Test
@@ -51,8 +66,12 @@ public class JcrNodeTest extends AbstractJcrTest {
         assertThat(altima.getPath(), is("/Cars/Hybrid/Nissan Altima"));
 
         javax.jcr.Node altima2 = hybrid.addNode("Nissan Altima");
-        assertThat(altima2, is(notNullValue()));
-        assertThat(altima2.getPath(), is("/Cars/Hybrid/Nissan Altima[2]"));
+        try {
+            assertThat(altima2, is(notNullValue()));
+            assertThat(altima2.getPath(), is("/Cars/Hybrid/Nissan Altima[2]"));
+        } finally {
+            altima2.remove(); // remove the node we added in this test to not interfere with other tests
+        }
     }
 
     @Test
@@ -60,16 +79,24 @@ public class JcrNodeTest extends AbstractJcrTest {
         assertThat(altima.getIndex(), is(1));
 
         javax.jcr.Node altima2 = hybrid.addNode("Nissan Altima");
-        assertThat(altima2, is(notNullValue()));
-        assertThat(altima2.getIndex(), is(2));
+        try {
+            assertThat(altima2, is(notNullValue()));
+            assertThat(altima2.getIndex(), is(2));
+        } finally {
+            altima2.remove(); // remove the node we added in this test to not interfere with other tests
+        }
     }
 
     @Test
     public void shouldHaveNameThatExcludesSameNameSiblingIndex() throws Exception {
         assertThat(altima.getName(), is("Nissan Altima"));
         javax.jcr.Node altima2 = hybrid.addNode("Nissan Altima");
-        assertThat(altima2, is(notNullValue()));
-        assertThat(altima2.getPath(), is("/Cars/Hybrid/Nissan Altima[2]"));
-        assertThat(altima2.getName(), is("Nissan Altima"));
+        try {
+            assertThat(altima2, is(notNullValue()));
+            assertThat(altima2.getPath(), is("/Cars/Hybrid/Nissan Altima[2]"));
+            assertThat(altima2.getName(), is("Nissan Altima"));
+        } finally {
+            altima2.remove(); // remove the node we added in this test to not interfere with other tests
+        }
     }
 }

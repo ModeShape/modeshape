@@ -25,14 +25,14 @@ package org.modeshape.jcr;
 
 import java.io.IOException;
 import java.io.InputStream;
+import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.NotThreadSafe;
-import org.modeshape.graph.property.Binary;
+import org.modeshape.jcr.value.Binary;
 
 /**
- * An {@link InputStream} implementation that can be used to access the content of a supplied {@link Binary} value. An instance of
- * this class immediately {@link Binary#acquire() acquires} the binary's lock, and allows the InputStream to be processed and used
- * normally. This class, however, guarantees that the binary lock is {@link Binary#release() released} whenever this class throws
- * an exception or when the instance is {@link #close() closed}.
+ * An {@link InputStream} implementation that can be used to access the content of a supplied {@link Binary} value. This class,
+ * however, guarantees that the binary lock is {@link Binary#dispose() released} whenever this class throws an exception or when
+ * the instance is {@link #close() closed}.
  * <p>
  * The draft version of the JSR-283 specification outlines a new mechanism for obtaining a lock on a binary value, and in fact
  * this mechanism was used as the baseline for the design of ModeShape's Binary value. Therefore, when ModeShape's JCR
@@ -43,218 +43,192 @@ import org.modeshape.graph.property.Binary;
 class SelfClosingInputStream extends InputStream {
 
     private final Binary binary;
-    private final InputStream stream;
+    private InputStream stream;
 
     /**
-     * Create a self-closing {@link InputStream} to access the content of the supplied {@link Binary} value. This construct
-     * immediately {@link Binary#acquire() acquires} the binary's lock, which is {@link Binary#release() released} whenever this
-     * class throws an exception or when the instance is {@link #close() closed}.
+     * Create a self-closing {@link InputStream} to access the content of the supplied {@link Binary} value.
      * 
      * @param binary the {@link Binary} object that this stream accesses; may not be null
      */
     public SelfClosingInputStream( Binary binary ) {
         assert binary != null;
         this.binary = binary;
-        this.binary.acquire();
-        this.stream = binary.getStream();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.io.InputStream#available()
-     */
+    protected void open() throws RepositoryException {
+        if (this.stream == null) {
+            this.stream = binary.getStream();
+        }
+    }
+
     @Override
     public int available() throws IOException {
         try {
+            open();
             return stream.available();
+        } catch (RepositoryException e) {
+            this.binary.dispose();
+            throw new IOException(e);
         } catch (IOException e) {
-            this.binary.release();
+            this.binary.dispose();
             throw e;
         } catch (RuntimeException e) {
-            this.binary.release();
+            this.binary.dispose();
             throw e;
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.io.InputStream#close()
-     */
     @Override
     public void close() throws IOException {
-        try {
-            stream.close();
-        } finally {
-            this.binary.release();
+        if (stream != null) {
+            try {
+                stream.close();
+            } finally {
+                this.binary.dispose();
+            }
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
     @Override
     public boolean equals( Object obj ) {
-        return stream.equals(obj);
+        return binary.equals(obj);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#hashCode()
-     */
     @Override
     public int hashCode() {
-        return stream.hashCode();
+        return binary.hashCode();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.io.InputStream#mark(int)
-     */
     @Override
     public void mark( int readlimit ) {
         try {
+            open();
             stream.mark(readlimit);
+        } catch (RepositoryException e) {
+            this.binary.dispose();
+            throw new RuntimeException(e);
         } catch (RuntimeException e) {
-            this.binary.release();
+            this.binary.dispose();
             throw e;
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.io.InputStream#markSupported()
-     */
     @Override
     public boolean markSupported() {
-        return stream.markSupported();
+        try {
+            open();
+            return stream.markSupported();
+        } catch (RepositoryException e) {
+            this.binary.dispose();
+            throw new RuntimeException(e);
+        } catch (RuntimeException e) {
+            this.binary.dispose();
+            throw e;
+        }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.io.InputStream#read(byte[], int, int)
-     */
     @Override
     public int read( byte[] b,
                      int off,
                      int len ) throws IOException {
         try {
+            open();
             int result = stream.read(b, off, len);
             if (result == -1) {
                 // the end of the stream has been reached ...
-                this.binary.release();
+                this.binary.dispose();
             }
             return result;
+        } catch (RepositoryException e) {
+            this.binary.dispose();
+            throw new IOException(e);
         } catch (IOException e) {
-            this.binary.release();
+            this.binary.dispose();
             throw e;
         } catch (RuntimeException e) {
-            this.binary.release();
+            this.binary.dispose();
             throw e;
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.io.InputStream#read(byte[])
-     */
     @Override
     public int read( byte[] b ) throws IOException {
         try {
+            open();
             int result = stream.read(b);
             if (result == -1) {
                 // the end of the stream has been reached ...
-                this.binary.release();
+                this.binary.dispose();
             }
             return result;
+        } catch (RepositoryException e) {
+            this.binary.dispose();
+            throw new IOException(e);
         } catch (IOException e) {
-            this.binary.release();
+            this.binary.dispose();
             throw e;
         } catch (RuntimeException e) {
-            this.binary.release();
+            this.binary.dispose();
             throw e;
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.io.InputStream#read()
-     */
     @Override
     public int read() throws IOException {
         try {
+            open();
             int result = stream.read();
             if (result == -1) {
                 // the end of the stream has been reached ...
-                this.binary.release();
+                this.binary.dispose();
             }
             return result;
+        } catch (RepositoryException e) {
+            this.binary.dispose();
+            throw new IOException(e);
         } catch (IOException e) {
-            this.binary.release();
+            this.binary.dispose();
             throw e;
         } catch (RuntimeException e) {
-            this.binary.release();
+            this.binary.dispose();
             throw e;
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.io.InputStream#reset()
-     */
     @Override
     public void reset() throws IOException {
-        try {
-            stream.reset();
-        } catch (IOException e) {
-            this.binary.release();
-            throw e;
-        } catch (RuntimeException e) {
-            this.binary.release();
-            throw e;
+        if (stream != null) {
+            try {
+                stream.reset();
+            } catch (IOException e) {
+                this.binary.dispose();
+                throw e;
+            } catch (RuntimeException e) {
+                this.binary.dispose();
+                throw e;
+            }
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.io.InputStream#skip(long)
-     */
     @Override
     public long skip( long n ) throws IOException {
         try {
+            open();
             return stream.skip(n);
+        } catch (RepositoryException e) {
+            this.binary.dispose();
+            throw new IOException(e);
         } catch (IOException e) {
-            this.binary.release();
+            this.binary.dispose();
             throw e;
         } catch (RuntimeException e) {
-            this.binary.release();
+            this.binary.dispose();
             throw e;
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#toString()
-     */
     @Override
     public String toString() {
-        try {
-            return stream.toString();
-        } catch (RuntimeException e) {
-            this.binary.release();
-            throw e;
-        }
+        return binary.toString();
     }
 }

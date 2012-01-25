@@ -24,8 +24,8 @@
 package org.modeshape.jcr;
 
 import org.modeshape.common.annotation.Immutable;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.basic.BasicName;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.basic.BasicName;
 
 /**
  * Lexicon of names from the standard JCR "<code>http://www.jcp.org/jcr/sv/1.0</code>" namespace.

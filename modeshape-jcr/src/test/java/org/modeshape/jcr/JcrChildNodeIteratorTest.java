@@ -28,31 +28,58 @@ import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
+import org.modeshape.jcr.JcrChildNodeIterator.NodeResolver;
+import org.modeshape.jcr.cache.ChildReference;
+import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.value.basic.BasicName;
 
-@Migrated
+/**
+ * 
+ */
 public class JcrChildNodeIteratorTest {
 
+    private Map<ChildReference, AbstractJcrNode> childNodesByRef;
     private List<AbstractJcrNode> children;
+    private List<ChildReference> refs;
     private NodeIterator iter;
+    private NodeKey keyTemplate;
 
     @Before
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
+        keyTemplate = new NodeKey("source1", "workspa", "1");
         children = new ArrayList<AbstractJcrNode>();
+        refs = new ArrayList<ChildReference>();
+        childNodesByRef = new HashMap<ChildReference, AbstractJcrNode>();
         for (int i = 0; i != 10; ++i) {
-            // Create a child (node with payload and JCR node object, all mock) ...
+            // Create a child reference ...
+            String name = "node" + (i + 1);
+            NodeKey key = keyTemplate.withId(name);
+            ChildReference ref = new ChildReference(key, new BasicName("http://foo", name), 1);
+            refs.add(ref);
+            // Create a mock child node ...
             AbstractJcrNode childJcrNode = mock(AbstractJcrNode.class);
             children.add(childJcrNode);
+            childNodesByRef.put(ref, childJcrNode);
         }
-        iter = new JcrChildNodeIterator(children, children.size());
+        NodeResolver resolver = new NodeResolver() {
+            @SuppressWarnings( "synthetic-access" )
+            @Override
+            public Node nodeFrom( ChildReference ref ) {
+                return childNodesByRef.get(ref);
+            }
+        };
+        iter = new JcrChildNodeIterator(resolver, refs.iterator());
     }
 
     @Test

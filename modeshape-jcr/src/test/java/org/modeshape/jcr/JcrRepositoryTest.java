@@ -4,13 +4,13 @@
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
  * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors. 
+ * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- *
+ * 
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -28,165 +28,162 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
+import java.util.LinkedList;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import javax.jcr.Credentials;
+import javax.jcr.NamespaceException;
+import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.Repository;
 import javax.jcr.Session;
-import javax.jcr.SimpleCredentials;
 import javax.jcr.ValueFormatException;
-import javax.jcr.nodetype.NodeTypeDefinition;
-import javax.security.auth.Subject;
-import javax.security.auth.login.LoginContext;
+import org.infinispan.config.Configuration;
+import org.infinispan.manager.CacheContainer;
+import org.infinispan.test.fwk.TestCacheManagerFactory;
+import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 import org.modeshape.common.FixFor;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.Graph;
-import org.modeshape.graph.JaasSecurityContext.UserPasswordCallbackHandler;
-import org.modeshape.graph.Node;
-import org.modeshape.graph.connector.RepositoryConnection;
-import org.modeshape.graph.connector.RepositoryConnectionFactory;
-import org.modeshape.graph.connector.RepositorySource;
-import org.modeshape.graph.connector.RepositorySourceException;
-import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
-import org.modeshape.graph.observe.MockObservable;
-import org.modeshape.jcr.JcrRepository.Option;
+import org.modeshape.jcr.RepositoryStatistics.DurationActivity;
+import org.modeshape.jcr.RepositoryStatistics.History;
+import org.modeshape.jcr.RepositoryStatistics.Statistics;
+import org.modeshape.jcr.api.monitor.DurationMetric;
+import org.modeshape.jcr.api.monitor.ValueMetric;
+import org.modeshape.jcr.api.monitor.Window;
 
-/**
- */
 public class JcrRepositoryTest {
 
-    private String sourceName;
-    private ExecutionContext context;
+    private CacheContainer cm;
+    private RepositoryConfiguration config;
     private JcrRepository repository;
-    private InMemoryRepositorySource source;
-    private Map<String, String> descriptors;
-    private RepositoryConnectionFactory connectionFactory;
-    private Credentials credentials;
-    private Graph sourceGraph;
-    private Graph systemGraph;
     private JcrSession session;
 
-    @BeforeClass
-    public static void beforeAll() {
-        // Initialize the JAAS configuration to allow for an admin login later
-        JaasTestUtil.initJaas("security/jaas.conf.xml");
-    }
-
-    @AfterClass
-    public static void afterAll() {
-        JaasTestUtil.releaseJaas();
-    }
-
-    @SuppressWarnings( "deprecation" )
     @Before
     public void beforeEach() throws Exception {
-        MockitoAnnotations.initMocks(this);
-        sourceName = "repository";
+        Configuration c = new Configuration();
+        c = c.fluent().transaction().transactionManagerLookup(new DummyTransactionManagerLookup()).build();
+        cm = TestCacheManagerFactory.createCacheManager(c);
 
-        // Set up the source ...
-        source = new InMemoryRepositorySource();
-        source.setName(sourceName);
-
-        // Set up the execution context ...
-        context = new ExecutionContext();
-        credentials = new SimpleCredentials("superuser", "superuser".toCharArray());
-
-        // Stub out the connection factory ...
-        connectionFactory = new RepositoryConnectionFactory() {
-            /**
-             * {@inheritDoc}
-             * 
-             * @see org.modeshape.graph.connector.RepositoryConnectionFactory#createConnection(java.lang.String)
-             */
-            public RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException {
-                return sourceName.equals(source().getName()) ? source().getConnection() : null;
-            }
-        };
-
-        // Set up the repository ...
-        descriptors = new HashMap<String, String>();
-        Map<Option, String> options = Collections.singletonMap(Option.USE_SECURITY_CONTEXT_CREDENTIALS, "true");
-        repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null, descriptors, options,
-                                       null, null);
-
-        // Set up the graph that goes directly to the source ...
-        sourceGraph = Graph.create(source(), context);
-
-        // Set up the graph that goes directly to the system source ...
-        systemGraph = repository.createSystemGraph(context);
+        config = new RepositoryConfiguration("repoName", cm);
+        repository = new JcrRepository(config);
+        repository.start();
     }
 
     @After
-    public void afterEach() {
+    public void afterEach() throws Exception {
         if (session != null) {
             try {
                 session.logout();
             } finally {
                 session = null;
+                try {
+                    TestingUtil.killRepositories(repository);
+                } finally {
+                    repository = null;
+                    config = null;
+                    try {
+                        org.infinispan.test.TestingUtil.killCacheManagers(cm);
+                    } finally {
+                        cm = null;
+                    }
+                }
             }
         }
     }
 
-    protected RepositorySource source() {
-        return source;
+    @Test
+    public void shouldCreateRepositoryInstanceWithoutPassingInCacheManager() throws Exception {
+        // This will use log: "Falling back to DummyTransactionManager from Infinispan"
+        // since we're not specifying a transaction manager ...
+        RepositoryConfiguration config = new RepositoryConfiguration("repoName");
+        JcrRepository repository = new JcrRepository(config);
+        repository.start();
+        try {
+            Session session = repository.login();
+            assertThat(session, is(notNullValue()));
+        } finally {
+            repository.shutdown().get(3L, TimeUnit.SECONDS);
+        }
     }
 
     @Test
-    public void shouldFailIfWorkspacesSharingSystemBranchConstantIsFalse() {
-        // Check that the debugging flag is ALWAYS set to true...
-        assertThat(JcrRepository.WORKSPACES_SHARE_SYSTEM_BRANCH, is(true));
+    public void shouldAllowCreationOfSessionForDefaultWorkspaceWithoutUsingCredentials() throws Exception {
+        JcrSession session1 = repository.login();
+        assertThat(session1.isLive(), is(true));
+    }
+
+    @Test( expected = NoSuchWorkspaceException.class )
+    public void shouldNotAllowCreatingSessionForNonExistantWorkspace() throws Exception {
+        repository.login("non-existant-workspace");
     }
 
     @Test
-    public void shouldAllowNullDescriptors() throws Exception {
-        new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null, null, null, null, null);
+    public void shouldAllowShuttingDownAndRestarting() throws Exception {
+        JcrSession session1 = repository.login();
+        JcrSession session2 = repository.login();
+        assertThat(session1.isLive(), is(true));
+        assertThat(session2.isLive(), is(true));
+        session2.logout();
+        assertThat(session1.isLive(), is(true));
+        assertThat(session2.isLive(), is(false));
+
+        repository.shutdown().get(3L, TimeUnit.SECONDS);
+        assertThat(session1.isLive(), is(false));
+        assertThat(session2.isLive(), is(false));
+
+        repository.start();
+        JcrSession session3 = repository.login();
+        assertThat(session1.isLive(), is(false));
+        assertThat(session2.isLive(), is(false));
+        assertThat(session3.isLive(), is(true));
+        session3.logout();
     }
 
-    @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowNullExecutionContext() throws Exception {
-        new JcrRepository(null, connectionFactory, sourceName, new MockObservable(), null, descriptors, null, null, null);
+    @Test
+    public void shouldAllowCreatingNewWorkspacesByDefault() throws Exception {
+        // Verify the workspace does not exist yet ...
+        try {
+            repository.login("new-workspace");
+        } catch (NoSuchWorkspaceException e) {
+            // expected
+        }
+        JcrSession session1 = repository.login();
+        assertThat(session1.getRootNode(), is(notNullValue()));
+        session1.getWorkspace().createWorkspace("new-workspace");
+
+        // Now create a session to that workspace ...
+        JcrSession session2 = repository.login("new-workspace");
+        assertThat(session2.getRootNode(), is(notNullValue()));
     }
 
-    @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowNullConnectionFactories() throws Exception {
-        new JcrRepository(context, null, sourceName, new MockObservable(), null, descriptors, null, null, null);
+    @Test
+    public void shouldAllowDestroyingWorkspacesByDefault() throws Exception {
+        // Verify the workspace does not exist yet ...
+        try {
+            repository.login("new-workspace");
+        } catch (NoSuchWorkspaceException e) {
+            // expected
+        }
+        JcrSession session1 = repository.login();
+        assertThat(session1.getRootNode(), is(notNullValue()));
+        session1.getWorkspace().createWorkspace("new-workspace");
+
+        // Now create a session to that workspace ...
+        JcrSession session2 = repository.login("new-workspace");
+        assertThat(session2.getRootNode(), is(notNullValue()));
     }
 
-    @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowNullObservable() throws Exception {
-        new JcrRepository(context, connectionFactory, sourceName, null, null, null, null, null, null);
+    @Test
+    public void shouldReturnNullForNullDescriptorKey() {
+        assertThat(repository.getDescriptor(null), is(nullValue()));
     }
 
-    @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowNullSourceName() throws Exception {
-        new JcrRepository(context, connectionFactory, null, new MockObservable(), null, descriptors, null, null, null);
-    }
-
-    @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowNoDescriptorKey() {
-        repository.getDescriptor(null);
-    }
-
-    @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowEmptyDescriptorKey() {
-        repository.getDescriptor("");
+    @Test
+    public void shouldReturnNullForEmptyDescriptorKey() {
+        assertThat(repository.getDescriptor(""), is(nullValue()));
     }
 
     @Test
@@ -201,15 +198,13 @@ public class JcrRepositoryTest {
 
     @Test
     public void shouldProvideBuiltInDescriptorsWhenNotSuppliedDescriptors() throws Exception {
-        Repository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null,
-                                                  descriptors, null, null, null);
         testDescriptorKeys(repository);
         testDescriptorValues(repository);
     }
 
     @Test
     public void shouldProvideRepositoryWorkspaceNamesDescriptor() throws ValueFormatException {
-        Set<String> workspaceNames = repository.workspaceNames();
+        Set<String> workspaceNames = repository.repositoryCache().getWorkspaceNames();
         Set<String> descriptorValues = new HashSet<String>();
         for (JcrValue value : repository.getDescriptorValues(org.modeshape.jcr.api.Repository.REPOSITORY_WORKSPACES)) {
             descriptorValues.add(value.getString());
@@ -217,337 +212,65 @@ public class JcrRepositoryTest {
         assertThat(descriptorValues, is(workspaceNames));
     }
 
+    /**
+     * Skipping this test because it purposefully runs over 6 seconds, mostly just waiting for the statistics thread to wake up
+     * once every 5 seconds.
+     * 
+     * @throws Exception
+     */
+    @Ignore
     @Test
-    public void shouldNotProvideRepositoryWorkspaceNamesDescriptorIfOptionSetToFalse() throws Exception {
-        JcrConfiguration config = new JcrConfiguration();
-        config.repositorySource("Store").usingClass(InMemoryRepositorySource.class);
-        config.repository("JCR")
-              .setOption(JcrRepository.Option.EXPOSE_WORKSPACE_NAMES_IN_DESCRIPTOR, Boolean.FALSE.toString())
-              .setSource("Store");
-
-        JcrEngine engine = config.build();
-        engine.start();
-
-        assertThat(engine.getRepository("JCR").getDescriptor(org.modeshape.jcr.api.Repository.REPOSITORY_WORKSPACES),
-                   is(nullValue()));
-
-        engine.shutdownAndAwaitTermination(3, TimeUnit.SECONDS);
-    }
-
-    @Test
-    public void shouldProvideObserver() {
-        assertThat(this.repository.getObserver(), is(notNullValue()));
-    }
-
-    @Test
-    public void shouldProvideRepositoryObservable() {
-        assertThat(this.repository.getRepositoryObservable(), is(notNullValue()));
-    }
-
-    @Test
-    public void shouldHaveDefaultOptionsWhenNotOverridden() throws Exception {
-        JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null,
-                                                     descriptors, null, null, null);
-        assertThat(repository.getOptions().get(JcrRepository.Option.PROJECT_NODE_TYPES),
-                   is(JcrRepository.DefaultOption.PROJECT_NODE_TYPES));
-    }
-
-    @Test
-    public void shouldProvideUserSuppliedDescriptors() throws Exception {
-        Map<String, String> descriptors = new HashMap<String, String>();
-        descriptors.put("property", "value");
-        Repository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null,
-                                                  descriptors, null, null, null);
-        testDescriptorKeys(repository);
-        testDescriptorValues(repository);
-        assertThat(repository.getDescriptor("property"), is("value"));
-    }
-
-    @Test( expected = javax.jcr.LoginException.class )
-    public void shouldNotAllowLoginWithNoCredentialsWhenAnonymousAuthenticationIsNotEnabled() throws Exception {
-        // This would work iff this code was executing in a privileged block, but it's not
-        Map<Option, String> options = new HashMap<Option, String>();
-        options.put(Option.ANONYMOUS_USER_ROLES, ""); // disable anonymous authentication
-        repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null, descriptors, options,
-                                       null, null);
-        repository.login();
-    }
-
-    @Test( expected = javax.jcr.LoginException.class )
-    public void shouldNotAllowLoginWithCredentialsWhenAnonymousAuthenticationIsEnabledButTryAnonymousAuthenticationIsNotEnabled()
-        throws Exception {
-        // This would work iff this code was executing in a privileged block, but it's not
-        Map<Option, String> options = new HashMap<Option, String>();
-        options.put(Option.USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN, "false"); // disable anonymous authentication
-        repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null, descriptors, options,
-                                       null, null);
-
-        repository.login(new SimpleCredentials("InvalidUserID", "InvalidPassword".toCharArray()));
-    }
-
-    @Test
-    public void shouldAllowLoginWithNoCredentialsWhenAnonymousAuthenticationIsEnabled() throws Exception {
-        Map<Option, String> options = new HashMap<Option, String>();
-        options.put(Option.USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN, "true"); // enable anonymous authentication
-        repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null, descriptors, options,
-                                       null, null);
-
-        repository.login();
-    }
-
-    @Test( expected = javax.jcr.LoginException.class )
-    public void shouldNotAllowLoginWithInvalidCredentialsWhenAnonymousAuthenticationIsNotEnabled() throws Exception {
-        Map<Option, String> options = new HashMap<Option, String>();
-        options.put(Option.ANONYMOUS_USER_ROLES, ""); // disable anonymous authentication
-        repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null, descriptors, options,
-                                       null, null);
-        repository.login(new SimpleCredentials("InvalidUserID", "InvalidPassword".toCharArray()));
-    }
-
-    @Test
-    public void shouldAllowLoginWithInvalidCredentialsWhenAnonymousAuthenticationIsEnabled() throws Exception {
-        Map<Option, String> options = new HashMap<Option, String>();
-        options.put(Option.USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN, "true"); // disable anonymous authentication
-        repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null, descriptors, options,
-                                       null, null);
-
-        Session session = repository.login(new SimpleCredentials("InvalidUserID", "InvalidPassword".toCharArray()));
-        assertThat(session.getUserID(), is(JcrRepository.ANONYMOUS_USER_NAME));
-    }
-
-    @SuppressWarnings( "cast" )
-    @Test
-    public void shouldAllowLoginWithNoCredentialsInPrivilegedBlock() throws Exception {
-        LoginContext login = new LoginContext("modeshape-jcr", new UserPasswordCallbackHandler("superuser",
-                                                                                               "superuser".toCharArray()));
-        login.login();
-
-        Subject subject = login.getSubject();
-
-        Session session = (Session)Subject.doAsPrivileged(subject, new PrivilegedExceptionAction<Session>() {
-
-            @SuppressWarnings( "synthetic-access" )
-            public Session run() throws Exception {
-                return repository.login();
-            }
-
-        }, AccessController.getContext());
-
-        assertThat(session, is(notNullValue()));
-        assertThat(session.getUserID(), is("superuser"));
-        login.logout();
-    }
-
-    @Test
-    public void shouldAllowLoginWithNoCredentialsIfAnonAccessEnabled() throws Exception {
-        Map<Option, String> options = new HashMap<Option, String>();
-        options.put(Option.USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN, "true"); // enable anonymous authentication
-        options.put(JcrRepository.Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.READONLY);
-        JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null,
-                                                     descriptors, options, null, null);
-
-        session = (JcrSession)repository.login();
-
-        assertThat(session, is(notNullValue()));
-        assertThat(session.getUserID(), is(JcrRepository.ANONYMOUS_USER_NAME));
-
-    }
-
-    @Test
-    public void shouldAllowLoginWithProperCredentials() throws Exception {
-        repository.login(credentials);
-    }
-
-    @Test
-    public void shouldAllowLoginWithNoWorkspaceName() throws Exception {
-        Session session = repository.login(credentials, null);
-        assertThat(session, notNullValue());
-        session.logout();
-    }
-
-    @Test( expected = javax.jcr.LoginException.class )
-    public void shouldNotAllowLoginIfCredentialsDoNotProvideJaasMethod() throws Exception {
-        repository.login(Mockito.mock(Credentials.class));
-    }
-
-    @Test( expected = javax.jcr.LoginException.class )
-    public void shouldNotAllowLoginIfCredentialsReturnNoAccessControlContext() throws Exception {
-        repository.login(new Credentials() {
-
-            private static final long serialVersionUID = 1L;
-
-            @SuppressWarnings( "unused" )
-            public AccessControlContext getAccessControlContext() {
-                return null;
-            }
-        });
-    }
-
-    @Test( expected = javax.jcr.LoginException.class )
-    public void shouldNotAllowLoginIfCredentialsReturnNoLoginContext() throws Exception {
-        repository.login(new Credentials() {
-
-            private static final long serialVersionUID = 1L;
-
-            @SuppressWarnings( "unused" )
-            public LoginContext getLoginContext() {
-                return null;
-            }
-        });
-    }
-
-    @SuppressWarnings( "deprecation" )
-    @Test
-    public void shouldHaveRootNode() throws Exception {
-        session = createSession();
-        javax.jcr.Node root = session.getRootNode();
-        String uuid = root.getIdentifier();
-
-        // Should be referenceable ...
-        assertThat(root.isNodeType("mix:referenceable"), is(true));
-
-        // Should have a UUID ...
-        assertThat(root.getUUID(), is(uuid));
-
-        // Get the root via the direct graph ...
-        Node dnaRoot = sourceGraph.getNodeAt("/");
-        UUID dnaRootUuid = dnaRoot.getLocation().getUuid();
-
-        // They should have the same UUID ...
-        assertThat(uuid, is(dnaRootUuid.toString()));
-
-        // Get the children of the root node ...
-        javax.jcr.NodeIterator iter = root.getNodes();
-        javax.jcr.Node system = iter.nextNode();
-        assertThat(system.getName(), is("jcr:system"));
-
-        // Add a child node ...
-        javax.jcr.Node childA = root.addNode("childA", "nt:unstructured");
-        assertThat(childA, is(notNullValue()));
-        iter = root.getNodes();
-        javax.jcr.Node system2 = iter.nextNode();
-        javax.jcr.Node childA2 = iter.nextNode();
-        assertThat(system2.getName(), is("jcr:system"));
-        assertThat(childA2.getName(), is("childA"));
-    }
-
-    @Test
-    public void shouldHaveSystemBranch() throws Exception {
-        session = createSession();
-        javax.jcr.Node root = session.getRootNode();
-        AbstractJcrNode system = (AbstractJcrNode)root.getNode("jcr:system");
-        UUID uuid = system.location.getUuid();
-
+    public void shouldProvideStatistics() throws Exception {
         for (int i = 0; i != 3; ++i) {
-            // Get the same node via the direct graph ...
-            Node dnaSystem = systemGraph.getNodeAt("/jcr:system");
-            UUID dnaSystemUuid = dnaSystem.getLocation().getUuid();
-
-            // They should have the same UUID ...
-            assertThat(uuid, is(dnaSystemUuid));
+            JcrSession session1 = repository.login();
+            assertThat(session1.getRootNode(), is(notNullValue()));
         }
+        // wait for 6 seconds, so that the statistics have a value ...
+        Thread.sleep(6000L);
+        History history = repository.getRepositoryStatistics().getHistory(ValueMetric.SESSION_COUNT, Window.PREVIOUS_60_SECONDS);
+        Statistics[] stats = history.getStats();
+        assertThat(stats.length, is(12));
+        assertThat(stats[0], is(nullValue()));
+        assertThat(stats[11], is(notNullValue()));
+        assertThat(stats[11].getMaximum(), is(3L));
+        assertThat(stats[11].getMinimum(), is(3L));
+        assertThat(history.getTotalDuration(TimeUnit.SECONDS), is(60L));
+        System.out.println(history);
     }
 
+    /**
+     * Skipping this test because it purposefully runs over 18 seconds, mostly just waiting for the statistics thread to wake up
+     * once every 5 seconds.
+     * 
+     * @throws Exception
+     */
+    @Ignore
     @Test
-    public void shouldHaveRegisteredThoseNamespacesNeedeByDna() throws Exception {
-        session = createSession();
-        // Don't use the constants, since this needs to check that the actual values are correct
-        assertThat(session.getNamespaceURI("mode"), is("http://www.modeshape.org/1.0"));
-        assertThat(session.getNamespaceURI("modeint"), is("http://www.modeshape.org/internal/1.0"));
-    }
+    public void shouldProvideStatisticsForMultipleSeconds() throws Exception {
+        LinkedList<JcrSession> sessions = new LinkedList<JcrSession>();
+        for (int i = 0; i != 5; ++i) {
+            JcrSession session1 = repository.login();
+            assertThat(session1.getRootNode(), is(notNullValue()));
+            sessions.addFirst(session1);
+            Thread.sleep(1000L);
+        }
+        Thread.sleep(6000L);
+        while (sessions.peek() != null) {
+            JcrSession session = sessions.poll();
+            session.logout();
+            Thread.sleep(1000L);
+        }
+        History history = repository.getRepositoryStatistics().getHistory(ValueMetric.SESSION_COUNT, Window.PREVIOUS_60_SECONDS);
+        Statistics[] stats = history.getStats();
+        assertThat(stats.length, is(12));
+        assertThat(history.getTotalDuration(TimeUnit.SECONDS), is(60L));
+        System.out.println(history);
 
-    @Test
-    public void shouldHaveRegisteredThoseNamespacesDefinedByTheJcrSpecification() throws Exception {
-        session = createSession();
-        // Don't use the constants, since this needs to check that the actual values are correct
-        assertThat(session.getNamespaceURI("mode"), is("http://www.modeshape.org/1.0"));
-        assertThat(session.getNamespaceURI("jcr"), is("http://www.jcp.org/jcr/1.0"));
-        assertThat(session.getNamespaceURI("mix"), is("http://www.jcp.org/jcr/mix/1.0"));
-        assertThat(session.getNamespaceURI("nt"), is("http://www.jcp.org/jcr/nt/1.0"));
-        assertThat(session.getNamespaceURI(""), is(""));
-    }
-
-    @Test
-    public void shouldHaveRegisteredThoseNamespacesDefinedByTheJcrApiJavaDoc() throws Exception {
-        session = createSession();
-        // Don't use the constants, since this needs to check that the actual values are correct
-        assertThat(session.getNamespaceURI("sv"), is("http://www.jcp.org/jcr/sv/1.0"));
-        assertThat(session.getNamespaceURI("xmlns"), is("http://www.w3.org/2000/xmlns/"));
-    }
-
-    @Test
-    public void shouldParseSourceNameOptionWithOnlySourceName() {
-        assertSourceWorkspacePair("source name", "source name", null);
-        assertSourceWorkspacePair(" \t source name \n ", "source name", null);
-        assertSourceWorkspacePair(" \t source \\@ name \n ", "source @ name", null);
-    }
-
-    @Test
-    public void shouldParseSourceNameOptionWithWorkspaceNameAndSourceName() {
-        assertSourceWorkspacePair("workspace@source", "source", "workspace");
-        assertSourceWorkspacePair(" \t workspace\t@ \t source \t \n", "source", "workspace");
-        assertSourceWorkspacePair(" \t workspace\\@ name \t@ \t source\\@name \t \n", "source@name", "workspace@ name");
-        assertSourceWorkspacePair("@ \t source \\@ name \n ", "source @ name", "");
-        assertSourceWorkspacePair("   @ \t source \\@ name \n ", "source @ name", "");
-    }
-
-    @Test( expected = IllegalArgumentException.class )
-    public void shouldFailToParseSourceNameOptionThatHasZeroLengthSource() {
-        new JcrRepository.SourceWorkspacePair("workspace@");
-    }
-
-    @Test( expected = IllegalArgumentException.class )
-    public void shouldFailToParseSourceNameOptionThatHasBlankSource() {
-        new JcrRepository.SourceWorkspacePair("workspace@  ");
-    }
-
-    @Test
-    public void shouldParseSourceNameOptionThatHasBlankSourceAndWorkspace() {
-        assertSourceWorkspacePair("@", "", "");
-        assertSourceWorkspacePair(" @ ", "", "");
-    }
-
-    protected void assertSourceWorkspacePair( String value,
-                                              String expectedSourceName,
-                                              String expectedWorkspaceName ) {
-        JcrRepository.SourceWorkspacePair pair = new JcrRepository.SourceWorkspacePair(value);
-        assertThat(pair, is(notNullValue()));
-        assertThat(pair.getSourceName(), is(expectedSourceName));
-        assertThat(pair.getWorkspaceName(), is(expectedWorkspaceName));
-    }
-
-    protected JcrSession createSession() throws Exception {
-        LoginContext login = new LoginContext("modeshape-jcr", new UserPasswordCallbackHandler("superuser",
-                                                                                               "superuser".toCharArray()));
-        login.login();
-
-        Subject subject = login.getSubject();
-        JcrSession session = (JcrSession)Subject.doAsPrivileged(subject, new PrivilegedExceptionAction<Session>() {
-
-            @SuppressWarnings( "synthetic-access" )
-            public Session run() throws Exception {
-                return repository.login();
-            }
-
-        }, AccessController.getContext());
-        return session;
-    }
-
-    protected JcrSession createSession( final String workspace ) throws Exception {
-        LoginContext login = new LoginContext("modeshape-jcr", new UserPasswordCallbackHandler("superuser",
-                                                                                               "superuser".toCharArray()));
-        login.login();
-
-        Subject subject = login.getSubject();
-        JcrSession session = (JcrSession)Subject.doAsPrivileged(subject, new PrivilegedExceptionAction<Session>() {
-
-            @SuppressWarnings( "synthetic-access" )
-            public Session run() throws Exception {
-                return repository.login(workspace);
-            }
-
-        }, AccessController.getContext());
-        return session;
+        DurationActivity[] lifetimes = repository.getRepositoryStatistics().getLongestRunning(DurationMetric.SESSION_LIFETIME);
+        System.out.println("Session lifetimes: ");
+        for (DurationActivity activity : lifetimes) {
+            System.out.println("  " + activity);
+        }
     }
 
     @SuppressWarnings( "deprecation" )
@@ -583,26 +306,114 @@ public class JcrRepositoryTest {
         assertThat(repository.getDescriptor(Repository.OPTION_VERSIONING_SUPPORTED), is("true"));
         assertThat(repository.getDescriptor(Repository.QUERY_XPATH_DOC_ORDER), is("false"));
         assertThat(repository.getDescriptor(Repository.QUERY_XPATH_POS_INDEX), is("true"));
-        assertThat(repository.getDescriptor(Repository.REP_NAME_DESC), is("ModeShape JCR Repository"));
+        assertThat(repository.getDescriptor(Repository.REP_NAME_DESC), is("ModeShape"));
         assertThat(repository.getDescriptor(Repository.REP_VENDOR_DESC), is("JBoss, a division of Red Hat"));
         assertThat(repository.getDescriptor(Repository.REP_VENDOR_URL_DESC), is("http://www.modeshape.org"));
         assertThat(repository.getDescriptor(Repository.REP_VERSION_DESC), is(notNullValue()));
-        // assertThat(repository.getDescriptor(Repository.REP_VERSION_DESC), is("1.1-SNAPSHOT"));
+        assertThat(repository.getDescriptor(Repository.REP_VERSION_DESC).startsWith("3."), is(true));
         assertThat(repository.getDescriptor(Repository.SPEC_NAME_DESC), is(JcrI18n.SPEC_NAME_DESC.text()));
         assertThat(repository.getDescriptor(Repository.SPEC_VERSION_DESC), is("2.0"));
+    }
+
+    @Test
+    public void shouldReturnNullWhenDescriptorKeyIsNull() {
+        assertThat(repository.getDescriptor(null), is(nullValue()));
+    }
+
+    @Test
+    public void shouldNotAllowEmptyDescriptorKey() {
+        assertThat(repository.getDescriptor(""), is(nullValue()));
+    }
+
+    @Test
+    public void shouldNotProvideRepositoryWorkspaceNamesDescriptorIfOptionSetToFalse() throws Exception {
+        assertThat(repository.getDescriptor(org.modeshape.jcr.api.Repository.REPOSITORY_WORKSPACES), is(nullValue()));
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldHaveRootNode() throws Exception {
+        session = createSession();
+        javax.jcr.Node root = session.getRootNode();
+        String uuid = root.getIdentifier();
+
+        // Should be referenceable ...
+        assertThat(root.isNodeType("mix:referenceable"), is(true));
+
+        // Should have a UUID ...
+        assertThat(root.getUUID(), is(uuid));
+
+        // Should have an identifier ...
+        assertThat(root.getIdentifier(), is(uuid));
+
+        // Get the children of the root node ...
+        javax.jcr.NodeIterator iter = root.getNodes();
+        javax.jcr.Node system = iter.nextNode();
+        assertThat(system.getName(), is("jcr:system"));
+
+        // Add a child node ...
+        javax.jcr.Node childA = root.addNode("childA", "nt:unstructured");
+        assertThat(childA, is(notNullValue()));
+        iter = root.getNodes();
+        javax.jcr.Node system2 = iter.nextNode();
+        javax.jcr.Node childA2 = iter.nextNode();
+        assertThat(system2.getName(), is("jcr:system"));
+        assertThat(childA2.getName(), is("childA"));
+    }
+
+    @Test
+    public void shouldHaveSystemBranch() throws Exception {
+        session = createSession();
+        javax.jcr.Node root = session.getRootNode();
+        AbstractJcrNode system = (AbstractJcrNode)root.getNode("jcr:system");
+        assertThat(system, is(notNullValue()));
+    }
+
+    @Test
+    public void shouldHaveRegisteredModeShapeSpecificNamespacesNamespaces() throws Exception {
+        session = createSession();
+        // Don't use the constants, since this needs to check that the actual values are correct
+        assertThat(session.getNamespaceURI("mode"), is("http://www.modeshape.org/1.0"));
+    }
+
+    @Test( expected = NamespaceException.class )
+    public void shouldNotHaveModeShapeInternalNamespaceFromVersion2() throws Exception {
+        session = createSession();
+        // Don't use the constants, since this needs to check that the actual values are correct
+        session.getNamespaceURI("modeint");
+    }
+
+    @Test
+    public void shouldHaveRegisteredThoseNamespacesDefinedByTheJcrSpecification() throws Exception {
+        session = createSession();
+        // Don't use the constants, since this needs to check that the actual values are correct
+        assertThat(session.getNamespaceURI("mode"), is("http://www.modeshape.org/1.0"));
+        assertThat(session.getNamespaceURI("jcr"), is("http://www.jcp.org/jcr/1.0"));
+        assertThat(session.getNamespaceURI("mix"), is("http://www.jcp.org/jcr/mix/1.0"));
+        assertThat(session.getNamespaceURI("nt"), is("http://www.jcp.org/jcr/nt/1.0"));
+        assertThat(session.getNamespaceURI(""), is(""));
+    }
+
+    @Test
+    public void shouldHaveRegisteredThoseNamespacesDefinedByTheJcrApiJavaDoc() throws Exception {
+        session = createSession();
+        // Don't use the constants, since this needs to check that the actual values are correct
+        assertThat(session.getNamespaceURI("sv"), is("http://www.jcp.org/jcr/sv/1.0"));
+        assertThat(session.getNamespaceURI("xmlns"), is("http://www.w3.org/2000/xmlns/"));
+    }
+
+    protected JcrSession createSession() throws Exception {
+        return repository.login();
+    }
+
+    protected JcrSession createSession( final String workspace ) throws Exception {
+        return repository.login(workspace);
     }
 
     @Ignore( "GC behavior is non-deterministic from the application's POV - this test _will_ occasionally fail" )
     @Test
     public void shouldAllowManySessionLoginsAndLogouts() throws Exception {
-        // Use a different repository that supports anonymous logins to make this test cleaner
-        Map<Option, String> options = new HashMap<Option, String>();
-        options.put(JcrRepository.Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.ADMIN);
-        JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null,
-                                                     descriptors, options, null, null);
-
-        Session session;
-
+        Session session = null;
         for (int i = 0; i < 10000; i++) {
             session = repository.login();
             session.logout();
@@ -615,20 +426,14 @@ public class JcrRepositoryTest {
         System.gc();
         Thread.sleep(100);
 
-        assertThat(repository.activeSessions().size(), is(0));
+        assertThat(repository.runningState().activeSessinCount(), is(0));
     }
 
     @Ignore( "This test normally sleeps for 30 seconds" )
     @Test
     public void shouldCleanUpLocksFromDeadSessions() throws Exception {
-        // Use a different repository that supports anonymous logins to make this test cleaner
-        Map<Option, String> options = new HashMap<Option, String>();
-        options.put(JcrRepository.Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.ADMIN);
-        JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null,
-                                                     descriptors, options, null, null);
-
         String lockedNodeName = "lockedNode";
-        JcrSession locker = (JcrSession)repository.login();
+        JcrSession locker = repository.login();
 
         // Create a node to lock
         javax.jcr.Node lockedNode = locker.getRootNode().addNode(lockedNodeName);
@@ -644,7 +449,7 @@ public class JcrRepositoryTest {
         assertThat(readerNode.isLocked(), is(true));
 
         // No locks should have changed yet.
-        repository.getRepositoryLockManager().cleanUpLocks();
+        repository.runningState().cleanUpLocks();
         assertThat(lockedNode.isLocked(), is(true));
         assertThat(readerNode.isLocked(), is(true));
 
@@ -655,102 +460,21 @@ public class JcrRepositoryTest {
          * confirms that the code works in principle. A different chicken dance may be required to
          * fully test this on a different computer.
          */
-        repository.activeSessions.remove(locker);
-        Thread.sleep(JcrEngine.LOCK_EXTENSION_INTERVAL_IN_MILLIS + 100);
+        repository.runningState().removeSession(locker);
+        Thread.sleep(RepositoryConfiguration.LOCK_EXTENSION_INTERVAL_IN_MILLIS + 100);
 
         // The locker thread should be inactive and the lock cleaned up
-        repository.getRepositoryLockManager().cleanUpLocks();
+        repository.runningState().cleanUpLocks();
         assertThat(readerNode.isLocked(), is(false));
     }
 
     @Test
-    public void shouldHaveAvailableWorkspacesMatchingThoseInSourceContainingJustDefaultWorkspace() throws Exception {
-        // Set up the source ...
-        source = new InMemoryRepositorySource();
-        source.setName(sourceName);
-        sourceGraph = Graph.create(source(), context);
-
-        // Create the repository ...
-        repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null, descriptors, null,
-                                       null, null);
-
-        // Get the available workspaces ...
-        session = createSession();
-        Set<String> jcrWorkspaces = setOf(session.getWorkspace().getAccessibleWorkspaceNames());
-
-        // Check against the session ...
-        Set<String> graphWorkspaces = sourceGraph.getWorkspaces();
-        assertThat(jcrWorkspaces, is(graphWorkspaces));
-    }
-
-    @Test
-    public void shouldHaveAvailableWorkspacesMatchingThoseInSourceContainingPredefinedWorkspaces() throws Exception {
-        // Set up the source ...
-        source = new InMemoryRepositorySource();
-        source.setName(sourceName);
-        source.setPredefinedWorkspaceNames(new String[] {"ws1", "ws2", "ws3"});
-        source.setDefaultWorkspaceName("ws1");
-        sourceGraph = Graph.create(source(), context);
-
-        // Create the repository ...
-        repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null, descriptors, null,
-                                       null, null);
-
-        // Get the available workspaces ...
-        session = createSession();
-        Set<String> jcrWorkspaces = setOf(session.getWorkspace().getAccessibleWorkspaceNames());
-
-        // Check against the session ...
-        Set<String> graphWorkspaces = sourceGraph.getWorkspaces();
-        assertThat(jcrWorkspaces, is(graphWorkspaces));
-    }
-
-    protected <T> Set<T> setOf( T... values ) {
-        return org.modeshape.common.collection.Collections.unmodifiableSet(values);
-    }
-
-    @Test
-    public void shouldInitializeContentForNewlyCreatedWorkspacesIfDefined() throws Exception {
-        String urlToResourceFile = getClass().getClassLoader().getResource("initialWorkspaceContent.xml").toExternalForm();
-        String urlToCndFile = getClass().getClassLoader().getResource("cars.cnd").toExternalForm();
-
-        // Create the JcrRepositoyr instance ...
-        assertThat(source.getCapabilities().supportsCreatingWorkspaces(), is(true));
-        descriptors.put(Repository.OPTION_WORKSPACE_MANAGEMENT_SUPPORTED, "true");
-        repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), source.getCapabilities(),
-                                       descriptors, null, urlToResourceFile, null);
-
-        // Load the node types ...
-        session = createSession();
-        CndNodeTypeReader nodeTypeReader = new CndNodeTypeReader(session);
-        nodeTypeReader.read(urlToCndFile);
-        NodeTypeDefinition[] defns = nodeTypeReader.getNodeTypeDefinitions();
-        session.getWorkspace().getNodeTypeManager().registerNodeTypes(defns, true);
-        session.logout();
-
-        // Create a new workspace ...
-        session = createSession();
-        session.getWorkspace().createWorkspace("MyCarWorkspace");
-        session.logout();
-
-        // Check that the new workspace contains the initial content ...
-        session = createSession("MyCarWorkspace");
-        javax.jcr.Node cars = session.getRootNode().getNode("Cars");
-        javax.jcr.Node prius = session.getRootNode().getNode("Cars/Hybrid/Toyota Prius");
-        javax.jcr.Node g37 = session.getRootNode().getNode("Cars/Sports/Infiniti G37");
-        assertThat(cars, is(notNullValue()));
-        assertThat(prius, is(notNullValue()));
-        assertThat(g37, is(notNullValue()));
-    }
-
-    @Test
     public void shouldAllowCreatingWorkspaces() throws Exception {
-
-        // Create the JcrRepositoyr instance ...
-        assertThat(source.getCapabilities().supportsCreatingWorkspaces(), is(true));
-        descriptors.put(Repository.OPTION_WORKSPACE_MANAGEMENT_SUPPORTED, "true");
-        repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), source.getCapabilities(),
-                                       descriptors, null, null, null);
+        RepositoryConfiguration config = null;
+        config = RepositoryConfiguration.read("{ \"name\" : \"repoName\", \"workspaces\" : { \"allowCreation\" : true } }");
+        config = new RepositoryConfiguration(config.getDocument(), "repoName", cm);
+        repository = new JcrRepository(config);
+        repository.start();
 
         // Create several sessions ...
         Session session2 = null;

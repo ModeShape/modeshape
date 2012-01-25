@@ -4,13 +4,13 @@
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
  * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors. 
+ * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- *
+ * 
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -27,23 +27,30 @@ import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import org.modeshape.common.annotation.Immutable;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.NamespaceRegistry;
-import org.modeshape.graph.property.Path;
+import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.jcr.cache.NodeCache;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.NamespaceRegistry;
+import org.modeshape.jcr.value.Path;
 
 /**
- * An abstract {@link Item} implementation.
+ * The abstract base class for all {@link Item} implementations.
  */
-@Immutable
+@ThreadSafe
 abstract class AbstractJcrItem implements Item {
 
-    protected final SessionCache cache;
+    protected final JcrSession session;
 
-    protected AbstractJcrItem( SessionCache cache ) {
-        assert cache != null;
-        this.cache = cache;
+    protected AbstractJcrItem( JcrSession session ) {
+        this.session = session;
+    }
+
+    final JcrSession session() {
+        return session;
+    }
+
+    final String workspaceName() {
+        return session.workspaceName();
     }
 
     /**
@@ -52,26 +59,15 @@ abstract class AbstractJcrItem implements Item {
      * @throws RepositoryException if the session is not valid or live
      */
     protected final void checkSession() throws RepositoryException {
-        cache.session().checkLive();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#getSession()
-     */
-    public Session getSession() {
-        // Do not check whether the session is valid, because we need to be able to get the session to check isLive()
-        // checkSession();
-        return cache.session();
-    }
-
-    final JcrSession session() {
-        return cache.session();
+        session.checkLive();
     }
 
     final ExecutionContext context() {
-        return cache.context();
+        return session.context();
+    }
+
+    final NodeCache cache() {
+        return session().cache();
     }
 
     final Name nameFrom( String name ) {
@@ -94,41 +90,18 @@ abstract class AbstractJcrItem implements Item {
         return context().getNamespaceRegistry();
     }
 
-    abstract Path path() throws RepositoryException;
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#isSame(javax.jcr.Item)
-     */
-    public boolean isSame( Item otherItem ) throws RepositoryException {
-        assert getSession() != null;
-        assert otherItem.getSession() != null;
-        assert getSession().getRepository() != null;
-        assert otherItem.getSession().getRepository() != null;
-
-        if (getSession().getRepository() != otherItem.getSession().getRepository()) {
-            return false;
-        }
-
-        assert getSession().getWorkspace() != null;
-        assert otherItem.getSession().getWorkspace() != null;
-
-        String workspaceName = getSession().getWorkspace().getName();
-        String otherWorkspaceName = otherItem.getSession().getWorkspace().getName();
-
-        if (workspaceName == null) {
-            return otherWorkspaceName == null;
-        }
-
-        return workspaceName.equals(otherWorkspaceName);
+    final JcrValueFactory valueFactory() {
+        return session().valueFactory();
     }
+
+    abstract Path path() throws RepositoryException;
 
     /**
      * {@inheritDoc}
      * 
      * @see javax.jcr.Item#getAncestor(int)
      */
+    @Override
     public Item getAncestor( int depth ) throws RepositoryException {
         checkSession();
 
@@ -161,9 +134,30 @@ abstract class AbstractJcrItem implements Item {
      * 
      * @see javax.jcr.Item#getDepth()
      */
+    @Override
     public int getDepth() throws RepositoryException {
         checkSession();
         return path().size();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Item#getParent()
+     */
+    @Override
+    public abstract AbstractJcrNode getParent() throws ItemNotFoundException, RepositoryException;
+
+    protected boolean isSameRepository( Item otherItem ) throws RepositoryException {
+        assert getSession() != null;
+        assert otherItem.getSession() != null;
+        assert getSession().getRepository() != null;
+        assert otherItem.getSession().getRepository() != null;
+
+        if (getSession().getRepository() != otherItem.getSession().getRepository()) {
+            return false;
+        }
+        return true;
     }
 
 }

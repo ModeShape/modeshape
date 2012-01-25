@@ -29,7 +29,6 @@ import org.modeshape.common.statistic.Stopwatch;
 /**
  * Test performance writing graph subtrees of various sizes with varying number of properties
  */
-@Migrated
 public class JcrWritingTest extends AbstractJcrAccessTest {
 
     @Test
@@ -37,6 +36,8 @@ public class JcrWritingTest extends AbstractJcrAccessTest {
         int[] breadths = new int[] {10,};
         int[] depths = new int[] {1, 2, 3,};
         int[] properties = new int[] {0, 7, 50};
+
+        print = false;
 
         for (int i = 0; i < breadths.length; i++) {
             for (int j = 0; j < depths.length; j++) {
@@ -50,7 +51,7 @@ public class JcrWritingTest extends AbstractJcrAccessTest {
                                    properties[k],
                                    false,
                                    new Stopwatch(),
-                                   System.out,
+                                   print ? System.out : null,
                                    null);
                 }
             }

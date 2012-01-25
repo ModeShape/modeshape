@@ -31,15 +31,12 @@ import java.util.Arrays;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
-import org.modeshape.graph.query.QueryResults;
-import org.modeshape.graph.query.QueryResults.Columns;
-import org.modeshape.graph.query.model.Column;
-import org.modeshape.graph.query.model.SelectorName;
-import org.modeshape.graph.query.process.QueryResultColumns;
-import org.modeshape.graph.query.validate.Schemata;
-import org.modeshape.jcr.Migrated;
+import org.modeshape.jcr.query.QueryResults.Columns;
+import org.modeshape.jcr.query.model.Column;
+import org.modeshape.jcr.query.model.SelectorName;
+import org.modeshape.jcr.query.process.QueryResultColumns;
+import org.modeshape.jcr.query.validate.Schemata;
 
-@Migrated
 public class XPathQueryResultTest {
 
     private XPathQueryResult result;

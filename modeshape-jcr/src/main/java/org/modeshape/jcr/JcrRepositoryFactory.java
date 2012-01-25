@@ -23,34 +23,33 @@
  */
 package org.modeshape.jcr;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+import org.infinispan.schematic.document.ParsingException;
 import org.modeshape.common.annotation.ThreadSafe;
-import org.modeshape.common.collection.Problem;
 import org.modeshape.common.util.Logger;
 import org.modeshape.jcr.api.Repositories;
 import org.modeshape.jcr.api.RepositoryFactory;
-import org.xml.sax.SAXException;
 
 /**
  * Service provider for the JCR2 {@code RepositoryFactory} interface. This class provides a single public method,
  * {@link #getRepository(Map)}, that allows for a runtime link to a ModeShape JCR repository.
  * <p>
- * The canonical way to get a reference to this class is to use the ServiceLocator:
+ * The canonical way to get a reference to this class is to use the {@link ServiceLoader}:
  * 
  * <pre>
  * String configUrl = ... ; // URL that points to your configuration file
@@ -67,17 +66,34 @@ import org.xml.sax.SAXException;
  * 
  * <pre>
  * RepositoryFactory repoFactory = new JcrRepositoryFactory();    
- * String configUrl = ... ; // URL that points to your configuration file
- * Map params = Collections.singletonMap(JcrRepositoryFactory.URL, configUrl);
+ * String url = ... ; // URL that points to your configuration file
+ * Map params = Collections.singletonMap(JcrRepositoryFactory.URL, url);
  * 
  * Repository repository = repoFactory.getRepository(params);]]></programlisting>
  * </pre>
  * 
  * </p>
  * <p>
- * The <code>configUrl</code> used in the sample above should point to a configuration file (e.g.,
- * {@code file:src/test/resources/configRepository.xml?repositoryName=MyRepository}) OR a {@link Repositories} instance stored in
- * the JNDI tree (e.g., {@code jndi://name/of/Repositories/resource?repositoryName=MyRepository}).
+ * Several URL formats are supported:
+ * <ul>
+ * <li><strong>JNDI location of repository</strong> - The URL contains the location in JNDI of an existing
+ * <code>javax.jcr.Repository</code> instance. For example, "<code>jndi:jcr/local/my_repository</code>" is a URL that identifies
+ * the JCR repository located in JNDI at the name "jcr/local/my_repository". Note that the use of such URLs requires that the
+ * repository already be registered in JNDI at that location.</li>
+ * <li><strong>JNDI location of engine and repository name</strong> - The URL contains the location in JNDI of an existing
+ * ModeShape {@link JcrEngine engine} instance and the name of the <code>javax.jcr.Repository</code> repository as a URL query
+ * parameter. For example, "<code>jndi:jcr/local?repositoryName=my_repository</code>" identifies a ModeShape engine registered in
+ * JNDI at "jcr/local", and looks in that engine for a JCR repository named "<code>my_repository</code>".</li>
+ * <li><strong>Location of a repository configuration</strong> - The URL contains a location that is resolvable to a configuration
+ * file for the repository. If the configuration file has not already been loaded by the factory, then the configuration file is
+ * read and used to deploy a new repository; subsequent uses of the same URL will return the previously deployed repository
+ * instance. Several URL schemes are supported, including <code>classpath:</code>, "<code>file:</code>", <code>http:</code> and
+ * any other URL scheme that can be {@link URL#openConnection() resolved and opened}. For example, "
+ * <code>file://path/to/myRepoConfig.json</code>" identifies the file on the file system at the absolute path "
+ * <code>/path/to/myRepoConfig.json</code>"; "<code>classpath://path/to/myRepoConfig.json</code>" identifies the file at "
+ * <code>/path/to/myRepoConfig.json</code>" on the classpath, and "<code>http://www.example.com/path/to/myRepoConfig.json</code>
+ * " identifies the file "<code>myRepoConfig.json</code>" at the given URL.</li>
+ * </ul>
  * </p>
  * 
  * @see #getRepository(Map)
@@ -89,16 +105,57 @@ public class JcrRepositoryFactory implements RepositoryFactory {
     private static final Logger LOG = Logger.getLogger(JcrRepositoryFactory.class);
 
     /**
-     * A map of configuration file locations to existing engines. This map helps ensure that Repositories are not recreated with
-     * every call to {@link #getRepository(Map)}.
+     * The engine that hosts the deployed repository instances.
      */
-    private static final Map<String, JcrEngine> ENGINES = new HashMap<String, JcrEngine>();
+    private static final JcrEngine ENGINE = new JcrEngine();
 
-    /** The name of the key for the ModeShape JCR URL in the parameter map */
-    public static final String URL = "org.modeshape.jcr.URL";
+    /**
+     * The name of the key for the ModeShape JCR URL in the parameter map
+     * 
+     * @deprecated use {@link RepositoryFactory#URL} instead
+     */
+    @Deprecated
+    public static final String URL = RepositoryFactory.URL;
 
-    /** The name of the URL parameter that specifies the repository name. */
-    public static final String REPOSITORY_NAME_PARAM = "repositoryName";
+    /**
+     * The name of the URL parameter that specifies the repository name.
+     * 
+     * @deprecated use {@link RepositoryFactory#REPOSITORY_NAME_PARAM} instead
+     */
+    @Deprecated
+    public static final String REPOSITORY_NAME_PARAM = RepositoryFactory.REPOSITORY_NAME_PARAM;
+
+    static {
+        ENGINE.start();
+    }
+
+    /**
+     * Shutdown this engine to stop all repositories created by calls to {@link #getRepository(Map)}, terminate any ongoing
+     * background operations (such as sequencing), and reclaim any resources that were acquired by the repositories. This method
+     * may be called multiple times, but only the first time has an effect.
+     * <p>
+     * Calling this static method is identical to calling the {@link #shutdown()} method on any JcrRepositoryFactory instance, and
+     * is provided for convenience.
+     * </p>
+     * <p>
+     * Invoking this method does not preclude creating new {@link Repository} instances with future calls to
+     * {@link #getRepository(Map)}. Any caller using this method as part of an application shutdown process should take care to
+     * cease invocations of {@link #getRepository(Map)} prior to invoking this method.
+     * </p>
+     * <p>
+     * This method returns immediately, even before the repositories have been shut down. However, the caller can simply call the
+     * {@link Future#get() get()} method on the returned {@link Future} to block until all repositories have shut down. Note that
+     * the {@link Future#get(long, TimeUnit)} method can be called to block for a maximum amount of time.
+     * </p>
+     * 
+     * @return a future that allows the caller to block until the engine is shutdown; any error during shutdown will be thrown
+     *         when {@link Future#get() getting} the repository from the future, where the exception is wrapped in a
+     *         {@link ExecutionException}. The value returned from the future will always be true if the engine shutdown (or was
+     *         not running), or false if the engine is still running.
+     */
+    public static Future<Boolean> shutdownAll() {
+        return ENGINE.shutdown();
+    }
 
     /**
      * Returns a reference to the appropriate repository for the given parameter map, if one exists. Although the
@@ -123,6 +180,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
      *         <ul>
      * @see RepositoryFactory#getRepository(Map)
      */
+    @Override
     @SuppressWarnings( {"unchecked", "rawtypes"} )
     public Repository getRepository( Map parameters ) {
         LOG.debug("Trying to load ModeShape JCR Repository with parameters: " + parameters);
@@ -138,10 +196,15 @@ public class JcrRepositoryFactory implements RepositoryFactory {
         if (rawUrl instanceof URL) {
             url = (URL)rawUrl;
         } else {
-            url = urlFor(rawUrl.toString());
+            url = urlFor(rawUrl.toString(), null);
         }
 
         if (url == null) return null;
+        return getRepository(url, parameters);
+    }
+
+    protected Repository getRepository( URL url,
+                                        Map<String, String> parameters ) {
 
         // See if the URL refers to a Repository instance in JNDI, which is probably what would be required
         // when registering particular repository instances rather than the engine (e.g., via JndiRepositoryFactory).
@@ -149,21 +212,34 @@ public class JcrRepositoryFactory implements RepositoryFactory {
         if ("jndi".equals(url.getProtocol())) {
             Repository repository = getRepositoryFromJndi(url.getPath(), parameters);
             if (repository != null) return repository;
+        } else {
+            // Otherwise just use the URL ...
+            return getRepositoryFromConfigFile(url);
         }
 
-        Repositories repositories = repositoriesFor(url, parameters);
-        if (repositories == null) return null;
+        LOG.debug("Could not load or find a ModeShape repository using the URL '{1}'", url);
+        return null;
+    }
 
-        String repositoryName = repositoryNameFor(repositories, url);
-        if (repositoryName == null) return null;
-
-        try {
-            LOG.debug("Trying to access repository: " + repositoryName);
-            return repositories.getRepository(repositoryName);
-        } catch (RepositoryException re) {
-            LOG.debug(re, "Could not load repository named '{0}'", repositoryName);
-            return null;
+    private JcrEngine getEngine() {
+        // Make sure the engine is started ...
+        switch (ENGINE.getState()) {
+            case NOT_RUNNING:
+                ENGINE.start();
+                break;
+            case STOPPING:
+                // Wait until it's shutdown ...
+                try {
+                    ENGINE.shutdown().get(10, TimeUnit.SECONDS);
+                } catch (Exception e) {
+                    // ignore and let if fail ...
+                }
+                break;
+            case RUNNING:
+            case STARTING:
+                // do nothing ...
         }
+        return ENGINE;
     }
 
     /**
@@ -176,79 +252,110 @@ public class JcrRepositoryFactory implements RepositoryFactory {
      * @return a {@code JcrEngine} that was initialized from the given configuration file or null if no engine could be
      *         initialized from that file without errors.
      */
-    private JcrEngine getEngineFromConfigFile( URL configUrl ) {
+    private JcrRepository getRepositoryFromConfigFile( URL configUrl ) {
         assert configUrl != null;
 
-        /*
-         * Strip any query parameters from the incoming file URLs by creating a new URL with the same protocol, host, and port,
-         * but using the URL path as returned by URL#getPath() instead of the URL path and query parameters as returned by 
-         * URL#getFile().
-         * 
-         * We need to strip for the file protocol only because an URL with a file protocol and query parameters has the 
-         * query parameters appended to the file name (e.g., "file:/tmp/foo/bar?repositoryName=foo" turns into an attempt
-         * to access the "/tmp/foo/bar?repositoryName=foo" file).  Other protocol handlers like http handle this better.
-         */
-        if ("file".equals(configUrl.getProtocol())) {
-            try {
-                configUrl = new URL(configUrl.getProtocol(), configUrl.getHost(), configUrl.getPort(), configUrl.getPath());
-            } catch (MalformedURLException mfe) {
-                // This shouldn't be possible, since we're creating a new URL from an existing, valid URL
-                throw new IllegalStateException(mfe);
-            }
-        }
-        String configKey = configUrl.toString();
-
-        synchronized (ENGINES) {
-            JcrEngine engine = ENGINES.get(configKey);
-            if (engine != null) return engine;
-
-            JcrConfiguration config = new JcrConfiguration();
-            try {
-                config.loadFrom(configUrl);
-            } catch (FileNotFoundException fnfe) {
-                // If this is a file protocol, double-check that the configuration isn't on the classpath
-                if (!"file".equals(configUrl.getProtocol())) {
-                    LOG.warn(fnfe, JcrI18n.couldNotStartEngine);
-                    return null;
-
-                }
+        try {
+            if ("file".equals(configUrl.getProtocol())) {
                 try {
-                    InputStream in = getClass().getResourceAsStream(configUrl.getPath());
-                    if (in == null) {
-                        LOG.debug(fnfe, JcrI18n.couldNotStartEngine.text());
-                        return null;
+                    // Strip any query parameters from the incoming file URLs by creating a new URL with the same protocol, host,
+                    // and
+                    // port,
+                    // but using the URL path as returned by URL#getPath() instead of the URL path and query parameters as
+                    // returned by
+                    // URL#getFile().
+                    //
+                    // We need to strip for the file protocol only because an URL with a file protocol and query parameters has
+                    // the
+                    // query parameters appended to the file name (e.g., "file:/tmp/foo/bar?repositoryName=foo" turns into an
+                    // attempt
+                    // to access the "/tmp/foo/bar?repositoryName=foo" file). Other protocol handlers like http handle this
+                    // better.
+                    configUrl = new URL(configUrl.getProtocol(), configUrl.getHost(), configUrl.getPort(), configUrl.getPath());
+                } catch (MalformedURLException mfe) {
+                    // This shouldn't be possible, since we're creating a new URL from an existing, valid URL
+                    throw new IllegalStateException(mfe);
+                }
+            }
+
+            // Look for an existing repository with the same URL ...
+            String configKey = configUrl.toString();
+            JcrEngine engine = getEngine();
+            if (engine.getRepositoryKeys().contains(configKey)) {
+                try {
+                    return engine.getRepository(configKey);
+                } catch (NoSuchRepositoryException e) {
+                    // Must have been removed since we checked, so just continue on to redeploy it ...
+                }
+            }
+
+            // Otherwise, we need to deploy and start a new repository ...
+
+            // Now try reading the configuration ...
+            RepositoryConfiguration config = null;
+            if ("file".equals(configUrl.getProtocol())) {
+                // Strip any query parameters from the incoming file URLs by creating a new URL with the same protocol, host, and
+                // port,
+                // but using the URL path as returned by URL#getPath() instead of the URL path and query parameters as returned by
+                // URL#getFile().
+                //
+                // We need to strip for the file protocol only because an URL with a file protocol and query parameters has the
+                // query parameters appended to the file name (e.g., "file:/tmp/foo/bar?repositoryName=foo" turns into an attempt
+                // to access the "/tmp/foo/bar?repositoryName=foo" file). Other protocol handlers like http handle this better.
+                try {
+                    config = RepositoryConfiguration.read(configUrl);
+                } catch (ParsingException e) {
+                    // Try reading from the classpath ...
+                    try {
+                        String path = classpathResource(configUrl);
+                        if (path.length() == 0) throw e;
+                        config = RepositoryConfiguration.read(path);
+                    } catch (Throwable t) {
+                        // This didn't work, so throw the original exception
+                        throw e;
                     }
-                    config.loadFrom(in);
-                } catch (IOException ioe) {
-                    LOG.debug(fnfe, JcrI18n.couldNotStartEngine.text());
-                    return null;
-                } catch (SAXException se) {
-                    LOG.debug(fnfe, JcrI18n.couldNotStartEngine.text());
-                    return null;
                 }
-            } catch (IOException ioe) {
-                LOG.warn(ioe, JcrI18n.couldNotStartEngine);
-                return null;
-            } catch (SAXException se) {
-                LOG.warn(se, JcrI18n.couldNotStartEngine);
-                return null;
-            }
-            engine = config.build();
-            engine.start();
-
-            if (engine.getProblems().hasProblems()) {
-                LOG.warn(JcrI18n.couldNotStartEngine);
-                for (Problem problem : engine.getProblems()) {
-                    LOG.warn(problem.getMessage(), problem.getParameters());
-                }
-
-                engine.shutdown();
-                return null;
+            } else if ("classpath".equals(configUrl.getProtocol())) {
+                // Look for the configuration file on the classpath ...
+                String path = classpathResource(configUrl);
+                config = RepositoryConfiguration.read(path);
+            } else {
+                // Just try resolving the URL ...
+                config = RepositoryConfiguration.read(configUrl);
             }
 
-            ENGINES.put(configKey, engine);
-            return engine;
+            // Check if the engine contains repository with the name specified in the configuration
+            String configName = config.getName();
+            if (engine.getRepositoryNames().contains(configName)) {
+                try {
+                    return engine.getRepository(configName);
+                } catch (NoSuchRepositoryException e) {
+                    // Must have been removed since we checked, so just continue on to redeploy it ...
+                }
+            }
+
+            // Now deploy the new repository ...
+            JcrRepository repository = engine.deploy(config);
+            repository.start();
+            return repository;
+        } catch (RepositoryException err) {
+            LOG.debug(err, "Unable to start repository for configuration file at '{0}': {1}", configUrl, err.getMessage());
+            return null;
+        } catch (IOException err) {
+            LOG.debug(err, "Unable to start repository for configuration file at '{0}': {1}", configUrl, err.getMessage());
+            return null;
+        } catch (NamingException err) {
+            LOG.debug(err, "Unable to start repository for configuration file at '{0}': {1}", configUrl, err.getMessage());
+            return null;
         }
+    }
+
+    private String classpathResource( URL url ) {
+        String path = url.getPath();
+        while (path.startsWith("/") && path.length() > 1) {
+            path = path.substring(1);
+        }
+        return path.length() != 0 ? path : null;
     }
 
     /**
@@ -270,31 +377,6 @@ public class JcrRepositoryFactory implements RepositoryFactory {
     }
 
     /**
-     * Attempts to look up a {@link Repositories} at the given JNDI name. All parameters in the parameters map are passed to the
-     * {@link InitialContext} constructor in a {@link Hashtable}.
-     * 
-     * @param engineJndiName the JNDI name of the JCR engine; may not be null
-     * @param parameters any additional parameters that should be passed to the {@code InitialContext}'s constructor; may be empty
-     *        or null
-     * @return the Repositories object from JNDI, if one exists at the given name
-     */
-    private Repositories getRepositoriesFromJndi( String engineJndiName,
-                                                  Map<String, String> parameters ) {
-        try {
-            if (parameters == null) parameters = Collections.emptyMap();
-            InitialContext ic = new InitialContext(hashtable(parameters));
-
-            Object ob = ic.lookup(engineJndiName);
-            if (ob instanceof Repositories) {
-                return (Repositories)ob;
-            }
-            return null;
-        } catch (NamingException ne) {
-            return null;
-        }
-    }
-
-    /**
      * Attempts to look up a {@link Repository} at the given JNDI name. All parameters in the parameters map are passed to the
      * {@link InitialContext} constructor in a {@link Hashtable}.
      * 
@@ -305,12 +387,67 @@ public class JcrRepositoryFactory implements RepositoryFactory {
      */
     private Repository getRepositoryFromJndi( String jndiName,
                                               Map<String, String> parameters ) {
+        if (parameters == null) parameters = Collections.emptyMap();
+
+        // There should be a parameter with the name ...
+        String repoName = parameters.get(RepositoryFactory.REPOSITORY_NAME_PARAM);
+        if (repoName != null && repoName.trim().length() == 0) repoName = null;
+
         try {
-            if (parameters == null) parameters = Collections.emptyMap();
             InitialContext ic = new InitialContext(hashtable(parameters));
 
             Object ob = ic.lookup(jndiName);
-            if (ob instanceof Repository) {
+            if (ob instanceof JcrEngine) {
+                JcrEngine engine = (JcrEngine)ob;
+                switch (engine.getState()) {
+                    case NOT_RUNNING:
+                    case STOPPING:
+                        LOG.error(JcrI18n.engineAtJndiLocationIsNotRunning, jndiName);
+                        return null;
+                    case RUNNING:
+                    case STARTING:
+                        break; // continue
+                }
+                // There should be a parameter with the name ...
+                if (repoName == null) {
+                    // No repository name was specified, so see if there's just one in the engine ...
+                    if (engine.getRepositories().size() == 1) {
+                        repoName = engine.getRepositories().keySet().iterator().next();
+                    }
+                }
+                if (repoName != null) {
+                    repoName = repoName.trim();
+                    if (repoName.length() != 0) {
+                        // Look for a repository with the supplied name ...
+                        try {
+                            JcrRepository repository = engine.getRepository(repoName);
+                            switch (repository.getState()) {
+                                case STARTING:
+                                case RUNNING:
+                                    return repository;
+                                default:
+                                    LOG.error(JcrI18n.repositoryIsNotRunningOrHasBeenShutDownInEngineAtJndiLocation,
+                                              repoName,
+                                              jndiName);
+                                    return null;
+                            }
+                        } catch (NoSuchRepositoryException e) {
+                            LOG.warn(JcrI18n.repositoryNotFoundInEngineAtJndiLocation, repoName, jndiName);
+                            return null;
+                        }
+                    }
+                }
+                // At this point, warn about a missing repository name ...
+                LOG.warn(JcrI18n.missingRepositoryNameInUrlContainingJndiLocationOfEngine, jndiName, REPOSITORY_NAME_PARAM);
+            } else if (ob instanceof Repositories) {
+                Repositories repos = (Repositories)ob;
+                try {
+                    return repos.getRepository(repoName);
+                } catch (RepositoryException e) {
+                    LOG.warn(JcrI18n.repositoryNotFoundInEngineAtJndiLocation, repoName, jndiName);
+                }
+            } else if (ob instanceof Repository) {
+                // Just return the repository instance ...
                 return (Repository)ob;
             }
             return null;
@@ -319,57 +456,21 @@ public class JcrRepositoryFactory implements RepositoryFactory {
         }
     }
 
+    @Override
     public Future<Boolean> shutdown() {
-        synchronized (ENGINES) {
-            for (JcrEngine engine : ENGINES.values()) {
-                engine.shutdown();
-            }
-
-            ENGINES.clear();
-        }
-        return new Future<Boolean>() {
-            @Override
-            public Boolean get() {
-                return Boolean.TRUE;
-            }
-
-            @Override
-            public boolean cancel( boolean mayInterruptIfRunning ) {
-                return false;
-            }
-
-            @Override
-            public Boolean get( long timeout,
-                                TimeUnit unit ) {
-                return Boolean.TRUE;
-            }
-
-            @Override
-            public boolean isCancelled() {
-                return false;
-            }
-
-            @Override
-            public boolean isDone() {
-                return true;
-            }
-        };
+        return ENGINE.shutdown();
     }
 
+    @Override
     public boolean shutdown( long timeout,
                              TimeUnit unit ) throws InterruptedException {
-        synchronized (ENGINES) {
-            for (JcrEngine engine : ENGINES.values()) {
-                engine.shutdown();
-            }
-
-            boolean allShutDownClean = true;
-            for (JcrEngine engine : ENGINES.values()) {
-                allShutDownClean &= engine.awaitTermination(timeout, unit);
-            }
-
-            ENGINES.clear();
-            return allShutDownClean;
+        try {
+            return ENGINE.shutdown().get(timeout, unit);
+        } catch (ExecutionException e) {
+            LOG.error(e, JcrI18n.errorShuttingDownJcrRepositoryFactory);
+            return false;
+        } catch (TimeoutException e) {
+            return false;
         }
     }
 
@@ -397,75 +498,19 @@ public class JcrRepositoryFactory implements RepositoryFactory {
      */
     public Repository getRepository( String jcrUrl,
                                      String repositoryName ) throws RepositoryException {
-        URL url = urlFor(jcrUrl);
+        URL url = urlFor(jcrUrl, repositoryName);
         if (url == null) return null;
-
-        Repositories repositories = repositoriesFor(url, null);
-        if (repositories == null) return null;
-
-        if (repositoryName == null) {
-            repositoryName = repositoryNameFor(repositories, url);
-        }
-
-        return repositories.getRepository(repositoryName);
+        return getRepository(url, null);
     }
 
-    /**
-     * Returns the repository names in the {@link JcrEngine} referenced by the {@code jcrUrl} parameter.
-     * <p>
-     * If the {@code jcrUrl} parameter contains a valid, ModeShape-compatible URL for a {@link JcrEngine} that has not yet been
-     * started, that {@code JcrEngine} will be created and {@link JcrEngine#start() started} as a side effect of this method.
-     * </p>
-     * 
-     * @param jcrUrl the ModeShape-compatible URL that specifies the {@link JcrEngine} to be used; may not be null
-     * @return the set of repository names in the given engine referred to by the {@code jcrUrl} parameter if that engine exists
-     *         and it can be started (or is already started), otherwise {@code null}
-     */
-    public Set<String> getRepositoryNames( String jcrUrl ) {
-        URL url = urlFor(jcrUrl);
-        if (url == null) return null;
-
-        Repositories repositories = repositoriesFor(url, null);
-
-        if (repositories == null) return null;
-
-        return repositories.getRepositoryNames();
+    @Override
+    public Repository getRepository( String repositoryName ) throws RepositoryException {
+        return getEngine().getRepository(repositoryName);
     }
 
-    /**
-     * Returns the {@link JcrEngine} referenced by the {@code url} parameter.
-     * <p>
-     * If the {@code url} parameter contains a valid, ModeShape-compatible URL for a {@link JcrEngine} that has not yet been
-     * started, that {@code JcrEngine} will be created and {@link JcrEngine#start() started} as a side effect of this method.
-     * </p>
-     * 
-     * @param url the ModeShape-compatible URL that specifies the {@link JcrEngine} to be used; may not be null
-     * @param parameters an optional list of parameters that will be passed into the JNDI {@link InitialContext} if the
-     *        {@code url} parameter specifies a ModeShape URL that uses the JNDI protocol; may be null or empty
-     * @return the {@code JcrEngine} referenced by the given URL if it can be accessed and started (if not already started),
-     *         otherwise {@code null}.
-     */
-    private Repositories repositoriesFor( URL url,
-                                          Map<String, String> parameters ) {
-        if (url.getPath() == null || url.getPath().trim().length() == 0) {
-            LOG.debug("Cannot have null or empty path in repository URL");
-            return null;
-        }
-
-        Repositories repositories = null;
-
-        if ("jndi".equals(url.getProtocol())) {
-            repositories = getRepositoriesFromJndi(url.getPath(), parameters);
-        } else {
-            repositories = getEngineFromConfigFile(url);
-        }
-
-        if (repositories == null) {
-            LOG.debug("Could not load engine from URL: " + url);
-            return null;
-        }
-
-        return repositories;
+    @Override
+    public Set<String> getRepositoryNames() {
+        return getEngine().getRepositoryNames();
     }
 
     /**
@@ -473,70 +518,27 @@ public class JcrRepositoryFactory implements RepositoryFactory {
      * {@link MalformedURLException}, but may throw a {@link NullPointerException} if {@code jcrUrl} is null.
      * 
      * @param jcrUrl the string representation of an URL that should be converted into an URL; may not be null
+     * @param repoName the optional name of the repository; may be null
      * @return the URL version of {@code jcrUrl} if {@code jcrUrl} is a valid URL, otherwise null
      */
-    private URL urlFor( String jcrUrl ) {
+    private URL urlFor( String jcrUrl,
+                        String repoName ) {
         if (jcrUrl == null || jcrUrl.isEmpty()) {
             throw new IllegalStateException(JcrI18n.invalidJcrUrl.text(jcrUrl));
         }
 
         try {
+            if (repoName != null) {
+                repoName = repoName.trim();
+                String queryParam = "?" + REPOSITORY_NAME_PARAM + "=";
+                if (repoName.length() != 0 && !jcrUrl.contains(queryParam)) {
+                    jcrUrl = jcrUrl + queryParam + repoName;
+                }
+            }
             return new URL(jcrUrl.toString());
         } catch (MalformedURLException mue) {
             LOG.debug("Could not parse URL: " + mue.getMessage());
             return null;
         }
     }
-
-    /**
-     * Returns the repository name to use for the given URL. If the {@code url} contains a query parameter named
-     * {@code repositoryName}, the value of that query parameter is returned. If the {@code url} does not contain a query paramer
-     * named {@code repositoryName} then {@code engine} is checked to see if it contains exactly one repository. If so, that
-     * repository is returned. If {@code engine} contains more than one JCR repository and the {@code repositoryName} parameter is
-     * {@code null}, then {@code null} is returned.
-     * <p>
-     * NOTE: If a repository name is provided in the {@code url} parameter, this method does not validate that a repository with
-     * that name exists in {@code engine}.
-     * </p>
-     * 
-     * @param repositories the container of the named repositories, used to check for a default repository name if none is
-     *        provided in the {@code url}; may be null only if {@code url} explicitly provides a repository name
-     * @param url the url for which the repository name should be returned; may not be null
-     * @return the repository name to use based on the algorithm described above; may be null
-     */
-    private String repositoryNameFor( Repositories repositories,
-                                      URL url ) {
-        String repositoryName = null;
-        String query = url.getQuery();
-        if (query != null) {
-            for (String keyValuePair : query.split("&")) {
-                String[] splitPair = keyValuePair.split("=");
-
-                if (splitPair.length == 2 && REPOSITORY_NAME_PARAM.equals(splitPair[0])) {
-                    repositoryName = splitPair[1];
-                    break;
-                }
-            }
-        }
-
-        if (repositoryName == null) {
-            Set<String> repositoryNames = repositories.getRepositoryNames();
-
-            if (repositoryNames.size() != 1) {
-                LOG.debug("No repository name provided in URL and multiple repositories configured in engine with following names: "
-                          + repositoryNames);
-                return null;
-            }
-
-            repositoryName = repositoryNames.iterator().next();
-        }
-        return repositoryName;
-    }
-
-    public Repositories getRepositories( String jcrUrl ) {
-        URL url = urlFor(jcrUrl);
-        if (url == null) return null;
-        return repositoriesFor(url, null);
-    }
-
 }

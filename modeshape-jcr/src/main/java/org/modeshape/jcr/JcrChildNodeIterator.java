@@ -24,90 +24,103 @@
 package org.modeshape.jcr;
 
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import javax.jcr.Node;
 import javax.jcr.NodeIterator;
-import org.modeshape.common.annotation.Immutable;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.jcr.cache.ChildReference;
+import org.modeshape.jcr.cache.ChildReferences;
 
 /**
- * A concrete {@link NodeIterator} implementation.
+ * A concrete {@link NodeIterator} implementation for children. Where possible, the creator should pass in the size. However, if
+ * it is not known, the size is computed by this iterator only when needed.
  */
-@Immutable
+@NotThreadSafe
 final class JcrChildNodeIterator implements NodeIterator {
 
-    private final Iterator<AbstractJcrNode> iterator;
-    private int ndx;
-    private int size;
-
-    JcrChildNodeIterator( Iterable<AbstractJcrNode> children,
-                          int size ) {
-        assert children != null;
-        iterator = children.iterator();
-        this.size = size;
+    protected static interface NodeResolver {
+        public Node nodeFrom( ChildReference ref );
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.RangeIterator#getPosition()
-     */
+    private final NodeResolver resolver;
+    private final Iterator<ChildReference> iterator;
+    private Iterator<Node> nodeIterator;
+    private int ndx;
+    private long size;
+
+    JcrChildNodeIterator( NodeResolver resolver,
+                          Iterator<ChildReference> iterator ) {
+        this.resolver = resolver;
+        this.iterator = iterator;
+        this.size = -1L; // we'll calculate if needed
+    }
+
+    JcrChildNodeIterator( NodeResolver resolver,
+                          ChildReferences childReferences ) {
+        assert size >= 0L;
+        this.resolver = resolver;
+        this.iterator = childReferences.iterator();
+        this.size = childReferences.size();
+    }
+
+    @Override
     public long getPosition() {
         return ndx;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.RangeIterator#getSize()
-     */
+    @Override
     public long getSize() {
+        if (size > -1L) return size;
+        if (!hasNext()) {
+            // There are no more, so return the number of nodes we've already seen ...
+            size = ndx;
+            return size;
+        }
+        // Otherwise, we have to iterate through the remaining iterator and keep the results ...
+        List<Node> remainingNodes = new LinkedList<Node>();
+        size = ndx;
+        while (iterator.hasNext()) {
+            Node node = resolver.nodeFrom(iterator.next());
+            if (node != null) {
+                remainingNodes.add(node);
+                ++size;
+            }
+        }
+        nodeIterator = remainingNodes.iterator();
         return size;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.Iterator#hasNext()
-     */
+    @Override
     public boolean hasNext() {
-        return iterator.hasNext();
+        return nodeIterator != null ? nodeIterator.hasNext() : iterator.hasNext();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.Iterator#next()
-     */
+    @Override
     public Object next() {
         return nextNode();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.NodeIterator#nextNode()
-     */
-    public javax.jcr.Node nextNode() {
-        AbstractJcrNode child = iterator.next();
+    @Override
+    public Node nextNode() {
+        if (nodeIterator != null) {
+            return nodeIterator.next();
+        }
+        Node child = null;
+        do {
+            child = resolver.nodeFrom(iterator.next());
+        } while (child == null);
         ndx++;
         return child;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws UnsupportedOperationException always
-     * @see java.util.Iterator#remove()
-     */
+    @Override
     public void remove() {
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws IllegalArgumentException if <code>count</code> is negative.
-     * @see javax.jcr.RangeIterator#skip(long)
-     */
+    @Override
     public void skip( long count ) {
         CheckArg.isNonNegative(count, "count");
         while (--count >= 0) {

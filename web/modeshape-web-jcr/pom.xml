@@ -19,14 +19,14 @@
 			<artifactId>modeshape-jcr-api</artifactId>
 		</dependency>
 
-		<dependency>
-			<groupId>org.modeshape</groupId>
-			<artifactId>modeshape-common</artifactId>
-		</dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-common</artifactId>
+        </dependency>
 
 		<!-- 
-      Java Content Repository API 
-    -->
+          Java Content Repository API 
+        -->
 		<dependency>
 			<groupId>javax.jcr</groupId>
 			<artifactId>jcr</artifactId>
@@ -61,6 +61,11 @@
 			<artifactId>modeshape-jcr</artifactId>
 			<scope>test</scope>
 		</dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-unit-test</artifactId>
+            <scope>test</scope>
+        </dependency>
 
 	</dependencies>
     <build>

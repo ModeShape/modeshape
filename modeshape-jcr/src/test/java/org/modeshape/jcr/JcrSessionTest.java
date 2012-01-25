@@ -1,16 +1,16 @@
 /*
-* ModeShape (http://www.modeshape.org)
+ * ModeShape (http://www.modeshape.org)
  * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
  * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors. 
+ * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- *
+ * 
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -31,72 +31,158 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.Principal;
 import java.util.Calendar;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import javax.jcr.Binary;
 import javax.jcr.Item;
 import javax.jcr.NamespaceException;
 import javax.jcr.Node;
+import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.PropertyType;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
-import javax.jcr.Session;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.ValueFactory;
 import javax.jcr.nodetype.NodeType;
-import javax.security.auth.Subject;
-import javax.security.auth.login.LoginContext;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.JaasSecurityContext;
-import org.modeshape.graph.property.NamespaceRegistry;
-import org.modeshape.graph.property.Path;
+import org.modeshape.common.statistic.Stopwatch;
+import org.modeshape.jcr.api.AnonymousCredentials;
+import org.modeshape.jcr.value.Path;
 
-@Migrated
-public class JcrSessionTest extends AbstractSessionTest {
+public class JcrSessionTest extends SingleUseAbstractTest {
 
     private static final String MULTI_LINE_VALUE = "Line\t1\nLine 2\rLine 3\r\nLine 4";
 
-    @Override
-    @Before
-    public void beforeEach() throws Exception {
-        super.beforeEach();
+    protected void initializeData() throws Exception {
+        Node root = session.getRootNode();
+        Node a = root.addNode("a");
+        Node b = a.addNode("b");
+        Node c = b.addNode("c");
+        a.addMixin("mix:lockable");
+        a.setProperty("stringProperty", "value");
 
+        b.addMixin("mix:referenceable");
+        b.setProperty("booleanProperty", true);
+
+        c.setProperty("stringProperty", "value");
+        c.setProperty("multiLineProperty", MULTI_LINE_VALUE);
+        session.save();
     }
 
-    @Override
-    protected void initializeContent() {
-        graph.create("/a").and().create("/a/b").and().create("/a/b/c").and();
-        graph.set("booleanProperty").on("/a/b").to(true);
-        graph.set("stringProperty").on("/a/b/c").to("value");
-        graph.set("jcr:mixinTypes").on("/a").to("mix:lockable");
-        graph.set("jcr:mixinTypes").on("/a/b").to("mix:referenceable");
-        graph.set("multiLineProperty").on("/a/b/c").to(MULTI_LINE_VALUE);
-
-        // Make sure the path to the namespaces exists ...
-        graph.create("/jcr:system").and().create("/jcr:system/mode:namespaces").and();
-
+    @Test
+    public void shouldHaveRootNode() throws Exception {
+        JcrRootNode node = session.getRootNode();
+        assertThat(node, is(notNullValue()));
+        assertThat(node.getPath(), is("/"));
     }
 
-    @After
-    public void after() throws Exception {
-        if (session.isLive()) {
-            session.logout();
+    @Test
+    public void shouldHaveJcrSystemNodeUnderRoot() throws Exception {
+        JcrRootNode node = session.getRootNode();
+        Node system = node.getNode("jcr:system");
+        assertThat(system, is(notNullValue()));
+        assertThat(system.getPath(), is("/jcr:system"));
+    }
+
+    @Test
+    public void shouldAllowCreatingManyUnstructuredNodesWithSameNameSiblings() throws Exception {
+        JcrRootNode node = session.getRootNode();
+        int count = 10000;
+        long start1 = System.nanoTime();
+        for (int i = 0; i != count; ++i) {
+            node.addNode("childNode");
         }
+        long millis = TimeUnit.MILLISECONDS.convert(System.nanoTime() - start1, TimeUnit.NANOSECONDS);
+        System.out.println("Time to create " + count + " nodes under root: " + millis + " ms");
+
+        long start2 = System.nanoTime();
+        session.save();
+        millis = TimeUnit.MILLISECONDS.convert(System.nanoTime() - start2, TimeUnit.NANOSECONDS);
+        System.out.println("Time to save " + count + " new nodes: " + millis + " ms");
+        millis = TimeUnit.MILLISECONDS.convert(System.nanoTime() - start1, TimeUnit.NANOSECONDS);
+        System.out.println("Total time to create " + count + " new nodes and save: " + millis + " ms");
+
+        NodeIterator iter = node.getNodes("childNode");
+        assertThat(iter.getSize(), is((long)count));
+        while (iter.hasNext()) {
+            Node child = iter.nextNode();
+            assertThat(child.getPrimaryNodeType().getName(), is("nt:unstructured"));
+        }
+
+        // Now add another node ...
+        start1 = System.nanoTime();
+        node.addNode("oneMore");
+        session.save();
+        millis = TimeUnit.MILLISECONDS.convert(System.nanoTime() - start1, TimeUnit.NANOSECONDS);
+        System.out.println("Time to create " + (count + 1) + "th node and save: " + millis + " ms");
+    }
+
+    @Test
+    public void shouldAllowCreatingNodeUnderUnsavedNode() throws Exception {
+        Node node = session.getRootNode().addNode("testNode");
+        node.addNode("childNode");
+        session.save();
+    }
+
+    @Test
+    public void shouldAllowCreatingManyUnstructuredNodesWithNoSameNameSiblings() throws Exception {
+        Stopwatch sw = new Stopwatch();
+        for (int i = 0; i != 15; ++i) {
+            // Each iteration adds another node under the root and creates the many nodes under that node ...
+            Node node = session.getRootNode().addNode("testNode");
+            session.save();
+
+            int count = 100;
+            if (i > 2) sw.start();
+            for (int j = 0; j != count; ++j) {
+                node.addNode("childNode" + j);
+            }
+
+            session.save();
+            if (i > 2) sw.stop();
+
+            // Now add another node ...
+            node.addNode("oneMore");
+            session.save();
+
+            session.getRootNode().getNode("testNode").remove();
+            session.save();
+        }
+        System.out.println(sw.getDetailedStatistics());
+    }
+
+    @Test
+    public void shouldAllowCreatingNodesTwoLevelsBelowRoot() throws Exception {
+        Node node = session.getRootNode().addNode("testNode");
+        session.save();
+        node.addNode("childNode");
+        session.save();
+    }
+
+    @Test
+    public void shouldAllowDeletingNodeWithNoChildren() throws Exception {
+        Node node = session.getRootNode().addNode("testNode");
+        session.save();
+        // session.getRootNode().getNodes();
+        // System.out.println("Root: " + session.getRootNode().getNodes().getSize() + " children");
+        node.remove();
+        session.save();
+    }
+
+    @Test
+    public void shouldAllowDeletingTransientNodeWithNoChildren() throws Exception {
+        Node node = session.getRootNode().addNode("testNode");
+        node.remove();
+        session.save();
     }
 
     @Test( expected = IllegalArgumentException.class )
@@ -142,11 +228,13 @@ public class JcrSessionTest extends AbstractSessionTest {
 
     @Test
     public void shouldReturnPropertyAttributeValueGivenNameOfExistingAttribute() throws Exception {
+        session = repository.login(new AnonymousCredentials("attribute1", "value1"));
         assertThat(session.getAttribute("attribute1"), is((Object)"value1"));
     }
 
     @Test
     public void shouldProvideAttributeNames() throws Exception {
+        session = repository.login(new AnonymousCredentials("attribute1", "value1"));
         String[] names = session.getAttributeNames();
         assertThat(names, notNullValue());
         assertThat(names.length, is(1));
@@ -155,15 +243,7 @@ public class JcrSessionTest extends AbstractSessionTest {
 
     @Test
     public void shouldProvideEmptyAttributeNames() throws Exception {
-        // Set up the session attributes ...
-        sessionAttributes = new HashMap<String, Object>();
-
-        // Now create the workspace ...
-        workspace = new JcrWorkspace(repository, workspaceName, context, sessionAttributes);
-
-        // Create the session and log in ...
-        session = (JcrSession)workspace.getSession();
-
+        session = repository.login(new AnonymousCredentials());
         // Get get the attribute names (there should be none) ...
         String[] names = session.getAttributeNames();
         assertThat(names, notNullValue());
@@ -199,16 +279,8 @@ public class JcrSessionTest extends AbstractSessionTest {
     @Test
     public void shouldProvideUserId() throws Exception {
         assertThat(session.getUserID(), notNullValue());
-        Principal principal = Mockito.mock(Principal.class);
-        when(principal.getName()).thenReturn("name");
-        Subject subject = new Subject(false, Collections.singleton(principal), Collections.EMPTY_SET, Collections.EMPTY_SET);
-        LoginContext loginContext = mock(LoginContext.class);
-        when(loginContext.getSubject()).thenReturn(subject);
-        NamespaceRegistry globalRegistry = context.getNamespaceRegistry();
-        ExecutionContext sessionContext = context.with(new JaasSecurityContext(loginContext));
-        Session session = new JcrSession(repository, workspace, sessionContext, globalRegistry, sessionAttributes);
         try {
-            assertThat(session.getUserID(), is("name"));
+            assertThat(session.getUserID(), is("<anonymous>"));
         } finally {
             session.logout();
         }
@@ -227,6 +299,7 @@ public class JcrSessionTest extends AbstractSessionTest {
 
     @Test
     public void shouldProvideChildrenByPath() throws Exception {
+        initializeData();
         Item item = session.getItem("/a");
         assertThat(item, instanceOf(Node.class));
         item = session.getItem("/a/b");
@@ -237,6 +310,7 @@ public class JcrSessionTest extends AbstractSessionTest {
 
     @Test
     public void shouldGetItemByIdentifierPath() throws Exception {
+        initializeData();
         // Look up the node by the identifier path ...
         Item item = session.getItem(identifierPathFor("/a"));
         assertThat(item, instanceOf(Node.class));
@@ -253,6 +327,7 @@ public class JcrSessionTest extends AbstractSessionTest {
 
     @Test
     public void shouldGetNodeByIdentifierPath() throws Exception {
+        initializeData();
         // Look up the node by the identifier path ...
         Node node = session.getNode(identifierPathFor("/a"));
         assertThat(node.getPath(), is("/a"));
@@ -266,6 +341,7 @@ public class JcrSessionTest extends AbstractSessionTest {
 
     @Test
     public void shouldCorrectlyDetermineIfItemExistsUsingPath() throws Exception {
+        initializeData();
         assertThat(session.itemExists("/"), is(true));
         assertThat(session.itemExists("/a"), is(true));
         assertThat(session.itemExists("/a/b"), is(true));
@@ -273,6 +349,7 @@ public class JcrSessionTest extends AbstractSessionTest {
 
     @Test
     public void shouldCorrectlyDetermineIfItemExistsUsingIdentifierPath() throws Exception {
+        initializeData();
         assertThat(session.itemExists(identifierPathFor("/")), is(true));
         assertThat(session.itemExists(identifierPathFor("/a")), is(true));
         assertThat(session.itemExists(identifierPathFor("/a/b")), is(true));
@@ -280,6 +357,7 @@ public class JcrSessionTest extends AbstractSessionTest {
 
     @Test
     public void shouldProvidePropertiesByPath() throws Exception {
+        initializeData();
         Item item = session.getItem("/a/b/booleanProperty");
         assertThat(item, instanceOf(Property.class));
 
@@ -289,6 +367,7 @@ public class JcrSessionTest extends AbstractSessionTest {
 
     @Test
     public void shouldProvideNodesByPath() throws Exception {
+        initializeData();
         Node node = session.getNode("/a");
         assertThat(node, instanceOf(Node.class));
         node = session.getNode("/a/b");
@@ -296,24 +375,28 @@ public class JcrSessionTest extends AbstractSessionTest {
 
     @Test( expected = PathNotFoundException.class )
     public void shouldNotReturnPropertyAsNode() throws Exception {
+        initializeData();
         assertThat(session.nodeExists("/a/b/booleanProperty"), is(false));
         session.getNode("/a/b/booleanProperty");
     }
 
     @Test( expected = PathNotFoundException.class )
     public void shouldNotReturnNonExistantNode() throws Exception {
+        initializeData();
         assertThat(session.nodeExists("/a/b/argleBargle"), is(false));
         session.getNode("/a/b/argleBargle");
     }
 
     @Test( expected = PathNotFoundException.class )
     public void shouldNotReturnNodeAsProperty() throws Exception {
+        initializeData();
         assertThat(session.propertyExists("/a/b"), is(false));
         session.getProperty("/a/b");
     }
 
     @Test( expected = PathNotFoundException.class )
     public void shouldNotReturnNonExistantProperty() throws Exception {
+        initializeData();
         assertThat(session.propertyExists("/a/b/argleBargle"), is(false));
         session.getProperty("/a/b/argleBargle");
     }
@@ -360,6 +443,7 @@ public class JcrSessionTest extends AbstractSessionTest {
 
     @Test
     public void shouldProvideItemExists() throws Exception {
+        initializeData();
         assertThat(session.itemExists("/a/b"), is(true));
         assertThat(session.itemExists("/a/c"), is(false));
     }
@@ -446,14 +530,14 @@ public class JcrSessionTest extends AbstractSessionTest {
     public void rootNodeShouldBeReferenceable() throws RepositoryException {
         Node rootNode = session.getRootNode();
 
-        assertTrue(rootNode.getPrimaryNodeType()
-                           .isNodeType(JcrMixLexicon.REFERENCEABLE.getString(context.getNamespaceRegistry())));
+        assertTrue(rootNode.getPrimaryNodeType().isNodeType(JcrMixLexicon.REFERENCEABLE.getString(session.namespaces())));
     }
 
     @Test
     public void shouldExportMultiLinePropertiesInSystemView() throws Exception {
-        OutputStream os = new ByteArrayOutputStream();
+        initializeData();
 
+        OutputStream os = new ByteArrayOutputStream();
         session.exportSystemView("/a/b/c", os, false, true);
 
         String fileContents = os.toString();
@@ -462,19 +546,17 @@ public class JcrSessionTest extends AbstractSessionTest {
 
     @Test
     public void shouldUseJcrCardinalityPerPropertyDefinition() throws Exception {
+        initializeData();
 
         // Verify that the node does exist in the source ...
-        Path pathToNode = context.getValueFactories().getPathFactory().create("/a/b");
-        Node carsNode = session.getNode(pathToNode);
+        Path pathToNode = session.context().getValueFactories().getPathFactory().create("/a/b");
+        Node carsNode = session.node(pathToNode);
 
-        String mixinTypesName = JcrLexicon.MIXIN_TYPES.getString(session.getExecutionContext().getNamespaceRegistry());
+        String mixinTypesName = JcrLexicon.MIXIN_TYPES.getString(session.context().getNamespaceRegistry());
         Property mixinTypes = carsNode.getProperty(mixinTypesName);
 
-        // Check that the underlying ModeShape property has one value - this is a test of the testing data
-        assertThat(((AbstractJcrProperty)mixinTypes).property().isMultiple(), is(false));
         // Check that the JCR property is a MultiProperty - this call will throw an exception if the property is not.
         mixinTypes.getValues();
-
     }
 
     /*
@@ -484,6 +566,7 @@ public class JcrSessionTest extends AbstractSessionTest {
 
     @Test
     public void shouldProvideIdentifierEvenIfNotReferenceable() throws Exception {
+        initializeData();
         // The b node was not set up to be referenceable in this test, but does have a mixin type
         Node node = session.getRootNode().getNode("a").getNode("b").getNode("c");
         assertThat(node.getIdentifier(), is(notNullValue()));
@@ -491,6 +574,7 @@ public class JcrSessionTest extends AbstractSessionTest {
 
     @Test
     public void shouldProvideIdentifierEvenIfNoMixinTypes() throws Exception {
+        initializeData();
         // The b node was not set up to be referenceable in this test, but does have a mixin type
         Node node = session.getRootNode().getNode("a").getNode("b").getNode("c");
         assertThat(node.getIdentifier(), is(notNullValue()));
@@ -499,6 +583,7 @@ public class JcrSessionTest extends AbstractSessionTest {
     @SuppressWarnings( "deprecation" )
     @Test( expected = UnsupportedRepositoryOperationException.class )
     public void shouldNotProvideUuidIfNotReferenceable() throws Exception {
+        initializeData();
         // The b node was not set up to be referenceable in this test, but does have a mixin type
         Node node = session.getRootNode().getNode("a").getNode("b").getNode("c");
         node.getUUID();
@@ -507,6 +592,7 @@ public class JcrSessionTest extends AbstractSessionTest {
     @SuppressWarnings( "deprecation" )
     @Test( expected = UnsupportedRepositoryOperationException.class )
     public void shouldNotProvideUuidIfNoMixinTypes() throws Exception {
+        initializeData();
         // The c node was not set up to be referenceable in this test and has no mixin types
         Node node = session.getRootNode().getNode("a").getNode("b").getNode("c");
         node.getUUID();
@@ -514,6 +600,7 @@ public class JcrSessionTest extends AbstractSessionTest {
 
     @Test
     public void shouldMoveToNewName() throws Exception {
+        initializeData();
         session.move("/a/b/c", "/a/b/d");
 
         session.getRootNode().getNode("a").getNode("b").getNode("d");
@@ -530,9 +617,15 @@ public class JcrSessionTest extends AbstractSessionTest {
     public void shouldAddCreatedPropertyForHierarchyNodes() throws Exception {
         // q.v. MODE-694
         Node folderNode = session.getRootNode().addNode("folderNode", "nt:folder");
-        assertThat(folderNode.hasProperty("jcr:created"), is(true));
+        assertThat(folderNode.hasProperty("jcr:created"), is(false));
 
         Node fileNode = folderNode.addNode("fileNode", "nt:file");
+        assertThat(fileNode.hasProperty("jcr:created"), is(false));
+
+        // Save the changes ...
+        session.save();
+
+        assertThat(folderNode.hasProperty("jcr:created"), is(true));
         assertThat(fileNode.hasProperty("jcr:created"), is(true));
     }
 
@@ -548,4 +641,21 @@ public class JcrSessionTest extends AbstractSessionTest {
         assertTrue(!session.hasCapability("addNode", session.getRootNode(), new String[] {"someNewNode", "nt:invalidType"}));
     }
 
+    @SuppressWarnings( "deprecation" )
+    protected String identifierPathFor( String pathToNode ) throws Exception {
+        AbstractJcrNode node = session.getNode(pathToNode);
+        if (node.isNodeType("mix:referenceable")) {
+            // Make sure that the identifier matches the UUID ...
+            assertThat(node.getUUID(), is(node.getIdentifier()));
+        } else {
+            try {
+                node.getUUID();
+                fail("Should have thrown an UnsupportedRepositoryOperationException if the node " + pathToNode
+                     + " is not referenceable");
+            } catch (UnsupportedRepositoryOperationException e) {
+                // expected
+            }
+        }
+        return node.identifierPath();
+    }
 }

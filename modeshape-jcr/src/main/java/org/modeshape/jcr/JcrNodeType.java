@@ -40,9 +40,10 @@ import javax.jcr.nodetype.NodeTypeIterator;
 import javax.jcr.nodetype.PropertyDefinition;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.basic.BasicName;
+import org.modeshape.jcr.RepositoryNodeTypeManager.NodeTypes;
+import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.basic.BasicName;
 
 /**
  * ModeShape implementation of JCR {@link NodeType}s.
@@ -53,6 +54,7 @@ class JcrNodeType implements NodeType {
     public static final String RESIDUAL_ITEM_NAME = "*";
     public static final Name RESIDUAL_NAME = new BasicName("", RESIDUAL_ITEM_NAME);
 
+    private final NodeKey key;
     /** The name of the node type (e.g., <code>{http://www.jcp.org/jcr/nt/1.0}base</code>) */
     private final Name name;
     /** The name of the node's primary item */
@@ -111,7 +113,8 @@ class JcrNodeType implements NodeType {
     /** Link to the repository node type manager for the repository to which this node type belongs. */
     private RepositoryNodeTypeManager nodeTypeManager;
 
-    JcrNodeType( ExecutionContext context,
+    JcrNodeType( NodeKey prototypeKey,
+                 ExecutionContext context,
                  RepositoryNodeTypeManager nodeTypeManager,
                  Name name,
                  List<JcrNodeType> declaredSupertypes,
@@ -171,6 +174,11 @@ class JcrNodeType implements NodeType {
         this.thisAndAllSupertypesNames = Collections.unmodifiableSet(typeNames);
 
         this.allDefinitions = new DefinitionCache(this);
+        this.key = prototypeKey.withId("/jcr:system/jcr:nodeTypes/" + name.getString());
+    }
+
+    final NodeKey key() {
+        return key;
     }
 
     List<JcrNodeType> getTypeAndSupertypes() {
@@ -249,22 +257,14 @@ class JcrNodeType implements NodeType {
         return null;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.NodeType#canAddChildNode(java.lang.String)
-     */
+    @Override
     public boolean canAddChildNode( String childNodeName ) {
         CheckArg.isNotNull(childNodeName, "childNodeName");
         Name childName = context.getValueFactories().getNameFactory().create(childNodeName);
-        return nodeTypeManager().findChildNodeDefinition(this.name, null, childName, null, 0, true) != null;
+        return nodeTypes().findChildNodeDefinition(this.name, null, childName, null, 0, true) != null;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.NodeType#canAddChildNode(java.lang.String, java.lang.String)
-     */
+    @Override
     public boolean canAddChildNode( String childNodeName,
                                     String primaryNodeTypeName ) {
 
@@ -273,18 +273,20 @@ class JcrNodeType implements NodeType {
         Name childName = context.getValueFactories().getNameFactory().create(childNodeName);
         Name childPrimaryTypeName = context.getValueFactories().getNameFactory().create(primaryNodeTypeName);
 
+        NodeTypes nodeTypes = nodeTypes();
         if (primaryNodeTypeName != null) {
-            JcrNodeType childType = this.nodeTypeManager().getNodeType(childPrimaryTypeName);
+            JcrNodeType childType = nodeTypes.getNodeType(childPrimaryTypeName);
             if (childType.isAbstract() || childType.isMixin()) return false;
         }
 
-        return nodeTypeManager().findChildNodeDefinition(this.name, null, childName, childPrimaryTypeName, 0, true) != null;
+        return nodeTypes.findChildNodeDefinition(this.name, null, childName, childPrimaryTypeName, 0, true) != null;
     }
 
+    @Override
     public boolean canRemoveNode( String itemName ) {
         CheckArg.isNotNull(itemName, "itemName");
         Name childName = context.getValueFactories().getNameFactory().create(itemName);
-        return nodeTypeManager().canRemoveAllChildren(this.name, null, childName, true);
+        return nodeTypes().canRemoveAllChildren(this.name, null, childName, true);
     }
 
     /**
@@ -296,10 +298,11 @@ class JcrNodeType implements NodeType {
      * 
      * @see javax.jcr.nodetype.NodeType#canRemoveItem(java.lang.String)
      */
+    @Override
     public boolean canRemoveItem( String itemName ) {
         CheckArg.isNotNull(itemName, "itemName");
         Name childName = context.getValueFactories().getNameFactory().create(itemName);
-        return nodeTypeManager().canRemoveItem(this.name, null, childName, true);
+        return nodeTypes().canRemoveItem(this.name, null, childName, true);
     }
 
     /**
@@ -309,19 +312,21 @@ class JcrNodeType implements NodeType {
      * will be considered to have succeeded and the value constraints (if any) will be interpreted using the semantics for the
      * type specified in <code>value.getType()</code>.
      * 
+     * @param session the session in which the constraints are to be checked; may not be null
      * @param propertyDefinition the property definition to validate against
      * @param value the value to be validated
      * @return <code>true</code> if the value can be cast to the required type for the property definition (if it exists) and
      *         satisfies the constraints for the property (if any exist).
      * @see PropertyDefinition#getValueConstraints()
-     * @see JcrPropertyDefinition#satisfiesConstraints(Value)
+     * @see JcrPropertyDefinition#satisfiesConstraints(Value,JcrSession)
      */
-    boolean canCastToTypeAndMatchesConstraints( JcrPropertyDefinition propertyDefinition,
+    boolean canCastToTypeAndMatchesConstraints( JcrSession session,
+                                                JcrPropertyDefinition propertyDefinition,
                                                 Value value ) {
         try {
             assert value instanceof JcrValue : "Illegal implementation of Value interface";
             ((JcrValue)value).asType(propertyDefinition.getRequiredType()); // throws ValueFormatException if there's a problem
-            return propertyDefinition.satisfiesConstraints(value);
+            return propertyDefinition.satisfiesConstraints(value, session);
         } catch (javax.jcr.ValueFormatException vfe) {
             // Cast failed
             return false;
@@ -335,41 +340,47 @@ class JcrNodeType implements NodeType {
      * will be considered to have succeeded and the value constraints (if any) will be interpreted using the semantics for the
      * type specified in <code>value.getType()</code>.
      * 
+     * @param session the session in which the constraints are to be checked; may not be null
      * @param propertyDefinition the property definition to validate against
      * @param values the values to be validated
      * @return <code>true</code> if the value can be cast to the required type for the property definition (if it exists) and
      *         satisfies the constraints for the property (if any exist).
      * @see PropertyDefinition#getValueConstraints()
-     * @see JcrPropertyDefinition#satisfiesConstraints(Value)
+     * @see JcrPropertyDefinition#satisfiesConstraints(Value,JcrSession)
      */
-    boolean canCastToTypeAndMatchesConstraints( JcrPropertyDefinition propertyDefinition,
+    boolean canCastToTypeAndMatchesConstraints( JcrSession session,
+                                                JcrPropertyDefinition propertyDefinition,
                                                 Value[] values ) {
         for (Value value : values) {
-            if (!canCastToTypeAndMatchesConstraints(propertyDefinition, value)) return false;
+            if (!canCastToTypeAndMatchesConstraints(session, propertyDefinition, value)) return false;
         }
         return true;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.NodeType#canSetProperty(java.lang.String, javax.jcr.Value)
-     */
+    @Override
     public boolean canSetProperty( String propertyName,
+                                   Value value ) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean canSetProperty( String propertyName,
+                                   Value[] values ) {
+        throw new UnsupportedOperationException();
+    }
+
+    public boolean canSetProperty( JcrSession session,
+                                   String propertyName,
                                    Value value ) {
         CheckArg.isNotNull(propertyName, "propertyName");
         Name name = context.getValueFactories().getNameFactory().create(propertyName);
 
         // Reuse the logic in RepositoryNodeTypeManager ...
-        return nodeTypeManager().findPropertyDefinition(this.name, null, name, value, false, true) != null;
+        return nodeTypes().findPropertyDefinition(session, this.name, null, name, value, false, true) != null;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.NodeType#canSetProperty(java.lang.String, javax.jcr.Value[])
-     */
-    public boolean canSetProperty( String propertyName,
+    public boolean canSetProperty( JcrSession session,
+                                   String propertyName,
                                    Value[] values ) {
         CheckArg.isNotNull(propertyName, "propertyName");
         if (values == null || values.length == 0) {
@@ -378,62 +389,50 @@ class JcrNodeType implements NodeType {
 
         Name name = context.getValueFactories().getNameFactory().create(propertyName);
         // Reuse the logic in RepositoryNodeTypeManager ...
-        return nodeTypeManager().findPropertyDefinition(this.name, null, name, values, true) != null;
+        return nodeTypes().findPropertyDefinition(session, this.name, null, name, values, true) != null;
     }
 
+    @Override
     public boolean canRemoveProperty( String propertyName ) {
         CheckArg.isNotNull(propertyName, "propertyName");
         Name name = context.getValueFactories().getNameFactory().create(propertyName);
 
         // Reuse the logic in RepositoryNodeTypeManager ...
-        return nodeTypeManager().canRemoveProperty(this.name, null, name, true);
+        return nodeTypes().canRemoveProperty(this.name, null, name, true);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.NodeType#getDeclaredChildNodeDefinitions()
-     */
+    @Override
     public JcrNodeDefinition[] getDeclaredChildNodeDefinitions() {
         // Always have to make a copy to prevent changes ...
         return childNodeDefinitions.toArray(new JcrNodeDefinition[childNodeDefinitions.size()]);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.NodeType#getChildNodeDefinitions()
-     */
+    @Override
     public JcrNodeDefinition[] getChildNodeDefinitions() {
         // Always have to make a copy to prevent changes ...
         Collection<JcrNodeDefinition> definitions = this.allDefinitions.allChildNodeDefinitions();
         return definitions.toArray(new JcrNodeDefinition[definitions.size()]);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.NodeType#getPropertyDefinitions()
-     */
+    @Override
     public JcrPropertyDefinition[] getPropertyDefinitions() {
         // Always have to make a copy to prevent changes ...
         Collection<JcrPropertyDefinition> definitions = this.allDefinitions.allPropertyDefinitions();
         return definitions.toArray(new JcrPropertyDefinition[definitions.size()]);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.NodeType#getDeclaredSupertypes()
-     */
+    @Override
     public JcrNodeType[] getDeclaredSupertypes() {
         // Always have to make a copy to prevent changes ...
         return declaredSupertypes.toArray(new JcrNodeType[declaredSupertypes.size()]);
     }
 
     /**
+     * {@inheritDoc}
+     * 
      * @return the array of names of supertypes declared for this node; possibly empty, never null
      */
+    @Override
     public String[] getDeclaredSupertypeNames() {
         List<String> supertypeNames = new ArrayList<String>(declaredSupertypes.size());
 
@@ -445,19 +444,17 @@ class JcrNodeType implements NodeType {
         return supertypeNames.toArray(new String[supertypeNames.size()]);
     }
 
+    @Override
     public NodeTypeIterator getSubtypes() {
-        return new JcrNodeTypeIterator(nodeTypeManager.subtypesFor(this));
+        return new JcrNodeTypeIterator(nodeTypes().subtypesFor(this));
     }
 
+    @Override
     public NodeTypeIterator getDeclaredSubtypes() {
-        return new JcrNodeTypeIterator(nodeTypeManager.declaredSubtypesFor(this));
+        return new JcrNodeTypeIterator(nodeTypes().declaredSubtypesFor(this));
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.NodeType#getName()
-     */
+    @Override
     public String getName() {
         // Translate the name to the correct prefix. Need to check the session to support url-remapping.
         return name.getString(context.getNamespaceRegistry());
@@ -469,7 +466,7 @@ class JcrNodeType implements NodeType {
      * 
      * @return the internal {@link Name} object for the node type.
      */
-    Name getInternalName() {
+    final Name getInternalName() {
         return name;
     }
 
@@ -483,11 +480,7 @@ class JcrNodeType implements NodeType {
         return primaryItemName;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.NodeType#getPrimaryItemName()
-     */
+    @Override
     public String getPrimaryItemName() {
         if (primaryItemName == null) {
             return null;
@@ -497,55 +490,37 @@ class JcrNodeType implements NodeType {
         return primaryItemName.getString(context.getNamespaceRegistry());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.NodeType#getDeclaredPropertyDefinitions()
-     */
+    @Override
     public JcrPropertyDefinition[] getDeclaredPropertyDefinitions() {
         return propertyDefinitions.toArray(new JcrPropertyDefinition[propertyDefinitions.size()]);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.NodeType#getSupertypes()
-     */
+    @Override
     public NodeType[] getSupertypes() {
         return allSupertypes.toArray(new NodeType[allSupertypes.size()]);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.NodeType#hasOrderableChildNodes()
-     */
+    @Override
     public boolean hasOrderableChildNodes() {
         return orderableChildNodes;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.NodeType#isMixin()
-     */
+    @Override
     public boolean isMixin() {
         return mixin;
     }
 
+    @Override
     public boolean isAbstract() {
         return isAbstract;
     }
 
+    @Override
     public boolean isQueryable() {
         return queryable;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.NodeType#isNodeType(java.lang.String)
-     */
+    @Override
     public boolean isNodeType( String nodeTypeName ) {
         if (nodeTypeName == null) return false;
         Name name = context.getValueFactories().getNameFactory().create(nodeTypeName);
@@ -565,21 +540,11 @@ class JcrNodeType implements NodeType {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#hashCode()
-     */
     @Override
     public int hashCode() {
         return this.name.hashCode();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
     @Override
     public boolean equals( Object obj ) {
         if (obj == this) return true;
@@ -608,7 +573,7 @@ class JcrNodeType implements NodeType {
      * @return a new {@link JcrNodeType} that has the same state as this node type, but with the given node type manager.
      */
     final JcrNodeType with( RepositoryNodeTypeManager nodeTypeManager ) {
-        return new JcrNodeType(this.context, nodeTypeManager, this.name, this.declaredSupertypes, this.primaryItemName,
+        return new JcrNodeType(this.key, this.context, nodeTypeManager, this.name, this.declaredSupertypes, this.primaryItemName,
                                this.childNodeDefinitions, this.propertyDefinitions, this.mixin, this.isAbstract, this.queryable,
                                this.orderableChildNodes);
     }
@@ -618,12 +583,15 @@ class JcrNodeType implements NodeType {
      * 
      * @param context the new execution context
      * @return a new {@link JcrNodeType} that has the same state as this node type, but with the given node type manager.
-     * @see JcrNodeTypeManager
      */
     final JcrNodeType with( ExecutionContext context ) {
-        return new JcrNodeType(context, this.nodeTypeManager, this.name, this.declaredSupertypes, this.primaryItemName,
+        return new JcrNodeType(this.key, context, this.nodeTypeManager, this.name, this.declaredSupertypes, this.primaryItemName,
                                this.childNodeDefinitions, this.propertyDefinitions, this.mixin, this.isAbstract, this.queryable,
                                this.orderableChildNodes);
+    }
+
+    final NodeTypes nodeTypes() {
+        return nodeTypeManager.getNodeTypes();
     }
 
     final RepositoryNodeTypeManager nodeTypeManager() {
@@ -753,5 +721,4 @@ class JcrNodeType implements NodeType {
 
         return false;
     }
-
 }

@@ -27,112 +27,69 @@ import javax.jcr.AccessDeniedException;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
-import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.version.VersionException;
-import org.modeshape.common.annotation.NotThreadSafe;
-import org.modeshape.graph.Location;
-import org.modeshape.graph.session.GraphSession.NodeId;
+import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.jcr.cache.MutableCachedNode;
+import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.cache.SessionCache;
+import org.modeshape.jcr.value.Path;
 
 /**
  * A concrete {@link Node JCR Node} implementation.
  * 
  * @see JcrRootNode
- * @see JcrSharedNode
  */
-@NotThreadSafe
+@ThreadSafe
 class JcrNode extends AbstractJcrNode {
 
-    JcrNode( SessionCache cache,
-             NodeId nodeId,
-             Location location ) {
-        super(cache, nodeId, location);
+    JcrNode( JcrSession session,
+             NodeKey nodeKey ) {
+        super(session, nodeKey);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.AbstractJcrNode#isRoot()
-     */
     @Override
     final boolean isRoot() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Node#getIndex()
-     */
+    @Override
+    Type type() {
+        return Type.NODE;
+    }
+
+    @Override
     public int getIndex() throws RepositoryException {
         return segment().getIndex();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#getName()
-     */
+    @Override
     public String getName() throws RepositoryException {
         return segment().getName().getString(namespaces());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#getParent()
-     */
     @Override
     public AbstractJcrNode getParent() throws ItemNotFoundException, RepositoryException {
         checkSession();
-        return parentNodeInfo().getPayload().getJcrNode();
+        NodeKey parentKey = node().getParentKey(sessionCache());
+        return session().node(parentKey, null);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#getPath()
-     */
+    @Override
     public String getPath() throws RepositoryException {
         // checkSession(); ideally we don't have to do this, because getting the path is a useful thing and is used in 'toString'
         return path().getString(namespaces());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.AbstractJcrNode#doRemove()
-     */
     @Override
-    protected void doRemove() throws RepositoryException, LockException {
-        AbstractJcrNode parentNode = getParent();
-        if (parentNode.isLocked()) {
-            Lock parentLock = lockManager().getLock(parentNode);
-            if (parentLock != null && !parentLock.isLockOwningSession()) {
-                throw new LockException(JcrI18n.lockTokenNotHeld.text(this.location));
-            }
-        }
+    protected void doRemove( Path path )
+        throws VersionException, LockException, ConstraintViolationException, AccessDeniedException, RepositoryException {
 
-        if (!parentNode.isCheckedOut()) {
-            throw new VersionException(JcrI18n.nodeIsCheckedIn.text(parentNode.getPath()));
-        }
-
-        JcrNodeDefinition nodeDefn = cache.nodeTypes().getNodeDefinition(nodeInfo().getPayload().getDefinitionId());
-
-        if (nodeDefn.isProtected()) {
-            throw new ConstraintViolationException(JcrI18n.cannotRemoveItemWithProtectedDefinition.text(getPath()));
-        }
-        session().recordRemoval(locationToDestroy()); // do this first before we destroy the node!
-        doDestroy();
+        SessionCache cache = sessionCache();
+        NodeKey key = key();
+        MutableCachedNode parent = mutableParent();
+        parent.removeChild(cache, key);
+        cache.destroy(key);
     }
-
-    protected Location locationToDestroy() {
-        return location;
-    }
-
-    protected void doDestroy() throws AccessDeniedException, RepositoryException {
-        editor().destroy();
-    }
-
 }

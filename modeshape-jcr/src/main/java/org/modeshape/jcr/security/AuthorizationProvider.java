@@ -23,9 +23,9 @@
  */
 package org.modeshape.jcr.security;
 
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.property.Path;
+import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.ModeShapePermissions;
+import org.modeshape.jcr.value.Path;
 
 /**
  * An interface that can authorize access to specific resources within repositories.
@@ -38,7 +38,7 @@ public interface AuthorizationProvider {
      * 
      * @param context the context in which the subject is performing the actions on the supplied workspace
      * @param repositoryName the name of the repository containing the workspace content
-     * @param repositorySourceName the name of the repository's source
+     * @param repositorySourceName <i>This is no longer used and will always be the same as the repositoryName</i>
      * @param workspaceName the name of the workspace in which the path exists
      * @param path the path on which the actions are occurring
      * @param actions the list of {@link ModeShapePermissions actions} to check

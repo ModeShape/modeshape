@@ -23,35 +23,15 @@
  */
 package org.modeshape.jcr;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import javax.jcr.Credentials;
-import javax.jcr.Node;
-import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
-import javax.jcr.Session;
-import javax.jcr.SimpleCredentials;
-import junit.framework.TestSuite;
-import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
-import org.modeshape.jcr.JcrRepository.Option;
 
-/**
- * The {@link JcrNodeTypeManager} test class.
- */
-@Migrated
-public final class JcrNodeTypeManagerTest extends TestSuite {
-
-    // ===========================================================================================================================
-    // Constants
-    // ===========================================================================================================================
+public class JcrNodeTypeManagerTest extends MultiUseAbstractTest {
 
     private static final String MIXIN1 = "mix:lockable";
     private static final String MIXIN2 = "mix:referenceable";
@@ -73,74 +53,23 @@ public final class JcrNodeTypeManagerTest extends TestSuite {
         System.arraycopy(MIXINS, 0, SUBTYPES_MIXINS, SUBTYPES.length, MIXINS.length);
     }
 
-    // ===========================================================================================================================
-    // Class Methods
-    // ===========================================================================================================================
-
     @BeforeClass
-    public static void beforeAll() {
-        // Initialize the JAAS configuration to allow for an admin login later
-        JaasTestUtil.initJaas("security/jaas.conf.xml");
+    public static final void beforeAll() throws Exception {
+        MultiUseAbstractTest.beforeAll();
     }
 
     @AfterClass
-    public static void afterAll() {
-        JaasTestUtil.releaseJaas();
+    public static final void afterAll() throws Exception {
+        MultiUseAbstractTest.afterAll();
     }
 
-    // ===========================================================================================================================
-    // Fields
-    // ===========================================================================================================================
-
-    private JcrEngine engine;
-    private Session session;
     private JcrNodeTypeManager nodeTypeMgr;
 
-    // ===========================================================================================================================
-    // Methods
-    // ===========================================================================================================================
-
-    @After
-    public void afterEach() {
-        try {
-            if (this.session != null) {
-                this.session.logout();
-            }
-        } finally {
-            this.session = null;
-
-            try {
-                this.engine.shutdown();
-            } finally {
-                this.engine = null;
-            }
-        }
-    }
-
+    @Override
     @Before
-    public void beforeEach() throws RepositoryException {
-        final String WORKSPACE = "ws1";
-        final String REPOSITORY = "r1";
-        final String SOURCE = "store";
-
-        JcrConfiguration config = new JcrConfiguration();
-        config.repositorySource("store")
-              .usingClass(InMemoryRepositorySource.class)
-              .setRetryLimit(100)
-              .setProperty("defaultWorkspaceName", WORKSPACE);
-        config.repository(REPOSITORY).setSource(SOURCE).setOption(Option.JAAS_LOGIN_CONFIG_NAME, "modeshape-jcr");
-        config.save();
-
-        // Create and start the engine ...
-        this.engine = config.build();
-        this.engine.start();
-
-        // Create repository and session
-        Repository repository = this.engine.getRepository(REPOSITORY);
-        final String USER_ID = "superuser";
-        Credentials credentials = new SimpleCredentials(USER_ID, USER_ID.toCharArray());
-        this.session = repository.login(credentials, WORKSPACE);
-        this.nodeTypeMgr = (JcrNodeTypeManager)this.session.getWorkspace().getNodeTypeManager();
+    public void beforeEach() throws Exception {
+        super.beforeEach();
+        nodeTypeMgr = session().nodeTypeManager();
     }
 
     @Test( expected = IllegalArgumentException.class )
@@ -182,32 +111,6 @@ public final class JcrNodeTypeManagerTest extends TestSuite {
     @Test
     public void shouldNotBeDerivedFromIfNoMatch() throws Exception {
         assertFalse(this.nodeTypeMgr.isDerivedFrom(SUBTYPES, NO_MATCH_TYPE, MIXINS));
-    }
-
-    @Test
-    public void shouldAllowDisjunctiveResidualChildNodeDefinitions() throws Exception {
-        // This is an extended test of the MODE-698 fix
-        CndNodeTypeReader factory = new CndNodeTypeReader(engine.getExecutionContext());
-        factory.read("/magnolia.cnd");
-        nodeTypeMgr.registerNodeTypes(factory.getNodeTypeDefinitions(), false);
-        session.getWorkspace().getNamespaceRegistry().registerNamespace("mgnl", "http://www.magnolia.info/jcr/mgnl");
-
-        assertThat(nodeTypeMgr.getNodeType("mgnl:content"), is(notNullValue()));
-
-        Node rootNode = session.getRootNode();
-        Node branchNode = rootNode.addNode("disjunctiveTest", "nt:unstructured");
-        Node testNode = branchNode.addNode("testNode", "mgnl:content");
-
-        assertTrue(testNode.hasNode("MetaData"));
-        session.save();
-
-        // This residual definition comes from the ancestor - nt:hierarchyNode
-        testNode.addNode("hierarchyNode", "nt:folder");
-
-        // This residual definition comes from mgnl:content
-        testNode.addNode("baseNode", "nt:unstructured");
-
-        session.save();
     }
 
     @Test

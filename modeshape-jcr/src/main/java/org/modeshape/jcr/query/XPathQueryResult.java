@@ -35,9 +35,8 @@ import javax.jcr.Value;
 import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
-import org.modeshape.graph.Location;
-import org.modeshape.graph.query.QueryResults;
-import org.modeshape.graph.query.validate.Schemata;
+import org.modeshape.jcr.query.QueryResults.Location;
+import org.modeshape.jcr.query.validate.Schemata;
 
 /**
  * {@link QueryResult} implementation for XPath results.
@@ -70,31 +69,16 @@ public class XPathQueryResult extends JcrQueryResult {
         this.columnTypes = Collections.unmodifiableList(columnTypes);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see JcrQueryResult#getColumnNameList()
-     */
     @Override
     public List<String> getColumnNameList() {
         return columnNames;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.query.JcrQueryResult#getColumnTypeList()
-     */
     @Override
     public java.util.List<String> getColumnTypeList() {
         return columnTypes;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see JcrQueryResult#getRows()
-     */
     @Override
     public RowIterator getRows() {
         final int numRows = results.getRowCount();

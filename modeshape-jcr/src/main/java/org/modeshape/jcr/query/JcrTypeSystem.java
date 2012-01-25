@@ -24,7 +24,7 @@
 package org.modeshape.jcr.query;
 
 import javax.jcr.ValueFactory;
-import org.modeshape.graph.query.model.TypeSystem;
+import org.modeshape.jcr.query.model.TypeSystem;
 
 /**
  * 

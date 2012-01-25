@@ -25,21 +25,54 @@ package org.modeshape.jcr;
 
 import javax.jcr.Node;
 import org.modeshape.common.annotation.Immutable;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.basic.BasicName;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.basic.BasicName;
 
 /**
  * A lexicon of names used within ModeShape.
  */
 @Immutable
-public class ModeShapeLexicon extends org.modeshape.repository.ModeShapeLexicon {
+public class ModeShapeLexicon {
 
+    public static class Namespace {
+        public static final String URI = "http://www.modeshape.org/1.0";
+        public static final String PREFIX = "mode";
+    }
+
+    public static final Name UUID = new BasicName(Namespace.URI, "uuid");
+    public static final Name MERGE_PLAN = new BasicName(Namespace.URI, "mergePlan");
+    public static final Name CLASSNAME = new BasicName(Namespace.URI, "classname");
+    public static final Name CLASSPATH = new BasicName(Namespace.URI, "classpath");
+    public static final Name NAMESPACES = new BasicName(Namespace.URI, "namespaces");
+    public static final Name PROJECTION_RULES = new BasicName(Namespace.URI, "projectionRules");
+    public static final Name READ_ONLY = new BasicName(Namespace.URI, "readOnly");
+    public static final Name RESOURCE = new BasicName(Namespace.URI, "resource");
+    public static final Name ROOT = new BasicName(Namespace.URI, "root");
+    public static final Name TIME_TO_EXPIRE = new BasicName(Namespace.URI, "timeToExpire");
+    public static final Name URI = new BasicName(Namespace.URI, "uri");
+    public static final Name GENERATED = new BasicName(Namespace.URI, "generated");
+    /**
+     * @deprecated Use {@link #URI} instead.
+     */
+    @Deprecated
+    public static final Name NAMESPACE_URI = URI;
+
+    public static final Name WORKSPACES = new BasicName(Namespace.URI, "workspaces");
+    public static final Name SOURCE_NAME = new BasicName(Namespace.URI, "source");
+    public static final Name WORKSPACE_NAME = new BasicName(Namespace.URI, "workspaceName");
+    public static final Name DEFAULT_WORKSPACE_NAME = new BasicName(Namespace.URI, "defaultWorkspaceName");
+    public static final Name PROJECTION = new BasicName(Namespace.URI, "projection");
+    public static final Name PROJECTIONS = new BasicName(Namespace.URI, "projections");
+
+    public static final Name HASHED = new BasicName(Namespace.URI, "hashed");
+    public static final Name SHA1 = new BasicName(Namespace.URI, "sha1");
     public static final Name BASE = new BasicName(Namespace.URI, "base");
     public static final Name EXPIRATION_DATE = new BasicName(Namespace.URI, "expirationDate");
     public static final Name IS_HELD_BY_SESSION = new BasicName(Namespace.URI, "isHeldBySession");
     public static final Name IS_SESSION_SCOPED = new BasicName(Namespace.URI, "isSessionScoped");
     public static final Name LOCK = new BasicName(Namespace.URI, "lock");
-    public static final Name LOCKED_UUID = new BasicName(Namespace.URI, "lockedUuid");
+    public static final Name LOCK_TOKEN = new BasicName(Namespace.URI, "lockToken");
+    public static final Name LOCKED_KEY = new BasicName(Namespace.URI, "lockedKey");
     public static final Name LOCKING_SESSION = new BasicName(Namespace.URI, "lockingSession");
     public static final Name LOCKS = new BasicName(Namespace.URI, "locks");
     public static final Name NAMESPACE = new BasicName(Namespace.URI, "namespace");

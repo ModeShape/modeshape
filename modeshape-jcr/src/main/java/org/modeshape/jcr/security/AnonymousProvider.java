@@ -26,9 +26,9 @@ package org.modeshape.jcr.security;
 import java.util.Map;
 import java.util.Set;
 import javax.jcr.Credentials;
+import javax.jcr.GuestCredentials;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.SecurityContext;
+import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.api.AnonymousCredentials;
 
 /**
@@ -50,14 +50,23 @@ public class AnonymousProvider implements AuthenticationProvider {
      * {@inheritDoc}
      * 
      * @see org.modeshape.jcr.security.AuthenticationProvider#authenticate(javax.jcr.Credentials, java.lang.String,
-     *      java.lang.String, org.modeshape.graph.ExecutionContext, java.util.Map)
+     *      java.lang.String, org.modeshape.jcr.ExecutionContext, java.util.Map)
      */
+    @Override
     public ExecutionContext authenticate( Credentials credentials,
                                           String repositoryName,
                                           String workspaceName,
                                           ExecutionContext repositoryContext,
                                           Map<String, Object> sessionAttributes ) {
-        if (credentials == null || credentials instanceof AnonymousCredentials) {
+        if (credentials == null) {
+            return repositoryContext.with(anonymousContext);
+        }
+        if (credentials instanceof AnonymousCredentials) {
+            AnonymousCredentials creds = (AnonymousCredentials)credentials;
+            sessionAttributes.putAll(creds.getAttributes());
+            return repositoryContext.with(anonymousContext);
+        }
+        if (credentials instanceof GuestCredentials) {
             return repositoryContext.with(anonymousContext);
         }
         return null;
@@ -73,14 +82,22 @@ public class AnonymousProvider implements AuthenticationProvider {
             this.anonymousUsername = anonymousUsername;
         }
 
+        @Override
+        public boolean isAnonymous() {
+            return true;
+        }
+
+        @Override
         public String getUserName() {
             return anonymousUsername;
         }
 
+        @Override
         public boolean hasRole( String roleName ) {
             return userRoles.contains(roleName);
         }
 
+        @Override
         public void logout() {
             // do nothing
         }

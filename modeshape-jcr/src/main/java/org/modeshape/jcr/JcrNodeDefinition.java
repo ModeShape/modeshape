@@ -24,16 +24,15 @@
 package org.modeshape.jcr;
 
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.HashSet;
 import java.util.Set;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
-import org.modeshape.common.annotation.GuardedBy;
 import org.modeshape.common.annotation.Immutable;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.ValueFactory;
+import org.modeshape.jcr.RepositoryNodeTypeManager.NodeTypes;
+import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.ValueFactory;
 
 /**
  * ModeShape implementation of the {@link NodeDefinition} class.
@@ -50,22 +49,20 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
      */
     private final Name defaultPrimaryTypeName;
 
-    @GuardedBy( "ensureRequiredPrimaryTypesLoaded()" )
-    private volatile Map<Name, JcrNodeType> requiredPrimaryTypesByName;
-
-    @GuardedBy( "ensureRequiredPrimaryTypesLoaded()" )
-    private volatile JcrNodeType[] requiredPrimaryTypes;
-
     private final Name[] requiredPrimaryTypeNames;
+    private final Set<Name> requiredPrimaryTypeNameSet;
 
     /** A durable identifier for this node definition. */
-    private volatile NodeDefinitionId id;
+    private final NodeDefinitionId id;
+
+    private final NodeKey key;
 
     /** Link to the repository node type manager */
     private final RepositoryNodeTypeManager nodeTypeManager;
 
     JcrNodeDefinition( ExecutionContext context,
                        JcrNodeType declaringNodeType,
+                       NodeKey prototypeKey,
                        Name name,
                        int onParentVersion,
                        boolean autoCreated,
@@ -74,13 +71,14 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
                        boolean allowsSameNameSiblings,
                        Name defaultPrimaryTypeName,
                        Name[] requiredPrimaryTypeNames ) {
-        this(context, null, declaringNodeType, name, onParentVersion, autoCreated, mandatory, protectedItem,
+        this(context, null, declaringNodeType, prototypeKey, name, onParentVersion, autoCreated, mandatory, protectedItem,
              allowsSameNameSiblings, defaultPrimaryTypeName, requiredPrimaryTypeNames);
     }
 
     JcrNodeDefinition( ExecutionContext context,
                        RepositoryNodeTypeManager nodeTypeManager,
                        JcrNodeType declaringNodeType,
+                       NodeKey prototypeKey,
                        Name name,
                        int onParentVersion,
                        boolean autoCreated,
@@ -94,7 +92,16 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
         this.allowsSameNameSiblings = allowsSameNameSiblings;
         this.defaultPrimaryTypeName = defaultPrimaryTypeName;
         this.requiredPrimaryTypeNames = requiredPrimaryTypeNames;
-        assert this.requiredPrimaryTypeNames != null;
+        this.id = this.declaringNodeType == null ? null : new NodeDefinitionId(this.declaringNodeType.getInternalName(),
+                                                                               this.name, this.requiredPrimaryTypeNames);
+        this.key = this.id == null ? prototypeKey : prototypeKey.withId("/jcr:system/jcr:nodeTypes/" + this.id.getString());
+
+        // Cache the set of required primary type names ...
+        Set<Name> requiredPrimaryTypeNameSet = new HashSet<Name>();
+        for (Name requiredTypeName : this.requiredPrimaryTypeNames) {
+            requiredPrimaryTypeNameSet.add(requiredTypeName);
+        }
+        this.requiredPrimaryTypeNameSet = Collections.unmodifiableSet(requiredPrimaryTypeNameSet);
     }
 
     private final String string( Name name ) {
@@ -104,46 +111,9 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
         return name.getString(context.getNamespaceRegistry());
     }
 
-    /**
-     * Checks that the fields derived from requiredPrimaryTypeNames are initialized.
-     * <p>
-     * This was pulled out of the constructor to make type registration more flexible by deferring node type lookup for required
-     * primary types until after type registration is complete. This allows, for example, nodes to have themselves as required
-     * primary types of their children.
-     * </p>
-     */
-    private void ensureRequiredPrimaryTypesLoaded() {
-        if (requiredPrimaryTypesByName != null) return;
-        // We don't want to lock around calls to the RepositoryNodeTypeManager, in case we're referencing node
-        // types that somehow refer back to us. Theoretically it shouldn't be a problem, but using a lock
-        // should be safer in any case...
-
-        // Instead, populate the new array outside of the lock ...
-        final int numRequiredPrimaryTypeNames = requiredPrimaryTypeNames.length;
-        final JcrNodeType[] requiredPrimaryTypes = new JcrNodeType[numRequiredPrimaryTypeNames];
-        for (int i = 0; i != numRequiredPrimaryTypeNames; ++i) {
-            requiredPrimaryTypes[i] = nodeTypeManager.getNodeType(requiredPrimaryTypeNames[i]);
-        }
-        Map<Name, JcrNodeType> requiredPrimaryTypesByName = new HashMap<Name, JcrNodeType>();
-        for (JcrNodeType requiredPrimaryType : requiredPrimaryTypes) {
-            requiredPrimaryTypesByName.put(requiredPrimaryType.getInternalName(), requiredPrimaryType);
-        }
-        requiredPrimaryTypesByName = Collections.unmodifiableMap(requiredPrimaryTypesByName);
-
-        // Now, synchronize to ensure multiple threads don't race in this section.
-        // Note that nowhere else do we use 'synchronized(this)' ...
-        synchronized (this) {
-            // Now check whether some other thread snuck in after we checked if 'requiredPrimaryTypesByName' is
-            // null (on the first line of this method), obtained the lock, and set the values before we get the
-            // lock ...
-            if (this.requiredPrimaryTypes == null) {
-                assert this.requiredPrimaryTypesByName == null;
-                // It was not set by another thread, so we can set it ...
-                this.requiredPrimaryTypes = requiredPrimaryTypes;
-                this.requiredPrimaryTypesByName = requiredPrimaryTypesByName;
-            }
-            // otherwise, another thread did sneak in so we can discard our array and map ...
-        }
+    @Override
+    final NodeKey key() {
+        return key;
     }
 
     /**
@@ -152,19 +122,9 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
      * @return the node definition ID; never null
      */
     public NodeDefinitionId getId() {
-        if (id == null) {
-            // This is idempotent, so no need to lock, but we can't do this in the constructor since the
-            // declaring node type might not have a name when this object is instantiated ...
-            id = new NodeDefinitionId(this.declaringNodeType.getInternalName(), this.name, this.requiredPrimaryTypeNames);
-        }
         return id;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.NodeDefinition#allowsSameNameSiblings()
-     */
     @Override
     public boolean allowsSameNameSiblings() {
         return allowsSameNameSiblings;
@@ -177,40 +137,31 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
         return defaultPrimaryTypeName;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.NodeDefinition#getDefaultPrimaryType()
-     */
     @Override
-    public NodeType getDefaultPrimaryType() {
+    public JcrNodeType getDefaultPrimaryType() {
         // It is valid for this field to be null.
         if (defaultPrimaryTypeName == null) {
             return null;
         }
 
-        return nodeTypeManager.getNodeType(defaultPrimaryTypeName);
+        return nodeTypeManager.getNodeTypes().getNodeType(defaultPrimaryTypeName);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.NodeDefinition#getRequiredPrimaryTypes()
-     */
     @Override
     public NodeType[] getRequiredPrimaryTypes() {
-        ensureRequiredPrimaryTypesLoaded();
-        if (requiredPrimaryTypes.length == 0) {
+        if (requiredPrimaryTypeNames.length == 0) {
             // Per the JavaDoc, this method should never return null or an empty array; if there are no constraints,
             // then this method should include an array with 'nt:base' as the required primary type.
             NodeType[] result = new NodeType[1];
-            result[0] = nodeTypeManager.getNodeType(JcrNtLexicon.BASE);
+            result[0] = nodeTypeManager.getNodeTypes().getNodeType(JcrNtLexicon.BASE);
             return result;
         }
         // Make a copy so that the caller can't modify our content ...
-        NodeType[] result = new NodeType[requiredPrimaryTypes.length];
-        for (int i = 0; i != requiredPrimaryTypes.length; ++i) {
-            result[i] = requiredPrimaryTypes[i];
+        NodeType[] result = new NodeType[requiredPrimaryTypeNames.length];
+        int i = 0;
+        final NodeTypes nodeTypes = nodeTypeManager.getNodeTypes();
+        for (Name name : requiredPrimaryTypeNames) {
+            result[i++] = nodeTypes.getNodeType(name);
         }
         return result;
     }
@@ -231,17 +182,13 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
      * @return the required primary type names
      */
     Set<Name> requiredPrimaryTypeNameSet() {
-        ensureRequiredPrimaryTypesLoaded();
-        return requiredPrimaryTypesByName.keySet();
+        return requiredPrimaryTypeNameSet;
     }
 
-    /**
-     * @return the names of the required primary types for this child node definition; never null
-     */
     @Override
     public String[] getRequiredPrimaryTypeNames() {
-        // make a defensive copy ...
-        Name[] requiredPrimaryTypeNames = this.requiredPrimaryTypeNames;
+        if (requiredPrimaryTypeNames == null) return new String[0];
+
         String[] rptNames = new String[requiredPrimaryTypeNames.length];
         for (int i = 0; i < requiredPrimaryTypeNames.length; i++) {
             rptNames[i] = string(requiredPrimaryTypeNames[i]);
@@ -249,9 +196,6 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
         return rptNames;
     }
 
-    /**
-     * @return the name of the default primary type for this child node definition; may be null
-     */
     @Override
     public String getDefaultPrimaryTypeName() {
         return string(this.defaultPrimaryTypeName);
@@ -274,15 +218,8 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
             }
             return false;
         }
-        if (requiredPrimaryTypesByName == null) {
-            int x = 0;
-        }
-        ensureRequiredPrimaryTypesLoaded();
-        if (requiredPrimaryTypesByName == null) {
-            ensureRequiredPrimaryTypesLoaded();
-        }
         // The supplied primary type must be or extend all of the required primary types ...
-        for (Name requiredPrimaryTypeName : requiredPrimaryTypesByName.keySet()) {
+        for (Name requiredPrimaryTypeName : requiredPrimaryTypeNameSet) {
             if (!childPrimaryType.isNodeType(requiredPrimaryTypeName)) return false;
         }
         return true;
@@ -297,19 +234,19 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
      *         <code>declaringNodeType</code>.
      */
     JcrNodeDefinition with( JcrNodeType declaringNodeType ) {
-        return new JcrNodeDefinition(this.context, declaringNodeType.nodeTypeManager(), declaringNodeType, name,
+        return new JcrNodeDefinition(this.context, declaringNodeType.nodeTypeManager(), declaringNodeType, key(), name,
                                      getOnParentVersion(), isAutoCreated(), isMandatory(), isProtected(),
                                      allowsSameNameSiblings(), defaultPrimaryTypeName, requiredPrimaryTypeNames);
     }
 
     JcrNodeDefinition with( ExecutionContext context ) {
-        return new JcrNodeDefinition(context, this.nodeTypeManager, this.declaringNodeType, name, getOnParentVersion(),
+        return new JcrNodeDefinition(context, this.nodeTypeManager, this.declaringNodeType, key(), name, getOnParentVersion(),
                                      isAutoCreated(), isMandatory(), isProtected(), allowsSameNameSiblings(),
                                      defaultPrimaryTypeName, requiredPrimaryTypeNames);
     }
 
     JcrNodeDefinition with( RepositoryNodeTypeManager nodeTypeManager ) {
-        return new JcrNodeDefinition(this.context, nodeTypeManager, this.declaringNodeType, name, getOnParentVersion(),
+        return new JcrNodeDefinition(this.context, nodeTypeManager, this.declaringNodeType, key(), name, getOnParentVersion(),
                                      isAutoCreated(), isMandatory(), isProtected(), allowsSameNameSiblings(),
                                      defaultPrimaryTypeName, requiredPrimaryTypeNames);
     }
@@ -331,11 +268,6 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
         return true;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#toString()
-     */
     @Override
     public String toString() {
         ValueFactory<String> strings = context.getValueFactories().getStringFactory();

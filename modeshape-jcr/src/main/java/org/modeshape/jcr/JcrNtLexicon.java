@@ -23,14 +23,29 @@
  */
 package org.modeshape.jcr;
 
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.basic.BasicName;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.basic.BasicName;
 
 /**
  * Lexicon of names from the standard JCR "<code>http://www.jcp.org/jcr/nt/1.0</code>" namespace.
  */
-public class JcrNtLexicon extends org.modeshape.graph.JcrNtLexicon {
+public class JcrNtLexicon {
 
+    public static class Namespace {
+        public static final String URI = "http://www.jcp.org/jcr/nt/1.0";
+        public static final String PREFIX = "nt";
+    }
+
+    public static final Name UNSTRUCTURED = new BasicName(Namespace.URI, "unstructured");
+    public static final Name FILE = new BasicName(Namespace.URI, "file");
+    public static final Name FOLDER = new BasicName(Namespace.URI, "folder");
+    public static final Name RESOURCE = new BasicName(Namespace.URI, "resource");
+    public static final Name BASE = new BasicName(Namespace.URI, "base");
+
+    // Names used in the node type definitions ...
+    public static final Name NODE_TYPE = new BasicName(Namespace.URI, "nodeType");
+    public static final Name CHILD_NODE_DEFINITION = new BasicName(Namespace.URI, "childNodeDefinition");
+    public static final Name PROPERTY_DEFINITION = new BasicName(Namespace.URI, "propertyDefinition");
     public static final Name FROZEN_NODE = new BasicName(Namespace.URI, "frozenNode");
     public static final Name HIERARCHY_NODE = new BasicName(Namespace.URI, "hierarchyNode");
     public static final Name LINKED_FILE = new BasicName(Namespace.URI, "linkedFile");

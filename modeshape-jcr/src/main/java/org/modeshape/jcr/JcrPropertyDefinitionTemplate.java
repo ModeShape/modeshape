@@ -26,11 +26,9 @@ package org.modeshape.jcr;
 import javax.jcr.PropertyType;
 import javax.jcr.Value;
 import javax.jcr.nodetype.ConstraintViolationException;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.Path;
-import org.modeshape.graph.property.ValueFactories;
-import org.modeshape.jcr.nodetype.PropertyDefinitionTemplate;
+import javax.jcr.nodetype.PropertyDefinitionTemplate;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.Path;
 
 /**
  * ModeShape implementation of the JCR 2 PropertyDefinitionTemplate interface.
@@ -64,8 +62,7 @@ class JcrPropertyDefinitionTemplate extends JcrItemDefinitionTemplate implements
                 Value originalValue = original.defaultValues[i];
                 assert originalValue instanceof JcrValue;
                 JcrValue jcrValue = ((JcrValue)originalValue);
-                SessionCache cache = jcrValue.sessionCache();
-                this.defaultValues[i] = new JcrValue(context.getValueFactories(), cache, jcrValue.getType(), jcrValue.value());
+                this.defaultValues[i] = new JcrValue(jcrValue.factories(), jcrValue.getType(), jcrValue.value());
                 switch (jcrValue.getType()) {
                     case PropertyType.NAME:
                         Name nameValue = original.getContext().getValueFactories().getNameFactory().create(jcrValue.value());
@@ -84,46 +81,17 @@ class JcrPropertyDefinitionTemplate extends JcrItemDefinitionTemplate implements
         return context == super.getContext() ? this : new JcrPropertyDefinitionTemplate(this, context);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.nodetype.PropertyDefinitionTemplate#setDefaultValues(java.lang.String[])
-     */
-    public void setDefaultValues( String[] defaultValues ) {
-        if (defaultValues != null) {
-            this.defaultValues = new Value[defaultValues.length];
-            ValueFactories factories = getExecutionContext().getValueFactories();
-            for (int i = 0; i < defaultValues.length; i++) {
-                this.defaultValues[i] = new JcrValue(factories, null, PropertyType.STRING, defaultValues[i]);
-            }
-        } else {
-            this.defaultValues = null;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.nodetype.PropertyDefinitionTemplate#setDefaultValues(Value[])
-     */
+    @Override
     public void setDefaultValues( Value[] defaultValues ) {
         this.defaultValues = defaultValues;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.nodetype.PropertyDefinitionTemplate#setMultiple(boolean)
-     */
+    @Override
     public void setMultiple( boolean multiple ) {
         this.multiple = multiple;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.nodetype.PropertyDefinitionTemplate#setRequiredType(int)
-     */
+    @Override
     public void setRequiredType( int requiredType ) {
         assert requiredType == PropertyType.BINARY || requiredType == PropertyType.BOOLEAN || requiredType == PropertyType.DATE
                || requiredType == PropertyType.DOUBLE || requiredType == PropertyType.DECIMAL
@@ -134,135 +102,81 @@ class JcrPropertyDefinitionTemplate extends JcrItemDefinitionTemplate implements
         this.requiredType = requiredType;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.nodetype.PropertyDefinitionTemplate#setValueConstraints(java.lang.String[])
-     */
+    @Override
     public void setValueConstraints( String[] constraints ) {
         this.valueConstraints = constraints;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.PropertyDefinition#getDefaultValues()
-     */
+    @Override
     public Value[] getDefaultValues() {
         return this.defaultValues;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.PropertyDefinition#getRequiredType()
-     */
+    @Override
     public int getRequiredType() {
         return requiredType;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.PropertyDefinition#getValueConstraints()
-     */
+    @Override
     public String[] getValueConstraints() {
         return valueConstraints;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.PropertyDefinition#isMultiple()
-     */
+    @Override
     public boolean isMultiple() {
         return multiple;
     }
 
+    @Override
     public boolean isFullTextSearchable() {
         return this.fullTextSearchable;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see PropertyDefinitionTemplate#setFullTextSearchable(boolean)
-     */
+    @Override
     public void setFullTextSearchable( boolean fullTextSearchable ) {
         this.fullTextSearchable = fullTextSearchable;
     }
 
+    @Override
     public String[] getAvailableQueryOperators() {
         return this.availableQueryOperators;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see PropertyDefinitionTemplate#setAvailableQueryOperators(String[])
-     */
+    @Override
     public void setAvailableQueryOperators( String[] queryOperators ) {
         this.availableQueryOperators = queryOperators;
     }
 
+    @Override
     public boolean isQueryOrderable() {
         return this.queryOrderable;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see PropertyDefinitionTemplate#setQueryOrderable(boolean)
-     */
+    @Override
     public void setQueryOrderable( boolean queryOrderable ) {
         this.queryOrderable = queryOrderable;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.PropertyDefinitionTemplate#setName(java.lang.String)
-     */
     @Override
     public void setName( String name ) throws ConstraintViolationException {
         super.setName(name);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.PropertyDefinitionTemplate#setAutoCreated(boolean)
-     */
     @Override
     public void setAutoCreated( boolean autoCreated ) {
         super.setAutoCreated(autoCreated);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.PropertyDefinitionTemplate#setMandatory(boolean)
-     */
     @Override
     public void setMandatory( boolean mandatory ) {
         super.setMandatory(mandatory);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.PropertyDefinitionTemplate#setOnParentVersion(int)
-     */
     @Override
     public void setOnParentVersion( int onParentVersion ) {
         super.setOnParentVersion(onParentVersion);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.PropertyDefinitionTemplate#setProtected(boolean)
-     */
     @Override
     public void setProtected( boolean isProtected ) {
         super.setProtected(isProtected);

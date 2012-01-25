@@ -23,7 +23,7 @@
 		<module>modeshape-jcr-api</module>
 		<module>modeshape-common</module>
 		<module>modeshape-schematic</module>
-		<module>modeshape-jcr-redux</module>
+		<module>modeshape-jcr</module>
     <module>sequencers/modeshape-sequencer-msoffice</module>
     <module>sequencers/modeshape-sequencer-images</module>
     <module>sequencers/modeshape-sequencer-java</module>
@@ -32,7 +32,17 @@
     <module>sequencers/modeshape-sequencer-text</module>
     <module>sequencers/modeshape-sequencer-sramp</module>
     <module>sequencers/modeshape-sequencer-xsd</module>
+    <!--module>sequencers/modeshape-sequencer-teiid</module-->
+    <!--module>sequencers/modeshape-sequencer-xml</module-->
+    <!--module>sequencers/modeshape-sequencer-wsdl</module-->
+    <!--module>sequencers/modeshape-sequencer-zip</module-->
+    <!--module>extractors/modeshape-extractor-tika</module-->
+    <module>modeshape-unit-test</module>
+    <!--module>modeshape-jdbc-local</module-->
+    <!--module>modeshape-jdbc</module-->
+		<!--module>web</module-->
 		<module>deploy/jbossas</module>
+    <!--module>modeshape-integration-tests</module-->
 
 	</modules>
 	<properties>
@@ -40,53 +50,6 @@
 	</properties>
 
 	<profiles>
-		<profile>
-			<!-- 
-			  This profile is TEMPORARY and is used to build the modules
-			  that have not yet been moved over to use the new JCR module.
-				It must be activated manually, as in "mvn ... -Plegacy ..."
-			-->
-			<id>legacy</id>
-			<activation>
-				<activeByDefault>false</activeByDefault>
-			</activation>
-			<modules>
-    		<!-- The remaining modules are from the legacy project -->
-    		<module>modeshape-graph</module>
-    		<module>modeshape-repository</module>
-    		<module>modeshape-cnd</module>
-    		<module>extensions/modeshape-search-lucene</module>
-    		<module>extensions/modeshape-clustering</module>
-    		<module>modeshape-jcr</module>
-    		<!-- Order of extensions is not important -->
-    		<module>extensions/modeshape-classloader-maven</module>
-    		<module>extensions/modeshape-sequencer-jbpm-jpdl</module>
-    		<module>extensions/modeshape-sequencer-java</module>
-    		<module>extensions/modeshape-sequencer-msoffice</module>
-    		<module>extensions/modeshape-sequencer-teiid</module>
-    		<module>extensions/modeshape-sequencer-xml</module>
-    		<module>extensions/modeshape-sequencer-xsd</module>
-    		<module>extensions/modeshape-sequencer-wsdl</module>
-    		<module>extensions/modeshape-sequencer-zip</module>
-    		<module>extensions/modeshape-connector-disk</module>
-    		<module>extensions/modeshape-connector-filesystem</module>
-    		<module>extensions/modeshape-connector-infinispan</module>
-    		<module>extensions/modeshape-connector-jbosscache</module>
-    		<module>extensions/modeshape-connector-svn</module>
-    		<module>extensions/modeshape-connector-jcr</module>
-    		<module>extensions/modeshape-connector-store-jpa</module>
-    		<module>extensions/modeshape-connector-jdbc-metadata</module>
-    		<module>extensions/modeshape-extractor-tika</module>
-    		<!-- Order is important (web before JDBC before jbossas) -->
-    		<module>web</module>
-    		<module>utils/modeshape-jpa-ddl-gen</module>
-    		<module>utils/modeshape-jdbc-local</module>
-    		<module>utils/modeshape-jdbc</module>
-    		<module>utils/modeshape-unit-test</module>
-    		<module>deploy/jbossas</module>
-    		<module>modeshape-integration-tests</module>
-			</modules>
-		</profile>
 		<profile>
 			<!-- 
 			  This profile is used to run the build plus the JCR TCK tests
@@ -110,7 +73,6 @@
 				<activeByDefault>false</activeByDefault>
 			</activation>
 			<modules>
-				<module>modeshape-integration-tests</module>
 				<module>modeshape-distribution</module>
 			</modules>
 		</profile>

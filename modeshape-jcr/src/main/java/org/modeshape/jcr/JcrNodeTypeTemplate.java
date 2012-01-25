@@ -27,22 +27,20 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeDefinition;
+import javax.jcr.nodetype.NodeDefinitionTemplate;
+import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.nodetype.PropertyDefinition;
+import javax.jcr.nodetype.PropertyDefinitionTemplate;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.ValueFormatException;
-import org.modeshape.jcr.nodetype.NodeDefinitionTemplate;
-import org.modeshape.jcr.nodetype.NodeTypeDefinition;
-import org.modeshape.jcr.nodetype.NodeTypeTemplate;
-import org.modeshape.jcr.nodetype.PropertyDefinitionTemplate;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.ValueFormatException;
 
 /**
  * ModeShape implementation of the JCR NodeTypeTemplate interface
  */
 @NotThreadSafe
-public class JcrNodeTypeTemplate implements NodeTypeDefinition, NodeTypeTemplate {
+public class JcrNodeTypeTemplate implements NodeTypeTemplate {
 
     private final ExecutionContext context;
     private final List<NodeDefinitionTemplate> nodeDefinitionTemplates = new ArrayList<NodeDefinitionTemplate>();
@@ -107,39 +105,22 @@ public class JcrNodeTypeTemplate implements NodeTypeDefinition, NodeTypeTemplate
         return this.declaredSupertypeNames;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.nodetype.NodeTypeTemplate#getNodeDefinitionTemplates()
-     */
+    @Override
     public List<NodeDefinitionTemplate> getNodeDefinitionTemplates() {
         return nodeDefinitionTemplates;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.nodetype.NodeTypeTemplate#getPropertyDefinitionTemplates()
-     */
+    @Override
     public List<PropertyDefinitionTemplate> getPropertyDefinitionTemplates() {
         return propertyDefinitionTemplates;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.nodetype.NodeTypeTemplate#setAbstract(boolean)
-     */
+    @Override
     public void setAbstract( boolean isAbstract ) {
         this.isAbstract = isAbstract;
     }
 
-    /**
-     * Set the direct supertypes for this node type.
-     * 
-     * @param names the names of the direct supertypes, or empty or null if there are none.
-     * @throws ConstraintViolationException
-     */
+    @Override
     public void setDeclaredSuperTypeNames( String[] names ) throws ConstraintViolationException {
         if (names == null) {
             throw new ConstraintViolationException(JcrI18n.badNodeTypeName.text("names"));
@@ -158,20 +139,12 @@ public class JcrNodeTypeTemplate implements NodeTypeDefinition, NodeTypeTemplate
         this.declaredSupertypeNames = supertypeNames;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.nodetype.NodeTypeTemplate#setMixin(boolean)
-     */
+    @Override
     public void setMixin( boolean mixin ) {
         this.mixin = mixin;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.nodetype.NodeTypeTemplate#setName(java.lang.String)
-     */
+    @Override
     public void setName( String name ) throws ConstraintViolationException {
         CheckArg.isNotEmpty(name, "name");
         try {
@@ -181,11 +154,7 @@ public class JcrNodeTypeTemplate implements NodeTypeDefinition, NodeTypeTemplate
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.nodetype.NodeTypeTemplate#setOrderableChildNodes(boolean)
-     */
+    @Override
     public void setOrderableChildNodes( boolean orderable ) {
         this.orderableChildNodes = orderable;
     }
@@ -196,9 +165,9 @@ public class JcrNodeTypeTemplate implements NodeTypeDefinition, NodeTypeTemplate
      * Passing a null or blank name is equivalent to "unsetting" (or removing) the primary item name.
      * </p>
      * 
-     * @see org.modeshape.jcr.nodetype.NodeTypeDefinition#getPrimaryItemName()
-     *      type.NodeTypeTemplate#setPrimaryItemName(java.lang.String)
+     * @see javax.jcr.nodetype.NodeTypeDefinition#getPrimaryItemName() type.NodeTypeTemplate#setPrimaryItemName(java.lang.String)
      */
+    @Override
     public void setPrimaryItemName( String name ) throws ConstraintViolationException {
         if (name == null || name.trim().length() == 0) {
             this.primaryItemName = null;
@@ -211,33 +180,21 @@ public class JcrNodeTypeTemplate implements NodeTypeDefinition, NodeTypeTemplate
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see NodeTypeDefinition#getDeclaredChildNodeDefinitions()
-     */
+    @Override
     public NodeDefinition[] getDeclaredChildNodeDefinitions() {
         if (!createdFromExistingDefinition && nodeDefinitionTemplates.isEmpty()) return null;
 
         return nodeDefinitionTemplates.toArray(new NodeDefinition[nodeDefinitionTemplates.size()]);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.nodetype.NodeTypeDefinition#getDeclaredPropertyDefinitions()
-     */
+    @Override
     public PropertyDefinition[] getDeclaredPropertyDefinitions() {
         if (!createdFromExistingDefinition && propertyDefinitionTemplates.isEmpty()) return null;
 
         return propertyDefinitionTemplates.toArray(new PropertyDefinition[propertyDefinitionTemplates.size()]);
     }
 
-    /**
-     * Get the direct supertypes for this node type.
-     * 
-     * @return the names of the direct supertypes, or an empty array if there are none
-     */
+    @Override
     public String[] getDeclaredSupertypeNames() {
         if (declaredSupertypeNames == null) return new String[0];
         String[] names = new String[declaredSupertypeNames.length];
@@ -248,65 +205,37 @@ public class JcrNodeTypeTemplate implements NodeTypeDefinition, NodeTypeTemplate
         return names;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.nodetype.NodeTypeDefinition#getName()
-     */
+    @Override
     public String getName() {
         return string(name);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.nodetype.NodeTypeDefinition#getPrimaryItemName()
-     */
+    @Override
     public String getPrimaryItemName() {
         return string(primaryItemName);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.nodetype.NodeTypeDefinition#hasOrderableChildNodes()
-     */
+    @Override
     public boolean hasOrderableChildNodes() {
         return orderableChildNodes;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.nodetype.NodeTypeDefinition#isAbstract()
-     */
+    @Override
     public boolean isAbstract() {
         return isAbstract;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.nodetype.NodeTypeDefinition#isMixin()
-     */
+    @Override
     public boolean isMixin() {
         return mixin;
     }
 
-    /**
-     * Get whether this node is queryable
-     * 
-     * @return true if the node is queryable; false otherwise
-     */
+    @Override
     public boolean isQueryable() {
         return queryable;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.nodetype.NodeTypeTemplate#setQueryable(boolean)
-     */
+    @Override
     public void setQueryable( boolean queryable ) {
         this.queryable = queryable;
     }

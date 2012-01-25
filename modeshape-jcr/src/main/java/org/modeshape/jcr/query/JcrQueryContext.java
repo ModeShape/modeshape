@@ -24,17 +24,17 @@
 package org.modeshape.jcr.query;
 
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.Location;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.query.QueryResults;
-import org.modeshape.graph.query.model.QueryCommand;
-import org.modeshape.graph.query.plan.PlanHints;
-import org.modeshape.graph.query.validate.Schemata;
+import org.modeshape.jcr.ExecutionContext;
+import org.modeshape.jcr.query.QueryResults.Location;
+import org.modeshape.jcr.query.model.QueryCommand;
+import org.modeshape.jcr.query.plan.PlanHints;
+import org.modeshape.jcr.query.validate.Schemata;
+import org.modeshape.jcr.value.Name;
 
 /**
  * The context in which queries are executed.
@@ -61,9 +61,10 @@ public interface JcrQueryContext {
                           PlanHints hints,
                           Map<String, Object> variables ) throws RepositoryException;
 
-    QueryResults search( String searchExpression,
-                         int maxRowCount,
-                         int offset ) throws RepositoryException;
-
     NodeIterator emptyNodeIterator();
+
+    void recordDuration( long nanos,
+                         TimeUnit unit,
+                         String query,
+                         String language );
 }

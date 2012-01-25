@@ -14,7 +14,6 @@
 	<description>Builds the ModeShape components that can be deployed to JBoss</description>
 	<modules>
 		<!-- <module>modeshape-jbossas-console</module> -->
-		<!-- <module>modeshape-jbossas-service</module> -->
 		<module>modeshape-jbossas-subsystem</module>
 		<!-- <module>modeshape-jbossas-web-rest-war</module> -->
 		<!-- <module>modeshape-jbossas-web-webdav-war</module> -->
@@ -75,7 +74,7 @@
 				<configuration>
 						<finalName>modeshape-${project.version}</finalName>
 					<descriptors>
-                    	<descriptor>assembly/kit-as7.xml</descriptor>
+					  <descriptor>assembly/kit-as7.xml</descriptor>
 					</descriptors>
 						<outputDirectory>target/distribution</outputDirectory>
 						<workDirectory>target/assembly/work</workDirectory>

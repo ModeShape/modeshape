@@ -25,10 +25,8 @@ package org.modeshape.jcr;
 
 import java.io.InputStream;
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
-import java.util.List;
 import javax.jcr.Binary;
 import javax.jcr.Node;
 import javax.jcr.PropertyType;
@@ -39,8 +37,8 @@ import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.version.VersionException;
 import org.modeshape.common.annotation.NotThreadSafe;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.Property;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.Property;
 
 /**
  * A {@link javax.jcr.Property JCR Property} implementation that has multiple values.
@@ -52,113 +50,65 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
 
     static final JcrValue[] EMPTY_VALUES = new JcrValue[] {};
 
-    JcrMultiValueProperty( SessionCache cache,
-                           AbstractJcrNode node,
-                           Name name ) {
-        super(cache, node, name);
+    JcrMultiValueProperty( AbstractJcrNode node,
+                           Name name,
+                           int propertyType ) {
+        super(node, name, propertyType);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.AbstractJcrProperty#isMultiple()
-     */
     @Override
     public boolean isMultiple() {
         return true;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws ValueFormatException always
-     * @see javax.jcr.Property#getBoolean()
-     */
+    @Override
     public boolean getBoolean() throws ValueFormatException {
         throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws ValueFormatException always
-     * @see javax.jcr.Property#getDate()
-     */
+    @Override
     public Calendar getDate() throws ValueFormatException {
         throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws ValueFormatException always
-     * @see javax.jcr.Property#getDouble()
-     */
+    @Override
     public double getDouble() throws ValueFormatException {
         throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#getNode()
-     */
+    @Override
     public Node getNode() throws ValueFormatException, RepositoryException {
         throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws ValueFormatException always
-     * @see javax.jcr.Property#getLength()
-     */
+    @Override
     public long getLength() throws ValueFormatException {
         throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#getLengths()
-     */
+    @Override
     public long[] getLengths() throws RepositoryException {
         checkSession();
-        Property dnaProperty = propertyInfo().getProperty();
-        long[] lengths = new long[dnaProperty.size()];
-        Iterator<?> iter = dnaProperty.iterator();
-        for (int ndx = 0; iter.hasNext(); ndx++) {
-            lengths[ndx] = createValue(iter.next()).getLength();
+        JcrValue[] values = getValues();
+        long[] lengths = new long[values.length];
+        int ndx = 0;
+        for (JcrValue value : values) {
+            lengths[ndx++] = value.getLength();
         }
         return lengths;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws ValueFormatException always
-     * @see javax.jcr.Property#getLong()
-     */
+    @Override
     public long getLong() throws ValueFormatException {
         throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws ValueFormatException always
-     * @see javax.jcr.Property#getStream()
-     */
+    @Override
     public InputStream getStream() throws ValueFormatException {
         throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws ValueFormatException always
-     * @see javax.jcr.Property#getString()
-     */
+    @Override
     public String getString() throws ValueFormatException {
         throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
@@ -173,191 +123,150 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
      * 
      * @see javax.jcr.Property#getValues()
      */
-    public Value[] getValues() throws RepositoryException {
+    @Override
+    public JcrValue[] getValues() throws RepositoryException {
         checkSession();
-        Property dnaProperty = propertyInfo().getProperty();
-        Value[] values = new JcrValue[dnaProperty.size()];
-        Iterator<?> iter = dnaProperty.iterator();
+        Property innerProp = property();
+        JcrValue[] values = new JcrValue[innerProp.size()];
+        Iterator<?> iter = innerProp.iterator();
         for (int ndx = 0; iter.hasNext(); ndx++) {
             values[ndx] = createValue(iter.next());
         }
         return values;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#setValue(javax.jcr.Value[])
-     */
+    @Override
     public final void setValue( Value[] values )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
-        checkForLock();
 
         if (values == null) {
             this.remove();
             return;
         }
         checkSession();
+        checkForLock();
+        checkForCheckedOut();
 
+        Object[] literals = new Object[values.length];
         for (int i = 0; i < values.length; i++) {
             // Force a conversion as per SetValueValueFormatExceptionTest in JR TCK
-            JcrValue val = (JcrValue)values[i];
-            if (val != null) {
-                if (val.value() == null) {
+            JcrValue value = (JcrValue)values[i];
+            if (value != null) {
+                if (value.value() == null) {
                     throw new ValueFormatException(JcrI18n.valueMayNotContainNull.text(getName()));
                 }
-                val.asType(this.getType());
+                literals[i] = value.asType(this.getType()).value();
+            } else {
+                literals[i] = null;
             }
         }
 
-        editor().setProperty(name(), values, PropertyType.UNDEFINED);
+        Property newProperty = propertyFactory().create(name(), literals);
+        mutable().setProperty(sessionCache(), newProperty);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#setValue(java.lang.String[])
-     */
+    @Override
     public final void setValue( String[] values )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
-        checkForLock();
 
         if (values == null) {
             this.remove();
             return;
         }
         checkSession();
+        checkForLock();
+        checkForCheckedOut();
 
-        Value[] jcrValues = null;
+        Property newProperty = null;
         if (values.length != 0) {
             int numValues = values.length;
-            List<Value> valuesList = new ArrayList<Value>(numValues);
-            jcrValues = new JcrValue[numValues];
+            Object[] literals = new Object[numValues];
             for (int i = 0; i != numValues; ++i) {
                 String value = values[i];
-                if (value == null) continue; // skip null values
-                valuesList.add(createValue(values[i], PropertyType.STRING).asType(this.getType()));
+                if (value == null) {
+                    literals[i] = null;
+                } else {
+                    JcrValue jcrValue = createValue(values[i], PropertyType.STRING).asType(this.getType());
+                    literals[i] = jcrValue.value();
+                }
             }
-            if (valuesList.isEmpty()) {
-                jcrValues = EMPTY_VALUES;
-            } else {
-                jcrValues = valuesList.toArray(new Value[valuesList.size()]);
-            }
-        } else {
-            jcrValues = EMPTY_VALUES;
+            newProperty = propertyFactory().create(name(), literals);
         }
 
-        editor().setProperty(name(), jcrValues, this.getType());
+        if (newProperty == null) {
+            // must be empty ...
+            newProperty = propertyFactory().create(name());
+        }
+        mutable().setProperty(sessionCache(), newProperty);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws ValueFormatException always
-     * @see javax.jcr.Property#getValue()
-     */
-    public Value getValue() throws ValueFormatException {
+    @Override
+    public JcrValue getValue() throws ValueFormatException {
         throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws ValueFormatException always
-     * @see javax.jcr.Property#setValue(javax.jcr.Value)
-     */
+    @Override
     public final void setValue( Value value ) throws ValueFormatException {
         throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws ValueFormatException always
-     * @see javax.jcr.Property#setValue(java.lang.String)
-     */
+    @Override
     public final void setValue( String value ) throws ValueFormatException {
         throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws ValueFormatException always
-     * @see javax.jcr.Property#setValue(java.io.InputStream)
-     */
+    @Override
     public final void setValue( InputStream value ) throws ValueFormatException {
         throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws ValueFormatException always
-     * @see javax.jcr.Property#setValue(long)
-     */
+    @Override
     public final void setValue( long value ) throws ValueFormatException {
         throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws ValueFormatException always
-     * @see javax.jcr.Property#setValue(double)
-     */
+    @Override
     public final void setValue( double value ) throws ValueFormatException {
         throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws ValueFormatException always
-     * @see javax.jcr.Property#setValue(java.util.Calendar)
-     */
+    @Override
     public final void setValue( Calendar value ) throws ValueFormatException {
         throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws ValueFormatException always
-     * @see javax.jcr.Property#setValue(boolean)
-     */
+    @Override
     public final void setValue( boolean value ) throws ValueFormatException {
         throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws ValueFormatException always
-     * @see javax.jcr.Property#setValue(javax.jcr.Node)
-     */
+    @Override
     public final void setValue( Node value ) throws ValueFormatException {
         throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
+    @Override
     public Binary getBinary() throws ValueFormatException, RepositoryException {
         throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
+    @Override
     public BigDecimal getDecimal() throws ValueFormatException, RepositoryException {
         throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
+    @Override
     public javax.jcr.Property getProperty() throws ValueFormatException, RepositoryException {
         throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
+    @Override
     public void setValue( BigDecimal value ) throws ValueFormatException, RepositoryException {
         throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 
+    @Override
     public void setValue( Binary value ) throws ValueFormatException, RepositoryException {
         throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
-
 }

@@ -36,15 +36,15 @@ import javax.jcr.ValueFormatException;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.IoUtil;
-import org.modeshape.graph.property.Binary;
-import org.modeshape.graph.property.BinaryFactory;
-import org.modeshape.graph.property.DateTime;
-import org.modeshape.graph.property.DateTimeFactory;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.NameFactory;
-import org.modeshape.graph.property.Path;
-import org.modeshape.graph.property.PathFactory;
-import org.modeshape.graph.property.ValueFactories;
+import org.modeshape.jcr.api.value.DateTime;
+import org.modeshape.jcr.value.Binary;
+import org.modeshape.jcr.value.BinaryFactory;
+import org.modeshape.jcr.value.DateTimeFactory;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.NameFactory;
+import org.modeshape.jcr.value.Path;
+import org.modeshape.jcr.value.PathFactory;
+import org.modeshape.jcr.value.ValueFactories;
 
 /**
  * ModeShape implementation of a {@link Value JCR Value}.
@@ -54,17 +54,17 @@ final class JcrValue implements javax.jcr.Value {
 
     static final JcrValue[] EMPTY_ARRAY = new JcrValue[] {};
 
-    private final SessionCache sessionCache;
-    private final ValueFactories valueFactories;
+    private final ValueFactories factories;
     private final int type;
     private final Object value;
     private InputStream asStream = null;
 
-    JcrValue( ValueFactories valueFactories,
-              SessionCache sessionCache,
+    JcrValue( ValueFactories factories,
               int type,
               Object value ) {
-        assert valueFactories != null;
+        assert factories != null;
+        this.factories = factories;
+
         assert type == PropertyType.BINARY || type == PropertyType.BOOLEAN || type == PropertyType.DATE
                || type == PropertyType.DECIMAL || type == PropertyType.DOUBLE || type == PropertyType.LONG
                || type == PropertyType.NAME || type == PropertyType.PATH || type == PropertyType.REFERENCE
@@ -79,19 +79,15 @@ final class JcrValue implements javax.jcr.Value {
         // assert sessionCache != null;
         assert value != null;
 
-        this.valueFactories = valueFactories;
-        this.sessionCache = sessionCache;
         this.type = type;
         this.value = convertToType(this.type, value);
     }
 
-    JcrValue( ValueFactories valueFactories,
-              SessionCache sessionCache,
+    JcrValue( ValueFactories factories,
               Value value ) throws RepositoryException {
+        assert factories != null;
         assert value != null;
-
-        this.valueFactories = valueFactories;
-        this.sessionCache = sessionCache;
+        this.factories = factories;
         this.type = value.getType();
         this.value = valueToType(this.type, value);
     }
@@ -100,8 +96,12 @@ final class JcrValue implements javax.jcr.Value {
         return new ValueFormatException(JcrI18n.cannotConvertValue.text(value.getClass().getSimpleName(), type.getSimpleName()));
     }
 
-    private ValueFormatException createValueFormatException( org.modeshape.graph.property.ValueFormatException vfe ) {
+    private ValueFormatException createValueFormatException( org.modeshape.jcr.value.ValueFormatException vfe ) {
         return new ValueFormatException(vfe);
+    }
+
+    final ValueFactories factories() {
+        return factories;
     }
 
     /**
@@ -114,66 +114,42 @@ final class JcrValue implements javax.jcr.Value {
         return value;
     }
 
-    /**
-     * Returns the session cache for the session that created this value.
-     * 
-     * @return the session cache for the session that created this value.
-     */
-    final SessionCache sessionCache() {
-        return sessionCache;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Value#getBoolean()
-     */
+    @Override
     public boolean getBoolean() throws ValueFormatException {
         try {
-            boolean convertedValue = valueFactories.getBooleanFactory().create(value);
+            boolean convertedValue = factories().getBooleanFactory().create(value);
             return convertedValue;
         } catch (RuntimeException error) {
             throw createValueFormatException(boolean.class);
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Value#getDate()
-     */
+    @Override
     public Calendar getDate() throws ValueFormatException {
         if (value == null) return null;
         try {
-            Calendar convertedValue = valueFactories.getDateFactory().create(value).toCalendar();
+            Calendar convertedValue = factories().getDateFactory().create(value).toCalendar();
             return convertedValue;
         } catch (RuntimeException error) {
             throw createValueFormatException(Calendar.class);
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Value#getDecimal()
-     */
+    @Override
     public BigDecimal getDecimal() throws ValueFormatException, RepositoryException {
+        if (value == null) return null;
         try {
-            BigDecimal convertedValue = valueFactories.getDecimalFactory().create(value);
+            BigDecimal convertedValue = factories().getDecimalFactory().create(value);
             return convertedValue;
         } catch (RuntimeException error) {
             throw createValueFormatException(double.class);
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Value#getDouble()
-     */
+    @Override
     public double getDouble() throws ValueFormatException {
         try {
-            double convertedValue = valueFactories.getDoubleFactory().create(value);
+            double convertedValue = factories().getDoubleFactory().create(value);
             return convertedValue;
         } catch (RuntimeException error) {
             throw createValueFormatException(double.class);
@@ -183,35 +159,27 @@ final class JcrValue implements javax.jcr.Value {
     long getLength() throws RepositoryException {
         if (value == null) return 0L;
         if (type == PropertyType.BINARY) {
-            return valueFactories.getBinaryFactory().create(value).getSize();
+            return factories().getBinaryFactory().create(value).getSize();
         }
         return getString().length();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Value#getLong()
-     */
+    @Override
     public long getLong() throws ValueFormatException {
         try {
-            long convertedValue = valueFactories.getLongFactory().create(value);
+            long convertedValue = factories().getLongFactory().create(value);
             return convertedValue;
         } catch (RuntimeException error) {
             throw createValueFormatException(long.class);
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Value#getStream()
-     */
+    @Override
     public InputStream getStream() throws ValueFormatException {
+        if (value == null) return null;
         try {
             if (asStream == null) {
-                Binary binary = valueFactories.getBinaryFactory().create(value);
-                if (binary == null) return null;
+                Binary binary = factories().getBinaryFactory().create(value);
                 asStream = new SelfClosingInputStream(binary);
             }
             return asStream;
@@ -220,59 +188,38 @@ final class JcrValue implements javax.jcr.Value {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Value#getBinary()
-     */
-    public javax.jcr.Binary getBinary() throws RepositoryException {
+    @Override
+    public Binary getBinary() throws RepositoryException {
+        if (value == null) return null;
         try {
-            Binary binary = valueFactories.getBinaryFactory().create(value);
-            return binary != null ? new JcrBinary(binary) : null;
+            Binary binary = factories().getBinaryFactory().create(value);
+            return binary;
         } catch (RuntimeException error) {
             throw createValueFormatException(InputStream.class);
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Value#getString()
-     */
+    @Override
     public String getString() throws ValueFormatException {
         try {
-            String convertedValue = valueFactories.getStringFactory().create(value);
+            String convertedValue = factories().getStringFactory().create(value);
             return convertedValue;
         } catch (RuntimeException error) {
             throw createValueFormatException(String.class);
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Value#getType()
-     */
+    @Override
     public int getType() {
         return type;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#hashCode()
-     */
     @Override
     public int hashCode() {
         // Use the value's hash code
         return value.hashCode();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
     @Override
     public boolean equals( Object obj ) {
         if (obj == this) return true;
@@ -284,7 +231,7 @@ final class JcrValue implements javax.jcr.Value {
                     case PropertyType.STRING:
                         return this.getString().equals(that.getString());
                     case PropertyType.BINARY:
-                        BinaryFactory binaryFactory = valueFactories.getBinaryFactory();
+                        BinaryFactory binaryFactory = factories().getBinaryFactory();
                         Binary thisValue = binaryFactory.create(this.value);
                         Binary thatValue = binaryFactory.create(that.value);
                         return thisValue.equals(thatValue);
@@ -297,17 +244,17 @@ final class JcrValue implements javax.jcr.Value {
                     case PropertyType.DECIMAL:
                         return getDecimal().equals(that.getDecimal());
                     case PropertyType.DATE:
-                        DateTimeFactory dateFactory = valueFactories.getDateFactory();
+                        DateTimeFactory dateFactory = factories().getDateFactory();
                         DateTime thisDateValue = dateFactory.create(this.value);
                         DateTime thatDateValue = dateFactory.create(that.value);
                         return thisDateValue.equals(thatDateValue);
                     case PropertyType.PATH:
-                        PathFactory pathFactory = valueFactories.getPathFactory();
+                        PathFactory pathFactory = factories().getPathFactory();
                         Path thisPathValue = pathFactory.create(this.value);
                         Path thatPathValue = pathFactory.create(that.value);
                         return thisPathValue.equals(thatPathValue);
                     case PropertyType.NAME:
-                        NameFactory nameFactory = valueFactories.getNameFactory();
+                        NameFactory nameFactory = factories().getNameFactory();
                         Name thisNameValue = nameFactory.create(this.value);
                         Name thatNameValue = nameFactory.create(that.value);
                         return thisNameValue.equals(thatNameValue);
@@ -362,7 +309,7 @@ final class JcrValue implements javax.jcr.Value {
 
     private JcrValue withTypeAndValue( int type,
                                        Object value ) {
-        return new JcrValue(this.valueFactories, this.sessionCache, type, value);
+        return new JcrValue(factories, type, value);
     }
 
     /**
@@ -388,8 +335,8 @@ final class JcrValue implements javax.jcr.Value {
                     throw createValueFormatException(boolean.class);
                 }
                 try {
-                    return this.withTypeAndValue(type, valueFactories.getBooleanFactory().create(value));
-                } catch (org.modeshape.graph.property.ValueFormatException vfe) {
+                    return this.withTypeAndValue(type, factories().getBooleanFactory().create(value));
+                } catch (org.modeshape.jcr.value.ValueFormatException vfe) {
                     throw createValueFormatException(vfe);
                 }
 
@@ -399,8 +346,8 @@ final class JcrValue implements javax.jcr.Value {
                     throw createValueFormatException(Calendar.class);
                 }
                 try {
-                    return this.withTypeAndValue(type, valueFactories.getDateFactory().create(value));
-                } catch (org.modeshape.graph.property.ValueFormatException vfe) {
+                    return this.withTypeAndValue(type, factories().getDateFactory().create(value));
+                } catch (org.modeshape.jcr.value.ValueFormatException vfe) {
                     throw createValueFormatException(vfe);
                 }
 
@@ -409,8 +356,8 @@ final class JcrValue implements javax.jcr.Value {
                     throw createValueFormatException(Name.class);
                 }
                 try {
-                    return this.withTypeAndValue(type, valueFactories.getNameFactory().create(value));
-                } catch (org.modeshape.graph.property.ValueFormatException vfe) {
+                    return this.withTypeAndValue(type, factories().getNameFactory().create(value));
+                } catch (org.modeshape.jcr.value.ValueFormatException vfe) {
                     throw createValueFormatException(vfe);
                 }
 
@@ -419,8 +366,8 @@ final class JcrValue implements javax.jcr.Value {
                     throw createValueFormatException(Path.class);
                 }
                 try {
-                    return this.withTypeAndValue(type, valueFactories.getPathFactory().create(value));
-                } catch (org.modeshape.graph.property.ValueFormatException vfe) {
+                    return this.withTypeAndValue(type, factories().getPathFactory().create(value));
+                } catch (org.modeshape.jcr.value.ValueFormatException vfe) {
                     throw createValueFormatException(vfe);
                 }
 
@@ -430,8 +377,8 @@ final class JcrValue implements javax.jcr.Value {
                     throw createValueFormatException(Node.class);
                 }
                 try {
-                    return this.withTypeAndValue(type, valueFactories.getReferenceFactory().create(value));
-                } catch (org.modeshape.graph.property.ValueFormatException vfe) {
+                    return this.withTypeAndValue(type, factories().getReferenceFactory().create(value));
+                } catch (org.modeshape.jcr.value.ValueFormatException vfe) {
                     throw createValueFormatException(vfe);
                 }
             case PropertyType.WEAKREFERENCE:
@@ -439,8 +386,8 @@ final class JcrValue implements javax.jcr.Value {
                     throw createValueFormatException(Node.class);
                 }
                 try {
-                    return this.withTypeAndValue(type, valueFactories.getWeakReferenceFactory().create(value));
-                } catch (org.modeshape.graph.property.ValueFormatException vfe) {
+                    return this.withTypeAndValue(type, factories().getWeakReferenceFactory().create(value));
+                } catch (org.modeshape.jcr.value.ValueFormatException vfe) {
                     throw createValueFormatException(vfe);
                 }
             case PropertyType.DOUBLE:
@@ -449,8 +396,8 @@ final class JcrValue implements javax.jcr.Value {
                     throw createValueFormatException(double.class);
                 }
                 try {
-                    return this.withTypeAndValue(type, valueFactories.getDoubleFactory().create(value));
-                } catch (org.modeshape.graph.property.ValueFormatException vfe) {
+                    return this.withTypeAndValue(type, factories().getDoubleFactory().create(value));
+                } catch (org.modeshape.jcr.value.ValueFormatException vfe) {
                     throw createValueFormatException(vfe);
                 }
             case PropertyType.LONG:
@@ -459,8 +406,8 @@ final class JcrValue implements javax.jcr.Value {
                     throw createValueFormatException(long.class);
                 }
                 try {
-                    return this.withTypeAndValue(type, valueFactories.getLongFactory().create(value));
-                } catch (org.modeshape.graph.property.ValueFormatException vfe) {
+                    return this.withTypeAndValue(type, factories().getLongFactory().create(value));
+                } catch (org.modeshape.jcr.value.ValueFormatException vfe) {
                     throw createValueFormatException(vfe);
                 }
             case PropertyType.DECIMAL:
@@ -469,8 +416,8 @@ final class JcrValue implements javax.jcr.Value {
                     throw createValueFormatException(BigDecimal.class);
                 }
                 try {
-                    return this.withTypeAndValue(type, valueFactories.getDecimalFactory().create(value));
-                } catch (org.modeshape.graph.property.ValueFormatException vfe) {
+                    return this.withTypeAndValue(type, factories().getDecimalFactory().create(value));
+                } catch (org.modeshape.jcr.value.ValueFormatException vfe) {
                     throw createValueFormatException(vfe);
                 }
             case PropertyType.URI:
@@ -478,22 +425,22 @@ final class JcrValue implements javax.jcr.Value {
                     throw createValueFormatException(URI.class);
                 }
                 try {
-                    return this.withTypeAndValue(type, valueFactories.getUriFactory().create(value));
-                } catch (org.modeshape.graph.property.ValueFormatException vfe) {
+                    return this.withTypeAndValue(type, factories().getUriFactory().create(value));
+                } catch (org.modeshape.jcr.value.ValueFormatException vfe) {
                     throw createValueFormatException(vfe);
                 }
 
                 // Anything can be converted to these types
             case PropertyType.BINARY:
                 try {
-                    return this.withTypeAndValue(type, valueFactories.getBinaryFactory().create(value));
-                } catch (org.modeshape.graph.property.ValueFormatException vfe) {
+                    return this.withTypeAndValue(type, factories().getBinaryFactory().create(value));
+                } catch (org.modeshape.jcr.value.ValueFormatException vfe) {
                     throw createValueFormatException(vfe);
                 }
             case PropertyType.STRING:
                 try {
-                    return this.withTypeAndValue(type, valueFactories.getStringFactory().create(value));
-                } catch (org.modeshape.graph.property.ValueFormatException vfe) {
+                    return this.withTypeAndValue(type, factories().getStringFactory().create(value));
+                } catch (org.modeshape.jcr.value.ValueFormatException vfe) {
                     throw createValueFormatException(vfe);
                 }
             case PropertyType.UNDEFINED:
@@ -510,28 +457,28 @@ final class JcrValue implements javax.jcr.Value {
                                   Value value ) throws RepositoryException {
         switch (type) {
             case PropertyType.BOOLEAN:
-                return valueFactories.getBooleanFactory().create(value.getBoolean());
+                return factories().getBooleanFactory().create(value.getBoolean());
             case PropertyType.DATE:
-                return valueFactories.getDateFactory().create(value.getDate());
+                return factories().getDateFactory().create(value.getDate());
             case PropertyType.NAME:
-                return valueFactories.getNameFactory().create(value.getString());
+                return factories().getNameFactory().create(value.getString());
             case PropertyType.PATH:
-                return valueFactories.getPathFactory().create(value.getString());
+                return factories().getPathFactory().create(value.getString());
             case PropertyType.REFERENCE:
             case PropertyType.WEAKREFERENCE:
-                return valueFactories.getReferenceFactory().create(value.getString());
+                return factories().getReferenceFactory().create(value.getString());
             case PropertyType.DOUBLE:
-                return valueFactories.getDoubleFactory().create(value.getDouble());
+                return factories().getDoubleFactory().create(value.getDouble());
             case PropertyType.LONG:
-                return valueFactories.getLongFactory().create(value.getLong());
+                return factories().getLongFactory().create(value.getLong());
             case PropertyType.DECIMAL:
-                return valueFactories.getDecimalFactory().create(value.getDecimal());
+                return factories().getDecimalFactory().create(value.getDecimal());
             case PropertyType.URI:
-                return valueFactories.getUriFactory().create(value.getString());
+                return factories().getUriFactory().create(value.getString());
             case PropertyType.BINARY:
-                return valueFactories.getBinaryFactory().create(value.getBinary());
+                return factories().getBinaryFactory().create(value.getBinary());
             case PropertyType.STRING:
-                return valueFactories.getStringFactory().create(value.getString());
+                return factories().getStringFactory().create(value.getString());
             case PropertyType.UNDEFINED:
                 return value.getString();
 
@@ -544,36 +491,31 @@ final class JcrValue implements javax.jcr.Value {
 
     protected Object convertToType( int type,
                                     Object value ) {
-        if (value == null) {
-            return null;
-        }
-
-        value = unpackValue(value);
-
+        if (value == null) return null;
         switch (type) {
             case PropertyType.BOOLEAN:
-                return valueFactories.getBooleanFactory().create(value);
+                return factories().getBooleanFactory().create(value);
             case PropertyType.DATE:
-                return valueFactories.getDateFactory().create(value);
+                return factories().getDateFactory().create(value);
             case PropertyType.NAME:
-                return valueFactories.getNameFactory().create(value);
+                return factories().getNameFactory().create(value);
             case PropertyType.PATH:
-                return valueFactories.getPathFactory().create(value);
+                return factories().getPathFactory().create(value);
             case PropertyType.REFERENCE:
             case PropertyType.WEAKREFERENCE:
-                return valueFactories.getReferenceFactory().create(value);
+                return factories().getReferenceFactory().create(value);
             case PropertyType.DOUBLE:
-                return valueFactories.getDoubleFactory().create(value);
+                return factories().getDoubleFactory().create(value);
             case PropertyType.LONG:
-                return valueFactories.getLongFactory().create(value);
+                return factories().getLongFactory().create(value);
             case PropertyType.DECIMAL:
-                return valueFactories.getDecimalFactory().create(value);
+                return factories().getDecimalFactory().create(value);
             case PropertyType.URI:
-                return valueFactories.getUriFactory().create(value);
+                return factories().getUriFactory().create(value);
             case PropertyType.BINARY:
-                return valueFactories.getBinaryFactory().create(value);
+                return factories().getBinaryFactory().create(value);
             case PropertyType.STRING:
-                return valueFactories.getStringFactory().create(value);
+                return factories().getStringFactory().create(value);
             case PropertyType.UNDEFINED:
                 return value;
 
@@ -582,22 +524,6 @@ final class JcrValue implements javax.jcr.Value {
                 // This should still throw an exception even if assertions are turned off
                 throw new IllegalStateException("Invalid property type " + type);
         }
-    }
-
-    private Object unpackValue( Object value ) {
-        if (value instanceof JcrBinary) {
-            value = ((JcrBinary) value).binary();
-        }
-        if (value instanceof javax.jcr.Binary) {
-            //Support any implementation of javax.jcr.Binary (see MODE-1308)
-            javax.jcr.Binary jcrBinary = (javax.jcr.Binary) value;
-            try {
-                value = valueFactories.getBinaryFactory().create(jcrBinary.getStream(), jcrBinary.getSize());
-            } catch (RepositoryException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        return value;
     }
 
     @Override

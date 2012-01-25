@@ -1,10 +1,11 @@
 package org.modeshape.jcr;
 
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.concurrent.TimeUnit;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.naming.Context;
@@ -17,11 +18,7 @@ import javax.naming.event.NamespaceChangeListener;
 import javax.naming.event.NamingEvent;
 import javax.naming.event.NamingExceptionEvent;
 import javax.naming.spi.ObjectFactory;
-import org.modeshape.common.collection.Problem;
-import org.modeshape.common.collection.Problems;
 import org.modeshape.common.util.Logger;
-import org.modeshape.jcr.api.Repositories;
-import org.modeshape.repository.ModeShapeEngine;
 import org.xml.sax.SAXException;
 
 /**
@@ -37,15 +34,15 @@ import org.xml.sax.SAXException;
  *      &lt;Resource name=&quot;jcr/local&quot; auth=&quot;Container&quot;
  *           type=&quot;javax.jcr.Repository&quot;
  *           factory=&quot;org.modeshape.jcr.JndiRepositoryFactory&quot;
- *           configFile=&quot;/tck/default/configRepository.xml&quot;
+ *           configFile=&quot;/path/to/repository-config.json&quot;
  *           repositoryName=&quot;Test Repository Source&quot;
  *           /&gt;
  *   &lt;/GlobalNamingResources&gt;
  * </pre>
  * 
- * This will create a repository loaded from the or file &quot;/tck/default/configRepository.xml&quot; and return the JCR
- * repository named &quot;Test Repository Source&quot;. The name of the repository is important as a single configuration file may
- * contain configuration information for many JCR repositories.
+ * This will create a repository loaded from the or file &quot;/path/to/configRepository.xml&quot; and return the JCR repository
+ * named &quot;Test Repository Source&quot;. The name of the repository will be used to more quickly look up the repository if it
+ * has been previously loaded.
  * </p>
  * <p>
  * Note that if the "repositoryName" property is not specified or is empty, the factory will register the ModeShape engine at the
@@ -56,65 +53,140 @@ import org.xml.sax.SAXException;
 public class JndiRepositoryFactory implements ObjectFactory {
 
     private static final String CONFIG_FILE = "configFile";
+    private static final String CONFIG_FILES = "configFiles";
     private static final String REPOSITORY_NAME = "repositoryName";
-    private static final String TYPE = "type";
 
-    private static JcrEngine engine;
+    private static final JcrEngine engine = new JcrEngine();
     protected static final Logger log = Logger.getLogger(JndiRepositoryFactory.class);
 
     /**
-     * {@link JcrConfiguration#loadFrom(java.io.InputStream) Initializes} and {@link JcrEngine#start() starts} the
-     * {@code JcrEngine} managed by this factory.
+     * Method that shuts down the JDNI repository factory's engine, usually for testing purposes.
+     * 
+     * @return a future that allows the caller to block until the engine is shutdown; any error during shutdown will be thrown
+     *         when {@link Future#get() getting} the result from the future, where the exception is wrapped in a
+     *         {@link ExecutionException}. The value returned from the future will always be true if the engine shutdown (or was
+     *         not running), or false if the engine is still running.
+     */
+    static Future<Boolean> shutdown() {
+        return engine.shutdown();
+    }
+
+    /**
+     * Get or initialize the JCR Repository instance as described by the supplied configuration file and repository name.
      * 
      * @param configFileName the name of the file containing the configuration information for the {@code JcrEngine}; may not be
      *        null. This method will first attempt to load this file as a resource from the classpath. If no resource with the
-     *        given name exists, the name will be treated as a file name and loaded from the file system.
+     *        given name exists, the name will be treated as a file name and loaded from the file system. May be null if the
+     *        repository should already exist.
+     * @param repositoryName the name of the repository; may be null if the repository name is to be read from the configuration
+     *        file (note that this does require parsing the configuration file)
+     * @param nameCtx the naming context used to register a removal listener to shut down the repository when removed from JNDI;
+     *        may be null
+     * @param jndiName the name in JNDI where the repository is to be found
+     * @return the JCR repository instance
      * @throws IOException if there is an error or problem reading the configuration resource at the supplied path
-     * @throws SAXException if the contents of the configuration resource are not valid XML
-     * @throws RepositoryException if the {@link JcrEngine#start() JcrEngine could not be started}
-     * @see JcrConfiguration#loadFrom(java.io.InputStream)
-     * @see Class#getResourceAsStream(String)
+     * @throws RepositoryException if the repository could not be started
+     * @throws NamingException if there is an error registering the namespace listener
      */
-    private static synchronized void initializeEngine( String configFileName )
-        throws IOException, SAXException, RepositoryException {
-        if (engine != null) return;
+    private static synchronized JcrRepository getRepository( String configFileName,
+                                                             String repositoryName,
+                                                             final Context nameCtx,
+                                                             final Name jndiName )
+        throws IOException, RepositoryException, NamingException {
 
-        log.info(JcrI18n.engineStarting);
-        long start = System.currentTimeMillis();
+        if (repositoryName != null) {
+            // Make sure the engine is running ...
+            engine.start();
 
-        JcrConfiguration config = new JcrConfiguration();
-        InputStream configStream = JndiRepositoryFactory.class.getResourceAsStream(configFileName);
-
-        if (configStream == null) {
+            // See if we can shortcut the process by using the name ...
             try {
-                configStream = new FileInputStream(configFileName);
-            } catch (IOException ioe) {
-                throw new RepositoryException(ioe);
+                JcrRepository repository = engine.getRepository(repositoryName);
+                switch (repository.getState()) {
+                    case STARTING:
+                    case RUNNING:
+                        return repository;
+                    default:
+                        log.error(JcrI18n.repositoryIsNotRunningOrHasBeenShutDown, repositoryName);
+                        return null;
+                }
+            } catch (NoSuchRepositoryException e) {
+                if (configFileName == null) {
+                    // No configuration file given, so we can't do anything ...
+                    throw e;
+                }
+                // Nothing found, so continue ...
             }
         }
 
-        engine = config.loadFrom(configStream).build();
-        engine.start();
-
-        Problems problems = engine.getProblems();
-        for (Problem problem : problems) {
-            switch (problem.getStatus()) {
-                case ERROR:
-                    log.error(problem.getThrowable(), problem.getMessage(), problem.getParameters());
-                    break;
-                case WARNING:
-                    log.warn(problem.getThrowable(), problem.getMessage(), problem.getParameters());
-                    break;
-                case INFO:
-                    log.info(problem.getThrowable(), problem.getMessage(), problem.getParameters());
-                    break;
-            }
+        RepositoryConfiguration config = RepositoryConfiguration.read(configFileName);
+        if (repositoryName == null) repositoryName = config.getName();
+        else if (!repositoryName.equals(config.getName())) {
+            // The repository
+            log.error(JcrI18n.repositoryNameDoesNotMatchConfigurationName, repositoryName, config.getName(), configFileName);
         }
 
-        if (problems.hasErrors()) {
-            throw new RepositoryException(JcrI18n.couldNotStartEngine.text());
+        // Try to deploy and start the repository ...
+        JcrRepository repository = engine.deploy(config);
+        try {
+            engine.startRepository(repository.getName()).get();
+        } catch (InterruptedException e) {
+            Thread.interrupted();
+            throw new RepositoryException(e);
+        } catch (ExecutionException e) {
+            throw new RepositoryException(e.getCause());
         }
-        log.info(JcrI18n.engineStarted, (System.currentTimeMillis() - start));
+
+        // Register the JNDI listener, to shut down the repository when removed from JNDI ...
+        if (nameCtx instanceof EventContext) {
+            EventContext evtCtx = (EventContext)nameCtx;
+
+            NamespaceChangeListener listener = new NamespaceChangeListener() {
+
+                @Override
+                public void namingExceptionThrown( NamingExceptionEvent evt ) {
+                    evt.getException().printStackTrace();
+                }
+
+                @Override
+                public void objectAdded( NamingEvent evt ) {
+                    // do nothing ...
+                }
+
+                @SuppressWarnings( "synthetic-access" )
+                @Override
+                public void objectRemoved( NamingEvent evt ) {
+                    Object oldObject = evt.getOldBinding().getObject();
+                    if (!(oldObject instanceof JcrRepository)) return;
+
+                    JcrRepository repository = (JcrRepository)oldObject;
+                    String repoName = repository.getName();
+                    try {
+                        engine.shutdownRepository(repoName).get();
+                    } catch (NoSuchRepositoryException e) {
+                        // Ignore this ...
+                    } catch (InterruptedException ie) {
+                        log.error(ie, JcrI18n.errorWhileShuttingDownRepositoryInJndi, repoName, jndiName);
+                        // Thread.interrupted();
+                    } catch (ExecutionException e) {
+                        log.error(e.getCause(), JcrI18n.errorWhileShuttingDownRepositoryInJndi, repoName, jndiName);
+                    } finally {
+                        // Try to shutdown the repository only if there are no more running repositories.
+                        // IOW, shutdown but do not force shutdown of running repositories ...
+                        engine.shutdown(false); // no need to block on the futured returned by 'shutdown(boolean)'
+                    }
+                }
+
+                @Override
+                public void objectRenamed( NamingEvent evt ) {
+                    // do nothing ...
+                }
+
+            };
+
+            evtCtx.addNamingListener(jndiName, EventContext.OBJECT_SCOPE, listener);
+        }
+
+        return repository;
     }
 
     /**
@@ -139,124 +211,52 @@ public class JndiRepositoryFactory implements ObjectFactory {
      * @throws RepositoryException if the {@link JcrEngine#start() JcrEngine could not be started}, the named repository does not
      *         exist in the given configuration resource, or the named repository could not be created
      */
+    @Override
     public Object getObjectInstance( Object obj,
-                                     Name name,
-                                     Context nameCtx,
+                                     final Name name,
+                                     final Context nameCtx,
                                      Hashtable<?, ?> environment )
         throws IOException, SAXException, RepositoryException, NamingException {
         if (!(obj instanceof Reference)) return null;
-
         Reference ref = (Reference)obj;
 
-        if (engine == null) {
-            RefAddr configFile = ref.get(CONFIG_FILE);
-            assert configFile != null;
-
-            initializeEngine(configFile.getContent().toString());
-
-            if (nameCtx instanceof EventContext) {
-                EventContext evtCtx = (EventContext)nameCtx;
-
-                NamespaceChangeListener listener = new NamespaceChangeListener() {
-
-                    public void namingExceptionThrown( NamingExceptionEvent evt ) {
-                        evt.getException().printStackTrace();
-                    }
-
-                    public void objectAdded( NamingEvent evt ) {
-                    }
-
-                    public void objectRemoved( NamingEvent evt ) {
-                        Object oldObject = evt.getOldBinding().getObject();
-                        if (!(oldObject instanceof JcrEngine)) return;
-
-                        JcrEngine engine = (JcrEngine)oldObject;
-
-                        log.info(JcrI18n.engineStopping);
-                        long start = System.currentTimeMillis();
-                        engine.shutdown();
-                        try {
-                            engine.awaitTermination(30, TimeUnit.SECONDS);
-                            log.info(JcrI18n.engineStopped, (System.currentTimeMillis() - start));
-                        } catch (InterruptedException ie) {
-                            // Thread.interrupted();
-                        }
-                    }
-
-                    public void objectRenamed( NamingEvent evt ) {
-                    }
-
-                };
-
-                evtCtx.addNamingListener(name, EventContext.OBJECT_SCOPE, listener);
-            }
-        }
-
-        assert engine != null;
-
-        // Determine the repository name that we're supposed to use/register ...
+        // Get the name of the repository
         RefAddr repositoryName = ref.get(REPOSITORY_NAME);
-        String repoName = null;
-        if (repositoryName != null) {
-            repoName = repositoryName.getContent().toString();
-            if (repoName != null && repoName.trim().length() == 0) repoName = null;
+        String repoName = repositoryName != null ? repositoryName.getContent().toString() : null;
+
+        // Get the configuration file
+        RefAddr configFileRef = ref.get(CONFIG_FILE);
+        String configFile = configFileRef != null ? configFileRef.getContent().toString() : null;
+
+        RefAddr configFilesRef = ref.get(CONFIG_FILES);
+        Set<String> configFiles = configFilesRef != null ? parseStrings(configFilesRef.getContent().toString()) : null;
+
+        engine.start();
+        if (repoName != null && configFile != null) {
+            // Start the named repository ...
+            return getRepository(configFile, repoName, nameCtx, name);
         }
-
-        // Determine the type that we're supposed to create/register ...
-        RefAddr type = ref.get(TYPE);
-        if (type != null) {
-            String typeName = type.getContent().toString();
-            if (typeName != null && typeName.trim().length() == 0) typeName = null;
-
-            // See if the type value matches a classname we know how to deal with ...
-            if (Repositories.class.getName().equals(typeName) || JcrEngine.class.getName().equals(typeName)
-                || ModeShapeEngine.class.getName().equals(typeName)) {
-                if (repositoryName != null) {
-                    // Log a warning ...
-                    log.warn(JcrI18n.repositoryNameProvidedWhenRegisteringEngineInJndi, name, repoName, typeName);
-                }
-                // We're supposed to register the engine ...
-                return engine;
+        if (configFiles != null) {
+            // Start the configured repositories ...
+            for (String file : configFiles) {
+                getRepository(file, null, nameCtx, name);
             }
-            if (!Repository.class.getName().equals(typeName) && !JcrRepository.class.getName().equals(typeName)
-                && !org.modeshape.jcr.api.Repository.class.getName().equals(typeName)) {
-                // We only know how to reigster the repository (other than engine), so return null ...
-                return null;
-            }
-        } else {
-            // There's no type ...
-            log.warn(JcrI18n.typeMissingWhenRegisteringEngineInJndi, name, Repositories.class.getName());
-            // and base what we register purely upon whether there's a name ...
-            if (repoName == null) {
-                // This factory registers an engine or a repository, and they didn't specify a repository ...
-                return engine;
-            }
-
-            // Otherwise there is a repository name, so continue ...
+            return engine;
         }
+        return null;
+    }
 
-        // We know we're supposed to register the Repository instance, so look for the name ...
-        if (repoName == null) {
-            if (repositoryName == null) {
-                log.error(JcrI18n.repositoryNameNotProvidedWhenRegisteringRepositoryInJndi, name);
-            } else {
-                log.error(JcrI18n.emptyRepositoryNameProvidedWhenRegisteringRepositoryInJndi, name);
-            }
+    protected Set<String> parseStrings( String value ) {
+        if (value == null) return null;
+        value = value.trim();
+        if (value == null) return null;
+        Set<String> result = new HashSet<String>();
+        for (String strValue : value.split(",")) {
+            if (strValue == null) continue;
+            strValue = strValue.trim();
+            if (strValue == null) continue;
+            result.add(strValue);
         }
-
-        Repository repository = engine.getRepository(repoName);
-        if (repository == null) {
-            // Build up a single string with the names of the available repositories ...
-            StringBuilder repoNames = new StringBuilder();
-            boolean first = true;
-            for (String existingName : engine.getRepositoryNames()) {
-                if (first) first = false;
-                else repoNames.append(", ");
-                repoNames.append('"').append(existingName).append('"');
-            }
-            log.error(JcrI18n.invalidRepositoryNameWhenRegisteringRepositoryInJndi, name, repoName, repoNames);
-            return null;
-        }
-        return repository;
+        return result;
     }
 }

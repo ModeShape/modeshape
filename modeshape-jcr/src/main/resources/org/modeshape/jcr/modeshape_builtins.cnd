@@ -45,7 +45,7 @@
 + * (nt:nodeType) = nt:nodeType protected version
 
 [mode:lock] > nt:base
-- mode:lockedUuid (string) protected ignore
+- mode:lockedKey (string) protected ignore
 - jcr:lockOwner (string) protected ignore
 - mode:lockingSession (string) protected ignore
 - mode:expirationDate (date) protected ignore

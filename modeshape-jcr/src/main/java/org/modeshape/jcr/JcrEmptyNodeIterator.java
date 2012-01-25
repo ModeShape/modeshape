@@ -35,67 +35,45 @@ import org.modeshape.common.util.CheckArg;
 @Immutable
 class JcrEmptyNodeIterator implements NodeIterator {
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.NodeIterator#nextNode()
-     */
+    static final NodeIterator INSTANCE = new JcrEmptyNodeIterator();
+
+    private JcrEmptyNodeIterator() {
+        // Prevent instantiation
+    }
+
+    @Override
     public Node nextNode() {
         throw new NoSuchElementException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.RangeIterator#getPosition()
-     */
+    @Override
     public long getPosition() {
         return 0;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.RangeIterator#getSize()
-     */
+    @Override
     public long getSize() {
         return 0;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.RangeIterator#skip(long)
-     */
+    @Override
     public void skip( long skipNum ) {
         CheckArg.isNonNegative(skipNum, "skipNum");
         if (skipNum == 0L) return;
         throw new NoSuchElementException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.Iterator#hasNext()
-     */
+    @Override
     public boolean hasNext() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.Iterator#next()
-     */
+    @Override
     public Object next() {
         throw new NoSuchElementException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.Iterator#remove()
-     */
+    @Override
     public void remove() {
         throw new UnsupportedOperationException();
     }

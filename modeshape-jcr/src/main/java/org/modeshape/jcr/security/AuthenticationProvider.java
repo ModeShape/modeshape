@@ -26,8 +26,7 @@ package org.modeshape.jcr.security;
 import java.util.Map;
 import javax.jcr.Credentials;
 import javax.jcr.Session;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.SecurityContext;
+import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.api.AnonymousCredentials;
 import org.modeshape.jcr.api.Repository;
 

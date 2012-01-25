@@ -4,13 +4,13 @@
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
  * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors. 
+ * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- *
+ * 
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -27,62 +27,74 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.AccessControlException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import javax.jcr.AccessDeniedException;
 import javax.jcr.Credentials;
+import javax.jcr.InvalidItemStateException;
 import javax.jcr.InvalidSerializedDataException;
-import javax.jcr.Item;
 import javax.jcr.ItemExistsException;
 import javax.jcr.ItemNotFoundException;
+import javax.jcr.LoginException;
 import javax.jcr.NamespaceException;
+import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.Node;
-import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
-import javax.jcr.PropertyIterator;
-import javax.jcr.PropertyType;
 import javax.jcr.ReferentialIntegrityException;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import javax.jcr.SimpleCredentials;
 import javax.jcr.UnsupportedRepositoryOperationException;
-import javax.jcr.Value;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
-import javax.jcr.query.Query;
-import javax.jcr.query.QueryResult;
-import javax.jcr.query.Row;
-import javax.jcr.query.RowIterator;
+import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.retention.RetentionManager;
 import javax.jcr.security.AccessControlManager;
 import javax.jcr.version.VersionException;
-import org.modeshape.common.annotation.Immutable;
-import org.modeshape.common.annotation.NotThreadSafe;
+import org.infinispan.schematic.SchematicEntry;
+import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.Graph;
-import org.modeshape.graph.GraphI18n;
-import org.modeshape.graph.Location;
-import org.modeshape.graph.SecurityContext;
-import org.modeshape.graph.property.NamespaceRegistry;
-import org.modeshape.graph.property.Path;
-import org.modeshape.graph.property.Path.Segment;
-import org.modeshape.graph.property.PathFactory;
-import org.modeshape.graph.query.QueryBuilder;
-import org.modeshape.graph.query.model.QueryCommand;
-import org.modeshape.graph.query.model.TypeSystem;
-import org.modeshape.graph.session.GraphSession;
+import org.modeshape.common.util.Logger;
+import org.modeshape.jcr.AbstractJcrNode.Type;
 import org.modeshape.jcr.JcrContentHandler.EnclosingSAXException;
-import org.modeshape.jcr.JcrContentHandler.SaveMode;
 import org.modeshape.jcr.JcrNamespaceRegistry.Behavior;
-import org.modeshape.jcr.JcrRepository.Option;
-import org.modeshape.jcr.SessionCache.JcrPropertyPayload;
+import org.modeshape.jcr.JcrRepository.RunningState;
+import org.modeshape.jcr.RepositoryNodeTypeManager.NodeTypes;
+import org.modeshape.jcr.api.monitor.DurationMetric;
+import org.modeshape.jcr.api.monitor.ValueMetric;
+import org.modeshape.jcr.cache.CachedNode;
+import org.modeshape.jcr.cache.ChildReference;
+import org.modeshape.jcr.cache.DocumentAlreadyExistsException;
+import org.modeshape.jcr.cache.DocumentNotFoundException;
+import org.modeshape.jcr.cache.MutableCachedNode;
+import org.modeshape.jcr.cache.NodeCache;
+import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.cache.NodeNotFoundException;
+import org.modeshape.jcr.cache.SessionCache;
+import org.modeshape.jcr.cache.SessionCache.SaveContext;
+import org.modeshape.jcr.cache.WorkspaceNotFoundException;
+import org.modeshape.jcr.cache.WrappedException;
 import org.modeshape.jcr.security.AuthorizationProvider;
+import org.modeshape.jcr.security.SecurityContext;
+import org.modeshape.jcr.value.DateTimeFactory;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.NameFactory;
+import org.modeshape.jcr.value.NamespaceRegistry;
+import org.modeshape.jcr.value.Path;
+import org.modeshape.jcr.value.Path.Segment;
+import org.modeshape.jcr.value.PathFactory;
+import org.modeshape.jcr.value.PropertyFactory;
+import org.modeshape.jcr.value.Reference;
+import org.modeshape.jcr.value.ReferenceFactory;
+import org.modeshape.jcr.value.UuidFactory;
+import org.modeshape.jcr.value.basic.LocalNamespaceRegistry;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -91,116 +103,127 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
 
 /**
- * The ModeShape implementation of a {@link Session JCR Session}.
+ * 
  */
-@NotThreadSafe
-class JcrSession implements Session {
+public class JcrSession implements Session {
 
     private static final String[] NO_ATTRIBUTES_NAMES = new String[] {};
 
-    /**
-     * The repository that created this session.
-     */
+    private final ExecutionContext context;
     private final JcrRepository repository;
-
-    /**
-     * The workspace that corresponds to this session.
-     */
-    private final JcrWorkspace workspace;
-
-    /**
-     * A JCR namespace registry that is specific to this session, with any locally-defined namespaces defined in this session.
-     * This is backed by the workspace's namespace registry.
-     */
-    private final JcrNamespaceRegistry sessionRegistry;
-
-    /**
-     * The execution context for this session, which uses the {@link #sessionRegistry session's namespace registry}
-     */
-    private ExecutionContext executionContext;
-
-    /**
-     * The session-specific attributes that came from the {@link SimpleCredentials}' {@link SimpleCredentials#getAttributeNames()}
-     */
-    private final Map<String, Object> sessionAttributes;
-
-    /**
-     * The graph representing this session, which uses the {@link #graph session's graph}.
-     */
-    private final JcrGraph graph;
-
     private final SessionCache cache;
-
     private final JcrValueFactory valueFactory;
+    private final JcrRootNode rootNode;
+    private final ConcurrentMap<NodeKey, AbstractJcrNode> jcrNodes = new ConcurrentHashMap<NodeKey, AbstractJcrNode>();
+    private final Map<String, Object> sessionAttributes;
+    private final JcrWorkspace workspace;
+    private final JcrNamespaceRegistry sessionRegistry;
+    private final AtomicReference<Map<NodeKey, NodeKey>> baseVersionKeys = new AtomicReference<Map<NodeKey, NodeKey>>();
+    private volatile boolean isLive = true;
+    private final long nanosCreated;
 
-    /**
-     * A cached instance of the root path.
-     */
-    private final Path rootPath;
-
-    private boolean isLive;
-
-    private final boolean performReferentialIntegrityChecks;
-    /**
-     * The locations of the nodes that were (transiently) removed in this session and not yet saved.
-     */
-    private Set<Location> removedNodes = null;
-    /**
-     * The UUIDs of the mix:referenceable nodes that were (transiently) removed in this session and not yet saved.
-     */
-    private Set<String> removedReferenceableNodeUuids = null;
-
-    JcrSession( JcrRepository repository,
-                JcrWorkspace workspace,
-                ExecutionContext sessionContext,
-                NamespaceRegistry globalNamespaceRegistry,
-                Map<String, Object> sessionAttributes ) {
-        assert repository != null;
-        assert workspace != null;
-        assert sessionAttributes != null;
-        assert sessionContext != null;
+    protected JcrSession( JcrRepository repository,
+                          String workspaceName,
+                          ExecutionContext context,
+                          Map<String, Object> sessionAttributes,
+                          boolean readOnly ) {
         this.repository = repository;
-        this.sessionAttributes = sessionAttributes;
-        this.workspace = workspace;
 
-        // Create an execution context for this session, which should use the local namespace registry ...
-        this.executionContext = sessionContext;
-        NamespaceRegistry local = sessionContext.getNamespaceRegistry();
-        this.sessionRegistry = new JcrNamespaceRegistry(Behavior.SESSION, local, globalNamespaceRegistry, this);
-        this.rootPath = this.executionContext.getValueFactories().getPathFactory().createRootPath();
+        // Create an execution context for this session that uses a local namespace registry ...
+        final NamespaceRegistry globalNamespaceRegistry = context.getNamespaceRegistry(); // thread-safe!
+        final LocalNamespaceRegistry localRegistry = new LocalNamespaceRegistry(globalNamespaceRegistry); // not-thread-safe!
+        this.context = context.with(localRegistry);
+        this.sessionRegistry = new JcrNamespaceRegistry(Behavior.SESSION, localRegistry, globalNamespaceRegistry, this);
 
-        // Set up the graph to use for this session (which uses the session's namespace registry and context) ...
-        this.graph = workspace.graph();
+        // Create the session cache ...
+        this.cache = repository.repositoryCache().createSession(context, workspaceName, readOnly);
+        this.valueFactory = new JcrValueFactory(this.context);
+        this.rootNode = new JcrRootNode(this, this.cache.getRootKey());
+        this.jcrNodes.put(this.rootNode.key(), this.rootNode);
+        if (sessionAttributes == null) {
+            this.sessionAttributes = Collections.emptyMap();
+        } else {
+            this.sessionAttributes = Collections.unmodifiableMap(sessionAttributes);
+        }
+        this.workspace = new JcrWorkspace(this, workspaceName);
 
-        this.cache = new SessionCache(this);
-        this.isLive = true;
+        // Pre-cache all of the namespaces to be a snapshot of what's in the global registry at this time.
+        // This behavior is specified in Section 3.5.2 of the JCR 2.0 specification.
+        localRegistry.getNamespaces();
 
-        this.performReferentialIntegrityChecks = Boolean.valueOf(repository.getOptions()
-                                                                           .get(Option.PERFORM_REFERENTIAL_INTEGRITY_CHECKS))
-                                                        .booleanValue();
-
-        assert this.sessionAttributes != null;
-        assert this.workspace != null;
-        assert this.repository != null;
-        assert this.executionContext != null;
-        assert this.sessionRegistry != null;
-        assert this.graph != null;
-        assert this.executionContext.getSecurityContext() != null;
-        this.valueFactory = new JcrValueFactory(this);
+        // Increment the statistics ...
+        this.nanosCreated = System.nanoTime();
+        repository.statistics().increment(ValueMetric.SESSION_COUNT);
     }
 
-    // Added to facilitate mock testing of items without necessarily requiring an entire repository structure to be built
-    final SessionCache cache() {
-        return this.cache;
+    protected JcrSession( JcrSession original,
+                          boolean readOnly ) {
+        // Most of the components can be reused from the original session ...
+        this.repository = original.repository;
+        this.context = original.context;
+        this.sessionRegistry = original.sessionRegistry;
+        this.valueFactory = original.valueFactory;
+        this.sessionAttributes = original.sessionAttributes;
+        this.workspace = original.workspace;
+
+        // Create a new session cache and root node ...
+        this.cache = repository.repositoryCache().createSession(context, this.workspace.getName(), readOnly);
+        this.rootNode = new JcrRootNode(this, this.cache.getRootKey());
+        this.jcrNodes.put(this.rootNode.key(), this.rootNode);
+
+        // Increment the statistics ...
+        this.nanosCreated = System.nanoTime();
+        repository.statistics().increment(ValueMetric.SESSION_COUNT);
+    }
+
+    final JcrWorkspace workspace() {
+        return workspace;
+    }
+
+    final JcrRepository repository() {
+        return repository;
     }
 
     /**
-     * {@inheritDoc}
+     * This method is called by {@link #logout()} and by {@link JcrRepository#shutdown()}. It should not be called from anywhere
+     * else.
      * 
-     * @see javax.jcr.Session#isLive()
+     * @param removeFromActiveSession true if the session should be removed from the active session list
      */
-    public boolean isLive() {
-        return isLive;
+    void terminate( boolean removeFromActiveSession ) {
+        if (!isLive()) {
+            return;
+        }
+
+        isLive = false;
+
+        // TODO: Observation
+        // this.workspace().observationManager().removeAllEventListeners();
+
+        try {
+            lockManager().cleanLocks();
+        } catch (RepositoryException e) {
+            // This can only happen if the session is not live, which is checked above ...
+            Logger.getLogger(getClass()).error(e, JcrI18n.unexpectedException, e.getMessage());
+        }
+        if (removeFromActiveSession) this.repository.runningState().removeSession(this);
+        this.context.getSecurityContext().logout();
+    }
+
+    protected SchematicEntry entryForNode( NodeKey nodeKey ) throws RepositoryException {
+        SchematicEntry entry = repository.database().get(nodeKey.toString());
+        if (entry == null) {
+            throw new PathNotFoundException(nodeKey.toString());
+        }
+        return entry;
+    }
+
+    final String workspaceName() {
+        return workspace.getName();
+    }
+
+    final String sessionId() {
+        return context.getId();
     }
 
     /**
@@ -214,196 +237,734 @@ class JcrSession implements Session {
         }
     }
 
-    ExecutionContext getExecutionContext() {
-        return this.executionContext;
+    NamespaceRegistry namespaces() {
+        return context.getNamespaceRegistry();
     }
 
-    void setSessionData( String key,
-                         String value ) {
-        // This returns the same instance iff the <key,value> would not alter the current context ...
-        this.executionContext = this.executionContext.with(key, value);
-        this.graph.setContext(this.executionContext);
+    final org.modeshape.jcr.value.ValueFactory<String> stringFactory() {
+        return context.getValueFactories().getStringFactory();
     }
 
-    String sessionId() {
-        return this.executionContext.getId();
+    final NameFactory nameFactory() {
+        return context.getValueFactories().getNameFactory();
     }
 
-    JcrLockManager lockManager() {
-        return workspace.lockManager();
+    final PathFactory pathFactory() {
+        return context.getValueFactories().getPathFactory();
     }
 
-    JcrNodeTypeManager nodeTypeManager() {
+    final PropertyFactory propertyFactory() {
+        return context.getPropertyFactory();
+    }
+
+    final ReferenceFactory referenceFactory() {
+        return context.getValueFactories().getReferenceFactory();
+    }
+
+    final UuidFactory uuidFactory() {
+        return context.getValueFactories().getUuidFactory();
+    }
+
+    final DateTimeFactory dateFactory() {
+        return context.getValueFactories().getDateFactory();
+    }
+
+    final ExecutionContext context() {
+        return context;
+    }
+
+    final JcrValueFactory valueFactory() {
+        return valueFactory;
+    }
+
+    final SessionCache cache() {
+        return cache;
+    }
+
+    final SessionCache createSystemCache( boolean readOnly ) {
+        return repository.createSystemSession(context, readOnly);
+    }
+
+    final JcrNodeTypeManager nodeTypeManager() {
         return this.workspace.nodeTypeManager();
     }
 
-    NamespaceRegistry namespaces() {
-        return this.executionContext.getNamespaceRegistry();
+    final NodeTypes nodeTypes() {
+        return this.repository().nodeTypeManager().getNodeTypes();
     }
 
-    void signalNamespaceChanges( boolean global ) {
+    final JcrVersionManager versionManager() {
+        return this.workspace.versionManager();
+    }
+
+    final JcrLockManager lockManager() {
+        return workspace().lockManager();
+    }
+
+    final void signalNamespaceChanges( boolean global ) {
         nodeTypeManager().signalNamespaceChanges();
-        if (global) repository.getRepositoryTypeManager().signalNamespaceChanges();
+        if (global) repository.nodeTypeManager().signalNamespaceChanges();
     }
 
-    JcrWorkspace workspace() {
-        return this.workspace;
+    final void setDesiredBaseVersionKey( NodeKey nodeKey,
+                                         NodeKey baseVersionKey ) {
+        baseVersionKeys.get().put(nodeKey, baseVersionKey);
     }
 
-    JcrRepository repository() {
-        return this.repository;
+    final JcrSession spawnSession( boolean readOnly ) {
+        return new JcrSession(this, readOnly);
     }
 
-    Graph.Batch createBatch() {
-        return graph.batch();
+    final JcrSession spawnSession( String workspaceName,
+                                   boolean readOnly ) {
+        return new JcrSession(repository(), workspaceName, context(), sessionAttributes, readOnly);
     }
 
-    Graph graph() {
-        return graph;
+    final SessionCache spawnSessionCache( boolean readOnly ) {
+        return repository().repositoryCache().createSession(context(), workspaceName(), readOnly);
     }
 
-    String sourceName() {
-        return this.repository.getRepositorySourceName();
-    }
-
-    Path pathFor( String path,
-                  String parameterName ) throws RepositoryException {
+    protected final String readableLocation( CachedNode node ) {
         try {
-            return this.executionContext.getValueFactories().getPathFactory().create(path);
-
-        } catch (org.modeshape.graph.property.ValueFormatException vfe) {
-            throw new RepositoryException(JcrI18n.invalidPathParameter.text(path, parameterName), vfe);
+            return stringFactory().create(node.getPath(cache));
+        } catch (Throwable t) {
+            return node.getKey().toString();
         }
     }
 
     /**
-     * {@inheritDoc}
+     * Obtain the {@link Node JCR Node} object for the node with the supplied key.
      * 
-     * @see javax.jcr.Session#getWorkspace()
+     * @param nodeKey the node's key
+     * @param expectedType the expected implementation type for the node, or null if it is not known
+     * @return the JCR node; never null
+     * @throws ItemNotFoundException if there is no node with the supplied key
      */
-    public org.modeshape.jcr.api.Workspace getWorkspace() {
-        return this.workspace;
+    AbstractJcrNode node( NodeKey nodeKey,
+                          AbstractJcrNode.Type expectedType ) throws ItemNotFoundException {
+        AbstractJcrNode node = jcrNodes.get(nodeKey);
+        if (node != null) {
+            // Make sure the node is still valid ...
+            CachedNode cachedNode = cache.getNode(nodeKey);
+            if (cachedNode == null) {
+                // The node must have been deleted ...
+                throw new ItemNotFoundException(nodeKey.toString());
+            }
+        } else {
+            CachedNode cachedNode = cache.getNode(nodeKey);
+            if (cachedNode != null) {
+                node = node(cachedNode, expectedType);
+            } else {
+                // The node does not exist ...
+                throw new ItemNotFoundException(nodeKey.toString());
+            }
+        }
+        return node;
     }
 
     /**
-     * {@inheritDoc}
+     * Obtain the {@link Node JCR Node} object for the node with the supplied key.
      * 
-     * @see javax.jcr.Session#getRepository()
+     * @param cachedNode the cached node; may not be null
+     * @param expectedType the expected implementation type for the node, or null if it is not known
+     * @return the JCR node; never null
      */
-    public Repository getRepository() {
-        return this.repository;
+    AbstractJcrNode node( CachedNode cachedNode,
+                          AbstractJcrNode.Type expectedType ) {
+        assert cachedNode != null;
+        NodeKey nodeKey = cachedNode.getKey();
+        AbstractJcrNode node = jcrNodes.get(nodeKey);
+        if (node != null) return node;
+
+        if (expectedType == null) {
+            Name primaryType = cachedNode.getPrimaryType(cache);
+            expectedType = Type.typeForPrimaryType(primaryType);
+            if (expectedType == null) {
+                // If this node from the system workspace, then the default is Type.SYSTEM rather than Type.NODE ...
+                if (repository().systemWorkspaceKey().equals(nodeKey.getWorkspaceKey())) {
+                    expectedType = Type.SYSTEM;
+                } else {
+                    expectedType = Type.NODE;
+                }
+                assert expectedType != null;
+            }
+        }
+        switch (expectedType) {
+            case NODE:
+                node = new JcrNode(this, nodeKey);
+                break;
+            case VERSION:
+                node = new JcrVersionNode(this, nodeKey);
+                break;
+            case VERSION_HISTORY:
+                node = new JcrVersionHistoryNode(this, nodeKey);
+                break;
+            case SHARED:
+                // TODO: Shared nodes
+                throw new UnsupportedOperationException("Need to implement JcrSharedNode node");
+            case SYSTEM:
+                node = new JcrSystemNode(this, nodeKey);
+                break;
+            case ROOT:
+                try {
+                    return getRootNode();
+                } catch (RepositoryException e) {
+                    assert false : "Should never happen: " + e.getMessage();
+                }
+        }
+        AbstractJcrNode newNode = jcrNodes.putIfAbsent(nodeKey, node);
+        if (newNode != null) {
+            // Another thread snuck in and created the node object ...
+            node = newNode;
+        }
+        return node;
+    }
+
+    final CachedNode cachedNode( Path absolutePath ) throws PathNotFoundException, RepositoryException {
+        return cachedNode(cache, getRootNode().node(), absolutePath, ModeShapePermissions.READ);
+    }
+
+    final CachedNode cachedNode( SessionCache cache,
+                                 CachedNode node,
+                                 Path path,
+                                 String... actions ) throws PathNotFoundException, AccessDeniedException, RepositoryException {
+        // We treat the path as a relative path, but the algorithm actually works for absolute, too. So don't enforce.
+        for (Segment segment : path) {
+            if (segment.isSelfReference()) continue;
+            if (segment.isParentReference()) {
+                node = cache.getNode(node.getParentKey(cache));
+            } else {
+                ChildReference ref = node.getChildReferences(cache).getChild(segment);
+                if (ref == null) {
+                    throw new PathNotFoundException(JcrI18n.nodeNotFound.text(stringFactory().create(path), workspaceName()));
+                }
+                CachedNode child = cache.getNode(ref);
+                assert child != null : "Found a child reference in " + node.getPath(cache) + " to a non-existant child "
+                                       + segment;
+                node = child;
+            }
+        }
+        checkPermission(path, actions);
+        return node;
+    }
+
+    final MutableCachedNode mutableNode( SessionCache cache,
+                                         CachedNode node,
+                                         Path path,
+                                         String... actions ) throws PathNotFoundException, RepositoryException {
+        return cache.mutable(cachedNode(cache, node, path, actions).getKey());
+    }
+
+    final AbstractJcrNode node( CachedNode node,
+                                Path path ) throws PathNotFoundException, AccessDeniedException, RepositoryException {
+        CachedNode child = cachedNode(cache, node, path, "read");
+        return node(child, (Type)null);
+    }
+
+    final AbstractJcrNode node( Path absolutePath ) throws PathNotFoundException, AccessDeniedException, RepositoryException {
+        assert absolutePath.isAbsolute();
+        if (absolutePath.isRoot()) return getRootNode();
+        if (absolutePath.isIdentifier()) {
+            // Look up the node by identifier ...
+            NodeKey key = rootNode.key().withId(stringFactory().create(absolutePath));
+            return node(key, null);
+        }
+        CachedNode node = getRootNode().node();
+        return node(node, absolutePath);
+    }
+
+    final AbstractJcrItem findItem( NodeKey nodeKey,
+                                    Path relativePath ) throws RepositoryException {
+        return findItem(node(nodeKey, null), relativePath);
+    }
+
+    final AbstractJcrItem findItem( AbstractJcrNode node,
+                                    Path relativePath ) throws RepositoryException {
+        assert !relativePath.isAbsolute();
+        if (relativePath.size() == 1) {
+            Segment last = relativePath.getLastSegment();
+            if (last.isSelfReference()) return node;
+            if (last.isParentReference()) return node.getParent();
+        }
+        // Find the path to the referenced node ...
+        Path nodePath = node.path();
+        Path absolutePath = nodePath.resolve(relativePath);
+        if (absolutePath.isAtOrBelow(nodePath)) {
+            // Find the item starting at 'node' ...
+        }
+        return getItem(absolutePath);
     }
 
     /**
-     * {@inheritDoc}
+     * Parse the supplied string into an absolute {@link Path} representation.
      * 
-     * @return <code>null</code>
-     * @see javax.jcr.Session#getAttribute(java.lang.String)
+     * @param absPath the string containing an absolute path
+     * @return the absolute path object; never null
+     * @throws RepositoryException if the supplied string is not a valid absolute path
      */
-    public Object getAttribute( String name ) {
-        return sessionAttributes.get(name);
+    Path absolutePathFor( String absPath ) throws RepositoryException {
+        Path path = null;
+        try {
+            path = pathFactory().create(absPath);
+        } catch (org.modeshape.jcr.value.ValueFormatException e) {
+            throw new RepositoryException(e.getMessage());
+        }
+        if (!path.isAbsolute()) {
+            throw new RepositoryException(JcrI18n.invalidAbsolutePath.text(absPath));
+        }
+        return path;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @return An empty array
-     * @see javax.jcr.Session#getAttributeNames()
-     */
+    @Override
+    public JcrRepository getRepository() {
+        return repository;
+    }
+
+    @Override
+    public String getUserID() {
+        return context.getSecurityContext().getUserName();
+    }
+
+    public boolean isAnonymous() {
+        return context.getSecurityContext().isAnonymous();
+    }
+
+    @Override
     public String[] getAttributeNames() {
         Set<String> names = sessionAttributes.keySet();
         if (names.isEmpty()) return NO_ATTRIBUTES_NAMES;
         return names.toArray(new String[names.size()]);
     }
 
-    /**
-     * @return a copy of the session attributes for this session
-     */
-    Map<String, Object> sessionAttributes() {
-        return new HashMap<String, Object>(sessionAttributes);
+    @Override
+    public Object getAttribute( String name ) {
+        return this.sessionAttributes.get(name);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Session#getNamespacePrefix(java.lang.String)
-     */
-    public String getNamespacePrefix( String uri ) throws RepositoryException {
-        return sessionRegistry.getPrefix(uri);
+    @Override
+    public JcrWorkspace getWorkspace() {
+        return workspace;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Session#getNamespacePrefixes()
-     */
-    public String[] getNamespacePrefixes() throws RepositoryException {
-        return sessionRegistry.getPrefixes();
+    @Override
+    public JcrRootNode getRootNode() throws RepositoryException {
+        checkLive();
+        return rootNode;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Session#getNamespaceURI(java.lang.String)
-     */
-    public String getNamespaceURI( String prefix ) throws RepositoryException {
-        return sessionRegistry.getURI(prefix);
+    @Override
+    public Session impersonate( Credentials credentials ) throws LoginException, RepositoryException {
+        checkLive();
+        return repository.login(credentials, workspaceName());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Session#setNamespacePrefix(java.lang.String, java.lang.String)
-     */
-    public void setNamespacePrefix( String newPrefix,
-                                    String existingUri ) throws NamespaceException, RepositoryException {
-        sessionRegistry.registerNamespace(newPrefix, existingUri);
+    @Deprecated
+    @Override
+    public AbstractJcrNode getNodeByUUID( String uuid ) throws ItemNotFoundException, RepositoryException {
+        return getNodeByIdentifier(uuid);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Session#addLockToken(java.lang.String)
-     */
-    public void addLockToken( String lt ) {
-        CheckArg.isNotNull(lt, "lock token");
+    @Override
+    public AbstractJcrNode getNodeByIdentifier( String id ) throws ItemNotFoundException, RepositoryException {
+        checkLive();
+        if (NodeKey.isValidFormat(id)) {
+            // Try the identifier as a node key ...
+            try {
+                NodeKey key = new NodeKey(id);
+                return node(key, null);
+            } catch (ItemNotFoundException e) {
+                // continue ...
+            }
+        }
+        // Try as node key identifier ...
+        NodeKey key = this.rootNode.key.withId(id);
+        return node(key, null);
+    }
+
+    @Override
+    public AbstractJcrNode getNode( String absPath ) throws PathNotFoundException, RepositoryException {
+        checkLive();
+        CheckArg.isNotEmpty(absPath, "absolutePath");
+        Path path = absolutePathFor(absPath);
+
+        // Return root node if path is "/" ...
+        if (path.isRoot()) {
+            return getRootNode();
+        }
+
+        return node(path);
+    }
+
+    @Override
+    public AbstractJcrItem getItem( String absPath ) throws PathNotFoundException, RepositoryException {
+        checkLive();
+        CheckArg.isNotEmpty(absPath, "absPath");
+        Path path = absolutePathFor(absPath);
+        return getItem(path);
+    }
+
+    AbstractJcrItem getItem( Path path ) throws PathNotFoundException, RepositoryException {
+        assert path.isAbsolute() : "Path supplied to Session.getItem(Path) must be absolute";
+        // Return root node if path is "/" ...
+        if (path.isRoot()) {
+            return getRootNode();
+        }
+        // Since we don't know whether path refers to a node or a property, look to see if we can tell it's a node ...
+        if (path.isIdentifier() || path.getLastSegment().hasIndex()) {
+            return node(path);
+        }
+        // We can't tell from the name, so ask for an item.
+        // JSR-170 doesn't allow children and proeprties to have the same name, but this is relaxed in JSR-283.
+        // But JSR-283 Section 3.3.4 states "The method Session.getItem will return the item at the specified path
+        // if there is only one such item, if there is both a node and a property at the specified path, getItem
+        // will return the node." Therefore, look for a child first ...
+        try {
+            return node(path);
+        } catch (PathNotFoundException e) {
+            // Must not be any child by that name, so now look for a property on the parent node ...
+            AbstractJcrNode parent = node(path.getParent());
+            AbstractJcrProperty prop = parent.getProperty(path.getLastSegment().getName());
+            if (prop != null) return prop;
+            // Failed to find any item ...
+            String pathStr = stringFactory().create(path);
+            throw new PathNotFoundException(JcrI18n.itemNotFoundAtPath.text(pathStr, workspaceName()));
+        }
+    }
+
+    @Override
+    public Property getProperty( String absPath ) throws PathNotFoundException, RepositoryException {
+        checkLive();
+        CheckArg.isNotEmpty(absPath, "absPath");
+        // Return root node if path is "/"
+        Path path = absolutePathFor(absPath);
+        if (path.isRoot()) {
+            throw new PathNotFoundException(JcrI18n.rootNodeIsNotProperty.text());
+        }
+        if (path.isIdentifier()) {
+            throw new PathNotFoundException(JcrI18n.identifierPathNeverReferencesProperty.text());
+        }
+
+        Segment lastSegment = path.getLastSegment();
+        if (lastSegment.hasIndex()) {
+            throw new RepositoryException(JcrI18n.pathCannotHaveSameNameSiblingIndex.text(absPath));
+        }
+
+        // This will throw a PNFE if the parent path does not exist
+        AbstractJcrNode parentNode = node(path.getParent());
+        AbstractJcrProperty property = parentNode.getProperty(lastSegment.getName());
+
+        if (property == null) {
+            throw new PathNotFoundException(GraphI18n.pathNotFoundExceptionLowestExistingLocationFound.text(absPath,
+                                                                                                            parentNode.getPath()));
+        }
+        return property;
+    }
+
+    @Override
+    public boolean itemExists( String absPath ) throws RepositoryException {
+        try {
+            return getItem(absPath) != null;
+        } catch (PathNotFoundException error) {
+            return false;
+        }
+    }
+
+    @Override
+    public void removeItem( String absPath )
+        throws VersionException, LockException, ConstraintViolationException, AccessDeniedException, RepositoryException {
+        getItem(absPath).remove();
+    }
+
+    @Override
+    public boolean nodeExists( String absPath ) throws RepositoryException {
+        // This is an optimized version of 'getNode(absPath)' ...
+        checkLive();
+        CheckArg.isNotEmpty(absPath, "absPath");
+        Path absolutePath = absolutePathFor(absPath);
+
+        if (absolutePath.isRoot()) return true;
+        if (absolutePath.isIdentifier()) {
+            // Look up the node by identifier ...
+            NodeKey key = new NodeKey(stringFactory().create(absolutePath));
+            return cache().getNode(key) != null;
+        }
+
+        return cachedNode(absolutePath) != null;
+    }
+
+    @Override
+    public boolean propertyExists( String absPath ) throws RepositoryException {
+        checkLive();
+        CheckArg.isNotEmpty(absPath, "absPath");
+        // Return root node if path is "/"
+        Path path = absolutePathFor(absPath);
+        if (path.isRoot()) {
+            throw new PathNotFoundException(JcrI18n.rootNodeIsNotProperty.text());
+        }
+        if (path.isIdentifier()) {
+            throw new PathNotFoundException(JcrI18n.identifierPathNeverReferencesProperty.text());
+        }
+
+        Segment lastSegment = path.getLastSegment();
+        if (lastSegment.hasIndex()) {
+            throw new RepositoryException(JcrI18n.pathCannotHaveSameNameSiblingIndex.text(absPath));
+        }
+
+        // This will throw a PNFE if the parent path does not exist
+        CachedNode parentNode = cachedNode(path.getParent());
+        return parentNode != null && parentNode.hasProperty(lastSegment.getName(), cache());
+    }
+
+    @Override
+    public void move( String srcAbsPath,
+                      String destAbsPath )
+        throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException, LockException,
+        RepositoryException {
+        checkLive();
+
+        // Find the source path and destination path ...
+        Path srcPath = absolutePathFor(srcAbsPath);
+        Path destPath = absolutePathFor(destAbsPath);
+        if (srcPath.isRoot()) {
+            throw new RepositoryException(JcrI18n.unableToMoveRootNode.text(workspaceName()));
+        }
+        if (destPath.isRoot()) {
+            throw new RepositoryException(JcrI18n.rootNodeCannotBeDestinationOfMovedNode.text(workspaceName()));
+        }
+        if (!destPath.isIdentifier() && destAbsPath.endsWith("]")) {
+            // Doing a literal test here because the path factory will canonicalize "/node[1]" to "/node"
+            throw new RepositoryException(JcrI18n.pathCannotHaveSameNameSiblingIndex.text(destAbsPath));
+        }
+        if (srcPath.isAncestorOf(destPath)) {
+            String msg = JcrI18n.unableToMoveNodeToBeChildOfDecendent.text(srcAbsPath, destAbsPath, workspaceName());
+            throw new RepositoryException(msg);
+        }
+        if (srcPath.equals(destPath)) {
+            // Nothing to do ...
+            return;
+        }
+
+        // Get the node at the source path and the parent node of the destination path ...
+        AbstractJcrNode srcNode = node(srcPath);
+        AbstractJcrNode destParentNode = node(destPath.getParent());
+
+        // Check whether these nodes are locked ...
+        if (srcNode.isLocked() && !srcNode.getLock().isLockOwningSession()) {
+            javax.jcr.lock.Lock sourceLock = srcNode.getLock();
+            if (sourceLock != null && sourceLock.getLockToken() == null) {
+                throw new LockException(JcrI18n.lockTokenNotHeld.text(srcAbsPath));
+            }
+        }
+        if (destParentNode.isLocked() && !destParentNode.getLock().isLockOwningSession()) {
+            javax.jcr.lock.Lock newParentLock = destParentNode.getLock();
+            if (newParentLock != null && newParentLock.getLockToken() == null) {
+                throw new LockException(JcrI18n.lockTokenNotHeld.text(destAbsPath));
+            }
+        }
+
+        // Check whether the nodes that will be modified are checked out ...
+        AbstractJcrNode srcParent = srcNode.getParent();
+        if (!srcParent.isCheckedOut()) {
+            throw new VersionException(JcrI18n.nodeIsCheckedIn.text(srcNode.getPath()));
+        }
+        if (!destParentNode.isCheckedOut()) {
+            throw new VersionException(JcrI18n.nodeIsCheckedIn.text(destParentNode.getPath()));
+        }
 
         try {
-            lockManager().addLockToken(lt);
-        } catch (LockException le) {
-            // For backwards compatibility (and API compatibility), the LockExceptions from the LockManager need to get swallowed
+            MutableCachedNode mutableSrcParent = srcParent.mutable();
+            MutableCachedNode mutableDestParent = destParentNode.mutable();
+            if (mutableSrcParent.equals(mutableDestParent)) {
+                // It's just a rename ...
+                mutableSrcParent.renameChild(cache, srcNode.key(), destPath.getLastSegment().getName());
+            } else {
+                // It is a move from one parent to another ...
+                mutableSrcParent.moveChild(cache, srcNode.key(), mutableDestParent, destPath.getLastSegment().getName());
+            }
+        } catch (NodeNotFoundException e) {
+            // Not expected ...
+            String msg = JcrI18n.nodeNotFound.text(stringFactory().create(srcPath.getParent()), workspaceName());
+            throw new PathNotFoundException(msg);
         }
+    }
+
+    @Override
+    public void save()
+        throws AccessDeniedException, ItemExistsException, ReferentialIntegrityException, ConstraintViolationException,
+        InvalidItemStateException, VersionException, LockException, NoSuchNodeTypeException, RepositoryException {
+        checkLive();
+
+        // Perform the save, using 'JcrPreSave' operations ...
+        SessionCache systemCache = createSystemCache(false);
+        SystemContent systemContent = new SystemContent(systemCache);
+        Map<NodeKey, NodeKey> baseVersionKeys = this.baseVersionKeys.get();
+        try {
+            cache().save(systemContent.cache(), new JcrPreSave(systemContent, baseVersionKeys));
+            this.baseVersionKeys.set(null);
+        } catch (WrappedException e) {
+            Throwable cause = e.getCause();
+            throw (cause instanceof RepositoryException) ? (RepositoryException)cause : new RepositoryException(e.getCause());
+        } catch (DocumentNotFoundException e) {
+            // Try to figure out which node in this transient state was the problem ...
+            NodeKey key = new NodeKey(e.getKey());
+            AbstractJcrNode problemNode = node(key, null);
+            String path = problemNode.getPath();
+            throw new InvalidItemStateException(JcrI18n.nodeModifiedBySessionWasRemovedByAnotherSession.text(path, key), e);
+        } catch (DocumentAlreadyExistsException e) {
+            // Try to figure out which node in this transient state was the problem ...
+            NodeKey key = new NodeKey(e.getKey());
+            AbstractJcrNode problemNode = node(key, null);
+            String path = problemNode.getPath();
+            throw new InvalidItemStateException(JcrI18n.nodeCreatedBySessionUsedExistingKey.text(path, key), e);
+        } catch (Throwable t) {
+            throw new RepositoryException(t);
+        }
+
+        try {
+            // Record the save operation ...
+            repository().statistics().increment(ValueMetric.SESSION_SAVES);
+        } catch (IllegalStateException e) {
+            // The repository has been shutdown ...
+        }
+    }
+
+    /**
+     * Save a subset of the changes made within this session.
+     * 
+     * @param node the node at or below which the changes are to be saved; may not be null
+     * @throws RepositoryException if there is a problem saving the changes
+     * @see AbstractJcrNode#save()
+     */
+    void save( AbstractJcrNode node ) throws RepositoryException {
+
+        // Perform the save, using 'JcrPreSave' operations ...
+        SessionCache systemCache = createSystemCache(false);
+        SystemContent systemContent = new SystemContent(systemCache);
+        Map<NodeKey, NodeKey> baseVersionKeys = this.baseVersionKeys.get();
+        try {
+            cache().save(node.node(), systemContent.cache(), new JcrPreSave(systemContent, baseVersionKeys));
+        } catch (WrappedException e) {
+            Throwable cause = e.getCause();
+            throw (cause instanceof RepositoryException) ? (RepositoryException)cause : new RepositoryException(e.getCause());
+        } catch (DocumentNotFoundException e) {
+            // Try to figure out which node in this transient state was the problem ...
+            NodeKey key = new NodeKey(e.getKey());
+            AbstractJcrNode problemNode = node(key, null);
+            String path = problemNode.getPath();
+            throw new InvalidItemStateException(JcrI18n.nodeModifiedBySessionWasRemovedByAnotherSession.text(path, key), e);
+        } catch (DocumentAlreadyExistsException e) {
+            // Try to figure out which node in this transient state was the problem ...
+            NodeKey key = new NodeKey(e.getKey());
+            AbstractJcrNode problemNode = node(key, null);
+            String path = problemNode.getPath();
+            throw new InvalidItemStateException(JcrI18n.nodeCreatedBySessionUsedExistingKey.text(path, key), e);
+        } catch (Throwable t) {
+            throw new RepositoryException(t);
+        }
+
+        try {
+            // Record the save operation ...
+            repository().statistics().increment(ValueMetric.SESSION_SAVES);
+        } catch (IllegalStateException e) {
+            // The repository has been shutdown ...
+        }
+    }
+
+    @Override
+    public void refresh( boolean keepChanges ) throws RepositoryException {
+        checkLive();
+        if (!keepChanges) {
+            cache.clear();
+        }
+        // Otherwise there is nothing to do, as all persistent changes are always immediately vislble to all sessions
+        // using that same workspace
+    }
+
+    @Override
+    public boolean hasPendingChanges() throws RepositoryException {
+        checkLive();
+        return cache().hasChanges();
+    }
+
+    @Override
+    public JcrValueFactory getValueFactory() throws UnsupportedRepositoryOperationException, RepositoryException {
+        checkLive();
+        return valueFactory;
+    }
+
+    /**
+     * Determine if the current user does not have permission for all of the named actions in the named workspace, otherwise
+     * returns silently.
+     * 
+     * @param workspaceName the name of the workspace in which the path exists
+     * @param path the path on which the actions are occurring
+     * @param actions the list of {@link ModeShapePermissions actions} to check
+     * @return true if the subject has privilege to perform all of the named actions on the content at the supplied path in the
+     *         given workspace within the repository, or false otherwise
+     */
+    private final boolean hasPermission( String workspaceName,
+                                         Path path,
+                                         String... actions ) {
+        final String repositoryName = this.repository.repositoryName();
+        SecurityContext sec = context.getSecurityContext();
+        if (sec instanceof AuthorizationProvider) {
+            // Delegate to the security context ...
+            AuthorizationProvider authorizer = (AuthorizationProvider)sec;
+            return authorizer.hasPermission(context, repositoryName, repositoryName, workspaceName, path, actions);
+        }
+        // It is a role-based security context, so apply role-based authorization ...
+        boolean hasPermission = true;
+        for (String action : actions) {
+            if (ModeShapePermissions.READ.equals(action)) {
+                hasPermission &= hasRole(sec, ModeShapeRoles.READONLY, repositoryName, workspaceName)
+                                 || hasRole(sec, ModeShapeRoles.READWRITE, repositoryName, workspaceName)
+                                 || hasRole(sec, ModeShapeRoles.ADMIN, repositoryName, workspaceName);
+            } else if (ModeShapePermissions.REGISTER_NAMESPACE.equals(action)
+                       || ModeShapePermissions.REGISTER_TYPE.equals(action) || ModeShapePermissions.UNLOCK_ANY.equals(action)
+                       || ModeShapePermissions.CREATE_WORKSPACE.equals(action)
+                       || ModeShapePermissions.DELETE_WORKSPACE.equals(action) || ModeShapePermissions.MONITOR.equals(action)
+                       || ModeShapePermissions.DELETE_WORKSPACE.equals(action)
+                       || ModeShapePermissions.INDEX_WORKSPACE.equals(action)) {
+                hasPermission &= hasRole(sec, ModeShapeRoles.ADMIN, repositoryName, workspaceName);
+            } else {
+                hasPermission &= hasRole(sec, ModeShapeRoles.ADMIN, repositoryName, workspaceName)
+                                 || hasRole(sec, ModeShapeRoles.READWRITE, repositoryName, workspaceName);
+            }
+        }
+        return hasPermission;
     }
 
     /**
      * Returns whether the authenticated user has the given role.
      * 
+     * @param context the security context
      * @param roleName the name of the role to check
+     * @param repositoryName the name of the repository
      * @param workspaceName the workspace under which the user must have the role. This may be different from the current
      *        workspace.
      * @return true if the user has the role and is logged in; false otherwise
      */
-    final boolean hasRole( String roleName,
-                           String workspaceName ) {
-        SecurityContext context = getExecutionContext().getSecurityContext();
+    private final boolean hasRole( SecurityContext context,
+                                   String roleName,
+                                   String repositoryName,
+                                   String workspaceName ) {
         if (context.hasRole(roleName)) return true;
-        roleName = roleName + "." + this.repository.getRepositorySourceName();
+        roleName = roleName + "." + repositoryName;
         if (context.hasRole(roleName)) return true;
         roleName = roleName + "." + workspaceName;
         return context.hasRole(roleName);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws IllegalArgumentException if either <code>path</code> or <code>actions</code> is empty or <code>null</code>.
-     * @see javax.jcr.Session#checkPermission(java.lang.String, java.lang.String)
-     */
+    @Override
     public void checkPermission( String path,
                                  String actions ) {
         CheckArg.isNotEmpty(path, "path");
-
-        this.checkPermission(executionContext.getValueFactories().getPathFactory().create(path), actions);
+        CheckArg.isNotEmpty(actions, "actions");
+        try {
+            this.checkPermission(absolutePathFor(path), actions.split(","));
+        } catch (RepositoryException e) {
+            throw new AccessControlException(JcrI18n.permissionDenied.text(path, actions));
+        }
     }
 
     /**
@@ -415,9 +976,10 @@ class JcrSession implements Session {
      * 
      * @param path the path on which the actions are occurring
      * @param actions a comma-delimited list of actions to check
+     * @throws AccessDeniedException if the actions cannot be performed on the node at the specified path
      */
     void checkPermission( Path path,
-                          String actions ) {
+                          String... actions ) throws AccessDeniedException {
         checkPermission(this.workspace().getName(), path, actions);
     }
 
@@ -431,98 +993,25 @@ class JcrSession implements Session {
      * @param workspaceName the name of the workspace in which the path exists
      * @param path the path on which the actions are occurring
      * @param actions a comma-delimited list of actions to check
+     * @throws AccessDeniedException if the actions cannot be performed on the node at the specified path
      */
     void checkPermission( String workspaceName,
                           Path path,
-                          String actions ) {
+                          String... actions ) throws AccessDeniedException {
         CheckArg.isNotEmpty(actions, "actions");
-        if (hasPermission(executionContext, workspaceName, path, actions.split(","))) return;
+        if (hasPermission(workspaceName, path, actions)) return;
 
         String pathAsString = path != null ? path.getString(this.namespaces()) : "<unknown>";
-        throw new AccessControlException(JcrI18n.permissionDenied.text(pathAsString, actions));
+        throw new AccessDeniedException(JcrI18n.permissionDenied.text(pathAsString, actions));
     }
 
-    /**
-     * A companion method to {@link #checkPermission(String, String)} that returns false (instead of throwing an exception) if the
-     * current session doesn't have sufficient privileges to perform the given list of actions at the given path.
-     * 
-     * @param path the path at which the privileges are to be checked
-     * @param actions a comma-delimited list of actions to check
-     * @return true if the current session has sufficient privileges to perform all of the actions on the the given path; false
-     *         otherwise
-     * @see javax.jcr.Session#checkPermission(java.lang.String, java.lang.String)
-     */
-    public boolean hasPermission( String path,
-                                  String actions ) {
-        CheckArg.isNotEmpty(path, "path");
-        Path p = executionContext.getValueFactories().getPathFactory().create(path);
-        return hasPermission(executionContext, this.workspace().getName(), p, actions.split(","));
-    }
-
-    /**
-     * Determine if the current user does not have permission for all of the named actions in the named workspace, otherwise
-     * returns silently.
-     * 
-     * @param context the context in which the subject is performing the actions on the supplied workspace
-     * @param workspaceName the name of the workspace in which the path exists
-     * @param path the path on which the actions are occurring
-     * @param actions the list of {@link ModeShapePermissions actions} to check
-     * @return true if the subject has privilege to perform all of the named actions on the content at the supplied path in the
-     *         given workspace within the repository, or false otherwise
-     */
-    boolean hasPermission( ExecutionContext context,
-                           String workspaceName,
-                           Path path,
-                           String... actions ) {
-        final String repositoryName = this.repository.repositoryName();
-        final String repositorySourceName = this.repository.getRepositorySourceName();
-        SecurityContext sec = context.getSecurityContext();
-        if (sec instanceof AuthorizationProvider) {
-            // Delegate to the security context ...
-            AuthorizationProvider authorizer = (AuthorizationProvider)sec;
-            return authorizer.hasPermission(context, repositoryName, repositorySourceName, workspaceName, path, actions);
-        }
-        // It is a role-based security context, so apply role-based authorization ...
-        boolean hasPermission = true;
-        for (String action : actions) {
-            if (ModeShapePermissions.READ.equals(action)) {
-                hasPermission &= hasRole(sec, ModeShapeRoles.READONLY, repositoryName, repositorySourceName, workspaceName)
-                                 || hasRole(sec, ModeShapeRoles.READWRITE, repositoryName, repositorySourceName, workspaceName)
-                                 || hasRole(sec, ModeShapeRoles.ADMIN, repositoryName, repositorySourceName, workspaceName);
-            } else if (ModeShapePermissions.REGISTER_NAMESPACE.equals(action)
-                       || ModeShapePermissions.REGISTER_TYPE.equals(action) || ModeShapePermissions.UNLOCK_ANY.equals(action)
-                       || ModeShapePermissions.CREATE_WORKSPACE.equals(action)
-                       || ModeShapePermissions.DELETE_WORKSPACE.equals(action)) {
-                hasPermission &= hasRole(sec, ModeShapeRoles.ADMIN, repositoryName, repositorySourceName, workspaceName);
-            } else {
-                hasPermission &= hasRole(sec, ModeShapeRoles.ADMIN, repositoryName, repositorySourceName, workspaceName)
-                                 || hasRole(sec, ModeShapeRoles.READWRITE, repositoryName, repositorySourceName, workspaceName);
-            }
-        }
-        return hasPermission;
-    }
-
-    /**
-     * Returns whether the authenticated user has the given role.
-     * 
-     * @param context the security context
-     * @param roleName the name of the role to check
-     * @param repositoryName the name of the repository
-     * @param repositorySourceName the name of the repository's source
-     * @param workspaceName the workspace under which the user must have the role. This may be different from the current
-     *        workspace.
-     * @return true if the user has the role and is logged in; false otherwise
-     */
-    private final boolean hasRole( SecurityContext context,
-                                   String roleName,
-                                   String repositoryName,
-                                   String repositorySourceName,
-                                   String workspaceName ) {
-        if (context.hasRole(roleName)) return true;
-        roleName = roleName + "." + repositorySourceName;
-        if (context.hasRole(roleName)) return true;
-        roleName = roleName + "." + workspaceName;
-        return context.hasRole(roleName);
+    @Override
+    public boolean hasPermission( String absPath,
+                                  String actions ) throws RepositoryException {
+        checkLive();
+        CheckArg.isNotEmpty(absPath, "absPath");
+        Path p = absolutePathFor(absPath);
+        return hasPermission(this.workspace().getName(), p, actions.split(","));
     }
 
     /**
@@ -537,11 +1026,13 @@ class JcrSession implements Session {
      * @throws IllegalArgumentException
      * @throws RepositoryException
      */
+    @Override
     public boolean hasCapability( String methodName,
                                   Object target,
-                                  Object[] arguments ) throws IllegalArgumentException, RepositoryException {
+                                  Object[] arguments ) throws RepositoryException {
         CheckArg.isNotEmpty(methodName, "methodName");
         CheckArg.isNotNull(target, "target");
+        checkLive();
 
         if (target instanceof AbstractJcrNode) {
             AbstractJcrNode node = (AbstractJcrNode)target;
@@ -558,397 +1049,37 @@ class JcrSession implements Session {
                 }
                 return node.canAddNode(relPath, primaryNodeTypeName);
             }
+            // TODO: Should 'hasCapability' support methods other than 'addNode'?
         }
         return true;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Session#exportDocumentView(java.lang.String, org.xml.sax.ContentHandler, boolean, boolean)
-     */
-    public void exportDocumentView( String absPath,
-                                    ContentHandler contentHandler,
-                                    boolean skipBinary,
-                                    boolean noRecurse ) throws RepositoryException, SAXException {
-        CheckArg.isNotNull(absPath, "absPath");
-        CheckArg.isNotNull(contentHandler, "contentHandler");
-        Path exportRootPath = executionContext.getValueFactories().getPathFactory().create(absPath);
-        Node exportRootNode = getNode(exportRootPath);
-        AbstractJcrExporter exporter = new JcrDocumentViewExporter(this);
-        exporter.exportView(exportRootNode, contentHandler, skipBinary, noRecurse);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Session#exportDocumentView(java.lang.String, java.io.OutputStream, boolean, boolean)
-     */
-    public void exportDocumentView( String absPath,
-                                    OutputStream out,
-                                    boolean skipBinary,
-                                    boolean noRecurse ) throws RepositoryException {
-        CheckArg.isNotNull(absPath, "absPath");
-        CheckArg.isNotNull(out, "out");
-        Path exportRootPath = executionContext.getValueFactories().getPathFactory().create(absPath);
-        Node exportRootNode = getNode(exportRootPath);
-        AbstractJcrExporter exporter = new JcrDocumentViewExporter(this);
-        exporter.exportView(exportRootNode, out, skipBinary, noRecurse);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Session#exportSystemView(java.lang.String, org.xml.sax.ContentHandler, boolean, boolean)
-     */
-    public void exportSystemView( String absPath,
-                                  ContentHandler contentHandler,
-                                  boolean skipBinary,
-                                  boolean noRecurse ) throws RepositoryException, SAXException {
-        CheckArg.isNotNull(absPath, "absPath");
-        CheckArg.isNotNull(contentHandler, "contentHandler");
-        Path exportRootPath = executionContext.getValueFactories().getPathFactory().create(absPath);
-        Node exportRootNode = getNode(exportRootPath);
-        AbstractJcrExporter exporter = new JcrSystemViewExporter(this);
-        exporter.exportView(exportRootNode, contentHandler, skipBinary, noRecurse);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Session#exportSystemView(java.lang.String, java.io.OutputStream, boolean, boolean)
-     */
-    public void exportSystemView( String absPath,
-                                  OutputStream out,
-                                  boolean skipBinary,
-                                  boolean noRecurse ) throws RepositoryException {
-        CheckArg.isNotNull(absPath, "absPath");
-        CheckArg.isNotNull(out, "out");
-        Path exportRootPath = executionContext.getValueFactories().getPathFactory().create(absPath);
-        Node exportRootNode = getNode(exportRootPath);
-        AbstractJcrExporter exporter = new JcrSystemViewExporter(this);
-        exporter.exportView(exportRootNode, out, skipBinary, noRecurse);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Session#getImportContentHandler(java.lang.String, int)
-     */
+    @Override
     public ContentHandler getImportContentHandler( String parentAbsPath,
-                                                   int uuidBehavior ) throws PathNotFoundException, RepositoryException {
-        Path parentPath = this.executionContext.getValueFactories().getPathFactory().create(parentAbsPath);
+                                                   int uuidBehavior )
+        throws PathNotFoundException, ConstraintViolationException, VersionException, LockException, RepositoryException {
+        checkLive();
+
+        // Find the parent path ...
+        AbstractJcrNode parent = getNode(parentAbsPath);
+        if (!parent.isCheckedOut()) {
+            throw new VersionException(JcrI18n.nodeIsCheckedIn.text(parent.getPath()));
+        }
+
         boolean retainLifecycleInfo = getRepository().getDescriptorValue(Repository.OPTION_LIFECYCLE_SUPPORTED).getBoolean();
         boolean retainRetentionInfo = getRepository().getDescriptorValue(Repository.OPTION_RETENTION_SUPPORTED).getBoolean();
-        return new JcrContentHandler(this, parentPath, uuidBehavior, SaveMode.SESSION, retainRetentionInfo, retainLifecycleInfo);
+
+        // Since we're importing into this session, we need to capture any base version information in the imported file ...
+        baseVersionKeys.compareAndSet(null, new ConcurrentHashMap<NodeKey, NodeKey>());
+        return new JcrContentHandler(this, parent, uuidBehavior, false, retainRetentionInfo, retainLifecycleInfo);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws IllegalArgumentException if <code>absolutePath</code> is empty or <code>null</code>.
-     * @see javax.jcr.Session#getItem(java.lang.String)
-     */
-    public Item getItem( String absolutePath ) throws RepositoryException {
-        CheckArg.isNotEmpty(absolutePath, "absolutePath");
-        // Return root node if path is "/"
-        Path path = executionContext.getValueFactories().getPathFactory().create(absolutePath);
-        if (path.isRoot()) {
-            return getRootNode();
-        }
-        // Since we don't know whether path refers to a node or a property, look to see if we can tell it's a node ...
-        if (path.isIdentifier() || path.getLastSegment().hasIndex()) {
-            return getNode(path);
-        }
-        // We can't tell from the name, so ask for an item ...
-        try {
-            return cache.findJcrItem(null, rootPath, path.relativeTo(rootPath));
-        } catch (ItemNotFoundException e) {
-            throw new PathNotFoundException(e.getMessage(), e);
-        }
-    }
-
-    /**
-     * Throws a {@code RepositoryException} if {@code path} is not an absolute path, otherwise returns silently.
-     * 
-     * @param pathAsString the string representation of the path
-     * @param path the path to check
-     * @throws RepositoryException if {@code !path.isAbsolute()}
-     */
-    private void checkAbsolute( String pathAsString,
-                                Path path ) throws RepositoryException {
-        if (!path.isAbsolute()) {
-            throw new RepositoryException(JcrI18n.invalidAbsolutePath.text(pathAsString));
-        }
-    }
-
-    /**
-     * @param absolutePath an absolute path
-     * @return the specified node
-     * @throws IllegalArgumentException if <code>absolutePath</code> is empty or <code>null</code>.
-     * @throws PathNotFoundException If no accessible node is found at the specifed path
-     * @throws RepositoryException if another error occurs
-     * @see javax.jcr.Session#getItem(java.lang.String)
-     */
-    public AbstractJcrNode getNode( String absolutePath ) throws PathNotFoundException, RepositoryException {
-        CheckArg.isNotEmpty(absolutePath, "absolutePath");
-        // Return root node if path is "/"
-        Path path = executionContext.getValueFactories().getPathFactory().create(absolutePath);
-        if (path.isRoot()) {
-            return getRootNode();
-        }
-
-        checkAbsolute(absolutePath, path);
-
-        return getNode(path);
-    }
-
-    /**
-     * Returns true if a node exists at the given path and is accessible to the current user.
-     * 
-     * @param absolutePath the absolute path to the node
-     * @return true if a node exists at absolute path and is accessible to the current user.
-     * @throws IllegalArgumentException if <code>absolutePath</code> is empty or <code>null</code>.
-     * @throws PathNotFoundException If no accessible node is found at the specifed path
-     * @throws RepositoryException if another error occurs
-     */
-    public boolean nodeExists( String absolutePath ) throws PathNotFoundException, RepositoryException {
-        CheckArg.isNotEmpty(absolutePath, "absolutePath");
-        // Return root node if path is "/"
-        Path path = executionContext.getValueFactories().getPathFactory().create(absolutePath);
-        if (path.isRoot()) {
-            return true;
-        }
-
-        checkAbsolute(absolutePath, path);
-
-        try {
-            cache.findJcrNode(null, path);
-            return true;
-        } catch (ItemNotFoundException e) {
-            return false;
-        }
-    }
-
-    /**
-     * @param absolutePath an absolute path
-     * @return the specified node
-     * @throws IllegalArgumentException if <code>absolutePath</code> is empty or <code>null</code>.
-     * @throws PathNotFoundException If no accessible node is found at the specifed path
-     * @throws RepositoryException if another error occurs
-     * @see javax.jcr.Session#getItem(java.lang.String)
-     */
-    public AbstractJcrProperty getProperty( String absolutePath ) throws PathNotFoundException, RepositoryException {
-        CheckArg.isNotEmpty(absolutePath, "absolutePath");
-        // Return root node if path is "/"
-        Path path = pathFor(absolutePath, "absolutePath");
-        if (path.isRoot()) {
-            throw new PathNotFoundException(JcrI18n.rootNodeIsNotProperty.text());
-        }
-        if (path.isIdentifier()) {
-            throw new PathNotFoundException(JcrI18n.identifierPathNeverReferencesProperty.text());
-        }
-
-        checkAbsolute(absolutePath, path);
-
-        Segment lastSegment = path.getLastSegment();
-        if (lastSegment.hasIndex()) {
-            throw new RepositoryException(JcrI18n.pathCannotHaveSameNameSiblingIndex.text(absolutePath));
-        }
-
-        // This will throw a PNFE if the parent path does not exist
-        AbstractJcrNode parentNode = getNode(path.getParent());
-        AbstractJcrProperty property = parentNode.getProperty(lastSegment.getName());
-
-        if (property == null) {
-            throw new PathNotFoundException(GraphI18n.pathNotFoundExceptionLowestExistingLocationFound.text(absolutePath,
-                                                                                                            parentNode.getPath()));
-        }
-        return property;
-    }
-
-    /**
-     * Returns true if a property exists at the given path and is accessible to the current user.
-     * 
-     * @param absolutePath the absolute path to the property
-     * @return true if a property exists at absolute path and is accessible to the current user.
-     * @throws IllegalArgumentException if <code>absolutePath</code> is empty or <code>null</code>.
-     * @throws RepositoryException if another error occurs
-     */
-    public boolean propertyExists( String absolutePath ) throws RepositoryException {
-        CheckArg.isNotEmpty(absolutePath, "absolutePath");
-        // Return root node if path is "/"
-        Path path = pathFor(absolutePath, "absolutePath");
-        if (path.isRoot() || path.isIdentifier()) {
-            return false;
-        }
-
-        checkAbsolute(absolutePath, path);
-
-        Segment lastSegment = path.getLastSegment();
-        if (lastSegment.hasIndex()) {
-            throw new RepositoryException(JcrI18n.pathCannotHaveSameNameSiblingIndex.text(absolutePath));
-        }
-
-        try {
-            // This will throw a PNFE if the parent path does not exist
-            AbstractJcrNode parentNode = getNode(path.getParent());
-            return parentNode.hasProperty(lastSegment.getName());
-        } catch (PathNotFoundException pnfe) {
-            return false;
-        }
-    }
-
-    public void removeItem( String absolutePath ) throws RepositoryException {
-        Item item = getItem(absolutePath);
-        item.remove();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Session#getLockTokens()
-     */
-    public String[] getLockTokens() {
-        return lockManager().getLockTokens();
-    }
-
-    /**
-     * Find or create a JCR Node for the given path. This method works for the root node, too.
-     * 
-     * @param path the path; may not be null
-     * @return the JCR node instance for the given path; never null
-     * @throws PathNotFoundException if the path could not be found
-     * @throws RepositoryException if there is a problem
-     */
-    AbstractJcrNode getNode( Path path ) throws RepositoryException, PathNotFoundException {
-        if (path.isRoot()) return cache.findJcrRootNode();
-        try {
-            if (path.isIdentifier()) {
-                // Convert the path to a UUID ...
-                try {
-                    UUID uuid = executionContext.getValueFactories().getUuidFactory().create(path);
-                    return cache.findJcrNode(Location.create(uuid));
-                } catch (org.modeshape.graph.property.ValueFormatException e) {
-                    // The identifier path didn't contain a UUID (but another identifier form) ...
-                    String pathStr = executionContext.getValueFactories().getStringFactory().create(path);
-                    throw new PathNotFoundException(JcrI18n.identifierPathContainedUnsupportedIdentifierFormat.text(pathStr));
-                }
-            }
-            return cache.findJcrNode(null, path);
-        } catch (ItemNotFoundException e) {
-            throw new PathNotFoundException(e.getMessage());
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Session#getNodeByUUID(java.lang.String)
-     */
-    public AbstractJcrNode getNodeByUUID( String uuid ) throws ItemNotFoundException, RepositoryException {
-        return cache.findJcrNode(Location.create(UUID.fromString(uuid)));
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Session#getNodeByIdentifier(java.lang.String)
-     */
-    public AbstractJcrNode getNodeByIdentifier( String id ) throws ItemNotFoundException, RepositoryException {
-        // Attempt to create a UUID from the identifier ...
-        try {
-            return cache.findJcrNode(Location.create(UUID.fromString(id)));
-        } catch (ItemNotFoundException e) {
-            // Some connectors don't support finding by UUID, so try searching for the node by UUID using a query ...
-            Path path = searchForNodePath(id);
-            if (path != null) return getNode(path);
-            throw e;
-        } catch (IllegalArgumentException e) {
-            try {
-                // See if it's a path ...
-                PathFactory pathFactory = executionContext.getValueFactories().getPathFactory();
-                Path path = pathFactory.create(id);
-                return getNode(path);
-            } catch (org.modeshape.graph.property.ValueFormatException e2) {
-                // It's not a path either ...
-                throw new RepositoryException(JcrI18n.identifierPathContainedUnsupportedIdentifierFormat.text(id), e2);
-            } catch (org.modeshape.graph.property.InvalidPathException e2) {
-                // It's an invalid path either ...
-                throw new RepositoryException(JcrI18n.identifierPathContainedUnsupportedIdentifierFormat.text(id), e2);
-            } catch (RuntimeException e2) {
-                // Something unexpected happened ...
-                throw new RepositoryException(JcrI18n.identifierPathContainedUnsupportedIdentifierFormat.text(id), e2);
-            }
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Session#getRootNode()
-     */
-    public AbstractJcrNode getRootNode() throws RepositoryException {
-        return cache.findJcrRootNode();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Session#getUserID()
-     * @see SecurityContext#getUserName()
-     */
-    public String getUserID() {
-        return executionContext.getSecurityContext().getUserName();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Session#getValueFactory()
-     */
-    public JcrValueFactory getValueFactory() {
-        return valueFactory;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Session#hasPendingChanges()
-     */
-    public boolean hasPendingChanges() {
-        return cache.hasPendingChanges();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Session#impersonate(javax.jcr.Credentials)
-     */
-    public Session impersonate( Credentials credentials ) throws RepositoryException {
-        return repository.login(credentials, this.workspace.getName());
-    }
-
-    /**
-     * Returns a new {@link JcrSession session} that uses the same security information to create a session that points to the
-     * named workspace.
-     * 
-     * @param workspaceName the name of the workspace to connect to
-     * @return a new session that uses the named workspace
-     * @throws RepositoryException if an error occurs creating the session
-     */
-    JcrSession with( String workspaceName ) throws RepositoryException {
-        return repository.sessionForContext(executionContext, workspaceName, sessionAttributes);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Session#importXML(java.lang.String, java.io.InputStream, int)
-     */
+    @Override
     public void importXML( String parentAbsPath,
                            InputStream in,
-                           int uuidBehavior ) throws IOException, InvalidSerializedDataException, RepositoryException {
+                           int uuidBehavior )
+        throws IOException, PathNotFoundException, ItemExistsException, ConstraintViolationException, VersionException,
+        InvalidSerializedDataException, LockException, RepositoryException {
         CheckArg.isNotNull(parentAbsPath, "parentAbsPath");
         CheckArg.isNotNull(in, "in");
         checkLive();
@@ -960,12 +1091,8 @@ class JcrSession implements Session {
             parser.parse(new InputSource(in));
         } catch (EnclosingSAXException ese) {
             Exception cause = ese.getException();
-            if (cause instanceof ItemExistsException) {
-                throw (ItemExistsException)cause;
-            } else if (cause instanceof ConstraintViolationException) {
-                throw (ConstraintViolationException)cause;
-            } else if (cause instanceof VersionException) {
-                throw (VersionException)cause;
+            if (cause instanceof RepositoryException) {
+                throw (RepositoryException)cause;
             }
             throw new RepositoryException(cause);
         } catch (SAXParseException se) {
@@ -985,118 +1112,119 @@ class JcrSession implements Session {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws IllegalArgumentException if <code>absolutePath</code> is empty or <code>null</code>.
-     * @see javax.jcr.Session#itemExists(java.lang.String)
-     */
-    public boolean itemExists( String absolutePath ) throws RepositoryException {
-        try {
-            return (getItem(absolutePath) != null);
-        } catch (PathNotFoundException error) {
-            return false;
-        }
+    @Override
+    public void exportSystemView( String absPath,
+                                  ContentHandler contentHandler,
+                                  boolean skipBinary,
+                                  boolean noRecurse ) throws PathNotFoundException, SAXException, RepositoryException {
+        CheckArg.isNotNull(absPath, "absPath");
+        CheckArg.isNotNull(contentHandler, "contentHandler");
+        Node exportRootNode = getNode(absPath);
+        AbstractJcrExporter exporter = new JcrSystemViewExporter(this);
+        exporter.exportView(exportRootNode, contentHandler, skipBinary, noRecurse);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Session#logout()
-     */
+    @Override
+    public void exportSystemView( String absPath,
+                                  OutputStream out,
+                                  boolean skipBinary,
+                                  boolean noRecurse ) throws IOException, PathNotFoundException, RepositoryException {
+        CheckArg.isNotNull(absPath, "absPath");
+        CheckArg.isNotNull(out, "out");
+        Node exportRootNode = getNode(absPath);
+        AbstractJcrExporter exporter = new JcrSystemViewExporter(this);
+        exporter.exportView(exportRootNode, out, skipBinary, noRecurse);
+    }
+
+    @Override
+    public void exportDocumentView( String absPath,
+                                    ContentHandler contentHandler,
+                                    boolean skipBinary,
+                                    boolean noRecurse ) throws PathNotFoundException, SAXException, RepositoryException {
+        CheckArg.isNotNull(absPath, "absPath");
+        CheckArg.isNotNull(contentHandler, "contentHandler");
+        checkLive();
+        Node exportRootNode = getNode(absPath);
+        AbstractJcrExporter exporter = new JcrDocumentViewExporter(this);
+        exporter.exportView(exportRootNode, contentHandler, skipBinary, noRecurse);
+    }
+
+    @Override
+    public void exportDocumentView( String absPath,
+                                    OutputStream out,
+                                    boolean skipBinary,
+                                    boolean noRecurse ) throws IOException, PathNotFoundException, RepositoryException {
+        CheckArg.isNotNull(absPath, "absPath");
+        CheckArg.isNotNull(out, "out");
+        Node exportRootNode = getNode(absPath);
+        AbstractJcrExporter exporter = new JcrDocumentViewExporter(this);
+        exporter.exportView(exportRootNode, out, skipBinary, noRecurse);
+    }
+
+    @Override
+    public String getNamespacePrefix( String uri ) throws RepositoryException {
+        checkLive();
+        return sessionRegistry.getPrefix(uri);
+    }
+
+    @Override
+    public String[] getNamespacePrefixes() throws RepositoryException {
+        checkLive();
+        return sessionRegistry.getPrefixes();
+    }
+
+    @Override
+    public String getNamespaceURI( String prefix ) throws RepositoryException {
+        checkLive();
+        return sessionRegistry.getURI(prefix);
+    }
+
+    @Override
+    public void setNamespacePrefix( String newPrefix,
+                                    String existingUri ) throws NamespaceException, RepositoryException {
+        checkLive();
+        sessionRegistry.registerNamespace(newPrefix, existingUri);
+    }
+
+    @Override
     public void logout() {
-        terminate(true);
+        this.isLive = false;
+        try {
+            RunningState running = repository.runningState();
+            long lifetime = System.nanoTime() - this.nanosCreated;
+            Map<String, String> payload = Collections.singletonMap("userId", getUserID());
+            running.statistics().recordDuration(DurationMetric.SESSION_LIFETIME, lifetime, TimeUnit.NANOSECONDS, payload);
+            running.statistics().decrement(ValueMetric.SESSION_COUNT);
+            running.removeSession(this);
+        } catch (IllegalStateException e) {
+            // The repository has been shutdown
+        }
     }
 
-    /**
-     * This method is called by {@link #logout()} and by {@link JcrRepository#terminateAllSessions()}. It should not be called
-     * from anywhere else.
-     * 
-     * @param removeFromActiveSession true if the session should be removed from the active session list
-     */
-    void terminate( boolean removeFromActiveSession ) {
-        if (!isLive()) {
-            return;
-        }
-
-        isLive = false;
-        this.workspace().observationManager().removeAllEventListeners();
-        this.lockManager().cleanLocks();
-        if (removeFromActiveSession) this.repository.sessionLoggedOut(this);
-        this.executionContext.getSecurityContext().logout();
+    @Override
+    public boolean isLive() {
+        return isLive;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Session#move(java.lang.String, java.lang.String)
-     */
-    public void move( String srcAbsPath,
-                      String destAbsPath ) throws ItemExistsException, RepositoryException {
-        CheckArg.isNotNull(srcAbsPath, "srcAbsPath");
-        CheckArg.isNotNull(destAbsPath, "destAbsPath");
-
-        PathFactory pathFactory = executionContext.getValueFactories().getPathFactory();
-        Path destPath = pathFactory.create(destAbsPath);
-
-        // Doing a literal test here because the path factory will canonicalize "/node[1]" to "/node"
-        if (destAbsPath.endsWith("]")) {
-            throw new RepositoryException(JcrI18n.pathCannotHaveSameNameSiblingIndex.text(destAbsPath));
+    @Override
+    public void addLockToken( String lockToken ) {
+        CheckArg.isNotNull(lockToken, "lockToken");
+        try {
+            lockManager().addLockToken(lockToken);
+        } catch (LockException le) {
+            // For backwards compatibility (and API compatibility), the LockExceptions from the LockManager need to get swallowed
         }
-
-        Path.Segment newNodeName = null;
-        AbstractJcrNode sourceNode = getNode(pathFactory.create(srcAbsPath));
-        AbstractJcrNode newParentNode = null;
-        if (destPath.isIdentifier()) {
-            AbstractJcrNode existingDestNode = getNode(destPath);
-            newParentNode = existingDestNode.getParent();
-            newNodeName = existingDestNode.segment();
-        } else {
-            newParentNode = getNode(destPath.getParent());
-            newNodeName = destPath.getSegment(destPath.size() - 1);
-        }
-
-        if (sourceNode.isLocked() && !sourceNode.getLock().isLockOwningSession()) {
-            javax.jcr.lock.Lock sourceLock = sourceNode.getLock();
-            if (sourceLock != null && sourceLock.getLockToken() == null) {
-                throw new LockException(JcrI18n.lockTokenNotHeld.text(srcAbsPath));
-            }
-        }
-
-        if (newParentNode.isLocked() && !newParentNode.getLock().isLockOwningSession()) {
-            javax.jcr.lock.Lock newParentLock = newParentNode.getLock();
-            if (newParentLock != null && newParentLock.getLockToken() == null) {
-                throw new LockException(JcrI18n.lockTokenNotHeld.text(destAbsPath));
-            }
-        }
-
-        if (!sourceNode.getParent().isCheckedOut()) {
-            throw new VersionException(JcrI18n.nodeIsCheckedIn.text(sourceNode.getPath()));
-        }
-
-        if (!newParentNode.isCheckedOut()) {
-            throw new VersionException(JcrI18n.nodeIsCheckedIn.text(newParentNode.getPath()));
-        }
-
-        newParentNode.editor().moveToBeChild(sourceNode, newNodeName.getName());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Session#refresh(boolean)
-     */
-    public void refresh( boolean keepChanges ) {
-        this.cache.refresh(keepChanges);
+    @Override
+    public String[] getLockTokens() {
+        if (!isLive()) return new String[] {};
+        return lockManager().getLockTokens();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Session#removeLockToken(java.lang.String)
-     */
+    @Override
     public void removeLockToken( String lockToken ) {
-        CheckArg.isNotNull(lockToken, "lock token");
+        CheckArg.isNotNull(lockToken, "lockToken");
         // A LockException is thrown if the lock associated with the specified lock token is session-scoped.
         try {
             lockManager().removeLockToken(lockToken);
@@ -1105,268 +1233,265 @@ class JcrSession implements Session {
         }
     }
 
-    Path searchForNodePath( String identifier ) throws RepositoryException {
-        TypeSystem typeSystem = executionContext.getValueFactories().getTypeSystem();
-        QueryBuilder builder = new QueryBuilder(typeSystem);
-        QueryCommand query = builder.select("jcr:path")
-                                    .from("mix:referenceable AS referenceable")
-                                    .where()
-                                    .propertyValue("referenceable", "jcr:uuid")
-                                    .isEqualTo(identifier)
-                                    .end()
-                                    .query();
-        JcrQueryManager queryManager = workspace().queryManager();
-        Query jcrQuery = queryManager.createQuery(query);
-        QueryResult result = jcrQuery.execute();
-        RowIterator rows = result.getRows();
-        while (rows.hasNext()) {
-            Row row = rows.nextRow();
-            String path = row.getValue("jcr:path").getString();
-            if (path != null) return executionContext.getValueFactories().getPathFactory().create(path);
-        }
-        return null;
-    }
-
-    void recordRemoval( Location location ) throws RepositoryException {
-        if (!performReferentialIntegrityChecks) {
-            return;
-        }
-        if (removedNodes == null) {
-            removedNodes = new HashSet<Location>();
-            removedReferenceableNodeUuids = new HashSet<String>();
-        }
-
-        // Find the UUIDs of all of the mix:referenceable nodes that are below this node being removed ...
-        Path path = location.getPath();
-        org.modeshape.graph.property.ValueFactory<String> stringFactory = executionContext.getValueFactories().getStringFactory();
-        String pathStr = stringFactory.create(path);
-        int sns = path.getLastSegment().getIndex();
-        if (sns == Path.DEFAULT_INDEX) pathStr = pathStr + "[1]";
-
-        TypeSystem typeSystem = executionContext.getValueFactories().getTypeSystem();
-        QueryBuilder builder = new QueryBuilder(typeSystem);
-        QueryCommand query = builder.select("jcr:uuid")
-                                    .from("mix:referenceable AS referenceable")
-                                    .where()
-                                    .path("referenceable")
-                                    .isLike(pathStr + "%")
-                                    .end()
-                                    .query();
-        JcrQueryManager queryManager = workspace().queryManager();
-        Query jcrQuery = queryManager.createQuery(query);
-        QueryResult result = jcrQuery.execute();
-        RowIterator rows = result.getRows();
-        while (rows.hasNext()) {
-            Row row = rows.nextRow();
-            String uuid = row.getValue("jcr:uuid").getString();
-            if (uuid != null) removedReferenceableNodeUuids.add(uuid);
-        }
-
-        // Now record that this location is being removed ...
-        Set<Location> extras = null;
-        for (Location alreadyDeleted : removedNodes) {
-            Path alreadyDeletedPath = alreadyDeleted.getPath();
-            if (alreadyDeletedPath.isAtOrAbove(path)) {
-                // Already covered by the alreadyDeleted location ...
-                return;
-            }
-            if (alreadyDeletedPath.isDecendantOf(path)) {
-                // The path being deleted is above the path that was already deleted, so remove the already-deleted one ...
-                if (extras == null) {
-                    extras = new HashSet<Location>();
-                }
-                extras.add(alreadyDeleted);
-            }
-        }
-        // Not covered by any already-deleted location, so add it ...
-        removedNodes.add(location);
-        if (extras != null) {
-            // Remove the nodes that will be covered by the node being deleted now ...
-            removedNodes.removeAll(extras);
-        }
-    }
-
-    boolean wasRemovedInSession( Location location ) {
-        if (removedNodes == null) return false;
-        if (removedNodes.contains(location)) return true;
-        Path path = location.getPath();
-        for (Location removed : removedNodes) {
-            if (removed.getPath().isAtOrAbove(path)) return true;
-        }
-        return false;
-    }
-
-    boolean wasRemovedInSession( UUID uuid ) {
-        if (removedReferenceableNodeUuids == null) return false;
-        return removedReferenceableNodeUuids.contains(uuid);
-
-    }
-
-    /**
-     * Determine whether there is at least one other node outside this branch that has a reference to nodes within the branch
-     * rooted by this node.
-     * 
-     * @param subgraphRoot the root of the subgraph under which the references should be checked, or null if the root node should
-     *        be used (meaning all references in the workspace should be checked)
-     * @throws ReferentialIntegrityException if the changes would leave referential integrity problems
-     * @throws RepositoryException if an error occurs while obtaining the information
-     */
-    void checkReferentialIntegrityOfChanges( AbstractJcrNode subgraphRoot )
-        throws ReferentialIntegrityException, RepositoryException {
-        if (removedNodes == null) return;
-        if (removedReferenceableNodeUuids.isEmpty()) return;
-
-        if (removedNodes.size() == 1 && removedNodes.iterator().next().getPath().isRoot()) {
-            // The root node is being removed, so there will be no referencing nodes remaining ...
-            return;
-        }
-
-        String subgraphPath = null;
-        if (subgraphRoot != null) {
-            subgraphPath = subgraphRoot.getPath();
-            if (subgraphRoot.getIndex() == Path.DEFAULT_INDEX) subgraphPath = subgraphPath + "[1]";
-        }
-
-        // Build one (or several) queries to find the first reference to any 'mix:referenceable' nodes
-        // that have been (transiently) removed from the session ...
-        int maxBatchSize = 100;
-        Set<Object> someUuidsInBranch = new HashSet<Object>();
-        Iterator<String> uuidIter = removedReferenceableNodeUuids.iterator();
-        while (uuidIter.hasNext()) {
-            // Accumulate the next 100 UUIDs of referenceable nodes inside this branch ...
-            while (uuidIter.hasNext() && someUuidsInBranch.size() <= maxBatchSize) {
-                String uuid = uuidIter.next();
-                someUuidsInBranch.add(uuid);
-            }
-            assert !someUuidsInBranch.isEmpty();
-            // Now issue a query to see if any nodes outside this branch references these referenceable nodes ...
-            TypeSystem typeSystem = executionContext.getValueFactories().getTypeSystem();
-            QueryBuilder builder = new QueryBuilder(typeSystem);
-            QueryCommand query = null;
-            if (subgraphPath != null) {
-                query = builder.select("jcr:primaryType")
-                               .fromAllNodesAs("allNodes")
-                               .where()
-                               .strongReferenceValue("allNodes")
-                               .isIn(someUuidsInBranch)
-                               .and()
-                               .path("allNodes")
-                               .isLike(subgraphPath + "%")
-                               .end()
-                               .query();
-            } else {
-                query = builder.select("jcr:primaryType")
-                               .fromAllNodesAs("allNodes")
-                               .where()
-                               .strongReferenceValue("allNodes")
-                               .isIn(someUuidsInBranch)
-                               .end()
-                               .query();
-            }
-            Query jcrQuery = workspace().queryManager().createQuery(query);
-            // The nodes that have been (transiently) deleted will not appear in these results ...
-            QueryResult result = jcrQuery.execute();
-            NodeIterator referencingNodes = result.getNodes();
-            while (referencingNodes.hasNext()) {
-                // The REFERENCE property (or properties) may have been removed in this session,
-                // so check whether they referencing nodes have been loaded into the session ...
-                AbstractJcrNode referencingNode = (AbstractJcrNode)referencingNodes.nextNode();
-                if (!referencingNode.nodeInfo().isChanged(false)) {
-                    // This node has not changed, so there is at least one reference; we can stop here ...
-                    throw new ReferentialIntegrityException();
-                }
-                // This node has changed. This node is okay as long as the node no longer
-                // contains a REFERENCE property to any of the removed nodes...
-                PropertyIterator propIter = referencingNode.getProperties();
-                while (propIter.hasNext()) {
-                    Property property = propIter.nextProperty();
-                    if (property.getType() != PropertyType.REFERENCE) return;
-                    if (property.isMultiple()) {
-                        for (Value value : property.getValues()) {
-                            String referencedUuid = value.getString();
-                            if (removedReferenceableNodeUuids.contains(referencedUuid)) {
-                                // This node still has a reference to a node being removed ...
-                                throw new ReferentialIntegrityException();
-                            }
-                        }
-                    } else {
-                        String referencedUuid = property.getValue().getString();
-                        if (removedReferenceableNodeUuids.contains(referencedUuid)) {
-                            // This node still has a reference to a node being removed ...
-                            throw new ReferentialIntegrityException();
-                        }
-                    }
-                }
-            }
-            someUuidsInBranch.clear();
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Session#save()
-     */
-    public void save() throws RepositoryException {
-        checkReferentialIntegrityOfChanges(null);
-        removedNodes = null;
-        cache.save();
-    }
-
-    /**
-     * Get a snapshot of the current session state. This snapshot is immutable and will not reflect any future state changes in
-     * the session.
-     * 
-     * @return the snapshot; never null
-     */
-    public Snapshot getSnapshot() {
-        return new Snapshot(cache.graphSession().getRoot().getSnapshot(false));
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#toString()
-     */
     @Override
-    public String toString() {
-        return getSnapshot().toString();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Session#getAccessControlManager()
-     */
     public AccessControlManager getAccessControlManager() throws UnsupportedRepositoryOperationException, RepositoryException {
         throw new UnsupportedRepositoryOperationException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Session#getRetentionManager()
-     */
+    @Override
     public RetentionManager getRetentionManager() throws UnsupportedRepositoryOperationException, RepositoryException {
         throw new UnsupportedRepositoryOperationException();
     }
 
-    @Immutable
-    public class Snapshot {
-        private final GraphSession.StructureSnapshot<JcrPropertyPayload> rootSnapshot;
+    /**
+     * Returns the absolute path of the node in the specified workspace that corresponds to this node.
+     * <p>
+     * The corresponding node is defined as the node in srcWorkspace with the same UUID as this node or, if this node has no UUID,
+     * the same path relative to the nearest ancestor that does have a UUID, or the root node, whichever comes first. This is
+     * qualified by the requirement that referencable nodes only correspond with other referencables and non-referenceables with
+     * other non-referenceables.
+     * </p>
+     * 
+     * @param workspaceName the name of the workspace; may not be null
+     * @param key the key for the node; may not be null
+     * @param relativePath the relative path from the referenceable node, or null if the supplied UUID identifies the
+     *        corresponding node
+     * @return the absolute path to the corresponding node in the workspace; never null
+     * @throws NoSuchWorkspaceException if the specified workspace does not exist
+     * @throws ItemNotFoundException if no corresponding node exists
+     * @throws AccessDeniedException if the current session does not have sufficient rights to perform this operation
+     * @throws RepositoryException if another exception occurs
+     */
+    Path getPathForCorrespondingNode( String workspaceName,
+                                      NodeKey key,
+                                      Path relativePath )
+        throws NoSuchWorkspaceException, AccessDeniedException, ItemNotFoundException, RepositoryException {
+        assert key != null;
 
-        protected Snapshot( GraphSession.StructureSnapshot<JcrPropertyPayload> snapshot ) {
-            this.rootSnapshot = snapshot;
+        try {
+            NodeCache cache = repository.repositoryCache().getWorkspaceCache(workspaceName);
+            CachedNode node = cache.getNode(key);
+            if (node == null) {
+                throw new ItemNotFoundException(JcrI18n.itemNotFoundWithUuid.text(key.toString()));
+            }
+            if (relativePath != null) {
+                for (Segment segment : relativePath) {
+                    ChildReference child = node.getChildReferences(cache).getChild(segment);
+                    CachedNode childNode = cache.getNode(child);
+                    if (childNode == null) {
+                        Path path = pathFactory().create(node.getPath(cache), segment);
+                        throw new ItemNotFoundException(JcrI18n.itemNotFoundAtPath.text(path.getString(namespaces())));
+                    }
+                    node = childNode;
+                }
+            }
+            return node.getPath(cache);
+        } catch (AccessControlException ace) {
+            throw new AccessDeniedException(ace);
+        } catch (WorkspaceNotFoundException e) {
+            throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(repository().repositoryName(), workspaceName));
+        }
+    }
+
+    @Override
+    public String toString() {
+        return cache.toString();
+    }
+
+    /**
+     * Define the operations that are to be performed on all the nodes that were created or modified within this session. This
+     * class was designed to be as efficient as possible for most nodes, since most nodes do not need any additional processing.
+     */
+    protected final class JcrPreSave implements SessionCache.PreSave {
+        private final SessionCache cache;
+        private final RepositoryNodeTypeManager nodeTypeMgr;
+        private final NodeTypes nodeTypeCapabilities;
+        private final SystemContent systemContent;
+        private final Map<NodeKey, NodeKey> baseVersionKeys;
+        private boolean initialized = false;
+        private PropertyFactory propertyFactory;
+        private ReferenceFactory referenceFactory;
+        private JcrVersionManager versionManager;
+
+        protected JcrPreSave( SystemContent content,
+                              Map<NodeKey, NodeKey> baseVersionKeys ) {
+            assert content != null;
+            this.cache = cache();
+            this.systemContent = content;
+            this.baseVersionKeys = baseVersionKeys;
+            // Get the capabilities cache. This is immutable, so we'll use it for the entire pre-save operation ...
+            this.nodeTypeMgr = repository().nodeTypeManager();
+            this.nodeTypeCapabilities = nodeTypeMgr.getNodeTypes();
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.lang.Object#toString()
-         */
         @Override
-        public String toString() {
-            return rootSnapshot.toString();
+        public void process( MutableCachedNode node,
+                             SaveContext context ) throws Exception {
+            // Most nodes do not need any extra processing, so the first thing to do is figure out whether this
+            // node has a primary type or mixin types that need extra processing. Unfortunately, this means we always have
+            // to get the primary type and mixin types.
+            final Name primaryType = node.getPrimaryType(cache);
+            final Set<Name> mixinTypes = node.getMixinTypes(cache);
+
+            if (nodeTypeCapabilities.isFullyDefinedType(primaryType, mixinTypes)) {
+                // There is nothing to do for this node ...
+                return;
+            }
+
+            if (!initialized) {
+                // We're gonna need a few more objects, so create them now ...
+                initialized = true;
+                versionManager = versionManager();
+                propertyFactory = propertyFactory();
+                referenceFactory = referenceFactory();
+            }
+
+            AbstractJcrNode jcrNode = null;
+
+            // -----------
+            // mix:created
+            // -----------
+            boolean initializeVersionHistory = false;
+            if (node.isNew()) {
+                if (nodeTypeCapabilities.isCreated(primaryType, mixinTypes)) {
+                    // Set the created by and time information ...
+                    node.setProperty(cache, propertyFactory.create(JcrLexicon.CREATED, context.getTime()));
+                    node.setProperty(cache, propertyFactory.create(JcrLexicon.CREATED_BY, context.getUserId()));
+                }
+                initializeVersionHistory = nodeTypeCapabilities.isVersionable(primaryType, mixinTypes);
+            } else {
+                // Changed nodes can only be made versionable if the primary type or mixins changed ...
+                if (node.hasChangedPrimaryType() || !node.getAddedMixins(cache).isEmpty()) {
+                    initializeVersionHistory = nodeTypeCapabilities.isVersionable(primaryType, mixinTypes);
+                }
+            }
+
+            // ----------------
+            // mix:lastModified
+            // ----------------
+            if (nodeTypeCapabilities.isLastModified(primaryType, mixinTypes)) {
+                // Set the last modified by and time information ...
+                node.setProperty(cache, propertyFactory.create(JcrLexicon.LAST_MODIFIED, context.getTime()));
+                node.setProperty(cache, propertyFactory.create(JcrLexicon.LAST_MODIFIED_BY, context.getUserId()));
+            }
+
+            // ---------------
+            // mix:versionable
+            // ---------------
+            if (initializeVersionHistory) {
+                // See if there is a version history for the node ...
+                NodeKey versionableKey = node.getKey();
+                if (!systemContent.hasVersionHistory(versionableKey)) {
+                    // Initialize the version history ...
+                    NodeKey historyKey = systemContent.versionHistoryNodeKeyFor(versionableKey);
+                    NodeKey baseVersionKey = baseVersionKeys == null ? null : baseVersionKeys.get(versionableKey);
+                    if (baseVersionKey == null) baseVersionKey = historyKey.withRandomId();
+                    Path versionHistoryPath = versionManager.versionHistoryPathFor(versionableKey);
+                    systemContent.initializeVersionStorage(versionableKey,
+                                                           historyKey,
+                                                           baseVersionKey,
+                                                           primaryType,
+                                                           mixinTypes,
+                                                           versionHistoryPath,
+                                                           null,
+                                                           context.getTime());
+
+                    // Now update the node as if it's checked in ...
+                    Reference historyRef = referenceFactory.create(historyKey);
+                    Reference baseVersionRef = referenceFactory.create(baseVersionKey);
+                    node.setProperty(cache, propertyFactory.create(JcrLexicon.IS_CHECKED_OUT, Boolean.TRUE));
+                    node.setProperty(cache, propertyFactory.create(JcrLexicon.VERSION_HISTORY, historyRef));
+                    node.setProperty(cache, propertyFactory.create(JcrLexicon.BASE_VERSION, baseVersionRef));
+                    node.setProperty(cache, propertyFactory.create(JcrLexicon.PREDECESSORS, new Object[] {}));
+                }
+            }
+
+            // --------------------
+            // Mandatory properties
+            // --------------------
+            // Some of the version history properties are mandatory, so we need to initialize the version history first ...
+            Collection<JcrPropertyDefinition> mandatoryPropDefns = null;
+            mandatoryPropDefns = nodeTypeCapabilities.getMandatoryPropertyDefinitions(primaryType, mixinTypes);
+            if (!mandatoryPropDefns.isEmpty()) {
+                // There is at least one mandatory property on this node, so go through all of the mandatory property
+                // definitions and see if any do not correspond to existing properties ...
+                for (JcrPropertyDefinition defn : mandatoryPropDefns) {
+                    Name propName = defn.getInternalName();
+                    if (!node.hasProperty(propName, cache)) {
+                        // There is no mandatory property ...
+                        if (defn.hasDefaultValues()) {
+                            // This may or may not be auto-created; we don't care ...
+                            if (jcrNode == null) jcrNode = node(node, (Type)null);
+                            JcrValue[] defaultValues = defn.getDefaultValues();
+                            if (defn.isMultiple()) {
+                                jcrNode.setProperty(propName, defaultValues, defn.getRequiredType(), false);
+                            } else {
+                                jcrNode.setProperty(propName, defaultValues[0], false);
+                            }
+                        } else {
+                            // There is no default for this mandatory property, so this is a constraint violation ...
+                            String pName = defn.getName();
+                            String typeName = defn.getDeclaringNodeType().getName();
+                            String loc = readableLocation(node);
+                            throw new ConstraintViolationException(JcrI18n.missingMandatoryProperty.text(pName, typeName, loc));
+                        }
+                    } else {
+                        // There is a property with the same name as the mandatory property, so verify that the
+                        // existing property does indeed use this property definition. Use the JCR property
+                        // since it may already cache the property definition ID or will know how to find it ...
+                        if (jcrNode == null) jcrNode = node(node, (Type)null);
+                        AbstractJcrProperty jcrProperty = jcrNode.getProperty(propName);
+                        PropertyDefinitionId defnId = jcrProperty.propertyDefinitionId();
+                        if (defn.getId().equals(defnId)) {
+                            // This existing property does use the auto-created definition ...
+                            continue;
+                        }
+                        // The existing property does not use the property definition, but we can't auto-create the property
+                        // because there is already an existing one with the same name. First see if we can forcibly
+                        // recompute the property definition ...
+                        jcrProperty.releasePropertyDefinitionId();
+                        defnId = jcrProperty.propertyDefinitionId();
+                        if (defn.getId().equals(defnId)) {
+                            // This existing property does use the auto-created definition ...
+                            continue;
+                        }
+
+                        // Still didn't match, so this is a constraint violation of the existing property ...
+                        String pName = defn.getName();
+                        String typeName = defn.getDeclaringNodeType().getName();
+                        String loc = readableLocation(node);
+                        I18n msg = JcrI18n.propertyNoLongerSatisfiesConstraints;
+                        throw new ConstraintViolationException(msg.text(pName, loc, defn.getName(), typeName));
+                    }
+                }
+            }
+
+            // ---------------------
+            // Mandatory child nodes
+            // ---------------------
+            Collection<JcrNodeDefinition> mandatoryChildDefns = null;
+            mandatoryChildDefns = nodeTypeCapabilities.getMandatoryChildNodeDefinitions(primaryType, mixinTypes);
+            if (!mandatoryChildDefns.isEmpty()) {
+                // There is at least one auto-created child node definition on this node, so figure out if they are all
+                // covered by existing children ...
+                for (JcrNodeDefinition defn : mandatoryChildDefns) {
+                    Name propName = defn.getInternalName();
+                    // TODO: Validation
+                }
+            }
+
+            // --------
+            // mix:etag
+            // --------
+            // The 'jcr:etag' property may depend on auto-created properties, so do this last ...
+            if (nodeTypeCapabilities.isETag(primaryType, mixinTypes)) {
+                // Per section 3.7.12 of JCR 2, the 'jcr:etag' property should be changed whenever BINARY properties
+                // are added, removed, or changed. So, go through the properties (in sorted-name order so it is repeatable)
+                // and create this value by simply concatenating the SHA-1 hash of each BINARY value ...
+                String etagValue = node.getEtag(cache);
+                node.setProperty(cache, propertyFactory.create(JcrLexicon.ETAG, etagValue));
+            }
+
         }
     }
 }

@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.jcr.PropertyType;
-import javax.jcr.Value;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.version.OnParentVersionAction;
@@ -43,20 +42,19 @@ import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.collection.LinkedHashMultimap;
 import org.modeshape.common.collection.Multimap;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.NameFactory;
-import org.modeshape.graph.property.NamespaceRegistry;
-import org.modeshape.graph.property.NamespaceRegistry.Namespace;
-import org.modeshape.graph.property.basic.LocalNamespaceRegistry;
-import org.modeshape.graph.query.model.AllNodes;
-import org.modeshape.graph.query.model.Operator;
-import org.modeshape.graph.query.model.SelectorName;
-import org.modeshape.graph.query.model.TypeSystem;
-import org.modeshape.graph.query.validate.ImmutableSchemata;
-import org.modeshape.graph.query.validate.Schemata;
-import org.modeshape.search.lucene.IndexRules;
-import org.modeshape.search.lucene.LuceneSearchEngine;
+import org.modeshape.jcr.RepositoryNodeTypeManager.NodeTypes;
+import org.modeshape.jcr.api.query.qom.Operator;
+import org.modeshape.jcr.query.IndexRules;
+import org.modeshape.jcr.query.model.AllNodes;
+import org.modeshape.jcr.query.model.SelectorName;
+import org.modeshape.jcr.query.model.TypeSystem;
+import org.modeshape.jcr.query.validate.ImmutableSchemata;
+import org.modeshape.jcr.query.validate.Schemata;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.NameFactory;
+import org.modeshape.jcr.value.NamespaceRegistry;
+import org.modeshape.jcr.value.NamespaceRegistry.Namespace;
+import org.modeshape.jcr.value.basic.LocalNamespaceRegistry;
 
 /**
  * A {@link Schemata} implementation that is constructed from the {@link NodeType}s and {@link PropertyDefinition}s contained
@@ -74,21 +72,18 @@ class NodeTypeSchemata implements Schemata {
     private final Map<String, String> prefixesByUris = new HashMap<String, String>();
     private final boolean includeColumnsForInheritedProperties;
     private final boolean includePseudoColumnsInSelectStar;
-    private final Collection<JcrPropertyDefinition> propertyDefinitions;
-    private final Map<Name, JcrNodeType> nodeTypesByName;
+    private final NodeTypes nodeTypes;
     private final Multimap<JcrNodeType, JcrNodeType> subtypesByName = LinkedHashMultimap.create();
     private final IndexRules indexRules;
     private final List<JcrPropertyDefinition> pseudoProperties = new ArrayList<JcrPropertyDefinition>();
 
     NodeTypeSchemata( ExecutionContext context,
-                      Map<Name, JcrNodeType> nodeTypes,
-                      Collection<JcrPropertyDefinition> propertyDefinitions,
+                      NodeTypes nodeTypes,
                       boolean includeColumnsForInheritedProperties,
                       boolean includePseudoColumnsInSelectStar ) {
         this.includeColumnsForInheritedProperties = includeColumnsForInheritedProperties;
         this.includePseudoColumnsInSelectStar = includePseudoColumnsInSelectStar;
-        this.propertyDefinitions = propertyDefinitions;
-        this.nodeTypesByName = nodeTypes;
+        this.nodeTypes = nodeTypes;
 
         // Register all the namespace prefixes by URIs ...
         for (Namespace namespace : context.getNamespaceRegistry().getNamespaces()) {
@@ -96,7 +91,7 @@ class NodeTypeSchemata implements Schemata {
         }
 
         // Identify the subtypes for each node type, and do this before we build any views ...
-        for (JcrNodeType nodeType : nodeTypesByName.values()) {
+        for (JcrNodeType nodeType : nodeTypes.getAllNodeTypes()) {
             // For each of the supertypes ...
             for (JcrNodeType supertype : nodeType.getTypeAndSupertypes()) {
                 subtypesByName.put(supertype, nodeType);
@@ -105,7 +100,7 @@ class NodeTypeSchemata implements Schemata {
 
         // Build the schemata for the current node types ...
         TypeSystem typeSystem = context.getValueFactories().getTypeSystem();
-        ImmutableSchemata.Builder builder = ImmutableSchemata.createBuilder(typeSystem);
+        ImmutableSchemata.Builder builder = ImmutableSchemata.createBuilder(context);
 
         // Build the fast-search for type names based upon PropertyType values ...
         types = new HashMap<Integer, String>();
@@ -129,15 +124,15 @@ class NodeTypeSchemata implements Schemata {
         pseudoProperties.add(pseudoProperty(context, ModeShapeLexicon.DEPTH, PropertyType.LONG));
 
         // Create the "ALLNODES" table, which will contain all possible properties ...
-        IndexRules.Builder indexRulesBuilder = IndexRules.createBuilder(LuceneSearchEngine.DEFAULT_RULES);
-        indexRulesBuilder.defaultTo(Field.Store.YES,
+        IndexRules.Builder indexRulesBuilder = IndexRules.createBuilder(IndexRules.DEFAULT_RULES);
+        indexRulesBuilder.defaultTo(Field.Store.NO,
                                     Field.Index.ANALYZED,
                                     DEFAULT_CAN_CONTAIN_REFERENCES,
                                     DEFAULT_FULL_TEXT_SEARCHABLE);
         addAllNodesTable(builder, indexRulesBuilder, context, pseudoProperties);
 
         // Define a view for each node type ...
-        for (JcrNodeType nodeType : nodeTypesByName.values()) {
+        for (JcrNodeType nodeType : nodeTypes.getAllNodeTypes()) {
             addView(builder, context, nodeType);
         }
 
@@ -155,10 +150,10 @@ class NodeTypeSchemata implements Schemata {
         boolean multiple = false;
         boolean fullTextSearchable = false;
         boolean queryOrderable = true;
-        Value[] defaultValues = null;
+        JcrValue[] defaultValues = null;
         String[] valueConstraints = new String[] {};
         String[] queryOperators = null;
-        return new JcrPropertyDefinition(context, null, name, opv, autoCreated, mandatory, isProtected, defaultValues,
+        return new JcrPropertyDefinition(context, null, null, name, opv, autoCreated, mandatory, isProtected, defaultValues,
                                          propertyType, valueConstraints, multiple, fullTextSearchable, queryOrderable,
                                          queryOperators);
     }
@@ -173,7 +168,7 @@ class NodeTypeSchemata implements Schemata {
     }
 
     protected JcrNodeType getNodeType( Name nodeTypeName ) {
-        return nodeTypesByName.get(nodeTypeName);
+        return nodeTypes.getNodeType(nodeTypeName);
     }
 
     protected final void addAllNodesTable( ImmutableSchemata.Builder builder,
@@ -187,10 +182,8 @@ class NodeTypeSchemata implements Schemata {
         boolean first = true;
         Map<String, String> typesForNames = new HashMap<String, String>();
         Set<String> fullTextSearchableNames = new HashSet<String>();
-        for (JcrPropertyDefinition defn : propertyDefinitions) {
+        for (JcrPropertyDefinition defn : nodeTypes.getAllPropertyDefinitions()) {
             if (defn.isResidual()) continue;
-            if (defn.isPrivate()) continue;
-            // if (defn.isMultiple()) continue;
             Name name = defn.getInternalName();
 
             String columnName = name.getString(registry);
@@ -361,7 +354,6 @@ class NodeTypeSchemata implements Schemata {
                 continue;
             }
             if (defn.isMultiple()) continue;
-            if (defn.isPrivate()) continue;
             Name name = defn.getInternalName();
 
             String columnName = name.getString(registry);
@@ -441,11 +433,7 @@ class NodeTypeSchemata implements Schemata {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.query.validate.Schemata#getTable(org.modeshape.graph.query.model.SelectorName)
-     */
+    @Override
     public Table getTable( SelectorName name ) {
         return schemata.getTable(name);
     }
@@ -477,7 +465,7 @@ class NodeTypeSchemata implements Schemata {
      * @return true if the session overrides one or more namespace mappings used in this schemata, or false otherwise
      */
     private boolean overridesNamespaceMappings( JcrSession session ) {
-        NamespaceRegistry registry = session.getExecutionContext().getNamespaceRegistry();
+        NamespaceRegistry registry = session.context().getNamespaceRegistry();
         if (registry instanceof LocalNamespaceRegistry) {
             Set<Namespace> localNamespaces = ((LocalNamespaceRegistry)registry).getLocalNamespaces();
             if (localNamespaces.isEmpty()) {
@@ -515,19 +503,15 @@ class NodeTypeSchemata implements Schemata {
 
         protected SessionSchemata( JcrSession session ) {
             this.session = session;
-            this.context = this.session.getExecutionContext();
+            this.context = this.session.context();
             this.nameFactory = context.getValueFactories().getNameFactory();
-            this.builder = ImmutableSchemata.createBuilder(context.getValueFactories().getTypeSystem());
+            this.builder = ImmutableSchemata.createBuilder(context);
             // Add the "AllNodes" table ...
             addAllNodesTable(builder, null, context, null);
             this.schemata = builder.build();
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.validate.Schemata#getTable(org.modeshape.graph.query.model.SelectorName)
-         */
+        @Override
         public Table getTable( SelectorName name ) {
             Table table = schemata.getTable(name);
             if (table == null) {

@@ -32,6 +32,8 @@ import org.modeshape.common.i18n.I18n;
 @Immutable
 public final class JcrI18n {
 
+    public static I18n initializing;
+
     public static I18n engineStarting;
     public static I18n engineStarted;
     public static I18n couldNotStartEngine;
@@ -53,6 +55,7 @@ public final class JcrI18n {
     public static I18n usingAnonymousUser;
     public static I18n unknownCredentialsImplementation;
     public static I18n defaultWorkspaceName;
+    public static I18n nodeNotFound;
     public static I18n pathNotFound;
     public static I18n pathNotFoundRelativeTo;
     public static I18n pathCannotHaveSameNameSiblingIndex;
@@ -66,8 +69,6 @@ public final class JcrI18n {
     public static I18n errorLoadingNodeTypeDefintions;
     public static I18n errorStartingRepositoryCheckConfiguration;
     public static I18n completedStartingRepository;
-    public static I18n registeringNodeTypesDefinedInConfiguration;
-    public static I18n completedRegisteringNodeTypesDefinedInConfiguration;
     public static I18n startingAllRepositoriesWasInterrupted;
     public static I18n unableToFindNodeTypeDefinitionsOnClasspathOrFileOrUrl;
     public static I18n unableToFindResourceOnClasspathOrFileOrUrl;
@@ -75,6 +76,9 @@ public final class JcrI18n {
     public static I18n fileMustExistAndBeReadable;
     public static I18n invalidJcrUrl;
     public static I18n unableToInitializeAuthenticationProvider;
+    public static I18n errorInAuthenticationProvider;
+    public static I18n unableToInitializeSequencer;
+    public static I18n unableToInitializeTextExtractor;
 
     public static I18n rootNodeHasNoParent;
     public static I18n rootNodeIsNotProperty;
@@ -94,6 +98,7 @@ public final class JcrI18n {
 
     public static I18n errorWhileInitializingTheNamespaceRegistry;
     public static I18n errorCleaningUpLocks;
+    public static I18n errorRefreshingLocks;
     public static I18n cleaningUpLocks;
     public static I18n cleanedUpLocks;
     public static I18n invalidRelativePath;
@@ -137,12 +142,18 @@ public final class JcrI18n {
     public static I18n invalidOptionProvided;
     public static I18n noOptionValueProvided;
     public static I18n valueMayNotContainNull;
+    public static I18n propertyNoLongerSatisfiesConstraints;
+    public static I18n propertyNoLongerHasValidDefinition;
 
     public static I18n cannotRemoveRootNode;
     public static I18n cannotRemoveParentNodeOfTarget;
     public static I18n invalidPropertyType;
 
+    public static I18n rootNodeCannotBeDestinationOfMovedNode;
+    public static I18n unableToMoveRootNode;
     public static I18n unableToRemoveRootNode;
+    public static I18n unableToRemoveSystemNodes;
+    public static I18n unableToModifySystemNodes;
     public static I18n unableToMoveNodeToBeChildOfDecendent;
     public static I18n nodeHasAlreadyBeenRemovedFromThisSession;
 
@@ -163,8 +174,12 @@ public final class JcrI18n {
     public static I18n searchIndexDirectoryOptionSpecifiesDirectoryThatCannotBeCreated;
     public static I18n errorUpdatingQueryIndexes;
 
+    public static I18n invalidAliasForComponent;
+    public static I18n unableToSetFieldOnInstance;
+    public static I18n missingFieldOnInstance;
+    public static I18n missingComponentClassnameOrAlias;
+
     public static I18n typeMissingWhenRegisteringEngineInJndi;
-    public static I18n repositoryNameProvidedWhenRegisteringEngineInJndi;
     public static I18n repositoryNameNotProvidedWhenRegisteringRepositoryInJndi;
     public static I18n invalidRepositoryNameWhenRegisteringRepositoryInJndi;
     public static I18n emptyRepositoryNameProvidedWhenRegisteringRepositoryInJndi;
@@ -205,7 +220,10 @@ public final class JcrI18n {
     public static I18n ambiguousPrimaryItemName;
     public static I18n invalidPrimaryItemName;
     public static I18n autocreatedNodesNeedDefaults;
-    public static I18n residualDefinitionsCannotBeMandatory;
+    public static I18n residualPropertyDefinitionsCannotBeMandatory;
+    public static I18n residualPropertyDefinitionsCannotBeAutoCreated;
+    public static I18n residualNodeDefinitionsCannotBeMandatory;
+    public static I18n residualNodeDefinitionsCannotBeAutoCreated;
     public static I18n cannotOverrideProtectedDefinition;
     public static I18n cannotMakeMandatoryDefinitionOptional;
     public static I18n constraintsChangedInSubtype;
@@ -216,9 +234,11 @@ public final class JcrI18n {
     public static I18n cannotRedefineChildNodeWithIncompatibleDefinition;
     public static I18n cannotRemoveItemWithProtectedDefinition;
 
-    public static I18n noDefinition;
+    public static I18n noChildNodeDefinition;
+    public static I18n noPropertyDefinition;
     public static I18n noSnsDefinition;
-    public static I18n missingMandatoryItem;
+    public static I18n missingMandatoryProperty;
+    public static I18n missingMandatoryChild;
     public static I18n valueViolatesConstraintsOnDefinition;
     public static I18n valuesViolateConstraintsOnDefinition;
     public static I18n referenceValueViolatesConstraintsOnDefinition;
@@ -242,8 +262,11 @@ public final class JcrI18n {
     public static I18n invalidMixinTypeForNode;
     public static I18n notOrderable;
     public static I18n cannotUseMixinTypeAsPrimaryType;
+    public static I18n unableToChangePrimaryTypeDueToPropertyDefinition;
+    public static I18n unableToChangePrimaryTypeDueToParentsChildDefinition;
     public static I18n primaryTypeCannotBeAbstract;
-    public static I18n setPrimaryTypeNotSupported;
+    public static I18n setPrimaryTypeOnRootNodeIsNotSupported;
+    public static I18n suppliedNodeTypeIsNotMixinType;
 
     public static I18n errorReadingNodeTypesFromRemote;
     public static I18n problemReadingNodeTypesFromRemote;
@@ -253,15 +276,22 @@ public final class JcrI18n {
     public static I18n problemRefreshingNodeTypesFromSystem;
     public static I18n errorRefreshingNodeTypes;
 
+    public static I18n errorsParsingNodeTypeDefinitions;
+    public static I18n errorsParsingStreamOfNodeTypeDefinitions;
+
     // Lock messages
     public static I18n nodeNotLockable;
     public static I18n cannotRemoveLockToken;
+    public static I18n nodeIsLocked;
     public static I18n alreadyLocked;
     public static I18n parentAlreadyLocked;
+    public static I18n descendantAlreadyLocked;
     public static I18n notLocked;
     public static I18n lockTokenNotHeld;
     public static I18n lockTokenAlreadyHeld;
     public static I18n invalidLockToken;
+    public static I18n changedNodeCannotBeLocked;
+    public static I18n changedNodeCannotBeUnlocked;
     public static I18n uuidRequiredForLock;
 
     // JcrObservationManager messages
@@ -278,6 +308,7 @@ public final class JcrI18n {
     public static I18n invalidVersionLabel;
     public static I18n invalidVersionName;
     public static I18n versionLabelAlreadyExists;
+    public static I18n labeledNodeNotFound;
     public static I18n requiresVersionable;
     public static I18n cannotRestoreRootVersion;
     public static I18n cannotCheckinNodeWithAbortProperty;
@@ -286,6 +317,68 @@ public final class JcrI18n {
     public static I18n versionNotInMergeFailed;
     public static I18n unrootedVersionsInRestore;
     public static I18n errorDuringCheckinNode;
+    public static I18n noVersionHistoryForTransientVersionableNodes;
+    public static I18n versionHistoryForNewlyVersionableNodesNotAvailableUntilSave;
+
+    public static I18n creatingWorkspacesIsNotAllowedInRepository;
+    public static I18n workspaceHasBeenDeleted;
+    public static I18n unableToDestroyPredefinedWorkspaceInRepository;
+    public static I18n unableToDestroyDefaultWorkspaceInRepository;
+    public static I18n unableToDestroySystemWorkspaceInRepository;
+    public static I18n workspaceNotFound;
+
+    public static I18n unableToFindRepositoryConfigurationSchema;
+    public static I18n unableToLoadRepositoryConfigurationSchema;
+    public static I18n errorsInRepositoryConfiguration;
+
+    // Engine
+    public static I18n engineIsNotRunning;
+    public static I18n engineAtJndiLocationIsNotRunning;
+    public static I18n repositoryConfigurationIsNotValid;
+    public static I18n startingOfRepositoryWasCancelled;
+    public static I18n startingOfRepositoryWasInterrupted;
+    public static I18n failedToShutdownDeployedRepository;
+    public static I18n repositoryIsAlreadyDeployed;
+    public static I18n repositoryIsNotRunningOrHasBeenShutDown;
+    public static I18n repositoryIsNotRunningOrHasBeenShutDownInEngineAtJndiLocation;
+    public static I18n repositoryNotFoundInEngineAtJndiLocation;
+    public static I18n repositoriesNotFoundInEngineAtJndiLocation;
+    public static I18n potentialClasspathErrorAtJndiLocation;
+    public static I18n errorStartingRepository;
+    public static I18n storageRelatedConfigurationChangesWillTakeEffectAfterShutdown;
+    public static I18n missingRepositoryNameInUrlContainingJndiLocationOfEngine;
+    public static I18n errorShuttingDownJcrRepositoryFactory;
+    public static I18n repositoryNameDoesNotMatchConfigurationName;
+    public static I18n errorWhileShuttingDownRepositoryInJndi;
+    public static I18n errorWhileShuttingDownEngineInJndi;
+    public static I18n nodeModifiedBySessionWasRemovedByAnotherSession;
+    public static I18n nodeCreatedBySessionUsedExistingKey;
+
+    public static I18n failedWhileRollingBackDestroyToRuntimeError;
+    public static I18n unexpectedException;
+
+    public static I18n configurationError;
+    public static I18n configurationWarning;
+
+    public static I18n errorDuringGarbageCollection;
+    public static I18n errorMarkingBinaryValuesUnused;
+
+    public static I18n unableToReadTemporaryDirectory;
+    public static I18n unableToWriteTemporaryDirectory;
+    public static I18n unableToPersistBinaryValueToFileSystemStore;
+    public static I18n unableToDeleteTemporaryFile;
+    public static I18n unableToFindBinaryValue;
+    public static I18n tempDirectorySystemPropertyMustBeSet;
+    public static I18n tempDirectoryLocation;
+
+    public static I18n errorKillingRepository;
+    public static I18n errorKillingEngine;
+
+    public static I18n errorExtractingTextFromBinary;
+    public static I18n errorAddingBinaryTextToIndex;
+    public static I18n missingQueryVariableValue;
+    public static I18n errorClosingLuceneReaderForIndex;
+    public static I18n ignoringIndexingProperty;
 
     static {
         try {

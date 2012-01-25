@@ -26,6 +26,7 @@ package org.modeshape.jcr.query;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.query.Query;
@@ -33,14 +34,12 @@ import javax.jcr.query.QueryResult;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
-import org.modeshape.graph.property.Path;
-import org.modeshape.graph.query.QueryResults;
-import org.modeshape.graph.query.model.QueryCommand;
-import org.modeshape.graph.query.parse.QueryParser;
-import org.modeshape.graph.query.plan.PlanHints;
-import org.modeshape.graph.query.validate.Schemata;
-import org.modeshape.jcr.query.qom.JcrAbstractQuery;
-import org.modeshape.jcr.query.qom.JcrLiteral;
+import org.modeshape.jcr.query.model.LiteralValue;
+import org.modeshape.jcr.query.model.QueryCommand;
+import org.modeshape.jcr.query.parse.QueryParser;
+import org.modeshape.jcr.query.plan.PlanHints;
+import org.modeshape.jcr.query.validate.Schemata;
+import org.modeshape.jcr.value.Path;
 
 /**
  * Implementation of {@link Query} that represents a {@link QueryCommand query command}.
@@ -96,12 +95,14 @@ public class JcrQuery extends JcrAbstractQuery {
      * @see javax.jcr.query.Query#execute()
      */
     @SuppressWarnings( "deprecation" )
+    @Override
     public QueryResult execute() throws RepositoryException {
         context.isLive();
-        // Submit immediately to the workspace graph ...
+        final long start = System.nanoTime();
         Schemata schemata = context.getSchemata();
         QueryResults result = context.execute(query, hints, variables);
         checkForProblems(result.getProblems());
+        context.recordDuration(System.nanoTime() - start, TimeUnit.NANOSECONDS, statement, language);
         if (Query.XPATH.equals(language)) {
             return new XPathQueryResult(context, statement, result, schemata);
         } else if (Query.SQL.equals(language)) {
@@ -121,43 +122,27 @@ public class JcrQuery extends JcrAbstractQuery {
                + "AQM -> " + query;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.query.Query#bindValue(java.lang.String, javax.jcr.Value)
-     */
+    @Override
     public void bindValue( String varName,
                            Value value ) throws IllegalArgumentException, RepositoryException {
         CheckArg.isNotNull(varName, "varName");
         CheckArg.isNotNull(value, "value");
-        variables.put(varName, JcrLiteral.rawValue(value));
+        variables.put(varName, LiteralValue.rawValue(value));
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.query.Query#getBindVariableNames()
-     */
+    @Override
     public String[] getBindVariableNames() {
         Set<String> keys = variables.keySet();
         return keys.toArray(new String[keys.size()]);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.query.Query#setLimit(long)
-     */
+    @Override
     public void setLimit( long limit ) {
         if (limit > Integer.MAX_VALUE) limit = Integer.MAX_VALUE;
         query = query.withLimit((int)limit); // may not actually change if the limit matches the existing query
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.query.Query#setOffset(long)
-     */
+    @Override
     public void setOffset( long offset ) {
         if (offset > Integer.MAX_VALUE) offset = Integer.MAX_VALUE;
         query = query.withOffset((int)offset); // may not actually change if the offset matches the existing query

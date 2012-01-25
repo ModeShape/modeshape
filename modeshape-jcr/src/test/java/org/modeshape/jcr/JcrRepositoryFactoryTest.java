@@ -30,21 +30,28 @@ import static org.junit.Assert.assertThat;
 import java.util.Collections;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.concurrent.TimeUnit;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
+import org.junit.After;
 import org.junit.Test;
 import org.modeshape.jcr.api.RepositoryFactory;
 
-@Migrated
 public class JcrRepositoryFactoryTest {
 
     private String url;
     private Map<String, String> params;
     private Repository repository;
 
+    @After
+    public void afterEach() throws Exception {
+        // Shut down all repositories after each test, since multiple tests may use the same URL ...
+        JcrRepositoryFactory.shutdownAll().get(10, TimeUnit.SECONDS);
+    }
+
     @Test
     public void shouldReturnRepositoryFromConfigurationFile() {
-        url = "file:src/test/resources/tck/default/configRepository.xml?repositoryName=Test Repository Source";
+        url = "file:src/test/resources/config/sample-repo-config.json";
         params = Collections.singletonMap(JcrRepositoryFactory.URL, url);
 
         repository = repositoryFor(params);
@@ -52,8 +59,8 @@ public class JcrRepositoryFactoryTest {
     }
 
     @Test
-    public void shouldReturnRepositoryFromConfigurationClasspathResource() {
-        url = "file:///tck/default/configRepository.xml?repositoryName=Test Repository Source";
+    public void shouldReturnRepositoryFromConfigurationClasspathResourceUsingFileScheme() {
+        url = "file:///config/sample-repo-config.json";
         params = Collections.singletonMap(JcrRepositoryFactory.URL, url);
 
         repository = repositoryFor(params);
@@ -62,7 +69,7 @@ public class JcrRepositoryFactoryTest {
 
     @Test
     public void shouldReturnSameRepositoryFromSameConfigurationFile() {
-        url = "file:src/test/resources/tck/default/configRepository.xml?repositoryName=Test Repository Source";
+        url = "file:///config/sample-repo-config.json";
         params = Collections.singletonMap(JcrRepositoryFactory.URL, url);
 
         repository = repositoryFor(params);
@@ -79,21 +86,11 @@ public class JcrRepositoryFactoryTest {
         url = "file:?Test Repository Source";
         assertThat(repositoryFor(Collections.singletonMap(JcrRepositoryFactory.URL, url)), is(nullValue()));
 
-        url = "file:src/test/resources/tck/default/nonExistentFile";
+        url = "file:src/test/resources/nonExistentFile";
         assertThat(repositoryFor(Collections.singletonMap(JcrRepositoryFactory.URL, url)), is(nullValue()));
 
-        url = "file:src/test/resources/tck/default/nonExistentFile";
+        url = "file:src/test/resources/nonExistentFile";
         assertThat(repositoryFor(Collections.singletonMap(JcrRepositoryFactory.URL, url)), is(nullValue()));
-    }
-
-    @Test
-    public void shouldReturnRepositoryWithoutNameIfOnlyOneRepositoryInEngine() {
-        url = "file:src/test/resources/tck/default/configRepository.xml";
-        params = Collections.singletonMap(JcrRepositoryFactory.URL, url);
-
-        repository = repositoryFor(params);
-        assertThat(repository, is(notNullValue()));
-
     }
 
     protected Repository repositoryFor( Map<String, String> parameters ) {

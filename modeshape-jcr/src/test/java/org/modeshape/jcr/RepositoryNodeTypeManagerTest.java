@@ -30,58 +30,57 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.PropertyType;
+import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.version.OnParentVersionAction;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.NamespaceRegistry;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.NamespaceRegistry;
 
-public class RepositoryNodeTypeManagerTest extends AbstractSessionTest {
+public class RepositoryNodeTypeManagerTest {
 
-    @Override
+    private RepositoryConfiguration config;
+    private JcrRepository repository;
+    private ExecutionContext context;
+    private RepositoryNodeTypeManager repoTypeManager;
+    private Session session;
+
     @Before
     public void beforeEach() throws Exception {
-        super.beforeEach();
-    }
-
-    @Override
-    protected void initializeContent() {
-        super.initializeContent();
-        graph.create("/a").and().create("/a/b").and().create("/a/b/c").and();
-        graph.set("jcr:mixinTypes").on("/a").to(JcrMixLexicon.REFERENCEABLE);
-    }
-
-    @Override
-    protected void initializeOptions() {
-        // Stub out the repository options ...
-        options = new EnumMap<JcrRepository.Option, String>(JcrRepository.Option.class);
-        options.put(JcrRepository.Option.PROJECT_NODE_TYPES, Boolean.TRUE.toString());
+        config = new RepositoryConfiguration("repoName");
+        repository = new JcrRepository(config);
+        repository.start();
+        context = repository.runningState().context();
+        repoTypeManager = repository.nodeTypeManager();
+        session = repository.login();
     }
 
     @After
-    public void after() throws Exception {
-        if (session != null && session.isLive()) {
-            session.logout();
+    public void afterEach() throws Exception {
+        try {
+            repository.shutdown().get(3L, TimeUnit.SECONDS);
+        } finally {
+            repository = null;
+            config = null;
         }
     }
 
     @Test
-    public void shouldOnlyHaveOneDnaNamespacesNode() throws Exception {
+    public void shouldOnlyHaveOneNamespacesNode() throws Exception {
         NamespaceRegistry registry = context.getNamespaceRegistry();
 
         Node rootNode = session.getRootNode();
@@ -91,7 +90,7 @@ public class RepositoryNodeTypeManagerTest extends AbstractSessionTest {
         assertThat(systemNode, is(notNullValue()));
 
         NodeIterator namespacesNodes = systemNode.getNodes(ModeShapeLexicon.NAMESPACES.getString(registry));
-        assertEquals(namespacesNodes.getSize(), 1);
+        assertThat(namespacesNodes.getSize(), is(1L));
     }
 
     @Test
@@ -105,7 +104,7 @@ public class RepositoryNodeTypeManagerTest extends AbstractSessionTest {
         assertThat(systemNode, is(notNullValue()));
 
         NodeIterator nodeTypesNodes = systemNode.getNodes(JcrLexicon.NODE_TYPES.getString(registry));
-        assertEquals(1, nodeTypesNodes.getSize());
+        assertThat(nodeTypesNodes.getSize(), is(1L));
     }
 
     @Test
@@ -113,15 +112,15 @@ public class RepositoryNodeTypeManagerTest extends AbstractSessionTest {
         NamespaceRegistry registry = context.getNamespaceRegistry();
 
         // There's no definition for this node or for a * child node that does not allow SNS
-        JcrNodeDefinition def = repoTypeManager.findChildNodeDefinition(JcrNtLexicon.NODE_TYPE,
-                                                                        Collections.<Name>emptyList(),
-                                                                        JcrLexicon.PROPERTY_DEFINITION,
-                                                                        JcrNtLexicon.PROPERTY_DEFINITION,
-                                                                        1,
-                                                                        false);
+        JcrNodeDefinition def = repoTypeManager.getNodeTypes().findChildNodeDefinition(JcrNtLexicon.NODE_TYPE,
+                                                                                       null,
+                                                                                       JcrLexicon.PROPERTY_DEFINITION,
+                                                                                       JcrNtLexicon.PROPERTY_DEFINITION,
+                                                                                       1,
+                                                                                       false);
 
         assertThat(def, is(notNullValue()));
-        assertEquals(def.getName(), JcrLexicon.PROPERTY_DEFINITION.getString(registry));
+        assertThat(def.getName(), is(JcrLexicon.PROPERTY_DEFINITION.getString(registry)));
     }
 
     public void shouldProjectOntoWorkspaceGraph() throws Exception {
@@ -137,7 +136,7 @@ public class RepositoryNodeTypeManagerTest extends AbstractSessionTest {
         Node typesNode = systemNode.getNode(ModeShapeLexicon.NODE_TYPES.getString(registry));
         assertThat(typesNode, is(notNullValue()));
 
-        Collection<JcrNodeType> allNodeTypes = repoTypeManager.getAllNodeTypes();
+        Collection<JcrNodeType> allNodeTypes = repoTypeManager.getNodeTypes().getAllNodeTypes();
         assertThat(allNodeTypes.size(), greaterThan(0));
         for (JcrNodeType nodeType : allNodeTypes) {
             Node typeNode = typesNode.getNode(nodeType.getName());
@@ -171,7 +170,7 @@ public class RepositoryNodeTypeManagerTest extends AbstractSessionTest {
 
         assertThat(supertypesFromGraph.length, is(supertypesFromManager.length));
         for (int i = 0; i < supertypesFromManager.length; i++) {
-            assertEquals(supertypesFromManager[i].getName(), supertypesFromGraph[i].getString());
+            assertThat(supertypesFromManager[i].getName(), is(supertypesFromGraph[i].getString()));
         }
 
         Map<PropertyDefinitionKey, Node> propertyDefsFromGraph = new HashMap<PropertyDefinitionKey, Node>();
@@ -211,7 +210,7 @@ public class RepositoryNodeTypeManagerTest extends AbstractSessionTest {
 
         try {
             Property nameProp = childNodeNode.getProperty(JcrLexicon.NAME.getString(registry));
-            assertEquals(nameProp.getString(), nodeDef.getName());
+            assertThat(nameProp.getString(), is(nodeDef.getName()));
         } catch (PathNotFoundException pnfe) {
             assertThat(nodeDef.getName(), is(JcrNodeType.RESIDUAL_ITEM_NAME));
         }
@@ -220,18 +219,18 @@ public class RepositoryNodeTypeManagerTest extends AbstractSessionTest {
         try {
             Value[] requiredPrimaryTypes = childNodeNode.getProperty(JcrLexicon.REQUIRED_PRIMARY_TYPES.getString(registry))
                                                         .getValues();
-            assertEquals(requiredPrimaryTypes.length, requiredPrimaryTypeNames.size());
+            assertThat(requiredPrimaryTypes.length, is(requiredPrimaryTypeNames.size()));
             for (int i = 0; i < requiredPrimaryTypes.length; i++) {
                 Name rptName = context.getValueFactories().getNameFactory().create(requiredPrimaryTypes[i].getString());
-                assertEquals(requiredPrimaryTypeNames.contains(rptName), true);
+                assertThat(requiredPrimaryTypeNames.contains(rptName), is(true));
             }
         } catch (PathNotFoundException pnfe) {
-            assertEquals(requiredPrimaryTypeNames.size(), 0);
+            assertThat(requiredPrimaryTypeNames.size(), is(0));
         }
 
         try {
             Property nameProp = childNodeNode.getProperty(JcrLexicon.DEFAULT_PRIMARY_TYPE.getString(registry));
-            assertEquals(nameProp.getString(), nodeDef.getDefaultPrimaryType().getName());
+            assertThat(nameProp.getString(), is(nodeDef.getDefaultPrimaryType().getName()));
         } catch (PathNotFoundException pnfe) {
             assertThat(nodeDef.getDefaultPrimaryType(), is(nullValue()));
         }
@@ -254,7 +253,7 @@ public class RepositoryNodeTypeManagerTest extends AbstractSessionTest {
 
         try {
             Property nameProp = propNode.getProperty(JcrLexicon.NAME.getString(registry));
-            assertEquals(nameProp.getString(), propertyDef.getName());
+            assertThat(nameProp.getString(), is(propertyDef.getName()));
         } catch (PathNotFoundException pnfe) {
             assertThat(propertyDef.getName(), is(JcrNodeType.RESIDUAL_ITEM_NAME));
         }
@@ -308,27 +307,27 @@ public class RepositoryNodeTypeManagerTest extends AbstractSessionTest {
     // PathFactory pathFactory = context.getValueFactories().getPathFactory();
     // assertThat(repoTypeManager.inferFrom(graph, pathFactory.create("/abc")).isEmpty(), is(true));
     // }
-    //    
+    //
     // @Test
     // public void shouldInferOwnTypesFromOwnProjection() throws Exception {
     // PathFactory pathFactory = context.getValueFactories().getPathFactory();
     // Path nodeTypePath = pathFactory.create(pathFactory.createRootPath(), JcrLexicon.SYSTEM, JcrLexicon.NODE_TYPES);
-    //        
+    //
     // Collection<JcrNodeType> inferredTypes = repoTypeManager.inferFrom(graph, nodeTypePath);
-    //        
+    //
     // Collection<JcrNodeType> allNodeTypes = repoTypeManager.getAllNodeTypes();
     // assertThat(inferredTypes.size(), is(allNodeTypes.size()));
-    //        
+    //
     // Map<Name, JcrNodeType> allNodeTypesByName = new HashMap<Name, JcrNodeType>();
     // for (JcrNodeType jnt : allNodeTypes) {
     // allNodeTypesByName.put(jnt.getInternalName(), jnt);
     // }
-    //        
+    //
     // for (JcrNodeType nodeType : inferredTypes) {
     // JcrNodeType other = allNodeTypesByName.get(nodeType.getInternalName());
-    //            
+    //
     // System.out.println("Checking: " + other.getName());
-    //            
+    //
     // assertThat(other, is(notNullValue()));
     // assertThat(areSame(nodeType, other), is(true));
     // }

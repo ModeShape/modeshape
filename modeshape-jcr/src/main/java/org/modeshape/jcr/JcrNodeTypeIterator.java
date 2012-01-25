@@ -47,69 +47,41 @@ final class JcrNodeTypeIterator implements NodeTypeIterator {
 
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.NodeTypeIterator#nextNodeType()
-     */
+    @Override
     public NodeType nextNodeType() {
         position++;
         return iterator.next();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.RangeIterator#getPosition()
-     */
+    @Override
     public long getPosition() {
         return position;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.RangeIterator#getSize()
-     */
+    @Override
     public long getSize() {
         return size;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.RangeIterator#skip(long)
-     */
+    @Override
     public void skip( long count ) {
         position += count;
         while (count-- > 0)
             iterator.next();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.Iterator#hasNext()
-     */
+    @Override
     public boolean hasNext() {
         return iterator.hasNext();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.Iterator#next()
-     */
+    @Override
     public Object next() {
         position++;
         return iterator.next();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.Iterator#remove()
-     */
+    @Override
     public void remove() {
         throw new UnsupportedOperationException("Node types cannot be removed through their iterator");
     }

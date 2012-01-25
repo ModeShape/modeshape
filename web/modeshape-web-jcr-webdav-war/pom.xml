@@ -37,6 +37,11 @@
 			<artifactId>modeshape-jcr</artifactId>
 			<scope>integration-test</scope>
 		</dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-unit-test</artifactId>
+            <scope>test</scope>
+        </dependency>
 	</dependencies>
 	<build>
 		<finalName>webdav</finalName>

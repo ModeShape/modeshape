@@ -23,13 +23,15 @@
  */
 package org.modeshape.jcr;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import javax.jcr.Node;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
@@ -43,7 +45,7 @@ import org.modeshape.jcr.api.nodetype.NodeTypeManager;
  * expected type rather than attempting to validate all of the type registration functionality already tested in
  * {@link TypeRegistrationTest}.
  */
-public class NodeTypeRegistrationTest extends AbstractJcrAccessTest {
+public class NodeTypeRegistrationTest extends SingleUseAbstractTest {
 
     private NodeTypeManager nodeTypeManager;
 
@@ -51,7 +53,7 @@ public class NodeTypeRegistrationTest extends AbstractJcrAccessTest {
     @Before
     public void beforeEach() throws Exception {
         super.beforeEach();
-        this.nodeTypeManager = (NodeTypeManager)session().getWorkspace().getNodeTypeManager();
+        this.nodeTypeManager = (NodeTypeManager)session.getWorkspace().getNodeTypeManager();
     }
 
     protected InputStream resourceAsStream( String path ) {
@@ -70,13 +72,13 @@ public class NodeTypeRegistrationTest extends AbstractJcrAccessTest {
 
     @Test
     public void shouldAccessCustomNodeTypeManagerViaCasting() throws Exception {
-        NodeTypeManager nodeTypeMgr = (NodeTypeManager)session().getWorkspace().getNodeTypeManager();
+        NodeTypeManager nodeTypeMgr = (NodeTypeManager)session.getWorkspace().getNodeTypeManager();
         assertThat(nodeTypeMgr, is(notNullValue()));
     }
 
     @Test
     public void shouldAccessCustomNodeTypeManagerViaProtectedMethods() throws Exception {
-        NodeTypeManager nodeTypeMgr = session().workspace().nodeTypeManager();
+        NodeTypeManager nodeTypeMgr = session.workspace().nodeTypeManager();
         assertThat(nodeTypeMgr, is(notNullValue()));
     }
 
@@ -97,7 +99,7 @@ public class NodeTypeRegistrationTest extends AbstractJcrAccessTest {
 
     @Test
     public void shouldLoadNodeTypesFromCndResourceFileFoundOnClasspath() throws Exception {
-        nodeTypeManager.registerNodeTypes(resourceAsStream("cars.cnd"), true);
+        nodeTypeManager.registerNodeTypes(resourceAsStream("cnd/cars.cnd"), true);
         assertNodeType("car:Car");
     }
 
@@ -121,25 +123,25 @@ public class NodeTypeRegistrationTest extends AbstractJcrAccessTest {
 
     @Test
     public void shouldLoadNodeTypesFromUrlToCndFile() throws Exception {
-        nodeTypeManager.registerNodeTypes(resourceAsUrl("cars.cnd"), true);
+        nodeTypeManager.registerNodeTypes(resourceAsUrl("cnd/cars.cnd"), true);
         assertNodeType("car:Car");
     }
 
     @Test( expected = NodeTypeExistsException.class )
     public void shouldNotAllowRedefinitionOfExistingTypesFromCndFile() throws Exception {
-        nodeTypeManager.registerNodeTypes(resourceAsUrl("cndNodeTypeRegistration/existingType.cnd"), false);
+        nodeTypeManager.registerNodeTypes(resourceAsUrl("cnd/existingType.cnd"), false);
         // assertNodeType("nt:folder");
     }
 
     @Test
     public void shouldLoadMagnoliaTypesFromCndFile() throws Exception {
-        nodeTypeManager.registerNodeTypes(resourceAsUrl("magnolia.cnd"), true);
+        nodeTypeManager.registerNodeTypes(resourceAsUrl("cnd/magnolia.cnd"), true);
         assertNodeType("mgnl:contentNode");
     }
 
     @Test
     public void shouldRegisterValidTypesFromCndFile() throws Exception {
-        nodeTypeManager.registerNodeTypes(resourceAsUrl("cndNodeTypeRegistration/validType.cnd"), true);
+        nodeTypeManager.registerNodeTypes(resourceAsUrl("cnd/validType.cnd"), true);
 
         NodeType nodeType = assertNodeType("modetest:testType");
         assertThat(nodeType, is(notNullValue()));
@@ -169,13 +171,13 @@ public class NodeTypeRegistrationTest extends AbstractJcrAccessTest {
 
     @Test
     public void shouldLoadNodeTypesFromXmlResourceFileFoundOnClasspath() throws Exception {
-        nodeTypeManager.registerNodeTypes(resourceAsStream("xmlNodeTypeRegistration/magnolia_forum_nodetypes.xml"), true);
+        nodeTypeManager.registerNodeTypes(resourceAsStream("xml/magnolia_forum_nodetypes.xml"), true);
         assertNodeType("mgnl:forum");
     }
 
     @Test
     public void shouldLoadNodeTypesFromXmlResourceFileFoundWithRelativePathOnFileSystem() throws Exception {
-        File file = new File("src/test/resources/xmlNodeTypeRegistration/magnolia_forum_nodetypes.xml");
+        File file = new File("src/test/resources/xml/magnolia_forum_nodetypes.xml");
         if (file.exists()) {
             nodeTypeManager.registerNodeTypes(file, true);
             assertNodeType("mgnl:forum");
@@ -184,7 +186,7 @@ public class NodeTypeRegistrationTest extends AbstractJcrAccessTest {
 
     @Test
     public void shouldLoadNodeTypesFromXmlResourceFileFoundWithAbsolutePathOnFileSystem() throws Exception {
-        File file = new File("src/test/resources/xmlNodeTypeRegistration/magnolia_forum_nodetypes.xml");
+        File file = new File("src/test/resources/xml/magnolia_forum_nodetypes.xml");
         if (file.exists()) {
             nodeTypeManager.registerNodeTypes(file.getAbsoluteFile(), true);
             assertNodeType("mgnl:forum");
@@ -193,26 +195,47 @@ public class NodeTypeRegistrationTest extends AbstractJcrAccessTest {
 
     @Test
     public void shouldLoadNodeTypesFromUrl() throws Exception {
-        nodeTypeManager.registerNodeTypes(resourceAsUrl("xmlNodeTypeRegistration/magnolia_forum_nodetypes.xml"), true);
+        nodeTypeManager.registerNodeTypes(resourceAsUrl("xml/magnolia_forum_nodetypes.xml"), true);
         assertNodeType("mgnl:forum");
     }
 
     @Test
     public void shouldLoadMagnoliaNodeTypesFromXml() throws Exception {
-        nodeTypeManager.registerNodeTypes(resourceAsStream("xmlNodeTypeRegistration/magnolia_forum_nodetypes.xml"), true);
+        nodeTypeManager.registerNodeTypes(resourceAsStream("xml/magnolia_forum_nodetypes.xml"), true);
         assertNodeType("mgnl:forum");
     }
 
     @Test
     public void shouldLoadOwfeNodeTypesFromXml() throws Exception {
-        nodeTypeManager.registerNodeTypes(resourceAsStream("xmlNodeTypeRegistration/owfe_nodetypes.xml"), true);
+        nodeTypeManager.registerNodeTypes(resourceAsStream("xml/owfe_nodetypes.xml"), true);
         assertNodeType("expression");
     }
 
     @Test
     public void shouldLoadCustomNodeTypesFromXml() throws Exception {
-        nodeTypeManager.registerNodeTypes(resourceAsStream("xmlNodeTypeRegistration/custom_nodetypes.xml"), true);
+        nodeTypeManager.registerNodeTypes(resourceAsStream("xml/custom_nodetypes.xml"), true);
         assertNodeType("mgnl:reserve");
     }
 
+    @Test
+    public void shouldAllowDisjunctiveResidualChildNodeDefinitions() throws Exception {
+        // This is an extended test of the MODE-698 fix
+        nodeTypeManager.registerNodeTypes(resourceAsStream("cnd/magnolia.cnd"), true);
+        assertNodeType("mgnl:contentNode");
+
+        Node rootNode = session.getRootNode();
+        Node branchNode = rootNode.addNode("disjunctiveTest", "nt:unstructured");
+        Node testNode = branchNode.addNode("testNode", "mgnl:content");
+
+        assertTrue(testNode.hasNode("MetaData"));
+        session.save();
+
+        // This residual definition comes from the ancestor - nt:hierarchyNode
+        testNode.addNode("hierarchyNode", "nt:folder");
+
+        // This residual definition comes from mgnl:content
+        testNode.addNode("baseNode", "nt:unstructured");
+
+        session.save();
+    }
 }

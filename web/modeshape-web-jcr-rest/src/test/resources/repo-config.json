@@ -1,0 +1,17 @@
+{
+    "name" : "Test Repository",
+    "workspaces" : {
+        "predefined" : ["otherWorkspace"],
+        "default" : "default",
+        "allowCreation" : true
+    },
+    "storage" : {
+        "transactionManagerLookup" = "org.infinispan.transaction.lookup.DummyTransactionManagerLookup"
+    },
+    "security" : {
+        "anonymous" : {
+            "roles" : ["readonly","readwrite","admin"],
+            "useOnFailedLogin" : false
+        }
+    }
+}

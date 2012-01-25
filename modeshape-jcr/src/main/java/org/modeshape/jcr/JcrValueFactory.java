@@ -26,35 +26,30 @@ package org.modeshape.jcr;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
-import javax.jcr.Node;
-import javax.jcr.PropertyType;
-import javax.jcr.RepositoryException;
-import javax.jcr.ValueFactory;
-import javax.jcr.ValueFormatException;
+import javax.jcr.*;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.graph.property.Binary;
-import org.modeshape.graph.property.DateTime;
-import org.modeshape.graph.property.NamespaceRegistry;
-import org.modeshape.graph.property.Reference;
-import org.modeshape.graph.property.ReferenceFactory;
-import org.modeshape.graph.property.ValueFactories;
+import org.modeshape.jcr.api.value.DateTime;
+import org.modeshape.jcr.value.Binary;
+import org.modeshape.jcr.value.NamespaceRegistry;
+import org.modeshape.jcr.value.Reference;
+import org.modeshape.jcr.value.ReferenceFactory;
+import org.modeshape.jcr.value.ValueFactories;
 
 /**
  * The {@link ValueFactory} implementation for ModeShape.
  */
-class JcrValueFactory implements ValueFactory {
+class JcrValueFactory implements org.modeshape.jcr.api.ValueFactory {
 
     private static final JcrValue[] EMPTY_ARRAY = new JcrValue[0];
 
     private final ValueFactories valueFactories;
-    private final SessionCache sessionCache;
     private final NamespaceRegistry namespaces;
 
-    protected JcrValueFactory( JcrSession session ) {
-        this.valueFactories = session.getExecutionContext().getValueFactories();
-        this.sessionCache = session.cache();
-        this.namespaces = session.namespaces();
+    protected JcrValueFactory( ExecutionContext context ) {
+        this.valueFactories = context.getValueFactories();
+        this.namespaces = context.getNamespaceRegistry();
     }
 
     public JcrValue[] createValues( List<?> values,
@@ -64,83 +59,114 @@ class JcrValueFactory implements ValueFactory {
         if (size == 0) return EMPTY_ARRAY;
         JcrValue[] jcrValues = new JcrValue[size];
         int count = 0;
-        org.modeshape.graph.property.ValueFactory<?> valueFactory = valueFactoryFor(propertyType);
+        org.modeshape.jcr.value.ValueFactory<?> valueFactory = valueFactoryFor(propertyType);
         for (Object value : values) {
             try {
                 Object objectValue = valueFactory.create(value);
-                jcrValues[count++] = new JcrValue(valueFactories, sessionCache, propertyType, objectValue);
-            } catch (org.modeshape.graph.property.ValueFormatException vfe) {
+                jcrValues[count++] = new JcrValue(valueFactories, propertyType, objectValue);
+            } catch (org.modeshape.jcr.value.ValueFormatException vfe) {
                 throw new ValueFormatException(vfe);
             }
         }
         return jcrValues;
     }
 
+    @Override
     public JcrValue createValue( String value,
                                  int propertyType ) throws ValueFormatException {
-        CheckArg.isNotNull(value, "value");
-        return new JcrValue(valueFactories, sessionCache, propertyType, convertValueToType(value, propertyType));
+        return new JcrValue(valueFactories, propertyType, convertValueToType(value, propertyType));
     }
 
+    public JcrValue createValue( Object value,
+                                 int propertyType ) throws ValueFormatException {
+        return new JcrValue(valueFactories, propertyType, convertValueToType(value, propertyType));
+    }
+
+    @Override
     public JcrValue createValue( Node value ) throws RepositoryException {
+        if (value == null) {
+            return new JcrValue(valueFactories, PropertyType.REFERENCE, null);
+        }
         if (!value.isNodeType(JcrMixLexicon.REFERENCEABLE.getString(namespaces))) {
             throw new RepositoryException(JcrI18n.nodeNotReferenceable.text());
         }
         Reference ref = valueFactories.getReferenceFactory().create(value.getIdentifier());
-        return new JcrValue(valueFactories, sessionCache, PropertyType.REFERENCE, ref);
+        return new JcrValue(valueFactories, PropertyType.REFERENCE, ref);
     }
 
+    @Override
     public JcrValue createValue( Node value,
                                  boolean weak ) throws RepositoryException {
+        if (value == null) {
+            return new JcrValue(valueFactories, weak ? PropertyType.WEAKREFERENCE : PropertyType.REFERENCE, null);
+        }
         if (!value.isNodeType(JcrMixLexicon.REFERENCEABLE.getString(namespaces))) {
             throw new RepositoryException(JcrI18n.nodeNotReferenceable.text());
         }
         ReferenceFactory factory = weak ? valueFactories.getWeakReferenceFactory() : valueFactories.getReferenceFactory();
         int refType = weak ? PropertyType.WEAKREFERENCE : PropertyType.REFERENCE;
         Reference ref = factory.create(value.getIdentifier());
-        return new JcrValue(valueFactories, sessionCache, refType, ref);
+        return new JcrValue(valueFactories, refType, ref);
     }
 
+    @Override
     public JcrValue createValue( javax.jcr.Binary value ) {
-        return new JcrValue(valueFactories, sessionCache, PropertyType.BINARY, value);
+        return new JcrValue(valueFactories, PropertyType.BINARY, value);
     }
 
+    @Override
     public JcrValue createValue( InputStream value ) {
         Binary binary = valueFactories.getBinaryFactory().create(value);
-        return new JcrValue(valueFactories, sessionCache, PropertyType.BINARY, binary);
+        return new JcrValue(valueFactories, PropertyType.BINARY, binary);
     }
 
-    public JcrBinary createBinary( InputStream value ) {
-        Binary binary = valueFactories.getBinaryFactory().create(value);
-        return new JcrBinary(binary);
+    @Override
+    public Binary createBinary( InputStream value ) {
+        return valueFactories.getBinaryFactory().create(value);
     }
 
+    @Override
     public JcrValue createValue( Calendar value ) {
         DateTime dateTime = valueFactories.getDateFactory().create(value);
-        return new JcrValue(valueFactories, sessionCache, PropertyType.DATE, dateTime);
+        return new JcrValue(valueFactories, PropertyType.DATE, dateTime);
     }
 
+    @Override
     public JcrValue createValue( boolean value ) {
-        return new JcrValue(valueFactories, sessionCache, PropertyType.BOOLEAN, value);
+        return new JcrValue(valueFactories, PropertyType.BOOLEAN, value);
     }
 
+    @Override
     public JcrValue createValue( double value ) {
-        return new JcrValue(valueFactories, sessionCache, PropertyType.DOUBLE, value);
+        return new JcrValue(valueFactories, PropertyType.DOUBLE, value);
     }
 
+    @Override
     public JcrValue createValue( long value ) {
-        return new JcrValue(valueFactories, sessionCache, PropertyType.LONG, value);
+        return new JcrValue(valueFactories, PropertyType.LONG, value);
     }
 
+    @Override
     public JcrValue createValue( String value ) {
-        return new JcrValue(valueFactories, sessionCache, PropertyType.STRING, value);
+        return new JcrValue(valueFactories, PropertyType.STRING, value);
     }
 
+    @Override
     public JcrValue createValue( BigDecimal value ) {
-        return new JcrValue(valueFactories, sessionCache, PropertyType.DECIMAL, value);
+        return new JcrValue(valueFactories, PropertyType.DECIMAL, value);
     }
 
-    protected org.modeshape.graph.property.ValueFactory<?> valueFactoryFor( int jcrPropertyType ) {
+    @Override
+    public Binary createBinary( byte[] value )  {
+        return valueFactories.getBinaryFactory().create(value);
+    }
+
+    @Override
+    public JcrValue createValue( Date value ) throws ValueFormatException {
+        return new JcrValue(valueFactories, PropertyType.DATE, value);
+    }
+
+    protected org.modeshape.jcr.value.ValueFactory<?> valueFactoryFor( int jcrPropertyType ) {
         switch (jcrPropertyType) {
             case PropertyType.BOOLEAN:
                 return valueFactories.getBooleanFactory();
@@ -181,7 +207,7 @@ class JcrValueFactory implements ValueFactory {
                                          int toType ) throws ValueFormatException {
         try {
             return valueFactoryFor(toType).create(value);
-        } catch (org.modeshape.graph.property.ValueFormatException vfe) {
+        } catch (org.modeshape.jcr.value.ValueFormatException vfe) {
             throw new ValueFormatException(vfe);
         }
     }

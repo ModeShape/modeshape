@@ -24,17 +24,16 @@
 package org.modeshape.jcr;
 
 import javax.jcr.nodetype.ItemDefinition;
-import javax.jcr.nodetype.NodeType;
 import org.modeshape.common.annotation.Immutable;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.property.Name;
+import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.value.Name;
 
 /**
- * ModeShape implementation of the {@link ItemDefinition} interface. This implementation is immutable and has all fields initialized
- * through its constructor.
+ * ModeShape implementation of the {@link ItemDefinition} interface. This implementation is immutable and has all fields
+ * initialized through its constructor.
  */
 @Immutable
-class JcrItemDefinition implements ItemDefinition {
+abstract class JcrItemDefinition implements ItemDefinition {
 
     protected final ExecutionContext context;
 
@@ -62,6 +61,8 @@ class JcrItemDefinition implements ItemDefinition {
         this.protectedItem = protectedItem;
     }
 
+    abstract NodeKey key();
+
     final Name getInternalName() {
         return name;
     }
@@ -76,20 +77,12 @@ class JcrItemDefinition implements ItemDefinition {
         return name.getLocalName().equals("*");
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.ItemDefinition#getDeclaringNodeType()
-     */
-    public NodeType getDeclaringNodeType() {
+    @Override
+    public JcrNodeType getDeclaringNodeType() {
         return declaringNodeType;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.ItemDefinition#getName()
-     */
+    @Override
     public String getName() {
         if (name == null) {
             return JcrNodeType.RESIDUAL_ITEM_NAME;
@@ -98,38 +91,22 @@ class JcrItemDefinition implements ItemDefinition {
         return name.getString(context.getNamespaceRegistry());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.ItemDefinition#getOnParentVersion()
-     */
+    @Override
     public int getOnParentVersion() {
         return onParentVersion;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.ItemDefinition#isAutoCreated()
-     */
+    @Override
     public boolean isAutoCreated() {
         return autoCreated;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.ItemDefinition#isMandatory()
-     */
+    @Override
     public boolean isMandatory() {
         return mandatory;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.nodetype.ItemDefinition#isProtected()
-     */
+    @Override
     public boolean isProtected() {
         return protectedItem;
     }

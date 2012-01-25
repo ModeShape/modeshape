@@ -28,8 +28,7 @@ import java.util.LinkedList;
 import java.util.List;
 import javax.jcr.PropertyType;
 import javax.jcr.query.RowIterator;
-import org.modeshape.graph.query.QueryResults;
-import org.modeshape.graph.query.validate.Schemata;
+import org.modeshape.jcr.query.validate.Schemata;
 
 /**
  * 
@@ -64,31 +63,16 @@ public class JcrSqlQueryResult extends JcrQueryResult {
         this.columnTypes = Collections.unmodifiableList(columnTypes);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see JcrQueryResult#getColumnNameList()
-     */
     @Override
     public List<String> getColumnNameList() {
         return columnNames;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.query.JcrQueryResult#getColumnTypeList()
-     */
     @Override
     public java.util.List<String> getColumnTypeList() {
         return columnTypes;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see JcrQueryResult#getRows()
-     */
     @Override
     public RowIterator getRows() {
         final int numRows = results.getRowCount();

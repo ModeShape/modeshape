@@ -27,13 +27,13 @@ import java.util.Collection;
 import java.util.Iterator;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
-import org.modeshape.common.annotation.Immutable;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
 
 /**
  * ModeShape implementation of a {@link PropertyIterator}.
  */
-@Immutable
+@NotThreadSafe
 final class JcrPropertyIterator implements PropertyIterator {
 
     private final Iterator<? extends Property> iterator;
@@ -46,69 +46,39 @@ final class JcrPropertyIterator implements PropertyIterator {
         size = properties.size();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.RangeIterator#getPosition()
-     */
+    @Override
     public long getPosition() {
         return ndx;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.RangeIterator#getSize()
-     */
+    @Override
     public long getSize() {
         return size;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.Iterator#hasNext()
-     */
+    @Override
     public boolean hasNext() {
         return iterator.hasNext();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.Iterator#next()
-     */
+    @Override
     public Object next() {
         return nextProperty();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.PropertyIterator#nextProperty()
-     */
+    @Override
     public Property nextProperty() {
         Property next = iterator.next();
         ndx++;
         return next;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws UnsupportedOperationException always
-     * @see java.util.Iterator#remove()
-     */
+    @Override
     public void remove() {
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws IllegalArgumentException if <code>count</code> is negative.
-     * @see javax.jcr.RangeIterator#skip(long)
-     */
+    @Override
     public void skip( long count ) {
         CheckArg.isNonNegative(count, "count");
         while (--count >= 0) {
