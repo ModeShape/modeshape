@@ -296,7 +296,46 @@ public class TestModeShapeConfiguration extends AbstractSubsystemTest {
 
      }    
 
-	private KernelServices buildSubsystem() throws IOException,
+    @Test
+    public void testAddRemoveSequencer() throws Exception {
+    	KernelServices services = buildSubsystem();
+        
+        PathAddress addr = PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, ModeShapeExtension.MODESHAPE_SUBSYSTEM));
+        
+        // look at current sequencers make sure there are only two from configuration.
+        ModelNode read = new ModelNode();
+        read.get(OP).set("read-children-names");
+        read.get(OP_ADDR).set(addr.toModelNode());
+        read.get(CHILD_TYPE).set("repository");
+        
+        ModelNode result = services.executeOperation(read);
+        Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
+        
+        List<String> opNames = getList(result);
+        assertEquals(2, opNames.size());
+        String [] ops = {"sample", "sample2"};
+        assertEquals(Arrays.asList(ops), opNames);
+        
+        // add repository
+        ModelNode addOp = new ModelNode();
+        addOp.get(OP).set("add");
+        addOp.get(OP_ADDR).set(addr.toModelNode().add("repository", "myrepository")); //$NON-NLS-1$;
+        addOp.get("jndi-name").set("jcr:local:myrepository");
+        
+        result = services.executeOperation(addOp);
+        Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
+        
+        result = services.executeOperation(read);
+        Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
+        opNames = getList(result);
+        assertEquals(3, opNames.size());
+        String [] ops2 = {"myrepository", "sample",  "sample2"};
+        assertEquals(Arrays.asList(ops2), opNames);       
+
+     }    
+
+
+    private KernelServices buildSubsystem() throws IOException,
 			FileNotFoundException, Exception {
 		String subsystemXml = ObjectConverterUtil.convertToString(new FileReader("src/test/resources/modeshape-sample-config.xml"));
 
