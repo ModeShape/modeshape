@@ -16,6 +16,7 @@
 		<fileSet>
 			<directory>kit/jboss-as7</directory>
 			<outputDirectory>/</outputDirectory>
+			<filtered>true</filtered>
 		</fileSet>
 
 		<fileSet>
@@ -49,7 +50,7 @@
 		<dependencySet>
 			<outputDirectory>modules/org/modeshape/main</outputDirectory>
 			<includes>
-				<include>org.modeshape:modeshape-jcr-redux</include>
+				<include>org.modeshape:modeshape-jcr</include>
 				<include>org.modeshape:modeshape-common</include>
 				<include>org.modeshape:modeshape-schematic</include>
 			</includes>
