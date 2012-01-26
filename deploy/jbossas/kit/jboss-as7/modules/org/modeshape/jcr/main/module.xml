@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module xmlns="urn:jboss:module:1.0" name="org.modeshape">
     <resources>
-        <resource-root path="modeshape-jcr-redux-3.0-SNAPSHOT.jar" />
+        <resource-root path="modeshape-jcr-${project.version}.jar" />
         <resource-root path="conf" />
-        <resource-root path="modeshape-common-3.0-SNAPSHOT.jar" />
-        <resource-root path="modeshape-schematic-3.0-SNAPSHOT.jar" />  
-        <resource-root path="modeshape-subsystem-3.0-SNAPSHOT.jar" />
+        <resource-root path="modeshape-common-${project.version}.jar" />
+        <resource-root path="modeshape-schematic-${project.version}.jar" />  
+        <resource-root path="modeshape-subsystem-${project.version}.jar" />
     </resources>
 
    <dependencies>

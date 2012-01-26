@@ -28,7 +28,7 @@
     <!-- ModeShape JCR -->
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-jcr-redux</artifactId>
+      <artifactId>modeshape-jcr</artifactId>
     </dependency>
     <!-- This should eventually get refactored into this project -->
     <dependency>
