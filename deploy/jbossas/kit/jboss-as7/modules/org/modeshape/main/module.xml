@@ -11,8 +11,6 @@
    <dependencies>
         <module name="org.modeshape.jcr.api" />
         <module name="javax.jcr" />
-        <module name="javax.api" />
-        <module name="javax.resource.api"/>
         <module name="org.jboss.logging" />
         <module name="org.jboss.as.controller"/>
         <module name="org.jboss.modules"/>
