@@ -116,8 +116,24 @@ public class MultiRepositoryRequestResolverTest {
     }
 
     @Test
-    public void shouldResolveUrlPathWithSlashAndRepositoryAndBlankWorkspaceAndMultipleSegmentPath() {
-        assertResolved("/rep//a/b/c", "rep", "", "/a/b/c");
+    public void shouldResolveUrlPathWithSlashAndRepositoryAndMultipleSlashWorkspaceAndMultipleSegmentPath() {
+        assertResolved("/rep//a/b/c", "rep", "a", "/b/c");
+        assertResolved("/rep///a/b/c", "rep", "a", "/b/c");
+        assertResolved("/rep////a/b/c", "rep", "a", "/b/c");
+    }
+
+    @Test
+    public void shouldResolveUrlPathWithSlashAndRepositoryAndMultipleSlashWorkspaceAndMultipleSlashSegmentPath() {
+        assertResolved("/rep//a//b/c", "rep", "a", "/b/c");
+        assertResolved("/rep///a/b///c", "rep", "a", "/b/c");
+        assertResolved("/rep////a/b/c///", "rep", "a", "/b/c/");
+    }
+
+    @Test
+    public void shouldResolveUrlPathWithSlashAndRepositoryAndSlashWorkspaceAndMultipleSlashSegmentPath() {
+        assertResolved("/rep/a//b/c", "rep", "a", "/b/c");
+        assertResolved("/rep/a/b///c", "rep", "a", "/b/c");
+        assertResolved("/rep/a/b/c///", "rep", "a", "/b/c/");
     }
 
     @Test
@@ -127,16 +143,16 @@ public class MultiRepositoryRequestResolverTest {
 
     @Test
     public void shouldResolveUrlPathWithSlashAndBlankRepositoryAndBlankWorkspaceAndSlash() {
-        assertResolved("///", "", "", "/");
+        assertResolved("///", null, null, null);
     }
 
     @Test
     public void shouldResolveUrlPathWithSlashAndBlankRepositoryAndBlankWorkspaceAndSingleSegmentPath() {
-        assertResolved("///a", "", "", "/a");
+        assertResolved("///a", "a", null, null);
     }
 
     @Test
     public void shouldResolveUrlPathWithSlashAndBlankRepositoryAndBlankWorkspaceAndMultipleSegmentPath() {
-        assertResolved("///a/b/c", "", "", "/a/b/c");
+        assertResolved("///a/b/c", "a", "b", "/c");
     }
 }
