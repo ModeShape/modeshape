@@ -25,6 +25,12 @@
 			<scope>runtime</scope>
 		</dependency>
 
+        <dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+
 		<!--  TESTING DEPENDENCIES -->
 		<dependency>
 			<groupId>junit</groupId>
@@ -74,12 +80,12 @@
 							<cargo.jvmargs>-XX:PermSize=128m -XX:MaxPermSize=512 -XX:+UseConcMarkSweepGC -XX:+CMSPermGenSweepingEnabled -XX:+CMSClassUnloadingEnabled</cargo.jvmargs>
 							<cargo.logging>low</cargo.logging>
 							<cargo.servlet.users>dnauser:password:connect,readwrite|unauthorized:password:bogus</cargo.servlet.users>
-                                                        <cargo.servlet.port>8090</cargo.servlet.port>
+                            <cargo.servlet.port>8090</cargo.servlet.port>
 						</properties>
 						<home>${project.build.directory}/cargo</home>
 					</configuration>
 					<wait>false</wait>
-				</configuration>
+                </configuration>
 			</plugin>
 			<!--
 				Override the default Surefire behavior to run during
