@@ -40,7 +40,7 @@ public class MultiRepositoryRequestResolver implements RequestResolver {
     /**
      * The string representation of the Java version of the {@link #PATH_PATTERN} regular expression.
      */
-    protected static final String PATH_PATTERN_STRING = "/?(([^/]*)(/([^/]*)?(/(.*))?)?)?";
+    protected static final String PATH_PATTERN_STRING = "/*(([^/]*)(/+([^/]*)?(/+(.*))?)?)?";
 
     /**
      * The regular expression that is used to extract the repository name, workspace name, and node path. Group 2 will contain the
@@ -89,6 +89,7 @@ public class MultiRepositoryRequestResolver implements RequestResolver {
                     // There is a path, so make sure that the repository and workspace names exist ...
                     if (repositoryName == null) repositoryName = "";
                     else if (workspaceName == null) workspaceName = "";
+                    nodePath = nodePath.replaceAll("/{2,}+", "/");
                 }
                 return new ResolvedRequest(request, repositoryName, workspaceName, nodePath);
             }
