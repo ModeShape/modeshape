@@ -37,9 +37,9 @@
     <!--module>sequencers/modeshape-sequencer-wsdl</module-->
     <!--module>sequencers/modeshape-sequencer-zip</module-->
     <!--module>extractors/modeshape-extractor-tika</module-->
-    <module>modeshape-unit-test</module>
     <!--module>modeshape-jdbc-local</module-->
     <!--module>modeshape-jdbc</module-->
+    <!--module>modeshape-unit-test</module-->
 		<!--module>web</module-->
 		<module>deploy/jbossas</module>
     <!--module>modeshape-integration-tests</module-->
