@@ -2,6 +2,13 @@ package org.modeshape.sequencer.ddl.dialect.oracle;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import org.junit.Before;
+import org.junit.Test;
+import org.modeshape.common.FixFor;
+import org.modeshape.graph.JcrLexicon;
+import org.modeshape.sequencer.ddl.DdlConstants;
+import org.modeshape.sequencer.ddl.DdlParserScorer;
+import org.modeshape.sequencer.ddl.DdlParserTestHelper;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_TABLE_STATEMENT;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_GRANT_STATEMENT;
 import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ALTER_INDEXTYPE_STATEMENT;
@@ -15,13 +22,6 @@ import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_C
 import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_PROCEDURE_STATEMENT;
 import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_TRIGGER_STATEMENT;
 import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ROLLBACK_STATEMENT;
-import org.junit.Before;
-import org.junit.Test;
-import org.modeshape.common.FixFor;
-import org.modeshape.graph.JcrLexicon;
-import org.modeshape.sequencer.ddl.DdlConstants;
-import org.modeshape.sequencer.ddl.DdlParserScorer;
-import org.modeshape.sequencer.ddl.DdlParserTestHelper;
 import org.modeshape.sequencer.ddl.node.AstNode;
 
 public class OracleDdlParserTest extends DdlParserTestHelper {
@@ -323,5 +323,12 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
         printTest("shouldParseOracleStatements_4()");
         String content = getFileContent(DDL_FILE_PATH + "oracle_test_statements_4.ddl");
         assertScoreAndParse(content, "oracle_test_statements_4", 48);
+    }
+
+    @FixFor("MODE-1326")
+    @Test
+    public void shouldSequenceCreateIndexStatements() throws Exception {
+        String content = getFileContent(DDL_FILE_PATH + "mode_1326.ddl");
+        assertScoreAndParse(content, "mode_1326", 490);
     }
 }
