@@ -76,23 +76,9 @@
 		</fileSet>
 		<fileSet>
 		  <!--
-			Gather into the distribution the Getting Started document
-		  -->
-		  <directory>../docs/gettingstarted/target/docbook/publish/en-US</directory>
-		  <outputDirectory>doc/gettingstarted</outputDirectory>
-		</fileSet>
-		<fileSet>
-		  <!--
-			Gather into the distribution the Getting Started document
-		  -->
-		  <directory>../docs/reference/target/docbook/publish/en-US</directory>
-		  <outputDirectory>doc/reference</outputDirectory>
-		</fileSet>
-		<fileSet>
-		  <!--
 			Gather into the distribution the examples
 		  -->
-		  <directory>../docs/examples/gettingstarted/sequencers</directory>
+		  <directory>../demos/sequencers</directory>
 		  <outputDirectory>examples/sequencers</outputDirectory>
       <useDefaultExcludes>true</useDefaultExcludes>
       <excludes>
@@ -105,7 +91,7 @@
 		  <!--
 			Gather into the distribution the examples
 		  -->
-		  <directory>../docs/examples/gettingstarted/repositories</directory>
+		  <directory>../docs/embedded-repo</directory>
 		  <outputDirectory>examples/repositories</outputDirectory>
       <useDefaultExcludes>true</useDefaultExcludes>
       <excludes>
@@ -118,7 +104,7 @@
 		  <!--
 			Gather into the distribution the examples
 		  -->
-		  <directory>../docs/examples/gettingstarted</directory>
+		  <directory>../demos</directory>
 		  <outputDirectory>examples</outputDirectory>
       <includes>
         <include>pom.xml</include>

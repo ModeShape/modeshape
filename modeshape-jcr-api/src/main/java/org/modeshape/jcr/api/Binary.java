@@ -23,7 +23,9 @@
  */
 package org.modeshape.jcr.api;
 
+import java.io.IOException;
 import java.security.MessageDigest;
+import javax.jcr.RepositoryException;
 
 /**
  * An extension of the standard {@link javax.jcr.Binary} interface, with methods to obtain the SHA-1 hash of the binary value.
@@ -57,5 +59,24 @@ public interface Binary extends javax.jcr.Binary {
      * @see #getHash()
      */
     public String getHexHash();
+
+    /**
+     * Get the MIME type for this binary value.
+     * 
+     * @return the MIME type, or null if it cannot be determined (e.g., the Binary is empty)
+     * @throws IOException if there is a problem reading the binary content
+     * @throws RepositoryException if an error occurs.
+     */
+    public String getMimeType() throws IOException, RepositoryException;
+
+    /**
+     * Get the MIME type for this binary value.
+     * 
+     * @param name the name of the binary value, useful in helping to determine the MIME type
+     * @return the MIME type, or null if it cannot be determined (e.g., the Binary is empty)
+     * @throws IOException if there is a problem reading the binary content
+     * @throws RepositoryException if an error occurs.
+     */
+    public String getMimeType( String name ) throws IOException, RepositoryException;
 
 }

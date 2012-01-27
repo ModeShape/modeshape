@@ -163,6 +163,7 @@ public class JcrTools {
      * @return the newly created 'nt:file' node
      * @throws RepositoryException if there is a problem uploading the file
      * @throws IOException if there is a problem using the stream
+     * @throws IllegalArgumentException is any of the parameters are null
      */
     public Node uploadFile( Session session,
                             String path,
@@ -208,6 +209,7 @@ public class JcrTools {
      * @return the newly created 'nt:file' node
      * @throws RepositoryException if there is a problem uploading the file
      * @throws IOException if there is a problem using the stream
+     * @throws IllegalArgumentException is any of the parameters are null
      */
     public Node uploadFile( Session session,
                             String path,
@@ -234,6 +236,7 @@ public class JcrTools {
      * @throws RepositoryException if there is a problem uploading the file
      * @throws IOException if there is a problem using the stream
      * @throws IllegalArgumentException if the file does not exist or is not readable
+     * @throws IllegalArgumentException is any of the parameters are null
      */
     public Node uploadFile( Session session,
                             String path,

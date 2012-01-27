@@ -24,7 +24,9 @@
 package org.modeshape.jcr.value.binary;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.value.Binary;
@@ -38,19 +40,25 @@ public class InMemoryBinaryValue extends AbstractBinary {
 
     private static final long serialVersionUID = 2L;
 
+    private final BinaryStore store;
     private final byte[] bytes;
+    private transient String mimeType;
 
-    public InMemoryBinaryValue( byte[] bytes ) {
+    public InMemoryBinaryValue( BinaryStore store,
+                                byte[] bytes ) {
         super(bytes != null ? BinaryKey.keyFor(bytes) : new BinaryKey("invalid"));
         CheckArg.isNotNull(bytes, "bytes");
         this.bytes = bytes;
+        this.store = store;
     }
 
-    public InMemoryBinaryValue( BinaryKey key,
+    public InMemoryBinaryValue( BinaryStore store,
+                                BinaryKey key,
                                 byte[] bytes ) {
         super(key);
         CheckArg.isNotNull(bytes, "bytes");
         this.bytes = bytes;
+        this.store = store;
     }
 
     @Override
@@ -65,5 +73,21 @@ public class InMemoryBinaryValue extends AbstractBinary {
     @Override
     public InputStream getStream() {
         return new ByteArrayInputStream(this.bytes);
+    }
+
+    @Override
+    public String getMimeType() throws IOException, RepositoryException {
+        if (mimeType == null) {
+            mimeType = store.getMimeType(this, null);
+        }
+        return mimeType;
+    }
+
+    @Override
+    public String getMimeType( String name ) throws IOException, RepositoryException {
+        if (mimeType == null) {
+            mimeType = store.getMimeType(this, name);
+        }
+        return mimeType;
     }
 }

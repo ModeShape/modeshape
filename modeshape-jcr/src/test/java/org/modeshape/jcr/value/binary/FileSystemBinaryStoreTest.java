@@ -28,14 +28,31 @@ import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.RandomAccessFile;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -320,7 +337,9 @@ public class FileSystemBinaryStoreTest {
                 }
             }
         };
-        List<Future<String>> futures = executor.invokeAll(Arrays.asList(readingTask, readingTask, readingTask), 5, TimeUnit.SECONDS);
+        @SuppressWarnings( "unchecked" )
+        List<Callable<String>> tasks = Arrays.asList(readingTask, readingTask, readingTask);
+        List<Future<String>> futures = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
         for (Future<String> future : futures) {
             assertEquals(text, future.get());
         }

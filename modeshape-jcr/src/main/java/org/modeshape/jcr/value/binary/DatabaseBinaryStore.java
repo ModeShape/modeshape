@@ -61,4 +61,10 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
         throw new BinaryStoreException("Not implemented");
     }
 
+    @Override
+    public String getMimeType( Binary binary,
+                               String name ) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
 }

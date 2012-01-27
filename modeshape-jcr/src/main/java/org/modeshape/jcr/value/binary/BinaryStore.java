@@ -23,9 +23,12 @@
  */
 package org.modeshape.jcr.value.binary;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
+import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.text.TextExtractor;
 import org.modeshape.jcr.value.Binary;
 import org.modeshape.jcr.value.BinaryKey;
@@ -63,6 +66,13 @@ public interface BinaryStore {
      * @param textExtractor the text extractor
      */
     void setTextExtractor( TextExtractor textExtractor );
+
+    /**
+     * Set the MIME type detector that can be used for determining the MIME type for binary content.
+     * 
+     * @param mimeTypeDetector the detector
+     */
+    void setMimeTypeDetector( MimeTypeDetector mimeTypeDetector );
 
     /**
      * Store the binary value and return the JCR representation. Note that if the binary content in the supplied stream is already
@@ -119,4 +129,15 @@ public interface BinaryStore {
      */
     String getText( Binary binary ) throws BinaryStoreException;
 
+    /**
+     * Get the MIME type for this binary value.
+     * 
+     * @param binary the binary content; may not be null
+     * @param name the name of the content, useful for determining the MIME type; may be null if not known
+     * @return the MIME type, or null if it cannot be determined (e.g., the Binary is empty)
+     * @throws IOException if there is a problem reading the binary content
+     * @throws RepositoryException if an error occurs.
+     */
+    public String getMimeType( Binary binary,
+                               String name ) throws IOException, RepositoryException;
 }

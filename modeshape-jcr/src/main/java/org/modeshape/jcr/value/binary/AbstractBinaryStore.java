@@ -26,6 +26,8 @@ package org.modeshape.jcr.value.binary;
 import java.util.concurrent.atomic.AtomicLong;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
+import org.modeshape.jcr.mimetype.ExtensionBasedMimeTypeDetector;
 import org.modeshape.jcr.text.NoOpTextExtractor;
 import org.modeshape.jcr.text.TextExtractor;
 
@@ -56,6 +58,7 @@ public abstract class AbstractBinaryStore implements BinaryStore {
 
     private final AtomicLong minBinarySizeInBytes = new AtomicLong(DEFAULT_MINIMUM_BINARY_SIZE_IN_BYTES);
     private volatile TextExtractor extractor = NoOpTextExtractor.INSTANCE;
+    private volatile MimeTypeDetector detector = ExtensionBasedMimeTypeDetector.INSTANCE;
 
     @Override
     public long getMinimumBinarySizeInBytes() {
@@ -73,6 +76,11 @@ public abstract class AbstractBinaryStore implements BinaryStore {
         this.extractor = textExtractor != null ? textExtractor : NoOpTextExtractor.INSTANCE;
     }
 
+    @Override
+    public void setMimeTypeDetector( MimeTypeDetector mimeTypeDetector ) {
+        this.detector = mimeTypeDetector != null ? mimeTypeDetector : ExtensionBasedMimeTypeDetector.INSTANCE;
+    }
+
     /**
      * Get the text extractor that can be used to extract text by this store.
      * 
@@ -80,5 +88,14 @@ public abstract class AbstractBinaryStore implements BinaryStore {
      */
     protected final TextExtractor extractor() {
         return this.extractor;
+    }
+
+    /**
+     * Get the MIME type detector that can be used to find the MIME type for binary content
+     * 
+     * @return the detector; never null
+     */
+    protected final MimeTypeDetector detector() {
+        return detector;
     }
 }

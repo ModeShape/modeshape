@@ -914,11 +914,6 @@
 			</dependency>
 			<dependency>
 				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-jcr</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
 				<artifactId>modeshape-schematic</artifactId>
 				<version>${project.version}</version>
 			</dependency>
