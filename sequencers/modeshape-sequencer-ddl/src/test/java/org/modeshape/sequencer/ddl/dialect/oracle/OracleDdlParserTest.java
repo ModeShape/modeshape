@@ -336,4 +336,11 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
         String content = getFileContent(DDL_FILE_PATH + "oracle_test_statements_4.ddl");
         assertScoreAndParse(content, "oracle_test_statements_4", 48);
     }
+
+    @FixFor("MODE-1326")
+    @Test
+    public void shouldSequenceCreateIndexStatements() throws Exception {
+        String content = getFileContent(DDL_FILE_PATH + "mode_1326.ddl");
+        assertScoreAndParse(content, "mode_1326", 490);
+    }
 }
