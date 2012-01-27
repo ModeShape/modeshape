@@ -204,12 +204,6 @@ def copy_artifacts_to_archive_location(archive_path,version):
   if os.path.exists(from_path):
     copy_folder(from_path,os.path.join(docs_path,'xref'))
 
-  # Copy the readme files into the downloads area and the docs area...
-  for readme in ['release.html','release.txt']:
-    from_path = os.path.join('target',readme)
-    shutil.copy(from_path,os.path.join(docs_path,readme))
-    shutil.copy(from_path,os.path.join(archive_path,readme))
-  
   # Copy the Reference Guide and Getting Started Guide ...
   formats = ['html','html_single','pdf']
   guides = ['reference','gettingstarted']
@@ -222,6 +216,20 @@ def copy_artifacts_to_archive_location(archive_path,version):
         if not os.path.exists(to_path):
           os.makedirs(to_path)
         copy_folder(from_path,os.path.join(to_path,format))
+
+
+def copy_release_notes_to_archive_location(archive_path,version):
+  try:
+    os.makedirs(archive_path)
+  except:
+    pass
+    
+  # Copy the release notes into the archive area...
+  for readme in ['release.html','release.txt']:
+    from_path = os.path.join('target',readme)
+    shutil.copy(from_path,os.path.join(docs_path,readme))
+    shutil.copy(from_path,os.path.join(archive_path,readme))
+  
 
 def copy_folder( from_path, to_path ):
   if os.path.exists(to_path):
@@ -414,7 +422,8 @@ def release():
   print "archive_path = '%s'" % archive_path
   prettyprint("Step 5: Copying build artifacts and documentation to archive '%s'" % (archive_path), Levels.INFO)
 #ALPHA1  copy_artifacts_to_archive_location(archive_path,version)
-#ALPHA1  prettyprint("Step 5: Complete", Levels.INFO)
+  copy_release_notes_to_archive_location(archive_path,version);
+  prettyprint("Step 5: Complete", Levels.INFO)
 
   # Step 6: Generate contribution emails 
   prettyprint("Step 6: Generating contribution emails using JIRA and placing in '%s'" % (archive_path), Levels.INFO)

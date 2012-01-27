@@ -213,12 +213,14 @@ Thank you very much,
   def __get_issues_from_jira(self):
     version_id = self.version_info['id']
     project_id = self.project_info['id']
-    request_url = "https://issues.jboss.org/secure/ReleaseNote.jspa?projectId=%s&version=%s&styleName=Text" % (project_id,version_id)
+    request_url = "https://issues.jboss.org/ReleaseNote.jspa?projectId=%s&version=%s&styleName=Text" % (project_id,version_id)
+    # print "*** JIRA issue list request: %s" % request_url
     # make the HTML request ...
     socket = urllib.urlopen(request_url)
     html_response = socket.read()
     socket.close()
     # parse the HTML to extract find the relevant lines ...
+    print "*** HTML response: %s" % html_response
     issue_type = ''
     issue_exp = re.compile('\[(.*?)\]\s\-\s(.*)$')
     for line in html_response.splitlines():
@@ -239,7 +241,8 @@ Thank you very much,
   def __get_contributions_from_jira(self):
     version_id = self.version_info['id']
     project_id = self.project_info['id']
-    request_url = "%ssecure/ConfigureReport.jspa?versions=%s&ctype=R&ctype=A&ctype=C&ccompany=A&selectedProjectId=%s&reportKey=org.jboss.labs.jira.plugin.patch-contributions-report-plugin:involvedInReleaseReport&Next=Next" % (self.jira_url,version_id,project_id)
+    request_url = "%sConfigureReport.jspa?versions=%s&ctype=R&ctype=A&ctype=C&ccompany=A&selectedProjectId=%s&reportKey=org.jboss.labs.jira.plugin.patch-contributions-report-plugin:involvedInReleaseReport&Next=Next" % (self.jira_url,version_id,project_id)
+    # print "*** JIRA contributions request: %s" % request_url
     # make the HTML request ...
     socket = urllib.urlopen(request_url)
     html_response = socket.read()
@@ -316,10 +319,14 @@ def main():
   project_key = 'MODE'
   project_name = 'ModeShape'
   project_id = '12310930'
-  version = '2.5.0.Beta1'
+  version = '3.0.0.Alpha1'
   jira = Jira(jira_url,project_key,project_id,project_name,version)
   jira.fetch_release_info()
-  print jira.get_release_notes_in_markdown()
+  contributor_emails = jira.get_contributor_emails()
+  print contributor_emails
+  html_content = jira.get_contribution_html("joe.smith@bcc_bogus.com")
+  print html_content
+  #print jira.get_release_notes_in_markdown()
   #print jira.project_info()
   #print jira.version_info()
   #print jira.issues_by_email()
