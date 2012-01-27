@@ -220,7 +220,7 @@ Thank you very much,
     html_response = socket.read()
     socket.close()
     # parse the HTML to extract find the relevant lines ...
-    print "*** HTML response: %s" % html_response
+    # print "*** HTML response: %s" % html_response
     issue_type = ''
     issue_exp = re.compile('\[(.*?)\]\s\-\s(.*)$')
     for line in html_response.splitlines():

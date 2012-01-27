@@ -204,6 +204,12 @@ def copy_artifacts_to_archive_location(archive_path,version):
   if os.path.exists(from_path):
     copy_folder(from_path,os.path.join(docs_path,'xref'))
 
+  # Copy the release notes into the archive area...
+  for readme in ['release.html','release.txt']:
+    from_path = os.path.join('target',readme)
+    shutil.copy(from_path,os.path.join(docs_path,readme))
+    shutil.copy(from_path,os.path.join(archive_path,readme))
+  
   # Copy the Reference Guide and Getting Started Guide ...
   formats = ['html','html_single','pdf']
   guides = ['reference','gettingstarted']
@@ -227,7 +233,6 @@ def copy_release_notes_to_archive_location(archive_path,version):
   # Copy the release notes into the archive area...
   for readme in ['release.html','release.txt']:
     from_path = os.path.join('target',readme)
-    shutil.copy(from_path,os.path.join(docs_path,readme))
     shutil.copy(from_path,os.path.join(archive_path,readme))
   
 
