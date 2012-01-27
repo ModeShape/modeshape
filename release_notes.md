@@ -1,55 +1,66 @@
 # Release Notes for ModeShape &version;
 
-ModeShape &version; includes several new features, improvements, and bug fixes since 2.5.0.Final:
+The ModeShape &version; release is the first release of our new architecture, and is suitable
+only for testing and previewing features. APIs and storage formats are still subject to change.
 
-- improved overall performance
-- new disk-based storage connector
-- added cache support in several connectors
-- pluggable authentication and authorization
-- the JPA connector now support configuring/using Hibernate 2nd-level cache 
-- kits for JBoss Application Server 5.x and 6.x
-- improved BINARY property support for large files
-- automatically use the JDK logger if SLF4J binding is not available
-- upgraded to Infinispan 4.2.1.Final
-- faster startup of the ModeShape engine
-- over five dozen bug fixes
+## What's new
 
-> ***NOTE***: This release makes changes to the way the indexes store property values,
-> so it is strongly recommended that all users force re-indexing their content
-> after upgrading to &version;. To do this, simply remove the directory containing
-> the repository's indexes, as defined by the "queryIndexDirectory" repository 
-> configuration option.
+There is a lot that's changed since ModeShape 2.7, including:
 
+- ModeShape now uses Infinispan for all caching and storage, giving a powerful and flexible
+foundation for creating JCR repositories that are fast, scalable, and highly available.
+Infinispan offers a great deal of storage options (via cache loaders), but can also be used
+as a distributed, mulit-site, in-memory data grid.
+- Improved performance. ModeShape 3 is just plain seriously fast, and performance is all-around
+faster than 2.x - most operations are at least one if not several orders of magnitude faster!
+We'll publish performance and benchmarking results closer to the final release.
+- Improved scalability. ModeShape 3 has been designed to store and access the content so that
+a node can have hundreds of thousands of nodes (even with same-name-siblings) yet still be
+incredibly fast. Additionally, repositories can scale to millions of nodes and be deployed
+across many processes. (Clustering is not yet supported in this release.)
+- Improved configuration. There is no more global configuration of the engine; instead,
+each repository is configured with a separate JSON file, which must conform to a JSON Schema
+and can be validated by ModeShape prior to use. Repository configurations can even be
+changed while the repository is running (some restrictions apply), making it possible to 
+add/change/remove sequencers, authorization providers, and many other configuration options
+while the repository is in use.
+- Each repository can be deployed, started, stopped, and undeployed while the engine and other
+repositories are still in use.
+- Sessions now immediately see all changes persisted/committed by other sessions, although
+transient changes of the session always take precedence.
+- New monitoring API that allows accessing the history for over a dozen metrics.
+- New sequencing API, so sequencers now use the JCR API to get at the content being processed
+and create/update the derived content. Sequencers can also dynamically register namespaces and
+node types. Now it's easy to create custom sequencers.
+- Simplified API for implementing custom MIME type detectors. ModeShape still has built-in
+detectors that use the filename extensions and the binary content.
+- Improved storage of binary values of all sizes, with a separate facility for storing these on the file
+system. Storage of binary values in Infinispan and DBMSes will be added in upcoming releases.
+- API interfaces and methods that were deprecated in 2.7.0.Final (or later) have been removed.
+There weren't many of these; most of the ModeShape API remains the same.
+- Many bug fixes and minor improvements
 
-## JCR Supported Features
+There are also several major new features that are planned (but not yet available in this release):
 
-**ModeShape implements all of the required JCR 2.0 features** (repository acquisition, 
-authentication, reading/navigating, query, export, node type discovery, and permissions and capability 
-checking) and **most of the optional JCR 2.0 features** (writing, import, observation, workspace management
-versioning, locking, node type management, same-name siblings, shareable nodes, and orderable 
-child nodes). The remaining optional features in JCR 2.0 (access control management, 
-lifecycle management, retention and hold, and transactions) may be introduced in future versions.
+- Deployment to JBoss AS7. This is not yet available in this release, but by the next alpha
+release we'll have kits that install ModeShape as an AS7 service, allowing you to configure
+and manage repositories using the AS7 tooling.
+- JTA support is not yet working in this release but will be soon. It will allow
+JCR Sessions to participate in XA and container-managed transactions.
+- Map-reduce based operations for performing reporting and custom read-only operations in parallel
+against the entire content of a repository. ModeShape will use this to enable validation of
+repository content against the current set or a proposed set of node types, as well as
+optimizing the storage format/layout of each node.
 
-ModeShape supports the [JCR-SQL2][1] and [JCR-QOM][2] query languages defined in [JSR-283][3], plus the [XPath][4] and 
-[JCR-SQL][5] languages defined in [JSR-170][6] but deprecated in JSR-283. ModeShape also supports a simple
-[search-engine-like language][7] that is actually just the [full-text search expression grammar][8] 
-used in the second parameter of the CONTAINS(...) function of the JCR-SQL2 language.
+## Features
 
-  [1]:  http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#jcr-sql2-query-language
-  [2]:  http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#jcr-qom-query-language
-  [3]:  http://jcp.org/en/jsr/detail?id=283
-  [4]:  http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#jcr-xpath-query-language
-  [5]:  http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#jcr-sql-query-language
-  [6]:  http://jcp.org/en/jsr/detail?id=170
-  [7]:  http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#fulltext-search-query-language
-  [8]:  http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#jcr-sql2-full-text-search-constraints
-
-The &version; release has not yet been certified to be fully compliant with JCR 2.0. The ModeShape 
-project plans to focus on attaining this certification in the very near future.
+Most of the JCR features previously supported in 2.x are working
+and ready for testing. If any issues are found, please log a bug report in our JIRA.
 
 ### Accessing the Repository
+- RepositoryFactory access
+- JNDI registration of Repository
 - JAAS Authentication
-- HTTP Authentication (for RESTful and WebDAV Services Only)
 - Custom Authentication
 
 ### Namespaces
@@ -70,13 +81,6 @@ project plans to focus on attaining this certification in the very near future.
 - Moving, Copying, Cloning
 - Adding/Removing Mixins
 - Referential integrity enforcement
-
-### Query / Search
-- XPath
-- JCR-SQL
-- JCR-SQL2
-- JCR-QOM
-- Full-Text Search
 
 ### Importing/Exporting Repository Content
 - System View Import/Export
@@ -99,55 +103,19 @@ project plans to focus on attaining this certification in the very near future.
 
 ### Other JCR Optional Features
 - Locking
-- Observation
 - Versioning
-- Shareable Nodes
 
+### ModeShape Storage Options
+- In-memory
+- BerkleyDB
+- Relational databases (via JDBC), including in-memory, file-based, or remote
+- File system
+- Cassandra
+- Cloud storage (e.g., Amazon's S3, Rackspace's Cloudfiles, or any other provider supported by JClouds)
+- Remote Infinispan
+- Separate large binary storage on file system
 
-## Connectors, Sequencers, and Other Features
-
-As with previous releases, ModeShape &version; integrates with [JAAS][9], [web application security][10],
-or you can easily [integrate it with other systems][11]. ModeShape can use a variety of back-ends to store 
-information ([RDBMSes][12], [Infinispan data grid][13], [disk-storage][25] [memory][14], [JBoss Cache][15], [JCR repositories][16]), can access content
-in multiple systems ([file systems][17], [SVN repositories][18], [JDBC metadata][19]), can [federate][20] multiple stores and
-systems into a single JCR repository, or can access other systems using [custom connectors][21].
-ModeShape is also able to automatically extract and store useful content from files you upload into 
-the repository using its library of [sequencers][22], making that information much more accessible and 
-searchable than if it remains locked up inside the stored files. And ModeShape provides
-[WebDAV and RESTful services][23] to allow various clients to access the content. For details, see the [Reference Guide][24].
-
-  [9]:  http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#jcr-sessions-jaas
-  [10]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#jcr-sessions-servlet
-  [11]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#jcr-sessions-custom
-  [12]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#jdbc-storage-connector
-  [13]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#infinispan-connector
-  [14]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#in-memory-connector
-  [15]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#jboss-cache-connector
-  [16]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#jcr-connector
-  [17]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#file-system-connector
-  [18]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#subversion-connector
-  [19]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#jdbc-metadata-connector
-  [20]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#federation-connector
-  [21]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#custom-connectors
-  [22]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#sequencing_framework
-  [23]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#web-access
-  [24]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html
-  [25]: http://docs.jboss.org/modeshape/latest/manuals/reference/html_single/reference-guide-en.html#disk-connector
-
-
-### Connectors
-- Federated Connector
-- JPA Connector (read-write/persistent storage)
-- In-Memory Connector (read-write)
-- Disk-based Storage Connector (read-write)
-- JCR Connector (read-write)
-- Infinispan Connector (read-write/persistent storage)
-- JBoss Cache Connector (read-write/persistent storage)
-- File System Connector (read-write/persistent storage of files & folders)
-- Subversion Connector (read-write/persistent storage of files & folders)
-- JDBC Metadata Connector (read-only)
-
-### Sequencers
+### ModeShape Sequencers
 - Compact Node Definition (CND) Sequencer
 - DDL Sequencer
 - Image Sequencer
@@ -156,23 +124,50 @@ searchable than if it remains locked up inside the stored files. And ModeShape p
 - MP3 Sequencer
 - MS Office Sequencer
 - Text Sequencers (Delimited and Fixed Width)
-- XML Sequencer
 - XML Schema Document (XSD) Sequencer
+
+### ModeShape Deployment/Access Models
+- JNDI-Based Deployment
+- Embedded (in Server or JEE Archive) Deployment
+- Sequencers: CND, DDL, images, Java (source and class files), MP3, MS Office, Text, XSD
+- MIME type detection
+
+However, a number of features are **not** yet implemented. Please do not use these
+features or report problems; many will be implemented and ready for testing
+in the next release.
+
+### Query / Search
+- XPath
+- JCR-SQL
+- JCR-SQL2
+- JCR-QOM
+- Full-Text Search
+
+### Other JCR Optional Features
+- Observation
+- Shareable Nodes
+
+### ModeShape Storage Options
+- Federate and access content in external systems (e.g., file system, SVN, JDBC, JCR, etc.)
+- Separate large binary storage in Infinispan and DBMS
+
+### ModeShape Sequencers
+- XML Sequencer
 - Web Service Definition Lanaguage (WSDL) 1.1 Sequencer
 - Zip File Sequencer (also WARs, JARs, and EARs)
 - Teiid Relational Model Sequencer
 - Teiid VDB Sequencer
 
-### Deployment/Access Models
-- Clustering
-- JNDI-Based Deployment
-- Embedded (in Server or JEE Archive) Deployment
+### ModeShape Deployment/Access Models
+- Clustering and grids
 - OSGi-Compatible Archives
 - Access through RESTful Service
 - Access through WebDAV Service
-- Deploy as a service in JBoss Application Server 5.x and 6.x, with JOPR monitoring
+- JTA support, allowing Sessions to participate in XA and container-managed transactions 
+- Deploy as a service in JBoss Application Server, with RHQ/JON monitoring
 - JDBC driver for accessing ModeShape content through JDBC API and JCR-SQL2 queries
 
+
 ## Bug Fixes, Features, and other Issues
-The following are the bugs, features and other issues that have been fixed in this Beta release:
+The following are the bugs, features and other issues that have been fixed in this release:
 

@@ -394,7 +394,8 @@ class DryRunUploader(DryRun):
 
 def maven_build_distribution(version):
   """Builds the distribution in the current working dir"""
-  mvn_commands = [["clean", "install", "-Passembly"],["deploy","-Passembly","-DskipTests"]]
+#ALPHA1  mvn_commands = [["clean", "install", "-Passembly"],["deploy","-Passembly","-DskipTests"]]
+  mvn_commands = [["clean", "install"],["deploy","-DskipTests"]]
     
   for c in mvn_commands:
     if settings['dry_run']:
@@ -409,10 +410,10 @@ def maven_build_distribution(version):
   print "Verifying build"
   # Check an assembly files ...
   fn = "modeshape-distribution/target/modeshape-%s-javadoc.zip" % (version)
-  if os.path.isfile(fn):
-	f = open(fn)
-	xsd = f.read()
-	f.close()
+#ALPHA1  if os.path.isfile(fn):
+#ALPHA1	f = open(fn)
+#ALPHA1	xsd = f.read()
+#ALPHA1	f.close()
 
 
 def get_version_pattern(): 
@@ -439,6 +440,7 @@ def unmarkdown(markdown_text):
      "^#{3,4}\\s*" : "",         # remove h3 and h4 headers
      "^##\\s*(.*)$" : "\\1\\n-------------------------------------------------------------------",
      "^#\\s*" : "",              # remove h1 headers
+     "^#\\s*" : "",              # remove h2 headers
      "\*\*(.*?)\*\*" : "\\1",    # remove emphasis
      "\*(.*?)\*" : "\\1",        # remove emphasis
      "__(.*?)__" : "\\1",        # remove emphasis

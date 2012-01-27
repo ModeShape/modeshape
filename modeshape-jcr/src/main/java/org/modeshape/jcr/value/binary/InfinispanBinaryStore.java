@@ -65,4 +65,10 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
     public String getText( Binary binary ) throws BinaryStoreException {
         throw new BinaryStoreException("Not implemented");
     }
+
+    @Override
+    public String getMimeType( Binary binary,
+                               String name ) /* throws IOException, RepositoryException*/{
+        throw new UnsupportedOperationException("Not implemented");
+    }
 }

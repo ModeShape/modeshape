@@ -37,6 +37,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
+import javax.jcr.RepositoryException;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.IoUtil;
@@ -114,7 +115,7 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
                 // The content is small enough to just store in-memory ...
                 byte[] content = IoUtil.readBytes(tmpFile);
                 tmpFile.delete();
-                return new InMemoryBinaryValue(key, content);
+                return new InMemoryBinaryValue(this, key, content);
             }
 
             // Now that we know the SHA-1, find the File object that corresponds to the existing persisted file ...
@@ -386,4 +387,9 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
         return null;
     }
 
+    @Override
+    public String getMimeType( Binary binary,
+                               String name ) throws IOException, RepositoryException {
+        return detector().mimeTypeOf(name, binary.getStream());
+    }
 }

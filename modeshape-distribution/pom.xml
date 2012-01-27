@@ -23,42 +23,17 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-graph</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-repository</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-cnd</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-search-lucene</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-clustering</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>modeshape-jcr-api</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-jcr</artifactId>
+      <artifactId>modeshape-schematic</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-classloader-maven</artifactId>
+      <artifactId>modeshape-jcr</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -73,22 +48,7 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-sequencer-jbpm-jpdl</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-sequencer-cnd</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>modeshape-sequencer-java</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-sequencer-classfile</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -138,51 +98,6 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-disk</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-filesystem</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-infinispan</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-jbosscache</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-svn</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-jcr</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-store-jpa</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-jdbc-metadata</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-mimetype-detector-aperture</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>modeshape-extractor-tika</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -204,11 +119,6 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>modeshape-web-jcr-webdav</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-jpa-ddl-gen</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -243,12 +153,12 @@
     </dependency-->
     <dependency>
       <groupId>${project.groupId}.examples</groupId>
-      <artifactId>modeshape-example-sequencers</artifactId>
+      <artifactId>modeshape-demo-sequencers</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}.examples</groupId>
-      <artifactId>modeshape-example-repositories</artifactId>
+      <artifactId>modeshape-demo-embedded-repo</artifactId>
       <version>${project.version}</version>
     </dependency>
 
@@ -263,49 +173,19 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-graph</artifactId>
-      <version>${project.version}</version>
-			<classifier>sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-repository</artifactId>
-      <version>${project.version}</version>
-			<classifier>sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-cnd</artifactId>
-      <version>${project.version}</version>
-			<classifier>sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-search-lucene</artifactId>
-      <version>${project.version}</version>
-			<classifier>sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-clustering</artifactId>
-      <version>${project.version}</version>
-			<classifier>sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>modeshape-jcr-api</artifactId>
       <version>${project.version}</version>
 			<classifier>sources</classifier>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-jcr</artifactId>
+      <artifactId>modeshape-schematic</artifactId>
       <version>${project.version}</version>
 			<classifier>sources</classifier>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-classloader-maven</artifactId>
+      <artifactId>modeshape-jcr</artifactId>
       <version>${project.version}</version>
 			<classifier>sources</classifier>
     </dependency>
@@ -323,25 +203,7 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-sequencer-jbpm-jpdl</artifactId>
-      <version>${project.version}</version>
-			<classifier>sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-sequencer-cnd</artifactId>
-      <version>${project.version}</version>
-			<classifier>sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>modeshape-sequencer-java</artifactId>
-      <version>${project.version}</version>
-			<classifier>sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-sequencer-classfile</artifactId>
       <version>${project.version}</version>
 			<classifier>sources</classifier>
     </dependency>
@@ -401,60 +263,6 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-disk</artifactId>
-      <version>${project.version}</version>
-			<classifier>sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-filesystem</artifactId>
-      <version>${project.version}</version>
-			<classifier>sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-infinispan</artifactId>
-      <version>${project.version}</version>
-			<classifier>sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-jbosscache</artifactId>
-      <version>${project.version}</version>
-			<classifier>sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-svn</artifactId>
-      <version>${project.version}</version>
-			<classifier>sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-jcr</artifactId>
-      <version>${project.version}</version>
-			<classifier>sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-store-jpa</artifactId>
-      <version>${project.version}</version>
-			<classifier>sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-jdbc-metadata</artifactId>
-      <version>${project.version}</version>
-			<classifier>sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-mimetype-detector-aperture</artifactId>
-      <version>${project.version}</version>
-			<classifier>sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>modeshape-extractor-tika</artifactId>
       <version>${project.version}</version>
 			<classifier>sources</classifier>
@@ -485,12 +293,6 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-jpa-ddl-gen</artifactId>
-      <version>${project.version}</version>
-			<classifier>sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>modeshape-jdbc-local</artifactId>
       <version>${project.version}</version>
 			<classifier>sources</classifier>
@@ -514,49 +316,19 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-graph</artifactId>
-      <version>${project.version}</version>
-			<classifier>tests</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-repository</artifactId>
-      <version>${project.version}</version>
-			<classifier>tests</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-cnd</artifactId>
-      <version>${project.version}</version>
-			<classifier>tests</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-search-lucene</artifactId>
-      <version>${project.version}</version>
-			<classifier>tests</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-clustering</artifactId>
-      <version>${project.version}</version>
-			<classifier>tests</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>modeshape-jcr-api</artifactId>
       <version>${project.version}</version>
 			<classifier>tests</classifier>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-jcr</artifactId>
+      <artifactId>modeshape-schematic</artifactId>
       <version>${project.version}</version>
 			<classifier>tests</classifier>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-classloader-maven</artifactId>
+      <artifactId>modeshape-jcr</artifactId>
       <version>${project.version}</version>
 			<classifier>tests</classifier>
     </dependency>
@@ -574,25 +346,7 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-sequencer-jbpm-jpdl</artifactId>
-      <version>${project.version}</version>
-			<classifier>tests</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-sequencer-cnd</artifactId>
-      <version>${project.version}</version>
-			<classifier>tests</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>modeshape-sequencer-java</artifactId>
-      <version>${project.version}</version>
-			<classifier>tests</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-sequencer-classfile</artifactId>
       <version>${project.version}</version>
 			<classifier>tests</classifier>
     </dependency>
@@ -646,60 +400,6 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-disk</artifactId>
-      <version>${project.version}</version>
-			<classifier>tests</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-filesystem</artifactId>
-      <version>${project.version}</version>
-			<classifier>tests</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-infinispan</artifactId>
-      <version>${project.version}</version>
-			<classifier>tests</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-jbosscache</artifactId>
-      <version>${project.version}</version>
-			<classifier>tests</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-svn</artifactId>
-      <version>${project.version}</version>
-			<classifier>tests</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-jcr</artifactId>
-      <version>${project.version}</version>
-			<classifier>tests</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-store-jpa</artifactId>
-      <version>${project.version}</version>
-			<classifier>tests</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-jdbc-metadata</artifactId>
-      <version>${project.version}</version>
-			<classifier>tests</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-mimetype-detector-aperture</artifactId>
-      <version>${project.version}</version>
-			<classifier>tests</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>modeshape-extractor-tika</artifactId>
       <version>${project.version}</version>
 			<classifier>tests</classifier>
@@ -725,12 +425,6 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>modeshape-web-jcr-webdav</artifactId>
-      <version>${project.version}</version>
-			<classifier>tests</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-jpa-ddl-gen</artifactId>
       <version>${project.version}</version>
 			<classifier>tests</classifier>
     </dependency>
@@ -763,36 +457,6 @@
       <version>${project.version}</version>
 			<classifier>test-sources</classifier>
     </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-graph</artifactId>
-      <version>${project.version}</version>
-			<classifier>test-sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-repository</artifactId>
-      <version>${project.version}</version>
-			<classifier>test-sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-cnd</artifactId>
-      <version>${project.version}</version>
-			<classifier>test-sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-search-lucene</artifactId>
-      <version>${project.version}</version>
-			<classifier>test-sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-clustering</artifactId>
-      <version>${project.version}</version>
-			<classifier>test-sources</classifier>
-    </dependency>
     <!--dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>modeshape-jcr-api</artifactId>
@@ -801,13 +465,13 @@
     </dependency-->
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-jcr</artifactId>
+      <artifactId>modeshape-schematic</artifactId>
       <version>${project.version}</version>
 			<classifier>test-sources</classifier>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-classloader-maven</artifactId>
+      <artifactId>modeshape-jcr</artifactId>
       <version>${project.version}</version>
 			<classifier>test-sources</classifier>
     </dependency>
@@ -831,19 +495,7 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-sequencer-cnd</artifactId>
-      <version>${project.version}</version>
-			<classifier>test-sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>modeshape-sequencer-java</artifactId>
-      <version>${project.version}</version>
-			<classifier>test-sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-sequencer-classfile</artifactId>
       <version>${project.version}</version>
 			<classifier>test-sources</classifier>
     </dependency>
@@ -892,60 +544,6 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>modeshape-sequencer-ddl</artifactId>
-      <version>${project.version}</version>
-			<classifier>test-sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-disk</artifactId>
-      <version>${project.version}</version>
-			<classifier>test-sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-filesystem</artifactId>
-      <version>${project.version}</version>
-			<classifier>test-sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-infinispan</artifactId>
-      <version>${project.version}</version>
-			<classifier>test-sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-jbosscache</artifactId>
-      <version>${project.version}</version>
-			<classifier>test-sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-svn</artifactId>
-      <version>${project.version}</version>
-			<classifier>test-sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-jcr</artifactId>
-      <version>${project.version}</version>
-			<classifier>test-sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-store-jpa</artifactId>
-      <version>${project.version}</version>
-			<classifier>test-sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-jdbc-metadata</artifactId>
-      <version>${project.version}</version>
-			<classifier>test-sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-mimetype-detector-aperture</artifactId>
       <version>${project.version}</version>
 			<classifier>test-sources</classifier>
     </dependency>
@@ -981,12 +579,6 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-jpa-ddl-gen</artifactId>
-      <version>${project.version}</version>
-			<classifier>test-sources</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>modeshape-jdbc-local</artifactId>
       <version>${project.version}</version>
 			<classifier>test-sources</classifier>
@@ -1004,19 +596,7 @@
 		-->
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-graph</artifactId>
-      <version>${project.version}</version>
-			<classifier>jar-with-dependencies</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>modeshape-jcr</artifactId>
-      <version>${project.version}</version>
-			<classifier>jar-with-dependencies</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-classloader-maven</artifactId>
       <version>${project.version}</version>
 			<classifier>jar-with-dependencies</classifier>
     </dependency>
@@ -1034,25 +614,7 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-sequencer-jbpm-jpdl</artifactId>
-      <version>${project.version}</version>
-			<classifier>jar-with-dependencies</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-sequencer-cnd</artifactId>
-      <version>${project.version}</version>
-			<classifier>jar-with-dependencies</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>modeshape-sequencer-java</artifactId>
-      <version>${project.version}</version>
-			<classifier>jar-with-dependencies</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-sequencer-classfile</artifactId>
       <version>${project.version}</version>
 			<classifier>jar-with-dependencies</classifier>
     </dependency>
@@ -1106,70 +668,10 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-disk</artifactId>
-      <version>${project.version}</version>
-			<classifier>jar-with-dependencies</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-filesystem</artifactId>
-      <version>${project.version}</version>
-			<classifier>jar-with-dependencies</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-infinispan</artifactId>
-      <version>${project.version}</version>
-			<classifier>jar-with-dependencies</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-jbosscache</artifactId>
-      <version>${project.version}</version>
-			<classifier>jar-with-dependencies</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-svn</artifactId>
-      <version>${project.version}</version>
-			<classifier>jar-with-dependencies</classifier>
-    </dependency>
-    <!--dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-jcr</artifactId>
-      <version>${project.version}</version>
-			<classifier>jar-with-dependencies</classifier>
-    </dependency-->
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-store-jpa</artifactId>
-      <version>${project.version}</version>
-			<classifier>jar-with-dependencies</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-connector-jdbc-metadata</artifactId>
-      <version>${project.version}</version>
-			<classifier>jar-with-dependencies</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-mimetype-detector-aperture</artifactId>
-      <version>${project.version}</version>
-			<classifier>jar-with-dependencies</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>modeshape-extractor-tika</artifactId>
       <version>${project.version}</version>
 			<classifier>jar-with-dependencies</classifier>
     </dependency>
-    <!--dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-jpa-ddl-gen</artifactId>
-      <version>${project.version}</version>
-			<classifier>jar-with-dependencies</classifier>
-    </dependency-->
     <!--dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>modeshape-jdbc-local</artifactId>

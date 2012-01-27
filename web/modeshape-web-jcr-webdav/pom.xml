@@ -13,10 +13,6 @@
 	<description>ModeShape JCR WebDAV Library</description>
 	<url>http://www.modeshape.org</url>
 	<dependencies>
-			<dependency>
-			<groupId>org.modeshape</groupId>
-			<artifactId>modeshape-mimetype-detector-aperture</artifactId>
-		</dependency>
 		<dependency>
 			<groupId>org.modeshape</groupId>
 			<artifactId>modeshape-web-jcr</artifactId>

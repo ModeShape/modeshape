@@ -31,6 +31,7 @@ import java.io.InputStream;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 
 /**
  * All test classes that test {@link MimeTypeDetector MIME-type detector implementations} should extend this class to help ensure

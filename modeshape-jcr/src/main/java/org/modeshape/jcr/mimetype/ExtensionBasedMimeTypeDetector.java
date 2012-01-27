@@ -23,11 +23,11 @@
  */
 package org.modeshape.jcr.mimetype;
 
+import java.io.InputStream;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.MimeTypeUtil;
 import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
-import java.io.InputStream;
 
 /**
  * A {@link MimeTypeDetector} that attempts to match the extension of the supplied name against a set of known file extensions.
@@ -36,8 +36,11 @@ import java.io.InputStream;
 @ThreadSafe
 public class ExtensionBasedMimeTypeDetector extends MimeTypeUtil implements MimeTypeDetector {
 
+    public static final MimeTypeDetector INSTANCE = new ExtensionBasedMimeTypeDetector();
+
     @Override
-    public String mimeTypeOf( String name, InputStream content ) {
+    public String mimeTypeOf( String name,
+                              InputStream content ) {
         return mimeTypeOf(name);
     }
 }

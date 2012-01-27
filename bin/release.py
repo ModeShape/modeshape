@@ -235,10 +235,10 @@ def update_versions(version):
   for pom in patch_poms('.',version):
     modified_files.append(pom)
 
-  ## Update versions in the DocBook modules ...
-  docbook = DocBook(version)
-  for modified_file in docbook.patch_docbooks_under('docs'):
-      modified_files.append(modified_file)
+#ALPHA1  ## Update versions in the DocBook modules ...
+#ALPHA1  docbook = DocBook(version)
+#ALPHA1  for modified_file in docbook.patch_docbooks_under('docs'):
+#ALPHA1      modified_files.append(modified_file)
 
   # Now make sure this goes back into the repository.
   git.commit(modified_files)
@@ -374,7 +374,7 @@ def release():
   tag_name = "modeshape-%s" % version
   git = Git(branch, tag_name)
   if not git.is_upstream_clone():
-    proceed = input_with_default('This is not a clone of an %supstream%s Infinispan repository! Are you sure you want to proceed?' % (Colors.UNDERLINE, Colors.END), 'N')
+    proceed = input_with_default('This is not a clone of an %supstream%s ModeShape repository! Are you sure you want to proceed?' % (Colors.UNDERLINE, Colors.END), 'N')
     if not proceed.upper().startswith('Y'):
       prettyprint("... User Abort!", Levels.WARNING)
       sys.exit(1)
@@ -413,8 +413,8 @@ def release():
     os.makedirs(archive_path)
   print "archive_path = '%s'" % archive_path
   prettyprint("Step 5: Copying build artifacts and documentation to archive '%s'" % (archive_path), Levels.INFO)
-  copy_artifacts_to_archive_location(archive_path,version)
-  prettyprint("Step 5: Complete", Levels.INFO)
+#ALPHA1  copy_artifacts_to_archive_location(archive_path,version)
+#ALPHA1  prettyprint("Step 5: Complete", Levels.INFO)
 
   # Step 6: Generate contribution emails 
   prettyprint("Step 6: Generating contribution emails using JIRA and placing in '%s'" % (archive_path), Levels.INFO)
@@ -437,20 +437,20 @@ def release():
 
   # Step 8: Upload javadocs to JBoss.org
   prettyprint("Step 8: Uploading documentation to JBoss.org", Levels.INFO)
-  do_task(upload_documentation, [base_dir, version], async_processes)
+#ALPHA1  do_task(upload_documentation, [base_dir, version], async_processes)
   prettyprint("Step 8: Complete", Levels.INFO)
   
   # Step 9: Upload downloads to JBoss.org
   prettyprint("Step 9: Uploading downloads to JBoss.org", Levels.INFO)
-  do_task(upload_artifacts, [base_dir, version], async_processes)    
+#ALPHA1  do_task(upload_artifacts, [base_dir, version], async_processes)    
   prettyprint("Step 9: Complete", Levels.INFO)
   
   ## Wait for processes to finish
-  for p in async_processes:
-    p.start()
+#ALPHA1  for p in async_processes:
+#ALPHA1    p.start()
   
-  for p in async_processes:
-    p.join()
+#ALPHA1  for p in async_processes:
+#ALPHA1    p.join()
   
   prettyprint("\n\n\nDone!  Now all you need to do is the remaining post-release tasks as outlined in https://docspace.corp.redhat.com/docs/DOC-28594", Levels.INFO)
 

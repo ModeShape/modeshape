@@ -25,6 +25,7 @@ package org.modeshape.jcr.value.binary;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
 import static org.modeshape.jcr.value.basic.BinaryContains.hasContent;
 import static org.modeshape.jcr.value.basic.BinaryContains.hasNoContent;
 import java.io.IOException;
@@ -43,6 +44,7 @@ public class InMemoryBinaryValueTest {
     private byte[] validByteArrayContent;
     private String validStringContent;
     private InMemoryBinaryValue binary;
+    private BinaryStore store;
 
     /**
      * @throws java.lang.Exception
@@ -51,12 +53,13 @@ public class InMemoryBinaryValueTest {
     public void setUp() throws Exception {
         validStringContent = "This is a valid string content";
         validByteArrayContent = this.validStringContent.getBytes("UTF-8");
-        binary = new InMemoryBinaryValue(validByteArrayContent);
+        store = mock(BinaryStore.class);
+        binary = new InMemoryBinaryValue(store, validByteArrayContent);
     }
 
     @Test
     public void shouldConstructFromByteArray() {
-        binary = new InMemoryBinaryValue(validByteArrayContent);
+        binary = new InMemoryBinaryValue(store, validByteArrayContent);
         assertThat(binary.getSize(), is((long)validByteArrayContent.length));
         assertThat(binary, hasContent(validByteArrayContent));
     }
@@ -64,14 +67,14 @@ public class InMemoryBinaryValueTest {
     @Test
     public void shouldConstructFromEmptyByteArray() {
         validByteArrayContent = new byte[0];
-        binary = new InMemoryBinaryValue(validByteArrayContent);
+        binary = new InMemoryBinaryValue(store, validByteArrayContent);
         assertThat(binary.getSize(), is(0l));
         assertThat(binary, hasNoContent());
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotConstructFromNullByteArray() {
-        new InMemoryBinaryValue(null);
+        new InMemoryBinaryValue(store, null);
     }
 
     @Test
@@ -91,7 +94,7 @@ public class InMemoryBinaryValueTest {
 
     @Test
     public void shouldConsiderEquivalentThoseInstancesWithSameContent() {
-        Binary another = new InMemoryBinaryValue(validByteArrayContent);
+        Binary another = new InMemoryBinaryValue(store, validByteArrayContent);
         assertThat(binary.equals(another), is(true));
         assertThat(binary.compareTo(another), is(0));
         assertThat(binary, is(another));
@@ -105,7 +108,7 @@ public class InMemoryBinaryValueTest {
         for (int i = 0; i != shorterContent.length; ++i) {
             shorterContent[i] = validByteArrayContent[i];
         }
-        Binary another = new InMemoryBinaryValue(shorterContent);
+        Binary another = new InMemoryBinaryValue(store, shorterContent);
         assertThat(binary.equals(another), is(false));
         assertThat(binary.compareTo(another) > 0, is(true));
         assertThat(another.compareTo(binary) < 0, is(true));
@@ -115,7 +118,7 @@ public class InMemoryBinaryValueTest {
     @Test
     public void shouldComputeSha1HashOfEmptyContent() throws Exception {
         validByteArrayContent = new byte[0];
-        binary = new InMemoryBinaryValue(validByteArrayContent);
+        binary = new InMemoryBinaryValue(store, validByteArrayContent);
         assertThat(binary.getSize(), is(0l));
         assertThat(binary, hasNoContent());
         byte[] hash = binary.getHash();
@@ -125,7 +128,7 @@ public class InMemoryBinaryValueTest {
 
     @Test
     public void shouldComputeSha1HashOfNonEmptyContent() throws Exception {
-        binary = new InMemoryBinaryValue(validByteArrayContent);
+        binary = new InMemoryBinaryValue(store, validByteArrayContent);
         assertThat(binary.getSize(), is((long)validByteArrayContent.length));
         byte[] hash = binary.getHash();
         assertThat(hash.length, is(20));

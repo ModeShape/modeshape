@@ -43,6 +43,7 @@
 		<!--module>web</module-->
 		<module>deploy/jbossas</module>
     <!--module>modeshape-integration-tests</module-->
+		<module>demos</module>
 
 	</modules>
 	<properties>

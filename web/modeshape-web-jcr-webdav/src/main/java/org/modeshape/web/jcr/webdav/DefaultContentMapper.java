@@ -8,13 +8,10 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
-import javax.jcr.Binary;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.servlet.ServletContext;
 import org.modeshape.common.util.Logger;
-import org.modeshape.graph.mimetype.MimeTypeDetector;
-import org.modeshape.mimetype.aperture.ApertureMimeTypeDetector;
 
 public class DefaultContentMapper implements ContentMapper {
 
@@ -41,7 +38,6 @@ public class DefaultContentMapper implements ContentMapper {
     private String newFolderPrimaryType;
     private String newResourcePrimaryType;
     private String newContentPrimaryType;
-    private MimeTypeDetector mimeTypeDetector = new ApertureMimeTypeDetector();
 
     private final Logger logger = Logger.getLogger(getClass());
 
@@ -191,14 +187,16 @@ public class DefaultContentMapper implements ContentMapper {
 
         // contentNode.setProperty(MIME_TYPE_PROP_NAME, contentType != null ? contentType : "application/octet-stream");
         contentNode.setProperty(ENCODING_PROP_NAME, characterEncoding != null ? characterEncoding : "UTF-8");
-        Binary binary = parentNode.getSession().getValueFactory().createBinary(newContent);
+        org.modeshape.jcr.api.Binary binary = (org.modeshape.jcr.api.Binary)parentNode.getSession()
+                                                                                      .getValueFactory()
+                                                                                      .createBinary(newContent);
         contentNode.setProperty(DATA_PROP_NAME, binary);
         contentNode.setProperty(MODIFIED_PROP_NAME, Calendar.getInstance());
 
         // Copy the content to the property, THEN re-read the content from the Binary value to avoid discaring the first
         // bytes of the stream
         if (contentType == null) {
-            contentType = mimeTypeDetector.mimeTypeOf(resourceName, binary.getStream());
+            contentType = binary.getMimeType(resourceName);
         }
 
         return contentNode.getProperty(DATA_PROP_NAME).getLength();

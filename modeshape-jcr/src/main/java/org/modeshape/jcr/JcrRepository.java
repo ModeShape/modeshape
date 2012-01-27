@@ -543,7 +543,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 try {
                     running = doStart();
                 } catch (Throwable t) {
-                    throw new RepositoryException(JcrI18n.errorStartingRepository.text(repoName, t.getMessage()));
+                    throw new RepositoryException(JcrI18n.errorStartingRepository.text(repoName, t.getMessage()), t);
                 }
                 if (running == null) {
                     throw new RepositoryException(JcrI18n.repositoryIsNotRunningOrHasBeenShutDown.text(repoName));

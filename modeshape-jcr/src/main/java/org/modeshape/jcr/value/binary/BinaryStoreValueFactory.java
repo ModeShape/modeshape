@@ -215,7 +215,7 @@ public class BinaryStoreValueFactory extends AbstractValueFactory<Binary> implem
     public Binary create( byte[] value ) throws ValueFormatException {
         if (value.length <= store.getMinimumBinarySizeInBytes()) {
             // It's small enough, so just create an in-memory value ...
-            return new InMemoryBinaryValue(value);
+            return new InMemoryBinaryValue(store, value);
         }
         try {
             // Store the value in the store ...
