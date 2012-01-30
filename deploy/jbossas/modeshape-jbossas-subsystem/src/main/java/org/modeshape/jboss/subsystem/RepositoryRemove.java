@@ -19,7 +19,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301 USA.
  */
-package org.modeshape.jboss;
+package org.modeshape.jboss.subsystem;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESCRIBE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESCRIPTION;
@@ -32,13 +32,12 @@ import java.util.ResourceBundle;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.dmr.ModelNode;
-import org.modeshape.jboss.subsystem.JBossManagedI18n;
 
 class RepositoryRemove extends AbstractRemoveStepHandler implements DescriptionProvider {
 
 	@Override
 	public ModelNode getModelDescription(Locale locale) {
-        final ResourceBundle bundle = JBossManagedI18n.getResourceBundle(locale);
+        final ResourceBundle bundle = JBossSubsystemI18n.getResourceBundle(locale);
         final ModelNode operation = new ModelNode();
         operation.get(OPERATION_NAME).set(REMOVE);
         operation.get(DESCRIPTION).set(bundle.getString(REMOVE+"."+DESCRIBE)); //$NON-NLS-1$

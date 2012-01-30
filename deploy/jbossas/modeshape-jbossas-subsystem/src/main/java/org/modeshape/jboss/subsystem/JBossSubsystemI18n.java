@@ -31,7 +31,7 @@ import org.modeshape.common.i18n.I18n;
 /**
  * The internationalized string constants for the <code>org.modeshape.jboss.managed*</code> packages.
  */
-public final class JBossManagedI18n {
+public final class JBossSubsystemI18n {
 
 	private static final String PLUGIN_ID = "org.modeshape.jboss.subsystem" ; //$NON-NLS-1$
 	static final String BUNDLE_NAME = PLUGIN_ID + ".i18n"; //$NON-NLS-1$
@@ -50,7 +50,7 @@ public final class JBossManagedI18n {
 
     static {
         try {
-            I18n.initialize(JBossManagedI18n.class);
+            I18n.initialize(JBossSubsystemI18n.class);
         } catch (final Exception e) {
             System.err.println(e);
         }
@@ -60,7 +60,7 @@ public final class JBossManagedI18n {
         if (locale == null) {
             locale = Locale.getDefault();
         }
-        return ResourceBundle.getBundle(JBossManagedI18n.BUNDLE_NAME, locale);
+        return ResourceBundle.getBundle(JBossSubsystemI18n.BUNDLE_NAME, locale);
     }
     
 }   

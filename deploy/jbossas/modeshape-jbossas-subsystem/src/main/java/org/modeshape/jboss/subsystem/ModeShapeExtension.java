@@ -19,7 +19,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301 USA.
  */
-package org.modeshape.jboss;
+package org.modeshape.jboss.subsystem;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTES;
@@ -39,7 +39,6 @@ import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
-import org.modeshape.jboss.subsystem.JBossManagedI18n;
 
 public class ModeShapeExtension implements Extension {
 	
@@ -72,7 +71,7 @@ public class ModeShapeExtension implements Extension {
         final ManagementResourceRegistration repositorySubsystem = modeShapeSubsystem.registerSubModel(PathElement.pathElement(Element.REPOSITORY_ELEMENT.getLocalName()), new DescriptionProvider() {
 			@Override
 			public ModelNode getModelDescription(Locale locale) {
-				final ResourceBundle bundle = JBossManagedI18n.getResourceBundle(locale);
+				final ResourceBundle bundle = JBossSubsystemI18n.getResourceBundle(locale);
 
 				final ModelNode node = new ModelNode();
 	            node.get(DESCRIPTION).set(Element.REPOSITORY_ELEMENT.getDescription(bundle));

@@ -21,14 +21,14 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jboss.managed;
+package org.modeshape.jboss.subsystem;
 
 import org.modeshape.common.AbstractI18nTest;
-import org.modeshape.jboss.subsystem.JBossManagedI18n;
+import org.modeshape.jboss.subsystem.JBossSubsystemI18n;
 
-public class JbossManagedI18nTest extends AbstractI18nTest {
+public class JbossSubsystemI18nTest extends AbstractI18nTest {
 
-    public JbossManagedI18nTest() {
-        super(JBossManagedI18n.class);
+    public JbossSubsystemI18nTest() {
+        super(JBossSubsystemI18n.class);
     }
 }

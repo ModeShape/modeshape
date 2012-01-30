@@ -19,13 +19,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301 USA.
  */
-package org.modeshape.jboss;
+package org.modeshape.jboss.subsystem;
 
 import org.jboss.msc.service.ServiceName;
 
 public class ModeShapeServiceNames {
 	public static ServiceName ENGINE = ServiceName.JBOSS.append("modeshape", "engine"); //$NON-NLS-1$ //$NON-NLS-2$
-	public static ServiceName REPOSITORY = ServiceName.JBOSS.append("modeshape", "repositories");//$NON-NLS-1$ //$NON-NLS-2$
+	public static ServiceName REPOSITORY = ServiceName.JBOSS.append("modeshape", "repository");//$NON-NLS-1$ //$NON-NLS-2$
 		
 //	public static ServiceName translatorServiceName(String name) {
 //		return ServiceName.of(TRANSLATOR_BASE, name);
@@ -39,9 +39,9 @@ public class ModeShapeServiceNames {
 //		return ServiceName.JBOSS.append("thread", "executor", poolName); //$NON-NLS-1$ //$NON-NLS-2$
 //	}
 //	
-//	public static ServiceName transportServiceName(String name) {
-//		return ServiceName.of(TRANSPORT_BASE, name);
-//	}
+	public static ServiceName repositoryServiceName(String name) {
+		return ServiceName.of(REPOSITORY, name);
+	}
 //	
 //	public static ServiceName dsListenerServiceName(String name) {
 //		return ServiceName.of(DS_LISTENER_BASE, name);

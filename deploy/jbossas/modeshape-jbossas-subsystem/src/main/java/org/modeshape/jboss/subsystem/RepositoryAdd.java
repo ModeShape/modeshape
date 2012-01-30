@@ -19,34 +19,52 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301 USA.
  */
-package org.modeshape.jboss;
+package org.modeshape.jboss.subsystem;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_NAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REQUEST_PROPERTIES;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
+import org.infinispan.schematic.document.Document;
+import org.infinispan.schematic.document.ParsingException;
+import org.infinispan.schematic.internal.document.JsonReader;
 import org.jboss.as.controller.AbstractAddStepHandler;
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.dmr.ModelNode;
-import org.modeshape.jboss.subsystem.JBossManagedI18n;
+import org.jboss.msc.service.ServiceBuilder;
+import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceTarget;
+import org.modeshape.jboss.service.RepositoryService;
+import org.modeshape.jcr.JcrEngine;
+import org.modeshape.jcr.JcrRepository;
+import org.modeshape.jcr.RepositoryConfiguration;
 
 
 public class RepositoryAdd extends AbstractAddStepHandler implements DescriptionProvider {
 
 	private static Element[] attributes = {
+		Element.REPOSITORY_NAME_ATTRIBUTE,
 		Element.REPOSITORY_JNDI_NAME_ATTRIBUTE,
 		Element.REPOSITORY_ROOT_NODE_ID_ATTRIBUTE,
 		Element.REPOSITORY_LARGE_VALUE_SIZE_ID_ATTRIBUTE
 		
 	};
 	
+	private static String jndiBaseName = "java:jcr/local/";   
+	
 	@Override
 	public ModelNode getModelDescription(Locale locale) {
-		final ResourceBundle bundle = JBossManagedI18n.getResourceBundle(locale);
+		final ResourceBundle bundle = JBossSubsystemI18n.getResourceBundle(locale);
 		
         final ModelNode node = new ModelNode();
         node.get(OPERATION_NAME).set(ADD);
@@ -75,6 +93,42 @@ public class RepositoryAdd extends AbstractAddStepHandler implements Description
 		for (int i = 0; i < attributes.length; i++) {
 			attributes[i].populate(operation, model);
 		}
+	}
+	
+	@Override
+	protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model,
+            final ServiceVerificationHandler verificationHandler, final List<ServiceController<?>> newControllers) throws OperationFailedException {
+
+    	ServiceTarget target = context.getServiceTarget();
+    	
+        final ModelNode address = operation.require(OP_ADDR);
+        final PathAddress pathAddress = PathAddress.pathAddress(address);
+    	final String repositoryName = pathAddress.getLastElement().getValue();
+    	
+    	StringBuilder jndiName = new StringBuilder(jndiBaseName); 
+    	if (Element.REPOSITORY_JNDI_NAME_ATTRIBUTE.isDefined(model)) {
+    		jndiName.append(Element.REPOSITORY_JNDI_NAME_ATTRIBUTE.asString(model));
+    	}else{
+    		jndiName.append(repositoryName);
+    	}
+    	
+    	//TODO Update model with proper JNDI name
+    	
+    	String jsonString = model.toJSONString(true);
+    	Document configDoc;
+    	try {
+			configDoc = new JsonReader().read(jsonString, false);
+		} catch (ParsingException e) {
+			throw new OperationFailedException(e, model);
+		}
+    	RepositoryService repositoryService = new RepositoryService(new RepositoryConfiguration(configDoc, repositoryName));
+		
+    	ServiceBuilder<JcrRepository> repositoryBuilder = target.addService(ModeShapeServiceNames.repositoryServiceName(repositoryName), repositoryService);
+    	repositoryBuilder.addDependency(ModeShapeServiceNames.ENGINE, JcrEngine.class, repositoryService.getJcrEngineInjector());
+    	repositoryBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
+        ServiceController<JcrRepository> controller = repositoryBuilder.install(); 
+        newControllers.add(controller);
+        
 	}
 	
 }

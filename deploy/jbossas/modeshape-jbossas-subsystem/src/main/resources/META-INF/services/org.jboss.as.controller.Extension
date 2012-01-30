@@ -20,6 +20,6 @@
 # 02110-1301 USA, or see the FSF site: http://www.fsf.org.
 #
 
-org.modeshape.jboss.ModeShapeExtension
+org.modeshape.jboss.subsystem.ModeShapeExtension
 
 

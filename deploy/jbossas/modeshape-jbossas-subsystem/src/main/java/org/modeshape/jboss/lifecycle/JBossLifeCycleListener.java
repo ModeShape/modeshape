@@ -19,16 +19,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301 USA.
  */
-package org.modeshape.jboss;
+package org.modeshape.jboss.lifecycle;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import org.jboss.msc.service.ServiceContainer.TerminateListener;
-import org.modeshape.jboss.service.ContainerLifeCycleListener;
 
-class JBossLifeCycleListener implements TerminateListener, ContainerLifeCycleListener {
+public class JBossLifeCycleListener implements TerminateListener, ContainerLifeCycleListener {
 
 	private boolean shutdownInProgress = false;
 	private List<ContainerLifeCycleListener.LifeCycleEventListener> listeners = Collections.synchronizedList(new ArrayList<ContainerLifeCycleListener.LifeCycleEventListener>());
