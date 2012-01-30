@@ -19,27 +19,52 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301 USA.
  */
-package org.modeshape.jboss;
+package org.modeshape.jboss.service;
+
+import javax.jcr.RepositoryException;
 
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
+import org.jboss.msc.value.InjectedValue;
+import org.modeshape.jcr.ConfigurationException;
+import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.JcrRepository;
+import org.modeshape.jcr.RepositoryConfiguration;
 
 
-public class Repository implements Service<JcrRepository> {
+public class RepositoryService implements Service<JcrRepository> {
+
+	private final InjectedValue<JcrEngine> jcrEngineInjector = new InjectedValue<JcrEngine>();
+	
+	private RepositoryConfiguration repositoryConfiguration;
+	
+	
+	public RepositoryService(RepositoryConfiguration repositoryConfiguration) {
+		this.repositoryConfiguration = repositoryConfiguration;
+	}
 
 	@Override
 	public JcrRepository getValue() throws IllegalStateException,
 			IllegalArgumentException {
-		// TODO Auto-generated method stub
 		return null;
+	}
+	
+	private JcrEngine getJcrEngine() {
+		return jcrEngineInjector.getValue();
 	}
 
 	@Override
 	public void start(StartContext arg0) throws StartException {
-		// TODO Auto-generated method stub
+		JcrEngine engine = getJcrEngine();
+		try {
+			engine.deploy(repositoryConfiguration);
+		} catch (ConfigurationException e) {
+			throw new StartException(e);
+		} catch (RepositoryException e) {
+			throw new StartException(e);
+		}
 		
 	}
 
@@ -48,12 +73,12 @@ public class Repository implements Service<JcrRepository> {
 		// TODO Auto-generated method stub
 		
 	}
-	
-//	private final InjectedValue<SocketBinding> socketBindingInjector = new InjectedValue<SocketBinding>();
-//	private final InjectedValue<VDBRepository> vdbRepositoryInjector = new InjectedValue<VDBRepository>();
-//	private final InjectedValue<DQPCore> dqpInjector = new InjectedValue<DQPCore>();	
-//	private final InjectedValue<BufferServiceImpl> bufferServiceInjector = new InjectedValue<BufferServiceImpl>();
-	
-	
+
+	/**
+	 * @return the jcrEngineInjector
+	 */
+	public InjectedValue<JcrEngine> getJcrEngineInjector() {
+		return jcrEngineInjector;
+	}
 	
 }

@@ -35,7 +35,7 @@ import org.jboss.msc.value.InjectedValue;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.Reflection.Property;
-import org.modeshape.jboss.subsystem.JBossManagedI18n;
+import org.modeshape.jboss.subsystem.JBossSubsystemI18n;
 import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.JcrEngine.State;
 import org.modeshape.jcr.JcrRepository;
@@ -46,8 +46,6 @@ import org.modeshape.jcr.JcrRepository;
 public final class EngineService implements Service<JcrEngine>, Serializable {
 
     private static final long serialVersionUID = 1L;
-
-    private final InjectedValue<JcrRepository> jcrRepositoryInjector = new InjectedValue<JcrRepository>();
 
     private JcrEngine engine = new JcrEngine();
 
@@ -71,10 +69,6 @@ public final class EngineService implements Service<JcrEngine>, Serializable {
     public EngineService( JcrEngine engine ) {
         CheckArg.isNotNull(engine, "engine");
         this.engine = engine;
-    }
-
-    public InjectedValue<JcrRepository> getJcrRepositoryInjector() {
-        return jcrRepositoryInjector;
     }
 
     @Override
@@ -329,7 +323,7 @@ public final class EngineService implements Service<JcrEngine>, Serializable {
         try {
             return engine.getRepository(repositoryName);
         } catch (RepositoryException e) {
-            Logger.getLogger(getClass()).error(e, JBossManagedI18n.errorGettingRepositoryFromEngine, repositoryName);
+            Logger.getLogger(getClass()).error(e, JBossSubsystemI18n.errorGettingRepositoryFromEngine, repositoryName);
             return null;
         }
     }

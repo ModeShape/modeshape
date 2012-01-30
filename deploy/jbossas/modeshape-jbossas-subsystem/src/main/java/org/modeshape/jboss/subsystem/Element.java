@@ -20,7 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.modeshape.jboss;
+package org.modeshape.jboss.subsystem;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEFAULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESCRIPTION;
@@ -44,7 +44,7 @@ enum Element {
 	// Repository 
     REPOSITORY_ELEMENT("repository"),
     REPOSITORY_NAME_ATTRIBUTE("name", "name", ModelType.STRING, true, null),
-    REPOSITORY_JNDI_NAME_ATTRIBUTE("jndi-name", "jndi-name", ModelType.STRING, true, null),
+    REPOSITORY_JNDI_NAME_ATTRIBUTE("jndi-name", "jndi-name", ModelType.STRING, false, null),
     REPOSITORY_ROOT_NODE_ID_ATTRIBUTE("root-node-id", "root-node-id", ModelType.STRING, false, "cafebabe-cafe-babe-cafe-babecafebabe"),
     REPOSITORY_LARGE_VALUE_SIZE_ID_ATTRIBUTE("large-value-size", "large-value-size", ModelType.STRING, false, "10240"),
     

@@ -19,7 +19,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jboss;
+package org.modeshape.jboss.subsystem;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_NAME;
@@ -35,7 +35,6 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
-import org.modeshape.jboss.subsystem.JBossManagedI18n;
 
 public abstract class BaseOperationHandler<T> implements DescriptionProvider, OperationStepHandler {
 	private static final String DESCRIBE = ".describe"; //$NON-NLS-1$
@@ -83,7 +82,7 @@ public abstract class BaseOperationHandler<T> implements DescriptionProvider, Op
 	
     @Override
     public ModelNode getModelDescription(final Locale locale) {
-        final ResourceBundle bundle = JBossManagedI18n.getResourceBundle(locale);
+        final ResourceBundle bundle = JBossSubsystemI18n.getResourceBundle(locale);
         final ModelNode operation = new ModelNode();
         operation.get(OPERATION_NAME).set(this.operationName);
         operation.get(DESCRIPTION).set(bundle.getString(name()+DESCRIBE));

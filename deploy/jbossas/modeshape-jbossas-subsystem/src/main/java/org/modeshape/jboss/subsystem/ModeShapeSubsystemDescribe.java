@@ -20,7 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.modeshape.jboss;
+package org.modeshape.jboss.subsystem;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.*;
 
@@ -36,13 +36,12 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
-import org.modeshape.jboss.subsystem.JBossManagedI18n;
 
 public class ModeShapeSubsystemDescribe implements OperationStepHandler, DescriptionProvider {
 
 	@Override
 	public ModelNode getModelDescription(Locale locale) {
-		final ResourceBundle bundle = JBossManagedI18n.getResourceBundle(locale);
+		final ResourceBundle bundle = JBossSubsystemI18n.getResourceBundle(locale);
 		
         ModelNode node = new ModelNode();
         node.get(ModelDescriptionConstants.DESCRIPTION).set("modeshape subsystem"); //$NON-NLS-1$
