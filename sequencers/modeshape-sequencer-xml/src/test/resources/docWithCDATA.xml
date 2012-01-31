@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Simple example to demonstrate the CurrencyFormatter. -->
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml">
+
+    <mx:Script>
+        <![CDATA[
+
+              import mx.events.ValidationResultEvent;			
+              private var vResult:ValidationResultEvent;
+			
+              // Event handler to validate and format input.
+              private function Format():void {
+              
+                    vResult = numVal.validate();
+
+                    if (vResult.type==ValidationResultEvent.VALID) {
+                        var temp:Number=Number(priceUS.text); 
+                        formattedUSPrice.text= usdFormatter.format(temp);
+                    }
+                    
+                    else {
+                       formattedUSPrice.text="";
+                    }
+              }
+        ]]>
+    </mx:Script>
+    <programlisting3>mixture of text and <![CDATA[
+<dependency>entities like &gt; are not replaced in a CDATA
+</dependency>
+]]> and some text <!-- comment in content -->after.</programlisting3>
+
+    <mx:NumberValidator id="numVal" source="{priceUS}" property="text" 
+        allowNegative="true" domain="real"/>
+</mx:Application>
