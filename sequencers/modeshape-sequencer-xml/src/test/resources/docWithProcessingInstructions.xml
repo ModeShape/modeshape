@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?target content ?>
+<?target2 other stuff in the processing instruction ?>
+<Cars xmlns:jcr="http://www.jcp.org/jcr/1.0">
+    <!-- This is a comment -->
+    <Hybrid>
+        <car jcr:name="Toyota Prius"/>
+    </Hybrid>
+    <Sports>
+    </Sports>
+</Cars>
