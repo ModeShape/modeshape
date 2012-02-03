@@ -1,0 +1,89 @@
+<?xml version="1.0"?>
+<!--
+  ~ ModeShape (http://www.modeshape.org)
+  ~ See the COPYRIGHT.txt file distributed with this work for information
+  ~ regarding copyright ownership.  Some portions may be licensed
+  ~ to Red Hat, Inc. under one or more contributor license agreements.
+  ~ See the AUTHORS.txt file in the distribution for a full listing of
+  ~ individual contributors.
+  ~
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+  ~ is licensed to you under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ ModeShape is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+
+<definitions name="StockQuote"
+
+targetNamespace="http://example.com/stockquote.wsdl"
+          xmlns:tns="http://example.com/stockquote.wsdl"
+          xmlns:xsd1="http://example.com/stockquote.xsd"
+          xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+          xmlns="http://schemas.xmlsoap.org/wsdl/">
+
+    <types>
+       <schema targetNamespace="http://example.com/stockquote.xsd"
+              xmlns="http://www.w3.org/2001/XMLSchema">
+           <element name="TradePriceRequest">
+              <complexType>
+                  <all>
+                      <element name="tickerSymbol" type="string"/>
+                  </all>
+              </complexType>
+           </element>
+           <element name="TradePrice">
+              <complexType>
+                  <all>
+                      <element name="price" type="float"/>
+                  </all>
+              </complexType>
+           </element>
+       </schema>
+    </types>
+
+    <message name="GetLastTradePriceInput">
+        <part name="body" element="xsd1:TradePriceRequest"/>
+    </message>
+
+    <message name="GetLastTradePriceOutput">
+        <part name="body" element="xsd1:TradePrice"/>
+    </message>
+
+    <portType name="StockQuotePortType">
+        <operation name="GetLastTradePrice">
+           <input message="tns:GetLastTradePriceInput"/>
+           <output message="tns:GetLastTradePriceOutput"/>
+        </operation>
+    </portType>
+
+    <binding name="StockQuoteSoapBinding" type="tns:StockQuotePortType">
+        <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <operation name="GetLastTradePrice">
+           <soap:operation soapAction="http://example.com/GetLastTradePrice"/>
+           <input>
+               <soap:body use="literal"/>
+           </input>
+           <output>
+               <soap:body use="literal"/>
+           </output>
+        </operation>
+    </binding>
+
+    <service name="StockQuoteService">
+        <documentation>My first service</documentation>
+        <port name="StockQuotePort" binding="tns:StockQuoteBinding">
+           <soap:address location="http://example.com/stockquote"/>
+        </port>
+    </service>
+
+</definitions>

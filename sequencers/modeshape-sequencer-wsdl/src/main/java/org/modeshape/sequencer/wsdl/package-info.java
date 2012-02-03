@@ -21,32 +21,9 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org
  */
-package org.modeshape.sequencer.xsd;
-
-import java.util.HashMap;
-import java.util.Map;
-
 /**
- * A simple registry that keeps track of the identifiers and paths for entities, keyed by their namespace and name.
+ * The classes that make up the Web Service Definition Lanaguage (WSDL) 1.1 sequencer.
  */
-public class NamespaceEntityResolver {
 
-    private final Map<String, Map<String, String>> identifierByNameByNamespace = new HashMap<String, Map<String, String>>();
+package org.modeshape.sequencer.wsdl;
 
-    public void register( String namespace, String name, String identifier ) {
-        Map<String, String> forNamespace = identifierByNameByNamespace.get(namespace);
-        if (forNamespace == null) {
-            forNamespace = new HashMap<String, String>();
-            identifierByNameByNamespace.put(namespace, forNamespace);
-        }
-        forNamespace.put(name, identifier);
-    }
-
-    public String lookupIdentifier( String namespace, String name ) {
-        Map<String, String> forNamespace = identifierByNameByNamespace.get(namespace);
-        if (forNamespace == null) {
-            return null;
-        }
-        return forNamespace.get(name);
-    }
-}

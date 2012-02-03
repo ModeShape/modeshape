@@ -36,6 +36,8 @@ public final class MimeTypeConstants {
     public static final String RTF = "text/rtf";
     public static final String XML = "text/xml";
     public static final String HTML = "text/html";
+    public static final String WSDL = "application/wsdl";
+    public static final String XSD = "application/xsd";
 
     public static final String MP3 = "audio/mpeg";
     public static final String WAV = "audio/x-wav";
