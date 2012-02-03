@@ -166,6 +166,17 @@ class JcrValueFactory implements org.modeshape.jcr.api.ValueFactory {
         return new JcrValue(valueFactories, PropertyType.DATE, value);
     }
 
+    @Override
+    public String createName( String localName ) {
+        return valueFactories.getNameFactory().create(null, localName).getString();
+    }
+
+    @Override
+    public String createName( String namespaceUri,
+                              String localName ) {
+        return valueFactories.getNameFactory().create(namespaceUri, localName).getString();
+    }
+
     protected org.modeshape.jcr.value.ValueFactory<?> valueFactoryFor( int jcrPropertyType ) {
         switch (jcrPropertyType) {
             case PropertyType.BOOLEAN:

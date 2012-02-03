@@ -3,7 +3,7 @@
  * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
+ * See the AUTHORS.txt file in the distribution for a full listing of
  * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
@@ -14,31 +14,32 @@
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details
+ * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this software; if not, write to the Free
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
+
 package org.modeshape.sequencer.sramp;
 
-import javax.jcr.NamespaceRegistry;
-import javax.jcr.RepositoryException;
-import org.modeshape.jcr.api.nodetype.NodeTypeManager;
-import org.modeshape.jcr.api.sequencer.Sequencer;
-import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * Base class for sequencers which are based on the S-RAMP specification.
- *
- * @author Horia Chiorean
+ * A class which is used to map {@link Enum symbol classes } to {@link NamespaceEntityResolver entity resolvers}
  */
-public abstract class AbstractSrampSequencer extends Sequencer {
+public final class SymbolSpaceResolvers {
 
-    @Override
-    public void initialize( NamespaceRegistry registry,
-                            NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
-        super.registerNodeTypes(AbstractSrampSequencer.class.getResourceAsStream("sramp.cnd"), nodeTypeManager, true);
+    private final Map<SymbolSpace, NamespaceEntityResolver> resolversByKind = new HashMap<SymbolSpace, NamespaceEntityResolver>();
+
+    public NamespaceEntityResolver get( SymbolSpace kind ) {
+        NamespaceEntityResolver resolver = resolversByKind.get(kind);
+        if (resolver == null) {
+            resolver = new NamespaceEntityResolver();
+            resolversByKind.put(kind, resolver);
+        }
+        return resolver;
     }
 }

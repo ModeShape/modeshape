@@ -1,0 +1,248 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ * See the COPYRIGHT.txt file distributed with this work for information
+ * regarding copyright ownership.  Some portions may be licensed
+ * to Red Hat, Inc. under one or more contributor license agreements.
+* See the AUTHORS.txt file in the distribution for a full listing of 
+* individual contributors.
+ *
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * ModeShape is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+
+//------------------------------------------------------------------------------
+// N A M E S P A C E S
+//------------------------------------------------------------------------------
+<jcr='http://www.jcp.org/jcr/1.0'>
+<nt='http://www.jcp.org/jcr/nt/1.0'>
+<mix='http://www.jcp.org/jcr/mix/1.0'>
+<sramp = "http://s-ramp.org/xmlns/2010/s-ramp">
+<xs = "http://www.w3.org/2001/XMLSchema">
+<wsdl = "http://schemas.xmlsoap.org/wsdl/">
+
+//------------------------------------------------------------------------------
+// N O D E T Y P E S
+//------------------------------------------------------------------------------
+
+[wsdl:wsdlExtension] > sramp:derivedArtifactType
+- wsdl:ncName (string)
+- wsdl:namespace (uri)
+
+[wsdl:wsdlDerivedArtifactType] > sramp:derivedArtifactType abstract
+- wsdl:namespace (uri)
++ * (wsdl:wsdlExtension)
+
+[wsdl:namedWsdlDerivedArtifactType] > wsdl:wsdlDerivedArtifactType
+- wsdl:ncName (string)
+
+/*
+ * Messages and parts
+ */
+[wsdl:part] > wsdl:namedWsdlDerivedArtifactType
+- wsdl:element (reference) < 'xs:elementDeclaration'
+- wsdl:elementName (string)
+- wsdl:elementNamespace (uri)
+- wsdl:type (reference) < 'xs:simpleTypeDefinition'
+- wsdl:typeName (string)
+- wsdl:typeNamespace (uri)
+
+[wsdl:message] > wsdl:namedWsdlDerivedArtifactType
++ * (wsdl:part) = wsdl:part multiple
+
+/*
+ * Port types, operations, inputs, outputs, and faults
+ */
+[wsdl:operationInput] > wsdl:namedWsdlDerivedArtifactType
+- wsdl:message (reference)  < 'wsdl:message'
+
+[wsdl:operationOutput] > wsdl:namedWsdlDerivedArtifactType
+- wsdl:message (reference)  < 'wsdl:message'
+
+[wsdl:fault] > wsdl:namedWsdlDerivedArtifactType
+- wsdl:message (reference) mandatory < 'wsdl:message'
+
+[wsdl:operation] > wsdl:namedWsdlDerivedArtifactType
+- wsdl:parameterOrder (string) multiple
++ wsdl:input (wsdl:operationInput) = wsdl:operationInput
++ wsdl:output (wsdl:operationOutput) = wsdl:operationOutput
++ wsdl:fault (wsdl:fault) = wsdl:fault sns
+
+[wsdl:portType] > wsdl:namedWsdlDerivedArtifactType
++ * (wsdl:operation) sns
+
+/*
+ * Bindings, binding operations, inputs, outputs
+ */
+[wsdl:bindingOperationOutput] > wsdl:namedWsdlDerivedArtifactType
+- wsdl:output (reference) < 'wsdl:operationOutput'
+- wsdl:outputName (string)
+
+[wsdl:bindingOperationInput] > wsdl:namedWsdlDerivedArtifactType
+- wsdl:input (reference) < 'wsdl:operationInput'
+- wsdl:inputName (string)
+
+[wsdl:bindingOperationFault] > wsdl:namedWsdlDerivedArtifactType
+
+[wsdl:bindingOperation] > wsdl:namedWsdlDerivedArtifactType
++ wsdl:input (wsdl:bindingOperationInput) = wsdl:bindingOperationInput
++ wsdl:output (wsdl:bindingOperationOutput) = wsdl:bindingOperationOutput
++ wsdl:fault (wsdl:bindingOperationFault) = wsdl:bindingOperationFault sns
+
+[wsdl:binding] > wsdl:namedWsdlDerivedArtifactType
+- wsdl:type (reference) < 'wsdl:portType'
++ * (wsdl:bindingOperation) sns
+
+/*
+ * Ports and services
+ */
+[wsdl:port] > wsdl:namedWsdlDerivedArtifactType
+- wsdl:binding (reference) < 'wsdl:binding'
+- wsdl:bindingName (string)
+- wsdl:bindingNamespace (uri)
+
+[wsdl:service] > wsdl:namedWsdlDerivedArtifactType
++ * (wsdl:port) sns
+
+/*
+ * Types, schemas, and schema references
+ */
+[wsdl:referencedXsd] > sramp:derivedArtifactType abstract
+- xs:id (string)
+- xs:schemaLocation (string)
+- * (undefined) multiple 
+- * (undefined) 
+
+[wsdl:importedXsd] > wsdl:referencedXsd
+- xs:namespace (uri) mandatory
+
+[wsdl:includedXsd] > wsdl:referencedXsd
+
+[wsdl:redefinedXsd] > wsdl:referencedXsd
+
+/*
+ * The containers for the different kinds of components within WSDL documents.
+ * Strictly speaking, the containers should not allow SNS, but these components'
+ * names in WSDL are QNames, and we're only using the local part for the node name.
+ * Therefore, two components might have the same local part but different namespaces.
+ * (This is probably not a common occurance.)
+ */
+[wsdl:container] > sramp:derivedArtifactType abstract
+- * (string)
+- * (string) multiple
+
+[wsdl:messages] > wsdl:container
++ * (wsdl:message) = wsdl:message sns
+
+[wsdl:portTypes] > wsdl:container
++ * (wsdl:portType) = wsdl:portType sns
+
+[wsdl:bindings] > wsdl:container
++ * (wsdl:binding) = wsdl:binding sns
+
+[wsdl:services] > wsdl:container
++ * (wsdl:service) = wsdl:service sns
+
+/*
+ * WSDL documents
+ */
+[wsdl:wsdlDocument] > sramp:xmlDocument
+- wsdl:importedXsds (weakreference) multiple < 'xs:schemaDocument'
+- wsdl:includedXsds (weakreference) multiple < 'xs:schemaDocument'
+- wsdl:redefinedXsds (weakreference) multiple < 'xs:schemaDocument'
+- wsdl:importedWsdls (weakreference) multiple < 'wsdl:wsdlDocument'
++ wsdl:schema (xs:schemaDocument) = xs:schemaDocument sns
++ wsdl:importedXsd (wsdl:importedXsd) sns
++ wsdl:includedXsd (wsdl:includedXsd) sns
++ wsdl:redefinedXsd (wsdl:redefinedXsd) sns
++ wsdl:messages (wsdl:messages) = wsdl:messages
++ wsdl:portTypes (wsdl:portTypes) = wsdl:portTypes
++ wsdl:bindings (wsdl:bindings) = wsdl:bindings
++ wsdl:services (wsdl:services) = wsdl:services
+
+// -------------------------------------------------------
+// HTTPWSDL Model
+// -------------------------------------------------------
+
+[wsdl:httpExtension] > wsdl:wsdlExtension
+
+[wsdl:httpAddress] > wsdl:httpExtension
+- wsdl:location (uri) mandatory
+
+[wsdl:httpBinding] > wsdl:httpExtension
+- wsdl:verb (string) mandatory
+
+[wsdl:httpOperation] > wsdl:httpExtension
+- wsdl:location (uri) mandatory
+
+[wsdl:httpUrlEncoded] > wsdl:httpExtension
+
+[wsdl:httpUrlReplacement] > wsdl:httpExtension
+
+// -------------------------------------------------------
+// SOAPWSDL Model
+// -------------------------------------------------------
+
+[wsdl:soapExtension] > wsdl:wsdlExtension
+
+[wsdl:soapAddress] > wsdl:soapExtension
+- wsdl:soapLocation (uri) mandatory
+
+[wsdl:soapBinding] > wsdl:soapExtension
+- wsdl:style (string)
+- wsdl:transport (uri)
+
+[wsdl:soapOperation] > wsdl:soapExtension
+- wsdl:style (string)
+- wsdl:soapAction (uri)
+
+[wsdl:soapBody] > wsdl:soapExtension
+- wsdl:encodingStyle (uri) multiple
+- wsdl:parts (string) multiple
+- wsdl:use (string) < 'literal','encoded'
+
+[wsdl:soapFault] > wsdl:soapExtension
+- wsdl:encodingStyle (uri) multiple
+- wsdl:use (string) < 'literal','encoded'
+
+[wsdl:soapHeader] > wsdl:soapExtension
+- wsdl:message (string)
+- wsdl:part (string)
+- wsdl:encodingStyle (uri) multiple
+- wsdl:use (string) < 'literal','encoded'
++ * (wsdl:soapHeaderFault) = wsdl:soapHeaderFault
+
+[wsdl:soapHeaderFault] > wsdl:soapExtension
+- wsdl:encodingStyle (uri) multiple
+- wsdl:use (string) < 'literal','encoded'
+
+// -------------------------------------------------------
+// SOAPMIME Model
+// -------------------------------------------------------
+
+[wsdl:mimeExtension] > wsdl:wsdlExtension
+
+[wsdl:mimeMultipartRelated] > wsdl:mimeExtension
++ wsdl:mimePart (wsdl:mimePart) sns
+
+[wsdl:mimePart] > wsdl:mimeExtension
++ * (wsdl:mimeExtension) sns
+
+[wsdl:mimeContent] > wsdl:mimeExtension
+- wsdl:mimeType (string)
+- wsdl:mimePart (string)
+
+[wsdl:mimeXml] > wsdl:mimeExtension
+- wsdl:mimePart (string)
+

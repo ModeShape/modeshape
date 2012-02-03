@@ -23,22 +23,33 @@
  */
 package org.modeshape.sequencer.sramp;
 
-import javax.jcr.NamespaceRegistry;
-import javax.jcr.RepositoryException;
-import org.modeshape.jcr.api.nodetype.NodeTypeManager;
-import org.modeshape.jcr.api.sequencer.Sequencer;
-import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * Base class for sequencers which are based on the S-RAMP specification.
- *
- * @author Horia Chiorean
+ * A simple registry that keeps track of the identifiers and paths for entities, keyed by their namespace and name.
  */
-public abstract class AbstractSrampSequencer extends Sequencer {
+public final class NamespaceEntityResolver {
 
-    @Override
-    public void initialize( NamespaceRegistry registry,
-                            NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
-        super.registerNodeTypes(AbstractSrampSequencer.class.getResourceAsStream("sramp.cnd"), nodeTypeManager, true);
+    private final Map<String, Map<String, String>> identifierByNameByNamespace = new HashMap<String, Map<String, String>>();
+
+    public void register( String namespace,
+                          String name,
+                          String identifier ) {
+        Map<String, String> forNamespace = identifierByNameByNamespace.get(namespace);
+        if (forNamespace == null) {
+            forNamespace = new HashMap<String, String>();
+            identifierByNameByNamespace.put(namespace, forNamespace);
+        }
+        forNamespace.put(name, identifier);
+    }
+
+    public String lookupIdentifier( String namespace,
+                                    String name ) {
+        Map<String, String> forNamespace = identifierByNameByNamespace.get(namespace);
+        if (forNamespace == null) {
+            return null;
+        }
+        return forNamespace.get(name);
     }
 }

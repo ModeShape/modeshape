@@ -49,7 +49,7 @@
 - sramp:contentSize (long)
 
 [sramp:xmlDocument] > sramp:documentArtifactType mixin
-- sramp:contentEncoding (string) mandatory
+- sramp:contentEncoding (string)
 
 [sramp:document] > sramp:documentArtifactType mixin
 
