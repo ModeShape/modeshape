@@ -34,7 +34,7 @@
     <!-- The groupId and version values are inherited from parent -->
     <artifactId>modeshape-sequencer-zip</artifactId>
     <packaging>jar</packaging>
-    <name>ModeShape ZIP Sequencer</name>
+    <name>ModeShape Sequencer for ZIP Files</name>
     <description>ModeShape Sequencer that processes zip files and extracts content to repository</description>
     <url>http://www.modeshape.org</url>
     <dependencies>

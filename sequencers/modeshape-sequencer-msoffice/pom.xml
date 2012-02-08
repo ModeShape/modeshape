@@ -10,7 +10,7 @@
     <!-- The groupId and version values are inherited from parent -->
     <artifactId>modeshape-sequencer-msoffice</artifactId>
     <packaging>jar</packaging>
-    <name>ModeShape Microsoft Office Sequencer</name>
+    <name>ModeShape Sequencer for Microsoft Office Files</name>
     <description>ModeShape Sequencer that processes Microsoft Office files and searches for common metadata</description>
     <url>http://www.modeshape.org</url>
     <dependencies>

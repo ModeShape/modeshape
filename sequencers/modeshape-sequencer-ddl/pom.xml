@@ -10,7 +10,7 @@
     <!-- The groupId and version values are inherited from parent -->
     <artifactId>modeshape-sequencer-ddl</artifactId>
     <packaging>jar</packaging>
-    <name>ModeShape DDL Sequencer</name>
+    <name>ModeShape Sequencer for DDL Files</name>
     <description>ModeShape Sequencer that processes DDL files</description>
     <url>http://www.modeshape.org</url>
 

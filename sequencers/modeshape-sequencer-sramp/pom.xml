@@ -10,7 +10,7 @@
     <!-- The groupId and version values are inherited from parent -->
     <artifactId>modeshape-sequencer-sramp</artifactId>
     <packaging>jar</packaging>
-    <name>ModeShape S-RAMP Sequencer</name>
+    <name>ModeShape Sequencer for S-RAMP Files</name>
     <description>ModeShape Sequencer library defining the S-RAMP core model lexicon and CND, useful for other sequencers that
         reuse or extend S-RAMP definitions.
     </description>

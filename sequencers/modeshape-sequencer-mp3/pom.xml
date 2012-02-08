@@ -10,7 +10,7 @@
     <!-- The groupId and version values are inherited from parent -->
     <artifactId>modeshape-sequencer-mp3</artifactId>
     <packaging>jar</packaging>
-    <name>ModeShape MP3 Sequencer</name>
+    <name>ModeShape Sequencer for MP3 Files</name>
     <description>ModeShape Sequencer that processes MP3 audio files</description>
     <url>http://www.modeshape.org</url>
     <dependencies>

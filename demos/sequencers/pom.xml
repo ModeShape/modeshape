@@ -11,7 +11,7 @@
   <groupId>org.modeshape.demo</groupId>
 	<artifactId>modeshape-sequencers-demo</artifactId>
   <packaging>jar</packaging>
-  <name>ModeShape Sequencer Demo</name>
+  <name>ModeShape Demo of Sequencing Files</name>
   <description>Examples that showcase how to use sequencers with a JCR repository.</description>
 
   <dependencies>

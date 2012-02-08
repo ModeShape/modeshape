@@ -11,7 +11,7 @@
 	<groupId>org.modeshape.demo</groupId>
 	<artifactId>modeshape-embedded-repo-demo</artifactId>
 	<packaging>jar</packaging>
-	<name>ModeShape Embedded Repository Demo</name>
+	<name>ModeShape Demo of Embedding Repository</name>
 	<description>A simple demo application that creates an embedded ModeShape engine.</description>
 
 	<dependencies>

@@ -10,7 +10,7 @@
     <!-- The groupId and version values are inherited from parent -->
     <artifactId>modeshape-sequencer-wsdl</artifactId>
     <packaging>jar</packaging>
-    <name>ModeShape WSDL Sequencer</name>
+    <name>ModeShape Sequencer for WSDL Files</name>
     <description>ModeShape Sequencer that processes Web Service Definition Language (WSDL) 1.1 files and extracts the
         representation of the service definitions to repository
     </description>

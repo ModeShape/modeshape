@@ -2,15 +2,15 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>modeshape</artifactId>
         <groupId>org.modeshape</groupId>
+        <artifactId>modeshape-parent</artifactId>
         <version>3.0-SNAPSHOT</version>
-        <relativePath>../..</relativePath>
+        <relativePath>../../modeshape-parent</relativePath>
     </parent>
     <!-- The groupId and version values are inherited from parent -->
     <artifactId>modeshape-sequencer-text</artifactId>
     <packaging>jar</packaging>
-    <name>ModeShape Text File Sequencer</name>
+    <name>ModeShape Sequencer for Text Files</name>
     <description>ModeShape Sequencer that processes fixed width and delimited text files</description>
     <url>http://www.modeshape.org</url>
     <dependencies>

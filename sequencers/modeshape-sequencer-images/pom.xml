@@ -10,7 +10,7 @@
     <!-- The groupId and version values are inherited from parent -->
     <artifactId>modeshape-sequencer-images</artifactId>
     <packaging>jar</packaging>
-    <name>ModeShape Image Sequencer</name>
+    <name>ModeShape Sequencer for Image Files</name>
     <description>ModeShape Sequencer that processes PNG, JPEG, GIF and other image files</description>
     <url>http://www.modeshape.org</url>
 

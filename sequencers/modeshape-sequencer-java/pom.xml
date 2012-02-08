@@ -10,8 +10,7 @@
     <!-- The groupId and version values are inherited from parent -->
     <artifactId>modeshape-sequencer-java</artifactId>
     <packaging>jar</packaging>
-    <name>ModeShape Java Class and Source File Sequencer</name>
-
+    <name>ModeShape Sequencer for Java Class/Source Files</name>
     <description>ModeShape Sequencer that processes Java class and source files</description>
     <url>http://www.modeshape.org</url>
     <dependencyManagement>
