@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Document comment -->
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd" [
+<!ENTITY % RH-ENTITIES SYSTEM "Common_Config/rh-entities.ent">
+<!ENTITY versionNumber "0.1">
+<!ENTITY copyrightYear "2008">
+<!ENTITY copyrightHolder "Red Hat Middleware, LLC.">]>
+<book>
+  <bookinfo>
+    <title>ModeShape</title>
+    <releaseinfo>&versionNumber;</releaseinfo>
+    <productnumber>some text with &versionNumber;inside
+    </productnumber>
+    <abstract>
+      This is some long content that spans multiple lines and should span multiple calls to 'character(...)'.  Repeating to make really long. This is some 
+long content that spans multiple lines and should span multiple
+calls to 'character(...)'.  Repeating to make really long. This is some long content that spans multiple lines and should span multiple calls to 'character(...)'.  Repeating to make really long. This is some long content that spans multiple lines and should span multiple calls to 'character(...)'.  Repeating to make really long.
+    </abstract>
+  </bookinfo>
+  <programlisting1>
+&lt;dependency&gt;
+&lt;/dependency&gt;
+  </programlisting1>
+  <programlisting2><![CDATA[
+&lt;dependency&gt;
+&lt;/dependency&gt;
+]]></programlisting2>
+  <programlisting3>mixture of text and <![CDATA[
+&lt;dependency&gt;
+&lt;/dependency&gt;
+]]> and some text <!-- comment in content -->after.</programlisting3>
+</book>
