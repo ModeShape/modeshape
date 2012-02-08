@@ -1,0 +1,13 @@
+{
+    "name" : "ZIP Sequencer Test Repository",
+    "sequencing" : {
+        "removeDerivedContentWithOriginal" : true,
+        "sequencers" : [
+            {
+                "name" : "ZIP sequencer",
+                "type" : "zipsequencer",
+                "pathExpression" : "default:/(*.zip)/jcr:content[@jcr:data] => /zip"
+            }
+        ]
+    }
+}

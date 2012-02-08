@@ -27,6 +27,7 @@
     <module>sequencers/modeshape-sequencer-msoffice</module>
     <module>sequencers/modeshape-sequencer-images</module>
     <module>sequencers/modeshape-sequencer-java</module>
+    <module>sequencers/modeshape-sequencer-zip</module>
     <module>sequencers/modeshape-sequencer-ddl</module>
     <module>sequencers/modeshape-sequencer-mp3</module>
     <module>sequencers/modeshape-sequencer-text</module>

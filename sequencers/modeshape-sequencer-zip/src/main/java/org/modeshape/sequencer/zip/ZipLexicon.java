@@ -14,35 +14,30 @@
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details
+ * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this software; if not, write to the Free
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.api;
+
+package org.modeshape.sequencer.zip;
+
+import org.modeshape.common.annotation.Immutable;
+import static org.modeshape.sequencer.zip.ZipLexicon.Namespace.PREFIX;
 
 /**
- * Class which should hold string constants defined by the JCR spec.
- *
- * @author Horia Chiorean
+ * A lexicon of names used within the zip sequencer.
  */
-public final class JcrConstants {
-    public static final String JCR_MIMETYPE = "jcr:mimetype";
-    public static final String JCR_CONTENT = "jcr:content";
-    public static final String JCR_DATA = "jcr:data";
-    public static final String JCR_MIXIN_TYPES = "jcr:mixinTypes";
-    public static final String JCR_PRIMARY_TYPE = "jcr:primaryType";
-    public static final String JCR_MIME_TYPE = "jcr:mimeType";
-
-    public static final String NT_UNSTRUCTURED = "nt:unstructured";
-    public static final String NT_FOLDER = "nt:folder";
-    public static final String NT_FILE = "nt:file";
-    public static final String NT_RESOURCE = "nt:resource";
-
-    public static final String MIX_LAST_MODIFIED = "mix:lastModified";
-
-    private JcrConstants() {
+@Immutable
+public class ZipLexicon {
+    public static class Namespace {
+        public static final String URI = "http://www.modeshape.org/zip/1.0";
+        public static final String PREFIX = "zip";
     }
+
+    public static final String CONTENT = PREFIX + ":content";
+    public static final String FILE = PREFIX + ":file";
+
 }
