@@ -51,4 +51,23 @@ public interface ValueFactory extends javax.jcr.ValueFactory {
      * @return a Binary implementation instance
      */
     public Binary createBinary( byte[] value );
+
+    /**
+     * Creates a JCR compliant name string, from the given local name.
+     *
+     * @param localName a non-null string.
+     * @return a name-compliant string
+     */
+    public String createName( String localName );
+
+    /**
+     * Creates a JCR compliant name string, from the given namespace uri and local name.
+     *
+     * @param namespaceUri a non-null string.
+     * @param localName a non-null string.
+     *
+     * @return a name-compliant string
+     */
+    public String createName( String namespaceUri,
+                              String localName );
 }

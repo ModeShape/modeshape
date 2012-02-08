@@ -24,17 +24,17 @@
 		<module>modeshape-common</module>
 		<module>modeshape-schematic</module>
 		<module>modeshape-jcr</module>
-        <module>sequencers/modeshape-sequencer-msoffice</module>
-        <module>sequencers/modeshape-sequencer-images</module>
-        <module>sequencers/modeshape-sequencer-java</module>
-        <module>sequencers/modeshape-sequencer-ddl</module>
-        <module>sequencers/modeshape-sequencer-mp3</module>
-        <module>sequencers/modeshape-sequencer-text</module>
-        <module>sequencers/modeshape-sequencer-sramp</module>
-        <module>sequencers/modeshape-sequencer-xsd</module>
-        <module>sequencers/modeshape-sequencer-xml</module>
-            <!--module>sequencers/modeshape-sequencer-teiid</module-->
-    <!--module>sequencers/modeshape-sequencer-wsdl</module-->
+    <module>sequencers/modeshape-sequencer-msoffice</module>
+    <module>sequencers/modeshape-sequencer-images</module>
+    <module>sequencers/modeshape-sequencer-java</module>
+    <module>sequencers/modeshape-sequencer-ddl</module>
+    <module>sequencers/modeshape-sequencer-mp3</module>
+    <module>sequencers/modeshape-sequencer-text</module>
+    <module>sequencers/modeshape-sequencer-sramp</module>
+    <module>sequencers/modeshape-sequencer-xsd</module>
+    <!--module>sequencers/modeshape-sequencer-teiid</module-->
+    <module>sequencers/modeshape-sequencer-xml</module>
+    <module>sequencers/modeshape-sequencer-wsdl</module>
     <!--module>sequencers/modeshape-sequencer-zip</module-->
     <!--module>extractors/modeshape-extractor-tika</module-->
     <!--module>modeshape-jdbc-local</module-->
