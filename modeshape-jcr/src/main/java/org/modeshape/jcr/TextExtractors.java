@@ -23,17 +23,16 @@
  */
 package org.modeshape.jcr;
 
+import org.modeshape.common.annotation.Immutable;
+import org.modeshape.common.util.Logger;
+import org.modeshape.jcr.RepositoryConfiguration.Component;
+import org.modeshape.jcr.api.text.TextExtractor;
+import org.modeshape.jcr.api.text.TextExtractorOutput;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import org.modeshape.common.annotation.Immutable;
-import org.modeshape.common.util.Logger;
-import org.modeshape.jcr.RepositoryConfiguration.Component;
-import org.modeshape.jcr.text.TextExtractor;
-import org.modeshape.jcr.text.TextExtractorContext;
-import org.modeshape.jcr.text.TextExtractorOutput;
 
 /**
  * Facility for managing {@link TextExtractor} instances.
@@ -86,7 +85,7 @@ public final class TextExtractors implements TextExtractor {
     @Override
     public void extractFrom( InputStream stream,
                              TextExtractorOutput output,
-                             TextExtractorContext context ) throws IOException {
+                             Context context ) throws IOException {
         if (stream == null) return;
         if (stream.markSupported()) {
             stream.mark(Integer.MAX_VALUE);

@@ -22,7 +22,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 /**
- * This package defines an interface for components that {@link org.modeshape.jcr.text.TextExtractor extract text} from content.
+ * This package defines an interface for components that {@link org.modeshape.jcr.api.text.TextExtractor extract text} from content.
  */
 
 package org.modeshape.jcr.text;

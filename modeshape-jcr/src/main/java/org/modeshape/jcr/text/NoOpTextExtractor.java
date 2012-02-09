@@ -23,8 +23,11 @@
  */
 package org.modeshape.jcr.text;
 
+import java.io.IOException;
 import java.io.InputStream;
 import org.modeshape.common.annotation.Immutable;
+import org.modeshape.jcr.api.text.TextExtractor;
+import org.modeshape.jcr.api.text.TextExtractorOutput;
 
 /**
  * A TextExtractor that does nothing.
@@ -46,8 +49,7 @@ public final class NoOpTextExtractor implements TextExtractor {
     @Override
     public void extractFrom( InputStream stream,
                              TextExtractorOutput output,
-                             TextExtractorContext context ) {
-        // do nothing
+                             Context context ) throws IOException {
+        //do nothing
     }
-
 }

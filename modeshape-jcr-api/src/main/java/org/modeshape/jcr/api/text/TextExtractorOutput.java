@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.text;
+package org.modeshape.jcr.api.text;
 
 /**
  * The interface passed to a TextExtractor to which the extractor should record all text content.

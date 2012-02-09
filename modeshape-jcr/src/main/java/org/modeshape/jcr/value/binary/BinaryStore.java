@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
-import org.modeshape.jcr.text.TextExtractor;
+import org.modeshape.jcr.api.text.TextExtractor;
 import org.modeshape.jcr.value.Binary;
 import org.modeshape.jcr.value.BinaryKey;
 
