@@ -10,7 +10,7 @@
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- * 
+ *
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -21,35 +21,17 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.text;
+package org.modeshape.sequencer.teiid.lexicon;
 
-import java.io.IOException;
-import java.io.InputStream;
-import org.modeshape.common.annotation.Immutable;
-import org.modeshape.jcr.api.text.TextExtractor;
-import org.modeshape.jcr.api.text.TextExtractorOutput;
 
 /**
- * A TextExtractor that does nothing.
+ * 
  */
-@Immutable
-public final class NoOpTextExtractor implements TextExtractor {
+public class DiagramLexicon {
 
-    public static final TextExtractor INSTANCE = new NoOpTextExtractor();
-
-    private NoOpTextExtractor() {
-        // prevent instantiation
+    public static class Namespace {
+        public static final String URI = "http://www.metamatrix.com/metamodels/Diagram";
+        public static final String PREFIX = "diagram";
     }
 
-    @Override
-    public boolean supportsMimeType( String mimeType ) {
-        return false;
-    }
-
-    @Override
-    public void extractFrom( InputStream stream,
-                             TextExtractorOutput output,
-                             Context context ) throws IOException {
-        //do nothing
-    }
 }

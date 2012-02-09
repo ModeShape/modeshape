@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="ASCII"?>
+<!--
+  JBoss, Home of Professional Open Source.
+
+  See the LEGAL.txt file distributed with this work for information regarding copyright ownership and licensing.
+
+  See the AUTHORS.txt file distributed with this work for a full listing of individual contributors.
+-->
+<ecore:EPackage xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="Library"
+    nsURI="http://www.metamatrix.com/metamodels/Library" nsPrefix="com.metamatrix.metamodels.library">
+  <eClassifiers xsi:type="ecore:EClass" name="Book">
+    <eReferences name="author" eType="#//Writer" upperBound="-1" eOpposite="#//Writer/books"/>
+    <eAttributes name="title" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="pages" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eAttributes name="category" eType="#//BookCategory"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Library">
+    <eReferences name="writers" eType="#//Writer" upperBound="-1" containment="true"/>
+    <eReferences name="books" eType="#//Book" upperBound="-1" containment="true"/>
+    <eAttributes name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Writer">
+    <eReferences name="books" eType="#//Book" upperBound="-1" eOpposite="#//Book/author"/>
+    <eAttributes name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="BookCategory">
+    <eLiterals name="MYSTERY"/>
+    <eLiterals name="SCIENCE_FICTION" value="1"/>
+    <eLiterals name="BIOGRAPHY" value="2"/>
+  </eClassifiers>
+</ecore:EPackage>

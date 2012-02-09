@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="ASCII"?>
+<xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:diagram="http://www.metamatrix.com/metamodels/Diagram" xmlns:mmcore="http://www.metamatrix.com/metamodels/Core" xmlns:mmws="http://www.metamatrix.com/metamodels/WebService" xmlns:transformation="http://www.metamatrix.com/metamodels/Transformation">
+  <mmcore:ModelAnnotation xmi:uuid="mmuuid:7eb0ad40-f589-1f59-a112-e0eac778cc3c" primaryMetamodelUri="http://www.metamatrix.com/metamodels/WebService" modelType="VIRTUAL" ProducerName="Teiid Designer" ProducerVersion="6.0">
+    <modelImports xmi:uuid="mmuuid:46de19c0-f5d4-1f59-a112-e0eac778cc3c" name="BooksInput" modelLocation="BooksInput.xsd"/>
+    <modelImports xmi:uuid="mmuuid:fa1b4680-f5d8-1f59-a112-e0eac778cc3c" name="BooksXML" modelLocation="BooksXML.xmi" uuid="mmuuid:f96d8dc0-0dc9-1eec-8518-c32201e76066" modelType="VIRTUAL" primaryMetamodelUri="http://www.metamatrix.com/metamodels/XmlDocument"/>
+    <modelImports xmi:uuid="mmuuid:43950140-f62c-1f59-a112-e0eac778cc3c" name="Books" modelLocation="Books.xsd"/>
+  </mmcore:ModelAnnotation>
+  <diagram:DiagramContainer xmi:uuid="mmuuid:ab938b01-f58b-1f59-a112-e0eac778cc3c">
+    <diagram xmi:uuid="mmuuid:ab938b00-f58b-1f59-a112-e0eac778cc3c" type="packageDiagramType" target="mmuuid/7eb0ad40-f589-1f59-a112-e0eac778cc3c">
+      <diagramEntity xmi:uuid="mmuuid:5fb519c0-f58f-1f59-a112-e0eac778cc3c" name="Books" modelObject="mmuuid/d30a5bc0-f58e-1f59-a112-e0eac778cc3c" xPosition="20" yPosition="20"/>
+    </diagram>
+    <diagram xmi:uuid="mmuuid:884ed4c0-f594-1f59-a112-e0eac778cc3c" type="packageDiagramType" target="mmuuid/d30a5bc0-f58e-1f59-a112-e0eac778cc3c">
+      <diagramEntity xmi:uuid="mmuuid:bfd34040-f5a1-1f59-a112-e0eac778cc3c" modelObject="mmuuid/f8e62f40-f593-1f59-a112-e0eac778cc3c" xPosition="10" yPosition="10"/>
+    </diagram>
+    <diagram xmi:uuid="mmuuid:884ed4c1-f594-1f59-a112-e0eac778cc3c" type="transformationDiagramType" target="mmuuid/f8e62f40-f593-1f59-a112-e0eac778cc3c">
+      <diagramEntity xmi:uuid="mmuuid:822f9700-f5da-1f59-a112-e0eac778cc3c" modelObject="mmuuid/f8e62f40-f593-1f59-a112-e0eac778cc3c" xPosition="30" yPosition="50"/>
+      <diagramEntity xmi:uuid="mmuuid:8323bb00-f5da-1f59-a112-e0eac778cc3c" name="T" modelObject="mmuuid/a89054c0-f599-1f59-a112-e0eac778cc3c" xPosition="298" yPosition="50"/>
+      <diagramEntity xmi:uuid="mmuuid:e441c980-f5e5-1f59-a112-e0eac778cc3c" xPosition="348" yPosition="50">
+        <modelObject href="BooksXML.xmi#mmuuid/1379a507-0dca-1eec-8518-c32201e76066"/>
+      </diagramEntity>
+    </diagram>
+  </diagram:DiagramContainer>
+  <mmws:Interface xmi:uuid="mmuuid:d30a5bc0-f58e-1f59-a112-e0eac778cc3c" name="Books">
+    <operations xmi:uuid="mmuuid:f8e62f40-f593-1f59-a112-e0eac778cc3c" name="getBookCollection">
+      <input xmi:uuid="mmuuid:2adb8b80-f599-1f59-a112-e0eac778cc3c" name="getBookCollectionInput">
+        <contentElement href="BooksInput.xsd#//getBookCollectionByTitleRequest;XSDElementDeclaration"/>
+      </input>
+      <output xmi:uuid="mmuuid:a98478c1-f599-1f59-a112-e0eac778cc3c" name="getBookCollectionOutput">
+        <contentElement href="Books.xsd#//bookCollection;XSDElementDeclaration=2"/>
+        <samples xmi:uuid="mmuuid:c49b5ec1-f5e5-1f59-a112-e0eac778cc3c"/>
+        <xmlDocument href="BooksXML.xmi#mmuuid/1379a507-0dca-1eec-8518-c32201e76066"/>
+      </output>
+    </operations>
+  </mmws:Interface>
+  <transformation:TransformationContainer xmi:uuid="mmuuid:a89054c1-f599-1f59-a112-e0eac778cc3c">
+    <transformationMappings xsi:type="transformation:SqlTransformationMappingRoot" xmi:uuid="mmuuid:a89054c0-f599-1f59-a112-e0eac778cc3c" outputs="mmuuid/f8e62f40-f593-1f59-a112-e0eac778cc3c" target="mmuuid/f8e62f40-f593-1f59-a112-e0eac778cc3c">
+      <helper xsi:type="transformation:SqlTransformation" xmi:uuid="mmuuid:89a2f040-f5da-1f59-a112-e0eac778cc3c" selectSql="CREATE VIRTUAL PROCEDURE&#xa;BEGIN&#xa;DECLARE string VARIABLES.IN_BOOKNAME;&#xa;VARIABLES.IN_BOOKNAME = xpathValue(mmuuid:2adb8b80-f599-1f59-a112-e0eac778cc3c, '//*[local-name()=&quot;bookName&quot;]');&#xa;SELECT * FROM mmuuid:1379a507-0dca-1eec-8518-c32201e76066 WHERE lcase(mmuuid:1561ed01-0dca-1eec-8518-c32201e76066) = lcase(VARIABLES.IN_BOOKNAME);&#xa;END">
+        <nested xsi:type="transformation:SqlTransformation" xmi:uuid="mmuuid:8a971440-f5da-1f59-a112-e0eac778cc3c" selectSql="CREATE VIRTUAL PROCEDURE&#xa;BEGIN&#xa;DECLARE string VARIABLES.IN_BOOKNAME;&#xa;VARIABLES.IN_BOOKNAME = xpathValue(BooksWebService.Books.getBookCollection.getBookCollectionInput, '//*[local-name()=&quot;bookName&quot;]');&#xa;SELECT * FROM BooksXML.bookCollectionDocument WHERE lcase(BooksXML.bookCollectionDocument.bookCollection.book.title) = lcase(VARIABLES.IN_BOOKNAME);&#xa;END"/>
+        <aliases xmi:uuid="mmuuid:c49b5ec0-f5e5-1f59-a112-e0eac778cc3c" alias="bookCollectionDocument">
+          <aliasedObject href="BooksXML.xmi#mmuuid/1379a507-0dca-1eec-8518-c32201e76066"/>
+        </aliases>
+      </helper>
+      <nested xmi:uuid="mmuuid:c58f82c0-f5e5-1f59-a112-e0eac778cc3c" outputs="mmuuid/c49b5ec1-f5e5-1f59-a112-e0eac778cc3c"/>
+      <inputs href="BooksXML.xmi#mmuuid/1379a507-0dca-1eec-8518-c32201e76066"/>
+    </transformationMappings>
+  </transformation:TransformationContainer>
+</xmi:XMI>

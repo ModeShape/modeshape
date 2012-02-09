@@ -10,7 +10,7 @@
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- * 
+ *
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -21,17 +21,32 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.text;
+package org.modeshape.sequencer.teiid.lexicon;
+
+
+import static org.modeshape.sequencer.teiid.lexicon.CoreLexicon.Namespace.PREFIX;
 
 /**
- * The interface passed to a TextExtractor to which the extractor should record all text content.
+ * 
  */
-public interface TextExtractorOutput {
+public class CoreLexicon {
 
-    /**
-     * Record the text as being extracted. This method can be called multiple times during a single extract.
-     * 
-     * @param text the text extracted from the content.
-     */
-    void recordText( String text );
+    public static class Namespace {
+        public static final String URI = "http://www.metamatrix.com/metamodels/Core";
+        public static final String PREFIX = "mmcore";
+    }
+
+    public static final String MODEL = PREFIX + ":model";
+    public static final String ANNOTATED = PREFIX + ":annotated";
+    public static final String TAGS = PREFIX + ":tags";
+    public static final String PRIMARY_METAMODEL_URI = PREFIX + ":primaryMetamodelUri";
+    public static final String MODEL_TYPE = PREFIX + ":modelType";
+    public static final String ORIGINAL_FILE = PREFIX + ":originalFile";
+    public static final String IMPORT = PREFIX + ":import";
+    public static final String PATH = PREFIX + ":path";
+    public static final String DESCRIPTION = PREFIX + ":description";
+    public static final String KEYWORDS = PREFIX + ":keywords";
+    public static final String PRODUCER_NAME = PREFIX + ":producerName";
+    public static final String PRODUCER_VERSION = PREFIX + ":producerVersion";
+
 }

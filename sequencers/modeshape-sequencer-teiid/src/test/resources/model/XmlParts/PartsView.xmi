@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="ASCII"?>
+<xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:diagram="http://www.metamatrix.com/metamodels/Diagram" xmlns:mmcore="http://www.metamatrix.com/metamodels/Core" xmlns:relational="http://www.metamatrix.com/metamodels/Relational" xmlns:transformation="http://www.metamatrix.com/metamodels/Transformation">
+  <mmcore:ModelAnnotation xmi:uuid="mmuuid:a2387de9-a602-4621-84d1-ed5d29926bf7" primaryMetamodelUri="http://www.metamatrix.com/metamodels/Relational" modelType="VIRTUAL" ProducerName="Teiid Designer" ProducerVersion="7.0.0.v20100807-1026-H168-M1">
+    <modelImports xmi:uuid="mmuuid:c40c6be0-c972-4b37-89df-9d2f9166a41e" name="PartsData" modelLocation="PartsData.xmi" uuid="mmuuid:352bedee-4969-4ef7-8c25-d7bf8f82c47b" modelType="PHYSICAL" primaryMetamodelUri="http://www.metamatrix.com/metamodels/Relational"/>
+    <modelImports xmi:uuid="mmuuid:f51f7b3a-9392-4121-abd7-4373e873560d" name="XMLSchema" modelLocation="http://www.w3.org/2001/XMLSchema" modelType="TYPE" primaryMetamodelUri="http://www.eclipse.org/xsd/2002/XSD"/>
+  </mmcore:ModelAnnotation>
+  <diagram:DiagramContainer xmi:uuid="mmuuid:ce33de1e-ce48-4ee2-b718-ad6fab7dd0f0">
+    <diagram xmi:uuid="mmuuid:a829baa3-6acc-4b0e-9c11-52b2933cb88a" type="packageDiagramType" target="mmuuid/a2387de9-a602-4621-84d1-ed5d29926bf7">
+      <diagramEntity xmi:uuid="mmuuid:690e1195-446e-4383-847c-af6faa064fe4" modelObject="mmuuid/5898b251-4690-404d-bc41-caa8e988ea4f" xPosition="120" yPosition="70"/>
+    </diagram>
+    <diagram xmi:uuid="mmuuid:e8c26a69-637e-4627-bd4e-0b793f519aaf" type="transformationDiagramType" target="mmuuid/5898b251-4690-404d-bc41-caa8e988ea4f">
+      <diagramEntity xmi:uuid="mmuuid:5f70a988-e876-4bf0-b175-4e82bc321dbe" name="vParts" modelObject="mmuuid/5898b251-4690-404d-bc41-caa8e988ea4f" xPosition="30" yPosition="50"/>
+      <diagramEntity xmi:uuid="mmuuid:226ff3fa-314e-4308-8e94-5ab0668a3bb6" name="T" modelObject="mmuuid/79e465c4-11d8-428f-bb39-95cf2a243638" xPosition="242" yPosition="50"/>
+      <diagramEntity xmi:uuid="mmuuid:4bb2c65d-f643-4a2b-b6ad-dc2d53788594" xPosition="292" yPosition="50">
+        <modelObject href="PartsData.xmi#mmuuid/76fecac1-5279-439b-b27d-e78b72a1858c"/>
+      </diagramEntity>
+    </diagram>
+  </diagram:DiagramContainer>
+  <mmcore:AnnotationContainer xmi:uuid="mmuuid:c0d6d5c3-0089-4b16-ba03-6c6e538029a2"/>
+  <transformation:TransformationContainer xmi:uuid="mmuuid:f201faf0-120b-49fa-bc79-29ccdfcd38fe">
+    <transformationMappings xsi:type="transformation:SqlTransformationMappingRoot" xmi:uuid="mmuuid:79e465c4-11d8-428f-bb39-95cf2a243638" outputs="mmuuid/5898b251-4690-404d-bc41-caa8e988ea4f" target="mmuuid/5898b251-4690-404d-bc41-caa8e988ea4f">
+      <helper xsi:type="transformation:SqlTransformation" xmi:uuid="mmuuid:82156ba8-2f0d-4b9c-b6ae-fa392593ddc9" selectSql="SELECT x.* FROM (EXEC mmuuid:76fecac1-5279-439b-b27d-e78b72a1858c('PartsData.xml')) AS p, XMLTABLE('/parts/part' PASSING XMLPARSE(DOCUMENT P.file WELLFORMED) COLUMNS Part_ID string PATH '@id', Part_Name string PATH 'name', Part_Color string PATH 'color', Part_Weight string PATH 'weight') AS x">
+        <nested xsi:type="transformation:SqlTransformation" xmi:uuid="mmuuid:b35a0085-3a57-451e-ae4e-62d2b52d5950" selectSql="SELECT x.* FROM (EXEC PartsData.getTextFiles('PartsData.xml')) AS p, XMLTABLE('/parts/part' PASSING XMLPARSE(DOCUMENT P.file WELLFORMED) COLUMNS Part_ID string PATH '@id', Part_Name string PATH 'name', Part_Color string PATH 'color', Part_Weight string PATH 'weight') AS x"/>
+        <aliases xmi:uuid="mmuuid:3a532bf4-77f2-4187-85c9-c7a36496de42" alias="getTextFiles">
+          <aliasedObject href="PartsData.xmi#mmuuid/76fecac1-5279-439b-b27d-e78b72a1858c"/>
+        </aliases>
+      </helper>
+      <nested xsi:type="transformation:TransformationMapping" xmi:uuid="mmuuid:59157ee0-ee69-4aaa-8161-a3b1efa7b786" outputs="mmuuid/8733d109-74a6-4bca-9f98-413151d751ff"/>
+      <nested xsi:type="transformation:TransformationMapping" xmi:uuid="mmuuid:182681d3-80a1-4b96-9f6b-a7f405d05d68" outputs="mmuuid/89d57c18-a44b-48b0-9a19-5943b98a6fac"/>
+      <nested xsi:type="transformation:TransformationMapping" xmi:uuid="mmuuid:9b8bd766-613b-4b3c-9a9a-664a0a130e24" outputs="mmuuid/a66b9ce3-1237-475d-9417-57c3d0ead550"/>
+      <nested xsi:type="transformation:TransformationMapping" xmi:uuid="mmuuid:7ccdbbde-8ab1-48fc-9d00-bcd839731c1a" outputs="mmuuid/d1f3b204-c7de-495a-9b40-80bb633dffe7"/>
+      <inputs href="PartsData.xmi#mmuuid/76fecac1-5279-439b-b27d-e78b72a1858c"/>
+    </transformationMappings>
+  </transformation:TransformationContainer>
+  <relational:BaseTable xmi:uuid="mmuuid:5898b251-4690-404d-bc41-caa8e988ea4f" name="vParts" supportsUpdate="false">
+    <columns xmi:uuid="mmuuid:8733d109-74a6-4bca-9f98-413151d751ff" name="Part_ID" length="10">
+      <type href="http://www.w3.org/2001/XMLSchema#string"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:89d57c18-a44b-48b0-9a19-5943b98a6fac" name="Part_Name" length="10">
+      <type href="http://www.w3.org/2001/XMLSchema#string"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:a66b9ce3-1237-475d-9417-57c3d0ead550" name="Part_Color" length="10">
+      <type href="http://www.w3.org/2001/XMLSchema#string"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:d1f3b204-c7de-495a-9b40-80bb633dffe7" name="Part_Weight" length="10">
+      <type href="http://www.w3.org/2001/XMLSchema#string"/>
+    </columns>
+  </relational:BaseTable>
+</xmi:XMI>

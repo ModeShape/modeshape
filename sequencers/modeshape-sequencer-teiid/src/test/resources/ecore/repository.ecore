@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="ASCII"?>
+<!--
+  JBoss, Home of Professional Open Source.
+
+  See the LEGAL.txt file distributed with this work for information regarding copyright ownership and licensing.
+
+  See the AUTHORS.txt file distributed with this work for a full listing of individual contributors.
+-->
+<ecore:EPackage xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="repository"
+    nsURI="http://www.metamatrix.com/metamodels/MetaBaseRepository" nsPrefix="metabaseRepos">
+  <eClassifiers xsi:type="ecore:EClass" name="RepositoryObject" abstract="true">
+    <eOperations name="isLockedByUser" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
+    <eAttributes name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="uniqueId" eType="#//ObjectID"/>
+    <eAttributes name="readAllowed" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="true"/>
+    <eAttributes name="createAllowed" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="true"/>
+    <eAttributes name="deleteAllowed" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="true"/>
+    <eAttributes name="updateAllowed" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="true"/>
+    <eAttributes name="lastChangedTime" eType="#//JavaDate"/>
+    <eAttributes name="lockedTime" eType="#//JavaDate"/>
+    <eAttributes name="lockedHeldBy" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="comment" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="path" eType="#//IPath" changeable="false" volatile="true"/>
+    <eAttributes name="pathInWorkspace" eType="#//IPath" changeable="false" volatile="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="RepositoryFolder" eSuperTypes="#//RepositoryObject">
+    <eOperations name="refresh"/>
+    <eReferences name="items" eType="#//RepositoryItem" upperBound="-1" containment="true"
+        eOpposite="#//RepositoryItem/parent"/>
+    <eReferences name="folders" eType="#//RepositoryFolder" upperBound="-1" containment="true"
+        eOpposite="#//RepositoryFolder/parent"/>
+    <eReferences name="parent" eType="#//RepositoryFolder" transient="true" eOpposite="#//RepositoryFolder/folders"/>
+    <eAttributes name="type" eType="#//RepositoryFolderType"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="RepositoryItem" eSuperTypes="#//RepositoryObject">
+    <eOperations name="getInputStream" eType="#//InputStream"/>
+    <eReferences name="parent" eType="#//RepositoryFolder" transient="true" eOpposite="#//RepositoryFolder/items"/>
+    <eReferences name="history" eType="ecore:EClass History.ecore#//HistoryLog" changeable="false"
+        volatile="true" transient="true" resolveProxies="false"/>
+    <eAttributes name="version" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="size" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//ELong"/>
+    <eAttributes name="type" eType="#//RepositoryItemType" defaultValueLiteral="UNKNOWN"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EDataType" name="ObjectID" instanceClassName="com.metamatrix.core.id.ObjectID"/>
+  <eClassifiers xsi:type="ecore:EDataType" name="JavaDate" instanceClassName="java.util.Date"/>
+  <eClassifiers xsi:type="ecore:EDataType" name="InputStream" instanceClassName="java.io.InputStream"/>
+  <eClassifiers xsi:type="ecore:EDataType" name="IPath" instanceClassName="org.eclipse.core.runtime.IPath"/>
+  <eClassifiers xsi:type="ecore:EEnum" name="RepositoryFolderType">
+    <eLiterals name="FOLDER"/>
+    <eLiterals name="PROJECT" value="1"/>
+    <eLiterals name="CONTAINER" value="2"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="RepositoryItemType">
+    <eLiterals name="PHYSICAL"/>
+    <eLiterals name="VIRTUAL" value="1"/>
+    <eLiterals name="TYPE" value="2"/>
+    <eLiterals name="VDB_ARCHIVE" value="3"/>
+    <eLiterals name="UNKNOWN" value="4"/>
+    <eLiterals name="FUNCTION" value="5"/>
+    <eLiterals name="CONFIGURATION" value="6"/>
+    <eLiterals name="METAMODEL" value="7"/>
+    <eLiterals name="EXTENSION" value="8"/>
+    <eLiterals name="LOGICAL" value="9"/>
+    <eLiterals name="MATERIALIZATION" value="10"/>
+  </eClassifiers>
+</ecore:EPackage>

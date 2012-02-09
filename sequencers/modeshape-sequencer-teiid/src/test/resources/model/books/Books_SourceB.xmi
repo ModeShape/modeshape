@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="ASCII"?>
+<xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:Diagram="http://www.metamatrix.com/metamodels/Diagram" xmlns:Relational="http://www.metamatrix.com/metamodels/Relational" xmlns:mmcore="http://www.metamatrix.com/metamodels/Core">
+  <mmcore:ModelAnnotation xmi:uuid="mmuuid:5bad5100-0db6-1eec-8518-c32201e76066" primaryMetamodelUri="http://www.metamatrix.com/metamodels/Relational" modelType="PHYSICAL" ProducerName="MetaMatrix" ProducerVersion="5.0">
+    <modelImports xmi:uuid="mmuuid:2bd7c500-bf14-1f2c-9911-b53abd16b14e" name="XMLSchema" modelLocation="http://www.w3.org/2001/XMLSchema" modelType="PHYSICAL" primaryMetamodelUri="http://www.eclipse.org/xsd/2002/XSD"/>
+  </mmcore:ModelAnnotation>
+  <Relational:BaseTable xmi:uuid="mmuuid:7d3c03c0-0db6-1eec-8518-c32201e76066" name="AUTHORS" nameInSource="AUTHORS" cardinality="59">
+    <columns xmi:uuid="mmuuid:7e3027c1-0db6-1eec-8518-c32201e76066" name="AUTHOR_ID" nameInSource="AUTHOR_ID" nativeType="int" fixedLength="true" precision="10" nullable="NO_NULLS" caseSensitive="false" searchability="ALL_EXCEPT_LIKE">
+      <type href="http://www.w3.org/2001/XMLSchema#int"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:7e3027c3-0db6-1eec-8518-c32201e76066" name="FIRSTNAME" nameInSource="FIRSTNAME" nativeType="varchar" length="255">
+      <type href="http://www.w3.org/2001/XMLSchema#string"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:7e3027c2-0db6-1eec-8518-c32201e76066" name="LASTNAME" nameInSource="LASTNAME" nativeType="varchar" length="255">
+      <type href="http://www.w3.org/2001/XMLSchema#string"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:7e3027c0-0db6-1eec-8518-c32201e76066" name="MIDDLEINIT" nameInSource="MIDDLEINIT" nativeType="varchar" length="255">
+      <type href="http://www.w3.org/2001/XMLSchema#string"/>
+    </columns>
+  </Relational:BaseTable>
+  <Relational:BaseTable xmi:uuid="mmuuid:7e3027c4-0db6-1eec-8518-c32201e76066" name="BOOK_AUTHORS" nameInSource="BOOK_AUTHORS" cardinality="66">
+    <columns xmi:uuid="mmuuid:7e3027c5-0db6-1eec-8518-c32201e76066" name="ISBN" nameInSource="ISBN" nativeType="varchar" length="255" nullable="NO_NULLS">
+      <type href="http://www.w3.org/2001/XMLSchema#string"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:7e3027c6-0db6-1eec-8518-c32201e76066" name="AUTHOR_ID" nameInSource="AUTHOR_ID" nativeType="int" fixedLength="true" precision="10" nullable="NO_NULLS" caseSensitive="false" searchability="ALL_EXCEPT_LIKE">
+      <type href="http://www.w3.org/2001/XMLSchema#int"/>
+    </columns>
+  </Relational:BaseTable>
+  <Relational:BaseTable xmi:uuid="mmuuid:7f150980-0db6-1eec-8518-c32201e76066" name="BOOKS" nameInSource="BOOKS" cardinality="41">
+    <columns xmi:uuid="mmuuid:7f150984-0db6-1eec-8518-c32201e76066" name="ISBN" nameInSource="ISBN" nativeType="varchar" length="255" nullable="NO_NULLS">
+      <type href="http://www.w3.org/2001/XMLSchema#string"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:7f150982-0db6-1eec-8518-c32201e76066" name="TITLE" nameInSource="TITLE" nativeType="varchar" length="255">
+      <type href="http://www.w3.org/2001/XMLSchema#string"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:7f150986-0db6-1eec-8518-c32201e76066" name="SUBTITLE" nameInSource="SUBTITLE" nativeType="varchar" length="255">
+      <type href="http://www.w3.org/2001/XMLSchema#string"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:7f150985-0db6-1eec-8518-c32201e76066" name="PUBLISHER" nameInSource="PUBLISHER" nativeType="int" fixedLength="true" precision="10" caseSensitive="false" searchability="ALL_EXCEPT_LIKE">
+      <type href="http://www.w3.org/2001/XMLSchema#int"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:7f150983-0db6-1eec-8518-c32201e76066" name="PUBLISH_YEAR" nameInSource="PUBLISH_YEAR" nativeType="int" fixedLength="true" precision="10" caseSensitive="false" searchability="ALL_EXCEPT_LIKE">
+      <type href="http://www.w3.org/2001/XMLSchema#int"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:7f150987-0db6-1eec-8518-c32201e76066" name="EDITION" nameInSource="EDITION" nativeType="int" fixedLength="true" precision="10" caseSensitive="false" searchability="ALL_EXCEPT_LIKE">
+      <type href="http://www.w3.org/2001/XMLSchema#int"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:7f150981-0db6-1eec-8518-c32201e76066" name="TYPE" nameInSource="TYPE" nativeType="varchar" length="255">
+      <type href="http://www.w3.org/2001/XMLSchema#string"/>
+    </columns>
+  </Relational:BaseTable>
+  <Relational:BaseTable xmi:uuid="mmuuid:80092d80-0db6-1eec-8518-c32201e76066" name="PUBLISHERS" nameInSource="PUBLISHERS" cardinality="17">
+    <columns xmi:uuid="mmuuid:80092d82-0db6-1eec-8518-c32201e76066" name="PUBLISHER_ID" nameInSource="PUBLISHER_ID" nativeType="int" fixedLength="true" precision="10" nullable="NO_NULLS" caseSensitive="false" searchability="ALL_EXCEPT_LIKE">
+      <type href="http://www.w3.org/2001/XMLSchema#int"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:80092d81-0db6-1eec-8518-c32201e76066" name="NAME" nameInSource="NAME" nativeType="varchar" length="255">
+      <type href="http://www.w3.org/2001/XMLSchema#string"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:80092d83-0db6-1eec-8518-c32201e76066" name="LOCATION" nameInSource="LOCATION" nativeType="varchar" length="255">
+      <type href="http://www.w3.org/2001/XMLSchema#string"/>
+    </columns>
+  </Relational:BaseTable>
+  <Diagram:DiagramContainer xmi:uuid="mmuuid:b33c7a41-0db6-1eec-8518-c32201e76066">
+    <diagram xmi:uuid="mmuuid:b33c7a40-0db6-1eec-8518-c32201e76066" type="packageDiagramType" target="mmuuid/5bad5100-0db6-1eec-8518-c32201e76066">
+      <diagramEntity xmi:uuid="mmuuid:b4309e40-0db6-1eec-8518-c32201e76066" modelObject="mmuuid/7d3c03c0-0db6-1eec-8518-c32201e76066" xPosition="10" yPosition="10" height="117" width="163"/>
+      <diagramEntity xmi:uuid="mmuuid:b4309e45-0db6-1eec-8518-c32201e76066" modelObject="mmuuid/7e3027c4-0db6-1eec-8518-c32201e76066" xPosition="193" yPosition="10" height="87" width="128"/>
+      <diagramEntity xmi:uuid="mmuuid:b4309e48-0db6-1eec-8518-c32201e76066" modelObject="mmuuid/7f150980-0db6-1eec-8518-c32201e76066" xPosition="376" yPosition="10" height="162" width="151"/>
+      <diagramEntity xmi:uuid="mmuuid:b5158004-0db6-1eec-8518-c32201e76066" modelObject="mmuuid/80092d80-0db6-1eec-8518-c32201e76066" xPosition="559" yPosition="10" height="102" width="157"/>
+    </diagram>
+  </Diagram:DiagramContainer>
+</xmi:XMI>

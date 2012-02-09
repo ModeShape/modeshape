@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<vdb version="1" name="PartsFromXml">
+    <description>Maybe, just maybe, this will read in the XML file and crank out what looks like relational data! Maybe.</description>
+    <property value="false" name="preview"/>
+    <model visible="true" type="PHYSICAL" name="PartsData" path="/XmlParts/PartsData.xmi">
+        <property value="2278466267" name="checksum"/>
+        <property value="false" name="builtIn"/>
+        <property value="1200573655.INDEX" name="indexName"/>
+        <source translator-name="file" connection-jndi-name="PartsXmlDS" name="PartsData"/>
+        <validation-error path="getTextFiles/NewProcedureResult/filePath" severity="WARNING">Missing or invalid Length on column with a string/character datatype  (See validation Preferences)</validation-error>
+    </model>
+    <model visible="true" type="VIRTUAL" name="PartsView" path="/XmlParts/PartsView.xmi">
+        <property value="2734797807" name="checksum"/>
+        <property value="false" name="builtIn"/>
+        <property value="1842644986.INDEX" name="indexName"/>
+        <property value="/XmlParts/PartsData.xmi" name="imports"/>
+        <validation-error path="vParts" severity="WARNING">Possible cross-join: Group/s '[p, x]' are not joined either directly or transitively to other groups through a join criteria. Check all queries in the transformation.</validation-error>
+    </model>
+</vdb>

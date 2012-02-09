@@ -21,35 +21,17 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.text;
-
-import java.io.IOException;
-import java.io.InputStream;
-import org.modeshape.common.annotation.Immutable;
-import org.modeshape.jcr.api.text.TextExtractor;
-import org.modeshape.jcr.api.text.TextExtractorOutput;
+package org.modeshape.jcr.api.text;
 
 /**
- * A TextExtractor that does nothing.
+ * The interface passed to a TextExtractor to which the extractor should record all text content.
  */
-@Immutable
-public final class NoOpTextExtractor implements TextExtractor {
+public interface TextExtractorOutput {
 
-    public static final TextExtractor INSTANCE = new NoOpTextExtractor();
-
-    private NoOpTextExtractor() {
-        // prevent instantiation
-    }
-
-    @Override
-    public boolean supportsMimeType( String mimeType ) {
-        return false;
-    }
-
-    @Override
-    public void extractFrom( InputStream stream,
-                             TextExtractorOutput output,
-                             Context context ) throws IOException {
-        //do nothing
-    }
+    /**
+     * Record the text as being extracted. This method can be called multiple times during a single extract.
+     * 
+     * @param text the text extracted from the content.
+     */
+    void recordText( String text );
 }

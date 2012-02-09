@@ -1,0 +1,57 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ * See the COPYRIGHT.txt file distributed with this work for information
+ * regarding copyright ownership.  Some portions may be licensed
+ * to Red Hat, Inc. under one or more contributor license agreements.
+ * See the AUTHORS.txt file in the distribution for a full listing of 
+ * individual contributors. 
+ *
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * ModeShape is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+ 
+//------------------------------------------------------------------------------
+// N A M E S P A C E S
+//------------------------------------------------------------------------------
+
+<nt  = "http://www.jcp.org/jcr/nt/1.0">
+<xmi = "http://www.omg.org/XMI">
+<jdbcs = "http://www.metamatrix.com/metamodels/JDBC">
+
+//------------------------------------------------------------------------------
+// N O D E T Y P E S
+//------------------------------------------------------------------------------
+
+[jdbcs:source] > nt:unstructured, xmi:referenceable
+ - jdbcs:name (string) 
+ - jdbcs:driverName (string) 
+ - jdbcs:driverClass (string) 
+ - jdbcs:username (string) 
+ - jdbcs:url (string) 
+
+[jdbcs:imported] > nt:unstructured, xmi:referenceable
+ - jdbcs:createCatalogsInModel (boolean) = 'true' 
+ - jdbcs:createSchemasInModel (boolean) = 'true' 
+ - jdbcs:convertCaseInModel (string) < 'NONE', 'TO_UPPERCASE', 'TO_LOWERCASE'
+ - jdbcs:generateSourceNamesInModel (string) = 'UNQUALIFIED' < 'NONE', 'UNQUALIFIED', 'FULLY_QUALIFIED'
+ - jdbcs:includedCatalogPaths (string) multiple 
+ - jdbcs:includedSchemaPaths (string) multiple 
+ - jdbcs:excludedObjectPaths (string) multiple 
+ - jdbcs:includeForeignKeys (boolean) = 'true' 
+ - jdbcs:includeIndexes (boolean) = 'true' 
+ - jdbcs:includeProcedures (boolean) = 'false' 
+ - jdbcs:includeApproximateIndexes (boolean) = 'true' 
+ - jdbcs:includeUniqueIndexes (boolean) = 'false' 
+ - jdbcs:includedTableTypes (string) multiple 

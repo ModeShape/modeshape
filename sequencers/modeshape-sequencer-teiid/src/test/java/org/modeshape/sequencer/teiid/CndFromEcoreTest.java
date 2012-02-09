@@ -21,35 +21,42 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.text;
+package org.modeshape.sequencer.teiid;
 
-import java.io.IOException;
-import java.io.InputStream;
-import org.modeshape.common.annotation.Immutable;
-import org.modeshape.jcr.api.text.TextExtractor;
-import org.modeshape.jcr.api.text.TextExtractorOutput;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 
-/**
- * A TextExtractor that does nothing.
- */
-@Immutable
-public final class NoOpTextExtractor implements TextExtractor {
+@Ignore
+public class CndFromEcoreTest {
 
-    public static final TextExtractor INSTANCE = new NoOpTextExtractor();
+    private CndFromEcore converter;
 
-    private NoOpTextExtractor() {
-        // prevent instantiation
+    @Before
+    public void beforeEach() {
+        converter = new CndFromEcore();
     }
 
-    @Override
-    public boolean supportsMimeType( String mimeType ) {
-        return false;
+    @Test
+    public void shouldPrintUsageForNoInputFiles() throws Exception {
+        CndFromEcore.main(new String[] {"-o", "my.cnd"});
     }
 
-    @Override
-    public void extractFrom( InputStream stream,
-                             TextExtractorOutput output,
-                             Context context ) throws IOException {
-        //do nothing
+    @Test
+    public void shouldConvertRelationalEcore() {
+        converter.setEcoreFileNames("src/test/resources/ecore/relational.ecore");
+        converter.execute();
+    }
+
+    @Test
+    public void shouldConvertJdbcEcore() {
+        converter.setEcoreFileNames("src/test/resources/ecore/Jdbc.ecore");
+        converter.execute();
+    }
+
+    @Test
+    public void shouldConvertTransformation() {
+        converter.setEcoreFileNames("src/test/resources/ecore/transformation.ecore");
+        converter.execute();
     }
 }

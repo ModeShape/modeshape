@@ -1,0 +1,69 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ * See the COPYRIGHT.txt file distributed with this work for information
+ * regarding copyright ownership.  Some portions may be licensed
+ * to Red Hat, Inc. under one or more contributor license agreements.
+ * See the AUTHORS.txt file in the distribution for a full listing of 
+ * individual contributors. 
+ *
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * ModeShape is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+ 
+//------------------------------------------------------------------------------
+// N A M E S P A C E S
+//------------------------------------------------------------------------------
+
+<nt  = "http://www.jcp.org/jcr/nt/1.0">
+<xmi = "http://www.omg.org/XMI">
+<mmcore = "http://www.metamatrix.com/metamodels/Core">
+<mode = "http://www.modeshape.org/1.0">
+
+//------------------------------------------------------------------------------
+// N O D E T Y P E S
+//------------------------------------------------------------------------------
+
+[mmcore:model] > xmi:referenceable, mode:hashed mixin
+  - mmcore:modelType (string) = 'UNKNOWN' < 'PHYSICAL','VIRTUAL','TYPE','VDB_ARCHIVE','UNKNOWN','FUNCTION','CONFIGURATION','METAMODEL','EXTENSION','LOGICAL','MATERIALIZATION'
+  - mmcore:primaryMetamodelUri (string)
+  - mmcore:description (string)
+  - mmcore:nameInSource (string)
+  - mmcore:maxSetSize (long) = '100'
+  - mmcore:visible (boolean) = 'true'
+  - mmcore:supportsDistinct (boolean) = 'true'
+  - mmcore:supportsJoin (boolean) = 'true'
+  - mmcore:supportsOrderBy (boolean) = 'true'
+  - mmcore:supportsOuterJoin (boolean) = 'true'
+  - mmcore:supportsWhereAll (boolean) = 'true'
+  - mmcore:supportsDistinct (boolean) = 'true'
+  - mmcore:producerName (string)
+  - mmcore:producerVersion (string)
+  - mmcore:originalFile (string)
+  - mmcore:sha1 (string)
+
+[mmcore:import] > nt:unstructured, xmi:referenceable orderable
+  - mmcore:modelType (string) = 'UNKNOWN' < 'PHYSICAL','VIRTUAL','TYPE','VDB_ARCHIVE','UNKNOWN','FUNCTION','CONFIGURATION','METAMODEL','EXTENSION','LOGICAL','MATERIALIZATION'
+  - mmcore:primaryMetamodelUri (string)
+  - mmcore:path (string)
+  - mmcore:name (string)
+  - mmcore:modelLocation (string)
+
+[mmcore:annotated] mixin
+  - mmcore:description (string)
+  - mmcore:keywords (string) multiple
+
+[mmcore:tags] mixin
+  - * (undefined) multiple 
+  - * (undefined) 

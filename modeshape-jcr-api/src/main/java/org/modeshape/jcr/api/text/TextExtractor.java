@@ -21,13 +21,14 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.text;
+package org.modeshape.jcr.api.text;
 
 import java.io.IOException;
 import java.io.InputStream;
 
 /**
  * An abstraction for components that are able to extract text content from an input stream.
+ * //TODO author=Horia Chiorean date=2/9/12 description=Refine this class when porting/implementing extractors
  */
 public interface TextExtractor {
 
@@ -55,6 +56,13 @@ public interface TextExtractor {
      */
     void extractFrom( InputStream stream,
                       TextExtractorOutput output,
-                      TextExtractorContext context ) throws IOException;
+                      Context context ) throws IOException;
+
+
+    public interface Context {
+        //TODO author=Horia Chiorean date=2/9/12 description=define
+
+        String getMimeType();
+    }
 
 }

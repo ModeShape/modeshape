@@ -21,9 +21,32 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-/**
- * This package defines an interface for components that {@link org.modeshape.jcr.api.text.TextExtractor extract text} from content.
- */
+ 
+//------------------------------------------------------------------------------
+// N A M E S P A C E S
+//------------------------------------------------------------------------------
 
-package org.modeshape.jcr.text;
+<transform='http://www.metamatrix.com/metamodels/Transformation'>
 
+//------------------------------------------------------------------------------
+// N O D E T Y P E S
+//------------------------------------------------------------------------------
+
+[transform:transformed] mixin
+ - transform:transformedFrom (weakreference)
+ - transform:transformedFromHrefs (string)
+ - transform:transformedFromXmiUuids (string)
+ - transform:transformedFromNames (string)
+
+[transform:withSql] mixin
+ - transform:selectSql (string) 
+ - transform:insertSql (string) 
+ - transform:updateSql (string) 
+ - transform:deleteSql (string) 
+ - transform:insertAllowed (boolean) = 'true' 
+ - transform:updateAllowed (boolean) = 'true' 
+ - transform:deleteAllowed (boolean) = 'true' 
+ - transform:outputLocked (boolean) = 'false' 
+ - transform:insertSqlDefault (boolean) = 'true' 
+ - transform:updateSqlDefault (boolean) = 'true' 
+ - transform:deleteSqlDefault (boolean) = 'true' 

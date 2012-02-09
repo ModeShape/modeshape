@@ -29,13 +29,14 @@ import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.component.ClassLoaderFactory;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
+import org.modeshape.jcr.api.text.TextExtractor;
 import org.modeshape.jcr.security.SecurityContext;
 import org.modeshape.jcr.value.NamespaceRegistry;
 
 /**
  * A context for extracting the content.
  */
-public class TextExtractorContext extends ExecutionContext {
+public class TextExtractorContext extends ExecutionContext implements TextExtractor.Context {
 
     private final Problems problems;
     private final String mimeType;

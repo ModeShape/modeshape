@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="ASCII"?>
+<xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:diagram="http://www.metamatrix.com/metamodels/Diagram" xmlns:mmcore="http://www.metamatrix.com/metamodels/Core" xmlns:relational="http://www.metamatrix.com/metamodels/Relational" xmlns:transformation="http://www.metamatrix.com/metamodels/Transformation">
+  <mmcore:ModelAnnotation xmi:uuid="mmuuid:9c034c0d-10c7-4fa5-beae-ff602bfcf88e" primaryMetamodelUri="http://www.metamatrix.com/metamodels/Relational" modelType="VIRTUAL" ProducerName="Teiid Designer" ProducerVersion="7.0.0.v20100807-1026-H168-M1">
+    <modelImports xmi:uuid="mmuuid:46ba6b40-bb81-43ba-996e-6f3ebaffea3b" name="text" modelLocation="../QuickText/text.xmi" uuid="mmuuid:ba1f1ca6-b9a7-44f8-9d89-8d9ba9f801ba" modelType="PHYSICAL" primaryMetamodelUri="http://www.metamatrix.com/metamodels/Relational"/>
+    <modelImports xmi:uuid="mmuuid:36a2080b-7243-445c-a153-79a19d42f558" name="SimpleDatatypes-instance" modelLocation="http://www.metamatrix.com/metamodels/SimpleDatatypes-instance" modelType="TYPE" primaryMetamodelUri="http://www.eclipse.org/xsd/2002/XSD"/>
+    <modelImports xmi:uuid="mmuuid:ea4a1ff7-fa32-4348-b5a2-192c554b70a4" name="XMLSchema" modelLocation="http://www.w3.org/2001/XMLSchema" modelType="TYPE" primaryMetamodelUri="http://www.eclipse.org/xsd/2002/XSD"/>
+  </mmcore:ModelAnnotation>
+  <diagram:DiagramContainer xmi:uuid="mmuuid:e38296ed-8758-42bc-92f7-4548dc838457">
+    <diagram xmi:uuid="mmuuid:83676881-71b4-4c3d-862f-7cadc8c075e7" type="packageDiagramType" target="mmuuid/9c034c0d-10c7-4fa5-beae-ff602bfcf88e">
+      <diagramEntity xmi:uuid="mmuuid:3f3634c8-4f29-4694-b71c-1228784f21d4" name="EmployeeReturned" modelObject="mmuuid/6179a495-7b7e-4e12-9da3-998e4f709de4" xPosition="60" yPosition="40"/>
+    </diagram>
+    <diagram xmi:uuid="mmuuid:cf18a05d-e8c8-441b-b58b-34d769426a53" type="transformationDiagramType" target="mmuuid/6179a495-7b7e-4e12-9da3-998e4f709de4">
+      <diagramEntity xmi:uuid="mmuuid:af7b3983-27d4-4f31-9eb3-281e648bf4bd" name="EmpTable" modelObject="mmuuid/6179a495-7b7e-4e12-9da3-998e4f709de4" xPosition="30" yPosition="50"/>
+      <diagramEntity xmi:uuid="mmuuid:55914202-3386-4cde-bf90-ebbeab683867" name="T" modelObject="mmuuid/19a34669-d8b6-4e25-b712-090cd908d107" xPosition="248" yPosition="50"/>
+      <diagramEntity xmi:uuid="mmuuid:ede196c8-297d-491e-af91-bddd66602d0d" xPosition="298" yPosition="50">
+        <modelObject href="../QuickText/text.xmi#mmuuid/bf60b5cb-fd8c-474a-9f4c-68eb42ca40f2"/>
+      </diagramEntity>
+    </diagram>
+  </diagram:DiagramContainer>
+  <mmcore:AnnotationContainer xmi:uuid="mmuuid:0a6430a5-20b2-4056-b8b8-21c370efc7e4"/>
+  <transformation:TransformationContainer xmi:uuid="mmuuid:568062c4-2df4-40a6-b98a-aa4cc55a7ac6">
+    <transformationMappings xsi:type="transformation:SqlTransformationMappingRoot" xmi:uuid="mmuuid:19a34669-d8b6-4e25-b712-090cd908d107" outputs="mmuuid/6179a495-7b7e-4e12-9da3-998e4f709de4" target="mmuuid/6179a495-7b7e-4e12-9da3-998e4f709de4">
+      <helper xsi:type="transformation:SqlTransformation" xmi:uuid="mmuuid:d3e1aa96-8eae-4244-a698-266e0433f86b" selectSql="SELECT * FROM (EXEC mmuuid:bf60b5cb-fd8c-474a-9f4c-68eb42ca40f2('EmpData.txt')) AS f, TEXTTABLE(F.file COLUMNS lastName string, firstName string, middleName string, empId biginteger, department string, annualSalary double, title string, homePhone string, mgrId biginteger, street string, city string, state string, ZipCode string HEADER 3) AS emp">
+        <nested xsi:type="transformation:SqlTransformation" xmi:uuid="mmuuid:f4f5763b-d936-486e-a727-2debaa2c5900" selectSql="SELECT * FROM (EXEC text.getTextFiles('EmpData.txt')) AS f, TEXTTABLE(F.file COLUMNS lastName string, firstName string, middleName string, empId biginteger, department string, annualSalary double, title string, homePhone string, mgrId biginteger, street string, city string, state string, ZipCode string HEADER 3) AS emp"/>
+        <aliases xmi:uuid="mmuuid:ab7c33d3-09b1-47aa-92fe-0f605402dca4" alias="getTextFiles">
+          <aliasedObject href="../QuickText/text.xmi#mmuuid/bf60b5cb-fd8c-474a-9f4c-68eb42ca40f2"/>
+        </aliases>
+      </helper>
+      <nested xsi:type="transformation:TransformationMapping" xmi:uuid="mmuuid:800ff9ac-3e8a-409f-8d54-f039f2c093ab" outputs="mmuuid/5ca79549-8edc-4972-9d05-cb3066d41676">
+        <inputs href="../QuickText/text.xmi#mmuuid/092a2a85-7ec6-40da-9437-afd0812eccbb"/>
+      </nested>
+      <nested xsi:type="transformation:TransformationMapping" xmi:uuid="mmuuid:facd13b0-0faf-488c-a30b-c7399e4f2b3c" outputs="mmuuid/fea43d8f-94e4-41f3-9743-3286f8c28590">
+        <inputs href="../QuickText/text.xmi#mmuuid/232d5fd7-e5a6-49a7-bd5f-e5d6b7e753a3"/>
+      </nested>
+      <nested xsi:type="transformation:TransformationMapping" xmi:uuid="mmuuid:29190ae8-4ef8-48f8-82d1-ccf59b4de3a5" outputs="mmuuid/f0b80cce-dd11-44b7-ab2d-4e382befd701"/>
+      <nested xsi:type="transformation:TransformationMapping" xmi:uuid="mmuuid:4d038dab-253c-4d2d-a32a-6e9891eeb335" outputs="mmuuid/aae0eea7-fb09-4b46-9a41-8815bf5331db"/>
+      <nested xsi:type="transformation:TransformationMapping" xmi:uuid="mmuuid:8709f1fa-06b0-4d62-bfb8-f7dff33868d3" outputs="mmuuid/74333281-f3f8-4907-8ac1-4c819dfc76a8"/>
+      <nested xsi:type="transformation:TransformationMapping" xmi:uuid="mmuuid:a9d418ff-4fa3-4c55-a31c-91c8ab3fa699" outputs="mmuuid/5e42fcfc-fe7a-476d-8b55-8a5ce0cd7050"/>
+      <nested xsi:type="transformation:TransformationMapping" xmi:uuid="mmuuid:d9c27765-8c1e-40e2-a542-5db47dc85cd5" outputs="mmuuid/36ea6df0-ddc0-4311-be2e-f4a6cbe2b580"/>
+      <nested xsi:type="transformation:TransformationMapping" xmi:uuid="mmuuid:7f8a826f-7988-430c-b2e4-766155200ab9" outputs="mmuuid/79c7b080-c9de-42c9-b252-a449d44e5d34"/>
+      <nested xsi:type="transformation:TransformationMapping" xmi:uuid="mmuuid:6469a244-9455-4ca8-a2a0-700a00005336" outputs="mmuuid/001ac238-21c6-45f3-8959-3fa0c7bea6c6"/>
+      <nested xsi:type="transformation:TransformationMapping" xmi:uuid="mmuuid:7b97cb1a-e356-4a63-84e3-74ef15686bc4" outputs="mmuuid/432c3937-e7ad-40de-9cb4-deb9d52511b2"/>
+      <nested xsi:type="transformation:TransformationMapping" xmi:uuid="mmuuid:fa6e8798-8fee-4af3-93c3-3089ae9d4712" outputs="mmuuid/9c7b26dc-bbf6-4b83-9f03-438ad6a0b3f0"/>
+      <nested xsi:type="transformation:TransformationMapping" xmi:uuid="mmuuid:60be59c2-0faf-4d18-8664-8c8ef804b82a" outputs="mmuuid/1181dfe5-0d2b-4331-b10b-5d6409dd6cbe"/>
+      <nested xsi:type="transformation:TransformationMapping" xmi:uuid="mmuuid:01501de8-0e87-465c-931e-cdb4557a4650" outputs="mmuuid/60792162-1659-416b-a6da-b78119429247"/>
+      <nested xsi:type="transformation:TransformationMapping" xmi:uuid="mmuuid:5c702f07-1d9a-4ee9-aa62-defecc1dada6" outputs="mmuuid/67ed3d16-7fd6-43bb-b16a-61579a49db91"/>
+      <nested xsi:type="transformation:TransformationMapping" xmi:uuid="mmuuid:043aadfa-6d48-4a7b-9bef-379f99dccef1" outputs="mmuuid/2c2267b6-bddf-4d42-aef8-7d24e7527b65"/>
+      <inputs href="../QuickText/text.xmi#mmuuid/bf60b5cb-fd8c-474a-9f4c-68eb42ca40f2"/>
+    </transformationMappings>
+  </transformation:TransformationContainer>
+  <relational:BaseTable xmi:uuid="mmuuid:6179a495-7b7e-4e12-9da3-998e4f709de4" name="EmpTable" supportsUpdate="false">
+    <columns xmi:uuid="mmuuid:5ca79549-8edc-4972-9d05-cb3066d41676" name="file">
+      <type href="http://www.metamatrix.com/metamodels/SimpleDatatypes-instance#clob"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:fea43d8f-94e4-41f3-9743-3286f8c28590" name="filePath" length="10">
+      <type href="http://www.w3.org/2001/XMLSchema#string"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:f0b80cce-dd11-44b7-ab2d-4e382befd701" name="lastName" length="10">
+      <type href="http://www.w3.org/2001/XMLSchema#string"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:aae0eea7-fb09-4b46-9a41-8815bf5331db" name="firstName" length="10">
+      <type href="http://www.w3.org/2001/XMLSchema#string"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:74333281-f3f8-4907-8ac1-4c819dfc76a8" name="middleName" length="10">
+      <type href="http://www.w3.org/2001/XMLSchema#string"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:5e42fcfc-fe7a-476d-8b55-8a5ce0cd7050" name="empId">
+      <type href="http://www.metamatrix.com/metamodels/SimpleDatatypes-instance#biginteger"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:36ea6df0-ddc0-4311-be2e-f4a6cbe2b580" name="department" length="10">
+      <type href="http://www.w3.org/2001/XMLSchema#string"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:79c7b080-c9de-42c9-b252-a449d44e5d34" name="annualSalary">
+      <type href="http://www.w3.org/2001/XMLSchema#double"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:001ac238-21c6-45f3-8959-3fa0c7bea6c6" name="title" length="10">
+      <type href="http://www.w3.org/2001/XMLSchema#string"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:432c3937-e7ad-40de-9cb4-deb9d52511b2" name="homePhone" length="10">
+      <type href="http://www.w3.org/2001/XMLSchema#string"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:9c7b26dc-bbf6-4b83-9f03-438ad6a0b3f0" name="mgrId">
+      <type href="http://www.metamatrix.com/metamodels/SimpleDatatypes-instance#biginteger"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:1181dfe5-0d2b-4331-b10b-5d6409dd6cbe" name="street" length="10">
+      <type href="http://www.w3.org/2001/XMLSchema#string"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:60792162-1659-416b-a6da-b78119429247" name="city" length="10">
+      <type href="http://www.w3.org/2001/XMLSchema#string"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:67ed3d16-7fd6-43bb-b16a-61579a49db91" name="state" length="10">
+      <type href="http://www.w3.org/2001/XMLSchema#string"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:2c2267b6-bddf-4d42-aef8-7d24e7527b65" name="ZipCode" length="10">
+      <type href="http://www.w3.org/2001/XMLSchema#string"/>
+    </columns>
+  </relational:BaseTable>
+</xmi:XMI>
