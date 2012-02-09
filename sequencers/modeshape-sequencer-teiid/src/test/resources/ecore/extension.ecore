@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  JBoss, Home of Professional Open Source.
+
+  See the LEGAL.txt file distributed with this work for information regarding copyright ownership and licensing.
+
+  See the AUTHORS.txt file distributed with this work for a full listing of individual contributors.
+-->
+<ecore:EPackage xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="extension"
+    nsURI="http://www.metamatrix.com/metamodels/Extension" nsPrefix="mmext">
+  <eClassifiers xsi:type="ecore:EClass" name="XClass" eSuperTypes="Ecore.ecore#//EClass">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="extendedClass" eType="ecore:EClass Ecore.ecore#//EClass"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XPackage" eSuperTypes="Ecore.ecore#//EPackage">
+    <eOperations name="findXClass" eType="#//XClass">
+      <eParameters name="extendedClass" eType="ecore:EClass Ecore.ecore#//EClass"/>
+    </eOperations>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XAttribute" eSuperTypes="Ecore.ecore#//EAttribute"/>
+  <eClassifiers xsi:type="ecore:EClass" name="XEnum" eSuperTypes="Ecore.ecore#//EEnum"/>
+  <eClassifiers xsi:type="ecore:EClass" name="XEnumLiteral" eSuperTypes="Ecore.ecore#//EEnumLiteral"/>
+</ecore:EPackage>

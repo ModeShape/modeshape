@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  JBoss, Home of Professional Open Source.
+
+  See the LEGAL.txt file distributed with this work for information regarding copyright ownership and licensing.
+
+  See the AUTHORS.txt file distributed with this work for a full listing of individual contributors.
+-->
+<ecore:EPackage xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="diagram"
+    nsURI="http://www.metamatrix.com/metamodels/Diagram" nsPrefix="diagram">
+  <eClassifiers xsi:type="ecore:EClass" name="DiagramEntity" eSuperTypes="#//AbstractDiagramEntity">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="xPosition" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="yPosition" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="height" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="width" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="diagram" eType="#//Diagram"
+        transient="true" eOpposite="#//Diagram/diagramEntity"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="PresentationEntity" abstract="true">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Diagram" eSuperTypes="#//PresentationEntity">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="type" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="notation" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="linkType" eType="#//DiagramLinkType"
+        defaultValueLiteral="ORTHOGONAL"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="diagramEntity" upperBound="-1"
+        eType="#//DiagramEntity" containment="true" eOpposite="#//DiagramEntity/diagram"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="target" eType="ecore:EClass ../../org.eclipse.emf.ecore/src/model/Ecore.ecore#//EObject"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="diagramContainer" eType="#//DiagramContainer"
+        transient="true" eOpposite="#//DiagramContainer/diagram"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="diagramLinks" upperBound="-1"
+        eType="#//DiagramLink" containment="true" eOpposite="#//DiagramLink/diagram"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="DiagramContainer" eSuperTypes="#//PresentationEntity">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="diagram" upperBound="-1"
+        eType="#//Diagram" containment="true" eOpposite="#//Diagram/diagramContainer"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="DiagramLink" eSuperTypes="#//AbstractDiagramEntity">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="type" eType="#//DiagramLinkType"
+        defaultValueLiteral="ORTHOGONAL"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="diagram" eType="#//Diagram"
+        transient="true" eOpposite="#//Diagram/diagramLinks"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="routePoints" upperBound="-1"
+        eType="#//DiagramPosition" containment="true" eOpposite="#//DiagramPosition/diagramLink"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="AbstractDiagramEntity" abstract="true"
+      eSuperTypes="#//PresentationEntity">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="alias" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="userString" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="userType" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="modelObject" eType="ecore:EClass ../../org.eclipse.emf.ecore/src/model/Ecore.ecore#//EObject"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="DiagramPosition">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="xPosition" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="yPosition" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="diagramLink" eType="#//DiagramLink"
+        transient="true" eOpposite="#//DiagramLink/routePoints"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="DiagramLinkType">
+    <eLiterals name="ORTHOGONAL"/>
+    <eLiterals name="DIRECTED" value="1"/>
+    <eLiterals name="MANUAL" value="2"/>
+  </eClassifiers>
+</ecore:EPackage>

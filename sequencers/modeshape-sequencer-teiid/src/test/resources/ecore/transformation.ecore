@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  JBoss, Home of Professional Open Source.
+
+  See the LEGAL.txt file distributed with this work for information regarding copyright ownership and licensing.
+
+  See the AUTHORS.txt file distributed with this work for a full listing of individual contributors.
+-->
+<ecore:EPackage xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="transformation"
+    nsURI="http://www.metamatrix.com/metamodels/Transformation" nsPrefix="transformation">
+  <eClassifiers xsi:type="ecore:EClass" name="TransformationContainer">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="transformationMappings"
+        upperBound="-1" eType="#//TransformationMappingRoot" containment="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="SqlTransformation" eSuperTypes="Mapping.ecore#//MappingHelper">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="selectSql" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="insertSql" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="updateSql" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="deleteSql" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="insertAllowed" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="updateAllowed" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="deleteAllowed" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="outputLocked" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="false"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="insertSqlDefault" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="updateSqlDefault" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="deleteSqlDefault" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="aliases" upperBound="-1"
+        eType="#//SqlAlias" containment="true" eOpposite="#//SqlAlias/sqlTransformation"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="TransformationMappingRoot" abstract="true"
+      eSuperTypes="Mapping.ecore#//MappingRoot">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="target" eType="ecore:EClass Ecore.ecore#//EObject"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="TransformationMapping" eSuperTypes="Mapping.ecore#//Mapping"/>
+  <eClassifiers xsi:type="ecore:EClass" name="SqlAlias">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="alias" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="aliasedObject" lowerBound="1"
+        eType="ecore:EClass Ecore.ecore#//EObject"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="sqlTransformation" eType="#//SqlTransformation"
+        transient="true" eOpposite="#//SqlTransformation/aliases"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="SqlTransformationMappingRoot" eSuperTypes="#//TransformationMappingRoot"/>
+  <eClassifiers xsi:type="ecore:EClass" name="FragmentMappingRoot" eSuperTypes="#//TransformationMappingRoot"/>
+  <eClassifiers xsi:type="ecore:EClass" name="TreeMappingRoot" eSuperTypes="#//TransformationMappingRoot"/>
+  <eClassifiers xsi:type="ecore:EClass" name="MappingClass" eSuperTypes="#//MappingClassObject">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="recursive" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="false"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="recursionAllowed" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="false"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="recursionCriteria" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="recursionLimit" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
+        defaultValueLiteral="5"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="recursionLimitErrorMode"
+        eType="#//RecursionErrorMode" defaultValueLiteral="THROW"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="columns" lowerBound="1"
+        upperBound="-1" eType="#//MappingClassColumn" containment="true" eOpposite="#//MappingClassColumn/mappingClass"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="mappingClassSet" eType="#//MappingClassSet"
+        transient="true" eOpposite="#//MappingClassSet/mappingClasses"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="inputSet" eType="#//InputSet"
+        containment="true" eOpposite="#//InputSet/mappingClass"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="MappingClassColumn" eSuperTypes="#//MappingClassObject">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="mappingClass" lowerBound="1"
+        eType="#//MappingClass" transient="true" eOpposite="#//MappingClass/columns"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="type" lowerBound="1" eType="ecore:EClass Ecore.ecore#//EObject"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="MappingClassObject" abstract="true">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="StagingTable" eSuperTypes="#//MappingClass"/>
+  <eClassifiers xsi:type="ecore:EClass" name="MappingClassSet">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="mappingClasses" upperBound="-1"
+        eType="#//MappingClass" containment="true" eOpposite="#//MappingClass/mappingClassSet"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="target" eType="ecore:EClass Ecore.ecore#//EObject"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="inputBinding" upperBound="-1"
+        eType="#//InputBinding" containment="true" eOpposite="#//InputBinding/mappingClassSet"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="MappingClassSetContainer">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="mappingClassSets" upperBound="-1"
+        eType="#//MappingClassSet" containment="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="InputParameter">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="inputSet" lowerBound="1"
+        eType="#//InputSet" transient="true" eOpposite="#//InputSet/inputParameters"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="type" lowerBound="1" eType="ecore:EClass Ecore.ecore#//EObject"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="InputSet">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="mappingClass" lowerBound="1"
+        eType="#//MappingClass" transient="true" eOpposite="#//MappingClass/inputSet"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="inputParameters" upperBound="-1"
+        eType="#//InputParameter" containment="true" eOpposite="#//InputParameter/inputSet"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="InputBinding">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="mappingClassSet" lowerBound="1"
+        eType="#//MappingClassSet" transient="true" eOpposite="#//MappingClassSet/inputBinding"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="inputParameter" lowerBound="1"
+        eType="#//InputParameter"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="mappingClassColumn" lowerBound="1"
+        eType="#//MappingClassColumn"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="RecursionErrorMode">
+    <eLiterals name="THROW"/>
+    <eLiterals name="RECORD" value="1"/>
+    <eLiterals name="DISCARD" value="2"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="DataFlowMappingRoot" eSuperTypes="#//TransformationMappingRoot">
+    <eOperations name="getSourceNodes" eType="#//List"/>
+    <eOperations name="getTargetNodes" eType="#//List"/>
+    <eOperations name="getResultantSql" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="allowsOptimization" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="nodes" lowerBound="1" upperBound="-1"
+        eType="#//DataFlowNode" containment="true" eOpposite="#//DataFlowNode/owner"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="links" lowerBound="1" upperBound="-1"
+        eType="#//DataFlowLink" containment="true" eOpposite="#//DataFlowLink/owner"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="DataFlowNode">
+    <eOperations name="getInputNodes" eType="#//List"/>
+    <eOperations name="getOutputNodes" eType="#//List"/>
+    <eOperations name="getProjectedSymbols" eType="#//List"/>
+    <eOperations name="getSqlString" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="owner" eType="#//DataFlowMappingRoot"
+        transient="true" eOpposite="#//DataFlowMappingRoot/nodes"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="inputLinks" upperBound="-1"
+        eType="#//DataFlowLink" eOpposite="#//DataFlowLink/outputNode"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="outputLinks" upperBound="-1"
+        eType="#//DataFlowLink" eOpposite="#//DataFlowLink/inputNode"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="DataFlowLink">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="outputNode" lowerBound="1"
+        eType="#//DataFlowNode" eOpposite="#//DataFlowNode/inputLinks"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="inputNode" lowerBound="1"
+        eType="#//DataFlowNode" eOpposite="#//DataFlowNode/outputLinks"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="owner" eType="#//DataFlowMappingRoot"
+        transient="true" eOpposite="#//DataFlowMappingRoot/links"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Expression">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="value" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="owner" eType="#//ExpressionOwner"
+        transient="true" eOpposite="#//ExpressionOwner/expressions"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="TargetNode" eSuperTypes="#//DataFlowNode">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="target" eType="ecore:EClass Ecore.ecore#//EObject"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="SourceNode" eSuperTypes="#//DataFlowNode">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="source" eType="ecore:EClass Ecore.ecore#//EObject"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="AbstractOperationNode" abstract="true"
+      eSuperTypes="#//DataFlowNode #//ExpressionOwner">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="nodeGroup" eType="#//OperationNodeGroup"
+        transient="true" eOpposite="#//OperationNodeGroup/contents"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="OperationNodeGroup" eSuperTypes="#//AbstractOperationNode">
+    <eOperations name="getAllContents" eType="#//List"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="contents" upperBound="-1"
+        eType="#//AbstractOperationNode" containment="true" eOpposite="#//AbstractOperationNode/nodeGroup"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="OperationNode" eSuperTypes="#//AbstractOperationNode">
+    <eOperations name="getMinInputs" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eOperations name="getMaxInputs" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eOperations name="getMinOutputs" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eOperations name="getMaxOutputs" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="JoinNode" eSuperTypes="#//OperationNode">
+    <eOperations name="getCriteria" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="type" eType="#//JoinType"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="UnionNode" eSuperTypes="#//OperationNode"/>
+  <eClassifiers xsi:type="ecore:EClass" name="ProjectionNode" eSuperTypes="#//OperationNode"/>
+  <eClassifiers xsi:type="ecore:EClass" name="FilterNode" eSuperTypes="#//OperationNode">
+    <eOperations name="getCriteria" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="GroupingNode" eSuperTypes="#//OperationNode">
+    <eOperations name="getGroupingColumns" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="DupRemovalNode" eSuperTypes="#//OperationNode">
+    <eOperations name="getDistinct" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="SortNode" eSuperTypes="#//OperationNode">
+    <eOperations name="getOrderBy" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="SqlNode" eSuperTypes="#//OperationNode"/>
+  <eClassifiers xsi:type="ecore:EEnum" name="JoinType">
+    <eLiterals name="INNER"/>
+    <eLiterals name="LEFT_OUTER" value="1"/>
+    <eLiterals name="RIGHT_OUTER" value="2"/>
+    <eLiterals name="FULL_OUTER" value="3"/>
+    <eLiterals name="CROSS" value="4"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="SortDirection">
+    <eLiterals name="ASCENDING"/>
+    <eLiterals name="DESCENDING" value="1"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EDataType" name="List" instanceClassName="java.util.List"/>
+  <eClassifiers xsi:type="ecore:EClass" name="ExpressionOwner" abstract="true" interface="true">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="expressions" lowerBound="1"
+        upperBound="-1" eType="#//Expression" containment="true" eOpposite="#//Expression/owner"/>
+  </eClassifiers>
+</ecore:EPackage>

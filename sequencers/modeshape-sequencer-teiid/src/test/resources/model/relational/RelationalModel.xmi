@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="ASCII"?>
+<xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:diagram="http://www.metamatrix.com/metamodels/Diagram" xmlns:mmcore="http://www.metamatrix.com/metamodels/Core" xmlns:relational="http://www.metamatrix.com/metamodels/Relational">
+  <mmcore:ModelAnnotation xmi:uuid="mmuuid:d6c81683-4d46-41e3-8df1-73f3141e1906" description="Model's description. This model contains example relational model objects of various types and properties." primaryMetamodelUri="http://www.metamatrix.com/metamodels/Relational" modelType="PHYSICAL" ProducerName="Teiid Designer" ProducerVersion="7.1.0.qualifier">
+    <modelImports xmi:uuid="mmuuid:d3a072f8-937c-4d13-a620-01094144771a" name="XMLSchema" modelLocation="http://www.w3.org/2001/XMLSchema" modelType="TYPE" primaryMetamodelUri="http://www.eclipse.org/xsd/2002/XSD"/>
+  </mmcore:ModelAnnotation>
+  <diagram:DiagramContainer xmi:uuid="mmuuid:ccc849b5-a784-41ac-9eb8-e68516f2fb15">
+    <diagram xmi:uuid="mmuuid:784b480a-17e6-491d-84b5-be5de413f9e4" type="packageDiagramType" target="mmuuid/d6c81683-4d46-41e3-8df1-73f3141e1906">
+      <diagramEntity xmi:uuid="mmuuid:8a1656d7-e911-4f52-9320-902b5fb94cd4" modelObject="mmuuid/857a1ef9-5851-4d79-9d94-065f5ed20a6e" xPosition="20" yPosition="20"/>
+    </diagram>
+    <diagram xmi:uuid="mmuuid:65bf60af-e403-4192-86aa-c5eb4961c093" type="packageDiagramType" target="mmuuid/857a1ef9-5851-4d79-9d94-065f5ed20a6e">
+      <diagramEntity xmi:uuid="mmuuid:a07ee086-87b8-4d23-be9f-7fb740425779" modelObject="mmuuid/9ca26cf6-8705-4f1b-8f49-1d0ac5be1fd1" xPosition="40" yPosition="30"/>
+    </diagram>
+    <diagram xmi:uuid="mmuuid:7f16985a-d26f-472f-8bf2-b5ad5e1c3620" type="packageDiagramType" target="mmuuid/9ca26cf6-8705-4f1b-8f49-1d0ac5be1fd1">
+      <diagramEntity xmi:uuid="mmuuid:e5775dc8-8f3b-4ad3-b10f-6dbe46d385d3" name="TableInSchemaInCatalog" modelObject="mmuuid/faf2186f-d586-4edb-9808-767190e03300" xPosition="28" yPosition="70"/>
+      <diagramEntity xmi:uuid="mmuuid:e674b098-1c01-4cd3-a6df-2a504203aaed" name="TableWithFK" modelObject="mmuuid/e09774cb-f91d-4616-822e-468d5ef49584" xPosition="410" yPosition="187"/>
+      <diagramEntity xmi:uuid="mmuuid:2e47bfd5-41f1-48a6-b489-a26c0b2bdad3" name="Index" modelObject="mmuuid/e7e90f81-fba3-4361-8c50-2e295058f4c4" xPosition="28" yPosition="4"/>
+      <diagramEntity xmi:uuid="mmuuid:1d70ceae-745f-4ad3-b5ef-28814d3a0c74" name="Procedure" modelObject="mmuuid/8a2113ee-af0b-455d-93e0-b417ffeae01e" xPosition="44" yPosition="284"/>
+      <diagramEntity xmi:uuid="mmuuid:a3d5f6c1-6dff-4f96-b8ab-57ad1865da41" name="View" modelObject="mmuuid/d1254980-570f-4813-adde-c77467d4db30" xPosition="276" yPosition="21"/>
+    </diagram>
+    <diagram xmi:uuid="mmuuid:71f965d8-e5ff-44b1-9a7d-159452297aa9" type="packageDiagramType" target="mmuuid/57b22362-cc72-4802-a58d-77fd82e48b9b"/>
+  </diagram:DiagramContainer>
+  <mmcore:AnnotationContainer xmi:uuid="mmuuid:ab6d4efc-d4db-4200-8fbc-8c378d7e6595">
+    <annotations xmi:uuid="mmuuid:2ac2b711-4737-4f00-b4ca-df2d6033963c" description="Empty Catalog in relational model" annotatedObject="mmuuid/57b22362-cc72-4802-a58d-77fd82e48b9b"/>
+    <annotations xmi:uuid="mmuuid:c3da5667-23ee-4698-a034-f8b888663a23" annotatedObject="mmuuid/d6c81683-4d46-41e3-8df1-73f3141e1906">
+      <tags xmi:uuid="mmuuid:dcc3d699-8694-4b0d-9806-7f1c09b5b8b9" key="connection:driver-class" value="oracle.jdbc.OracleDriver"/>
+      <tags xmi:uuid="mmuuid:c292db43-afaa-4b42-ab50-ed69ced89ac2" key="connectionProfile:connectionProfileName" value="Oracle 9i Parts"/>
+      <tags xmi:uuid="mmuuid:1477d460-3af9-4ff7-8477-bdd0651156de" key="connectionProfile:connectionProfileProviderId" value="org.eclipse.datatools.enablement.oracle.connectionProfile"/>
+      <tags xmi:uuid="mmuuid:442a4770-0139-4a88-811b-c854427b0d4d" key="translator:name" value="oracle"/>
+      <tags xmi:uuid="mmuuid:f6587069-4ec5-4b3d-b7e9-2ceb9498c252" key="connection:password" value="xxxxxxxxx"/>
+      <tags xmi:uuid="mmuuid:4f1f1928-ff2a-4c34-ba6f-8ec497ea60a5" key="connection:connection-url" value="jdbc:oracle:thin:@serverA.xx.west.db:1521:ds09"/>
+      <tags xmi:uuid="mmuuid:068c24a7-9191-4d78-b195-fcc1fa0d20f8" key="connectionProfile:connectionProfileInstanceID" value="ea98a650-a973-11df-bdcf-b51a600a7179"/>
+      <tags xmi:uuid="mmuuid:db7a78a9-1aa9-4e41-9be0-29520f49c1ac" key="connection:connectionProfileInstanceID" value="org.eclipse.datatools.enablement.oracle.connectionProfile"/>
+      <tags xmi:uuid="mmuuid:a869722a-b2b1-41a2-942e-04912a456d62" key="connectionProfile:connectionProfileDescription" value=""/>
+      <tags xmi:uuid="mmuuid:fe5672e3-d4ac-4d3a-b148-6acac39ba461" key="connection:user-name" value="partssupplier"/>
+      <tags xmi:uuid="mmuuid:b2078716-f3c4-45d6-b7d7-f7f5b5349019" key="connectionProfile:connectionProfileCategory" value="org.eclipse.datatools.connectivity.db.category"/>
+    </annotations>
+    <annotations xmi:uuid="mmuuid:a466e996-54d8-48b3-842a-8c74db7a0177" description="View Description" annotatedObject="mmuuid/d1254980-570f-4813-adde-c77467d4db30"/>
+  </mmcore:AnnotationContainer>
+  <relational:Catalog xmi:uuid="mmuuid:857a1ef9-5851-4d79-9d94-065f5ed20a6e" name="Catalog">
+    <schemas xmi:uuid="mmuuid:9ca26cf6-8705-4f1b-8f49-1d0ac5be1fd1" name="SchemaInCatalog">
+      <tables xsi:type="relational:BaseTable" xmi:uuid="mmuuid:faf2186f-d586-4edb-9808-767190e03300" name="TableInSchemaInCatalog">
+        <columns xmi:uuid="mmuuid:f283b298-dd0f-4dac-be78-ec4d787aea4b" name="Column_String_255" length="255" uniqueKeys="mmuuid/2f02ec65-e617-4dfb-9efa-dc5bc5239dfa">
+          <type href="http://www.w3.org/2001/XMLSchema#string"/>
+        </columns>
+        <columns xmi:uuid="mmuuid:63c5b33e-761c-48e5-8bfe-11edf8a46086" name="Column_int">
+          <type href="http://www.w3.org/2001/XMLSchema#int"/>
+        </columns>
+        <columns xmi:uuid="mmuuid:e0218d14-0b13-4ddc-b2b1-49cd298b47ea" name="Column_boolean">
+          <type href="http://www.w3.org/2001/XMLSchema#boolean"/>
+        </columns>
+        <columns xmi:uuid="mmuuid:44b23cbd-5e25-43fb-8a71-c13286255c6b" name="Column_decimal">
+          <type href="http://www.w3.org/2001/XMLSchema#decimal"/>
+        </columns>
+        <primaryKey xmi:uuid="mmuuid:2f02ec65-e617-4dfb-9efa-dc5bc5239dfa" name="PrimaryKey" columns="mmuuid/f283b298-dd0f-4dac-be78-ec4d787aea4b" foreignKeys="mmuuid/8977a015-37e6-416e-991b-4b987003c43b"/>
+      </tables>
+      <tables xsi:type="relational:BaseTable" xmi:uuid="mmuuid:e09774cb-f91d-4616-822e-468d5ef49584" name="TableWithFK" nameInSource="TableWithFK" system="true" supportsUpdate="false">
+        <columns xmi:uuid="mmuuid:dff087bb-55b3-44a1-9d7d-2fcb113e01e4" name="Column_String_255" length="255" updateable="false" foreignKeys="mmuuid/8977a015-37e6-416e-991b-4b987003c43b">
+          <type href="http://www.w3.org/2001/XMLSchema#string"/>
+        </columns>
+        <columns xmi:uuid="mmuuid:15c71313-ec39-4596-9f70-8d19fec3b881" name="Column_int" updateable="false">
+          <type href="http://www.w3.org/2001/XMLSchema#int"/>
+        </columns>
+        <columns xmi:uuid="mmuuid:8d90898d-c478-4fab-8e20-1ae5828ac71e" name="Column_boolean" updateable="false">
+          <type href="http://www.w3.org/2001/XMLSchema#boolean"/>
+        </columns>
+        <columns xmi:uuid="mmuuid:9477744a-cb5e-467c-8dc0-175d454e49ea" name="Column_decimal" updateable="false">
+          <type href="http://www.w3.org/2001/XMLSchema#decimal"/>
+        </columns>
+        <foreignKeys xmi:uuid="mmuuid:8977a015-37e6-416e-991b-4b987003c43b" name="ForeignKey" columns="mmuuid/dff087bb-55b3-44a1-9d7d-2fcb113e01e4" uniqueKey="mmuuid/2f02ec65-e617-4dfb-9efa-dc5bc5239dfa"/>
+        <uniqueConstraints xmi:uuid="mmuuid:20fc90c1-a967-458b-bf25-f2418dd2ce03" name="UniqueConstraint" nameInSource="UniqueCOnstraint"/>
+      </tables>
+      <tables xsi:type="relational:View" xmi:uuid="mmuuid:d1254980-570f-4813-adde-c77467d4db30" name="View">
+        <columns xmi:uuid="mmuuid:580d34a0-c1d7-4a80-9fd5-2bbc19fa47c5" name="column" length="255" accessPatterns="mmuuid/bd3c041e-6982-4d08-9cd2-31eb94cc6c69">
+          <type href="http://www.w3.org/2001/XMLSchema#string"/>
+        </columns>
+        <accessPatterns xmi:uuid="mmuuid:bd3c041e-6982-4d08-9cd2-31eb94cc6c69" name="AccessPattern" nameInSource="MyAccessPatter" columns="mmuuid/580d34a0-c1d7-4a80-9fd5-2bbc19fa47c5"/>
+      </tables>
+      <procedures xmi:uuid="mmuuid:8a2113ee-af0b-455d-93e0-b417ffeae01e" name="Procedure">
+        <parameters xmi:uuid="mmuuid:2710b3fd-d884-4bc6-9a58-3439d9b0fcdb" name="Parameter" length="255">
+          <type href="http://www.w3.org/2001/XMLSchema#string"/>
+        </parameters>
+        <result xmi:uuid="mmuuid:bbe6223f-80a8-4056-ace3-f89fa667e17b" name="ProcedureResult">
+          <columns xmi:uuid="mmuuid:2d30fee6-f2e9-4e71-919f-6f4e9d7ebbed" name="column" length="255">
+            <type href="http://www.w3.org/2001/XMLSchema#string"/>
+          </columns>
+        </result>
+      </procedures>
+      <indexes xmi:uuid="mmuuid:e7e90f81-fba3-4361-8c50-2e295058f4c4" name="Index"/>
+      <logicalRelationships xmi:uuid="mmuuid:56b3e7cc-6f18-4caf-82ad-d7a31d6ab12d" name="NewLogicalRelationship"/>
+    </schemas>
+  </relational:Catalog>
+  <relational:Catalog xmi:uuid="mmuuid:57b22362-cc72-4802-a58d-77fd82e48b9b" name="Catalog_Empty"/>
+</xmi:XMI>

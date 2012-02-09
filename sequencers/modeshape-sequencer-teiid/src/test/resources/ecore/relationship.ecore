@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  JBoss, Home of Professional Open Source.
+
+  See the LEGAL.txt file distributed with this work for information regarding copyright ownership and licensing.
+
+  See the AUTHORS.txt file distributed with this work for a full listing of individual contributors.
+-->
+<ecore:EPackage xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="relationship"
+    nsURI="http://www.metamatrix.com/metamodels/Relationship" nsPrefix="genrelat">
+  <eClassifiers xsi:type="ecore:EClass" name="RelationshipType" eSuperTypes="#//RelationshipEntity">
+    <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+      <details key="documentation" value="A definition of the form for a relationship.  In particular, it defines constraints on the types (metaclasses) and numbers of objects that can be bound to a relationship.  Typically, many relationships have the same type.  Types can restrict or extend other types (that is, support generalization or specialization).&#xD;&#xA;&#xD;&#xA;RelationshipType instances are created (modeled) by users and customers to define the allowable types for associations.  Examples of instances might include those named &quot;Generalization&quot;, &quot;Inheritance&quot;, &quot;Parent Of&quot;, &quot;Uses&quot;, &quot;Depends on&quot;, &quot;Supplier of&quot;, etc.  &#xD;&#xA;&#xD;&#xA;RelationshipType are basically &quot;instantiated&quot; as Relationship objects that reference multiple objects.  Constraints on which objects can be associated given an RelationshipType are dictated by the RelationshipRoles. "/>
+    </eAnnotations>
+    <eOperations name="getSourceRole" eType="#//RelationshipRole">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="Convenience method to obtain the 'source' RelationshipRole in this RelationshipType."/>
+      </eAnnotations>
+    </eOperations>
+    <eOperations name="getTargetRole" eType="#//RelationshipRole">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="Convenience method to obtain the 'source' RelationshipRole in this RelationshipType."/>
+      </eAnnotations>
+    </eOperations>
+    <eOperations name="getAllRelationshipFeatures" eType="#//List">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="Method to obtain all of the relationship features from this type and it's superType (recursively)."/>
+      </eAnnotations>
+    </eOperations>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="directed" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="true">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="Specifies whether the relationship type has the concept of direction.  Defaults to 'true'."/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="exclusive" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="true">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="Defines whether it is legal for one object to be in both the 'sources' and a 'targets' references.  A value of 'true' means an object may appear in one or the other, but not both.  The default is 'true'."/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="crossModel" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="true">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="Defines whether it is legal for relationship instances with this type to reference objects that are in different models.  The default is 'true'."/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="abstract" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="false">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="Defines whether instances can be created of this relationship type.  An abstract relationship type cannot be instantiated.  "/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="userDefined" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="true">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="Defines whether a user has defined this type.  The only relationship types that can have a value set to 'false' are those types created by MetaMatrix and managed as &quot;built-in relationshp types&quot;."/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="status" eType="#//RelationshipTypeStatus"
+        defaultValueLiteral="STANDARD">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="The status of a relationship type defines whether it is valid for instances to exist.  Example values include &quot;Prototype&quot; (i.e., &quot;use with care&quot;), &quot;Standard&quot;, &quot;Deprecated&quot; (i.e., &quot;don't use anymore, but some may exist&quot;), or &quot;Invalid&quot; (i.e., &quot;should not be used anymore&quot;)."/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="stereotype" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="constraint" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="Field that can be used to define some textual constraints for the relationship type.  Example forms might include OCL, regular expressions, or simple text."/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="label" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="If the RelationshipType has implied direction, the label generally reflects the verbage for such relationships in that direction.  For example, if a RelationshipType might have a label of &quot;Author of&quot;, then the opposite label might be &quot;Written by&quot;."/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="oppositeLabel" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="If the RelationshipType has implied direction, the label generally reflects the verbage for such relationships in that direction.  This field defines an alternative label from the opposite perspective.  For example, if a RelationshipType has a label of &quot;Author of&quot;, then the opposite label might be &quot;Written by&quot;."/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="relationshipFeatures" upperBound="-1"
+        eType="ecore:EClass ../../org.eclipse.emf.ecore/src/model/Ecore.ecore#//EStructuralFeature"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="superType" eType="#//RelationshipType"
+        unsettable="true" eOpposite="#//RelationshipType/subType"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="subType" upperBound="-1"
+        eType="#//RelationshipType" eOpposite="#//RelationshipType/superType"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="roles" lowerBound="2" upperBound="2"
+        eType="#//RelationshipRole" containment="true" eOpposite="#//RelationshipRole/relationshipType"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="owner" eType="#//RelationshipFolder"
+        transient="true" eOpposite="#//RelationshipFolder/ownedRelationshipTypes"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="RelationshipEntity" abstract="true">
+    <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+      <details key="documentation" value="Abstract metaclass for relationships and relationship types."/>
+    </eAnnotations>
+    <eOperations name="isValid" eType="#//IStatus">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="Method to determine whether this relationship entity is considered valid.  The result is an IStatus that contains a message that can be displayed to the user, as well as a status code designating &quot;OK&quot;, &quot;WARNING&quot;, or &quot;ERROR&quot;."/>
+      </eAnnotations>
+    </eOperations>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Relationship" eSuperTypes="#//RelationshipEntity #//RelationshipContainer">
+    <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+      <details key="documentation" value="A connection or affiliation between a set of objects."/>
+    </eAnnotations>
+    <eOperations name="getSourceRole" eType="#//RelationshipRole">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="Convenience method to obtain the 'source' RelationshipRole in this object's RelationshipType."/>
+      </eAnnotations>
+    </eOperations>
+    <eOperations name="getTargetRole" eType="#//RelationshipRole">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="Convenience method to obtain the 'target' RelationshipRole in this object's RelationshipType."/>
+      </eAnnotations>
+    </eOperations>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="featureValues" upperBound="-1"
+        eType="ecore:EClass ../../org.eclipse.emf.ecore/src/model/Ecore.ecore#//EStringToStringMapEntry"
+        containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="targets" upperBound="-1"
+        eType="ecore:EClass ../../org.eclipse.emf.ecore/src/model/Ecore.ecore#//EObject"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="sources" upperBound="-1"
+        eType="ecore:EClass ../../org.eclipse.emf.ecore/src/model/Ecore.ecore#//EObject"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="type" eType="#//RelationshipType"
+        unsettable="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="relationshipContainer"
+        eType="#//RelationshipContainer" transient="true" eOpposite="#//RelationshipContainer/ownedRelationships"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="FileReference" eSuperTypes="#//UriReference">
+    <eOperations name="getDisplayableName" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="toolName" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="The name of the tool that produced the file content."/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="toolVersion" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="The version of the tool that produced the file content."/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="formatName" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="The name of the format of the content."/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="formatVersion" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="The version of the format of the content."/>
+      </eAnnotations>
+    </eStructuralFeatures>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="RelationshipRole" eSuperTypes="#//RelationshipEntity">
+    <eOperations name="isSourceRole" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="Convenience method to determine whether this role is considered the 'source' role of the RelationshipType that owns this role."/>
+      </eAnnotations>
+    </eOperations>
+    <eOperations name="isTargetRole" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="Convenience method to determine whether this role is considered the 'target' role of the RelationshipType that owns this role."/>
+      </eAnnotations>
+    </eOperations>
+    <eOperations name="isValidParticipant" eType="#//IStatus">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="Method to determine whether this relationship entity is considered valid.  The result is an IStatus that contains a message that can be displayed to the user, as well as a status code designating &quot;OK&quot;, &quot;WARNING&quot;, or &quot;ERROR&quot;."/>
+      </eAnnotations>
+      <eParameters name="participant" eType="ecore:EClass ../../org.eclipse.emf.ecore/src/model/Ecore.ecore#//EObject"/>
+    </eOperations>
+    <eOperations name="isValidParticipant" eType="#//IStatus">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="Method to determine whether this relationship entity is considered valid.  The result is an IStatus that contains a message that can be displayed to the user, as well as a status code designating &quot;OK&quot;, &quot;WARNING&quot;, or &quot;ERROR&quot;."/>
+      </eAnnotations>
+      <eParameters name="participantType" eType="ecore:EClass ../../org.eclipse.emf.ecore/src/model/Ecore.ecore#//EClassifier"/>
+    </eOperations>
+    <eOperations name="isAllowed" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="Method to compute whether the supplied EClassifier is considered valid or allowed by the includeTypes and excludeTypes features.  An object is valid for this role if 'instanceof' returns true for one of the EClassifiers in the 'includedTypes' feature AND 'instanceof' returns false for all of the EClassifiers in the 'excludedTypes' feature.  This method takes into account all overridden roles."/>
+      </eAnnotations>
+      <eParameters name="type" eType="ecore:EClass ../../org.eclipse.emf.ecore/src/model/Ecore.ecore#//EClassifier"/>
+    </eOperations>
+    <eOperations name="isAllowed" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="Method to compute whether the supplied EClassifier is considered valid or allowed by the includeTypes and excludeTypes features.  An object is valid for this role if 'instanceof' returns true for one of the EClassifiers in the 'includedTypes' feature AND 'instanceof' returns false for all of the EClassifiers in the 'excludedTypes' feature.  This method takes into account all overridden roles."/>
+      </eAnnotations>
+      <eParameters name="particpant" eType="ecore:EClass ../../org.eclipse.emf.ecore/src/model/Ecore.ecore#//EObject"/>
+    </eOperations>
+    <eOperations name="getOverriddenRole" eType="#//RelationshipRole">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="Obtain the corresponding RelationshipRole in the superType of this object's relationshipType, that is overridden by this role.  Will return null if there is no corresponding role."/>
+      </eAnnotations>
+    </eOperations>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="stereotype" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="The stereotype for this role in the relationship, if different than the name."/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="ordered" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="false">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="Specifies whether the order of the objects with this role in a relationship is considered important (conceptually).  The value, however, implies nothing about automated sorting of the values (that is, the user is responsible for re-ordering)."/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="unique" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="true">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="Specifies whether the objects bound to this role of a relationship must be unique.  Defaults to 'true'."/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="navigable" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="true">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="Defines whether it is conceptually correct or possible to navigate to this end of the relationship.  Some relationships are uni-directional, meaning only one end of the relationship is navigable.  The default is 'true' (navigable)."/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="lowerBound" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
+        defaultValueLiteral="1">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="The minimum number of objects that must be bound to this role in a relationship.  The value should be non-negative and less than or equal to the upper bound."/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="upperBound" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
+        defaultValueLiteral="-1">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="The maximum number of objects that must be bound to this role in a relationship.  The value should be greater than or equal to the lower bound, and generally non-negative.  However, a value of &quot;-1&quot; means unlimited.  The default is unlimited."/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="constraint" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="Field that can be used to define some textual constraints for the relationship type.  Example forms might include OCL, regular expressions, or simple text."/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="relationshipType" eType="#//RelationshipType"
+        transient="true" eOpposite="#//RelationshipType/roles"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="oppositeRole" lowerBound="1"
+        eType="#//RelationshipRole" changeable="false" volatile="true" transient="true"
+        resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="includeTypes" upperBound="-1"
+        eType="ecore:EClass ../../org.eclipse.emf.ecore/src/model/Ecore.ecore#//EClass"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="excludeTypes" upperBound="-1"
+        eType="ecore:EClass ../../org.eclipse.emf.ecore/src/model/Ecore.ecore#//EClass"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="PlaceholderReference" abstract="true">
+    <eOperations name="getDisplayableName" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="PlaceholderReferenceContainer"
+        eType="#//PlaceholderReferenceContainer" transient="true" eOpposite="#//PlaceholderReferenceContainer/placeholders"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="PlaceholderReferenceContainer">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="placeholders" upperBound="-1"
+        eType="#//PlaceholderReference" containment="true" eOpposite="#//PlaceholderReference/PlaceholderReferenceContainer"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="RelationshipTypeStatus">
+    <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+      <details key="documentation" value="The status of a relationship type defines whether it is valid for instances to exist.  Example values include &quot;Prototype&quot; (i.e., &quot;use with care&quot;), &quot;Standard&quot;, &quot;Deprecated&quot; (i.e., &quot;don't use anymore, but some may exist&quot;), or &quot;Invalid&quot; (i.e., &quot;should not be used anymore&quot;)."/>
+    </eAnnotations>
+    <eLiterals name="PROTOTYPE"/>
+    <eLiterals name="STANDARD" value="1"/>
+    <eLiterals name="DEPRECATED" value="2"/>
+    <eLiterals name="INVALID" value="3"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EDataType" name="IStatus" instanceClassName="org.eclipse.core.runtime.IStatus"/>
+  <eClassifiers xsi:type="ecore:EClass" name="UriReference" eSuperTypes="#//PlaceholderReference">
+    <eOperations name="getDisplayableName" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="The name or displayable form of the URI reference."/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="uri" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="The actual URI"/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="resolvable" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="true">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="Flag denoting whether the URI should be resolvable (that is, it is a URL).  Some URIs are used merely as identifiers and are not intended to be resolvable.  Some URLs are not resolvable to all users (e.g., because of a firewall)."/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="encoding" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="The (expected) encoding of the content found at this URI, if applicable."/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="abstract" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="A comment or description about the URI or its content."/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="keywords" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="A list of keywords, separated by whitespace."/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="relatedUris" upperBound="-1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="Other URIs that are related to this URI.  These may be alternative forms of the URI, variations of the URI, or simply other URIs that are related."/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="properties" upperBound="-1"
+        eType="ecore:EClass ../../org.eclipse.emf.ecore/src/model/Ecore.ecore#//EStringToStringMapEntry"
+        containment="true">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="Name-value pairs that are associated with this URI."/>
+      </eAnnotations>
+    </eStructuralFeatures>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EDataType" name="List" instanceClassName="java.util.List"/>
+  <eClassifiers xsi:type="ecore:EClass" name="RelationshipFolder" eSuperTypes="#//RelationshipEntity #//PlaceholderReferenceContainer #//RelationshipContainer">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="ownedRelationshipTypes"
+        upperBound="-1" eType="#//RelationshipType" containment="true" eOpposite="#//RelationshipType/owner"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="ownedRelationshipFolders"
+        upperBound="-1" eType="#//RelationshipFolder" containment="true" eOpposite="#//RelationshipFolder/owner"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="owner" eType="#//RelationshipFolder"
+        transient="true" eOpposite="#//RelationshipFolder/ownedRelationshipFolders"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="RelationshipContainer" abstract="true"
+      interface="true">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="ownedRelationships" upperBound="-1"
+        eType="#//Relationship" containment="true" eOpposite="#//Relationship/relationshipContainer"/>
+  </eClassifiers>
+</ecore:EPackage>

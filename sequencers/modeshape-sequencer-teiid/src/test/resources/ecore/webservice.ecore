@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  JBoss, Home of Professional Open Source.
+
+  See the LEGAL.txt file distributed with this work for information regarding copyright ownership and licensing.
+
+  See the AUTHORS.txt file distributed with this work for a full listing of individual contributors.
+-->
+<ecore:EPackage xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="webservice"
+    nsURI="http://www.metamatrix.com/metamodels/WebService" nsPrefix="mmws">
+  <eClassifiers xsi:type="ecore:EClass" name="Operation" eSuperTypes="#//WebServiceComponent">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="pattern" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="safe" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="input" eType="#//Input"
+        containment="true" eOpposite="#//Input/operation"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="output" eType="#//Output"
+        containment="true" eOpposite="#//Output/operation"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="interface" lowerBound="1"
+        eType="#//Interface" transient="true" eOpposite="#//Interface/operations"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Message" abstract="true" eSuperTypes="#//WebServiceComponent">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="contentElement" eType="ecore:EClass ../../org.eclipse.xsd/src/model/XSD.ecore#//XSDElementDeclaration"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="samples" eType="#//SampleMessages"
+        containment="true" eOpposite="#//SampleMessages/message"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="contentComplexType" eType="ecore:EClass ../../org.eclipse.xsd/src/model/XSD.ecore#//XSDComplexTypeDefinition"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="contentSimpleType" eType="ecore:EClass ../../org.eclipse.xsd/src/model/XSD.ecore#//XSDSimpleTypeDefinition"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="WebServiceComponent" abstract="true">
+    <eOperations name="isValid" eType="#//IStatus">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="Method to determine whether this relationship entity is considered valid.  The result is an IStatus that contains a message that can be displayed to the user, as well as a status code designating &quot;OK&quot;, &quot;WARNING&quot;, or &quot;ERROR&quot;."/>
+      </eAnnotations>
+    </eOperations>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Input" eSuperTypes="#//Message">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="operation" lowerBound="1"
+        eType="#//Operation" transient="true" eOpposite="#//Operation/input"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Output" eSuperTypes="#//Message">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="operation" lowerBound="1"
+        eType="#//Operation" transient="true" eOpposite="#//Operation/output"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="xmlDocument" lowerBound="1"
+        eType="ecore:EClass xml.ecore#//XmlDocument"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EDataType" name="IStatus" instanceClassName="org.eclipse.core.runtime.IStatus"/>
+  <eClassifiers xsi:type="ecore:EClass" name="Interface" eSuperTypes="#//WebServiceComponent">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="operations" upperBound="-1"
+        eType="#//Operation" containment="true" eOpposite="#//Operation/interface"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="SampleMessages">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="message" lowerBound="1"
+        eType="#//Message" transient="true" eOpposite="#//Message/samples"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="sampleFiles" upperBound="-1"
+        eType="#//SampleFile" containment="true" eOpposite="#//SampleFile/sampleMessages"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="sampleFromXsd" eType="#//SampleFromXsd"
+        containment="true" eOpposite="#//SampleFromXsd/sampleMessages"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="SampleFile">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="url" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="sampleMessages" lowerBound="1"
+        eType="#//SampleMessages" transient="true" eOpposite="#//SampleMessages/sampleFiles"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="SampleFromXsd">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="maxNumberOfLevelsToBuild"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt" defaultValueLiteral="30"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="sampleFragment" eType="ecore:EClass xml.ecore#//XmlElement"
+        containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="sampleMessages" lowerBound="1"
+        eType="#//SampleMessages" transient="true" eOpposite="#//SampleMessages/sampleFromXsd"/>
+  </eClassifiers>
+</ecore:EPackage>

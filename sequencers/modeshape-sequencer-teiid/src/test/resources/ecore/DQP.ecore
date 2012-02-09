@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="ASCII"?>
+<!--
+  JBoss, Home of Professional Open Source.
+
+  See the LEGAL.txt file distributed with this work for information regarding copyright ownership and licensing.
+
+  See the AUTHORS.txt file distributed with this work for a full listing of individual contributors.
+-->
+<ecore:EPackage xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="dqp"
+    nsURI="http://www.metamatrix.com/metamodels/DQP" nsPrefix="dqp">
+  <eClassifiers xsi:type="ecore:EClass" name="EmbeddedConfiguration">
+    <eReferences name="components" eType="#//Components" lowerBound="1" containment="true"
+        eOpposite="#//Components/configuration"/>
+    <eReferences name="metadata" eType="#//Metadata" lowerBound="1" containment="true"
+        eOpposite="#//Metadata/configuration"/>
+    <eReferences name="data" eType="#//Data" lowerBound="1" containment="true" eOpposite="#//Data/configuration"/>
+    <eAttributes name="formatVersion" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+        defaultValueLiteral="3.2"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="DQP" eSuperTypes="#//PropertyContainer #//ServiceUser">
+    <eReferences name="owner" eType="#//Components" transient="true" lowerBound="1"
+        eOpposite="#//Components/dqp"/>
+    <eAttributes name="maxThreads" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
+        defaultValueLiteral="5"/>
+    <eAttributes name="processorThreadTTL" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
+        defaultValueLiteral="300000"/>
+    <eAttributes name="processorTimeslice" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
+        defaultValueLiteral="2000"/>
+    <eAttributes name="maxCodeTables" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
+        defaultValueLiteral="10"/>
+    <eAttributes name="maxCodeTableRecords" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
+        defaultValueLiteral="1000"/>
+    <eAttributes name="minFetchSize" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
+        defaultValueLiteral="100"/>
+    <eAttributes name="maxFetchSize" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
+        defaultValueLiteral="20000"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="ConnectorManager" eSuperTypes="#//ServiceUser">
+    <eReferences name="dataSourceSpecifications" eType="#//DataSourceSpecification"
+        lowerBound="1" upperBound="-1" unsettable="true" eOpposite="#//DataSourceSpecification/connectorManagers"/>
+    <eReferences name="owner" eType="#//Components" transient="true" lowerBound="1"
+        eOpposite="#//Components/connectorManagers"/>
+    <eAttributes name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="maxThreads" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
+        defaultValueLiteral="5"/>
+    <eAttributes name="processorThreadTTL" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
+        defaultValueLiteral="300000"/>
+    <eAttributes name="maxResultRows" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
+        defaultValueLiteral="10000"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Service" eSuperTypes="#//PropertyContainer">
+    <eReferences name="usedBy" eType="#//ServiceUser" upperBound="-1" eOpposite="#//ServiceUser/uses"/>
+    <eReferences name="owner" eType="#//Components" transient="true" lowerBound="1"
+        eOpposite="#//Components/services"/>
+    <eAttributes name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="type" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="className" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Property">
+    <eReferences name="owner" eType="#//PropertyContainer" transient="true" lowerBound="1"
+        eOpposite="#//PropertyContainer/properties"/>
+    <eAttributes name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="value" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="VDB">
+    <eReferences name="modelInfos" eType="#//ModelInfo" lowerBound="1" upperBound="-1"
+        containment="true" eOpposite="#//ModelInfo/vdb"/>
+    <eReferences name="owner" eType="#//Metadata" transient="true" lowerBound="1"
+        eOpposite="#//Metadata/vdbs"/>
+    <eAttributes name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="version" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+        defaultValueLiteral="1"/>
+    <eAttributes name="status" eType="#//VDBStatus" defaultValueLiteral="ACTIVE"/>
+    <eAttributes name="metadataResource" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="ModelInfo">
+    <eReferences name="vdb" eType="#//VDB" transient="true" lowerBound="1" eOpposite="#//VDB/modelInfos"/>
+    <eReferences name="dataSource" eType="#//DataSourceSpecification" lowerBound="1"
+        unsettable="true" eOpposite="#//DataSourceSpecification/modelInfos"/>
+    <eAttributes name="model" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="visibility" eType="#//ModelVisibility" defaultValueLiteral="PUBLIC"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="ConnectorType">
+    <eReferences name="dataSourceSpecifications" eType="#//DataSourceSpecification"
+        upperBound="-1" eOpposite="#//DataSourceSpecification/connectorType"/>
+    <eReferences name="propertyDefinitions" eType="#//PropertyDefinition" upperBound="-1"
+        containment="true" eOpposite="#//PropertyDefinition/connectorType"/>
+    <eReferences name="owner" eType="#//Data" transient="true" lowerBound="1" eOpposite="#//Data/connectorTypes"/>
+    <eAttributes name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="className" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="PropertyContainer" abstract="true" interface="true">
+    <eReferences name="properties" eType="#//Property" upperBound="-1" containment="true"
+        eOpposite="#//Property/owner"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="ServiceUser" abstract="true" interface="true">
+    <eReferences name="uses" eType="#//Service" lowerBound="1" upperBound="-1" eOpposite="#//Service/usedBy"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="PropertyDefinition">
+    <eReferences name="connectorType" eType="#//ConnectorType" transient="true" lowerBound="1"
+        eOpposite="#//ConnectorType/propertyDefinitions"/>
+    <eAttributes name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="displayName" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="category" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="defaultValue" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="required" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="true"/>
+    <eAttributes name="masked" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="false"/>
+    <eAttributes name="form" eType="#//PropertyForm" defaultValueLiteral="NORMAL"/>
+    <eAttributes name="tooltip" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="PropertyForm">
+    <eLiterals name="NORMAL"/>
+    <eLiterals name="EXPERT" value="1"/>
+    <eLiterals name="HIDDEN" value="2"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="VDBStatus">
+    <eLiterals name="ACTIVE"/>
+    <eLiterals name="INACTIVE" value="1"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="DataSourceSpecification" eSuperTypes="#//PropertyContainer">
+    <eReferences name="connectorType" eType="#//ConnectorType" lowerBound="1" unsettable="true"
+        eOpposite="#//ConnectorType/dataSourceSpecifications"/>
+    <eReferences name="modelInfos" eType="#//ModelInfo" upperBound="-1" eOpposite="#//ModelInfo/dataSource"/>
+    <eReferences name="connectorManagers" eType="#//ConnectorManager" upperBound="-1"
+        eOpposite="#//ConnectorManager/dataSourceSpecifications"/>
+    <eReferences name="owner" eType="#//Data" transient="true" lowerBound="1" eOpposite="#//Data/dataSources"/>
+    <eAttributes name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Data">
+    <eReferences name="connectorTypes" eType="#//ConnectorType" lowerBound="1" upperBound="-1"
+        containment="true" eOpposite="#//ConnectorType/owner"/>
+    <eReferences name="dataSources" eType="#//DataSourceSpecification" lowerBound="1"
+        upperBound="-1" containment="true" eOpposite="#//DataSourceSpecification/owner"/>
+    <eReferences name="configuration" eType="#//EmbeddedConfiguration" transient="true"
+        lowerBound="1" eOpposite="#//EmbeddedConfiguration/data"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Components">
+    <eReferences name="connectorManagers" eType="#//ConnectorManager" lowerBound="1"
+        upperBound="-1" containment="true" eOpposite="#//ConnectorManager/owner"/>
+    <eReferences name="dqp" eType="#//DQP" lowerBound="1" containment="true" eOpposite="#//DQP/owner"/>
+    <eReferences name="services" eType="#//Service" lowerBound="1" upperBound="-1"
+        containment="true" eOpposite="#//Service/owner"/>
+    <eReferences name="configuration" eType="#//EmbeddedConfiguration" transient="true"
+        lowerBound="1" eOpposite="#//EmbeddedConfiguration/components"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Metadata">
+    <eReferences name="vdbs" eType="#//VDB" lowerBound="1" upperBound="-1" containment="true"
+        eOpposite="#//VDB/owner"/>
+    <eReferences name="configuration" eType="#//EmbeddedConfiguration" transient="true"
+        lowerBound="1" eOpposite="#//EmbeddedConfiguration/metadata"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="ModelVisibility">
+    <eLiterals name="PUBLIC"/>
+    <eLiterals name="PRIVATE" value="1"/>
+  </eClassifiers>
+</ecore:EPackage>

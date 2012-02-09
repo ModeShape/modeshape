@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  JBoss, Home of Professional Open Source.
+
+  See the LEGAL.txt file distributed with this work for information regarding copyright ownership and licensing.
+
+  See the AUTHORS.txt file distributed with this work for a full listing of individual contributors.
+-->
+<ecore:EPackage xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="dataaccess"
+    nsURI="http://www.metamatrix.com/metamodels/DataAccess" nsPrefix="dataaccess">
+  <eClassifiers xsi:type="ecore:EClass" name="Category" eSuperTypes="#//DataAccessEntity">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="groups" upperBound="-1"
+        eType="#//Group" containment="true" eOpposite="#//Group/category"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="nestedCategories" upperBound="-1"
+        eType="#//Category" containment="true" eOpposite="#//Category/parentCategory"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="parentCategory" eType="#//Category"
+        transient="true" eOpposite="#//Category/nestedCategories"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="procedures" upperBound="-1"
+        eType="#//Procedure" containment="true" eOpposite="#//Procedure/category"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="indexes" upperBound="-1"
+        eType="#//Index" containment="true" eOpposite="#//Index/category"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Group" eSuperTypes="relational.ecore#//BaseTable">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="category" eType="#//Category"
+        transient="true" eOpposite="#//Category/groups"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="nestedGroups" upperBound="-1"
+        eType="#//Group" containment="true" eOpposite="#//Group/parentGroup"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="parentGroup" eType="#//Group"
+        transient="true" eOpposite="#//Group/nestedGroups"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Element" eSuperTypes="relational.ecore#//Column"/>
+  <eClassifiers xsi:type="ecore:EClass" name="Procedure" eSuperTypes="relational.ecore#//Procedure">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="category" eType="#//Category"
+        transient="true" eOpposite="#//Category/procedures"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Index" eSuperTypes="relational.ecore#//Index">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="category" eType="#//Category"
+        transient="true" eOpposite="#//Category/indexes"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="DataAccessEntity" abstract="true" interface="true">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="nameInSource" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="PrimaryKey" eSuperTypes="relational.ecore#//PrimaryKey"/>
+  <eClassifiers xsi:type="ecore:EClass" name="UniqueConstraint" eSuperTypes="relational.ecore#//UniqueConstraint"/>
+  <eClassifiers xsi:type="ecore:EClass" name="ProcedureParameter" eSuperTypes="relational.ecore#//ProcedureParameter"/>
+  <eClassifiers xsi:type="ecore:EClass" name="ForeignKey" eSuperTypes="relational.ecore#//ForeignKey"/>
+  <eClassifiers xsi:type="ecore:EClass" name="ProcedureResult" eSuperTypes="relational.ecore#//ProcedureResult"/>
+  <eClassifiers xsi:type="ecore:EClass" name="AccessPattern" eSuperTypes="relational.ecore#//AccessPattern"/>
+</ecore:EPackage>

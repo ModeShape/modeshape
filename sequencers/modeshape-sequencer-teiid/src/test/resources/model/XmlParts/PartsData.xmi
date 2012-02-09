@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="ASCII"?>
+<xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:diagram="http://www.metamatrix.com/metamodels/Diagram" xmlns:mmcore="http://www.metamatrix.com/metamodels/Core" xmlns:relational="http://www.metamatrix.com/metamodels/Relational">
+  <mmcore:ModelAnnotation xmi:uuid="mmuuid:352bedee-4969-4ef7-8c25-d7bf8f82c47b" primaryMetamodelUri="http://www.metamatrix.com/metamodels/Relational" modelType="PHYSICAL" ProducerName="Teiid Designer" ProducerVersion="7.0.0.v20100807-1026-H168-M1">
+    <modelImports xmi:uuid="mmuuid:082e4e0c-67e0-4777-9f28-b163cfbc725c" name="XMLSchema" modelLocation="http://www.w3.org/2001/XMLSchema" modelType="TYPE" primaryMetamodelUri="http://www.eclipse.org/xsd/2002/XSD"/>
+    <modelImports xmi:uuid="mmuuid:694fa075-54c1-47c8-87c8-324df7ce6475" name="SimpleDatatypes-instance" modelLocation="http://www.metamatrix.com/metamodels/SimpleDatatypes-instance" modelType="TYPE" primaryMetamodelUri="http://www.eclipse.org/xsd/2002/XSD"/>
+  </mmcore:ModelAnnotation>
+  <diagram:DiagramContainer xmi:uuid="mmuuid:b32b2626-2b2f-491c-ac93-d77c2d638421">
+    <diagram xmi:uuid="mmuuid:e3709c2d-5d45-400b-a16f-832913ba6930" type="packageDiagramType" target="mmuuid/352bedee-4969-4ef7-8c25-d7bf8f82c47b">
+      <diagramEntity xmi:uuid="mmuuid:3f688f4c-4886-48e6-b02d-8863bcd2dc34" name="getTextFiles" modelObject="mmuuid/76fecac1-5279-439b-b27d-e78b72a1858c" xPosition="100" yPosition="60"/>
+    </diagram>
+  </diagram:DiagramContainer>
+  <mmcore:AnnotationContainer xmi:uuid="mmuuid:d182c1ba-a688-4234-9a28-011e90c3b958"/>
+  <relational:Procedure xmi:uuid="mmuuid:76fecac1-5279-439b-b27d-e78b72a1858c" name="getTextFiles">
+    <parameters xmi:uuid="mmuuid:7bba3d5f-056f-4063-aef4-e07b68513083" name="pathAndPattern">
+      <type href="http://www.w3.org/2001/XMLSchema#string"/>
+    </parameters>
+    <result xmi:uuid="mmuuid:5bdb415f-4cbf-4e93-90e9-8e5da76424aa" name="NewProcedureResult">
+      <columns xmi:uuid="mmuuid:f91c2f52-5e4b-413b-88bd-10836eae80d0" name="file">
+        <type href="http://www.metamatrix.com/metamodels/SimpleDatatypes-instance#clob"/>
+      </columns>
+      <columns xmi:uuid="mmuuid:599374a0-25e1-44db-a15c-7c70f0c237c4" name="filePath">
+        <type href="http://www.w3.org/2001/XMLSchema#string"/>
+      </columns>
+    </result>
+  </relational:Procedure>
+</xmi:XMI>

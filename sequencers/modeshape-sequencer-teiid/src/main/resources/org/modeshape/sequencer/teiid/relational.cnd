@@ -1,0 +1,211 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ * See the COPYRIGHT.txt file distributed with this work for information
+ * regarding copyright ownership.  Some portions may be licensed
+ * to Red Hat, Inc. under one or more contributor license agreements.
+ * See the AUTHORS.txt file in the distribution for a full listing of 
+ * individual contributors. 
+ *
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * ModeShape is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+ 
+//------------------------------------------------------------------------------
+// N A M E S P A C E S
+//------------------------------------------------------------------------------
+
+<nt  = "http://www.jcp.org/jcr/nt/1.0">
+<relational='http://www.metamatrix.com/metamodels/Relational'>
+<xmi = "http://www.omg.org/XMI">
+
+//------------------------------------------------------------------------------
+// N O D E T Y P E S
+//------------------------------------------------------------------------------
+
+[relational:relationalEntity] > xmi:referenceable abstract mixin
+ - relational:nameInSource (string) 
+
+[relational:relationship] > nt:unstructured, relational:relationalEntity abstract
+
+// -------------------------------------------
+// Columns and Column Sets
+// -------------------------------------------
+
+[relational:column] > nt:unstructured, relational:relationalEntity
+ - relational:nativeType (string) 
+ - relational:type (weakreference)  
+ - relational:typeHref (string) 
+ - relational:typeXmiUuid (string) 
+ - relational:typeName (string) 
+ - relational:length (long) 
+ - relational:fixedLength (boolean) 
+ - relational:precision (long) 
+ - relational:scale (long) 
+ - relational:nullable (string) = 'NULLABLE' < 'NO_NULLS', 'NULLABLE', 'NULLABLE_UNKNOWN'
+ - relational:autoIncremented (boolean) = 'false' 
+ - relational:defaultValue (string) 
+ - relational:minimumValue (string) 
+ - relational:maximumValue (string) 
+ - relational:format (string) 
+ - relational:characterSetName (string) 
+ - relational:collationName (string) 
+ - relational:selectable (boolean) = 'true' 
+ - relational:updateable (boolean) = 'true' 
+ - relational:caseSensitive (boolean) = 'true' 
+ - relational:searchability (string) = 'SEARCHABLE' < 'SEARCHABLE', 'ALL_EXCEPT_LIKE', 'LIKE_ONLY', 'UNSEARCHABLE'
+ - relational:currency (boolean) = 'false'
+ - relational:radix (long) = '10'
+ - relational:signed (boolean) = 'true' 
+ - relational:distinctValueCount (long) = '-1' 
+ - relational:nullValueCount (long) = '-1' 
+ - relational:uniqueKeys (weakreference) multiple 
+ - relational:uniqueKeyHrefs (string) multiple 
+ - relational:uniqueKeyXmiUuids (string) multiple 
+ - relational:uniqueKeyNames (string) multiple 
+ - relational:indexes (weakreference) multiple 
+ - relational:indexHrefs (string) multiple 
+ - relational:indexXmiUuids (string) multiple 
+ - relational:indexNames (string) multiple 
+ - relational:foreignKeys (weakreference) multiple 
+ - relational:foreignKeyHrefs (string) multiple 
+ - relational:foreignKeyXmiUuids (string) multiple 
+ - relational:foreignKeyNames (string) multiple 
+ - relational:accessPatterns (weakreference) multiple 
+ - relational:accessPatternHrefs (string) multiple 
+ - relational:accessPatternXmiUuids (string) multiple 
+ - relational:accessPatternNames (string) multiple
+
+[relational:columnSet] > nt:unstructured, relational:relationalEntity abstract orderable
+ + * (relational:column) = relational:column copy
+
+// -------------------------------------------
+// Constraints
+// -------------------------------------------
+
+[relational:uniqueKey] > nt:unstructured, relational:relationalEntity abstract
+ - relational:columns (weakreference) multiple
+ - relational:columnXmiUuids (string) multiple
+ - relational:columnNames (string) multiple 
+ - relational:foreignKeys (weakreference) multiple 
+ - relational:foreignKeyHrefs (string) multiple
+ - relational:foreignKeyXmiUuids (string) multiple 
+ - relational:foreignKeyNames (string) multiple 
+
+[relational:uniqueConstraint] > relational:uniqueKey
+
+[relational:primaryKey] > relational:uniqueKey
+
+[relational:foreignKey] > relational:relationship
+ - relational:foreignKeyMultiplicity (string) = 'ZERO_TO_MANY' < 'ONE', 'MANY', 'ZERO_TO_ONE', 'ZERO_TO_MANY', 'UNSPECIFIED'
+ - relational:primaryKeyMultiplicity (string) = 'ONE' < 'ONE', 'MANY', 'ZERO_TO_ONE', 'ZERO_TO_MANY', 'UNSPECIFIED'
+ - relational:columns (weakreference) multiple
+ - relational:columnXmiUuids (string) multiple 
+ - relational:columnNames (string) multiple 
+ - relational:uniqueKeys (weakreference) multiple 
+ - relational:uniqueKeyHrefs (string) multiple 
+ - relational:uniqueKeyXmiUuids (string) multiple 
+ - relational:uniqueKeyNames (string) multiple 
+
+[relational:index] > nt:unstructured, relational:relationalEntity
+ - relational:filterCondition (string) 
+ - relational:nullable (boolean) = 'true' 
+ - relational:autoUpdate (boolean) 
+ - relational:unique (boolean) 
+ - relational:columns (weakreference) multiple
+ - relational:columnXmiUuids (string) multiple 
+ - relational:columnNames (string) multiple 
+
+[relational:accessPattern] > nt:unstructured, relational:relationalEntity orderable
+ - relational:columns (UNDEFINED) multiple 
+
+// -------------------------------------------
+// Tables and Views
+// -------------------------------------------
+
+[relational:table] > relational:columnSet abstract orderable
+ - relational:system (boolean) = 'false' 
+ - relational:cardinality (long) 
+ - relational:supportsUpdate (boolean) = 'true' 
+ - relational:materialized (boolean) = 'false' 
+ - relational:logicalRelationships (weakreference) multiple 
+ - relational:logicalRelationshipHrefs (string) multiple 
+ - relational:logicalRelationshipXmiUuids (string) multiple 
+ - relational:logicalRelationshipNames (string) multiple 
+ + * (relational:primaryKey) = relational:primaryKey copy
+ + * (relational:foreignKey) = relational:foreignKey copy
+ + * (relational:accessPattern) = relational:accessPattern copy sns
+
+[relational:baseTable] > relational:table orderable
+
+[relational:view] > relational:table orderable
+
+
+// -------------------------------------------
+// Procedures
+// -------------------------------------------
+
+[relational:procedureParameter] > nt:unstructured, relational:relationalEntity
+ - relational:direction (string) < 'IN', 'OUT', 'INOUT', 'RETURN', 'UNKNOWN'
+ - relational:defaultValue (string) 
+ - relational:nativeType (string) 
+ - relational:type (weakreference) 
+ - relational:typeXmiUuid (string) 
+ - relational:typeName (string) 
+ - relational:length (long) 
+ - relational:precision (long) 
+ - relational:scale (long) 
+ - relational:nullable (string) = 'NULLABLE' < 'NO_NULLS', 'NULLABLE', 'NULLABLE_UNKNOWN'
+ - relational:radix (long) = '10' 
+
+[relational:procedureResult] > relational:columnSet orderable
+
+[relational:procedure] > nt:unstructured, relational:relationalEntity orderable
+ - relational:function (boolean) 
+ - relational:updateCount (string) < 'AUTO', 'ZERO', 'ONE', 'MULTIPLE'
+ + * (relational:procedureParameter) = relational:procedureParameter copy sns
+ + * (relational:procedureResult) = relational:procedureResult copy
+
+
+// -------------------------------------------
+// Logical Relationships
+// -------------------------------------------
+
+[relational:logicalRelationshipEnd] > nt:unstructured, relational:relationalEntity
+ - relational:multiplicity (string) < 'ONE', 'MANY', 'ZERO_TO_ONE', 'ZERO_TO_MANY', 'UNSPECIFIED'
+ - relational:table (weakreference)
+ - relational:tableHref (string)
+ - relational:tableXmiUuid (string)
+ - relational:tableName (string)
+
+[relational:logicalRelationship] > relational:relationship orderable
+ + * (relational:logicalRelationshipEnd) = relational:logicalRelationshipEnd copy sns
+
+// -------------------------------------------
+// Catalogs and Schemas
+// -------------------------------------------
+
+[relational:schema] > nt:unstructured, relational:relationalEntity orderable
+ + * (relational:table) = relational:baseTable copy
+ + * (relational:procedure) = relational:procedure copy sns
+ + * (relational:index) = relational:index copy
+ + * (relational:logicalRelationship) = relational:logicalRelationship copy
+
+[relational:catalog] > nt:unstructured, relational:relationalEntity orderable
+ + * (relational:schema) = relational:schema copy
+ + * (relational:table) = relational:baseTable copy
+ + * (relational:procedure) = relational:procedure copy sns
+ + * (relational:index) = relational:index copy
+ + * (relational:logicalRelationship) = relational:logicalRelationship copy
+ 

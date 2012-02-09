@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="ASCII"?>
+<!--
+  JBoss, Home of Professional Open Source.
+
+  See the LEGAL.txt file distributed with this work for information regarding copyright ownership and licensing.
+
+  See the AUTHORS.txt file distributed with this work for a full listing of individual contributors.
+-->
+<ecore:EPackage xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="history"
+    nsURI="http://www.metamatrix.com/metamodels/History" nsPrefix="history">
+  <eClassifiers xsi:type="ecore:EClass" name="HistoryLog" abstract="true">
+    <eReferences name="historyCriteria" eType="#//HistoryCriteria" containment="true"
+        eOpposite="#//HistoryCriteria/historyLog"/>
+    <eAttributes name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="uri" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Revision" eSuperTypes="#//HistoryLogEntry">
+    <eReferences name="historyLog" eType="#//RevisionLog" transient="true" lowerBound="1"
+        eOpposite="#//RevisionLog/firstRevision"/>
+    <eReferences name="branch" eType="#//Branch" upperBound="-1" containment="true"
+        eOpposite="#//Branch/previousRevision"/>
+    <eReferences name="label" eType="#//Label" upperBound="-1" containment="true"
+        eOpposite="#//Label/revision"/>
+    <eReferences name="nextRevision" eType="#//Revision" lowerBound="1" containment="true"
+        eOpposite="#//Revision/previousRevision"/>
+    <eReferences name="previousRevision" eType="#//Revision" transient="true" eOpposite="#//Revision/nextRevision"/>
+    <eAttributes name="comment" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="version" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Label" eSuperTypes="#//HistoryLogEntry">
+    <eReferences name="revision" eType="#//Revision" transient="true" lowerBound="1"
+        eOpposite="#//Revision/label"/>
+    <eReferences name="historyLog" eType="#//LabelLog" transient="true" lowerBound="1"
+        eOpposite="#//LabelLog/labels"/>
+    <eAttributes name="tag" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="HistoryLogEntry" abstract="true">
+    <eAttributes name="timestamp" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="user" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Branch" eSuperTypes="#//HistoryLogEntry">
+    <eReferences name="previousRevision" eType="#//Revision" transient="true" lowerBound="1"
+        eOpposite="#//Revision/branch"/>
+    <eAttributes name="version" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="HistoryCriteria">
+    <eReferences name="historyLog" eType="#//HistoryLog" transient="true" lowerBound="1"
+        eOpposite="#//HistoryLog/historyCriteria"/>
+    <eAttributes name="fromDate" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="toDate" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="user" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="includeLabels" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
+    <eAttributes name="onlyLabels" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="RevisionLog" eSuperTypes="#//HistoryLog">
+    <eReferences name="firstRevision" eType="#//Revision" lowerBound="1" containment="true"
+        eOpposite="#//Revision/historyLog"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="LabelLog" eSuperTypes="#//HistoryLog">
+    <eReferences name="labels" eType="#//Label" lowerBound="1" upperBound="-1" containment="true"
+        eOpposite="#//Label/historyLog"/>
+  </eClassifiers>
+</ecore:EPackage>

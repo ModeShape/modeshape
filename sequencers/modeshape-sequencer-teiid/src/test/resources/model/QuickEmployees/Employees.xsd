@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XML Spy v4.4 U (http://www.xmlspy.com) by Paul Nittel (MetaMatrix) -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:annotation>
+		<xs:documentation xml:lang="en">Employee schema Copyright (c) 2002, MetaMatrix. All right reserved.
+		Version 1.1 includes:
+		pattern (phone #)
+		annotation: documentation and appInfo
+		enumeration
+		attribute
+		recursion of employee as a supervisor</xs:documentation>
+	</xs:annotation>
+	<xs:element name="Employee">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">This schema describes an employee</xs:documentation>
+			<xs:appinfo>appContent="Employee"</xs:appinfo>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence maxOccurs="unbounded">
+				<xs:element name="Employee" type="EmployeeType"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:complexType name="EmployeeType">
+		<xs:sequence>
+			<xs:element ref="Name"/>
+			<xs:element ref="Address"/>
+			<xs:element ref="EmpId"/>
+			<xs:element name="Phone" maxOccurs="6">
+				<xs:annotation>
+					<xs:documentation>A telephone number the type of which is office, cell, home, etc.</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="PhoneNumber">
+							<xs:simpleType>
+								<xs:restriction base="xs:string">
+									<xs:pattern value="\([0-9]{3}\) [0-9]{3}\-[0-9]{4}"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:element>
+						<xs:element name="PhoneExt">
+							<xs:simpleType>
+								<xs:restriction base="xs:integer">
+									<xs:maxInclusive value="999"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:element>
+					</xs:sequence>
+					<xs:attribute name="PhoneType" use="required">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:enumeration value="office"/>
+								<xs:enumeration value="fax"/>
+								<xs:enumeration value="cell"/>
+								<xs:enumeration value="home"/>
+								<xs:enumeration value="pager"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="Supervisor" type="EmployeeType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Employee's supervisor</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:element name="SimpleEmployees">
+		<xs:annotation>
+			<xs:documentation>This schema describes an employee w/o complex phone type</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence maxOccurs="unbounded">
+				<xs:element name="Employee" type="SimpleEmployeeType"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:complexType name="SimpleEmployeeType">
+		<xs:annotation>
+			<xs:documentation>Same as EmployeeType but w/o complex phone type</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element ref="Name"/>
+			<xs:element ref="Address"/>
+			<xs:element ref="EmpId"/>
+			<xs:element name="Phone" type="xs:string"/>
+			<xs:element name="Supervisor" type="SimpleEmployeeType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:element name="Name">
+		<xs:annotation>
+			<xs:documentation>The name of an individual</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="LastName" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Last name, surname...</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="FirstName" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>First, or given, name</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="MiddleInitial" type="xs:string" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Middle initial - optional</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="Address">
+		<xs:annotation>
+			<xs:documentation>The address of an entity</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="Street" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Street of the address</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="City" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>City of address</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="State">
+					<xs:annotation>
+						<xs:documentation>State of the address - enumerated</xs:documentation>
+					</xs:annotation>
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:enumeration value="AL"/>
+							<xs:enumeration value="AK">
+								<xs:annotation>
+									<xs:documentation xml:lang="en">Alaska</xs:documentation>
+								</xs:annotation>
+							</xs:enumeration>
+							<xs:enumeration value="AS"/>
+							<xs:enumeration value="AZ"/>
+							<xs:enumeration value="AR"/>
+							<xs:enumeration value="IL"/>
+							<xs:enumeration value="MD"/>
+							<xs:enumeration value="MO">
+								<xs:annotation>
+									<xs:documentation xml:lang="en">Missouri - Home of the MetaMatrix developers' office</xs:documentation>
+								</xs:annotation>
+							</xs:enumeration>
+							<xs:enumeration value="NJ"/>
+							<xs:enumeration value="NY"/>
+							<xs:enumeration value="TX"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="EmpId" type="xs:positiveInteger">
+		<xs:annotation>
+			<xs:documentation>An integer, unique to each employee</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+</xs:schema>

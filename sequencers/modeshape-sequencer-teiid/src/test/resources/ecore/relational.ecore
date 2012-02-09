@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  JBoss, Home of Professional Open Source.
+
+  See the LEGAL.txt file distributed with this work for information regarding copyright ownership and licensing.
+
+  See the AUTHORS.txt file distributed with this work for a full listing of individual contributors.
+-->
+<ecore:EPackage xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="relational"
+    nsURI="http://www.metamatrix.com/metamodels/Relational" nsPrefix="relational">
+  <eClassifiers xsi:type="ecore:EClass" name="Table" abstract="true" eSuperTypes="#//ColumnSet">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="system" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="false"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="cardinality" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="supportsUpdate" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="materialized" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="schema" eType="#//Schema"
+        transient="true" eOpposite="#//Schema/tables"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="accessPatterns" upperBound="-1"
+        eType="#//AccessPattern" containment="true" eOpposite="#//AccessPattern/table"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="catalog" eType="#//Catalog"
+        transient="true" eOpposite="#//Catalog/tables"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="logicalRelationships" upperBound="-1"
+        eType="#//LogicalRelationshipEnd" eOpposite="#//LogicalRelationshipEnd/table"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Column" eSuperTypes="#//RelationalEntity">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="nativeType" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+        unsettable="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="length" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="fixedLength" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="precision" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="scale" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="nullable" eType="#//NullableType"
+        defaultValueLiteral="NULLABLE"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="autoIncremented" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="false"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="defaultValue" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="minimumValue" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="maximumValue" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="format" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="characterSetName" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="collationName" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="selectable" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="updateable" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="caseSensitive" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="searchability" eType="#//SearchabilityType"
+        defaultValueLiteral="SEARCHABLE"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="currency" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="radix" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
+        defaultValueLiteral="10"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="signed" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="distinctValueCount" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
+        defaultValueLiteral="-1"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="nullValueCount" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
+        defaultValueLiteral="-1"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="uniqueKeys" upperBound="-1"
+        eType="#//UniqueKey" eOpposite="#//UniqueKey/columns"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="indexes" upperBound="-1"
+        eType="#//Index" eOpposite="#//Index/columns"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="foreignKeys" upperBound="-1"
+        eType="#//ForeignKey" eOpposite="#//ForeignKey/columns"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="accessPatterns" upperBound="-1"
+        eType="#//AccessPattern" eOpposite="#//AccessPattern/columns"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="owner" eType="#//ColumnSet"
+        transient="true" eOpposite="#//ColumnSet/columns"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="type" lowerBound="1" eType="ecore:EClass ../../../plugin/org.eclipse.emf.ecore/model/Ecore.ecore#//EObject"
+        unsettable="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Schema" eSuperTypes="#//RelationalEntity">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="tables" upperBound="-1"
+        eType="#//Table" containment="true" eOpposite="#//Table/schema"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="catalog" eType="#//Catalog"
+        transient="true" eOpposite="#//Catalog/schemas"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="procedures" upperBound="-1"
+        eType="#//Procedure" containment="true" eOpposite="#//Procedure/schema"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="indexes" upperBound="-1"
+        eType="#//Index" containment="true" eOpposite="#//Index/schema"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="logicalRelationships" upperBound="-1"
+        eType="#//LogicalRelationship" containment="true" eOpposite="#//LogicalRelationship/schema"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="PrimaryKey" eSuperTypes="#//UniqueKey">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="table" eType="#//BaseTable"
+        transient="true" eOpposite="#//BaseTable/primaryKey"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="ForeignKey" eSuperTypes="#//Relationship">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="foreignKeyMultiplicity"
+        eType="#//MultiplicityKind" defaultValueLiteral="ZERO_TO_MANY"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="primaryKeyMultiplicity"
+        eType="#//MultiplicityKind" defaultValueLiteral="ONE"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="columns" lowerBound="1"
+        upperBound="-1" eType="#//Column" eOpposite="#//Column/foreignKeys"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="uniqueKey" lowerBound="1"
+        eType="#//UniqueKey" unsettable="true" eOpposite="#//UniqueKey/foreignKeys"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="table" eType="#//BaseTable"
+        transient="true" eOpposite="#//BaseTable/foreignKeys"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="RelationalEntity" abstract="true">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="nameInSource" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="UniqueKey" abstract="true" eSuperTypes="#//RelationalEntity">
+    <eOperations name="getTable" eType="#//BaseTable"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="columns" lowerBound="1"
+        upperBound="-1" eType="#//Column" eOpposite="#//Column/uniqueKeys"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="foreignKeys" upperBound="-1"
+        eType="#//ForeignKey" eOpposite="#//ForeignKey/uniqueKey"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="View" eSuperTypes="#//Table"/>
+  <eClassifiers xsi:type="ecore:EEnum" name="NullableType">
+    <eLiterals name="NO_NULLS"/>
+    <eLiterals name="NULLABLE" value="1"/>
+    <eLiterals name="NULLABLE_UNKNOWN" value="2"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Catalog" eSuperTypes="#//RelationalEntity">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="schemas" upperBound="-1"
+        eType="#//Schema" containment="true" eOpposite="#//Schema/catalog"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="procedures" upperBound="-1"
+        eType="#//Procedure" containment="true" eOpposite="#//Procedure/catalog"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="indexes" upperBound="-1"
+        eType="#//Index" containment="true" eOpposite="#//Index/catalog"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="tables" upperBound="-1"
+        eType="#//Table" containment="true" eOpposite="#//Table/catalog"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="logicalRelationships" upperBound="-1"
+        eType="#//LogicalRelationship" containment="true" eOpposite="#//LogicalRelationship/catalog"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Procedure" eSuperTypes="#//RelationalEntity">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="function" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="schema" eType="#//Schema"
+        transient="true" eOpposite="#//Schema/procedures"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="parameters" upperBound="-1"
+        eType="#//ProcedureParameter" containment="true" eOpposite="#//ProcedureParameter/procedure"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="catalog" eType="#//Catalog"
+        transient="true" eOpposite="#//Catalog/procedures"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="result" eType="#//ProcedureResult"
+        containment="true" eOpposite="#//ProcedureResult/procedure"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="updateCount" eType="#//ProcedureUpdateCount"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Index" eSuperTypes="#//RelationalEntity">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="filterCondition" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="nullable" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="autoUpdate" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="unique" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="schema" eType="#//Schema"
+        transient="true" eOpposite="#//Schema/indexes"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="columns" lowerBound="1"
+        upperBound="-1" eType="#//Column" eOpposite="#//Column/indexes"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="catalog" eType="#//Catalog"
+        transient="true" eOpposite="#//Catalog/indexes"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="ProcedureParameter" eSuperTypes="#//RelationalEntity">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="direction" eType="#//DirectionKind"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="defaultValue" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="nativeType" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="length" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="precision" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="scale" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="nullable" eType="#//NullableType"
+        defaultValueLiteral="NULLABLE"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="radix" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
+        defaultValueLiteral="10"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="procedure" eType="#//Procedure"
+        transient="true" eOpposite="#//Procedure/parameters"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="type" lowerBound="1" eType="ecore:EClass ../../../plugin/org.eclipse.emf.ecore/model/Ecore.ecore#//EObject"
+        unsettable="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="UniqueConstraint" eSuperTypes="#//UniqueKey">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="table" eType="#//BaseTable"
+        transient="true" eOpposite="#//BaseTable/uniqueConstraints"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="DirectionKind">
+    <eLiterals name="IN"/>
+    <eLiterals name="OUT" value="1"/>
+    <eLiterals name="INOUT" value="2"/>
+    <eLiterals name="RETURN" value="3"/>
+    <eLiterals name="UNKNOWN" value="4"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="AccessPattern" eSuperTypes="#//RelationalEntity">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="columns" lowerBound="1"
+        upperBound="-1" eType="#//Column" eOpposite="#//Column/accessPatterns"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="table" eType="#//Table"
+        transient="true" eOpposite="#//Table/accessPatterns"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="MultiplicityKind">
+    <eLiterals name="ONE"/>
+    <eLiterals name="MANY" value="1"/>
+    <eLiterals name="ZERO_TO_ONE" value="2"/>
+    <eLiterals name="ZERO_TO_MANY" value="3"/>
+    <eLiterals name="UNSPECIFIED" value="4"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Relationship" abstract="true" eSuperTypes="#//RelationalEntity"/>
+  <eClassifiers xsi:type="ecore:EClass" name="LogicalRelationship" eSuperTypes="#//Relationship">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="catalog" eType="#//Catalog"
+        transient="true" eOpposite="#//Catalog/logicalRelationships"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="schema" eType="#//Schema"
+        transient="true" eOpposite="#//Schema/logicalRelationships"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="ends" lowerBound="2" upperBound="-1"
+        eType="#//LogicalRelationshipEnd" containment="true" eOpposite="#//LogicalRelationshipEnd/relationship"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="LogicalRelationshipEnd" eSuperTypes="#//RelationalEntity">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="multiplicity" eType="#//MultiplicityKind"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="table" lowerBound="1" eType="#//Table"
+        eOpposite="#//Table/logicalRelationships"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="relationship" lowerBound="1"
+        eType="#//LogicalRelationship" transient="true" eOpposite="#//LogicalRelationship/ends"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="SearchabilityType">
+    <eLiterals name="SEARCHABLE"/>
+    <eLiterals name="ALL_EXCEPT_LIKE" value="1"/>
+    <eLiterals name="LIKE_ONLY" value="2"/>
+    <eLiterals name="UNSEARCHABLE" value="3"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="BaseTable" eSuperTypes="#//Table">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="foreignKeys" upperBound="-1"
+        eType="#//ForeignKey" containment="true" eOpposite="#//ForeignKey/table"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="primaryKey" eType="#//PrimaryKey"
+        containment="true" eOpposite="#//PrimaryKey/table"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="uniqueConstraints" upperBound="-1"
+        eType="#//UniqueConstraint" containment="true" eOpposite="#//UniqueConstraint/table"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="ColumnSet" abstract="true" eSuperTypes="#//RelationalEntity">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="columns" lowerBound="1"
+        upperBound="-1" eType="#//Column" containment="true" eOpposite="#//Column/owner"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="ProcedureResult" eSuperTypes="#//ColumnSet">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="procedure" eType="#//Procedure"
+        transient="true" eOpposite="#//Procedure/result"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="ProcedureUpdateCount">
+    <eLiterals name="AUTO"/>
+    <eLiterals name="ZERO" value="1"/>
+    <eLiterals name="ONE" value="2"/>
+    <eLiterals name="MULTIPLE" value="3"/>
+  </eClassifiers>
+</ecore:EPackage>

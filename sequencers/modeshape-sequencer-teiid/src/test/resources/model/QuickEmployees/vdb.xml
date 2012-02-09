@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<vdb version="1" name="qe">
+    <description>This VDB is for testing Recursive XML documents and Text Sources</description>
+    <property value="false" name="preview"/>
+    <model visible="true" type="VIRTUAL" name="EmpV" path="/QuickEmployees/EmpV.xmi">
+        <property value="2273245105" name="checksum"/>
+        <property value="false" name="builtIn"/>
+        <property value="1646901791.INDEX" name="indexName"/>
+        <property value="/QuickEmployees/Employees.xmi" name="imports"/>
+        <property value="/QuickText/text.xmi" name="imports"/>
+        <validation-error path="EmpTable/annualSalary" severity="WARNING">Missing or invalid Precision on column with a numeric datatype (See validation Preferences)</validation-error>
+        <validation-error path="EmpTable/mgrId" severity="WARNING">Missing or invalid Precision on column with a numeric datatype (See validation Preferences)</validation-error>
+        <validation-error path="EmpTable/empId" severity="WARNING">Missing or invalid Precision on column with a numeric datatype (See validation Preferences)</validation-error>
+    </model>
+    <model visible="true" type="VIRTUAL" name="EmpDoc" path="/QuickEmployees/EmpDoc.xmi">
+        <property value="2836334273" name="checksum"/>
+        <property value="false" name="builtIn"/>
+        <property value="4249782919.INDEX" name="indexName"/>
+        <property value="/QuickEmployees/Employees.xsd" name="imports"/>
+        <property value="/QuickEmployees/Employees.xmi" name="imports"/>
+        <property value="/QuickText/text.xmi" name="imports"/>
+        <validation-error path="SimpleEmployeesDocument/SimpleEmployees/sequence/Employee/sequence/Supervisor" severity="WARNING">&quot;Supervisor&quot; references an XML Schema component that has a max occurs of one, but may occur more than once in a result document. (See validation Preferences)</validation-error>
+        <validation-error path="SimpleEmployeesDocument/SimpleEmployees/sequence/Employee/sequence/Address/sequence/State" severity="WARNING">The XML Schema component type for &quot;State&quot; must be marked as an enterprise datatype to be used in this model.</validation-error>
+    </model>
+    <model visible="true" type="TYPE" name="Employees" path="/QuickEmployees/Employees.xsd">
+        <property value="3838138122" name="checksum"/>
+        <property value="false" name="builtIn"/>
+        <property value="2026880702.INDEX" name="indexName"/>
+    </model>
+    <model visible="true" type="PHYSICAL" name="text" path="/QuickText/text.xmi">
+        <property value="958072371" name="checksum"/>
+        <property value="false" name="builtIn"/>
+        <property value="2422826809.INDEX" name="indexName"/>
+        <source translator-name="file" connection-jndi-name="empdata-file" name="text"/>
+        <validation-error path="getTextFiles/NewProcedureResult/filePath" severity="WARNING">Missing or invalid Length on column with a string/character datatype  (See validation Preferences)</validation-error>
+    </model>
+    <model visible="true" type="VIRTUAL" name="Employees" path="/QuickEmployees/Employees.xmi">
+        <property value="1269937912" name="checksum"/>
+        <property value="false" name="builtIn"/>
+        <property value="3527409116.INDEX" name="indexName"/>
+        <property value="/QuickText/text.xmi" name="imports"/>
+        <validation-error path="EmpTable/annualSalary" severity="WARNING">Missing or invalid Precision on column with a numeric datatype (See validation Preferences)</validation-error>
+        <validation-error path="EmpTable/empId" severity="WARNING">Missing or invalid Precision on column with a numeric datatype (See validation Preferences)</validation-error>
+        <validation-error path="EmpTable/mgrId" severity="WARNING">Missing or invalid Precision on column with a numeric datatype (See validation Preferences)</validation-error>
+        <validation-error path="EmpTable" severity="WARNING">Possible cross-join: Group/s '[f, emp]' are not joined either directly or transitively to other groups through a join criteria. Check all queries in the transformation.</validation-error>
+    </model>
+</vdb>

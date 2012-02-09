@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="ASCII"?>
+<!--
+  JBoss, Home of Professional Open Source.
+
+  See the LEGAL.txt file distributed with this work for information regarding copyright ownership and licensing.
+
+  See the AUTHORS.txt file distributed with this work for a full listing of individual contributors.
+-->
+<xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:Relational="http://www.metamatrix.com/metamodels/Relational" xmlns:Sdt="http://www.metamatrix.com/metamodels/SimpleDatatypes" xmlns:jdbc="http://www.metamatrix.com/metamodels/JDBC" xmlns:mmcore="http://www.metamatrix.com/metamodels/Core">
+  <mmcore:ModelAnnotation xmi:uuid="mmuuid:3bbd2980-685c-1edf-ad26-eaf131c5fef9" primaryMetamodelUri="http://www.metamatrix.com/metamodels/Relational" modelType="PHYSICAL">
+    <modelImports xmi:uuid="mmuuid:3f7e7740-685c-1edf-ad26-eaf131c5fef9" name="builtInDataTypes" path="http://www.metamatrix.com/metamodels/SimpleDatatypes-instance" uuid="mmuuid:6b862080-3019-1e20-921b-eeee28353879" modelType="PHYSICAL" primaryMetamodelUri="http://www.metamatrix.com/metamodels/SimpleDatatypes"/>
+  </mmcore:ModelAnnotation>
+  <Relational:BaseTable xmi:uuid="mmuuid:3bbd2981-685c-1edf-ad26-eaf131c5fef9" name="AUTHORS" nameInSource="AUTHORS" cardinality="59">
+    <columns xmi:uuid="mmuuid:3da57180-685c-1edf-ad26-eaf131c5fef9" name="AUTHOR_ID" nameInSource="AUTHOR_ID" nativeType="int" fixedLength="true" precision="10" nullable="NO_NULLS" caseSensitive="false" searchability="ALL_EXCEPT_LIKE">
+      <type xsi:type="Sdt:SimpleDatatype" href="http://www.metamatrix.com/metamodels/SimpleDatatypes-instance#mmuuid:33add3c0-b98d-1e21-b812-969c8fc8b016"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:3da57181-685c-1edf-ad26-eaf131c5fef9" name="FIRSTNAME" nameInSource="FIRSTNAME" nativeType="varchar" length="255">
+      <type xsi:type="Sdt:SimpleDatatype" href="http://www.metamatrix.com/metamodels/SimpleDatatypes-instance#mmuuid:bf6c34c0-c442-1e24-9b01-c8207cd53eb7"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:3da57182-685c-1edf-ad26-eaf131c5fef9" name="LASTNAME" nameInSource="LASTNAME" nativeType="varchar" length="255">
+      <type xsi:type="Sdt:SimpleDatatype" href="http://www.metamatrix.com/metamodels/SimpleDatatypes-instance#mmuuid:bf6c34c0-c442-1e24-9b01-c8207cd53eb7"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:3da57183-685c-1edf-ad26-eaf131c5fef9" name="MIDDLEINIT" nameInSource="MIDDLEINIT" nativeType="varchar" length="255">
+      <type xsi:type="Sdt:SimpleDatatype" href="http://www.metamatrix.com/metamodels/SimpleDatatypes-instance#mmuuid:bf6c34c0-c442-1e24-9b01-c8207cd53eb7"/>
+    </columns>
+  </Relational:BaseTable>
+  <Relational:BaseTable xmi:uuid="mmuuid:40635900-685c-1edf-ad26-eaf131c5fef9" name="BOOK_AUTHORS" nameInSource="BOOK_AUTHORS" cardinality="66">
+    <columns xmi:uuid="mmuuid:41577d00-685c-1edf-ad26-eaf131c5fef9" name="ISBN" nameInSource="ISBN" nativeType="varchar" length="255" nullable="NO_NULLS">
+      <type xsi:type="Sdt:SimpleDatatype" href="http://www.metamatrix.com/metamodels/SimpleDatatypes-instance#mmuuid:bf6c34c0-c442-1e24-9b01-c8207cd53eb7"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:41577d01-685c-1edf-ad26-eaf131c5fef9" name="AUTHOR_ID" nameInSource="AUTHOR_ID" nativeType="int" fixedLength="true" precision="10" nullable="NO_NULLS" caseSensitive="false" searchability="ALL_EXCEPT_LIKE">
+      <type xsi:type="Sdt:SimpleDatatype" href="http://www.metamatrix.com/metamodels/SimpleDatatypes-instance#mmuuid:33add3c0-b98d-1e21-b812-969c8fc8b016"/>
+    </columns>
+  </Relational:BaseTable>
+  <Relational:BaseTable xmi:uuid="mmuuid:424ba100-685c-1edf-ad26-eaf131c5fef9" name="BOOKS" nameInSource="BOOKS" cardinality="41">
+    <columns xmi:uuid="mmuuid:4424a6c0-685c-1edf-ad26-eaf131c5fef9" name="ISBN" nameInSource="ISBN" nativeType="varchar" length="255" nullable="NO_NULLS">
+      <type xsi:type="Sdt:SimpleDatatype" href="http://www.metamatrix.com/metamodels/SimpleDatatypes-instance#mmuuid:bf6c34c0-c442-1e24-9b01-c8207cd53eb7"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:4424a6c1-685c-1edf-ad26-eaf131c5fef9" name="TITLE" nameInSource="TITLE" nativeType="varchar" length="255">
+      <type xsi:type="Sdt:SimpleDatatype" href="http://www.metamatrix.com/metamodels/SimpleDatatypes-instance#mmuuid:bf6c34c0-c442-1e24-9b01-c8207cd53eb7"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:4424a6c2-685c-1edf-ad26-eaf131c5fef9" name="SUBTITLE" nameInSource="SUBTITLE" nativeType="varchar" length="255">
+      <type xsi:type="Sdt:SimpleDatatype" href="http://www.metamatrix.com/metamodels/SimpleDatatypes-instance#mmuuid:bf6c34c0-c442-1e24-9b01-c8207cd53eb7"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:4424a6c3-685c-1edf-ad26-eaf131c5fef9" name="PUBLISHER" nameInSource="PUBLISHER" nativeType="int" fixedLength="true" precision="10" caseSensitive="false" searchability="ALL_EXCEPT_LIKE">
+      <type xsi:type="Sdt:SimpleDatatype" href="http://www.metamatrix.com/metamodels/SimpleDatatypes-instance#mmuuid:33add3c0-b98d-1e21-b812-969c8fc8b016"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:4518cac0-685c-1edf-ad26-eaf131c5fef9" name="PUBLISH_YEAR" nameInSource="PUBLISH_YEAR" nativeType="int" fixedLength="true" precision="10" caseSensitive="false" searchability="ALL_EXCEPT_LIKE">
+      <type xsi:type="Sdt:SimpleDatatype" href="http://www.metamatrix.com/metamodels/SimpleDatatypes-instance#mmuuid:33add3c0-b98d-1e21-b812-969c8fc8b016"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:4518cac1-685c-1edf-ad26-eaf131c5fef9" name="EDITION" nameInSource="EDITION" nativeType="int" fixedLength="true" precision="10" caseSensitive="false" searchability="ALL_EXCEPT_LIKE">
+      <type xsi:type="Sdt:SimpleDatatype" href="http://www.metamatrix.com/metamodels/SimpleDatatypes-instance#mmuuid:33add3c0-b98d-1e21-b812-969c8fc8b016"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:4518cac2-685c-1edf-ad26-eaf131c5fef9" name="TYPE" nameInSource="TYPE" nativeType="varchar" length="255">
+      <type xsi:type="Sdt:SimpleDatatype" href="http://www.metamatrix.com/metamodels/SimpleDatatypes-instance#mmuuid:bf6c34c0-c442-1e24-9b01-c8207cd53eb7"/>
+    </columns>
+  </Relational:BaseTable>
+  <Relational:BaseTable xmi:uuid="mmuuid:47d6b240-685c-1edf-ad26-eaf131c5fef9" name="PUBLISHERS" nameInSource="PUBLISHERS" cardinality="17">
+    <columns xmi:uuid="mmuuid:48cad640-685c-1edf-ad26-eaf131c5fef9" name="PUBLISHER_ID" nameInSource="PUBLISHER_ID" nativeType="int" fixedLength="true" precision="10" nullable="NO_NULLS" caseSensitive="false" searchability="ALL_EXCEPT_LIKE">
+      <type xsi:type="Sdt:SimpleDatatype" href="http://www.metamatrix.com/metamodels/SimpleDatatypes-instance#mmuuid:33add3c0-b98d-1e21-b812-969c8fc8b016"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:48cad641-685c-1edf-ad26-eaf131c5fef9" name="NAME" nameInSource="NAME" nativeType="varchar" length="255">
+      <type xsi:type="Sdt:SimpleDatatype" href="http://www.metamatrix.com/metamodels/SimpleDatatypes-instance#mmuuid:bf6c34c0-c442-1e24-9b01-c8207cd53eb7"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:48cad642-685c-1edf-ad26-eaf131c5fef9" name="LOCATION" nameInSource="LOCATION" nativeType="varchar" length="255">
+      <type xsi:type="Sdt:SimpleDatatype" href="http://www.metamatrix.com/metamodels/SimpleDatatypes-instance#mmuuid:bf6c34c0-c442-1e24-9b01-c8207cd53eb7"/>
+    </columns>
+  </Relational:BaseTable>
+  <jdbc:JdbcSource xmi:uuid="mmuuid:5ad7c140-6857-1edf-ad26-eaf131c5fef9" name="Books SQLServer" driverName="MetaMatrix SQL Server" driverClass="com.metamatrix.jdbc.sqlserver.SQLServerDriver" username="books" url="jdbc:mmx:sqlserver://slntds02:1433;DatabaseName=books">
+    <importSettings xmi:uuid="mmuuid:8ab60f40-685a-1edf-ad26-eaf131c5fef9" createCatalogsInModel="false" createSchemasInModel="false">
+      <includedCatalogPaths>/books</includedCatalogPaths>
+      <includedSchemaPaths>/books/dbo</includedSchemaPaths>
+      <includedSchemaPaths>/books/INFORMATION_SCHEMA</includedSchemaPaths>
+      <excludedObjectPaths>/books/dbo/TABLE/dtproperties</excludedObjectPaths>
+    </importSettings>
+  </jdbc:JdbcSource>
+</xmi:XMI>
