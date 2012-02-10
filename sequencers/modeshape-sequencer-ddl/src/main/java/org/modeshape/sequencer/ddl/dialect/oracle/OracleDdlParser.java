@@ -1217,7 +1217,7 @@ public class OracleDdlParser extends StandardDdlParser
         if (isUnique || isBitmap) {
             StringBuilder builder = new StringBuilder(CREATE);
             builder.append(parseUntilTerminatorIgnoreEmbeddedStatements(tokens));
-            //we need to include the terminator as well
+            // we need to include the terminator as well
             builder.append(tokens.consume());
             DdlTokenStream localTokens = new DdlTokenStream(builder.toString(), DdlTokenStream.ddlTokenizer(false), false);
             localTokens.start();
@@ -1230,9 +1230,7 @@ public class OracleDdlParser extends StandardDdlParser
             }
             return createIndexStmt;
         }
-        else {
-            return parseStatement(tokens, STMT_CREATE_INDEX, parentNode, TYPE_CREATE_INDEX_STATEMENT);
-        }
+        return parseStatement(tokens, STMT_CREATE_INDEX, parentNode, TYPE_CREATE_INDEX_STATEMENT);
     }
 
     private AstNode parseCommentStatement( DdlTokenStream tokens,

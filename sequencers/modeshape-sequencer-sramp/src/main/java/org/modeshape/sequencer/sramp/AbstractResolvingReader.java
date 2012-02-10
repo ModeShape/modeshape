@@ -24,20 +24,20 @@
 
 package org.modeshape.sequencer.sramp;
 
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.xml.sax.InputSource;
-import java.io.InputStream;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * Base class for the S-RAMP based readers, which hold the functionality for resolving references and registering namespaces
- *
+ * 
  * @author Horia Chiorean
  */
 public abstract class AbstractResolvingReader {
@@ -54,11 +54,9 @@ public abstract class AbstractResolvingReader {
         this.resolvers = resolvers != null ? resolvers : new SymbolSpaceResolvers();
     }
 
-
     public AbstractResolvingReader( Sequencer.Context context ) {
         this(context, null);
     }
-
 
     public SymbolSpaceResolvers getResolvers() {
         return resolvers;
@@ -66,7 +64,7 @@ public abstract class AbstractResolvingReader {
 
     /**
      * Get the sequencing context in which this reader is being used.
-     *
+     * 
      * @return context the context; never null
      */
     public Sequencer.Context getContext() {
@@ -75,7 +73,7 @@ public abstract class AbstractResolvingReader {
 
     /**
      * Read the document from the supplied stream, and produce the derived content.
-     *
+     * 
      * @param stream the stream; may not be null
      * @param outputNode the parent node at which the derived content should be written; may not be null
      * @throws Exception if there is a problem reading the XSD content
@@ -87,7 +85,7 @@ public abstract class AbstractResolvingReader {
 
     /**
      * Read the document from the supplied stream, and produce the derived content.
-     *
+     * 
      * @param source the input source of the document; may not be null
      * @param outputNode the parent node at which the derived content should be written; may not be null
      * @throws Exception if there is a problem reading the XSD content
@@ -95,8 +93,11 @@ public abstract class AbstractResolvingReader {
     public abstract void read( InputSource source,
                                Node outputNode ) throws Exception;
 
-
     /**
+     * @param symbolSpace the symbol space; may not be null
+     * @param namespace the namespace URI; may not be null
+     * @param name the name
+     * @param identifier the identifier
      * @see NamespaceEntityResolver#register(String, String, String)
      */
     protected void registerForSymbolSpace( SymbolSpace symbolSpace,
@@ -128,7 +129,7 @@ public abstract class AbstractResolvingReader {
     /**
      * Attempt to resolve any references that remain unresolved. This should be called if sharing a
      * {@link org.modeshape.sequencer.sramp.SymbolSpaceResolvers} with multiple {@link AbstractResolvingReader} instances.
-     *
+     * 
      * @throws RepositoryException if there is a problem resolving references in the repository
      */
     public void resolveReferences() throws RepositoryException {

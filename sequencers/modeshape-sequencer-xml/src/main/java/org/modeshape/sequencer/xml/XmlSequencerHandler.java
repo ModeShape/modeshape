@@ -23,6 +23,9 @@
  */
 package org.modeshape.sequencer.xml;
 
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
 import javax.jcr.NamespaceException;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
@@ -39,9 +42,6 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.ext.DefaultHandler2;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
 
 /**
  * A {@link org.xml.sax.ext.DefaultHandler2} implementation that is used by the sequencer.
@@ -67,8 +67,8 @@ public class XmlSequencerHandler extends DefaultHandler2 {
     protected final TextDecoder decoder;
 
     /**
-     * The stack of prefixes for each namespace, which is used to keep the {@link NamespaceRegistry namespace registry} in
-     * sync with the namespaces in the XML document.
+     * The stack of prefixes for each namespace, which is used to keep the {@link NamespaceRegistry namespace registry} in sync
+     * with the namespaces in the XML document.
      */
     private final Map<String, LinkedList<String>> prefixStackByUri = new HashMap<String, LinkedList<String>>();
 
@@ -107,6 +107,8 @@ public class XmlSequencerHandler extends DefaultHandler2 {
 
     /**
      * See if there is any element content that needs to be completed.
+     * 
+     * @throws RepositoryException if there is a problem writing the content to the repository session
      */
     protected void endContent() throws RepositoryException {
         // Process the content of the element ...
@@ -127,7 +129,7 @@ public class XmlSequencerHandler extends DefaultHandler2 {
      * <p>
      * {@inheritDoc}
      * </p>
-     *
+     * 
      * @see org.xml.sax.helpers.DefaultHandler#startDocument()
      */
     @Override
@@ -143,7 +145,7 @@ public class XmlSequencerHandler extends DefaultHandler2 {
      * <p>
      * {@inheritDoc}
      * </p>
-     *
+     * 
      * @see org.xml.sax.ext.DefaultHandler2#startDTD(String, String, String)
      */
     @Override
@@ -163,7 +165,7 @@ public class XmlSequencerHandler extends DefaultHandler2 {
      * <p>
      * {@inheritDoc}
      * </p>
-     *
+     * 
      * @see org.xml.sax.ext.DefaultHandler2#externalEntityDecl(String, String, String)
      */
     @Override
@@ -188,7 +190,7 @@ public class XmlSequencerHandler extends DefaultHandler2 {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.xml.sax.ext.DefaultHandler2#internalEntityDecl(String, String)
      */
     @Override
@@ -211,7 +213,7 @@ public class XmlSequencerHandler extends DefaultHandler2 {
      * <p>
      * {@inheritDoc}
      * </p>
-     *
+     * 
      * @see org.xml.sax.helpers.DefaultHandler#processingInstruction(String, String)
      */
     @Override
@@ -237,7 +239,7 @@ public class XmlSequencerHandler extends DefaultHandler2 {
      * to register the namespace if required. Note that because this class does not really use the namespace prefixes to create
      * names, no attempt is made to match the XML namespace prefixes.
      * </p>
-     *
+     * 
      * @see org.xml.sax.helpers.DefaultHandler#startPrefixMapping(String, String)
      */
     @Override
@@ -281,7 +283,7 @@ public class XmlSequencerHandler extends DefaultHandler2 {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.xml.sax.helpers.DefaultHandler#endPrefixMapping(String)
      */
     @Override
@@ -317,7 +319,7 @@ public class XmlSequencerHandler extends DefaultHandler2 {
      * <p>
      * {@inheritDoc}
      * </p>
-     *
+     * 
      * @see org.xml.sax.ext.DefaultHandler2#startEntity(String)
      */
     @Override
@@ -330,7 +332,7 @@ public class XmlSequencerHandler extends DefaultHandler2 {
      * <p>
      * {@inheritDoc}
      * </p>
-     *
+     * 
      * @see org.xml.sax.ext.DefaultHandler2#endEntity(String)
      */
     @Override
@@ -343,7 +345,7 @@ public class XmlSequencerHandler extends DefaultHandler2 {
      * <p>
      * {@inheritDoc}
      * </p>
-     *
+     * 
      * @see org.xml.sax.ext.DefaultHandler2#startCDATA()
      */
     @Override
@@ -362,7 +364,7 @@ public class XmlSequencerHandler extends DefaultHandler2 {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.xml.sax.ext.DefaultHandler2#endCDATA()
      */
     @Override
@@ -381,7 +383,7 @@ public class XmlSequencerHandler extends DefaultHandler2 {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.xml.sax.helpers.DefaultHandler#characters(char[], int, int)
      */
     @Override
@@ -427,7 +429,7 @@ public class XmlSequencerHandler extends DefaultHandler2 {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.xml.sax.ext.DefaultHandler2#comment(char[], int, int)
      */
     @Override
@@ -446,9 +448,8 @@ public class XmlSequencerHandler extends DefaultHandler2 {
 
     /**
      * {@inheritDoc}
-     *
-     * @see org.xml.sax.helpers.DefaultHandler#startElement(String, String, String,
-     *      org.xml.sax.Attributes)
+     * 
+     * @see org.xml.sax.helpers.DefaultHandler#startElement(String, String, String, org.xml.sax.Attributes)
      */
     @Override
     public void startElement( String uri,
@@ -460,7 +461,7 @@ public class XmlSequencerHandler extends DefaultHandler2 {
         try {
 
             // Create the node with the name built from the element's name ...
-            String nodeName = createAttributeName(uri, localName);;
+            String nodeName = createAttributeName(uri, localName);
             startNode(nodeName, XmlLexicon.ELEMENT);
 
             // Now, set each attribute as a property ...
@@ -496,11 +497,10 @@ public class XmlSequencerHandler extends DefaultHandler2 {
                                         String localName ) throws RepositoryException {
         if (StringUtil.isBlank(uri)) {
             return decoder.decode(localName.trim());
-        } else {
-            String prefix = session.getNamespacePrefix(uri);
-            assert prefix != null;
-            return prefix + ":" + decoder.decode(localName.trim());
         }
+        String prefix = session.getNamespacePrefix(uri);
+        assert prefix != null;
+        return prefix + ":" + decoder.decode(localName.trim());
     }
 
     @Override
@@ -521,7 +521,7 @@ public class XmlSequencerHandler extends DefaultHandler2 {
      * <p>
      * {@inheritDoc}
      * </p>
-     *
+     * 
      * @see org.xml.sax.helpers.DefaultHandler#warning(org.xml.sax.SAXParseException)
      */
     @Override

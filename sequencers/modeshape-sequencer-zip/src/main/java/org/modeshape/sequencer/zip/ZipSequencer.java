@@ -24,6 +24,10 @@
 
 package org.modeshape.sequencer.zip;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import javax.jcr.Binary;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
@@ -36,10 +40,6 @@ import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 /**
  * A sequencer that processes and extract the files and folders from ZIP archive files.
@@ -66,11 +66,11 @@ public class ZipSequencer extends Sequencer {
         ZipInputStream zipInputStream = null;
         try {
             zipInputStream = new ZipInputStream(binaryValue.getStream());
-            
+
             ZipEntry entry = zipInputStream.getNextEntry();
 
             outputNode = createTopLevelNode(outputNode);
-            
+
             while (entry != null) {
                 entry = sequenceZipEntry(outputNode, context, zipInputStream, entry);
             }
@@ -112,13 +112,13 @@ public class ZipSequencer extends Sequencer {
                                  Context context,
                                  Node zipFileNode ) throws RepositoryException, IOException {
         Node contentNode = zipFileNode.addNode(JcrConstants.JCR_CONTENT, JcrConstants.NT_RESOURCE);
-        //on session pre-save the appropriate properties should be set automatically
+        // on session pre-save the appropriate properties should be set automatically
         contentNode.addMixin(JcrConstants.MIX_LAST_MODIFIED);
 
-        //set the content bytes
+        // set the content bytes
         byte[] contentBytes = readContent(zipInputStream);
         org.modeshape.jcr.api.Binary contentBinary = context.valueFactory().createBinary(contentBytes);
-        contentNode.setProperty(JcrConstants.JCR_DATA, contentBinary);        
+        contentNode.setProperty(JcrConstants.JCR_DATA, contentBinary);
 
         // Figure out the mime type ...
         String mimeType = context.mimeTypeDetector().mimeTypeOf(entry.getName(), contentBinary.getStream());
@@ -129,6 +129,10 @@ public class ZipSequencer extends Sequencer {
 
     /**
      * Reads the content from the {@link ZipInputStream}, making sure it doesn't close the stream.
+     * 
+     * @param zipInputStream the input stream
+     * @return the content
+     * @throws IOException if there is a problem reading the stream
      */
     private byte[] readContent( ZipInputStream zipInputStream ) throws IOException {
         int bufferLength = 1024;
@@ -142,8 +146,13 @@ public class ZipSequencer extends Sequencer {
     }
 
     /**
-     * Creates (if necessary) the path from the {@link Node parentNode} to the {@link ZipEntry zip entry}, based on the name of the
-     * zip entry, which should contain its absolute path.
+     * Creates (if necessary) the path from the {@link Node parentNode} to the {@link ZipEntry zip entry}, based on the name of
+     * the zip entry, which should contain its absolute path.
+     * 
+     * @param parentNode the parent node under which the node for the ZIP entry should be created
+     * @param entry the ZIP file entry
+     * @return the newly created node
+     * @throws RepositoryException if there is a problem writing the content to the repository session
      */
     private Node createZipEntryPath( Node parentNode,
                                      ZipEntry entry ) throws RepositoryException {
@@ -155,11 +164,9 @@ public class ZipSequencer extends Sequencer {
             try {
                 zipEntryNode = zipEntryNode.getNode(segmentName);
             } catch (PathNotFoundException e) {
-                //the path does not exist yet - create it
+                // the path does not exist yet - create it
                 boolean isLastSegment = (i == segments.length - 1);
-                String segmentPrimaryType = isLastSegment ? 
-                        (entry.isDirectory() ? JcrConstants.NT_FOLDER : JcrConstants.NT_FILE)
-                        : JcrConstants.NT_FOLDER;
+                String segmentPrimaryType = isLastSegment ? (entry.isDirectory() ? JcrConstants.NT_FOLDER : JcrConstants.NT_FILE) : JcrConstants.NT_FOLDER;
                 zipEntryNode = zipEntryNode.addNode(segmentName, segmentPrimaryType);
             }
         }
