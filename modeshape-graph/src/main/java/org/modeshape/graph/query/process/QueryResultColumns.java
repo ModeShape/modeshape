@@ -454,7 +454,6 @@ public class QueryResultColumns implements Columns {
         return columns.get(columnIndex).propertyName();
     }
 
-    @Override
     public String getPropertyNameForColumnName( String columnName ) {
         String result = propertyNameByColumnName.get(columnName);
         return result != null ? result : columnName;

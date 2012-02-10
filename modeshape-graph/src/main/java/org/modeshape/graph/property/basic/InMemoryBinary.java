@@ -119,7 +119,6 @@ public class InMemoryBinary extends AbstractBinary {
         // do nothing
     }
 
-    @Override
     public void purge() {
         this.bytes = null;
     }
