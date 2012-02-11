@@ -191,6 +191,16 @@ public class RepositoryConfigurationTest {
         assertThat(config.getSequencing(), is(notNullValue()));
     }
 
+    @Test
+    public void shouldAllowValidButSimpleRepositoryConfiguration() {
+        assertValid("{ \"name\" : \"sample\", \"jndiName\" : \"modeshape_repo1\"}");
+    }
+
+    @Test
+    public void shouldAllowValidButSimpleRepositoryConfigurationWithSingleQuotes() {
+        assertValid("{ 'name' : 'sample', 'jndiName' : 'modeshape_repo1'}");
+    }
+
     protected void assertValid( RepositoryConfiguration config ) {
         Problems results = config.validate();
         assertThat(results.toString(), results.hasProblems(), is(false));
