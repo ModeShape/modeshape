@@ -150,7 +150,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.modeshape</groupId>
-			<artifactId>modeshape-connector-infinispan</artifactId>
+			<artifactId>modeshape-connector-infinispan-5</artifactId>
 			<version>${project.version}</version>
 			<scope>test</scope>
 		</dependency>
