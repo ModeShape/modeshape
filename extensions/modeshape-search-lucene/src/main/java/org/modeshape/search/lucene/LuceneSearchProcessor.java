@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.locks.Lock;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.search.Query;
 import org.modeshape.common.annotation.NotThreadSafe;
@@ -73,17 +72,13 @@ public class LuceneSearchProcessor extends AbstractLuceneProcessor<LuceneSearchW
     protected static final Columns FULL_TEXT_RESULT_COLUMNS = new FullTextSearchResultColumns();
     private static final Logger logger = Logger.getLogger(LuceneSearchProcessor.class);
 
-    private final Lock lock;
-
     protected LuceneSearchProcessor( String sourceName,
                                      ExecutionContext context,
                                      Workspaces<LuceneSearchWorkspace> workspaces,
                                      Observer observer,
                                      DateTime now,
-                                     boolean readOnly,
-                                     Lock lock ) {
+                                     boolean readOnly ) {
         super(sourceName, context, workspaces, observer, now, readOnly);
-        this.lock = lock;
     }
 
     /**
@@ -93,11 +88,7 @@ public class LuceneSearchProcessor extends AbstractLuceneProcessor<LuceneSearchW
      */
     @Override
     public void close() {
-        try {
-            super.close();
-        } finally {
-            this.lock.unlock();
-        }
+        super.close();
     }
 
     /**

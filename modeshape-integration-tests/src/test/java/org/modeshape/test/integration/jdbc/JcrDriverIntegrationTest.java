@@ -71,10 +71,11 @@ import org.modeshape.test.ModeShapeMultiUseTest;
  * </p>
  * <p>
  * To create the expected results to be used to run a test, use the test and print method: example:
- * ConnectionResultsComparator.executeTestAndPrint(this.connection, "SELECT * FROM [nt:base]"); This will print the expected results like this:
- * String[] expected = { "jcr:primaryType[STRING]", "mode:root", "car:Car", "car:Car", "nt:unstructured" } Now copy the expected
- * results to the test method. Then change the test to run the executeTest method passing in the <code>expected</code> results:
- * example: ConnectionResultsComparator.executeTest(this.connection, "SELECT * FROM [nt:base]", expected);
+ * ConnectionResultsComparator.executeTestAndPrint(this.connection, "SELECT * FROM [nt:base]"); This will print the expected
+ * results like this: String[] expected = { "jcr:primaryType[STRING]", "mode:root", "car:Car", "car:Car", "nt:unstructured" } Now
+ * copy the expected results to the test method. Then change the test to run the executeTest method passing in the
+ * <code>expected</code> results: example: ConnectionResultsComparator.executeTest(this.connection, "SELECT * FROM [nt:base]",
+ * expected);
  * </p>
  */
 public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
@@ -188,54 +189,34 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
     public void shouldBeAbleToExecuteSqlSelectAllNodes() throws SQLException {
         String[] expected = {
             "jcr:primaryType[STRING]    jcr:path[STRING]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
-            "mode:root    /        1.0        0", "car:Car    /Cars/Utility/Hummer H3    Hummer H3    1.0    Hummer H3    3",
-            "car:Car    /Cars/Sports/Infiniti G37    Infiniti G37    1.0    Infiniti G37    3",
-            "nt:unstructured    /Cars/Utility    Utility    1.0    Utility    2",
-            "nt:unstructured    /Cars    Cars    1.0    Cars    1",
-            "car:Car    /Cars/Luxury/Cadillac DTS    Cadillac DTS    1.0    Cadillac DTS    3",
+            "mode:root    /        1.0        0", "nt:unstructured    /Cars    Cars    1.0    Cars    1",
             "nt:unstructured    /Cars/Hybrid    Hybrid    1.0    Hybrid    2",
             "car:Car    /Cars/Hybrid/Nissan Altima    Nissan Altima    1.0    Nissan Altima    3",
-            "car:Car    /Cars/Utility/Land Rover LR2    Land Rover LR2    1.0    Land Rover LR2    3",
+            "car:Car    /Cars/Hybrid/Toyota Highlander    Toyota Highlander    1.0    Toyota Highlander    3",
             "car:Car    /Cars/Hybrid/Toyota Prius    Toyota Prius    1.0    Toyota Prius    3",
-            "car:Car    /Cars/Utility/Ford F-150    Ford F-150    1.0    Ford F-150    3",
-            "nt:unstructured    /Cars/Sports    Sports    1.0    Sports    2",
-            "car:Car    /Cars/Sports/Aston Martin DB9    Aston Martin DB9    1.0    Aston Martin DB9    3",
             "nt:unstructured    /Cars/Luxury    Luxury    1.0    Luxury    2",
             "car:Car    /Cars/Luxury/Bentley Continental    Bentley Continental    1.0    Bentley Continental    3",
-            "car:Car    /Cars/Utility/Land Rover LR3    Land Rover LR3    1.0    Land Rover LR3    3",
-            "car:Car    /Cars/Hybrid/Toyota Highlander    Toyota Highlander    1.0    Toyota Highlander    3",
+            "car:Car    /Cars/Luxury/Cadillac DTS    Cadillac DTS    1.0    Cadillac DTS    3",
             "car:Car    /Cars/Luxury/Lexus IS350    Lexus IS350    1.0    Lexus IS350    3",
-            "nt:unstructured    /Other/NodeA[2]    NodeA    1.0    NodeA    2",
+            "nt:unstructured    /Cars/Sports    Sports    1.0    Sports    2",
+            "car:Car    /Cars/Sports/Aston Martin DB9    Aston Martin DB9    1.0    Aston Martin DB9    3",
+            "car:Car    /Cars/Sports/Infiniti G37    Infiniti G37    1.0    Infiniti G37    3",
+            "nt:unstructured    /Cars/Utility    Utility    1.0    Utility    2",
+            "car:Car    /Cars/Utility/Ford F-150    Ford F-150    1.0    Ford F-150    3",
+            "car:Car    /Cars/Utility/Hummer H3    Hummer H3    1.0    Hummer H3    3",
+            "car:Car    /Cars/Utility/Land Rover LR2    Land Rover LR2    1.0    Land Rover LR2    3",
+            "car:Car    /Cars/Utility/Land Rover LR3    Land Rover LR3    1.0    Land Rover LR3    3",
+            "nt:unstructured    /NodeB    NodeB    1.0    NodeB    1", "nt:unstructured    /Other    Other    1.0    Other    1",
             "nt:unstructured    /Other/NodeA    NodeA    1.0    NodeA    2",
-            "nt:unstructured    /NodeB    NodeB    1.0    NodeB    1",
-            "nt:unstructured    /Other/NodeA[3]    NodeA    1.0    NodeA    2",
-            "nt:unstructured    /Other    Other    1.0    Other    1"};
+            "nt:unstructured    /Other/NodeA[2]    NodeA    1.0    NodeA    2",
+            "nt:unstructured    /Other/NodeA[3]    NodeA    1.0    NodeA    2"};
 
-        ConnectionResultsComparator.executeTest(this.connection, "SELECT * FROM [nt:base]", expected, 23);
+        ConnectionResultsComparator.executeTest(this.connection, "SELECT * FROM [nt:base] ORDER BY [jcr:path]", expected, 23);
     }
 
     @Test
     public void shouldBeAbleToExecuteSqlSelectAllCars() throws SQLException {
 
-        String[] expected = {
-            "car:maker[STRING]    car:model[STRING]    car:year[STRING]    car:msrp[STRING]    car:userRating[LONG]    car:valueRating[LONG]    car:mpgCity[LONG]    car:mpgHighway[LONG]    car:lengthInInches[DOUBLE]    car:wheelbaseInInches[DOUBLE]    car:engine[STRING]    jcr:primaryType[STRING]    jcr:path[STRING]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
-            "Hummer    H3    2008    $30,595    3    4    13    16    null    null    null    car:Car    /Cars/Utility/Hummer H3    Hummer H3    1.5705448389053345    Hummer H3    3",
-            "Infiniti    G37    2008    $34,900    3    4    18    24    null    null    null    car:Car    /Cars/Sports/Infiniti G37    Infiniti G37    1.5705448389053345    Infiniti G37    3",
-            "Cadillac    DTS    2008    null    1    null    null    null    null    null    3.6 liter V6    car:Car    /Cars/Luxury/Cadillac DTS    Cadillac DTS    1.5705448389053345    Cadillac DTS    3",
-            "Nissan    Altima    2008    $18,260    null    null    23    32    null    null    null    car:Car    /Cars/Hybrid/Nissan Altima    Nissan Altima    1.5705448389053345    Nissan Altima    3",
-            "Land Rover    LR2    2008    $33,985    4    5    16    23    null    null    null    car:Car    /Cars/Utility/Land Rover LR2    Land Rover LR2    1.5705448389053345    Land Rover LR2    3",
-            "Toyota    Prius    2008    $21,500    4    5    48    45    null    null    null    car:Car    /Cars/Hybrid/Toyota Prius    Toyota Prius    1.5705448389053345    Toyota Prius    3",
-            "Ford    F-150    2008    $23,910    5    1    14    20    null    null    null    car:Car    /Cars/Utility/Ford F-150    Ford F-150    1.5705448389053345    Ford F-150    3",
-            "Aston Martin    DB9    2008    $171,600    5    null    12    19    185.5    108.0    5,935 cc 5.9 liters V 12    car:Car    /Cars/Sports/Aston Martin DB9    Aston Martin DB9    1.5705448389053345    Aston Martin DB9    3",
-            "Bentley    Continental    2008    $170,990    null    null    10    17    null    null    null    car:Car    /Cars/Luxury/Bentley Continental    Bentley Continental    1.5705448389053345    Bentley Continental    3",
-            "Land Rover    LR3    2008    $48,525    5    2    12    17    null    null    null    car:Car    /Cars/Utility/Land Rover LR3    Land Rover LR3    1.5705448389053345    Land Rover LR3    3",
-            "Toyota    Highlander    2008    $34,200    4    5    27    25    null    null    null    car:Car    /Cars/Hybrid/Toyota Highlander    Toyota Highlander    1.5705448389053345    Toyota Highlander    3",
-            "Lexus    IS350    2008    $36,305    4    5    18    25    null    null    null    car:Car    /Cars/Luxury/Lexus IS350    Lexus IS350    1.5705448389053345    Lexus IS350    3"};
-        ConnectionResultsComparator.executeTest(this.connection, "SELECT * FROM [car:Car]", expected, 12);
-    }
-
-    @Test
-    public void shouldBeAbleToExecuteSqlQueryWithOrderByClauseUsingDefault() throws SQLException {
         String[] expected = {
             "car:maker[STRING]    car:model[STRING]    car:year[STRING]    car:msrp[STRING]    car:userRating[LONG]    car:valueRating[LONG]    car:mpgCity[LONG]    car:mpgHighway[LONG]    car:lengthInInches[DOUBLE]    car:wheelbaseInInches[DOUBLE]    car:engine[STRING]    jcr:primaryType[STRING]    jcr:path[STRING]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
             "Aston Martin    DB9    2008    $171,600    5    null    12    19    185.5    108.0    5,935 cc 5.9 liters V 12    car:Car    /Cars/Sports/Aston Martin DB9    Aston Martin DB9    1.5705448389053345    Aston Martin DB9    3",
@@ -248,11 +229,12 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
             "Land Rover    LR3    2008    $48,525    5    2    12    17    null    null    null    car:Car    /Cars/Utility/Land Rover LR3    Land Rover LR3    1.5705448389053345    Land Rover LR3    3",
             "Lexus    IS350    2008    $36,305    4    5    18    25    null    null    null    car:Car    /Cars/Luxury/Lexus IS350    Lexus IS350    1.5705448389053345    Lexus IS350    3",
             "Nissan    Altima    2008    $18,260    null    null    23    32    null    null    null    car:Car    /Cars/Hybrid/Nissan Altima    Nissan Altima    1.5705448389053345    Nissan Altima    3",
-            "Toyota    Prius    2008    $21,500    4    5    48    45    null    null    null    car:Car    /Cars/Hybrid/Toyota Prius    Toyota Prius    1.5705448389053345    Toyota Prius    3",
-            "Toyota    Highlander    2008    $34,200    4    5    27    25    null    null    null    car:Car    /Cars/Hybrid/Toyota Highlander    Toyota Highlander    1.5705448389053345    Toyota Highlander    3"};
-
-        ConnectionResultsComparator.executeTest(this.connection, "SELECT * FROM [car:Car] ORDER BY [car:maker]", expected, 12);
-
+            "Toyota    Highlander    2008    $34,200    4    5    27    25    null    null    null    car:Car    /Cars/Hybrid/Toyota Highlander    Toyota Highlander    1.5705448389053345    Toyota Highlander    3",
+            "Toyota    Prius    2008    $21,500    4    5    48    45    null    null    null    car:Car    /Cars/Hybrid/Toyota Prius    Toyota Prius    1.5705448389053345    Toyota Prius    3"};
+        ConnectionResultsComparator.executeTest(this.connection,
+                                                "SELECT * FROM [car:Car] ORDER BY [car:maker], [car:model]",
+                                                expected,
+                                                12);
     }
 
     @Test
@@ -296,7 +278,7 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
             "Toyota    Highlander    2008    $34,200"};
 
         ConnectionResultsComparator.executeTest(this.connection,
-                                                "SELECT car.[car:maker], car.[car:model], car.[car:year], car.[car:msrp] FROM [car:Car] AS car WHERE PATH(car) LIKE '%/Hybrid/%'",
+                                                "SELECT car.[car:maker], car.[car:model], car.[car:year], car.[car:msrp] FROM [car:Car] AS car WHERE PATH(car) LIKE '%/Hybrid/%' ORDER BY car.[car:maker]",
                                                 expected,
                                                 3);
 
@@ -312,7 +294,7 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
             "Toyota    Highlander    2008    $34,200"};
 
         ConnectionResultsComparator.executeTest(this.connection,
-                                                "SELECT car.[car:maker], car.[car:model], car.[car:year], car.[car:msrp] FROM [car:Car] AS car JOIN [nt:unstructured] AS hybrid ON ISCHILDNODE(car,hybrid) WHERE NAME(hybrid) = 'Hybrid'",
+                                                "SELECT car.[car:maker], car.[car:model], car.[car:year], car.[car:msrp] FROM [car:Car] AS car JOIN [nt:unstructured] AS hybrid ON ISCHILDNODE(car,hybrid) WHERE NAME(hybrid) = 'Hybrid' ORDER BY car.[car:maker]",
                                                 expected,
                                                 3);
 
@@ -359,12 +341,12 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
     public void shouldBeAbleToExecuteSqlQueryWithChildAxisCriteria() throws SQLException {
         String[] expected = {
             "jcr:primaryType[STRING]    jcr:path[STRING]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
-            "nt:unstructured    /Cars/Utility    Utility    1.4142135381698608    Utility    2",
             "nt:unstructured    /Cars/Hybrid    Hybrid    1.4142135381698608    Hybrid    2",
+            "nt:unstructured    /Cars/Luxury    Luxury    1.4142135381698608    Luxury    2",
             "nt:unstructured    /Cars/Sports    Sports    1.4142135381698608    Sports    2",
-            "nt:unstructured    /Cars/Luxury    Luxury    1.4142135381698608    Luxury    2"};
+            "nt:unstructured    /Cars/Utility    Utility    1.4142135381698608    Utility    2"};
         ConnectionResultsComparator.executeTest(this.connection,
-                                                "SELECT * FROM nt:base WHERE jcr:path LIKE '/Cars/%' AND NOT jcr:path LIKE '/Cars/%/%' ",
+                                                "SELECT * FROM nt:base WHERE jcr:path LIKE '/Cars/%' AND NOT jcr:path LIKE '/Cars/%/%'  ORDER BY jcr:path",
                                                 expected,
                                                 4,
                                                 QueryLanguage.JCR_SQL);
@@ -380,13 +362,13 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
     public void shouldBeAbleToExecuteSqlQueryWithContainsCriteria() throws SQLException {
         String[] expected = {
             "jcr:primaryType[STRING]    jcr:path[STRING]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
-            "nt:unstructured    /Cars/Utility    Utility    1.4142135381698608    Utility    2",
             "nt:unstructured    /Cars/Hybrid    Hybrid    1.4142135381698608    Hybrid    2",
+            "nt:unstructured    /Cars/Luxury    Luxury    1.4142135381698608    Luxury    2",
             "nt:unstructured    /Cars/Sports    Sports    1.4142135381698608    Sports    2",
-            "nt:unstructured    /Cars/Luxury    Luxury    1.4142135381698608    Luxury    2"};
+            "nt:unstructured    /Cars/Utility    Utility    1.4142135381698608    Utility    2"};
 
         ConnectionResultsComparator.executeTest(this.connection,
-                                                "SELECT * FROM nt:base WHERE jcr:path LIKE '/Cars/%' AND NOT jcr:path LIKE '/Cars/%/%'",
+                                                "SELECT * FROM nt:base WHERE jcr:path LIKE '/Cars/%' AND NOT jcr:path LIKE '/Cars/%/%' ORDER BY jcr:path",
                                                 expected,
                                                 4,
                                                 QueryLanguage.JCR_SQL);
@@ -752,7 +734,7 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
     @Test
     public void shouldGetAllColumnsFor1Table() throws SQLException {
         results.compareColumns = false;
-       
+
         String[] expected = {
             "TABLE_CAT[String]    TABLE_SCHEM[String]    TABLE_NAME[String]    COLUMN_NAME[String]    DATA_TYPE[Long]    TYPE_NAME[String]    COLUMN_SIZE[Long]    BUFFER_LENGTH[Long]    DECIMAL_DIGITS[Long]    NUM_PREC_RADIX[Long]    NULLABLE[Long]    REMARKS[String]    COLUMN_DEF[String]    SQL_DATA_TYPE[Long]    SQL_DATETIME_SUB[Long]    CHAR_OCTET_LENGTH[Long]    ORDINAL_POSITION[Long]    IS_NULLABLE[String]    SCOPE_CATLOG[String]    SCOPE_SCHEMA[String]    SCOPE_TABLE[String]    SOURCE_DATA_TYPE[Long]",
             "Repo    NULL    car:Car    car:engine    12    STRING    50    NULL    0    0    2        NULL    0    0    0    1    YES    NULL    NULL    NULL    0",
@@ -771,10 +753,8 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
             "Repo    NULL    car:Car    jcr:primaryType    12    STRING    20    NULL    0    0    1        NULL    0    0    0    14    NO    NULL    NULL    NULL    0",
             "Repo    NULL    car:Car    jcr:score    8    DOUBLE    20    NULL    0    0    2        NULL    0    0    0    15    YES    NULL    NULL    NULL    0",
             "Repo    NULL    car:Car    mode:depth    -5    LONG    20    NULL    0    0    2        NULL    0    0    0    16    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    mode:localName    12    STRING    50    NULL    0    0    2        NULL    0    0    0    17    YES    NULL    NULL    NULL    0"
-            };
-        
-        
+            "Repo    NULL    car:Car    mode:localName    12    STRING    50    NULL    0    0    2        NULL    0    0    0    17    YES    NULL    NULL    NULL    0"};
+
         ResultSet rs = dbmd.getColumns("%", "%", "car:Car", "%");
 
         results.assertResultsSetEquals(rs, expected);
@@ -823,14 +803,12 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
             "Repo    NULL    car:Car    jcr:primaryType    12    STRING    20    NULL    0    0    1        NULL    0    0    0    14    NO    NULL    NULL    NULL    0",
             "Repo    NULL    car:Car    jcr:score    8    DOUBLE    20    NULL    0    0    2        NULL    0    0    0    15    YES    NULL    NULL    NULL    0",
             "Repo    NULL    car:Car    mode:depth    -5    LONG    20    NULL    0    0    2        NULL    0    0    0    16    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    mode:localName    12    STRING    50    NULL    0    0    2        NULL    0    0    0    17    YES    NULL    NULL    NULL    0"
-            };
+            "Repo    NULL    car:Car    mode:localName    12    STRING    50    NULL    0    0    2        NULL    0    0    0    17    YES    NULL    NULL    NULL    0"};
 
         ResultSet rs = dbmd.getColumns("%", "%", "car%", "%");
 
         results.assertResultsSetEquals(rs, expected);
         results.assertRowCount(11);
-
 
     }
 
@@ -840,14 +818,13 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
 
         String[] expected = {
             "TABLE_CAT[String]    TABLE_SCHEM[String]    TABLE_NAME[String]    COLUMN_NAME[String]    DATA_TYPE[Long]    TYPE_NAME[String]    COLUMN_SIZE[Long]    BUFFER_LENGTH[Long]    DECIMAL_DIGITS[Long]    NUM_PREC_RADIX[Long]    NULLABLE[Long]    REMARKS[String]    COLUMN_DEF[String]    SQL_DATA_TYPE[Long]    SQL_DATETIME_SUB[Long]    CHAR_OCTET_LENGTH[Long]    ORDINAL_POSITION[Long]    IS_NULLABLE[String]    SCOPE_CATLOG[String]    SCOPE_SCHEMA[String]    SCOPE_TABLE[String]    SOURCE_DATA_TYPE[Long]",
-            "Repo    NULL    car:Car    car:msrp    12    STRING    50    NULL    0    0    2        NULL    0    0    0    1    YES    NULL    NULL    NULL    0"
-            };
-        
+            "Repo    NULL    car:Car    car:msrp    12    STRING    50    NULL    0    0    2        NULL    0    0    0    1    YES    NULL    NULL    NULL    0"};
+
         ResultSet rs = dbmd.getColumns("%", "%", "car:Car", "car:msrp");
-      
+
         results.assertResultsSetEquals(rs, expected);
         results.assertRowCount(1);
-        
+
     }
 
     @FixFor( "MODE-981" )

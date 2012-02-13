@@ -63,6 +63,8 @@ import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.jcr.JcrRepository.Option;
 import org.modeshape.jcr.nodetype.InvalidNodeTypeDefinitionException;
 import org.modeshape.jcr.query.JcrQueryResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This is a test suite that operates against a complete JcrRepository instance created and managed using the JcrEngine.
@@ -74,6 +76,8 @@ import org.modeshape.jcr.query.JcrQueryResult;
  * </p>
  */
 public class JcrQueryManagerTest {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(JcrQueryManagerTest.class);
 
     protected static URI resourceUri( String name ) throws URISyntaxException {
         return resourceUrl(name).toURI();
@@ -1145,6 +1149,45 @@ public class JcrQueryManagerTest {
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 1);
         assertResultsHaveColumns(result, searchColumnNames());
+    }
+
+    @Test
+    @FixFor( "MODE-1279")
+    public void shouldBeAbleToCreateAndExecuteFullTextSearchQueryMultipleTimes() throws RepositoryException {
+        for (int i = 0; i != 1; ++i) {
+            Query query = session.getWorkspace().getQueryManager().createQuery("quick", JcrRepository.QueryLanguage.SEARCH);
+            assertThat(query, is(notNullValue()));
+            LOGGER.debug("*** Issuing query");
+            QueryResult result = query.execute();
+            assertThat(result, is(notNullValue()));
+            assertResults(query, result, 2);
+            assertResultsHaveColumns(result, searchColumnNames());
+        }
+
+        // Re-create the branch that contains some same-name-siblings ...
+        Node root = session.getRootNode();
+        Node other = root.addNode("Other1", "nt:unstructured");
+        other.addNode("NodeA", "nt:unstructured").setProperty("something", "value3 quick brown fox");
+        other.addNode("NodeA", "nt:unstructured").setProperty("something", "value2 quick brown cat");
+        other.addNode("NodeA", "nt:unstructured").setProperty("something", "value1 quick black dog");
+        Node c = other.addNode("NodeC", "notion:typed");
+        c.setProperty("notion:booleanProperty", true);
+        c.setProperty("notion:booleanProperty2", false);
+        session.save();
+        LOGGER.debug("*** Saved session");
+
+        for (int i = 0; i != 1; ++i) {
+            Query query = session.getWorkspace().getQueryManager().createQuery("quick", JcrRepository.QueryLanguage.SEARCH);
+            assertThat(query, is(notNullValue()));
+            LOGGER.debug("*** Issuing query");
+            QueryResult result = query.execute();
+            assertThat(result, is(notNullValue()));
+            assertResults(query, result, 5);
+            assertResultsHaveColumns(result, searchColumnNames());
+        }
+        
+        session.getRootNode().getNode("Other1").remove();
+        session.save();
     }
 
     // ----------------------------------------------------------------------------------------------------------------
