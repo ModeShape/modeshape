@@ -1155,15 +1155,15 @@ public abstract class ModeShapeUnitTest {
         }
         assertThat(results, is(notNullValue()));
         assert results != null;
-        if (expectedNumberOfResults >= 0L) {
-            assertThat("Expected different number of rows from '" + queryExpression + "'",
-                       results.getRows().getSize(),
-                       is(expectedNumberOfResults));
-        }
         if (print) {
             System.out.println(queryExpression);
             System.out.println(results);
             System.out.println();
+        }
+        if (expectedNumberOfResults >= 0L) {
+            assertThat("Expected different number of rows from '" + queryExpression + "'",
+                       results.getRows().getSize(),
+                       is(expectedNumberOfResults));
         }
         return results;
     }

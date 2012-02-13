@@ -182,10 +182,10 @@ class FederatedRepositoryConnection implements RepositoryConnection {
                 // Execute the forking process in this thread ...
                 try {
                     fork.process(request);
+                    requests.add(new NoMoreFederatedRequests());
                 } finally {
                     fork.close();
                 }
-                requests.add(new NoMoreFederatedRequests());
                 // At this point, all submitted requests have been processed/forked, so we can continue with
                 // the join process, starting with the first submitted request. Note that the subtasks may
                 // still be executing, but as the join process operates on a forked request, it will wait
@@ -197,10 +197,10 @@ class FederatedRepositoryConnection implements RepositoryConnection {
                     public void run() {
                         try {
                             fork.process(request);
+                            requests.add(new NoMoreFederatedRequests());
                         } finally {
                             fork.close();
                         }
-                        requests.add(new NoMoreFederatedRequests());
                     }
                 });
 

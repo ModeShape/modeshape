@@ -23,16 +23,15 @@
  */
 package org.modeshape.test.integration.svn;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertThat;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 import javax.jcr.Session;
-import javax.jcr.SimpleCredentials;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 import org.junit.After;
+import static org.junit.Assert.assertThat;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.connector.svn.SvnRepositorySource;
@@ -41,7 +40,7 @@ import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.JcrRepository.Option;
 
 /**
- * 
+ *
  */
 public class SvnAndJcrIntegrationTest {
     private JcrEngine engine;
@@ -66,14 +65,12 @@ public class SvnAndJcrIntegrationTest {
         configuration.repository(repositoryName)
                      .setSource(svnRepositorySource)
                      .setOption(Option.QUERY_EXECUTION_ENABLED, "true");
-    
+
         configuration.save();
         this.engine = configuration.build();
         this.engine.start();
 
-        this.session = this.engine.getRepository(repositoryName)
-                                  .login(new SimpleCredentials("superuser",
-                                                               "superuser".toCharArray()));
+        this.session = this.engine.getRepository(repositoryName).login();
 
     }
 
@@ -104,7 +101,7 @@ public class SvnAndJcrIntegrationTest {
         Node resourceNodeOfPomFile = this.session.getRootNode().getNode("package-info.java/jcr:content");
         assertThat(resourceNodeOfPomFile, is(notNullValue()));
 
-        for (PropertyIterator iter = resourceNodeOfPomFile.getProperties(); iter.hasNext();) {
+        for (PropertyIterator iter = resourceNodeOfPomFile.getProperties(); iter.hasNext(); ) {
             Property property = iter.nextProperty();
             assertThat(property.getName(), is(notNullValue()));
         }

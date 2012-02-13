@@ -23,19 +23,6 @@
  */
 package org.modeshape.search.lucene;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringReader;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-import java.util.regex.Pattern;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
@@ -113,6 +100,22 @@ import org.modeshape.search.lucene.query.ComparePathQuery;
 import org.modeshape.search.lucene.query.CompareStringQuery;
 import org.modeshape.search.lucene.query.MatchNoneQuery;
 import org.modeshape.search.lucene.query.NotQuery;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringReader;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.Semaphore;
+import java.util.regex.Pattern;
 
 /**
  * The {@link WorkspaceSession} implementation for the {@link LuceneSearchEngine}.
@@ -149,6 +152,14 @@ public class LuceneSearchSession implements WorkspaceSession {
     protected static final int MAX_DEPTH = 100;
     protected static final int MIN_SNS_INDEX = 1;
     protected static final int MAX_SNS_INDEX = 1000; // assume there won't be more than 1000 same-name-siblings
+
+    /**
+     *  A [workspaceName -> binary semaphore] map, which is used to make sure that only 1 index writer is active per thread
+     *  per workspace, when updating indexes. Otherwise, if multiple threads were using multiple index writers on the same
+     *  workspace, content could potentially be lost when indexing.
+     */
+    private static final Map<String, Semaphore> INDEX_WRITER_LOCKS = Collections.synchronizedMap(
+            new HashMap<String, Semaphore>());
 
     private final LuceneSearchWorkspace workspace;
     protected final LuceneSearchProcessor processor;
@@ -206,11 +217,22 @@ public class LuceneSearchSession implements WorkspaceSession {
     protected IndexWriter getContentWriter() throws IOException {
         assert !processor.readOnly;
         if (contentWriter == null) {
+            lockIndexWriterAccess();
             // Don't overwrite, but create if missing ...
             IndexWriterConfig config = new IndexWriterConfig(workspace.getVersion(), workspace.analyzer);
             contentWriter = new IndexWriter(contentIndexDirectory, config);
         }
         return contentWriter;
+    }
+
+    private void lockIndexWriterAccess() {
+        String workspaceName = getWorkspaceName();
+        if (INDEX_WRITER_LOCKS.containsKey(workspaceName)) {
+            INDEX_WRITER_LOCKS.get(workspaceName).acquireUninterruptibly();
+        } else {
+            INDEX_WRITER_LOCKS.put(workspaceName, new Semaphore(1, true));
+            INDEX_WRITER_LOCKS.get(workspaceName).acquireUninterruptibly();
+        }
     }
 
     @Override
@@ -310,6 +332,7 @@ public class LuceneSearchSession implements WorkspaceSession {
                 } finally {
                     contentWriter = null;
                 }
+                unlockIndexWriterAccess();
             }
         }
         if (ioError != null) {
@@ -319,6 +342,10 @@ public class LuceneSearchSession implements WorkspaceSession {
             throw new LuceneException(msg, ioError);
         }
         if (runtimeError != null) throw runtimeError;
+    }
+
+    private void unlockIndexWriterAccess() {
+        INDEX_WRITER_LOCKS.get(getWorkspaceName()).release();
     }
 
     /**
@@ -362,6 +389,7 @@ public class LuceneSearchSession implements WorkspaceSession {
                 } finally {
                     contentWriter = null;
                 }
+                unlockIndexWriterAccess();
             }
         }
         if (ioError != null) {
