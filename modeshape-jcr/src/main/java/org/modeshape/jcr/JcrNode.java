@@ -30,8 +30,11 @@ import javax.jcr.RepositoryException;
 import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.nodetype.NodeDefinition;
+import javax.jcr.version.OnParentVersionAction;
 import javax.jcr.version.VersionException;
 import org.modeshape.common.annotation.NotThreadSafe;
+import org.modeshape.common.i18n.I18n;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.session.GraphSession.NodeId;
 
@@ -115,7 +118,18 @@ class JcrNode extends AbstractJcrNode {
         }
 
         if (!parentNode.isCheckedOut()) {
-            throw new VersionException(JcrI18n.nodeIsCheckedIn.text(parentNode.getPath()));
+            // The parent node is checked in, so we can only remove this node if this node has an OPV of 'ignore'
+            // See Section 15.2.2 of JSR-283 spec for details ...
+            NodeDefinition defn = getDefinition();
+            int opv = defn.getOnParentVersion();
+            if (opv != OnParentVersionAction.IGNORE) {
+                // The OPV is not 'ignore', so we can't create the new node ...
+                String path = getPath();
+                String opvStr = OnParentVersionAction.nameFromValue(opv);
+                I18n msg = JcrI18n.cannotRemoveChildOnCheckedInNodeSinceOpvOfChildDefinitionIsNotIgnore;
+                throw new VersionException(msg.text(path, defn.getName(), opvStr));
+            }
+            // Otherwise, child node definition is 'ignore', so okay to remove ...
         }
 
         JcrNodeDefinition nodeDefn = cache.nodeTypes().getNodeDefinition(nodeInfo().getPayload().getDefinitionId());

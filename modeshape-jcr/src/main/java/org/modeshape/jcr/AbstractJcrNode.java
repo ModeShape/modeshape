@@ -1468,7 +1468,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         }
 
         // Create the child ...
-        return editor.createChild(childName, desiredUuid, childPrimaryTypeName);
+        return editor.createChild(childName, desiredUuid, childPrimaryTypeName, false);
     }
 
     /**

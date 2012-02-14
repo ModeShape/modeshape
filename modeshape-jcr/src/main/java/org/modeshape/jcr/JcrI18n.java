@@ -276,6 +276,8 @@ public final class JcrI18n {
 
     // Versioning messages
     public static I18n nodeIsCheckedIn;
+    public static I18n cannotCreateChildOnCheckedInNodeSinceOpvOfChildDefinitionIsNotIgnore;
+    public static I18n cannotRemoveChildOnCheckedInNodeSinceOpvOfChildDefinitionIsNotIgnore;
     public static I18n cannotRemoveFromProtectedNode;
     public static I18n cannotRemoveVersion;
     public static I18n pendingMergeConflicts;

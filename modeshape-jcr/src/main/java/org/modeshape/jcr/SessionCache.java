@@ -51,7 +51,9 @@ import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
+import javax.jcr.version.OnParentVersionAction;
 import javax.jcr.version.VersionException;
+import javax.jcr.version.VersionManager;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.i18n.I18n;
@@ -1015,7 +1017,17 @@ class SessionCache {
          */
         boolean isCheckedOut() throws RepositoryException {
             for (Node<JcrNodePayload, JcrPropertyPayload> curr = node; curr.getParent() != null; curr = curr.getParent()) {
+                // If the node has an OPV of 'ignore' ...
+                NodeDefinitionId defnId = curr.getPayload().getDefinitionId();
+                JcrNodeDefinition defn = nodeTypes().getNodeDefinition(defnId);
+                if (defn.getOnParentVersion() == OnParentVersionAction.IGNORE) {
+                    // This node is not checked in ...
+                    return true;
+                }
+
                 if (isNodeType(curr, JcrMixLexicon.VERSIONABLE)) {
+
+                    // Otherwise, it's versionable AND it's not ignored ...
                     PropertyInfo<JcrPropertyPayload> prop = curr.getProperty(JcrLexicon.IS_CHECKED_OUT);
 
                     // This prop can only be null if the node has not been saved since it was made versionable.
@@ -1068,15 +1080,6 @@ class SessionCache {
             assert name != null;
             assert value != null;
 
-            /*
-             * Skip this check for protected nodes.  They can't be modified by users and, in some cases (e.g., jcr:isLocked),
-             * may be able to be modified for checked-in nodes.
-             */
-            if (!isCheckedOut() && skipProtected) {
-                String path = node.getLocation().getPath().getString(context().getNamespaceRegistry());
-                throw new VersionException(JcrI18n.nodeIsCheckedIn.text(path));
-            }
-
             checkCardinalityOfExistingProperty(name, false);
 
             JcrPropertyDefinition definition = null;
@@ -1101,6 +1104,7 @@ class SessionCache {
                     }
                 }
             }
+
             JcrNodePayload payload = node.getPayload();
             if (definition == null) {
                 // Look for a definition ...
@@ -1161,6 +1165,20 @@ class SessionCache {
                                                                                                                                 readable(payload.getPrimaryTypeName()),
                                                                                                                                 readable(payload.getMixinTypeNames())));
             }
+
+            /*
+             * Skip this check for protected nodes.  They can't be modified by users and, in some cases (e.g., jcr:isLocked),
+             * may be able to be modified for checked-in nodes.
+             */
+            if (!isCheckedOut() && skipProtected) {
+                // Changing property is only allowed if OPV of property is 'ignore' ...
+                if (definition.getOnParentVersion() != OnParentVersionAction.IGNORE) {
+                    // Can't change this property ...
+                    String path = node.getLocation().getPath().getString(context().getNamespaceRegistry());
+                    throw new VersionException(JcrI18n.nodeIsCheckedIn.text(path));
+                }
+            }
+
             // Create the ModeShape property ...
             Object objValue = value.value();
             int propertyType = definition.getRequiredType();
@@ -1677,7 +1695,7 @@ class SessionCache {
                     Name nodeName = nodeDefinition.getInternalName();
                     if (node.getChildrenCount(nodeName) == 0) {
                         assert nodeDefinition.getDefaultPrimaryType() != null;
-                        createChild(nodeName, null, ((JcrNodeType)nodeDefinition.getDefaultPrimaryType()).getInternalName());
+                        createChild(nodeName, null, ((JcrNodeType)nodeDefinition.getDefaultPrimaryType()).getInternalName(), true);
                     }
                 }
             }
@@ -1689,6 +1707,11 @@ class SessionCache {
          * @param name the name for the new child; may not be null
          * @param desiredUuid the desired UUID, or null if the UUID for the child should be generated automatically
          * @param primaryTypeName the name of the primary type for the new node
+         * @param ignoreCheckedInStatus true if this method should ignore the checked in status (e.g., the method is being called
+         *        as part of version management operations, such as {@link VersionManager#restore(String, String, boolean)
+         *        restore}, {@link VersionManager#restoreByLabel(String, String, boolean) restoreByLabel},
+         *        {@link VersionManager#merge(javax.jcr.Node) merge}, or {@link javax.jcr.Node#update(String) update} operations),
+         *        or false otherwise
          * @return the representation of the newly-created child
          * @throws InvalidItemStateException if the specified child has been marked for deletion within this session
          * @throws ConstraintViolationException if moving the node into this node violates this node's definition
@@ -1698,7 +1721,8 @@ class SessionCache {
          */
         public JcrNode createChild( Name name,
                                     UUID desiredUuid,
-                                    Name primaryTypeName )
+                                    Name primaryTypeName,
+                                    boolean ignoreCheckedInStatus )
             throws InvalidItemStateException, ConstraintViolationException, AccessDeniedException, RepositoryException {
 
             if (desiredUuid == null) desiredUuid = UUID.randomUUID();
@@ -1736,6 +1760,17 @@ class SessionCache {
                                                                                         sourceName());
 
                     throw new ConstraintViolationException(msg);
+                }
+
+                // See if this node is checked in. If so, then we can only create children if the child
+                // node definition has an OPV of 'ignore'. See Section 15.2.2 of the JSR-283 spec for details ...
+                if (!ignoreCheckedInStatus && !isCheckedOut() && definition.getOnParentVersion() != OnParentVersionAction.IGNORE) {
+                    // The OPV is not 'ignore', so we can't create the new node ...
+                    Path pathForChild = pathFactory.create(node.getPath(), name, numSns);
+                    String segment = readable(pathForChild.getLastSegment());
+                    String opv = OnParentVersionAction.nameFromValue(definition.getOnParentVersion());
+                    I18n msg = JcrI18n.cannotCreateChildOnCheckedInNodeSinceOpvOfChildDefinitionIsNotIgnore;
+                    throw new VersionException(msg.text(segment, readable(node.getPath()), definition.getName(), opv));
                 }
 
                 // Find the primary type ...
