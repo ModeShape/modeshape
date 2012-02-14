@@ -31,7 +31,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.infinispan.Cache;
-import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.modeshape.common.annotation.ThreadSafe;
@@ -51,7 +50,7 @@ public class InfinispanRepository extends Repository<InfinispanNode, InfinispanW
     public InfinispanRepository( BaseInfinispanSource source,
                                  CacheContainer cacheContainer ) {
         super(source);
-        this.cacheContainer = source.createCacheContainer();
+        this.cacheContainer = cacheContainer;
         assert this.cacheContainer != null;
         Set<String> workspaceNames = new HashSet<String>();
         for (String workspaceName : source.getPredefinedWorkspaceNames()) {
@@ -90,11 +89,6 @@ public class InfinispanRepository extends Repository<InfinispanNode, InfinispanW
             // EmbeddedCacheManager.getCacheNames() returns an immutable set. Copy the elements so that
             // we can remove any cache names that don't map to workspaces below.
             cacheNames = new HashSet<String>(((EmbeddedCacheManager)cacheContainer).getCacheNames());
-        } else if (cacheContainer instanceof RemoteCacheManager) {
-            // This might be coming in 5.0 ...
-            // cacheNames = ((RemoteCacheManager)container).getCacheNames();
-            // instead we currently have to do this ...
-            cacheNames = alreadyKnownNames;
         } else {
             cacheNames = alreadyKnownNames;
         }

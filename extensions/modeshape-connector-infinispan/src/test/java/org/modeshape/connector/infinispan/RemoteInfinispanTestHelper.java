@@ -24,6 +24,7 @@
 package org.modeshape.connector.infinispan;
 
 import java.io.IOException;
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.util.Properties;
 import org.infinispan.manager.DefaultCacheManager;
@@ -73,7 +74,11 @@ public class RemoteInfinispanTestHelper {
      */
     public static String hostAddress() {
         try {
-            return InetAddress.getLocalHost().getHostAddress();
+            InetAddress localHost = InetAddress.getLocalHost();
+            if (localHost instanceof Inet4Address) {
+                return "127.0.0.1";
+            }
+            return "::1";
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
