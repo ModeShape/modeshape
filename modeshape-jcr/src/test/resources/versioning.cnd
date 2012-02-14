@@ -1,0 +1,19 @@
+<ver='http://www.modeshape.org/test/nodetypes/versioning'>
+
+[ver:versionable] > mix:versionable
+  - versionProp (string) version
+  - copyProp (string) copy
+  - ignoreProp (string) ignore
+  + nonVersionedChild (ver:nonVersionableChild) multiple version
+  + versionedChild (ver:versionableChild) multiple version
+  + nonVersionedIgnoredChild (ver:nonVersionableChild) multiple ignore
+  + versionedIgnoredChild (ver:versionableChild) multiple ignore
+
+[ver:versionableChild] > mix:versionable
+  - copyProp (string) copy
+  - ignoreProp (string) ignore
+  
+[ver:nonVersionableChild]
+  - copyProp (string) copy
+  - ignoreProp (string) ignore
+  

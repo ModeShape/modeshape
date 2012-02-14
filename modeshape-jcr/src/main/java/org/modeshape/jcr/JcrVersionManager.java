@@ -702,7 +702,7 @@ final class JcrVersionManager implements VersionManager {
             AbstractJcrProperty uuidProp = sourceNode.getProperty(JcrLexicon.FROZEN_UUID);
             UUID desiredUuid = uuid(uuidProp.property().getFirstValue());
 
-            existingNode = parentNode.editor().createChild(path.getLastSegment().getName(), desiredUuid, primaryTypeName);
+            existingNode = parentNode.editor().createChild(path.getLastSegment().getName(), desiredUuid, primaryTypeName, true);
 
             nodeToCheckLock = parentNode;
         }
@@ -1127,7 +1127,7 @@ final class JcrVersionManager implements VersionManager {
                         PropertyInfo<JcrPropertyPayload> uuidProp = resolvedChild.getProperty(JcrLexicon.FROZEN_UUID);
                         UUID desiredUuid = uuid(uuidProp.getProperty().getFirstValue());
 
-                        targetChildNode = targetEditor.createChild(sourceChild.getName(), desiredUuid, primaryTypeName);
+                        targetChildNode = targetEditor.createChild(sourceChild.getName(), desiredUuid, primaryTypeName, true);
                     } else {
                         Name primaryTypeName = name(resolvedChild.getProperty(JcrLexicon.PRIMARY_TYPE)
                                                                  .getProperty()
@@ -1135,7 +1135,7 @@ final class JcrVersionManager implements VersionManager {
                         PropertyInfo<JcrPropertyPayload> uuidProp = resolvedChild.getProperty(JcrLexicon.UUID);
                         UUID desiredUuid = uuidProp == null ? null : uuid(uuidProp.getProperty().getFirstValue());
 
-                        targetChildNode = targetEditor.createChild(sourceChild.getName(), desiredUuid, primaryTypeName);
+                        targetChildNode = targetEditor.createChild(sourceChild.getName(), desiredUuid, primaryTypeName, true);
                     }
                     assert shouldRestore == true;
                 }
