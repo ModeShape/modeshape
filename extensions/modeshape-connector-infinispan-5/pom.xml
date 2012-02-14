@@ -8,13 +8,13 @@
     <relativePath>../../modeshape-parent</relativePath>
   </parent>
   <!-- The groupId and version values are inherited from parent -->
-  <artifactId>modeshape-connector-infinispan</artifactId>
+  <artifactId>modeshape-connector-infinispan-5</artifactId>
   <packaging>jar</packaging>
-  <name>ModeShape Connector to JBoss Infinispan 4.x</name>
-  <description>ModeShape Connector that accesses an in-process JBoss Infinispan 4.x instance.</description>
+  <name>ModeShape Connector to JBoss Infinispan 5.x</name>
+  <description>ModeShape Connector that accesses an in-process JBoss Infinispan 5.x instance.</description>
   <url>http://www.modeshape.org</url>
   <properties>
-      <version.infinispan>4.2.1.FINAL</version.infinispan>
+      <version.infinispan>5.1.1.FINAL</version.infinispan>
   </properties>
   <!--
   Define the dependencies.  Note that all version and scopes default to those 
@@ -93,6 +93,13 @@
       <groupId>org.infinispan</groupId>
       <artifactId>infinispan-server-hotrod</artifactId>
       <version>${version.infinispan}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.infinispan</groupId>
+      <artifactId>infinispan-core</artifactId>
+      <version>${version.infinispan}</version>
+      <type>test-jar</type>
       <scope>test</scope>
     </dependency>
     <!-- 

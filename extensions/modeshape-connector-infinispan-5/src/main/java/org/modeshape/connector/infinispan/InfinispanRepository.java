@@ -31,7 +31,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.infinispan.Cache;
-import org.infinispan.manager.CacheContainer;
+import org.infinispan.api.BasicCache;
+import org.infinispan.api.BasicCacheContainer;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.graph.ExecutionContext;
@@ -43,12 +44,12 @@ import org.modeshape.graph.connector.base.Repository;
 @ThreadSafe
 public class InfinispanRepository extends Repository<InfinispanNode, InfinispanWorkspace> {
 
-    private final CacheContainer cacheContainer;
+    private final BasicCacheContainer cacheContainer;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final Set<String> predefinedWorkspaceNames;
 
     public InfinispanRepository( BaseInfinispanSource source,
-                                 CacheContainer cacheContainer ) {
+                                 BasicCacheContainer cacheContainer ) {
         super(source);
         this.cacheContainer = cacheContainer;
         assert this.cacheContainer != null;
@@ -105,7 +106,7 @@ public class InfinispanRepository extends Repository<InfinispanNode, InfinispanW
             if (alreadyKnownNames.contains(cacheName)) continue;
 
             // Otherwise check the cache to see if it has a root node ...
-            Cache<UUID, InfinispanNode> cache = cacheContainer.getCache(cacheName);
+            BasicCache<UUID, InfinispanNode> cache = cacheContainer.getCache(cacheName);
             if (!cache.containsKey(rootNodeUuid)) {
                 nonWorkspaceCacheNames.add(cacheName);
             }
@@ -117,7 +118,7 @@ public class InfinispanRepository extends Repository<InfinispanNode, InfinispanW
         return cacheNames;
     }
 
-    protected Cache<UUID, InfinispanNode> getCacheOrCreateIfMissing( String cacheName ) {
+    protected BasicCache<UUID, InfinispanNode> getCacheOrCreateIfMissing( String cacheName ) {
         if (cacheContainer instanceof EmbeddedCacheManager) {
             EmbeddedCacheManager mgr = (EmbeddedCacheManager)cacheContainer;
             if (mgr.isRunning(cacheName)) return mgr.getCache(cacheName);
@@ -128,7 +129,7 @@ public class InfinispanRepository extends Repository<InfinispanNode, InfinispanW
                 return cache;
             }
             // Otherwise the cache does not yet exist ...
-            mgr.defineConfiguration(cacheName, mgr.getDefaultConfiguration());
+            mgr.defineConfiguration(cacheName, mgr.getDefaultCacheConfiguration());
             return mgr.getCache(cacheName);
         }
         return cacheContainer.getCache(cacheName);
@@ -139,7 +140,7 @@ public class InfinispanRepository extends Repository<InfinispanNode, InfinispanW
      * 
      * @return the cacheManager; never null
      */
-    protected CacheContainer getCacheContainer() {
+    protected BasicCacheContainer getCacheContainer() {
         return cacheContainer;
     }
 

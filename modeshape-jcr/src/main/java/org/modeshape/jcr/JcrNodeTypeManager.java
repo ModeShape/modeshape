@@ -820,7 +820,6 @@ public class JcrNodeTypeManager implements NodeTypeManager {
     }
 
     @SuppressWarnings( "deprecation" )
-    @Override
     public void registerNodeTypes( File file,
                                    boolean allowUpdate ) throws IOException, RepositoryException {
         CheckArg.isNotNull(file, "file");
@@ -846,7 +845,6 @@ public class JcrNodeTypeManager implements NodeTypeManager {
     }
 
     @SuppressWarnings( "deprecation" )
-    @Override
     public void registerNodeTypes( InputStream stream,
                                    boolean allowUpdate )
         throws IOException, javax.jcr.nodetype.InvalidNodeTypeDefinitionException, javax.jcr.nodetype.NodeTypeExistsException,
@@ -873,7 +871,6 @@ public class JcrNodeTypeManager implements NodeTypeManager {
     }
 
     @SuppressWarnings( "deprecation" )
-    @Override
     public void registerNodeTypes( URL url,
                                    boolean allowUpdate ) throws IOException, RepositoryException {
         CheckArg.isNotNull(url, "url");

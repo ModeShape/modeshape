@@ -153,6 +153,11 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
+      <artifactId>modeshape-connector-infinispan-5</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>modeshape-connector-jbosscache</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -419,6 +424,12 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
+      <artifactId>modeshape-connector-infinispan-5</artifactId>
+      <version>${project.version}</version>
+			<classifier>sources</classifier>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>modeshape-connector-jbosscache</artifactId>
       <version>${project.version}</version>
 			<classifier>sources</classifier>
@@ -659,6 +670,12 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>modeshape-connector-infinispan</artifactId>
+      <version>${project.version}</version>
+			<classifier>tests</classifier>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>modeshape-connector-infinispan-5</artifactId>
       <version>${project.version}</version>
 			<classifier>tests</classifier>
     </dependency>
@@ -915,6 +932,12 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
+      <artifactId>modeshape-connector-infinispan-5</artifactId>
+      <version>${project.version}</version>
+			<classifier>test-sources</classifier>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>modeshape-connector-jbosscache</artifactId>
       <version>${project.version}</version>
 			<classifier>test-sources</classifier>
@@ -1119,6 +1142,12 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>modeshape-connector-infinispan</artifactId>
+      <version>${project.version}</version>
+			<classifier>jar-with-dependencies</classifier>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>modeshape-connector-infinispan-5</artifactId>
       <version>${project.version}</version>
 			<classifier>jar-with-dependencies</classifier>
     </dependency>

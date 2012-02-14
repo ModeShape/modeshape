@@ -165,7 +165,6 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
      * 
      * @see javax.jcr.nodetype.NodeDefinition#allowsSameNameSiblings()
      */
-    @Override
     public boolean allowsSameNameSiblings() {
         return allowsSameNameSiblings;
     }
@@ -182,7 +181,6 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
      * 
      * @see javax.jcr.nodetype.NodeDefinition#getDefaultPrimaryType()
      */
-    @Override
     public NodeType getDefaultPrimaryType() {
         // It is valid for this field to be null.
         if (defaultPrimaryTypeName == null) {
@@ -197,7 +195,6 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
      * 
      * @see javax.jcr.nodetype.NodeDefinition#getRequiredPrimaryTypes()
      */
-    @Override
     public NodeType[] getRequiredPrimaryTypes() {
         ensureRequiredPrimaryTypesLoaded();
         if (requiredPrimaryTypes.length == 0) {
@@ -238,7 +235,6 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
     /**
      * @return the names of the required primary types for this child node definition; never null
      */
-    @Override
     public String[] getRequiredPrimaryTypeNames() {
         // make a defensive copy ...
         Name[] requiredPrimaryTypeNames = this.requiredPrimaryTypeNames;
@@ -252,7 +248,6 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
     /**
      * @return the name of the default primary type for this child node definition; may be null
      */
-    @Override
     public String getDefaultPrimaryTypeName() {
         return string(this.defaultPrimaryTypeName);
     }

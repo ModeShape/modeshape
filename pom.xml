@@ -48,6 +48,7 @@
 		<module>extensions/modeshape-connector-disk</module>
 		<module>extensions/modeshape-connector-filesystem</module>
 		<module>extensions/modeshape-connector-infinispan</module>
+		<module>extensions/modeshape-connector-infinispan-5</module>
 		<module>extensions/modeshape-connector-jbosscache</module>
 		<module>extensions/modeshape-connector-svn</module>
 		<module>extensions/modeshape-connector-jcr</module>
