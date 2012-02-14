@@ -55,8 +55,10 @@ import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.Problem;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
+import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.IoUtil;
+import org.modeshape.common.util.Logger;
 import org.modeshape.jcr.JcrContentHandler.EnclosingSAXException;
 import org.modeshape.jcr.RepositoryNodeTypeManager.NodeTypes;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
@@ -807,10 +809,8 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         return false;
     }
 
-    protected String messageFrom( Problems problems,
-                                  String message ) {
+    protected String messageFrom( Problems problems ) {
         StringBuilder sb = new StringBuilder();
-        sb.append(message);
         for (Problem problem : problems) {
             sb.append('\n').append(problem.getMessageString());
         }
@@ -855,11 +855,21 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         CndImporter importer = new CndImporter(context(), true);
         Problems problems = new SimpleProblems();
         importer.importFrom(content, problems, file.getAbsolutePath());
-        if (problems.hasErrors()) {
-            // There are problems, so report the original problems ...
-            String msg = JcrI18n.errorsParsingNodeTypeDefinitions.text(file.getAbsolutePath());
-            throw new RepositoryException(messageFrom(problems, msg));
+
+        // Check for (and report) any problems ...
+        if (problems.hasProblems()) {
+            // There are errors and/or warnings, so report them ...
+            String summary = messageFrom(problems);
+            if (problems.hasErrors()) {
+                String msg = JcrI18n.errorsParsingNodeTypeDefinitions.text(file.getAbsolutePath(), summary);
+                throw new RepositoryException(msg);
+            }
+            // Otherwise, there are warnings, so log them ...
+            I18n msg = JcrI18n.warningsParsingNodeTypeDefinitions;
+            Logger.getLogger(getClass()).warn(msg, file.getAbsolutePath(), summary);
         }
+
+        // Register the node types ...
         return registerNodeTypes(importer.getNodeTypeDefinitions(), allowUpdate);
     }
 
@@ -878,11 +888,21 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         CndImporter importer = new CndImporter(context(), true);
         Problems problems = new SimpleProblems();
         importer.importFrom(content, problems, "stream");
-        if (problems.hasErrors()) {
-            // There are problems, so report the original problems ...
-            String msg = JcrI18n.errorsParsingStreamOfNodeTypeDefinitions.text();
-            throw new RepositoryException(messageFrom(problems, msg));
+
+        // Check for (and report) any problems ...
+        if (problems.hasProblems()) {
+            // There are errors and/or warnings, so report them ...
+            String summary = messageFrom(problems);
+            if (problems.hasErrors()) {
+                String msg = JcrI18n.errorsParsingStreamOfNodeTypeDefinitions.text(summary);
+                throw new RepositoryException(msg);
+            }
+            // Otherwise, there are warnings, so log them ...
+            I18n msg = JcrI18n.warningsParsingStreamOfNodeTypeDefinitions;
+            Logger.getLogger(getClass()).warn(msg, summary);
         }
+
+        // Register the node types ...
         return registerNodeTypes(importer.getNodeTypeDefinitions(), allowUpdate);
     }
 
@@ -898,11 +918,21 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         CndImporter importer = new CndImporter(context(), true);
         Problems problems = new SimpleProblems();
         importer.importFrom(content, problems, url.toExternalForm());
-        if (problems.hasErrors()) {
-            // There are problems, so report the original problems ...
-            String msg = JcrI18n.errorsParsingNodeTypeDefinitions.text(url.toExternalForm());
-            throw new RepositoryException(messageFrom(problems, msg));
+
+        // Check for (and report) any problems ...
+        if (problems.hasProblems()) {
+            // There are errors and/or warnings, so report them ...
+            String summary = messageFrom(problems);
+            if (problems.hasErrors()) {
+                String msg = JcrI18n.errorsParsingNodeTypeDefinitions.text(url.toExternalForm(), summary);
+                throw new RepositoryException(msg);
+            }
+            // Otherwise, there are warnings, so log them ...
+            I18n msg = JcrI18n.warningsParsingNodeTypeDefinitions;
+            Logger.getLogger(getClass()).warn(msg, url.toExternalForm(), summary);
         }
+
+        // Register the node types ...
         return registerNodeTypes(importer.getNodeTypeDefinitions(), allowUpdate);
     }
 }

@@ -278,6 +278,8 @@ public final class JcrI18n {
 
     public static I18n errorsParsingNodeTypeDefinitions;
     public static I18n errorsParsingStreamOfNodeTypeDefinitions;
+    public static I18n warningsParsingNodeTypeDefinitions;
+    public static I18n warningsParsingStreamOfNodeTypeDefinitions;
 
     // Lock messages
     public static I18n nodeNotLockable;
