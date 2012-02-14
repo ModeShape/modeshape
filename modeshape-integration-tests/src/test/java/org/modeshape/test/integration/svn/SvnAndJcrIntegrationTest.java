@@ -23,15 +23,15 @@
  */
 package org.modeshape.test.integration.svn;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertThat;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 import javax.jcr.Session;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
 import org.junit.After;
-import static org.junit.Assert.assertThat;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.connector.svn.SvnRepositorySource;
@@ -101,7 +101,7 @@ public class SvnAndJcrIntegrationTest {
         Node resourceNodeOfPomFile = this.session.getRootNode().getNode("package-info.java/jcr:content");
         assertThat(resourceNodeOfPomFile, is(notNullValue()));
 
-        for (PropertyIterator iter = resourceNodeOfPomFile.getProperties(); iter.hasNext(); ) {
+        for (PropertyIterator iter = resourceNodeOfPomFile.getProperties(); iter.hasNext();) {
             Property property = iter.nextProperty();
             assertThat(property.getName(), is(notNullValue()));
         }
