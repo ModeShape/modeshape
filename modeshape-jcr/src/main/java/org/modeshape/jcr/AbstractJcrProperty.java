@@ -36,6 +36,7 @@ import javax.jcr.ValueFormatException;
 import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.version.OnParentVersionAction;
 import javax.jcr.version.VersionException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.NotThreadSafe;
@@ -200,7 +201,13 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
      */
     protected final void checkForCheckedOut() throws VersionException, RepositoryException {
         if (!node.isCheckedOut()) {
-            throw new VersionException(JcrI18n.nodeIsCheckedIn.text(getPath()));
+            // Node is not checked out, so changing property is only allowed if OPV of property is 'ignore' ...
+            JcrPropertyDefinition defn = getDefinition();
+            if (defn.getOnParentVersion() != OnParentVersionAction.IGNORE) {
+                // Can't change this property ...
+                String path = getParent().getPath();
+                throw new VersionException(JcrI18n.nodeIsCheckedIn.text(path));
+            }
         }
     }
 
