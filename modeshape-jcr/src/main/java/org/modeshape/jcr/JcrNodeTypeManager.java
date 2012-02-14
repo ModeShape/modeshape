@@ -45,8 +45,12 @@ import javax.jcr.nodetype.NodeTypeDefinition;
 import javax.jcr.nodetype.NodeTypeIterator;
 import javax.jcr.nodetype.PropertyDefinition;
 import org.modeshape.common.annotation.Immutable;
+import org.modeshape.common.collection.Problem;
+import org.modeshape.common.collection.Problems;
+import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.IoUtil;
+import org.modeshape.common.util.Logger;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NameFactory;
@@ -831,7 +835,23 @@ public class JcrNodeTypeManager implements NodeTypeManager {
             reader = new CndNodeTypeReader(session);
         }
         try {
+            // Read the file ...
             reader.read(file);
+
+            // Check for (and report) any problems ...
+            Problems problems = reader.getProblems();
+            if (problems.hasProblems()) {
+                // There are problems, so report the original problems ...
+                String summary = messageFrom(problems);
+                if (problems.hasErrors()) {
+                    String msg = JcrI18n.errorsParsingNodeTypeDefinitions.text(file.getAbsolutePath(), summary);
+                    throw new RepositoryException(msg);
+                }
+                I18n msg = JcrI18n.warningsParsingNodeTypeDefinitions;
+                Logger.getLogger(getClass()).warn(msg, file.getAbsolutePath(), summary);
+            }
+
+            // Register the node types ...
             registerNodeTypes(reader.getNodeTypeDefinitions(), allowUpdate);
         } catch (IOException ioe) {
             throw new RepositoryException(ioe);
@@ -860,6 +880,21 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         }
         try {
             reader.read(content, "Node type definitions");
+
+            // Check for (and report) any problems ...
+            Problems problems = reader.getProblems();
+            if (problems.hasProblems()) {
+                // There are problems, so report the original problems ...
+                String summary = messageFrom(problems);
+                if (problems.hasErrors()) {
+                    String msg = JcrI18n.errorsParsingStreamOfNodeTypeDefinitions.text(summary);
+                    throw new RepositoryException(msg);
+                }
+                I18n msg = JcrI18n.warningsParsingStreamOfNodeTypeDefinitions;
+                Logger.getLogger(getClass()).warn(msg, summary);
+            }
+
+            // Register the node types ...
             registerNodeTypes(reader.getNodeTypeDefinitions(), allowUpdate);
         } catch (RepositoryException t) {
             throw t;
@@ -887,6 +922,21 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         }
         try {
             reader.read(url);
+
+            // Check for (and report) any problems ...
+            Problems problems = reader.getProblems();
+            if (problems.hasProblems()) {
+                // There are problems, so report the original problems ...
+                String summary = messageFrom(problems);
+                if (problems.hasErrors()) {
+                    String msg = JcrI18n.errorsParsingNodeTypeDefinitions.text(url.toExternalForm(), summary);
+                    throw new RepositoryException(msg);
+                }
+                I18n msg = JcrI18n.warningsParsingNodeTypeDefinitions;
+                Logger.getLogger(getClass()).warn(msg, url.toExternalForm(), summary);
+            }
+
+            // Register the node types ...
             registerNodeTypes(reader.getNodeTypeDefinitions(), allowUpdate);
         } catch (IOException ioe) {
             throw new RepositoryException(ioe);
@@ -899,4 +949,11 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         }
     }
 
+    protected String messageFrom( Problems problems ) {
+        StringBuilder sb = new StringBuilder();
+        for (Problem problem : problems) {
+            sb.append('\n').append(problem.getMessageString());
+        }
+        return sb.toString();
+    }
 }
