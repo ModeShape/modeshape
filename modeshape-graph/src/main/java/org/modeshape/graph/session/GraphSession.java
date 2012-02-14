@@ -1814,9 +1814,10 @@ public class GraphSession<Payload, PropertyPayload> {
             // Perform phase 1 on each of the children ...
             boolean canUnloadChildren = true;
             for (Node<Payload, PropertyPayload> child : childrenByName.values()) {
-                if (child.refreshPhase1(refreshState)) {
+                if (!child.refreshPhase1(refreshState)) {
                     // The child can be unloaded
                     canUnloadChildren = false;
+                    break;
                 }
             }
 

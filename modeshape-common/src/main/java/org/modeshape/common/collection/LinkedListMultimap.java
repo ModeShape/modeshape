@@ -110,6 +110,7 @@ public final class LinkedListMultimap<K, V> implements ListMultimap<K, V> {
         length = 0;
         firstEntryWithKey.clear();
         lastEntryWithKey.clear();
+        numberOfEntriesForKey.clear();
     }
 
     /**
