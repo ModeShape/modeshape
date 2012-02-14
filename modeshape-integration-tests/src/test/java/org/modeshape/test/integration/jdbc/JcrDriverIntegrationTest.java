@@ -71,11 +71,10 @@ import org.modeshape.test.ModeShapeMultiUseTest;
  * </p>
  * <p>
  * To create the expected results to be used to run a test, use the test and print method: example:
- * ConnectionResultsComparator.executeTestAndPrint(this.connection, "SELECT * FROM [nt:base]"); This will print the expected
- * results like this: String[] expected = { "jcr:primaryType[STRING]", "mode:root", "car:Car", "car:Car", "nt:unstructured" } Now
- * copy the expected results to the test method. Then change the test to run the executeTest method passing in the
- * <code>expected</code> results: example: ConnectionResultsComparator.executeTest(this.connection, "SELECT * FROM [nt:base]",
- * expected);
+ * ConnectionResultsComparator.executeTestAndPrint(this.connection, "SELECT * FROM [nt:base]"); This will print the expected results like this:
+ * String[] expected = { "jcr:primaryType[STRING]", "mode:root", "car:Car", "car:Car", "nt:unstructured" } Now copy the expected
+ * results to the test method. Then change the test to run the executeTest method passing in the <code>expected</code> results:
+ * example: ConnectionResultsComparator.executeTest(this.connection, "SELECT * FROM [nt:base]", expected);
  * </p>
  */
 public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
@@ -753,7 +752,8 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
             "Repo    NULL    car:Car    jcr:primaryType    12    STRING    20    NULL    0    0    1        NULL    0    0    0    14    NO    NULL    NULL    NULL    0",
             "Repo    NULL    car:Car    jcr:score    8    DOUBLE    20    NULL    0    0    2        NULL    0    0    0    15    YES    NULL    NULL    NULL    0",
             "Repo    NULL    car:Car    mode:depth    -5    LONG    20    NULL    0    0    2        NULL    0    0    0    16    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    mode:localName    12    STRING    50    NULL    0    0    2        NULL    0    0    0    17    YES    NULL    NULL    NULL    0"};
+            "Repo    NULL    car:Car    mode:localName    12    STRING    50    NULL    0    0    2        NULL    0    0    0    17    YES    NULL    NULL    NULL    0"
+            };
 
         ResultSet rs = dbmd.getColumns("%", "%", "car:Car", "%");
 
@@ -803,7 +803,8 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
             "Repo    NULL    car:Car    jcr:primaryType    12    STRING    20    NULL    0    0    1        NULL    0    0    0    14    NO    NULL    NULL    NULL    0",
             "Repo    NULL    car:Car    jcr:score    8    DOUBLE    20    NULL    0    0    2        NULL    0    0    0    15    YES    NULL    NULL    NULL    0",
             "Repo    NULL    car:Car    mode:depth    -5    LONG    20    NULL    0    0    2        NULL    0    0    0    16    YES    NULL    NULL    NULL    0",
-            "Repo    NULL    car:Car    mode:localName    12    STRING    50    NULL    0    0    2        NULL    0    0    0    17    YES    NULL    NULL    NULL    0"};
+            "Repo    NULL    car:Car    mode:localName    12    STRING    50    NULL    0    0    2        NULL    0    0    0    17    YES    NULL    NULL    NULL    0"
+            };
 
         ResultSet rs = dbmd.getColumns("%", "%", "car%", "%");
 
@@ -818,7 +819,8 @@ public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
 
         String[] expected = {
             "TABLE_CAT[String]    TABLE_SCHEM[String]    TABLE_NAME[String]    COLUMN_NAME[String]    DATA_TYPE[Long]    TYPE_NAME[String]    COLUMN_SIZE[Long]    BUFFER_LENGTH[Long]    DECIMAL_DIGITS[Long]    NUM_PREC_RADIX[Long]    NULLABLE[Long]    REMARKS[String]    COLUMN_DEF[String]    SQL_DATA_TYPE[Long]    SQL_DATETIME_SUB[Long]    CHAR_OCTET_LENGTH[Long]    ORDINAL_POSITION[Long]    IS_NULLABLE[String]    SCOPE_CATLOG[String]    SCOPE_SCHEMA[String]    SCOPE_TABLE[String]    SOURCE_DATA_TYPE[Long]",
-            "Repo    NULL    car:Car    car:msrp    12    STRING    50    NULL    0    0    2        NULL    0    0    0    1    YES    NULL    NULL    NULL    0"};
+            "Repo    NULL    car:Car    car:msrp    12    STRING    50    NULL    0    0    2        NULL    0    0    0    1    YES    NULL    NULL    NULL    0"
+            };
 
         ResultSet rs = dbmd.getColumns("%", "%", "car:Car", "car:msrp");
 
