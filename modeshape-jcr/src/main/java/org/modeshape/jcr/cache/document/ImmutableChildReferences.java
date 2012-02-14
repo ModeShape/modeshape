@@ -123,6 +123,11 @@ public class ImmutableChildReferences {
         }
 
         @Override
+        public boolean hasChild( NodeKey key ) {
+            return false;
+        }
+
+        @Override
         public Iterator<ChildReference> iterator() {
             return EMPTY_ITERATOR;
         }
@@ -317,7 +322,12 @@ public class ImmutableChildReferences {
 
         @Override
         public ChildReference getChild( NodeKey key ) {
-            return childReferencesByKey.get(key);
+            return getChild(key, new BasicContext());
+        }
+
+        @Override
+        public boolean hasChild( NodeKey key ) {
+            return childReferencesByKey.containsKey(key);
         }
 
         @Override
@@ -395,15 +405,18 @@ public class ImmutableChildReferences {
         }
 
         @Override
-        public ChildReference getChild( NodeKey key ) {
-            ChildReference result = null;
+        public boolean hasChild( NodeKey key ) {
             Segment segment = this.firstSegment;
             while (segment != null) {
-                result = segment.getReferences().getChild(key);
-                if (result != null) break;
+                if (segment.getReferences().hasChild(key)) return true;
                 segment = segment.next(cache);
             }
-            return result;
+            return false;
+        }
+
+        @Override
+        public ChildReference getChild( NodeKey key ) {
+            return getChild(key, new BasicContext());
         }
 
         @Override

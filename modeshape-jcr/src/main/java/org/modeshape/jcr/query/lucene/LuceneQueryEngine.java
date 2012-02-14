@@ -27,23 +27,27 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.jcr.query.InvalidQueryException;
 import org.apache.lucene.search.Collector;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.util.Version;
 import org.hibernate.search.SearchFactory;
 import org.hibernate.search.engine.spi.SearchFactoryImplementor;
 import org.modeshape.common.util.Logger;
 import org.modeshape.jcr.ExecutionContext;
-import org.modeshape.jcr.api.query.qom.Limit;
 import org.modeshape.jcr.cache.NodeCache;
+import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.QueryIndexing;
 import org.modeshape.jcr.query.QueryResults;
 import org.modeshape.jcr.query.QueryResults.Columns;
 import org.modeshape.jcr.query.lucene.basic.BasicLuceneSchema;
+import org.modeshape.jcr.query.lucene.basic.ExistsTupleCollector;
 import org.modeshape.jcr.query.model.Constraint;
+import org.modeshape.jcr.query.model.FullTextSearchScore;
 import org.modeshape.jcr.query.model.QueryCommand;
 import org.modeshape.jcr.query.optimize.Optimizer;
 import org.modeshape.jcr.query.plan.PlanHints;
@@ -65,7 +69,8 @@ public class LuceneQueryEngine extends QueryEngine {
 
     private final ExecutionContext repositoryContext;
     private final BasicLuceneSchema schema;
-    private final String repositoryName;
+
+    // private final String repositoryName;
 
     /**
      * @param context the execution context for the repository
@@ -73,16 +78,18 @@ public class LuceneQueryEngine extends QueryEngine {
      * @param planner the planner that should be used
      * @param optimizer the optimizer that should be used
      * @param searchFactory the search factory for accessing the indexes
+     * @param version the Lucene version used by the indexes
      */
     public LuceneQueryEngine( ExecutionContext context,
                               String repositoryName,
                               Planner planner,
                               Optimizer optimizer,
-                              SearchFactoryImplementor searchFactory ) {
+                              SearchFactoryImplementor searchFactory,
+                              Version version ) {
         super(planner, optimizer, new LuceneQueryProcessor(repositoryName, searchFactory));
         this.repositoryContext = context;
-        this.repositoryName = repositoryName;
-        this.schema = new BasicLuceneSchema(this.repositoryContext, searchFactory);
+        // this.repositoryName = repositoryName;
+        this.schema = new BasicLuceneSchema(this.repositoryContext, searchFactory, version);
         ((LuceneQueryProcessor)this.processor).initialize(schema);
     }
 
@@ -99,8 +106,11 @@ public class LuceneQueryEngine extends QueryEngine {
      * Execute the supplied query against the named workspace, using the supplied hints, schemata and variables.
      * 
      * @param context the context in which the query is being executed; may not be null
-     * @param nodeCache the node cache that should be used to load results; may not be null
-     * @param workspaceName the name of the workspace to be queried
+     * @param repositoryCache the repository cache that should be used to load results; may not be null
+     * @param workspaceNames the name of each workspace to be queried, or an empty set if all the workspaces should be queried;
+     *        may not be null
+     * @param overriddenNodeCachesByWorkspaceName the NodeCache instances that should be used to load results, which will be used
+     *        instead of the RepositoryCache's NodeCache for a given workspace name; may be null or empty
      * @param query the query
      * @param schemata the schemata information that should be used for all processing of this query
      * @param hints the hints
@@ -109,13 +119,15 @@ public class LuceneQueryEngine extends QueryEngine {
      * @throws InvalidQueryException if the
      */
     public QueryResults query( ExecutionContext context,
-                               NodeCache nodeCache,
-                               String workspaceName,
+                               RepositoryCache repositoryCache,
+                               Set<String> workspaceNames,
+                               Map<String, NodeCache> overriddenNodeCachesByWorkspaceName,
                                QueryCommand query,
                                Schemata schemata,
                                PlanHints hints,
                                Map<String, Object> variables ) throws InvalidQueryException {
-        QueryContext queryContext = new QueryContext(context, nodeCache, workspaceName, schemata, hints, null, variables);
+        QueryContext queryContext = new QueryContext(context, repositoryCache, workspaceNames,
+                                                     overriddenNodeCachesByWorkspaceName, schemata, hints, null, variables);
         return this.execute(queryContext, query);
     }
 
@@ -141,8 +153,13 @@ public class LuceneQueryEngine extends QueryEngine {
         }
 
         @Override
+        protected boolean supportsPushDownExistConstraints() {
+            return true;
+        }
+
+        @Override
         protected LuceneProcessingContext createProcessingContext( QueryContext queryContext ) {
-            return new LuceneProcessingContext(queryContext, repositoryName, queryContext.getWorkspaceName(), searchFactory);
+            return new LuceneProcessingContext(queryContext, repositoryName, searchFactory, schema);
         }
 
         @Override
@@ -182,13 +199,40 @@ public class LuceneQueryEngine extends QueryEngine {
             this.processingContext = processingContext;
         }
 
+        /**
+         * {@inheritDoc}
+         * <p>
+         * Some kinds of constraints are not easily pushed down to Lucene as are of a Lucene Query, and instead are applied by
+         * filtering the results. For example, a {@link FullTextSearchScore} applies to the score of the tuple, which cannot be
+         * (easily?) applied as a {@link Query Lucene Query}.
+         * </p>
+         * <p>
+         * Therefore, each of the AND-ed constraints of the query are evaluated separately. After all, each of the tuples returned
+         * by the planned access query must satisfy all of the AND-ed constraints. Or, to put it another way, if a tuple does not
+         * satisfy one of the AND-ed constraints, the tuple should not be included in the query results.
+         * </p>
+         * <p>
+         * Logically, any AND-ed criteria that cannot be pushed down to Lucene can of course be applied as a filter on the
+         * results. Thus, each AND-ed constraint is processed to first determine if it can be represented as a Lucene query; all
+         * other AND-ed constraints must be handled as a results filter. Since most queries will likely use one or more simple
+         * constraints AND-ed together, this approach will likely work very well.
+         * </p>
+         * <p>
+         * The only hairy case is when any AND-ed constraint is actually an OR-ed combination of multiple constraints of which at
+         * least one cannot be pushed down to Lucene. In this case, the entire AND-ed constraint must be treated as a results
+         * filter (even if many of those constraints that make up the OR-ed constraint can be pushed down). Hopefully, this will
+         * not be a common case in actual queries.
+         * </p>
+         * 
+         * @see AbstractAccessComponent#execute()
+         */
         @Override
         public List<Object[]> execute() {
-            List<Constraint> andedConstraints = this.andedConstraints;
-            Limit limit = this.limit;
+            assert andedConstraints != null;
+            assert limit != null;
 
             // Create the Lucene queries ...
-            LuceneQuery queries = schema.createQuery(andedConstraints, processingContext);
+            LuceneQuery queries = schema.createQuery(sourceName, andedConstraints, processingContext);
 
             // Check whether the constraints were such that no results should be returned ...
             if (queries.matchesNone()) {
@@ -217,12 +261,28 @@ public class LuceneQueryEngine extends QueryEngine {
                     IndexSearcher searcher = processingContext.getSearcher(indexName);
                     Logger logger = Logger.getLogger(getClass());
                     if (logger.isTraceEnabled()) {
-                        String workspaceName = processingContext.getWorkspaceName();
+                        Set<String> workspaceNames = processingContext.getWorkspaceNames();
                         String repoName = processingContext.getRepositoryName();
-                        logger.trace("query \"{0}\" workspace in \"{1}\" repository: {2}", repoName, workspaceName, pushDownQuery);
+                        logger.trace("query \"{0}\" workspace(s) in \"{1}\" repository: {2}",
+                                     repoName,
+                                     workspaceNames,
+                                     pushDownQuery);
                     }
                     TupleCollector collector = schema.createTupleCollector(queryContext, columns);
-                    searcher.search(pushDownQuery, collector);
+                    if (getContext().getHints().isExistsQuery) {
+                        // We only are looking for the existance of a tuple, so we want to stop as soon as we find one.
+                        // So wrap the collector with an ExistsTupleCollector that will throw an exception as soon as one tuple
+                        // is found.
+                        collector = new ExistsTupleCollector(collector);
+                        try {
+                            searcher.search(pushDownQuery, collector);
+                        } catch (ExistsTupleCollector.CompletedException e) {
+                            // This only happens when the query has a row limit of 1, and we've found a tuple.
+                            // So we should eat this exception and just continue ...
+                        }
+                    } else {
+                        searcher.search(pushDownQuery, collector);
+                    }
                     tuples = collector.getTuples();
                 } catch (IOException e) {
                     throw new LuceneException(e);
@@ -251,12 +311,15 @@ public class LuceneQueryEngine extends QueryEngine {
                     int firstIndex = limit.getOffset();
                     int maxRows = Math.min(tuples.size(), limit.getRowLimit());
                     if (firstIndex > 0) {
+                        // There is an offset and we're limiting the number of rows ...
                         if (firstIndex > tuples.size()) {
-                            tuples.clear();
+                            tuples.clear(); // not enough rows, so return no tuples
                         } else {
+                            // Find the tuples for the range of rows we're interested in ...
                             tuples = tuples.subList(firstIndex, maxRows);
                         }
                     } else {
+                        // We're limiting the number of rows but there is no offset ...
                         tuples = tuples.subList(0, maxRows);
                     }
                 }
@@ -274,5 +337,13 @@ public class LuceneQueryEngine extends QueryEngine {
          * @return the tuples; never null
          */
         public abstract List<Object[]> getTuples();
+
+        @Override
+        public final void collect( int doc ) throws IOException {
+            doCollect(doc);
+        }
+
+        public abstract float doCollect( int doc ) throws IOException;
+
     }
 }

@@ -638,7 +638,11 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         for (String name : nodeTypeNames) {
             names.add(nameFactory.create(name));
         }
-        repositoryTypeManager.unregisterNodeType(names);
+
+        // Unregister the node types, but perform a check to see if any of the node types are currently being used.
+        // Unregistering a node type that is being used will likely cause the system to become unstable.
+        boolean failIfNodeTypesAreUsed = true;
+        repositoryTypeManager.unregisterNodeType(names, failIfNodeTypesAreUsed);
     }
 
     /**

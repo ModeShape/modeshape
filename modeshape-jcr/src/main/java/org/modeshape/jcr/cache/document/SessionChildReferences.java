@@ -84,6 +84,11 @@ public class SessionChildReferences extends AbstractChildReferences {
     }
 
     @Override
+    public boolean hasChild( NodeKey key ) {
+        return getChild(key, new BasicContext()) != null;
+    }
+
+    @Override
     public ChildReference getChild( NodeKey key ) {
         return getChild(key, new BasicContext());
     }

@@ -21,36 +21,32 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.query.lucene.basic;
+package org.modeshape.jcr.cache;
 
-import org.apache.lucene.document.Field;
-import org.modeshape.jcr.cache.NodeKey;
+import java.util.HashMap;
+import java.util.Map;
+import org.modeshape.common.annotation.NotThreadSafe;
 
 /**
- * The information about the index used to store path and name information.
+ * A set of {@link PathCache} instances keyed by workspace names.
  */
-public class BinaryInfoIndex {
+@NotThreadSafe
+public class RepositoryPathCache {
 
-    /**
-     * The name of the index in which the binary full-text search terms are to be stored.
-     */
-    public static final String INDEX_NAME = "binaries";
+    private final Map<String, PathCache> pathCacheByWorkspaceName;
 
-    public static final class FieldName {
-        /**
-         * The name of the {@link Field string field} in which the node identifier will be placed. The value is always the string
-         * form of the {@link NodeKey node key}.
-         * 
-         * @see NodeInfoIndex.FieldName#BINARY_SHA1S
-         */
-        public static final String SHA1 = "::sha1";
-
-        /**
-         * The name of the {@link Field string field} used to store the analyzed terms for the text extracted from the binary
-         * value.
-         * 
-         * @see NodeInfoIndex.FieldName#FULL_TEXT
-         */
-        public static final String FULL_TEXT = "::fts";
+    public RepositoryPathCache() {
+        this.pathCacheByWorkspaceName = new HashMap<String, PathCache>();
     }
+
+    public PathCache getPathCache( String workspaceName,
+                                   NodeCache nodeCacheForWorkspace ) throws WorkspaceNotFoundException {
+        PathCache cache = pathCacheByWorkspaceName.get(workspaceName);
+        if (cache == null) {
+            cache = new PathCache(nodeCacheForWorkspace);
+            pathCacheByWorkspaceName.put(workspaceName, cache);
+        }
+        return cache;
+    }
+
 }

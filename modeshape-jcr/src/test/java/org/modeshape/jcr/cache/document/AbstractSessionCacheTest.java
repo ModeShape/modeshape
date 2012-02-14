@@ -23,10 +23,12 @@
  */
 package org.modeshape.jcr.cache.document;
 
+import javax.transaction.TransactionManager;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.SessionCache;
+import org.modeshape.jcr.cache.SessionEnvironment;
 import org.modeshape.jcr.cache.change.PrintingChangeSetListener;
 
 /**
@@ -52,6 +54,21 @@ public abstract class AbstractSessionCacheTest extends AbstractNodeCacheTest {
 
     protected abstract SessionCache createSession( ExecutionContext context,
                                                    WorkspaceCache cache );
+
+    protected SessionEnvironment createSessionContext() {
+        final TransactionManager txnMgr = txnManager();
+        return new SessionEnvironment() {
+            @Override
+            public TransactionManager getTransactionManager() {
+                return txnMgr;
+            }
+
+            @Override
+            public Monitor createMonitor() {
+                return null;
+            }
+        };
+    }
 
     protected SessionCache session() {
         return (SessionCache)cache;

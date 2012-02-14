@@ -224,7 +224,8 @@
         <jackrabbit.jcr.tck.version>2.1.0</jackrabbit.jcr.tck.version>
         <picketbox.version>4.0.1</picketbox.version>
         <byteman.version>1.5.1</byteman.version>
-        <lucene.version>3.4.0</lucene.version>
+        <lucene.version>3.5.0</lucene.version>
+        <lucene.regex.version>3.0.3</lucene.regex.version>
         <hibernate.version>3.5.2-Final</hibernate.version>
         <hibernate.tools.version>3.2.4.GA</hibernate.tools.version>
         <hibernate.search.version>4.0.0.Final</hibernate.search.version>
@@ -839,6 +840,11 @@
                 <groupId>org.apache.lucene</groupId>
                 <artifactId>lucene-core</artifactId>
                 <version>${lucene.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-regex</artifactId>
+                <version>${lucene.regex.version}</version>
             </dependency>
             <!--
                Time and Date

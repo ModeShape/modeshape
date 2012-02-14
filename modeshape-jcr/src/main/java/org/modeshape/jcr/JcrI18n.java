@@ -378,11 +378,18 @@ public final class JcrI18n {
     public static I18n errorKillingRepository;
     public static I18n errorKillingEngine;
 
+    // Lucene query engine ...
     public static I18n errorExtractingTextFromBinary;
     public static I18n errorAddingBinaryTextToIndex;
     public static I18n missingQueryVariableValue;
     public static I18n errorClosingLuceneReaderForIndex;
     public static I18n ignoringIndexingProperty;
+    public static I18n locationForIndexesIsNotDirectory;
+    public static I18n locationForIndexesCannotBeRead;
+    public static I18n locationForIndexesCannotBeWritten;
+    public static I18n errorWhileCommittingIndexChanges;
+    public static I18n errorWhileRollingBackIndexChanges;
+    public static I18n missingVariableValue;
 
     static {
         try {

@@ -26,6 +26,7 @@ package org.modeshape.jcr;
 import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -48,6 +49,7 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.JcrRepository.QueryLanguage;
 import org.modeshape.jcr.api.monitor.DurationMetric;
 import org.modeshape.jcr.cache.NodeCache;
+import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.query.JcrQuery;
 import org.modeshape.jcr.query.JcrQueryContext;
 import org.modeshape.jcr.query.JcrTypeSystem;
@@ -263,9 +265,16 @@ class JcrQueryManager implements QueryManager {
             Schemata schemata = session.workspace().nodeTypeManager().schemata();
             ExecutionContext context = session.context();
             String workspaceName = session.workspaceName();
-            RepositoryQueryManager queryManager = session.repository().runningState().queryManager();
+            JcrRepository.RunningState state = session.repository().runningState();
+            RepositoryQueryManager queryManager = state.queryManager();
+            RepositoryCache repoCache = state.repositoryCache();
             NodeCache nodeCache = hints.useSessionContent ? session.cache() : session.cache().getWorkspace();
-            return queryManager.query(context, nodeCache, workspaceName, query, schemata, hints, variables);
+            Map<String, NodeCache> overriddenNodeCaches = new HashMap<String, NodeCache>();
+            overriddenNodeCaches.put(workspaceName, nodeCache);
+            Set<String> workspaceNames = new HashSet<String>();
+            workspaceNames.add(workspaceName);
+            if (hints.includeSystemContent) workspaceNames.add(repoCache.getSystemWorkspaceName());
+            return queryManager.query(context, repoCache, workspaceNames, overriddenNodeCaches, query, schemata, hints, variables);
         }
 
         @Override

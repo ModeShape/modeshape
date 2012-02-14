@@ -50,6 +50,7 @@ import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.ChildReferences;
+import org.modeshape.jcr.cache.ChildReferences.BasicContext;
 import org.modeshape.jcr.cache.ChildReferences.ChildInsertions;
 import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeCache;
@@ -317,7 +318,7 @@ public class SessionNode implements MutableCachedNode {
     protected final Segment getSegment( NodeCache cache,
                                         CachedNode parent ) {
         if (parent != null) {
-            ChildReference ref = parent.getChildReferences(cache).getChild(key);
+            ChildReference ref = parent.getChildReferences(cache).getChild(key, new BasicContext());
             return ref.getSegment();
         }
         // This is the root node ...
@@ -759,8 +760,7 @@ public class SessionNode implements MutableCachedNode {
                 additional = true;
             } else {
                 // Not a primary or additional parent ...
-                ChildReference ref = getChildReferences(session).getChild(key);
-                if (ref == null) {
+                if (!getChildReferences(session).hasChild(key)) {
                     throw new NodeNotFoundException(key);
                 }
             }
@@ -805,7 +805,7 @@ public class SessionNode implements MutableCachedNode {
         }
 
         // We need a mutable node in the session for the child, so that we can find changes in the parent ...
-        //cache.mutable(key);
+        // cache.mutable(key);
 
         if (toBeMoved == null) {
             // It wasn't appended, so verify it is really a child ...
@@ -833,8 +833,7 @@ public class SessionNode implements MutableCachedNode {
         WritableSessionCache session = writableSession(cache);
         session.assertInSession(this);
         ChildReferences references = getChildReferences(session);
-        ChildReference node = references.getChild(key);
-        if (node == null) throw new NodeNotFoundException(key);
+        if (!references.hasChild(key)) throw new NodeNotFoundException(key);
 
         // We need a mutable node in the session for the child, so that we can find changes in the parent ...
         cache.mutable(key);
@@ -1294,8 +1293,7 @@ public class SessionNode implements MutableCachedNode {
                 if (insertions == null) {
                     insertions = new Insertions(before, inserted);
                     insertedBefore.put(before.getKey(), insertions); // locked, so no need to 'putIfAbsent'
-                }
-                else {
+                } else {
                     insertions.add(inserted);
                 }
 

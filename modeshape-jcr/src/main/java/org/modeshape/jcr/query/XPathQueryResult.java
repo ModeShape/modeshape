@@ -80,6 +80,12 @@ public class XPathQueryResult extends JcrQueryResult {
     }
 
     @Override
+    public String[] getSelectorNames() {
+        // XPath queries are implicitly selected against all nodes ...
+        return new String[] {"nt:base"};
+    }
+
+    @Override
     public RowIterator getRows() {
         final int numRows = results.getRowCount();
         final List<Object[]> tuples = results.getTuples();

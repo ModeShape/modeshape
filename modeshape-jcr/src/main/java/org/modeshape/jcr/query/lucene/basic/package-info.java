@@ -23,9 +23,8 @@
  */
 /**
  * <p>
- * The core query engine, which currently uses Lucene for indexing and raw queries, and 
- * the Hibernate Search engine (which does not depend on or use Hibernate Core or JPA)
- * for updating and querying the Lucene indexes.
+ * The "basic" {@link org.modeshape.jcr.query.lucene.LuceneSchema Lucene schema} has a single index in which all node
+ * and property information are indexed into separate fields.
  * </p>
  */
 

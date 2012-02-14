@@ -134,6 +134,8 @@ public abstract class QueryProcessor<ProcessingContextType> implements Processor
         // do nothing ...
     }
 
+    protected abstract boolean supportsPushDownExistConstraints();
+
     /**
      * Create the {@link ProcessingComponent} that processes a single {@link Type#ACCESS} branch of a query plan.
      * 
@@ -247,18 +249,24 @@ public abstract class QueryProcessor<ProcessingContextType> implements Processor
             case LIMIT:
                 // Create the component under the LIMIT ...
                 assert node.getChildCount() == 1;
-                ProcessingComponent limitDelegate = createComponent(originalQuery,
-                                                                    context,
-                                                                    node.getFirstChild(),
-                                                                    columns,
-                                                                    processingContext);
-                // Then create the limit component ...
-                Integer rowLimit = node.getProperty(Property.LIMIT_COUNT, Integer.class);
-                Integer offset = node.getProperty(Property.LIMIT_OFFSET, Integer.class);
-                Limit limit = Limit.NONE;
-                if (rowLimit != null) limit = limit.withRowLimit(rowLimit.intValue());
-                if (offset != null) limit = limit.withOffset(offset.intValue());
-                component = new LimitComponent(limitDelegate, limit);
+                ProcessingComponent delegate = createComponent(originalQuery,
+                                                               context,
+                                                               node.getFirstChild(),
+                                                               columns,
+                                                               processingContext);
+                if (context.getHints().isExistsQuery && supportsPushDownExistConstraints()) {
+                    // This gets handled by the access query ...
+                    component = delegate;
+                } else {
+                    // Then create the limit component ...
+                    Integer rowLimit = node.getProperty(Property.LIMIT_COUNT, Integer.class);
+                    Integer offset = node.getProperty(Property.LIMIT_OFFSET, Integer.class);
+                    Limit limit = Limit.NONE;
+                    if (rowLimit != null) limit = limit.withRowLimit(rowLimit.intValue());
+                    if (offset != null) limit = limit.withOffset(offset.intValue());
+                    // And wrap the delegate
+                    component = new LimitComponent(delegate, limit);
+                }
                 break;
             case NULL:
                 component = new NoResultsComponent(context, columns);

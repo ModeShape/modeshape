@@ -25,6 +25,7 @@ package org.modeshape.jcr.query.lucene;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import org.apache.lucene.index.IndexReader;
@@ -38,7 +39,6 @@ import org.modeshape.jcr.query.QueryContext;
 @ThreadSafe
 public class LuceneProcessingContext {
     private final String repositoryName;
-    private final String workspaceName;
     private final SearchFactory searchFactory;
     private final Map<String, IndexReader> readerByIndexName = new HashMap<String, IndexReader>();
     private final Map<String, IndexSearcher> searcherByIndexName = new HashMap<String, IndexSearcher>();
@@ -48,17 +48,15 @@ public class LuceneProcessingContext {
 
     protected LuceneProcessingContext( QueryContext queryContext,
                                        String repositoryName,
-                                       String workspaceName,
-                                       SearchFactory searchFactory ) {
+                                       SearchFactory searchFactory,
+                                       LuceneSchema schema ) {
         assert queryContext != null;
         assert searchFactory != null;
         assert repositoryName != null;
-        assert workspaceName != null;
         this.queryContext = queryContext;
         this.searchFactory = searchFactory;
         this.repositoryName = repositoryName;
-        this.workspaceName = workspaceName;
-        this.queryFactory = new LuceneQueryFactory(queryContext);
+        this.queryFactory = schema.createLuceneQueryFactory(queryContext, searchFactory);
     }
 
     /**
@@ -76,10 +74,12 @@ public class LuceneProcessingContext {
     }
 
     /**
-     * @return workspaceName
+     * Return the name of each workspace to be queried, or an empty set if all the workspaces should be queried.
+     * 
+     * @return workspaceNames the workspace names; never null
      */
-    public String getWorkspaceName() {
-        return workspaceName;
+    public Set<String> getWorkspaceNames() {
+        return queryContext.getWorkspaceNames();
     }
 
     /**

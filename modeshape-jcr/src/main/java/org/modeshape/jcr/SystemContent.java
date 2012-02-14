@@ -269,14 +269,12 @@ public class SystemContent {
 
         Name name = nodeType.getInternalName();
         final NodeKey key = nodeType.key();
-        ChildReference nodeTypeRef = nodeTypes.getChildReferences(system).getChild(key);
         MutableCachedNode nodeTypeNode = null;
         Set<NodeKey> existingChildKeys = null;
-        if (nodeTypeRef != null) {
-            assert nodeTypeRef.getKey().equals(key);
+        if (nodeTypes.getChildReferences(system).hasChild(key)) {
             // The node already exists ...
             if (!updateExisting) return;
-            nodeTypeNode = system.mutable(nodeTypeRef.getKey());
+            nodeTypeNode = system.mutable(key);
 
             // We'll need to delete any existing child that isn't there anymore ...
             existingChildKeys = new HashSet<NodeKey>();
@@ -356,8 +354,7 @@ public class SystemContent {
         final Name name = propertyDef.getInternalName();
         MutableCachedNode propDefnNode = null;
         if (!nodeTypeNode.isNew()) {
-            ChildReference propDefnRef = nodeTypeNode.getChildReferences(system).getChild(key);
-            if (propDefnRef != null) {
+            if (nodeTypeNode.getChildReferences(system).hasChild(key)) {
                 // The node already exists ...
                 propDefnNode = system.mutable(key);
             }
@@ -435,8 +432,7 @@ public class SystemContent {
         final Name name = childNodeDef.getInternalName();
         MutableCachedNode nodeDefnNode = null;
         if (!nodeTypeNode.isNew()) {
-            ChildReference nodeDefnRef = nodeTypeNode.getChildReferences(system).getChild(key);
-            if (nodeDefnRef != null) {
+            if (nodeTypeNode.getChildReferences(system).hasChild(key)) {
                 // The node already exists ...
                 nodeDefnNode = system.mutable(key);
             }

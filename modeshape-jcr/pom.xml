@@ -16,6 +16,7 @@
     <name>ModeShape JCR Repository</name>
     <description>ModeShape implementation of the JCR API</description>
     <url>http://www.modeshape.org</url>
+
     <!--
       Define the dependencies. Note that all version and scopes default to those defined in the dependencyManagement section of the
       parent pom.
@@ -54,6 +55,10 @@
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-regex</artifactId>
         </dependency>
 
         <!-- MIME-type detection. This dependency can be omitted by clients, either by removing the aperture.jar or excluding it from their pom-->

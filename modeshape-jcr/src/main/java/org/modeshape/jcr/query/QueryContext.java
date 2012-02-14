@@ -23,14 +23,18 @@
  */
 package org.modeshape.jcr.query;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.cache.NodeCache;
+import org.modeshape.jcr.cache.RepositoryCache;
+import org.modeshape.jcr.cache.WorkspaceNotFoundException;
 import org.modeshape.jcr.query.model.BindVariableName;
 import org.modeshape.jcr.query.model.TypeSystem;
 import org.modeshape.jcr.query.plan.PlanHints;
@@ -44,20 +48,24 @@ import org.modeshape.jcr.value.NamespaceRegistry;
 @Immutable
 public class QueryContext {
     private final ExecutionContext context;
-    private final NodeCache nodeCache;
+    private final RepositoryCache repositoryCache;
     private final TypeSystem typeSystem;
     private final PlanHints hints;
     private final Schemata schemata;
     private final Problems problems;
     private final Map<String, Object> variables;
-    private final String workspaceName;
+    private final Set<String> workspaceNames;
+    private final Map<String, NodeCache> overriddenNodeCachesByWorkspaceName;
 
     /**
      * Create a new context for query execution.
      * 
      * @param context the context in which the query is being executed; may not be null
-     * @param nodeCache the node cache that should be used to load results; may not be null
-     * @param workspaceName the name of the workspace to be queried
+     * @param repositoryCache the repository cache that should be used to load results; may be null if no results are to be loaded
+     * @param workspaceNames the name of each workspace to be queried, or an empty set if all the workspaces should be queried;
+     *        may not be null
+     * @param overriddenNodeCachesByWorkspaceName the NodeCache instances that should be used to load results, which will be used
+     *        instead of the RepositoryCache's NodeCache for a given workspace name; may be null or empty
      * @param schemata the schemata
      * @param hints the hints, or null if there are no hints
      * @param problems the problems container, or null if a new problems container should be created
@@ -65,64 +73,69 @@ public class QueryContext {
      * @throws IllegalArgumentException if the context, workspace name, or schemata are null
      */
     public QueryContext( ExecutionContext context,
-                         NodeCache nodeCache,
-                         String workspaceName,
+                         RepositoryCache repositoryCache,
+                         Set<String> workspaceNames,
+                         Map<String, NodeCache> overriddenNodeCachesByWorkspaceName,
                          Schemata schemata,
                          PlanHints hints,
                          Problems problems,
                          Map<String, Object> variables ) {
         CheckArg.isNotNull(context, "context");
-        CheckArg.isNotNull(workspaceName, "workspaceName");
+        CheckArg.isNotNull(workspaceNames, "workspaceNames");
         CheckArg.isNotNull(schemata, "schemata");
         this.context = context;
-        this.nodeCache = nodeCache;
-        this.workspaceName = workspaceName;
+        this.repositoryCache = repositoryCache;
+        this.workspaceNames = workspaceNames;
         this.typeSystem = context.getValueFactories().getTypeSystem();
         this.hints = hints != null ? hints : new PlanHints();
         this.schemata = schemata;
         this.problems = problems != null ? problems : new SimpleProblems();
         this.variables = variables != null ? new HashMap<String, Object>(variables) : new HashMap<String, Object>();
+        this.overriddenNodeCachesByWorkspaceName = overriddenNodeCachesByWorkspaceName != null ? overriddenNodeCachesByWorkspaceName : Collections.<String, NodeCache>emptyMap();
         assert this.typeSystem != null;
         assert this.hints != null;
         assert this.schemata != null;
         assert this.problems != null;
         assert this.variables != null;
+        assert this.workspaceNames != null;
     }
 
     /**
      * Create a new context for query execution.
      * 
      * @param context the context in which the query is being executed; may not be null
-     * @param nodeCache the node cache that should be used to load results; may not be null
-     * @param workspaceName the name of the workspace to be queried
+     * @param repositoryCache the repository cache that should be used to load results; may not be null
+     * @param workspaceNames the name of each workspace to be queried, or an empty set if all the workspaces should be queried;
+     *        may not be null
      * @param schemata the schemata
      * @param hints the hints, or null if there are no hints
      * @param problems the problems container, or null if a new problems container should be created
      * @throws IllegalArgumentException if the context, workspace name, or schemata are null
      */
     public QueryContext( ExecutionContext context,
-                         NodeCache nodeCache,
-                         String workspaceName,
+                         RepositoryCache repositoryCache,
+                         Set<String> workspaceNames,
                          Schemata schemata,
                          PlanHints hints,
                          Problems problems ) {
-        this(context, nodeCache, workspaceName, schemata, hints, problems, null);
+        this(context, repositoryCache, workspaceNames, null, schemata, hints, problems, null);
     }
 
     /**
      * Create a new context for query execution.
      * 
      * @param context the context in which the query is being executed; may not be null
-     * @param nodeCache the node cache that should be used to load results; may not be null
-     * @param workspaceName the name of the workspace to be queried
+     * @param repositoryCache the repository cache that should be used to load results; may not be null
+     * @param workspaceNames the name of each workspace to be queried, or an empty set if all the workspaces should be queried;
+     *        may not be null
      * @param schemata the schemata
      * @throws IllegalArgumentException if the context, workspace name, or schemata are null
      */
     public QueryContext( ExecutionContext context,
-                         NodeCache nodeCache,
-                         String workspaceName,
+                         RepositoryCache repositoryCache,
+                         Set<String> workspaceNames,
                          Schemata schemata ) {
-        this(context, nodeCache, workspaceName, schemata, null, null, null);
+        this(context, repositoryCache, workspaceNames, null, schemata, null, null, null);
     }
 
     /**
@@ -133,8 +146,24 @@ public class QueryContext {
      * @throws IllegalArgumentException if the original is null
      */
     protected QueryContext( QueryContext original ) {
-        this(original.context, original.nodeCache, original.workspaceName, original.schemata, original.hints, original.problems,
-             original.variables);
+        this(original.context, original.repositoryCache, original.workspaceNames, original.overriddenNodeCachesByWorkspaceName,
+             original.schemata, original.hints, original.problems, original.variables);
+    }
+
+    /**
+     * Get the NodeCache for the given workspace name. The result will either be the overridden value supplied in the constructor
+     * or the workspace cache from the referenced RepositoryCache.
+     * 
+     * @param workspaceName the name of the workspace
+     * @return the node cache; never null
+     * @throws WorkspaceNotFoundException if there is no workspace with the supplied name
+     */
+    public NodeCache getNodeCache( String workspaceName ) throws WorkspaceNotFoundException {
+        NodeCache cache = overriddenNodeCachesByWorkspaceName.get(workspaceName);
+        if (cache == null) {
+            cache = repositoryCache.getWorkspaceCache(workspaceName);
+        }
+        return cache;
     }
 
     /**
@@ -148,12 +177,12 @@ public class QueryContext {
     }
 
     /**
-     * Get the NodeCache instance that should be used to load the result tuple values.
+     * Get the RepositoryCache instance that should be used to load the result tuple values.
      * 
      * @return the node cache
      */
-    public NodeCache getNodeCache() {
-        return nodeCache;
+    public RepositoryCache getRepositoryCache() {
+        return repositoryCache;
     }
 
     /**
@@ -166,12 +195,12 @@ public class QueryContext {
     }
 
     /**
-     * Get the name of the workspace that is to be queried.
+     * Get the names of each workspace that is to be queried.
      * 
      * @return the workspace name; never null
      */
-    public String getWorkspaceName() {
-        return workspaceName;
+    public Set<String> getWorkspaceNames() {
+        return workspaceNames;
     }
 
     /**
@@ -247,7 +276,8 @@ public class QueryContext {
      */
     public QueryContext with( Schemata schemata ) {
         CheckArg.isNotNull(schemata, "schemata");
-        return new QueryContext(context, nodeCache, workspaceName, schemata, hints, problems, variables);
+        return new QueryContext(context, repositoryCache, workspaceNames, overriddenNodeCachesByWorkspaceName, schemata, hints,
+                                problems, variables);
     }
 
     /**
@@ -259,7 +289,8 @@ public class QueryContext {
      */
     public QueryContext with( PlanHints hints ) {
         CheckArg.isNotNull(hints, "hints");
-        return new QueryContext(context, nodeCache, workspaceName, schemata, hints, problems, variables);
+        return new QueryContext(context, repositoryCache, workspaceNames, overriddenNodeCachesByWorkspaceName, schemata, hints,
+                                problems, variables);
     }
 
     /**
@@ -269,7 +300,8 @@ public class QueryContext {
      * @return the new context; never null
      */
     public QueryContext with( Problems problems ) {
-        return new QueryContext(context, nodeCache, workspaceName, schemata, hints, problems, variables);
+        return new QueryContext(context, repositoryCache, workspaceNames, overriddenNodeCachesByWorkspaceName, schemata, hints,
+                                problems, variables);
     }
 
     /**
@@ -279,7 +311,8 @@ public class QueryContext {
      * @return the new context; never null
      */
     public QueryContext with( Map<String, Object> variables ) {
-        return new QueryContext(context, nodeCache, workspaceName, schemata, hints, problems, variables);
+        return new QueryContext(context, repositoryCache, workspaceNames, overriddenNodeCachesByWorkspaceName, schemata, hints,
+                                problems, variables);
     }
 
 }

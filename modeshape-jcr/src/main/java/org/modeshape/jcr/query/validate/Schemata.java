@@ -32,6 +32,7 @@ import org.modeshape.jcr.api.query.qom.Operator;
 import org.modeshape.jcr.query.model.Ordering;
 import org.modeshape.jcr.query.model.QueryCommand;
 import org.modeshape.jcr.query.model.SelectorName;
+import org.modeshape.jcr.value.PropertyType;
 
 /**
  * The interface used to access the structure being queried and validate a query.
@@ -183,7 +184,7 @@ public interface Schemata {
          * 
          * @return the property type; never null
          */
-        String getPropertyType();
+        String getPropertyTypeName();
 
         /**
          * Get whether the column can be used in a full-text search.
@@ -205,6 +206,21 @@ public interface Schemata {
          * @return true if this column can be used in an order specification, or false otherwise
          */
         boolean isOrderable();
+
+        /**
+         * Get whether this column can be used within a comparison using {@link #getOperators() operators} other than
+         * {@link Operator#EQUAL_TO} or {@link Operator#NOT_EQUAL_TO}.
+         * 
+         * @return true if the column can be used in a comparison other than "=" or "!=", or false if only "=" and/or "!=" can be
+         *         used
+         */
+        boolean isComparable();
+
+        PropertyType getRequiredType();
+
+        Object getMinimum();
+
+        Object getMaximum();
     }
 
     /**

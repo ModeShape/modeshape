@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
+import org.apache.lucene.util.Version;
 import org.hibernate.annotations.common.reflection.ReflectionManager;
 import org.hibernate.search.cfg.SearchMapping;
 import org.hibernate.search.cfg.spi.SearchConfiguration;
@@ -61,6 +62,12 @@ public abstract class LuceneSearchConfiguration implements SearchConfiguration {
     protected void setProperty( String name,
                                 String value ) {
         if (value != null) this.properties.setProperty(name, value);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    public Version getVersion() {
+        Version version = Version.valueOf(this.properties.getProperty("hibernate.search.lucene_version"));
+        return version != null ? version : Version.LUCENE_CURRENT;
     }
 
     @Override
