@@ -68,6 +68,7 @@ import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.version.ActivityViolationException;
+import javax.jcr.version.OnParentVersionAction;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import org.modeshape.common.annotation.Immutable;
@@ -1074,6 +1075,19 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             childPrimaryNodeTypeName = defaultPrimaryType.getInternalName();
         }
 
+        // See if this node is checked in. If so, then we can only create children if the child
+        // node definition has an OPV of 'ignore'. See Section 15.2.2 of the JSR-283 spec for details ...
+        if (!isCheckedOut() && childDefn.getOnParentVersion() != OnParentVersionAction.IGNORE) {
+            // The OPV is not 'ignore', so we can't create the new node ...
+            Path parentPath = path();
+            String parentPathStr = readable(parentPath);
+            int sns = numExistingSns + 1;
+            String segment = readable(session.pathFactory().createSegment(childName, sns));
+            String opv = OnParentVersionAction.nameFromValue(childDefn.getOnParentVersion());
+            I18n msg = JcrI18n.cannotCreateChildOnCheckedInNodeSinceOpvOfChildDefinitionIsNotIgnore;
+            throw new VersionException(msg.text(segment, readable(parentPathStr), childDefn.getName(), opv));
+        }
+
         // We can create the child, so start by building the required properties ...
         PropertyFactory propFactory = session.propertyFactory();
         Property ptProp = propFactory.create(JcrLexicon.PRIMARY_TYPE, childPrimaryNodeTypeName);
@@ -1472,7 +1486,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         assert value != null;
         assert value.value() != null;
         checkForLock();
-        checkForCheckedOut();
+        // checked-out status is checked later, when we have the property definition ...
         checkNodeTypeCanBeModified();
         session.checkPermission(path(), ModeShapePermissions.SET_PROPERTY);
 
@@ -1529,6 +1543,15 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 I18n i18n = JcrI18n.weakReferenceValueViolatesConstraintsOnDefinition;
                 if (requiredType == PropertyType.REFERENCE) i18n = JcrI18n.referenceValueViolatesConstraintsOnDefinition;
                 throw new ConstraintViolationException(i18n.text(propName, value.getString(), location(), defnName, nodeTypeName));
+            }
+        }
+
+        if (!isCheckedOut()) {
+            // Node is not checked out, so changing property is only allowed if OPV of property is 'ignore' ...
+            if (defn.getOnParentVersion() != OnParentVersionAction.IGNORE) {
+                // Can't change this property ...
+                String path = getParent().getPath();
+                throw new VersionException(JcrI18n.nodeIsCheckedIn.text(path));
             }
         }
 
@@ -2603,16 +2626,32 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     @Override
     public void removeShare() throws VersionException, LockException, ConstraintViolationException, RepositoryException {
         checkSession();
-        checkForCheckedOut();
+
         // A node that is locked by one session can be removed by another session as long as there is no lock
         // on the parent node. See Section 17.7 of the JCR 2.0 specification:
         //
         // "Removing a node is considered an alteration of its parent. This means that a node within the scope of
         // a lock may be removed by a session that is not an owner of that lock, assuming no other restriction
         // prevents the removal."
-        getParent().checkForLock();
+        AbstractJcrNode parent = getParent();
+        parent.checkForLock();
         Path path = path();
         session.checkPermission(path, ModeShapePermissions.REMOVE);
+
+        if (!parent.isCheckedOut()) {
+            // The parent node is checked in, so we can only remove this node if this node has an OPV of 'ignore'.
+            // This is probably rarely the case, so the extra work is acceptable
+            // See Section 15.2.2 of JSR-283 spec for details ...
+            NodeDefinition defn = getDefinition();
+            int opv = defn.getOnParentVersion();
+            if (opv != OnParentVersionAction.IGNORE) {
+                // The OPV is not 'ignore', so we can't create the new node ...
+                String opvStr = OnParentVersionAction.nameFromValue(opv);
+                I18n msg = JcrI18n.cannotRemoveChildOnCheckedInNodeSinceOpvOfChildDefinitionIsNotIgnore;
+                throw new VersionException(msg.text(path, defn.getName(), opvStr));
+            }
+            // Otherwise, child node definition is 'ignore', so okay to remove ...
+        }
 
         if (isShareable()) {
             // TODO: Shared nodes
@@ -2682,6 +2721,12 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         SessionCache cache = sessionCache();
         ValueFactory<Boolean> booleanFactory = session.context().getValueFactories().getBooleanFactory();
         while (node != null) {
+            // If the node has an OPV of 'ignore' ...
+            NodeDefinition defn = node.getDefinition();
+            if (defn.getOnParentVersion() == OnParentVersionAction.IGNORE) {
+                // This node is not or cannot be checked in ...
+                return true;
+            }
             if (node.isNodeType(JcrMixLexicon.VERSIONABLE)) {
                 Property prop = node.node().getProperty(JcrLexicon.IS_CHECKED_OUT, cache);
                 // This prop can only be null if the node has not been saved since it was made versionable.

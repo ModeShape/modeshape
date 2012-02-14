@@ -1,0 +1,316 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ * See the COPYRIGHT.txt file distributed with this work for information
+ * regarding copyright ownership.  Some portions may be licensed
+ * to Red Hat, Inc. under one or more contributor license agreements.
+ * See the AUTHORS.txt file in the distribution for a full listing of
+ * individual contributors.
+ *
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * ModeShape is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+
+package org.modeshape.jcr;
+
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import java.net.URL;
+import javax.jcr.Node;
+import javax.jcr.RepositoryException;
+import javax.jcr.Session;
+import javax.jcr.UnsupportedRepositoryOperationException;
+import javax.jcr.version.VersionException;
+import javax.jcr.version.VersionHistory;
+import javax.jcr.version.VersionManager;
+import org.junit.Before;
+import org.junit.Test;
+import org.modeshape.common.FixFor;
+import org.modeshape.jcr.api.nodetype.NodeTypeManager;
+
+/**
+ * Unit test for versioning behaviour (see JSR_285#15)
+ */
+public class JcrVersioningTest extends SingleUseAbstractTest {
+
+    private VersionManager versionManager;
+
+    @Override
+    @Before
+    public void beforeEach() throws Exception {
+        super.beforeEach();
+        versionManager = session.getWorkspace().getVersionManager();
+    }
+
+    @Test
+    @FixFor( "MODE-1302" )
+    public void shouldHaveVersionHistoryWhenRefreshIsCalled() throws Exception {
+        Node outerNode = session.getRootNode().addNode("outerFolder");
+        Node innerNode = outerNode.addNode("innerFolder");
+        Node fileNode = innerNode.addNode("testFile.dat");
+        fileNode.setProperty("jcr:mimeType", "text/plain");
+        fileNode.setProperty("jcr:data", "Original content");
+        session.save();
+
+        assertFalse(hasVersionHistory(fileNode));
+        fileNode.addMixin("mix:versionable");
+        // Version history is not created until save
+        assertFalse(hasVersionHistory(fileNode));
+        session.refresh(true);
+        // Version history is not created until save
+        assertFalse(hasVersionHistory(fileNode));
+        session.save();
+        assertTrue(hasVersionHistory(fileNode));
+    }
+
+    @Test
+    @FixFor( "MODE-1401" )
+    public void shouldAllowAddingUnderCheckedInNodeNewChildNodeWithOpvOfIgnore() throws Exception {
+        registerNodeTypes(session, "cnd/versioning.cnd");
+
+        // Set up parent node and check it in ...
+        Node parent = session.getRootNode().addNode("versionableNode", "ver:versionable");
+        parent.setProperty("versionProp", "v");
+        parent.setProperty("copyProp", "c");
+        parent.setProperty("ignoreProp", "i");
+        session.save();
+        versionManager.checkin(parent.getPath());
+
+        // Try to add child with OPV of ignore ...
+        Node child = parent.addNode("nonVersionedIgnoredChild", "ver:nonVersionableChild");
+        child.setProperty("copyProp", "c");
+        child.setProperty("ignoreProp", "i");
+        session.save();
+
+        // Try to update the properties on the child with OPV of 'ignore'
+        child.setProperty("copyProp", "c2");
+        child.setProperty("ignoreProp", "i2");
+        session.save();
+
+        // Try to add versionable child with OPV of ignore ...
+        Node child2 = parent.addNode("versionedIgnoredChild", "ver:versionableChild");
+        child2.setProperty("copyProp", "c");
+        child2.setProperty("ignoreProp", "i");
+        session.save();
+
+        // Try to update the properties on the child with OPV of 'ignore'
+        child2.setProperty("copyProp", "c2");
+        child2.setProperty("ignoreProp", "i2");
+        session.save();
+    }
+
+    @Test
+    @FixFor( "MODE-1401" )
+    public void shouldNotAllowAddingUnderCheckedInNodeNewChildNodeWithOpvOfSomethingOtherThanIgnore() throws Exception {
+        registerNodeTypes(session, "cnd/versioning.cnd");
+
+        // Set up parent node and check it in ...
+        Node parent = session.getRootNode().addNode("versionableNode", "ver:versionable");
+        parent.setProperty("versionProp", "v");
+        parent.setProperty("copyProp", "c");
+        parent.setProperty("ignoreProp", "i");
+        session.save();
+        versionManager.checkin(parent.getPath());
+
+        // Try to add versionable child with OPV of not ignore ...
+        try {
+            parent.addNode("versionedChild", "ver:versionableChild");
+            fail("should have failed");
+        } catch (VersionException e) {
+            // expected
+        }
+
+        // Try to add non-versionable child with OPV of not ignore ...
+        try {
+            parent.addNode("nonVersionedChild", "ver:nonVersionableChild");
+            fail("should have failed");
+        } catch (VersionException e) {
+            // expected
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-1401" )
+    public void shouldAllowRemovingFromCheckedInNodeExistingChildNodeWithOpvOfIgnore() throws Exception {
+        registerNodeTypes(session, "cnd/versioning.cnd");
+
+        // Set up parent node and check it in ...
+        Node parent = session.getRootNode().addNode("versionableNode", "ver:versionable");
+        parent.setProperty("versionProp", "v");
+        parent.setProperty("copyProp", "c");
+        parent.setProperty("ignoreProp", "i");
+
+        Node child1 = parent.addNode("nonVersionedIgnoredChild", "ver:nonVersionableChild");
+        child1.setProperty("copyProp", "c");
+        child1.setProperty("ignoreProp", "i");
+
+        Node child2 = parent.addNode("versionedIgnoredChild", "ver:versionableChild");
+        child2.setProperty("copyProp", "c");
+        child2.setProperty("ignoreProp", "i");
+
+        session.save();
+        versionManager.checkin(parent.getPath());
+
+        // Should be able to change the properties on the ignored children
+        child1.setProperty("copyProp", "c2");
+        child1.setProperty("ignoreProp", "i2");
+        child2.setProperty("copyProp", "c2");
+        child2.setProperty("ignoreProp", "i2");
+        session.save();
+
+        // Try to remove the two child nodes that have an OPV of 'ignore' ...
+        child1.remove();
+        child2.remove();
+        session.save();
+
+        // Should be able to change the ignored properties on the checked-in parent ...
+        parent.setProperty("ignoreProp", "i");
+
+        // Should not be able to set any non-ignored properties on the checked in parent ...
+        try {
+            parent.setProperty("copyProp", "c2");
+            fail("not allowed");
+        } catch (VersionException e) {
+            // expected
+        }
+        try {
+            parent.setProperty("versionProp", "v2");
+            fail("not allowed");
+        } catch (VersionException e) {
+            // expected
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-1401" )
+    public void shouldNotAllowRemovingFromCheckedInNodeExistingChildNodeWithOpvOfSomethingOtherThanIgnore() throws Exception {
+        registerNodeTypes(session, "cnd/versioning.cnd");
+
+        // Set up parent node and check it in ...
+        Node parent = session.getRootNode().addNode("versionableNode", "ver:versionable");
+        parent.setProperty("versionProp", "v");
+        parent.setProperty("copyProp", "c");
+        parent.setProperty("ignoreProp", "i");
+
+        Node child1 = parent.addNode("nonVersionedChild", "ver:nonVersionableChild");
+        child1.setProperty("copyProp", "c");
+        child1.setProperty("ignoreProp", "i");
+
+        Node child2 = parent.addNode("versionedChild", "ver:versionableChild");
+        child2.setProperty("copyProp", "c");
+        child2.setProperty("ignoreProp", "i");
+
+        session.save();
+        versionManager.checkin(parent.getPath());
+        versionManager.checkin(child2.getPath());
+
+        // Should not be able to set any non-ignored properties on the checked in parent ...
+        try {
+            parent.setProperty("copyProp", "c2");
+            fail("not allowed");
+        } catch (VersionException e) {
+            // expected
+        }
+        try {
+            parent.setProperty("versionProp", "v2");
+            fail("not allowed");
+        } catch (VersionException e) {
+            // expected
+        }
+
+        // Should not be able to set any non-ignored properties on the non-ignored children ...
+        try {
+            child2.setProperty("copyProp", "c2");
+            fail("not allowed");
+        } catch (VersionException e) {
+            // expected
+        }
+        try {
+            child1.setProperty("copyProp", "c2");
+            fail("not allowed");
+        } catch (VersionException e) {
+            // expected
+        }
+
+        // Check out the versionable child node, and we should be able to edit it ...
+        versionManager.checkout(child2.getPath());
+        child2.setProperty("copyProp", "c3");
+        session.save();
+        versionManager.checkin(child2.getPath());
+
+        // But we still cannot edit a property on the nonVersionable child node when the parent is still checked in ...
+        try {
+            child1.setProperty("copyProp", "c2");
+            fail("not allowed");
+        } catch (VersionException e) {
+            // expected
+        }
+
+        // Check out the parent ...
+        versionManager.checkout(parent.getPath());
+
+        // Now we can change the properties on the non-versionable children ...
+        child1.setProperty("copyProp", "c2");
+        session.save();
+
+        // And even remove it ...
+        child1.remove();
+        session.save();
+
+        // Check in the parent ...
+        versionManager.checkin(parent.getPath());
+
+        // and we cannot remove the child versionable node ...
+        try {
+            child2.remove();
+            fail("not allowed");
+        } catch (VersionException e) {
+            // expected
+        }
+
+        // But once the parent is checked out ...
+        versionManager.checkout(parent.getPath());
+
+        // We can remove the versionable child that is checked in (!), since the parent is checked out ...
+        // See Section 15.2.2:
+        // "Note that remove of a read-only node is possible, as long as its parent is not read-only,
+        // since removal is an alteration of the parent node."
+        assertThat(versionManager.isCheckedOut(child2.getPath()), is(false));
+        child2.remove();
+        session.save();
+    }
+
+    private void registerNodeTypes( Session session,
+                                    String resourcePathToCnd ) throws Exception {
+        NodeTypeManager nodeTypes = (NodeTypeManager)session.getWorkspace().getNodeTypeManager();
+        URL url = getClass().getClassLoader().getResource(resourcePathToCnd);
+        assertThat(url, is(notNullValue()));
+        nodeTypes.registerNodeTypes(url, true);
+    }
+
+    private boolean hasVersionHistory( Node node ) throws RepositoryException {
+        try {
+            VersionHistory history = versionManager.getVersionHistory(node.getPath());
+            assertNotNull(history);
+            return true;
+        } catch (UnsupportedRepositoryOperationException e) {
+            return false;
+        }
+    }
+}
