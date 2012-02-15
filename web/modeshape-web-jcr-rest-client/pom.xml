@@ -149,7 +149,6 @@
       <plugins>
         <plugin>
           <artifactId>maven-assembly-plugin</artifactId>
-          <version>${maven.assembly.plugin.version}</version>
            <configuration>
              <descriptors>
                <descriptor>src/assembly/build-jar-with-dependencies.xml</descriptor>
@@ -236,7 +235,6 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-surefire-plugin</artifactId>
-          	<version>${maven.surefire.plugin.version}</version>
 						<configuration>
 							<skip>true</skip>
 						</configuration>
@@ -259,7 +257,6 @@
 					
 					<plugin>
 						<artifactId>maven-jar-plugin</artifactId>
-          	<version>${maven.jar.plugin.version}</version>
 						<configuration>
 							<archive>
 								<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
@@ -269,7 +266,6 @@
 					<plugin>
 						<groupId>org.apache.felix</groupId>
 						<artifactId>maven-bundle-plugin</artifactId>
-          	<version>${maven.bundle.plugin.version}</version>
 						<executions>
 							<execution>
 								<id>bundle-manifest</id>
@@ -314,7 +310,6 @@
                                                 </plugin>
 						<plugin>
 							<artifactId>maven-assembly-plugin</artifactId>
-          		<version>${maven.assembly.plugin.version}</version>
 							<configuration>
 								<descriptorRefs>
 									<descriptorRef>jar-with-dependencies</descriptorRef>
@@ -390,7 +385,6 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-surefire-plugin</artifactId>
-						<version>${maven.surefire.plugin.version}</version>
 						<configuration>
 							<skip>true</skip>
 						</configuration>

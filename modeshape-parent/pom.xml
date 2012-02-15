@@ -1,1277 +1,1255 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.modeshape</groupId>
-	<artifactId>modeshape-parent</artifactId>
-	<version>3.0-SNAPSHOT</version>
-	<name>ModeShape Common Parent</name>
-	
-	<url>http://www.modeshape.org</url>
-	<packaging>pom</packaging>
-	<description>ModeShape is a JCR repository implementation with support for federation and sequencing.</description>
-	<inceptionYear>2008</inceptionYear>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <parent>
+        <groupId>org.jboss</groupId>
+        <artifactId>jboss-parent</artifactId>
+        <version>8</version>
+    </parent>
 
-	<organization>
-		<name>JBoss, a division of Red Hat</name>
-		<url>http://www.jboss.org</url>
-	</organization>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.modeshape</groupId>
+    <artifactId>modeshape-parent</artifactId>
+    <version>3.0-SNAPSHOT</version>
+    <name>ModeShape Common Parent</name>
 
-	<licenses>
-		<license>
-			<name>GNU Lesser General Public License</name>
-			<url>http://repository.jboss.org/licenses/lgpl-2.1.txt</url>
-			<!--url>http://www.gnu.org/licenses/lgpl.html</url-->
-			<distribution>repo</distribution>
-			<comments>A business-friendly OSS license</comments>
-		</license>
-	</licenses>
+    <url>http://www.modeshape.org</url>
+    <packaging>pom</packaging>
+    <description>ModeShape is a JCR repository implementation with support for federation and sequencing.</description>
+    <inceptionYear>2008</inceptionYear>
 
-  <scm>
-    <connection>scm:git:git://github.com/ModeShape/modeshape.git</connection>
-    <developerConnection>scm:git:git@github.com:ModeShape/modeshape.git</developerConnection>
-    <url>http://github.com/ModeShape/modeshape</url>
-  </scm>
+    <organization>
+        <name>JBoss, a division of Red Hat</name>
+        <url>http://www.jboss.org</url>
+    </organization>
 
-	<issueManagement>
-		<system>jira</system>
-		<url>http://issues.jboss.org/browse/MODE</url>
-	</issueManagement>
+    <licenses>
+        <license>
+            <name>GNU Lesser General Public License</name>
+            <url>http://repository.jboss.org/licenses/lgpl-2.1.txt</url>
+            <!--url>http://www.gnu.org/licenses/lgpl.html</url-->
+            <distribution>repo</distribution>
+            <comments>A business-friendly OSS license</comments>
+        </license>
+    </licenses>
 
-	<developers>
-		<developer>
-			<name>Randall Hauch</name>
-			<id>randall</id>
-			<email>rhauch@redhat.com</email>
-			<organization>JBoss, a division of Red Hat</organization>
-			<roles>
-				<role>Project Lead</role>
-				<role>Developer</role>
-			</roles>
-			<timezone>-6</timezone>
-		</developer>
-		<developer>
-			<name>Van Halbert</name>
-			<id>vhalbert@redhat.com</id>
-			<email>vhalbert@redhat.com</email>
-			<organization>JBoss, a division of Red Hat</organization>
-			<roles>
-				<role>Developer</role>
-			</roles>
-			<timezone>-6</timezone>
-		</developer>
-		<developer>
-			<name>Horia Chiorean</name>
-			<id>hchiorea@redhat.com</id>
-			<email>hchiorea@redhat.com</email>
-			<organization>JBoss, a division of Red Hat</organization>
-			<roles>
-				<role>Developer</role>
-			</roles>
-			<timezone>+2</timezone>
-		</developer>
-		<developer>
-			<name>John Verhaeg</name>
-			<id>johnny</id>
-			<email>jverhaeg@redhat.com</email>
-			<organization>JBoss, a division of Red Hat</organization>
-			<roles>
-				<role>Developer</role>
-			</roles>
-			<timezone>-6</timezone>
-		</developer>
-		<developer>
-			<name>Dan Florian</name>
-			<id>dan</id>
-			<email>dflorian@redhat.com</email>
-			<organization>JBoss, a division of Red Hat</organization>
-			<roles>
-				<role>Developer</role>
-			</roles>
-			<timezone>-6</timezone>
-		</developer>
-		<developer>
-			<name>Stefano Maestri</name>
-			<id>stefano</id>
-			<email>stefano.maestri@javalinux.it</email>
-			<roles>
-				<role>Developer</role>
-			</roles>
-			<timezone>+1</timezone>
-		</developer>
-		<developer>
-			<name>Serge Pagop</name>
-			<id>spagop</id>
-			<email>Serge.Pagop@innoq.com</email>
-			<roles>
-				<role>Developer</role>
-			</roles>
-			<timezone>+1</timezone>
-		</developer>
-		<developer>
-			<name>Michael Trezzi</name>
-			<id>mathwizard</id>
-			<email>michael@mathwizard.org</email>
-			<roles>
-				<role>Developer</role>
-			</roles>
-			<timezone>+1</timezone>
-		</developer>
-		<developer>
-			<name>Alexandre Porcelli</name>
-			<id>porcelli</id>
-			<email>porcelli@devexp.com.br</email>
-			<roles>
-				<role>Developer</role>
-			</roles>
-			<timezone>-3</timezone>
-		</developer>
-		<developer>
-			<name>Sergiy Litsenko</name>
-			<id>lisbor</id>
-			<email>litsenko_sergey@yahoo.com</email>
-			<roles>
-				<role>Developer</role>
-			</roles>
-			<timezone>+10</timezone>
-		</developer>
-		<developer>
-			<name>Vijay Kiran</name>
-			<id>vijay.duvvuri</id>
-			<email>mail@vijaykiran.com</email>
-			<roles>
-				<role>Developer</role>
-			</roles>
-			<timezone>+1</timezone>
-		</developer>
-	</developers>
-	
-	<contributors>
-		<contributor>
-			<name>Greg Haber</name>
-			<organization>JBoss, a division of Red Hat</organization>
-			<timezone>-5</timezone>
-		</contributor>
-		<contributor>
-			<name>George Gastaldi</name>
-			<email>gegastaldi@gmail.com</email>
-			<timezone>-3</timezone>
-		</contributor>
-	</contributors>
+    <scm>
+        <connection>scm:git:git://github.com/ModeShape/modeshape.git</connection>
+        <developerConnection>scm:git:git@github.com:ModeShape/modeshape.git</developerConnection>
+        <url>http://github.com/ModeShape/modeshape</url>
+    </scm>
 
-	<properties>
+    <issueManagement>
+        <system>jira</system>
+        <url>http://issues.jboss.org/browse/MODE</url>
+    </issueManagement>
 
-		<!-- Used to define the JCR Descriptor value -->
-		<jcr.repository.vendor>${project.organization.name}</jcr.repository.vendor>
-		<jcr.repository.name>ModeShape</jcr.repository.name>
+    <developers>
+        <developer>
+            <name>Randall Hauch</name>
+            <id>randall</id>
+            <email>rhauch@redhat.com</email>
+            <organization>JBoss, a division of Red Hat</organization>
+            <roles>
+                <role>Project Lead</role>
+                <role>Developer</role>
+            </roles>
+            <timezone>-6</timezone>
+        </developer>
+        <developer>
+            <name>Van Halbert</name>
+            <id>vhalbert@redhat.com</id>
+            <email>vhalbert@redhat.com</email>
+            <organization>JBoss, a division of Red Hat</organization>
+            <roles>
+                <role>Developer</role>
+            </roles>
+            <timezone>-6</timezone>
+        </developer>
+        <developer>
+            <name>Horia Chiorean</name>
+            <id>hchiorea@redhat.com</id>
+            <email>hchiorea@redhat.com</email>
+            <organization>JBoss, a division of Red Hat</organization>
+            <roles>
+                <role>Developer</role>
+            </roles>
+            <timezone>+2</timezone>
+        </developer>
+        <developer>
+            <name>John Verhaeg</name>
+            <id>johnny</id>
+            <email>jverhaeg@redhat.com</email>
+            <organization>JBoss, a division of Red Hat</organization>
+            <roles>
+                <role>Developer</role>
+            </roles>
+            <timezone>-6</timezone>
+        </developer>
+        <developer>
+            <name>Dan Florian</name>
+            <id>dan</id>
+            <email>dflorian@redhat.com</email>
+            <organization>JBoss, a division of Red Hat</organization>
+            <roles>
+                <role>Developer</role>
+            </roles>
+            <timezone>-6</timezone>
+        </developer>
+        <developer>
+            <name>Stefano Maestri</name>
+            <id>stefano</id>
+            <email>stefano.maestri@javalinux.it</email>
+            <roles>
+                <role>Developer</role>
+            </roles>
+            <timezone>+1</timezone>
+        </developer>
+        <developer>
+            <name>Serge Pagop</name>
+            <id>spagop</id>
+            <email>Serge.Pagop@innoq.com</email>
+            <roles>
+                <role>Developer</role>
+            </roles>
+            <timezone>+1</timezone>
+        </developer>
+        <developer>
+            <name>Michael Trezzi</name>
+            <id>mathwizard</id>
+            <email>michael@mathwizard.org</email>
+            <roles>
+                <role>Developer</role>
+            </roles>
+            <timezone>+1</timezone>
+        </developer>
+        <developer>
+            <name>Alexandre Porcelli</name>
+            <id>porcelli</id>
+            <email>porcelli@devexp.com.br</email>
+            <roles>
+                <role>Developer</role>
+            </roles>
+            <timezone>-3</timezone>
+        </developer>
+        <developer>
+            <name>Sergiy Litsenko</name>
+            <id>lisbor</id>
+            <email>litsenko_sergey@yahoo.com</email>
+            <roles>
+                <role>Developer</role>
+            </roles>
+            <timezone>+10</timezone>
+        </developer>
+        <developer>
+            <name>Vijay Kiran</name>
+            <id>vijay.duvvuri</id>
+            <email>mail@vijaykiran.com</email>
+            <roles>
+                <role>Developer</role>
+            </roles>
+            <timezone>+1</timezone>
+        </developer>
+    </developers>
 
-		<!-- Instruct the build to use only UTF-8 encoding for source code -->
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<!--
-			These are properties used in the database profiles. Must initialize
-			them to be empty so that Maven applies them via filtering to the
-			resources. If a project needs files filtered, however, make sure to
-			include a 'testResources' fragment in the 'build' section of the
-			child project POM to say which files need to be filtered. See the
-			"modeshape-integration" or "extensions/modeshape-connector-store-jpa"
-			project POMs for examples.
-		-->
-		<jpaSource.dialect />
-		<jpaSource.driverClassName />
-		<jpaSource.url />
-		<jpaSource.username />
-		<jpaSource.password />
-		<jpaSource.maximumConnectionsInPool>2</jpaSource.maximumConnectionsInPool>
-		<jpaSource.minimumConnectionsInPool>1</jpaSource.minimumConnectionsInPool>
-		<jpaSource.numberOfConnectionsToAcquireAsNeeded>1</jpaSource.numberOfConnectionsToAcquireAsNeeded>
-		<jpaSource.maximumSizeOfStatementCache>100</jpaSource.maximumSizeOfStatementCache>
-		<jpaSource.maximumConnectionIdleTimeInSeconds>10</jpaSource.maximumConnectionIdleTimeInSeconds>
-		<jpaSource.referentialIntegrityEnforced>true</jpaSource.referentialIntegrityEnforced>
-		<jpaSource.largeValueSizeInBytes>150</jpaSource.largeValueSizeInBytes>
-		<jpaSource.autoGenerateSchema>create</jpaSource.autoGenerateSchema>
-		<jpaSource.compressData>true</jpaSource.compressData>
-		<jpaSource.cacheTimeToLiveInMilliseconds />
-		<jpaSource.creatingWorkspacesAllowed />
-		<jpaSource.defaultWorkspaceName />
-		<jpaSource.predefinedWorkspaceNames />
-		<jpaSource.model />
-		<jpaSource.referentialIntegrityEnforced>true</jpaSource.referentialIntegrityEnforced>
-		<jpaSource.retryLimit>3</jpaSource.retryLimit>
-		<jpaSource.rootNodeUuid />
-		<jpaSource.showSql>false</jpaSource.showSql>
-		<metadata.collectorClassName>org.modeshape.connector.meta.jdbc.JdbcMetadataCollector</metadata.collectorClassName>
-		<jgroups.preferIpv4>false</jgroups.preferIpv4>
-		<jgroups.preferIpv6>false</jgroups.preferIpv6>
-		<debug.argline></debug.argline>
-		<!--
-		Global dependency version information
-		-->
-		<joda.time.version>1.6</joda.time.version>
-		<junit.version>4.8.2</junit.version>
-		<hamcrest.version>1.1</hamcrest.version>
-		<mockito.all.version>1.8.4</mockito.all.version>
-		<slf4j.api.version>1.6.1</slf4j.api.version>
-		<slf4j.log4j.version>1.6.1</slf4j.log4j.version>
-		<log4j.version>1.2.16</log4j.version>
-		<jcr.version>2.0</jcr.version>
-		<jackrabbit.jcr.tck.version>2.1.0</jackrabbit.jcr.tck.version>
-		<picketbox.version>3.0.0.Final</picketbox.version>
-		<byteman.version>1.5.1</byteman.version>
-		<lucene.version>3.4.0</lucene.version>
-		<hibernate.version>3.5.2-Final</hibernate.version>
-		<hibernate.tools.version>3.2.4.GA</hibernate.tools.version>
-		<hibernate.search.version>4.0.0.Final</hibernate.search.version>
-		<infinispan.version>5.1.0.BETA3</infinispan.version>
-		<sun.xml.bind.jaxbimpl.version>2.1.12</sun.xml.bind.jaxbimpl.version>
-		<jdbc.mysql.version>5.0.7</jdbc.mysql.version>
-		<jdbc.derby.version>10.8.1.2</jdbc.derby.version>
-		<jdbc.hsqldb.version>1.8.0.2</jdbc.hsqldb.version>
-		<jdbc.h2.version>1.2.124</jdbc.h2.version>
-		<jdbc.postgresql.version>8.4-701.jdbc3</jdbc.postgresql.version>
-		<jdbc.mysql5.version>5.1.7</jdbc.mysql5.version>
-		<jdbc.db2v9.version>3.58.82</jdbc.db2v9.version>
-		<jdbc.db2v9.license.version>3.57.86</jdbc.db2v9.license.version>
-		<jdbc.oracle10g.version>10.0.2.0</jdbc.oracle10g.version>
-		<jdbc.oracle11g.version>11.1.0.7.0</jdbc.oracle11g.version>
-		<jdbc.sybase15.version>6.0.5</jdbc.sybase15.version>
-		<jdbc.mssql2008.version>2.0.1008.2</jdbc.mssql2008.version>
-		<modeshape.java.version>1.6</modeshape.java.version>
-		<javax.servlet.version>2.5</javax.servlet.version>
-		<javax.jacc.version>1.0.0.Final</javax.jacc.version>
-		<jboss.seam.version>2.2.2.Final</jboss.seam.version>
-		<!--
-		Maven plugin versions
-		-->
-		<maven.surefire.report.plugin.version>2.10</maven.surefire.report.plugin.version>
-		<maven.surefire.plugin.version>2.10</maven.surefire.plugin.version>
-		<maven.assembly.plugin.version>2.2.1</maven.assembly.plugin.version>
-		<maven.install.plugin.version>2.3.1</maven.install.plugin.version>
-        <maven.javadoc.plugin.version>2.8</maven.javadoc.plugin.version>
-		<maven.jxr.plugin.version>2.3</maven.jxr.plugin.version>
-		<maven.jar.plugin.version>2.3.2</maven.jar.plugin.version>
-		<maven.war.plugin.version>2.1.1</maven.war.plugin.version>
-		<maven.bundle.plugin.version>2.1.0</maven.bundle.plugin.version>
-		<maven.compiler.plugin.version>2.3.2</maven.compiler.plugin.version>
-		<maven.source.plugin.version>2.1.2</maven.source.plugin.version>
-		<maven.resources.plugin.version>2.5</maven.resources.plugin.version>
-		<maven.deploy.plugin.version>2.7</maven.deploy.plugin.version>
-		<maven.eclipse.plugin.version>2.8</maven.eclipse.plugin.version>
-		<maven.codehaus.cargo.plugin.version>1.1.3</maven.codehaus.cargo.plugin.version>
-	</properties>
+    <contributors>
+        <contributor>
+            <name>Greg Haber</name>
+            <organization>JBoss, a division of Red Hat</organization>
+            <timezone>-5</timezone>
+        </contributor>
+        <contributor>
+            <name>George Gastaldi</name>
+            <email>gegastaldi@gmail.com</email>
+            <timezone>-3</timezone>
+        </contributor>
+    </contributors>
 
-	<profiles>
-		
-		<!--
-			###################################################################
-			Clustering-related profiles
-			###################################################################
+    <properties>
 
-			To use, specify "-DpreferIpv4" or "-DpreferIpv6" on the Maven command line,
-			depending upon your environment's network configuration.
-		-->
-		<profile>
-			<id>preferIpv4</id>
-			<activation>
-				<property>
-					<name>!preferIpv6</name>
-				</property>
-			</activation>
-			<properties>
-				<jgroups.preferIpv4>true</jgroups.preferIpv4>
-				<jgroups.preferIpv6>false</jgroups.preferIpv6>
-			</properties>
-		</profile>
-		<profile>
-			<id>preferIpv6</id>
-			<properties>
-				<jgroups.preferIpv4>false</jgroups.preferIpv4>
-				<jgroups.preferIpv6>true</jgroups.preferIpv6>
-			</properties>
-		</profile>
+        <!-- Used to define the JCR Descriptor value -->
+        <jcr.repository.vendor>${project.organization.name}</jcr.repository.vendor>
+        <jcr.repository.name>ModeShape</jcr.repository.name>
 
-		<!--
-			###################################################################
-			Enable remotely debugging on the command line
-			###################################################################
+        <!-- Instruct the build to use only UTF-8 encoding for source code -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!--
+              These are properties used in the database profiles. Must initialize
+              them to be empty so that Maven applies them via filtering to the
+              resources. If a project needs files filtered, however, make sure to
+              include a 'testResources' fragment in the 'build' section of the
+              child project POM to say which files need to be filtered. See the
+              "modeshape-integration" or "extensions/modeshape-connector-store-jpa"
+              project POMs for examples.
+          -->
+        <jpaSource.dialect/>
+        <jpaSource.driverClassName/>
+        <jpaSource.url/>
+        <jpaSource.username/>
+        <jpaSource.password/>
+        <jpaSource.maximumConnectionsInPool>2</jpaSource.maximumConnectionsInPool>
+        <jpaSource.minimumConnectionsInPool>1</jpaSource.minimumConnectionsInPool>
+        <jpaSource.numberOfConnectionsToAcquireAsNeeded>1</jpaSource.numberOfConnectionsToAcquireAsNeeded>
+        <jpaSource.maximumSizeOfStatementCache>100</jpaSource.maximumSizeOfStatementCache>
+        <jpaSource.maximumConnectionIdleTimeInSeconds>10</jpaSource.maximumConnectionIdleTimeInSeconds>
+        <jpaSource.referentialIntegrityEnforced>true</jpaSource.referentialIntegrityEnforced>
+        <jpaSource.largeValueSizeInBytes>150</jpaSource.largeValueSizeInBytes>
+        <jpaSource.autoGenerateSchema>create</jpaSource.autoGenerateSchema>
+        <jpaSource.compressData>true</jpaSource.compressData>
+        <jpaSource.cacheTimeToLiveInMilliseconds/>
+        <jpaSource.creatingWorkspacesAllowed/>
+        <jpaSource.defaultWorkspaceName/>
+        <jpaSource.predefinedWorkspaceNames/>
+        <jpaSource.model/>
+        <jpaSource.referentialIntegrityEnforced>true</jpaSource.referentialIntegrityEnforced>
+        <jpaSource.retryLimit>3</jpaSource.retryLimit>
+        <jpaSource.rootNodeUuid/>
+        <jpaSource.showSql>false</jpaSource.showSql>
+        <metadata.collectorClassName>org.modeshape.connector.meta.jdbc.JdbcMetadataCollector</metadata.collectorClassName>
+        <jgroups.preferIpv4>false</jgroups.preferIpv4>
+        <jgroups.preferIpv6>false</jgroups.preferIpv6>
+        <debug.argline/>
+        <!--
+          Global dependency version information
+          -->
+        <joda.time.version>1.6</joda.time.version>
+        <junit.version>4.8.2</junit.version>
+        <hamcrest.version>1.1</hamcrest.version>
+        <mockito.all.version>1.8.4</mockito.all.version>
+        <slf4j.api.version>1.6.1</slf4j.api.version>
+        <slf4j.log4j.version>1.6.1</slf4j.log4j.version>
+        <log4j.version>1.2.16</log4j.version>
+        <jcr.version>2.0</jcr.version>
+        <jackrabbit.jcr.tck.version>2.1.0</jackrabbit.jcr.tck.version>
+        <picketbox.version>3.0.0.Final</picketbox.version>
+        <byteman.version>1.5.1</byteman.version>
+        <lucene.version>3.4.0</lucene.version>
+        <hibernate.version>3.5.2-Final</hibernate.version>
+        <hibernate.tools.version>3.2.4.GA</hibernate.tools.version>
+        <hibernate.search.version>4.0.0.Final</hibernate.search.version>
+        <infinispan.version>5.1.0.BETA3</infinispan.version>
+        <sun.xml.bind.jaxbimpl.version>2.1.12</sun.xml.bind.jaxbimpl.version>
+        <jdbc.mysql.version>5.0.7</jdbc.mysql.version>
+        <jdbc.derby.version>10.8.1.2</jdbc.derby.version>
+        <jdbc.hsqldb.version>1.8.0.2</jdbc.hsqldb.version>
+        <jdbc.h2.version>1.2.124</jdbc.h2.version>
+        <jdbc.postgresql.version>8.4-701.jdbc3</jdbc.postgresql.version>
+        <jdbc.mysql5.version>5.1.7</jdbc.mysql5.version>
+        <jdbc.db2v9.version>3.58.82</jdbc.db2v9.version>
+        <jdbc.db2v9.license.version>3.57.86</jdbc.db2v9.license.version>
+        <jdbc.oracle10g.version>10.0.2.0</jdbc.oracle10g.version>
+        <jdbc.oracle11g.version>11.1.0.7.0</jdbc.oracle11g.version>
+        <jdbc.sybase15.version>6.0.5</jdbc.sybase15.version>
+        <jdbc.mssql2008.version>2.0.1008.2</jdbc.mssql2008.version>
+        <modeshape.java.version>1.6</modeshape.java.version>
+        <javax.servlet.version>2.5</javax.servlet.version>
+        <javax.jacc.version>1.0.0.Final</javax.jacc.version>
+        <jboss.seam.version>2.2.2.Final</jboss.seam.version>
+        <!--
+          Maven plugin versions
+          -->
+        <maven.codehaus.cargo.plugin.version>1.1.3</maven.codehaus.cargo.plugin.version>
+    </properties>
 
-			To use, specify "-Ddebug=true" on the Maven command line
-			(typically used when running a single test). Then, start
-			remote debugger (on port 1044) and connect.
-		-->
-		<profile>
-			<id>debug</id>
-			<activation>
-				<property>
-					<name>debug</name>
-					<value>true</value>
-				</property>
-			</activation>
-			<properties>
-					<!-- Useful for remotely debugging the unit tests run by Surefire ... -->
-				<debug.argline>-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=1044</debug.argline>
-			</properties>
-		</profile>
+    <profiles>
 
-		<!--
-			###################################################################
-			Database profiles to specify which DBMS is used for tests.
-			###################################################################
+        <!--
+              ###################################################################
+              Clustering-related profiles
+              ###################################################################
 
-			To use, specify "-Ddatabase=<dbProfileName>" on the Maven command
-			line.
-		-->
+              To use, specify "-DpreferIpv4" or "-DpreferIpv6" on the Maven command line,
+              depending upon your environment's network configuration.
+          -->
+        <profile>
+            <id>preferIpv4</id>
+            <activation>
+                <property>
+                    <name>!preferIpv6</name>
+                </property>
+            </activation>
+            <properties>
+                <jgroups.preferIpv4>true</jgroups.preferIpv4>
+                <jgroups.preferIpv6>false</jgroups.preferIpv6>
+            </properties>
+        </profile>
+        <profile>
+            <id>preferIpv6</id>
+            <properties>
+                <jgroups.preferIpv4>false</jgroups.preferIpv4>
+                <jgroups.preferIpv6>true</jgroups.preferIpv6>
+            </properties>
+        </profile>
 
-		<!--
-			The default test environment is HSQLDB (may eventually move to H2)
-		-->
-		<profile>
-			<id>default_dbms</id>
-			<activation>
-				<property>
-					<name>!database</name>
-				</property>
-			</activation>
-			<dependencies>
-				<dependency>
-					<groupId>hsqldb</groupId>
-					<artifactId>hsqldb</artifactId>
-					<version>${jdbc.hsqldb.version}</version>
-					<scope>test</scope>
-				</dependency>
-			</dependencies>
-			<properties>
-				<database>hsqldb</database>
-				<jpaSource.dialect>org.hibernate.dialect.HSQLDialect</jpaSource.dialect>
-				<jpaSource.driverClassName>org.hsqldb.jdbcDriver</jpaSource.driverClassName>
-				<jpaSource.url>jdbc:hsqldb:mem:modeshape</jpaSource.url>
-				<jpaSource.username>sa</jpaSource.username>
-				<jpaSource.password />
-			</properties>
-		</profile>
+        <!--
+              ###################################################################
+              Enable remotely debugging on the command line
+              ###################################################################
 
-		<!-- The HSQLDB test environment -->
-		<profile>
-			<id>hsqldb</id>
-			<activation>
-				<property>
-					<name>database</name>
-					<value>hsqldb</value>
-				</property>
-			</activation>
-			<dependencies>
-				<dependency>
-					<groupId>hsqldb</groupId>
-					<artifactId>hsqldb</artifactId>
-					<version>${jdbc.hsqldb.version}</version>
-					<scope>test</scope>
-				</dependency>
-			</dependencies>
-			<properties>
-				<database>hsqldb</database>
-				<jpaSource.dialect>org.hibernate.dialect.HSQLDialect</jpaSource.dialect>
-				<jpaSource.driverClassName>org.hsqldb.jdbcDriver</jpaSource.driverClassName>
-				<jpaSource.url>jdbc:hsqldb:mem:modeshape</jpaSource.url>
-				<jpaSource.username>sa</jpaSource.username>
-				<jpaSource.password />
-			</properties>
-		</profile>
+              To use, specify "-Ddebug=true" on the Maven command line
+              (typically used when running a single test). Then, start
+              remote debugger (on port 1044) and connect.
+          -->
+        <profile>
+            <id>debug</id>
+            <activation>
+                <property>
+                    <name>debug</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <properties>
+                <!-- Useful for remotely debugging the unit tests run by Surefire ... -->
+                <debug.argline>-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=1044</debug.argline>
+            </properties>
+        </profile>
 
-		<!-- The Derby test environment -->
-		<profile>
-			<id>derby</id>
-			<activation>
-				<property>
-					<name>database</name>
-					<value>derby</value>
-				</property>
-			</activation>
-			<dependencies>
-				<dependency>
-					<groupId>org.apache.derby</groupId>
-					<artifactId>derby</artifactId>
-					<version>${jdbc.derby.version}</version>
-					<scope>test</scope>
-				</dependency>
-				<dependency>
-					<groupId>org.apache.derby</groupId>
-					<artifactId>derbyclient</artifactId>
-					<version>${jdbc.derby.version}</version>
-					<scope>test</scope>
-				</dependency>
-			</dependencies>
-			<properties>
-				<database>derby</database>
-				<jpaSource.dialect>org.hibernate.dialect.DerbyDialect</jpaSource.dialect>
-				<jpaSource.driverClassName>org.apache.derby.jdbc.ClientDriver</jpaSource.driverClassName>
-				<jpaSource.url>jdbc:derby:memory:modeshape;create=true</jpaSource.url>
-				<jpaSource.username></jpaSource.username>
-				<jpaSource.password />
-			</properties>
-		</profile>
+        <!--
+              ###################################################################
+              Database profiles to specify which DBMS is used for tests.
+              ###################################################################
 
-		<!-- The HSQLDB test environment -->
-		<profile>
-			<id>hsqldb_disk</id>
-			<activation>
-				<property>
-					<name>database</name>
-					<value>hsqldb_disk</value>
-				</property>
-			</activation>
-			<dependencies>
-				<dependency>
-					<groupId>hsqldb</groupId>
-					<artifactId>hsqldb</artifactId>
-					<version>${jdbc.hsqldb.version}</version>
-					<scope>test</scope>
-				</dependency>
-			</dependencies>
-			<properties>
-				<database>hsqldb</database>
-				<jpaSource.dialect>org.hibernate.dialect.HSQLDialect</jpaSource.dialect>
-				<jpaSource.driverClassName>org.hsqldb.jdbcDriver</jpaSource.driverClassName>
-				<jpaSource.url>jdbc:hsqldb:file:target/hsqldb/modeshape</jpaSource.url>
-				<jpaSource.username>sa</jpaSource.username>
-				<jpaSource.password />
-			</properties>
-		</profile>
+              To use, specify "-Ddatabase=<dbProfileName>" on the Maven command
+              line.
+          -->
 
-		<!-- The H2 test environment -->
+        <!--
+              The default test environment is HSQLDB (may eventually move to H2)
+          -->
+        <profile>
+            <id>default_dbms</id>
+            <activation>
+                <property>
+                    <name>!database</name>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>hsqldb</groupId>
+                    <artifactId>hsqldb</artifactId>
+                    <version>${jdbc.hsqldb.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <properties>
+                <database>hsqldb</database>
+                <jpaSource.dialect>org.hibernate.dialect.HSQLDialect</jpaSource.dialect>
+                <jpaSource.driverClassName>org.hsqldb.jdbcDriver</jpaSource.driverClassName>
+                <jpaSource.url>jdbc:hsqldb:mem:modeshape</jpaSource.url>
+                <jpaSource.username>sa</jpaSource.username>
+                <jpaSource.password/>
+            </properties>
+        </profile>
 
-		<profile>
-			<id>h2</id>
-			<activation>
-				<property>
-					<name>database</name>
-					<value>h2</value>
-				</property>
-			</activation>
-			<dependencies>
-				<dependency>
-					<groupId>com.h2database</groupId>
-					<artifactId>h2</artifactId>
-					<version>${jdbc.h2.version}</version>
-					<scope>test</scope>
-				</dependency>
-			</dependencies>
-			<properties>
-				<database>h2</database>
-				<jpaSource.dialect>org.hibernate.dialect.H2Dialect</jpaSource.dialect>
-				<jpaSource.driverClassName>org.h2.Driver</jpaSource.driverClassName>
-				<jpaSource.url>jdbc:h2:mem:target/test/db/h2/modeshape</jpaSource.url>
-				<jpaSource.username>sa</jpaSource.username>
-				<jpaSource.password />
-			</properties>
-		</profile>
+        <!-- The HSQLDB test environment -->
+        <profile>
+            <id>hsqldb</id>
+            <activation>
+                <property>
+                    <name>database</name>
+                    <value>hsqldb</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>hsqldb</groupId>
+                    <artifactId>hsqldb</artifactId>
+                    <version>${jdbc.hsqldb.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <properties>
+                <database>hsqldb</database>
+                <jpaSource.dialect>org.hibernate.dialect.HSQLDialect</jpaSource.dialect>
+                <jpaSource.driverClassName>org.hsqldb.jdbcDriver</jpaSource.driverClassName>
+                <jpaSource.url>jdbc:hsqldb:mem:modeshape</jpaSource.url>
+                <jpaSource.username>sa</jpaSource.username>
+                <jpaSource.password/>
+            </properties>
+        </profile>
 
-		<!-- The PostgreSQL test environment, local to the developer -->
-		<profile>
-			<id>postgresql_local</id>
-			<activation>
-				<property>
-					<name>database</name>
-					<value>postgresql_local</value>
-				</property>
-			</activation>
-			<dependencies>
-				<dependency>
-					<groupId>postgresql</groupId>
-					<artifactId>postgresql</artifactId>
-					<version>${jdbc.postgresql.version}</version>
-					<scope>test</scope>
-				</dependency>
-			</dependencies>
-			<properties>
-				<jpaSource.dialect>org.hibernate.dialect.PostgreSQLDialect</jpaSource.dialect>
-				<jpaSource.driverClassName>org.postgresql.Driver</jpaSource.driverClassName>
-				<jpaSource.url>jdbc:postgresql://localhost/unit_test</jpaSource.url>
-				<jpaSource.username>postgres</jpaSource.username>
-				<jpaSource.password>data</jpaSource.password>
-			</properties>
-		</profile>
+        <!-- The Derby test environment -->
+        <profile>
+            <id>derby</id>
+            <activation>
+                <property>
+                    <name>database</name>
+                    <value>derby</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.derby</groupId>
+                    <artifactId>derby</artifactId>
+                    <version>${jdbc.derby.version}</version>
+                    <scope>test</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.derby</groupId>
+                    <artifactId>derbyclient</artifactId>
+                    <version>${jdbc.derby.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <properties>
+                <database>derby</database>
+                <jpaSource.dialect>org.hibernate.dialect.DerbyDialect</jpaSource.dialect>
+                <jpaSource.driverClassName>org.apache.derby.jdbc.ClientDriver</jpaSource.driverClassName>
+                <jpaSource.url>jdbc:derby:memory:modeshape;create=true</jpaSource.url>
+                <jpaSource.username></jpaSource.username>
+                <jpaSource.password/>
+            </properties>
+        </profile>
 
-		<!-- The MySQL5 InnoDB test environment, local to the developer -->
-		<profile>
-			<id>mysql5_local</id>
-			<activation>
-				<property>
-					<name>database</name>
-					<value>mysql5_local</value>
-				</property>
-			</activation>
-			<dependencies>
-				<dependency>
-					<groupId>mysql</groupId>
-					<artifactId>mysql-connector-java</artifactId>
-					<version>${jdbc.mysql5.version}</version>
-					<scope>test</scope>
-				</dependency>
-			</dependencies>
-			<properties>
-				<database>mysql5</database>
-				<jpaSource.dialect>org.hibernate.dialect.MySQL5InnoDBDialect</jpaSource.dialect>
-				<jpaSource.driverClassName>com.mysql.jdbc.Driver</jpaSource.driverClassName>
-				<jpaSource.url>jdbc:mysql://localhost:3306/test</jpaSource.url>
-				<jpaSource.username>unit_test</jpaSource.username>
-				<jpaSource.password>unit_test</jpaSource.password>
-			</properties>
-		</profile>
+        <!-- The HSQLDB test environment -->
+        <profile>
+            <id>hsqldb_disk</id>
+            <activation>
+                <property>
+                    <name>database</name>
+                    <value>hsqldb_disk</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>hsqldb</groupId>
+                    <artifactId>hsqldb</artifactId>
+                    <version>${jdbc.hsqldb.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <properties>
+                <database>hsqldb</database>
+                <jpaSource.dialect>org.hibernate.dialect.HSQLDialect</jpaSource.dialect>
+                <jpaSource.driverClassName>org.hsqldb.jdbcDriver</jpaSource.driverClassName>
+                <jpaSource.url>jdbc:hsqldb:file:target/hsqldb/modeshape</jpaSource.url>
+                <jpaSource.username>sa</jpaSource.username>
+                <jpaSource.password/>
+            </properties>
+        </profile>
 
-		<!--
-			###################################################################
-			Profiles naming db instances in the Red Hat QA/QE lab First, those
-			with OSS drivers
-			###################################################################
-		-->
-		
-		<!-- The MySQL5 test environment -->
-		<profile>
-			<id>mysql5</id>
-			<activation>
-				<property>
-					<name>database</name>
-					<value>mysql5</value>
-				</property>
-			</activation>
-			<dependencies>
-				<dependency>
-					<groupId>mysql</groupId>
-					<artifactId>mysql-connector-java</artifactId>
-					<version>${jdbc.mysql5.version}</version>
-					<scope>test</scope>
-				</dependency>
-			</dependencies>
-			<properties>
-				<database>mysql5</database>
-				<jpaSource.dialect>org.hibernate.dialect.MySQL5InnoDBDialect</jpaSource.dialect>
-				<jpaSource.driverClassName>com.mysql.jdbc.Driver</jpaSource.driverClassName>
-				<jpaSource.url>jdbc:mysql://vmg02.mw.lab.eng.bos.redhat.com/modeshape</jpaSource.url>
-				<jpaSource.username>modeshape</jpaSource.username>
-				<jpaSource.password>modeshape</jpaSource.password>
-			</properties>
-		</profile>
+        <!-- The H2 test environment -->
 
-		<!-- The PostgreSQL test environment -->
-		<profile>
-			<id>postgresql8</id>
-			<activation>
-				<property>
-					<name>database</name>
-					<value>postgresql8</value>
-				</property>
-			</activation>
-			<dependencies>
-				<dependency>
-					<groupId>postgresql</groupId>
-					<artifactId>postgresql</artifactId>
-					<version>${jdbc.postgresql.version}</version>
-					<scope>test</scope>
-				</dependency>
-			</dependencies>
-			<properties>
-				<database>postgresql8</database>
-				<jpaSource.dialect>org.hibernate.dialect.PostgreSQLDialect</jpaSource.dialect>
-				<jpaSource.driverClassName>org.postgresql.Driver</jpaSource.driverClassName>
-				<jpaSource.url>jdbc:postgresql://vmg03.mw.lab.eng.bos.redhat.com:5432:modeshape</jpaSource.url>
-				<jpaSource.username>modeshape</jpaSource.username>
-				<jpaSource.password>modeshape</jpaSource.password>
-			</properties>
-		</profile>
+        <profile>
+            <id>h2</id>
+            <activation>
+                <property>
+                    <name>database</name>
+                    <value>h2</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>com.h2database</groupId>
+                    <artifactId>h2</artifactId>
+                    <version>${jdbc.h2.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <properties>
+                <database>h2</database>
+                <jpaSource.dialect>org.hibernate.dialect.H2Dialect</jpaSource.dialect>
+                <jpaSource.driverClassName>org.h2.Driver</jpaSource.driverClassName>
+                <jpaSource.url>jdbc:h2:mem:target/test/db/h2/modeshape</jpaSource.url>
+                <jpaSource.username>sa</jpaSource.username>
+                <jpaSource.password/>
+            </properties>
+        </profile>
 
-		<!--
-			###################################################################
-			Then, those with commercial drivers
-			###################################################################
-		-->
+        <!-- The PostgreSQL test environment, local to the developer -->
+        <profile>
+            <id>postgresql_local</id>
+            <activation>
+                <property>
+                    <name>database</name>
+                    <value>postgresql_local</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>postgresql</groupId>
+                    <artifactId>postgresql</artifactId>
+                    <version>${jdbc.postgresql.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <properties>
+                <jpaSource.dialect>org.hibernate.dialect.PostgreSQLDialect</jpaSource.dialect>
+                <jpaSource.driverClassName>org.postgresql.Driver</jpaSource.driverClassName>
+                <jpaSource.url>jdbc:postgresql://localhost/unit_test</jpaSource.url>
+                <jpaSource.username>postgres</jpaSource.username>
+                <jpaSource.password>data</jpaSource.password>
+            </properties>
+        </profile>
 
-		<!-- The DB2 9.x test environment (using 9x drivers)-->
-		<profile>
-			<id>db2v9</id>
-			<activation>
-				<property>
-					<name>database</name>
-					<value>db2v9</value>
-				</property>
-			</activation>
-			<dependencies>
-				<dependency>
-					<groupId>com.ibm</groupId>
-					<artifactId>db2jcc</artifactId>
-					<version>${jdbc.db2v9.version}</version>
-				</dependency>
-				<dependency>
-					<groupId>com.ibm</groupId>
-					<artifactId>db2jcc_license_cu</artifactId>
-					<version>${jdbc.db2v9.license.version}</version>
-					<scope>test</scope>
-				</dependency>
-			</dependencies>
-			<properties>
-				<database>db2v9</database>
-				<jpaSource.dialect>org.hibernate.dialect.DB2Dialect</jpaSource.dialect>
-				<jpaSource.driverClassName>com.ibm.db2.jcc.DB2Driver</jpaSource.driverClassName>
-				<jpaSource.url>jdbc:db2://vmg06.mw.lab.eng.bos.redhat.com:50000/jbossqa</jpaSource.url>
-				<jpaSource.username>dballo02</jpaSource.username>
-				<jpaSource.password>dballo02</jpaSource.password>
-			</properties>
-		</profile>
-		
-		<!-- The Oracle10g test environment -->
-		<profile>
-			<id>oracle10g</id>
-			<activation>
-				<property>
-					<name>database</name>
-					<value>oracle10g</value>
-				</property>
-			</activation>
-			<dependencies>
-				<dependency>
-					<groupId>com.oracle</groupId>
-					<artifactId>ojdbc14</artifactId>
-					<version>${jdbc.oracle10g.version}</version>
-					<scope>test</scope>
-				</dependency>
-			</dependencies>
-			<properties>
-				<database>oracle10g</database>
-				<jpaSource.dialect>org.hibernate.dialect.Oracle10gDialect</jpaSource.dialect>
-				<jpaSource.driverClassName>oracle.jdbc.driver.OracleDriver</jpaSource.driverClassName>
-				<jpaSource.url>jdbc:oracle:thin:@vmg05.mw.lab.eng.bos.redhat.com:1521:QAORA10</jpaSource.url>
-				<jpaSource.username>modeshape</jpaSource.username>
-				<jpaSource.password>modeshape</jpaSource.password>
-			</properties>
-		</profile>
+        <!-- The MySQL5 InnoDB test environment, local to the developer -->
+        <profile>
+            <id>mysql5_local</id>
+            <activation>
+                <property>
+                    <name>database</name>
+                    <value>mysql5_local</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>mysql</groupId>
+                    <artifactId>mysql-connector-java</artifactId>
+                    <version>${jdbc.mysql5.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <properties>
+                <database>mysql5</database>
+                <jpaSource.dialect>org.hibernate.dialect.MySQL5InnoDBDialect</jpaSource.dialect>
+                <jpaSource.driverClassName>com.mysql.jdbc.Driver</jpaSource.driverClassName>
+                <jpaSource.url>jdbc:mysql://localhost:3306/test</jpaSource.url>
+                <jpaSource.username>unit_test</jpaSource.username>
+                <jpaSource.password>unit_test</jpaSource.password>
+            </properties>
+        </profile>
 
-		<!-- The Oracle11g test environment -->
-		<profile>
-			<id>oracle11g</id>
-			<activation>
-				<property>
-					<name>database</name>
-					<value>oracle11g</value>
-				</property>
-			</activation>
-			<dependencies>
-				<dependency>
-					<groupId>com.oracle</groupId>
-					<artifactId>ojdbc6</artifactId>
-					<version>${jdbc.oracle11g.version}</version>
-					<scope>test</scope>
-				</dependency>
-			</dependencies>
-			<properties>
-				<database>oracle11g</database>
-				<jpaSource.dialect>org.hibernate.dialect.Oracle10gDialect</jpaSource.dialect>
-				<jpaSource.driverClassName>oracle.jdbc.driver.OracleDriver</jpaSource.driverClassName>
-				<jpaSource.url>jdbc:oracle:thin:@dev04.qa.atl2.redhat.com:1521:qaora11</jpaSource.url>
-				<jpaSource.username>modeshape</jpaSource.username>
-				<jpaSource.password>modeshape</jpaSource.password>
-			</properties>
-		</profile>
+        <!--
+              ###################################################################
+              Profiles naming db instances in the Red Hat QA/QE lab First, those
+              with OSS drivers
+              ###################################################################
+          -->
 
-		<!-- The Sybase 15 test environment -->
-		<profile>
-			<id>sybase15</id>
-			<activation>
-				<property>
-					<name>database</name>
-					<value>sybase15</value>
-				</property>
-			</activation>
-			<dependencies>
-				<dependency>
-					<groupId>com.sybase</groupId>
-					<artifactId>jconnect</artifactId>
-					<version>${jdbc.sybase15.version}</version>
-					<scope>test</scope>
-				</dependency>
-			</dependencies>
-			<properties>
-				<database>sybase15</database>
-				<jpaSource.dialect>org.hibernate.dialect.SybaseDialect</jpaSource.dialect>
-				<jpaSource.driverClassName>com.sybase.jdbc3.jdbc.SybDriver</jpaSource.driverClassName>
-				<jpaSource.url>jdbc:sybase:Tds:vmg07.mw.lab.eng.bos.redhat.com:5000/modeshape</jpaSource.url>
-				<jpaSource.username>modeshape</jpaSource.username>
-				<jpaSource.password>modeshape</jpaSource.password>
-			</properties>
-		</profile>
+        <!-- The MySQL5 test environment -->
+        <profile>
+            <id>mysql5</id>
+            <activation>
+                <property>
+                    <name>database</name>
+                    <value>mysql5</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>mysql</groupId>
+                    <artifactId>mysql-connector-java</artifactId>
+                    <version>${jdbc.mysql5.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <properties>
+                <database>mysql5</database>
+                <jpaSource.dialect>org.hibernate.dialect.MySQL5InnoDBDialect</jpaSource.dialect>
+                <jpaSource.driverClassName>com.mysql.jdbc.Driver</jpaSource.driverClassName>
+                <jpaSource.url>jdbc:mysql://vmg02.mw.lab.eng.bos.redhat.com/modeshape</jpaSource.url>
+                <jpaSource.username>modeshape</jpaSource.username>
+                <jpaSource.password>modeshape</jpaSource.password>
+            </properties>
+        </profile>
 
-		<!-- The SQLServer2008 (MS JDBC) test environment -->
-		<profile>
-			<id>mssql2008</id>
-			<activation>
-				<property>
-					<name>database</name>
-					<value>mssql2008</value>
-				</property>
-			</activation>
-			<dependencies>
-				<dependency>
-					<groupId>com.microsoft.sqlserver</groupId>
-					<artifactId>msjdbc</artifactId>
-					<version>${jdbc.mssql2008.version}</version>
-					<classifier>4</classifier>
-					<!--
-						Must use the JDBC-4 driver on JDK6
-					-->
-					<scope>test</scope>
-				</dependency>
-			</dependencies>
-			<properties>
-				<database>mssql2008</database>
-				<metadata.collectorClassName>org.modeshape.connector.meta.jdbc.SqlServerMetadataCollector</metadata.collectorClassName>
-				<jpaSource.dialect>org.hibernate.dialect.SQLServerDialect</jpaSource.dialect>
-				<jpaSource.driverClassName>com.microsoft.sqlserver.jdbc.SQLServerDriver</jpaSource.driverClassName>
-				<jpaSource.url>jdbc:sqlserver://vmg04.mw.lab.eng.bos.redhat.com</jpaSource.url>
-				<jpaSource.username>modeshape</jpaSource.username>
-				<jpaSource.password>modeshape</jpaSource.password>
-			</properties>
-		</profile>
-	</profiles>
+        <!-- The PostgreSQL test environment -->
+        <profile>
+            <id>postgresql8</id>
+            <activation>
+                <property>
+                    <name>database</name>
+                    <value>postgresql8</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>postgresql</groupId>
+                    <artifactId>postgresql</artifactId>
+                    <version>${jdbc.postgresql.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <properties>
+                <database>postgresql8</database>
+                <jpaSource.dialect>org.hibernate.dialect.PostgreSQLDialect</jpaSource.dialect>
+                <jpaSource.driverClassName>org.postgresql.Driver</jpaSource.driverClassName>
+                <jpaSource.url>jdbc:postgresql://vmg03.mw.lab.eng.bos.redhat.com:5432:modeshape</jpaSource.url>
+                <jpaSource.username>modeshape</jpaSource.username>
+                <jpaSource.password>modeshape</jpaSource.password>
+            </properties>
+        </profile>
 
-	<build>
-		<!--
-			This section defines the default plugin settings inherited by child
-			projects.
-		-->
-		<pluginManagement>
-			<plugins>
-				<!--
-					Fixes how test resources of a project can be used in projects
-					dependent on it
-				-->
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-jar-plugin</artifactId>
-					<version>${maven.jar.plugin.version}</version>
-				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-assembly-plugin</artifactId>
-					<version>${maven.assembly.plugin.version}</version>
-				</plugin>
-				<plugin>
-					<groupId>org.apache.felix</groupId>
-					<artifactId>maven-bundle-plugin</artifactId>
-					<version>${maven.bundle.plugin.version}</version>
-					<extensions>true</extensions>
-					<configuration>
-					  <instructions>
-					    <Export-Package>org.modeshape.*</Export-Package>
-					  </instructions>
-					</configuration>
-				</plugin>
-			</plugins>
-		</pluginManagement>
-		<plugins>
-			<!-- Specify the compiler options and settings -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>${maven.compiler.plugin.version}</version>
-				<configuration>
-					<source>${modeshape.java.version}</source>
-					<target>${modeshape.java.version}</target>
-					<showDeprecation>false</showDeprecation>
-					<showWarnings>false</showWarnings>
-				</configuration>
-			</plugin>
-			<!-- Produce source jars during the 'verify' phase -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-source-plugin</artifactId>
-				<version>${maven.source.plugin.version}</version>
-				<executions>
-					<execution>
-						<id>attach-sources</id>
-						<phase>verify</phase>
-						<goals>
-							<goal>jar</goal>
-							<goal>test-jar</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<version>${maven.surefire.plugin.version}</version>
-				<!-- Manually specify the JUnit provider; see MODE-1140 -->
-				<dependencies>
-				  <dependency>
-				    <groupId>org.apache.maven.surefire</groupId>
-				    <!--artifactId>surefire-junit47</artifactId-->
-				    <artifactId>surefire-junit4</artifactId>
-				    <!--artifactId>surefire-junit3</artifactId-->
-				    <version>${maven.surefire.plugin.version}</version>
-				  </dependency>
-				</dependencies>
-				<configuration>
-					<includes>
-						<include>**/*TestCase.java</include>
-						<include>**/*Test.java</include>
-					</includes>
-					<!--
-						excludes> <exclude>**/Abstract*TestCase.java</exclude>
-						<exclude>**/Abstract*Test.java</exclude> </excludes -->
-					<systemProperties>
-						<property>
-							<name>java.io.tmpdir</name>
-							<value>${basedir}/target</value>
-						</property>
-						<property>
-							<name>java.net.preferIPv4Stack</name>
-							<value>${jgroups.preferIpv4}</value>
-						</property>
-						<property>
-							<name>java.net.preferIPv6Addresses</name>
-							<value>${jgroups.preferIpv6}</value>
-						</property>
-					</systemProperties>
-					<argLine>-Xmx512M ${debug.argline} -XX:MaxPermSize=512m</argLine>
-					<runOrder>alphabetical</runOrder>
-				</configuration>
-			</plugin>
+        <!--
+              ###################################################################
+              Then, those with commercial drivers
+              ###################################################################
+          -->
 
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-eclipse-plugin</artifactId>
-				<version>${maven.eclipse.plugin.version}</version>
-			</plugin>
-			
-			<!--
-				Build a test-jar for each project, so that src/test/* resources and
-				classes can be used in other projects. Also customize how the jar
-				files are assembled.
-			-->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
-				<version>${maven.jar.plugin.version}</version>
-				<executions>
-					<execution>
-						<id>test-jar</id>
-						<goals>
-							<goal>test-jar</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<archive>
-						<manifest>
-							<addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-							<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-						</manifest>
-						<manifestEntries>
-							<Implementation-URL>${project.url}</Implementation-URL>
-						</manifestEntries>
-					</archive>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
-	
-	<!--
-		This section defines the default dependency settings inherited by
-		child projects. Note that this section does not add dependencies, but
-		rather provide default settings.
-	-->
-	<dependencyManagement>
-		<dependencies>
-			<!-- ModeShape subprojects -->
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-common</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-classloader-maven</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-graph</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-cnd</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-search-lucene</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-repository</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-jcr</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-schematic</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-jcr-api</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-jcr-tck</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-clustering</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-connector-jbosscache</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-connector-store-jpa</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-connector-disk</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-connector-filesystem</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-connector-infinispan</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-connector-jcr</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-connector-jdbc-metadata</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-connector-svn</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-mimetype-detector-aperture</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-sequencer-classfile</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-sequencer-cnd</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-sequencer-ddl</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-sequencer-images</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-sequencer-java</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-sequencer-jbpm-jpdl</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-sequencer-mp3</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-sequencer-msoffice</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-sequencer-sramp</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-sequencer-teiid</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-sequencer-text</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-sequencer-xml</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-sequencer-xsd</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-sequencer-wsdl</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-sequencer-zip</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-web-jcr-rest</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-web-jcr-rest-client</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-web-jcr-rest-war</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-web-jcr</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-jdbc-local</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-jdbc</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.modeshape</groupId>
-				<artifactId>modeshape-unit-test</artifactId>
-				<version>${project.version}</version>
-				<scope>test</scope>
-			</dependency>
-      <dependency>
-        <groupId>javax.servlet</groupId>
-        <artifactId>servlet-api</artifactId>
-        <version>${javax.servlet.version}</version>
-				<scope>provided</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.jboss.spec.javax.security.jacc</groupId>
-        <artifactId>jboss-jacc-api_1.4_spec</artifactId>
-        <version>${javax.jacc.version}</version>
-        <scope>provided</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.jboss.seam</groupId>
-        <artifactId>jboss-seam</artifactId>
-        <version>${jboss.seam.version}</version>
-        <scope>provided</scope>
-      </dependency>
+        <!-- The DB2 9.x test environment (using 9x drivers)-->
+        <profile>
+            <id>db2v9</id>
+            <activation>
+                <property>
+                    <name>database</name>
+                    <value>db2v9</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>com.ibm</groupId>
+                    <artifactId>db2jcc</artifactId>
+                    <version>${jdbc.db2v9.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>com.ibm</groupId>
+                    <artifactId>db2jcc_license_cu</artifactId>
+                    <version>${jdbc.db2v9.license.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <properties>
+                <database>db2v9</database>
+                <jpaSource.dialect>org.hibernate.dialect.DB2Dialect</jpaSource.dialect>
+                <jpaSource.driverClassName>com.ibm.db2.jcc.DB2Driver</jpaSource.driverClassName>
+                <jpaSource.url>jdbc:db2://vmg06.mw.lab.eng.bos.redhat.com:50000/jbossqa</jpaSource.url>
+                <jpaSource.username>dballo02</jpaSource.username>
+                <jpaSource.password>dballo02</jpaSource.password>
+            </properties>
+        </profile>
+
+        <!-- The Oracle10g test environment -->
+        <profile>
+            <id>oracle10g</id>
+            <activation>
+                <property>
+                    <name>database</name>
+                    <value>oracle10g</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>com.oracle</groupId>
+                    <artifactId>ojdbc14</artifactId>
+                    <version>${jdbc.oracle10g.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <properties>
+                <database>oracle10g</database>
+                <jpaSource.dialect>org.hibernate.dialect.Oracle10gDialect</jpaSource.dialect>
+                <jpaSource.driverClassName>oracle.jdbc.driver.OracleDriver</jpaSource.driverClassName>
+                <jpaSource.url>jdbc:oracle:thin:@vmg05.mw.lab.eng.bos.redhat.com:1521:QAORA10</jpaSource.url>
+                <jpaSource.username>modeshape</jpaSource.username>
+                <jpaSource.password>modeshape</jpaSource.password>
+            </properties>
+        </profile>
+
+        <!-- The Oracle11g test environment -->
+        <profile>
+            <id>oracle11g</id>
+            <activation>
+                <property>
+                    <name>database</name>
+                    <value>oracle11g</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>com.oracle</groupId>
+                    <artifactId>ojdbc6</artifactId>
+                    <version>${jdbc.oracle11g.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <properties>
+                <database>oracle11g</database>
+                <jpaSource.dialect>org.hibernate.dialect.Oracle10gDialect</jpaSource.dialect>
+                <jpaSource.driverClassName>oracle.jdbc.driver.OracleDriver</jpaSource.driverClassName>
+                <jpaSource.url>jdbc:oracle:thin:@dev04.qa.atl2.redhat.com:1521:qaora11</jpaSource.url>
+                <jpaSource.username>modeshape</jpaSource.username>
+                <jpaSource.password>modeshape</jpaSource.password>
+            </properties>
+        </profile>
+
+        <!-- The Sybase 15 test environment -->
+        <profile>
+            <id>sybase15</id>
+            <activation>
+                <property>
+                    <name>database</name>
+                    <value>sybase15</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>com.sybase</groupId>
+                    <artifactId>jconnect</artifactId>
+                    <version>${jdbc.sybase15.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <properties>
+                <database>sybase15</database>
+                <jpaSource.dialect>org.hibernate.dialect.SybaseDialect</jpaSource.dialect>
+                <jpaSource.driverClassName>com.sybase.jdbc3.jdbc.SybDriver</jpaSource.driverClassName>
+                <jpaSource.url>jdbc:sybase:Tds:vmg07.mw.lab.eng.bos.redhat.com:5000/modeshape</jpaSource.url>
+                <jpaSource.username>modeshape</jpaSource.username>
+                <jpaSource.password>modeshape</jpaSource.password>
+            </properties>
+        </profile>
+
+        <!-- The SQLServer2008 (MS JDBC) test environment -->
+        <profile>
+            <id>mssql2008</id>
+            <activation>
+                <property>
+                    <name>database</name>
+                    <value>mssql2008</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>com.microsoft.sqlserver</groupId>
+                    <artifactId>msjdbc</artifactId>
+                    <version>${jdbc.mssql2008.version}</version>
+                    <classifier>4</classifier>
+                    <!--
+                             Must use the JDBC-4 driver on JDK6
+                         -->
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <properties>
+                <database>mssql2008</database>
+                <metadata.collectorClassName>org.modeshape.connector.meta.jdbc.SqlServerMetadataCollector
+                </metadata.collectorClassName>
+                <jpaSource.dialect>org.hibernate.dialect.SQLServerDialect</jpaSource.dialect>
+                <jpaSource.driverClassName>com.microsoft.sqlserver.jdbc.SQLServerDriver</jpaSource.driverClassName>
+                <jpaSource.url>jdbc:sqlserver://vmg04.mw.lab.eng.bos.redhat.com</jpaSource.url>
+                <jpaSource.username>modeshape</jpaSource.username>
+                <jpaSource.password>modeshape</jpaSource.password>
+            </properties>
+        </profile>
+    </profiles>
+
+    <build>
+        <!--
+              This section defines the default plugin settings inherited by child
+              projects.
+          -->
+        <pluginManagement>
+            <plugins>
+                <!--
+                        Fixes how test resources of a project can be used in projects
+                        dependent on it
+                    -->
+                <plugin>
+                    <groupId>org.apache.felix</groupId>
+                    <artifactId>maven-bundle-plugin</artifactId>
+                    <extensions>true</extensions>
+                    <configuration>
+                        <instructions>
+                            <Export-Package>org.modeshape.*</Export-Package>
+                        </instructions>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+        <plugins>
+            <!-- Specify the compiler options and settings -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>${modeshape.java.version}</source>
+                    <target>${modeshape.java.version}</target>
+                    <showDeprecation>false</showDeprecation>
+                    <showWarnings>false</showWarnings>
+                </configuration>
+            </plugin>
+            <!-- Produce source jars during the 'verify' phase -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>jar</goal>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <!-- Manually specify the JUnit provider; see MODE-1140 -->
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.maven.surefire</groupId>
+                        <!--artifactId>surefire-junit47</artifactId-->
+                        <artifactId>surefire-junit4</artifactId>
+                        <!--artifactId>surefire-junit3</artifactId-->
+                        <version>${version.surefire.plugin}</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <includes>
+                        <include>**/*TestCase.java</include>
+                        <include>**/*Test.java</include>
+                    </includes>
+                    <!--
+                             excludes> <exclude>**/Abstract*TestCase.java</exclude>
+                             <exclude>**/Abstract*Test.java</exclude> </excludes -->
+                    <systemProperties>
+                        <property>
+                            <name>java.io.tmpdir</name>
+                            <value>${basedir}/target</value>
+                        </property>
+                        <property>
+                            <name>java.net.preferIPv4Stack</name>
+                            <value>${jgroups.preferIpv4}</value>
+                        </property>
+                        <property>
+                            <name>java.net.preferIPv6Addresses</name>
+                            <value>${jgroups.preferIpv6}</value>
+                        </property>
+                    </systemProperties>
+                    <argLine>-Xmx512M ${debug.argline} -XX:MaxPermSize=512m</argLine>
+                    <runOrder>alphabetical</runOrder>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-eclipse-plugin</artifactId>
+            </plugin>
+
+            <!--
+                   Build a test-jar for each project, so that src/test/* resources and
+                   classes can be used in other projects. Also customize how the jar
+                   files are assembled.
+               -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>test-jar</id>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                        </manifest>
+                        <manifestEntries>
+                            <Implementation-URL>${project.url}</Implementation-URL>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <!--
+         This section defines the default dependency settings inherited by
+         child projects. Note that this section does not add dependencies, but
+         rather provide default settings.
+     -->
+    <dependencyManagement>
+        <dependencies>
+            <!-- ModeShape subprojects -->
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-classloader-maven</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-graph</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-cnd</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-search-lucene</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-repository</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-jcr</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-schematic</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-jcr-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-jcr-tck</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-clustering</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-connector-jbosscache</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-connector-store-jpa</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-connector-disk</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-connector-filesystem</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-connector-infinispan</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-connector-jcr</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-connector-jdbc-metadata</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-connector-svn</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-mimetype-detector-aperture</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-classfile</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-cnd</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-ddl</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-images</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-java</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-jbpm-jpdl</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-mp3</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-msoffice</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-sramp</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-teiid</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-text</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-xml</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-xsd</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-wsdl</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-zip</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-web-jcr-rest</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-web-jcr-rest-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-web-jcr-rest-war</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-web-jcr</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-jdbc-local</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-jdbc</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-unit-test</artifactId>
+                <version>${project.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>javax.servlet</groupId>
+                <artifactId>servlet-api</artifactId>
+                <version>${javax.servlet.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.spec.javax.security.jacc</groupId>
+                <artifactId>jboss-jacc-api_1.4_spec</artifactId>
+                <version>${javax.jacc.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.seam</groupId>
+                <artifactId>jboss-seam</artifactId>
+                <version>${jboss.seam.version}</version>
+                <scope>provided</scope>
+            </dependency>
 
 
-			<!-- 
-		    Time and Date
-		    -->
-			<dependency>
-				<groupId>joda-time</groupId>
-				<artifactId>joda-time</artifactId>
-				<version>${joda.time.version}</version>
-				<scope>compile</scope>
-			</dependency>
-			<!-- Testing (note the scope) -->
-			<dependency>
-				<groupId>junit</groupId>
-				<artifactId>junit</artifactId>
-				<version>${junit.version}</version>
-				<scope>test</scope>
-			</dependency>
-			<dependency>
-				<groupId>junit</groupId>
-				<artifactId>junit-dep</artifactId>
-				<version>${junit.version}</version>
-				<scope>test</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.hamcrest</groupId>
-				<artifactId>hamcrest-library</artifactId>
-				<version>${hamcrest.version}</version>
-				<scope>test</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.mockito</groupId>
-				<artifactId>mockito-all</artifactId>
-				<version>${mockito.all.version}</version>
-				<scope>test</scope>
-			</dependency>
-      <!-- 
-      Byteman Dependencies, used for the bytecode injection during performance tests
-      -->
-      <dependency>
-        <groupId>org.jboss.byteman</groupId>
-        <artifactId>byteman-bmunit</artifactId>
-        <version>${byteman.version}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.jboss.byteman</groupId>
-        <artifactId>byteman-install</artifactId>
-        <version>${byteman.version}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.jboss.byteman</groupId>
-        <artifactId>byteman</artifactId>
-        <version>${byteman.version}</version>
-        <scope>test</scope>
-      </dependency>
-			<!--
-				Logging (require SLF4J API for compiling, but use Log4J and its
-				SLF4J binding for testing)
-			-->
-			<dependency>
-				<groupId>org.slf4j</groupId>
-				<artifactId>slf4j-api</artifactId>
-				<version>${slf4j.api.version}</version>
-				<scope>compile</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.slf4j</groupId>
-				<artifactId>slf4j-log4j12</artifactId>
-				<version>${slf4j.log4j.version}</version>
-				<scope>test</scope>
-			</dependency>
-			<dependency>
-				<groupId>log4j</groupId>
-				<artifactId>log4j</artifactId>
-				<version>${log4j.version}</version>
-				<scope>test</scope>
-			</dependency>
-			<!-- Java Content Repository API -->
-			<dependency>
-				<groupId>javax.jcr</groupId>
-				<artifactId>jcr</artifactId>
-				<version>${jcr.version}</version>
-				<scope>compile</scope>
-			</dependency>
-			<!--
-				Apache JCR API unit tests (for any JCR implementation), which is a
-				subset of the official TCK
-			-->
-			<dependency>
-				<groupId>org.apache.jackrabbit</groupId>
-				<artifactId>jackrabbit-jcr-tests</artifactId>
-				<version>${jackrabbit.jcr.tck.version}</version>
-				<scope>test</scope>
-			</dependency>
-			<!-- Databases and JDBC Drivers -->
-			<dependency>
-				<groupId>mysql</groupId>
-				<artifactId>mysql-connector-java</artifactId>
-				<version>${jdbc.mysql.version}</version>
-				<scope>test</scope>
-			</dependency>
-			<dependency>
-				<groupId>hsqldb</groupId>
-				<artifactId>hsqldb</artifactId>
-				<version>${jdbc.hsqldb.version}</version>
-				<scope>test</scope>
-			</dependency>
-			<!--
-			PicketBox (JAAS implementation used in test cases)
-			-->
-	    <dependency>
-	      <groupId>org.picketbox</groupId>
-	      <artifactId>picketbox-bare</artifactId>
-	      <version>${picketbox.version}</version>
-	      <scope>test</scope>
-	      <exclusions>
-	        <exclusion>
-	          <groupId>apache-xalan</groupId>
-	          <artifactId>xalan</artifactId>
-	        </exclusion>
-	        <exclusion>
-	          <groupId>apache-xalan</groupId>
-	          <artifactId>serializer</artifactId>
-	        </exclusion>
-	        <exclusion>
-	          <groupId>apache-xerces</groupId>
-	          <artifactId>xml-apis</artifactId>
-	        </exclusion>
-	        <exclusion>
-	          <groupId>apache-xerces</groupId>
-	          <artifactId>xercesImpl</artifactId>
-	        </exclusion>
-	        <exclusion>
-						<groupId>org.hibernate</groupId>
-						<artifactId>hibernate</artifactId>
-					</exclusion>
-	      </exclusions>
-	    </dependency>
-			<!--
-			JAX-B implementation used by some modules particularly the JBoss Console component
-			-->
-			<dependency>
-				<groupId>com.sun.xml.bind</groupId>
-				<artifactId>jaxb-impl</artifactId>
-				<version>${sun.xml.bind.jaxbimpl.version}</version>
-				<scope>runtime</scope>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
-	<reporting>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-report-plugin</artifactId>
-				<version>${maven.surefire.report.plugin.version}</version>
-			</plugin>
-		</plugins>
-	</reporting>
+            <!--
+               Time and Date
+               -->
+            <dependency>
+                <groupId>joda-time</groupId>
+                <artifactId>joda-time</artifactId>
+                <version>${joda.time.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <!-- Testing (note the scope) -->
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit-dep</artifactId>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.hamcrest</groupId>
+                <artifactId>hamcrest-library</artifactId>
+                <version>${hamcrest.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-all</artifactId>
+                <version>${mockito.all.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <!--
+            Byteman Dependencies, used for the bytecode injection during performance tests
+            -->
+            <dependency>
+                <groupId>org.jboss.byteman</groupId>
+                <artifactId>byteman-bmunit</artifactId>
+                <version>${byteman.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.byteman</groupId>
+                <artifactId>byteman-install</artifactId>
+                <version>${byteman.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.byteman</groupId>
+                <artifactId>byteman</artifactId>
+                <version>${byteman.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <!--
+                   Logging (require SLF4J API for compiling, but use Log4J and its
+                   SLF4J binding for testing)
+               -->
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.api.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-log4j12</artifactId>
+                <version>${slf4j.log4j.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>log4j</groupId>
+                <artifactId>log4j</artifactId>
+                <version>${log4j.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <!-- Java Content Repository API -->
+            <dependency>
+                <groupId>javax.jcr</groupId>
+                <artifactId>jcr</artifactId>
+                <version>${jcr.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <!--
+                   Apache JCR API unit tests (for any JCR implementation), which is a
+                   subset of the official TCK
+               -->
+            <dependency>
+                <groupId>org.apache.jackrabbit</groupId>
+                <artifactId>jackrabbit-jcr-tests</artifactId>
+                <version>${jackrabbit.jcr.tck.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <!-- Databases and JDBC Drivers -->
+            <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>${jdbc.mysql.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>hsqldb</groupId>
+                <artifactId>hsqldb</artifactId>
+                <version>${jdbc.hsqldb.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <!--
+               PicketBox (JAAS implementation used in test cases)
+               -->
+            <dependency>
+                <groupId>org.picketbox</groupId>
+                <artifactId>picketbox-bare</artifactId>
+                <version>${picketbox.version}</version>
+                <scope>test</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>apache-xalan</groupId>
+                        <artifactId>xalan</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>apache-xalan</groupId>
+                        <artifactId>serializer</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>apache-xerces</groupId>
+                        <artifactId>xml-apis</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>apache-xerces</groupId>
+                        <artifactId>xercesImpl</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.hibernate</groupId>
+                        <artifactId>hibernate</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <!--
+               JAX-B implementation used by some modules particularly the JBoss Console component
+               -->
+            <dependency>
+                <groupId>com.sun.xml.bind</groupId>
+                <artifactId>jaxb-impl</artifactId>
+                <version>${sun.xml.bind.jaxbimpl.version}</version>
+                <scope>runtime</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-report-plugin</artifactId>
+                <version>${version.surefire.plugin}</version>
+            </plugin>
+        </plugins>
+    </reporting>
 
-	<distributionManagement>
-		<repository>
-			<id>jboss-releases-repository</id>
-			<name>JBoss Releases Repository</name>
-			<url>https://repository.jboss.org/nexus/service/local/staging/deploy/maven2/</url>
-		</repository>
-	</distributionManagement>
+    <distributionManagement>
+        <repository>
+            <id>jboss-releases-repository</id>
+            <name>JBoss Releases Repository</name>
+            <url>https://repository.jboss.org/nexus/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
 </project>

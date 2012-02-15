@@ -107,17 +107,16 @@
                 files are assembled.
         -->
         <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>${maven.jar.plugin.version}</version>
-                <executions>
-                        <execution>
-                                <id>test-jar</id>
-                                <goals>
-                                        <goal>test-jar</goal>
-                                </goals>
-                        </execution>
-                </executions>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-jar-plugin</artifactId>
+            <executions>
+                <execution>
+                    <id>test-jar</id>
+                    <goals>
+                        <goal>test-jar</goal>
+                    </goals>
+                </execution>
+            </executions>
                 <configuration>
                         <archive>
                                 <manifest>
