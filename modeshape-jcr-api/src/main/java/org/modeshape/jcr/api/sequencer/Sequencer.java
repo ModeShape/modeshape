@@ -28,6 +28,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.UUID;
 import javax.jcr.NamespaceException;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
@@ -49,19 +50,19 @@ import org.modeshape.jcr.api.nodetype.NodeTypeManager;
  */
 public abstract class Sequencer {
 
-    private String name;
+    private final UUID uuid = UUID.randomUUID();
     private String description;
     private String repositoryName;
     private Object[] pathExpressions;
     private String pathExpression;
 
     /**
-     * Get the name of this sequencer.
+     * Return the unique identifier for this sequencer.
      * 
-     * @return the sequencer name; null only if not {@link #initialize initialized}
+     * @return the unique identifier; never null
      */
-    public final String getName() {
-        return name;
+    public final UUID getUniqueId() {
+        return uuid;
     }
 
     /**
@@ -164,7 +165,8 @@ public abstract class Sequencer {
 
     @Override
     public String toString() {
-        return repositoryName + " -> " + name + (description != null ? (" : " + description) : "");
+        return repositoryName + " -> " + getClass().getName() + " uuid=" + uuid
+               + (description != null ? (" : " + description) : "");
     }
 
     /**

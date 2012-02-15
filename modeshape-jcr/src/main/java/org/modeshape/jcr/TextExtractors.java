@@ -23,16 +23,16 @@
  */
 package org.modeshape.jcr;
 
-import org.modeshape.common.annotation.Immutable;
-import org.modeshape.common.util.Logger;
-import org.modeshape.jcr.RepositoryConfiguration.Component;
-import org.modeshape.jcr.api.text.TextExtractor;
-import org.modeshape.jcr.api.text.TextExtractorOutput;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import org.modeshape.common.annotation.Immutable;
+import org.modeshape.common.util.Logger;
+import org.modeshape.jcr.RepositoryConfiguration.Component;
+import org.modeshape.jcr.api.text.TextExtractor;
+import org.modeshape.jcr.api.text.TextExtractorOutput;
 
 /**
  * Facility for managing {@link TextExtractor} instances.
@@ -58,9 +58,9 @@ public final class TextExtractors implements TextExtractor {
                 TextExtractor extractor = component.createInstance(cl);
                 this.extractors.add(extractor);
             } catch (Throwable t) {
-                String name = component.getName();
+                String desc = component.getDescription();
                 String repoName = repository.name();
-                Logger.getLogger(getClass()).error(t, JcrI18n.unableToInitializeTextExtractor, name, repoName, t.getMessage());
+                Logger.getLogger(getClass()).error(t, JcrI18n.unableToInitializeTextExtractor, desc, repoName, t.getMessage());
             }
         }
     }

@@ -596,7 +596,7 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
                               Path pathToParent,
                               Problems problems,
                               SchemaDocumentResolver resolver ) {
-            if (Null.matches(fieldValue)) {
+            if (Null.matches(fieldValue) && fieldName != null) {
                 if (pathToParent.size() == 0) {
                     problems.recordError(pathToParent.with(fieldName), "The top-level '" + fieldName + "' field is required");
                 } else {

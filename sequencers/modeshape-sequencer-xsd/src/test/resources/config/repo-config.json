@@ -4,9 +4,9 @@
         "removeDerivedContentWithOriginal" : true,
         "sequencers" : [
             {
-                "name" : "XSD sequencer",
+                "description" : "XSD sequencer",
                 "type" : "xsdsequencer",
-                "pathExpression" : "default:/(*.xsd)/jcr:content[@jcr:data]"
+                "pathExpressions" : [ "default:/(*.xsd)/jcr:content[@jcr:data]" ]
             }
         ]
     }

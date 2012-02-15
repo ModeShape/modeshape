@@ -311,8 +311,8 @@ public class RepositoryConfiguration {
         public static final String PROVIDERS = "providers";
         public static final String TYPE = "type";
         public static final String DIRECTORY = "type";
-        public static final String CLASSNAME = "classname";
         public static final String CLASSPATH = "classpath";
+        public static final String CLASSNAME = "classname";
         public static final String QUERY = "query";
         public static final String QUERY_ENABLED = "enabled";
         public static final String REBUILD_UPON_STARTUP = "rebuildUponStartup";
@@ -452,7 +452,6 @@ public class RepositoryConfiguration {
 
     static {
         Set<String> skipProps = new HashSet<String>();
-        skipProps.add(FieldName.CLASSNAME);
         skipProps.add(FieldName.CLASSPATH);
         skipProps.add(FieldName.TYPE);
         COMPONENT_SKIP_PROPERTIES = Collections.unmodifiableSet(skipProps);
@@ -1306,26 +1305,19 @@ public class RepositoryConfiguration {
             for (Object value : components) {
                 if (value instanceof Document) {
                     Document component = (Document)value;
-                    String name = component.getString(FieldName.NAME); // optional
-                    String classname = component.getString(FieldName.CLASSNAME);
+                    String classname = component.getString(FieldName.TYPE);
                     String classpath = component.getString(FieldName.CLASSPATH); // optional
-                    if (classname == null) {
-                        String alias = component.getString(aliasFieldName);
-                        if (alias != null) {
-                            classname = classnamesByAlias.get(alias.toLowerCase());
-                            if (classname == null) {
-                                String aliases = aliasesStringFrom(classnamesByAlias);
-                                problems.addError(JcrI18n.invalidAliasForComponent, aliasFieldName, classname, aliases);
-                            }
-                        }
-                        if (classname == null) {
-                            String aliases = aliasesStringFrom(classnamesByAlias);
-                            problems.addError(JcrI18n.missingComponentClassnameOrAlias, aliases);
-                        }
+                    String description = component.getString(FieldName.DESCRIPTION); // optional
+                    if (classname != null) {
+                        String resolvedClassname = classnamesByAlias.get(classname.toLowerCase());
+                        if (resolvedClassname != null) classname = resolvedClassname;
+                    } else {
+                        String aliases = aliasesStringFrom(classnamesByAlias);
+                        problems.addError(JcrI18n.missingComponentType, aliases);
                     }
                     if (classname != null) {
-                        if (name == null) name = classname;
-                        results.add(new Component(name, classname, classpath, component));
+                        if (description == null) description = classname;
+                        results.add(new Component(description, classname, classpath, component));
                     }
                 }
             }
@@ -1511,28 +1503,30 @@ public class RepositoryConfiguration {
     }
 
     @Immutable
-    public class Component {
-        private final String name;
+    public static class Component {
+        private final String description;
         private final String classname;
         private final String classpath;
         private final Document document;
 
-        protected Component( String name,
+        protected Component( String description,
                              String classname,
                              String classpath,
                              Document document ) {
             assert classname != null;
             this.classname = classname;
             this.classpath = classpath;
-            this.name = name != null ? name : classname;
+            this.description = description != null ? description : classname;
             this.document = document;
         }
 
         /**
-         * @return name
+         * Get the component's description.
+         * 
+         * @return the description of this component; never null
          */
-        public String getName() {
-            return name;
+        public String getDescription() {
+            return description;
         }
 
         /**
@@ -1558,7 +1552,7 @@ public class RepositoryConfiguration {
 
         @Override
         public int hashCode() {
-            return name.hashCode();
+            return description.hashCode();
         }
 
         @Override
@@ -1567,7 +1561,7 @@ public class RepositoryConfiguration {
             if (obj instanceof Component) {
                 Component that = (Component)obj;
                 if (!this.getClassname().equals(that.getClassname())) return false;
-                if (!this.getName().equals(that.getName())) return false;
+                if (!this.getDescription().equals(that.getDescription())) return false;
                 if (!ObjectUtil.isEqualWithNulls(this.getClasspath(), that.getClasspath())) return false;
                 if (!this.getDocument().equals(that.getDocument())) return false;
                 return true;
@@ -1602,9 +1596,9 @@ public class RepositoryConfiguration {
         private <Type> Type createGenericComponent( ClassLoader classLoader ) {
             // Create the instance ...
             Type instance = Util.getInstance(getClassname(), classLoader);
-            // Always set the name; it may be set based upon the value in the document, but a name field in
+            // Always set the description; it may be set based upon the value in the document, but a name field in
             // documents is not required ...
-            ReflectionUtil.setValue(instance, "name", getName());
+            ReflectionUtil.setValue(instance, "description", getDescription());
             setTypeFields(instance, getDocument());
             return instance;
         }

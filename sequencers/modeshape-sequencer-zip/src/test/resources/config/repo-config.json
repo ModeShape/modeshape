@@ -4,9 +4,9 @@
         "removeDerivedContentWithOriginal" : true,
         "sequencers" : [
             {
-                "name" : "ZIP sequencer",
+                "description" : "ZIP sequencer",
                 "type" : "zipsequencer",
-                "pathExpression" : "default:/(*.zip)/jcr:content[@jcr:data] => /zip"
+                "pathExpressions" : [ "default:/(*.zip)/jcr:content[@jcr:data] => /zip" ]
             }
         ]
     }

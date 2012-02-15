@@ -4,9 +4,9 @@
         "removeDerivedContentWithOriginal" : true,
         "sequencers" : [
             {
-                "name" : "WSDL sequencer",
+                "description" : "WSDL sequencer",
                 "type" : "wsdlsequencer",
-                "pathExpression" : "default:/(*.wsdl)/jcr:content[@jcr:data] => /wsdl"
+                "pathExpressions" : [ "default:/(*.wsdl)/jcr:content[@jcr:data] => /wsdl" ]
             }
         ]
     }

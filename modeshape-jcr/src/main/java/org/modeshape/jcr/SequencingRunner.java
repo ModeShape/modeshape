@@ -60,6 +60,7 @@ final class SequencingRunner implements Runnable {
         JcrSession outputSession = null;
         final RunningState state = repository.runningState();
         final RepositoryStatistics stats = state.statistics();
+        Sequencer sequencer = null;
         try {
             // Create the required session(s) ...
             inputSession = state.loginInternalSession(work.getInputWorkspaceName());
@@ -70,7 +71,7 @@ final class SequencingRunner implements Runnable {
             }
 
             // Get the sequencer ...
-            Sequencer sequencer = state.sequencers().getSequencer(work.getSequencerName());
+            sequencer = state.sequencers().getSequencer(work.getSequencerId());
             if (sequencer == null) return;
 
             // Find the selected node ...
@@ -120,7 +121,8 @@ final class SequencingRunner implements Runnable {
 
             // Execute the sequencer ...
             DateTime now = outputSession.dateFactory().create();
-            Sequencer.Context context = new SequencingContext(now, outputSession.getValueFactory(), outputSession.context().getMimeTypeDetector());
+            Sequencer.Context context = new SequencingContext(now, outputSession.getValueFactory(),
+                                                              outputSession.context().getMimeTypeDetector());
             if (inputSession.isLive() && (inputSession == outputSession || outputSession.isLive())) {
                 final long start = System.nanoTime();
                 if (sequencer.execute(changedProperty, outputNode, context)) {
@@ -133,7 +135,7 @@ final class SequencingRunner implements Runnable {
                     outputSession.save();
                     long durationInNanos = System.nanoTime() - start;
                     Map<String, String> payload = new HashMap<String, String>();
-                    payload.put("sequencerName", sequencer.getName());
+                    payload.put("sequencerName", sequencer.getClass().getName());
                     payload.put("sequencedPath", changedProperty.getPath());
                     payload.put("outputPath", outputNode.getPath());
                     stats.recordDuration(DurationMetric.SEQUENCER_EXECUTION_TIME, durationInNanos, TimeUnit.NANOSECONDS, payload);
@@ -141,10 +143,11 @@ final class SequencingRunner implements Runnable {
             }
         } catch (Throwable t) {
             Logger logger = Logger.getLogger(getClass());
+            String name = sequencer != null ? sequencer.getClass().getName() : work.getSequencerId().toString();
             if (work.getOutputWorkspaceName() != null) {
                 logger.error(t,
                              RepositoryI18n.errorWhileSequencingNodeIntoWorkspace,
-                             work.getSequencerName(),
+                             name,
                              state.name(),
                              work.getInputPath(),
                              work.getInputWorkspaceName(),
@@ -153,7 +156,7 @@ final class SequencingRunner implements Runnable {
             } else {
                 logger.error(t,
                              RepositoryI18n.errorWhileSequencingNode,
-                             work.getSequencerName(),
+                             name,
                              state.name(),
                              work.getInputPath(),
                              work.getInputWorkspaceName(),

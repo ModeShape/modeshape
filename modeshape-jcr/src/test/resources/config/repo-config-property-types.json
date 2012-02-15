@@ -4,8 +4,8 @@
         "removeDerivedContentWithOriginal":true,
         "sequencers":[
             {
-                "name":"Test sequencer",
-                "classname":"org.modeshape.jcr.TestSequencersHolder$SequencerWithProperties",
+                "description":"Test sequencer",
+                "type":"org.modeshape.jcr.TestSequencersHolder$SequencerWithProperties",
                 "pathExpression":"default://",
                 "intList":[1, 1, 2, 3],
                 "intSet":[1, 2, 3],
@@ -25,15 +25,15 @@
                 "doubleProp" : 1.2,
                 "doubleArray" : [1.2, 3.4],
                 "subSequencer" : {
-                    "name" : "SubSequencer",
+                    "description" : "SubSequencer",
                     "intSet":[4,5]
                 },
                 "subSequencerList" : [
                     {
-                        "name" : "subSequencer1"
+                        "description" : "subSequencer1"
                     },
                     {
-                        "name" : "subSequencer2"
+                        "description" : "subSequencer2"
                     }
                 ]
             }

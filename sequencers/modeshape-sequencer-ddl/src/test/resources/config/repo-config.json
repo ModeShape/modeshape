@@ -4,9 +4,9 @@
         "removeDerivedContentWithOriginal" : true,
         "sequencers" : [
             {
-                "name" : "Ddl sequencer test",
+                "description" : "Ddl sequencer test",
                 "type" : "DdlSequencer",
-                "pathExpression" : "default://(*.ddl)/jcr:content[@jcr:data] => default:/ddl"
+                "pathExpressions" : [ "default://(*.ddl)/jcr:content[@jcr:data] => default:/ddl" ]
             }
         ]
     }
