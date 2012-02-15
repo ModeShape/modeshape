@@ -73,7 +73,7 @@ public class RepositoryConfigurationTest {
 
     @Test
     public void shouldReportErrorWithExtraSequencingProperties() {
-        assertNotValid(1, "{ 'name' = 'nm', \"sequencing\" : { \"notValid\" : false } }");
+        assertNotValid(1, "{ 'name' = 'nm', \"sequencing\" : { \"notValid\" : false, 'sequencers' : [] } }");
     }
 
     @Test

@@ -24,7 +24,7 @@
         "providers" : [
             {
                 "name" : "My Custom Security Provider",
-                "classname" : "com.example.MyAuthenticationProvider",
+                "type" : "com.example.MyAuthenticationProvider",
                 "description" : "A custom security provider used for authentication and authorization."
             },
             {
@@ -63,12 +63,12 @@
             {
                 "name" : "ZIP Files",
                 "type" : "ZipSequencer",
-                "pathExpression" : "default:/files(//)(*.zip[*])/jcr:content[@jcr:data] => default:/sequenced/zip/$1",
+                "pathExpressions" : ["default:/files(//)(*.zip[*])/jcr:content[@jcr:data] => default:/sequenced/zip/$1"],
                 "description" : "Sequences ZIP files loaded under '/files' and extracting into '/sequenced/zip/$1'",
             },
             {
                 "name" : "Delimited Text File Sequencer",
-                "classname" : "org.modeshape.sequencer.text.DelimitedTextSequencer",
+                "type" : "org.modeshape.sequencer.text.DelimitedTextSequencer",
                 "pathExpressions" : [ 
                     "default:/files//(*.csv[*])/jcr:content[@jcr:data] => default:/sequenced/text/delimited/$1"
                 ],

@@ -130,26 +130,18 @@
                         "description" : "Specification of a security provider configuration.",
                         "additionalProperties" : true,
                         "properties" : {
-                            "name" : {
-                                "type" : "string",
-                                "description" : "The optional user-defined name of the security provider configuration."
-                            },
-                            "description" : {
-                                "type" : "string",
-                                "description" : "The optional description of the security provider configuration."
-                            },
                             "type" : {
                                 "type" : "string",
-                                "description" : "A shortcut for 'classname' of built-in providers, where the package name is not required. Values are matched against the names of built-in provider implementation classes.",
-                                "enum" : [ "jaas", "servlet"]
-                            },
-                            "classname" : {
-                                "type" : "string",
-                                "description" : "The fully-qualified name of the org.modeshape.graph.text.TextExtractor implementation class."
+                                "required" : true,
+                                "description" : "The fully-qualified name of the 'org.modeshape.jcr.security.AuthenticationProvider' implementation class. Aliases can be used for the built-in providers: 'jaas' for the JAAS provider, and 'servlet' for the Servlet provider."
                             },
                             "classloader" : {
                                 "type" : "string",
-                                "description" : "The optional name of the classloader that should be used to load the sequencer class. If empty or not provided, the classpath accessible to ModeShape will be used."
+                                "description" : "The optional name of the classloader that should be used to load the AuthenicationProvider implementation class. If empty or not provided, the classpath accessible to ModeShape will be used."
+                            },
+                            "description" : {
+                                "type" : "string",
+                                "description" : "The optional description of the security provider configuration, used for administration and reporting. If not specified, the classname will be used."
                             }
                         }
                     }
@@ -180,25 +172,18 @@
                         "description" : "Specification of a text extractor configuration.",
                         "additionalProperties" : true,
                         "properties" : {
-                            "name" : {
-                                "type" : "string",
-                                "description" : "The optional user-defined name of the extractor configuration."
-                            },
-                            "description" : {
-                                "type" : "string",
-                                "description" : "The optional description of the extractor configuration."
-                            },
                             "type" : {
                                 "type" : "string",
-                                "description" : "A shortcut for 'classname' of built-in extractors, where the package name is not required. Values are matched against the names of built-in TextExtractor implementation classes."
-                            },
-                            "classname" : {
-                                "type" : "string",
-                                "description" : "The fully-qualified name of the org.modeshape.jcr.text.TextExtractor implementation class."
+                                "required" : true,
+                                "description" : "The fully-qualified name of the 'org.modeshape.jcr.text.TextExtractor' implementation class. A shortcut for built-in extractors is to just specify the name of the class (without the package specifciation)."
                             },
                             "classloader" : {
                                 "type" : "string",
                                 "description" : "The optional name of the classloader that should be used to load the sequencer class. If empty or not provided, the classpath accessible to ModeShape will be used."
+                            },
+                            "description" : {
+                                "type" : "string",
+                                "description" : "The optional description of the extractor configuration, used for administration and reporting purposes. If not specified, the extractor's classname will be used."
                             }
                         }
                     }
@@ -625,41 +610,32 @@
                 "sequencers" : {
                     "type" : "array",
                     "description" : "The named set of sequencer configurations",
+                    "required" : true,
                     "items" : {
                         "type" : "object",
                         "additionalProperties" : true,
                         "description" : "Specification of a sequencer configuration.",
                         "properties" : {
-                            "name" : {
-                                "type" : "string",
-                                "description" : "The optional user-defined name of the sequencer configuration."
-                            },
-                            "description" : {
-                                "type" : "string",
-                                "description" : "The optional description of the sequencer configuration."
-                            },
                             "type" : {
                                 "type" : "string",
-                                "description" : "A shortcut for 'classname' of built-in sequencers, where the package name is not required. Values are matched against the names of built-in sequencer implementation classes."
-                            },
-                            "classname" : {
-                                "type" : "string",
-                                "description" : "The fully-qualified name of the org.modeshape.jcr.sequencer.Sequencer implementation class."
+                                "required" : true,
+                                "description" : "The fully-qualified name of the 'org.modeshape.jcr.api.sequencer.Sequencer' subclass. A shortcut for built-in sequencers is to just use the name of the class (without the package specification)."
                             },
                             "classloader" : {
                                 "type" : "string",
                                 "description" : "The optional name of the classloader that should be used to load the sequencer class. If empty or not provided, the classpath accessible to ModeShape will be used."
                             },
-                            "pathExpression" : {
-                                "type" : "string",
-                                "description" : "The expression that describes the paths upon which this sequencer operates and the paths where the sequencer output is written."
-                            },
                             "pathExpressions" : {
                                 "type" : "array",
+                                "required" : true,
                                 "items" : {
                                     "type" : "string"
                                 },
                                 "description" : "The expressions that describes the paths upon which this sequencer operates and the paths where the sequencer output is written."
+                            },
+                            "description" : {
+                                "type" : "string",
+                                "description" : "The optional description of the sequencer configuration, used for administration and reporting purposes. If not specified, the description will be a combination of the type and path expressions."
                             }
                         }
                     }

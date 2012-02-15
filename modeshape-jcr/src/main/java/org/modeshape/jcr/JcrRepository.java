@@ -1235,11 +1235,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                         }
                     }
                 } catch (Throwable t) {
-                    logger.error(t,
-                                 JcrI18n.unableToInitializeAuthenticationProvider,
-                                 component.getName(),
-                                 repositoryName(),
-                                 t.getMessage());
+                    logger.error(t, JcrI18n.unableToInitializeAuthenticationProvider, component, repositoryName(), t.getMessage());
                 }
             }
 

@@ -6,7 +6,9 @@
             {
                 "name" : "CND sequencer",
                 "type" : "cnd",
-                "pathExpression" : "default://(*.cnd)/jcr:content[@jcr:data]"
+                "pathExpressions" : [ 
+                    "default://(*.cnd)/jcr:content[@jcr:data]" 
+                ]
             }
         ]
     }

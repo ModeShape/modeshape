@@ -33,6 +33,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.jcr.NamespaceRegistry;
@@ -77,10 +78,10 @@ import org.modeshape.jcr.value.ValueFactory;
 public class Sequencers implements ChangeSetListener {
 
     private final JcrRepository.RunningState repository;
-    private final Map<String, Sequencer> sequencersByName;
+    private final Map<UUID, Sequencer> sequencersById;
     private final Collection<Component> components;
     private final Lock configChangeLock = new ReentrantLock();
-    private final Map<String, Collection<SequencerPathExpression>> pathExpressionsBySequencerName;
+    private final Map<UUID, Collection<SequencerPathExpression>> pathExpressionsBySequencerId;
     private volatile Map<String, Collection<SequencingConfiguration>> configByWorkspaceName;
     private final String systemWorkspaceKey;
     private final String processId;
@@ -103,24 +104,23 @@ public class Sequencers implements ChangeSetListener {
             this.processId = null;
             this.stringFactory = null;
             this.configByWorkspaceName = null;
-            this.sequencersByName = null;
-            this.pathExpressionsBySequencerName = null;
+            this.sequencersById = null;
+            this.pathExpressionsBySequencerId = null;
             this.initialized = true;
         } else {
             assert workQueue != null;
             this.processId = repository.context().getProcessId();
             ExecutionContext context = this.repository.context();
             this.stringFactory = context.getValueFactories().getStringFactory();
-            this.sequencersByName = new HashMap<String, Sequencer>();
+            this.sequencersById = new HashMap<UUID, Sequencer>();
             this.configByWorkspaceName = new HashMap<String, Collection<SequencingConfiguration>>();
-            this.pathExpressionsBySequencerName = new HashMap<String, Collection<SequencerPathExpression>>();
+            this.pathExpressionsBySequencerId = new HashMap<UUID, Collection<SequencerPathExpression>>();
 
             // Get a session that we'll pass to the sequencers to use for registering namespaces and node types
             ClassLoader defaultClassLoader = getClass().getClassLoader();
 
             String repoName = repository.name();
             for (Component component : components) {
-                String name = component.getName();
                 try {
                     ClassLoader cl = context.getClassLoader(component.getClasspath());
                     if (cl == null) {
@@ -132,12 +132,13 @@ public class Sequencers implements ChangeSetListener {
                     // We'll initialize it later in #intialize() ...
 
                     // For each sequencer, figure out which workspaces apply ...
-                    sequencersByName.put(name, sequencer);
+                    UUID uuid = sequencer.getUniqueId();
+                    sequencersById.put(sequencer.getUniqueId(), sequencer);
                     // For each sequencer, create the path expressions ...
                     Set<SequencerPathExpression> pathExpressions = buildPathExpressionSet(sequencer);
-                    pathExpressionsBySequencerName.put(name, pathExpressions);
+                    pathExpressionsBySequencerId.put(uuid, pathExpressions);
                 } catch (Throwable t) {
-                    logger.error(t, JcrI18n.unableToInitializeSequencer, name, repoName, t.getMessage());
+                    logger.error(t, JcrI18n.unableToInitializeSequencer, component, repoName, t.getMessage());
                 }
             }
             // Now process each workspace ...
@@ -156,9 +157,9 @@ public class Sequencers implements ChangeSetListener {
         this.processId = original.processId;
         this.stringFactory = repository.context().getValueFactories().getStringFactory();
         this.components = original.components;
-        this.sequencersByName = original.sequencersByName;
+        this.sequencersById = original.sequencersById;
         this.configByWorkspaceName = original.configByWorkspaceName;
-        this.pathExpressionsBySequencerName = original.pathExpressionsBySequencerName;
+        this.pathExpressionsBySequencerId = original.pathExpressionsBySequencerId;
         this.logger = original.logger;
     }
 
@@ -186,12 +187,12 @@ public class Sequencers implements ChangeSetListener {
             }
 
             // Initialize each sequencer using the supplied session ...
-            for (Iterator<Map.Entry<String, Sequencer>> sequencersIterator = sequencersByName.entrySet().iterator(); sequencersIterator.hasNext();) {
+            for (Iterator<Map.Entry<UUID, Sequencer>> sequencersIterator = sequencersById.entrySet().iterator(); sequencersIterator.hasNext();) {
                 Sequencer sequencer = sequencersIterator.next().getValue();
                 try {
                     sequencer.initialize(registry, (org.modeshape.jcr.api.nodetype.NodeTypeManager)nodeTypeManager);
                 } catch (Throwable t) {
-                    logger.error(JcrI18n.unableToInitializeSequencer, sequencer.getName(), repository.name(), t.getMessage());
+                    logger.error(JcrI18n.unableToInitializeSequencer, sequencer, repository.name(), t.getMessage());
                     sequencersIterator.remove();
                 }
             }
@@ -227,8 +228,8 @@ public class Sequencers implements ChangeSetListener {
         }
         Collection<SequencingConfiguration> configs = new LinkedList<SequencingConfiguration>();
         // Go through the sequencers to see which apply to this workspace ...
-        for (Sequencer sequencer : sequencersByName.values()) {
-            for (SequencerPathExpression expression : pathExpressionsBySequencerName.get(sequencer.getName())) {
+        for (Sequencer sequencer : sequencersById.values()) {
+            for (SequencerPathExpression expression : pathExpressionsBySequencerId.get(sequencer.getUniqueId())) {
                 if (expression.appliesToWorkspace(workspaceName)) {
                     configs.add(new SequencingConfiguration(expression, sequencer));
                 }
@@ -293,7 +294,7 @@ public class Sequencers implements ChangeSetListener {
                                String propertyName ) {
         if (shutdown) return;
         // Conver the input path (which has a '@' to denote a property) to a standard JCR path ...
-        SequencingWorkItem workItem = new SequencingWorkItem(sequencingConfig.getSequencer().getName(), inputWorkspaceName,
+        SequencingWorkItem workItem = new SequencingWorkItem(sequencingConfig.getSequencer().getUniqueId(), inputWorkspaceName,
                                                              matcher.getSelectedPath(), matcher.getJcrInputPath(),
                                                              matcher.getOutputPath(), matcher.getOutputWorkspaceName(),
                                                              propertyName);
@@ -301,15 +302,15 @@ public class Sequencers implements ChangeSetListener {
         workQueue.submit(workItem);
     }
 
-    public Sequencer getSequencer( String name ) {
-        return sequencersByName.get(name);
+    public Sequencer getSequencer( UUID id ) {
+        return sequencersById.get(id);
     }
 
     protected Set<SequencerPathExpression> buildPathExpressionSet( Sequencer sequencer ) throws InvalidSequencerPathExpression {
         String[] pathExpressions = sequencer.getPathExpressions();
         if (pathExpressions.length == 0) {
             String msg = RepositoryI18n.atLeastOneSequencerPathExpressionMustBeSpecified.text(repository.name(),
-                                                                                              sequencer.getName());
+                                                                                              sequencer.getDescription());
             throw new InvalidSequencerPathExpression(msg);
         }
 
@@ -477,7 +478,7 @@ public class Sequencers implements ChangeSetListener {
     public static final class SequencingWorkItem implements Serializable {
         private static final long serialVersionUID = 1L;
 
-        private final String sequencerName;
+        private final UUID sequencerId;
         private final String inputWorkspaceName;
         private final String selectedPath;
         private final String inputPath;
@@ -486,39 +487,39 @@ public class Sequencers implements ChangeSetListener {
         private final String outputWorkspaceName;
         private final int hc;
 
-        protected SequencingWorkItem( String sequencerName,
+        protected SequencingWorkItem( UUID sequencerId,
                                       String inputWorkspaceName,
                                       String selectedPath,
                                       String inputPath,
                                       String outputPath,
                                       String outputWorkspaceName,
                                       String changedPropertyName ) {
-            this.sequencerName = sequencerName;
+            this.sequencerId = sequencerId;
             this.inputWorkspaceName = inputWorkspaceName;
             this.selectedPath = selectedPath;
             this.inputPath = inputPath;
             this.outputPath = outputPath;
             this.outputWorkspaceName = outputWorkspaceName;
             this.changedPropertyName = changedPropertyName;
-            this.hc = HashCode.compute(this.sequencerName,
+            this.hc = HashCode.compute(this.sequencerId,
                                        this.inputWorkspaceName,
                                        this.inputPath,
                                        this.changedPropertyName,
                                        this.outputPath,
                                        this.outputWorkspaceName);
-            assert this.sequencerName != null;
+            assert this.sequencerId != null;
             assert this.inputPath != null;
             assert this.changedPropertyName != null;
             assert this.outputPath != null;
         }
 
         /**
-         * Get the name of the sequencer.
+         * Get the identifier of the sequencer.
          * 
-         * @return the sequencer name; never null
+         * @return the sequencer ID; never null
          */
-        public String getSequencerName() {
-            return sequencerName;
+        public UUID getSequencerId() {
+            return sequencerId;
         }
 
         /**
@@ -592,7 +593,7 @@ public class Sequencers implements ChangeSetListener {
             if (obj instanceof SequencingWorkItem) {
                 SequencingWorkItem that = (SequencingWorkItem)obj;
                 if (this.hc != that.hc) return false;
-                if (!this.sequencerName.equals(that.sequencerName)) return false;
+                if (!this.sequencerId.equals(that.sequencerId)) return false;
                 if (!this.inputWorkspaceName.equals(that.inputWorkspaceName)) return false;
                 if (!this.inputPath.equals(that.inputPath)) return false;
                 if (!this.outputPath.equals(that.outputWorkspaceName)) return false;
@@ -609,7 +610,7 @@ public class Sequencers implements ChangeSetListener {
          */
         @Override
         public String toString() {
-            return sequencerName + " @ " + inputPath + " -> " + outputPath
+            return sequencerId + " @ " + inputPath + " -> " + outputPath
                    + (outputWorkspaceName != null ? (" in workspace '" + outputWorkspaceName + "'") : "");
         }
     }

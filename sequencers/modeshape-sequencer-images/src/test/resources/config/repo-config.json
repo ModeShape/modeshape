@@ -4,14 +4,14 @@
         "removeDerivedContentWithOriginal" : true,
         "sequencers" : [
             {
-                "name" : "Images in separate location",
+                "description" : "Images in separate location",
                 "type" : "ImageSequencer",
                 "pathExpression" : "default://(*.(gif|png|pict|jpg))/jcr:content[@jcr:data] => default:/sequenced/images"
             },
             {
-                "name" : "Images in the same location",
-                "classname" : "org.modeshape.sequencer.image.ImageMetadataSequencer",
-                "pathExpression" : "default://(*.(gif|png|pict|jpg))/jcr:content[@jcr:data]"
+                "description" : "Images in the same location",
+                "type" : "org.modeshape.sequencer.image.ImageMetadataSequencer",
+                "pathExpressions" : [ "default://(*.(gif|png|pict|jpg))/jcr:content[@jcr:data]" ]
             }
         ]
     }
