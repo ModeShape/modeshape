@@ -117,6 +117,7 @@ import org.modeshape.jcr.security.JaasProvider;
 import org.modeshape.jcr.security.SecurityContext;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.ValueFactories;
+import org.modeshape.jcr.value.binary.AbstractBinaryStore;
 import org.modeshape.jcr.value.binary.BinaryStore;
 import org.modeshape.jcr.value.binary.InfinispanBinaryStore;
 import org.modeshape.jcr.value.binary.UnusedBinaryChangeSetListener;
@@ -863,7 +864,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final WeakHashMap<JcrSession, Object> activeSessions = new WeakHashMap<JcrSession, Object>();
         private final WeakHashMap<JcrSession, Object> internalSessions = new WeakHashMap<JcrSession, Object>();
         private final RepositoryStatistics statistics;
-        private final BinaryStore binaryStore;
+        private final AbstractBinaryStore binaryStore;
         private final ScheduledExecutorService statsRollupService;
         private final Sequencers sequencers;
         private final Executor sequencingQueue;
@@ -953,6 +954,12 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 // Set up the binary store ...
                 BinaryStorage binaryStorageConfig = config.getBinaryStorage();
                 binaryStore = binaryStorageConfig.getBinaryStore();
+                if (binaryStore instanceof InfinispanBinaryStore) {
+                    InfinispanBinaryStore ispanBinStore = (InfinispanBinaryStore)binaryStore;
+                    ispanBinStore.setContentCacheName(cacheName);
+                    ispanBinStore.setContentCacheContainer(container);
+                }
+                binaryStore.start();
                 tempContext = tempContext.with(binaryStore);
 
                 // Now create the registry implementation and the execution context that uses it ...
@@ -1284,6 +1291,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 } catch (InterruptedException e) {
                     // do nothing ...
                 }
+            }
+
+            // Shutdown the binary store ...
+            if (this.binaryStore instanceof AbstractBinaryStore) {
+                ((AbstractBinaryStore)this.binaryStore).shutdown();
             }
         }
 

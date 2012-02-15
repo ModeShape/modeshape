@@ -98,4 +98,13 @@ public abstract class AbstractBinaryStore implements BinaryStore {
     protected final MimeTypeDetector detector() {
         return detector;
     }
+
+    /**
+     * Initialize the store and get ready for use.
+     */
+    public void start() {
+    }
+
+    public void shutdown() {
+    }
 }
