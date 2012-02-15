@@ -45,20 +45,86 @@
                     "description" : "The name of the Infinispan class that should be used to find the JTA transaction manager instance. It defaults to 'org.infinispan.transaction.lookup.GenericTransactionManagerLookup'"
                 },
                 "binaryStorage" : {
-                    "type" : "object",
-                    "additionalProperties" : true,
-                    "properties" : {
-                        "minimumBinarySizeInBytes" : {
-                            "type" : "integer",
-                            "default" : 4096,
-                            "description" : "The size threshold that dictates whether String and binary values should be stored in the binary store. String and binary values smaller than this value are stored with the node, whereas string and binary values with a size equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is '4096' bytes, or 4 kilobytes."
+                    "type" : [
+                        {
+                            "type" : "object",
+                            "additionalProperties" : false,
+                            "properties" : {
+                                "type" : {
+                                    "type" : "string",
+                                    "description" : "The specification of the transient binary store, which keeps BINARY values on disk in the temp directory.",
+                                    "enum" : [ "transient" ]
+                                },
+                                "minimumBinarySizeInBytes" : {
+                                    "type" : "integer",
+                                    "default" : 4096,
+                                    "description" : "The size threshold that dictates whether String and binary values should be stored in the binary store. String and binary values smaller than this value are stored with the node, whereas string and binary values with a size equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is '4096' bytes, or 4 kilobytes."
+                                },
+                            }
                         },
-                        "type" : {
-                            "type" : "string",
-                            "description" : "A shortcut for 'classname' of built-in providers, where the package name is not required. Values are matched against the names of built-in provider implementation classes. The value of this field will also determine whether any additional fields are required or optional.",
-                            "enum" : [ "transient", "file", "database","cache"]
+                        {
+                            "type" : "object",
+                            "additionalProperties" : false,
+                            "properties" : {
+                                "type" : {
+                                    "type" : "string",
+                                    "description" : "The specification of the file-based binary store, which keeps BINARY values on disk in the specified directory.",
+                                    "enum" : [ "file" ]
+                                },
+                                "directory" : {
+                                    "type" : "string",
+                                    "required" : true,
+                                    "description" : "The location of the directory the file system under which the BINARY values should be stored. The value can be an absolute or relative path."
+                                },
+                                "minimumBinarySizeInBytes" : {
+                                    "type" : "integer",
+                                    "default" : 4096,
+                                    "description" : "The size threshold that dictates whether String and binary values should be stored in the binary store. String and binary values smaller than this value are stored with the node, whereas string and binary values with a size equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is '4096' bytes, or 4 kilobytes."
+                                },
+                            }
                         },
-                    }
+                        {
+                            "type" : "object",
+                            "additionalProperties" : false,
+                            "properties" : {
+                                "type" : {
+                                    "type" : "string",
+                                    "description" : "The specification of the database binary store, which stores BINARY values in a JDBC-compatible database.",
+                                    "enum" : [ "database" ]
+                                },
+                                "minimumBinarySizeInBytes" : {
+                                    "type" : "integer",
+                                    "default" : 4096,
+                                    "description" : "The size threshold that dictates whether String and binary values should be stored in the binary store. String and binary values smaller than this value are stored with the node, whereas string and binary values with a size equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is '4096' bytes, or 4 kilobytes."
+                                },
+                            }
+                        },
+                        {
+                            "type" : "object",
+                            "additionalProperties" : false,
+                            "properties" : {
+                                "type" : {
+                                    "type" : "string",
+                                    "description" : "The specification of the database binary store, which stores BINARY values in a JDBC-compatible database.",
+                                    "enum" : [ "cache" ]
+                                },
+                                "cacheName" : {
+                                    "type" : "string",
+                                    "required" : true,
+                                    "description" : "The name of the Infinispan cache where BINARY values should be stored."
+                                },
+                                "cacheConfiguration" : {
+                                    "type" : "string",
+                                    "description" : "The name of the Infinispan configuration file for creating a new cache manager. If a file could not be found (on the thread context classloader, on the application's classpath, or on the system classpath), then the name is assumed to reference an existing Infinispan CacheContainer instance via a valid JNDI name or as the name of a service as defined by the local environment. If not specified or no such container is found, then the same cache manager used for the content storage will be used."
+                                },
+                                "minimumBinarySizeInBytes" : {
+                                    "type" : "integer",
+                                    "default" : 4096,
+                                    "description" : "The size threshold that dictates whether String and binary values should be stored in the binary store. String and binary values smaller than this value are stored with the node, whereas string and binary values with a size equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is '4096' bytes, or 4 kilobytes."
+                                },
+                            }
+                        },
+                    ]
                 },
             }
         },

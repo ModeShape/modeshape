@@ -4,36 +4,36 @@
         "removeDerivedContentWithOriginal" : true,
         "sequencers" : [
             {
-                "name" : "MP3s",
+                "description" : "MP3s",
                 "type" : "mp3",
-                "pathExpression" : "//(*.mp3)/jcr:content[@jcr:data] => /audio"
+                "pathExpressions" : [ "//(*.mp3)/jcr:content[@jcr:data] => /audio" ]
             },
             {
-                "name" : "Images",
+                "description" : "Images",
                 "type" : "image",
-                "pathExpression" : "//(*.(gif|png|pict|jpg))/jcr:content[@jcr:data] => /images"
+                "pathExpressions" : [ "//(*.(gif|png|pict|jpg))/jcr:content[@jcr:data] => /images" ]
             },
             {
-                "name" : "Fixed width text sequencer",
-                "classname" : "org.modeshape.sequencer.text.FixedWidthTextSequencer",
-                "pathExpression" : "//(*.txt)/jcr:content[@jcr:data] => /text",
+                "description" : "Fixed width text sequencer",
+                "type" : "org.modeshape.sequencer.text.FixedWidthTextSequencer",
+                "pathExpressions" : [ "//(*.txt)/jcr:content[@jcr:data] => /text" ],
                 "columnStartPositions" : [3,6],
                 "commentMarker" : "#"
             },
             {
                 "type" : "delimitedtext",
-                "pathExpression" : "//(*.csv)/jcr:content[@jcr:data] => /text",
+                "pathExpressions" : [ "//(*.csv)/jcr:content[@jcr:data] => /text" ],
                 "commentMarker" : "#"
             },
             {
-                "name" : "Java Classes",
+                "description" : "Java Classes",
                 "type" : "class",
-                "pathExpression" : "//(*.class)/jcr:content[@jcr:data] => /java"
+                "pathExpressions" : [ "//(*.class)/jcr:content[@jcr:data] => /java" ]
             },
             {
-                "name" : "Java Source",
+                "description" : "Java Source",
                 "type" : "java",
-                "pathExpression" : "//(*.java)/jcr:content[@jcr:data] => /java"
+                "pathExpressions" : [ "//(*.java)/jcr:content[@jcr:data] => /java" ]
             }
         ]
     }

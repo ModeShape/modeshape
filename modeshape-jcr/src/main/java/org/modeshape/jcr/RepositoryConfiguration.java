@@ -76,7 +76,7 @@ import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.ObjectUtil;
 import org.modeshape.jcr.security.AnonymousProvider;
 import org.modeshape.jcr.security.JaasProvider;
-import org.modeshape.jcr.value.binary.BinaryStore;
+import org.modeshape.jcr.value.binary.AbstractBinaryStore;
 import org.modeshape.jcr.value.binary.DatabaseBinaryStore;
 import org.modeshape.jcr.value.binary.FileSystemBinaryStore;
 import org.modeshape.jcr.value.binary.InfinispanBinaryStore;
@@ -674,6 +674,7 @@ public class RepositoryConfiguration {
     private final String docName;
     private final Document doc;
     private transient CacheContainer cacheContainer = null;
+    protected transient CacheContainer binaryStoreCacheContainer = null;
     private volatile Problems problems = null;
 
     public RepositoryConfiguration() {
@@ -779,23 +780,35 @@ public class RepositoryConfiguration {
             return binaryStorage.getLong(FieldName.MINIMUM_BINARY_SIZE_IN_BYTES, Default.MINIMUM_BINARY_SIZE_IN_BYTES);
         }
 
-        public BinaryStore getBinaryStore() {
+        public AbstractBinaryStore getBinaryStore() throws NamingException, IOException {
             String type = binaryStorage.getString(FieldName.TYPE, "transient");
-            BinaryStore store = null;
+            AbstractBinaryStore store = null;
             if (type.equalsIgnoreCase("transient")) {
                 store = TransientBinaryStore.get();
             } else if (type.equalsIgnoreCase("file")) {
                 String directory = binaryStorage.getString(FieldName.DIRECTORY);
+                assert directory != null;
                 File dir = new File(directory);
                 store = FileSystemBinaryStore.create(dir);
             } else if (type.equalsIgnoreCase("database")) {
                 store = new DatabaseBinaryStore();
             } else if (type.equalsIgnoreCase("cache")) {
                 String cacheName = binaryStorage.getString(FieldName.CACHE_NAME, getName());
-                String cacheConfiguration = binaryStorage.getString(FieldName.CACHE_CONFIGURATION);
-                String cacheTransactionManagerLookupClass = binaryStorage.getString(FieldName.CACHE_TRANSACTION_MANAGER_LOOKUP,
-                                                                                    Default.CACHE_TRANSACTION_MANAGER_LOOKUP);
-                store = new InfinispanBinaryStore();
+                String cacheConfiguration = binaryStorage.getString(FieldName.CACHE_CONFIGURATION); // may be null
+                CacheContainer cacheContainer = null;
+                if (cacheConfiguration != null) {
+                    if (binaryStoreCacheContainer == null) {
+                        binaryStoreCacheContainer = createCacheContainer(cacheConfiguration);
+                    }
+                    cacheContainer = binaryStoreCacheContainer;
+                } else {
+                    // Use the cache container for the content store ...
+                    cacheContainer = getCacheContainer();
+                }
+
+                // String cacheTransactionManagerLookupClass = binaryStorage.getString(FieldName.CACHE_TRANSACTION_MANAGER_LOOKUP,
+                // Default.CACHE_TRANSACTION_MANAGER_LOOKUP);
+                store = new InfinispanBinaryStore(cacheName, cacheContainer);
             }
             if (store == null) store = TransientBinaryStore.get();
             store.setMinimumBinarySizeInBytes(getMinimumBinarySizeInBytes());
@@ -1349,11 +1362,15 @@ public class RepositoryConfiguration {
     }
 
     protected CacheContainer getCacheContainer() throws IOException, NamingException {
-        if (this.cacheContainer != null) return this.cacheContainer;
+        if (this.cacheContainer == null) {
+            this.cacheContainer = createCacheContainer(getCacheConfiguration());
+        }
+        return this.cacheContainer;
+    }
 
+    protected CacheContainer createCacheContainer( String configFile ) throws IOException, NamingException {
         CacheContainer container = null;
         // First try finding the cache configuration ...
-        String configFile = this.getCacheConfiguration();
         if (configFile != null) {
             configFile = configFile.trim();
             try {
@@ -1585,9 +1602,10 @@ public class RepositoryConfiguration {
          */
         public <Type> Type createInstance( ClassLoader classLoader ) throws Exception {
             // Handle some of the built-in providers in a special way ...
-            if (AnonymousProvider.class.getName().equals(getClassname())) {
+            String classname = getClassname();
+            if (AnonymousProvider.class.getName().equals(classname)) {
                 return createAnonymousProvider();
-            } else if (JaasProvider.class.getName().equals(getClassname())) {
+            } else if (JaasProvider.class.getName().equals(classname)) {
                 return createJaasProvider();
             }
             return createGenericComponent(classLoader);
