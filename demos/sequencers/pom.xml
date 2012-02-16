@@ -1,135 +1,132 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
-  <parent>
-    <groupId>org.modeshape</groupId>
-    <artifactId>modeshape-parent</artifactId>
-    <version>3.0-SNAPSHOT</version>
-    <relativePath>../../modeshape-parent</relativePath>
-  </parent>
+    <parent>
+        <groupId>org.modeshape</groupId>
+        <artifactId>modeshape-parent</artifactId>
+        <version>3.0-SNAPSHOT</version>
+        <relativePath>../../modeshape-parent/pom.xml</relativePath>
+    </parent>
 
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>org.modeshape.demo</groupId>
-	<artifactId>modeshape-sequencers-demo</artifactId>
-  <packaging>jar</packaging>
-  <name>ModeShape Demo of Sequencing Files</name>
-  <description>Examples that showcase how to use sequencers with a JCR repository.</description>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.modeshape.demo</groupId>
+    <artifactId>modeshape-sequencers-demo</artifactId>
+    <packaging>jar</packaging>
+    <name>ModeShape Demo of Sequencing Files</name>
+    <description>Examples that showcase how to use sequencers with a JCR repository.</description>
 
-  <dependencies>
-    <dependency>
-      <groupId>org.modeshape</groupId>
-      <artifactId>modeshape-common</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.modeshape</groupId>
-      <artifactId>modeshape-jcr</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.modeshape</groupId>
-      <artifactId>modeshape-sequencer-java</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.modeshape</groupId>
-      <artifactId>modeshape-sequencer-images</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.modeshape</groupId>
-      <artifactId>modeshape-sequencer-mp3</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.modeshape</groupId>
-      <artifactId>modeshape-sequencer-text</artifactId>
-    </dependency>
-    <!--dependency>
-      <groupId>org.modeshape</groupId>
-      <artifactId>modeshape-sequencer-zip</artifactId>
-    </dependency-->
-    <!-- 
-    Logging (require SLF4J API for compiling, but use Logback binding for running) 
-    -->
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-    </dependency>
-    <dependency> 
-        <groupId>ch.qos.logback</groupId> 
-        <artifactId>logback-classic</artifactId> 
-        <version>0.9.29</version>
-        <scope>runtime</scope> 
-    </dependency> 
-    <!-- 
-      Java Content Repository API 
-    -->
-    <dependency>
-      <groupId>javax.jcr</groupId>
-      <artifactId>jcr</artifactId>
-    </dependency>
-    <!--
-      PicketBox (JAAS implementation used in test cases)
-    -->
-    <dependency>
-      <groupId>org.picketbox</groupId>
-      <artifactId>picketbox-bare</artifactId>
-        <version>${picketbox.version}</version>
-        <scope>compile</scope>
-    </dependency>
-    <!-- 
-      Test cases use JUnit
-    -->
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
-
-  <build>
-    <plugins>
-      <plugin>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <configuration>
-          <descriptors>
-            <descriptor>src/main/assembly/basic.xml</descriptor>
-          </descriptors>
-          <finalName>${project.artifactId}</finalName>
-        </configuration>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>directory-inline</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
+    <dependencies>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jcr</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-sequencer-java</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-sequencer-images</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-sequencer-mp3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-sequencer-text</artifactId>
+        </dependency>
+        <!--dependency>
+          <groupId>org.modeshape</groupId>
+          <artifactId>modeshape-sequencer-zip</artifactId>
+        </dependency-->
         <!--
-                Build a test-jar for each project, so that src/test/* resources and
-                classes can be used in other projects. Also customize how the jar
-                files are assembled.
+        Logging (require SLF4J API for compiling, but use Logback binding for running)
         -->
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-jar-plugin</artifactId>
-            <executions>
-                <execution>
-                    <id>test-jar</id>
-                    <goals>
-                        <goal>test-jar</goal>
-                    </goals>
-                </execution>
-            </executions>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+        </dependency>
+        <!--
+          Java Content Repository API
+        -->
+        <dependency>
+            <groupId>javax.jcr</groupId>
+            <artifactId>jcr</artifactId>
+        </dependency>
+        <!--
+          PicketBox (JAAS implementation used in test cases)
+        -->
+        <dependency>
+            <groupId>org.picketbox</groupId>
+            <artifactId>picketbox-bare</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <!--
+          Test cases use JUnit
+        -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
                 <configuration>
-                        <archive>
-                                <manifest>
-                                        <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-                                        <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-                                </manifest>
-                                <manifestEntries>
-                                        <Implementation-URL>${project.url}</Implementation-URL>
-                                </manifestEntries>
-                        </archive>
+                    <descriptors>
+                        <descriptor>src/main/assembly/basic.xml</descriptor>
+                    </descriptors>
+                    <finalName>${project.artifactId}</finalName>
                 </configuration>
-        </plugin>
-    </plugins>
-  </build>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>directory-inline</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!--
+                    Build a test-jar for each project, so that src/test/* resources and
+                    classes can be used in other projects. Also customize how the jar
+                    files are assembled.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>test-jar</id>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                        </manifest>
+                        <manifestEntries>
+                            <Implementation-URL>${project.url}</Implementation-URL>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

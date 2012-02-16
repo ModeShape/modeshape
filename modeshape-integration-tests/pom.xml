@@ -1,45 +1,45 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>org.modeshape</groupId>
-    <artifactId>modeshape-parent</artifactId>
-    <version>3.0-SNAPSHOT</version>
-    <relativePath>../modeshape-parent</relativePath>
-  </parent>
+    <parent>
+        <groupId>org.modeshape</groupId>
+        <artifactId>modeshape-parent</artifactId>
+        <version>3.0-SNAPSHOT</version>
+        <relativePath>../modeshape-parent/pom.xml</relativePath>
+    </parent>
 
-	<!-- The groupId and version values are inherited from parent -->
-	<artifactId>modeshape-integration-tests</artifactId>
-	<description>The ModeShape integration tests</description>
-	<packaging>jar</packaging>
-	<name>ModeShape Integration Tests</name>
-	<url>http://www.modeshape.org</url>
+    <!-- The groupId and version values are inherited from parent -->
+    <artifactId>modeshape-integration-tests</artifactId>
+    <description>The ModeShape integration tests</description>
+    <packaging>jar</packaging>
+    <name>ModeShape Integration Tests</name>
+    <url>http://www.modeshape.org</url>
 
-	<!--
-		Define the dependencies. Note that all version and scopes default to
-		those defined in the dependencyManagement section of the parent pom.
-	-->
-	<dependencies>
-		<dependency>
-			<groupId>org.modeshape</groupId>
-			<artifactId>modeshape-common</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.modeshape</groupId>
-			<artifactId>modeshape-classloader-maven</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.modeshape</groupId>
-			<artifactId>modeshape-repository</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.modeshape</groupId>
-			<artifactId>modeshape-jcr</artifactId>
-		</dependency>
+    <!--
+         Define the dependencies. Note that all version and scopes default to
+         those defined in the dependencyManagement section of the parent pom.
+     -->
+    <dependencies>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-classloader-maven</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-repository</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jcr</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-ddl</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
@@ -50,70 +50,63 @@
             <artifactId>modeshape-jdbc</artifactId>
         </dependency>
 
-		<!-- 
+        <!--
       Testing (note the scope)
         -->
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<scope>test</scope>
-		</dependency>
-    <dependency>
-        <groupId>org.mockito</groupId>
-        <artifactId>mockito-all</artifactId>
-        <scope>test</scope>
-    </dependency>
-		<dependency>
-			<groupId>org.hamcrest</groupId>
-			<artifactId>hamcrest-library</artifactId>
-		</dependency>
-		<!--
-			Logging (require SLF4J API for compiling, but use Log4J and its SLF4J
-			binding for testing)
-		-->
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-api</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-log4j12</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
-		</dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-all</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-library</artifactId>
+        </dependency>
+        <!--
+              Logging (require SLF4J API for compiling, but use Log4J and its SLF4J
+              binding for testing)
+          -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-unit-test</artifactId>
-            <scope>test</scope>
         </dependency>
-		<dependency>
-			<groupId>org.modeshape</groupId>
-			<artifactId>modeshape-common</artifactId>
-			<version>${project.version}</version>
-			<type>test-jar</type>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.modeshape</groupId>
-			<artifactId>modeshape-jcr</artifactId>
-			<version>${project.version}</version>
-			<type>test-jar</type>
-			<scope>test</scope>
-		</dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-jdbc-local</artifactId>
-            <version>${project.version}</version>
+            <artifactId>modeshape-common</artifactId>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jcr</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jdbc-local</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jdbc</artifactId>
-            <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
@@ -121,327 +114,306 @@
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-clustering</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
-		<dependency>
-			<groupId>org.modeshape</groupId>
-			<artifactId>modeshape-connector-jbosscache</artifactId>
-			<version>${project.version}</version>
-			<scope>test</scope>
-			<exclusions>
-				<exclusion>
-					<groupId>jgroups</groupId>
-					<artifactId>jgroups</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		<dependency>
-			<groupId>org.modeshape</groupId>
-			<artifactId>modeshape-connector-disk</artifactId>
-			<version>${project.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.modeshape</groupId>
-			<artifactId>modeshape-connector-filesystem</artifactId>
-			<version>${project.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.modeshape</groupId>
-			<artifactId>modeshape-connector-infinispan</artifactId>
-			<version>${project.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.modeshape</groupId>
-			<artifactId>modeshape-connector-svn</artifactId>
-			<version>${project.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.modeshape</groupId>
-			<artifactId>modeshape-connector-jdbc-metadata</artifactId>
-			<version>${project.version}</version>
-			<scope>test</scope>
-		</dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-connector-jbosscache</artifactId>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>jgroups</groupId>
+                    <artifactId>jgroups</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-connector-disk</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-connector-filesystem</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-connector-infinispan</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-connector-svn</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-connector-jdbc-metadata</artifactId>
+             <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-cnd</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-classfile</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-images</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-java</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-mp3</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-msoffice</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-teiid</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-text</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-xml</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-sramp</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-xsd</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-wsdl</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-zip</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-extractor-tika</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
 
-		<!-- 
-			JPA Connector Dependencies
-		-->
-		<dependency>
-			<groupId>org.modeshape</groupId>
-			<artifactId>modeshape-connector-store-jpa</artifactId>
-			<version>${project.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.hibernate</groupId>
-			<artifactId>hibernate-entitymanager</artifactId>
-			<version>3.5.2-Final</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.hibernate</groupId>
-			<artifactId>hibernate-c3p0</artifactId>
-			<version>3.5.2-Final</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>hsqldb</groupId>
-			<artifactId>hsqldb</artifactId>
-			<version>1.8.0.2</version>
-			<scope>test</scope>
-		</dependency>
+        <!--
+              JPA Connector Dependencies
+          -->
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-connector-store-jpa</artifactId>
+            <scope>test</scope>
+        </dependency>
 
-		<!-- 
+        <!-- TODO author=Horia Chiorean date=2/15/12 description=If these deps are still needed, move up to parent
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-entitymanager</artifactId>
+            <version>3.5.2-Final</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-c3p0</artifactId>
+            <version>3.5.2-Final</version>
+            <scope>test</scope>
+        </dependency>
+        -->
+        <dependency>
+            <groupId>hsqldb</groupId>
+            <artifactId>hsqldb</artifactId>
+        </dependency>
+
+        <!--
         Java Content Repository API 
         -->
-		<dependency>
-			<groupId>javax.jcr</groupId>
-			<artifactId>jcr</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<!-- 
-        JCR TCK unit tests
-		-->
-		<dependency>
-			<groupId>org.apache.jackrabbit</groupId>
-			<artifactId>jackrabbit-jcr-tests</artifactId>
-		</dependency>
-    <!-- 
-    Byteman Dependencies, used for the bytecode injection during performance tests
-    -->
-    <dependency>
-      <groupId>org.jboss.byteman</groupId>
-      <artifactId>byteman-bmunit</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.jboss.byteman</groupId>
-      <artifactId>byteman-install</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.jboss.byteman</groupId>
-      <artifactId>byteman</artifactId>
-    </dependency>
-		<!--
-		PicketBox (JAAS implementation used in test cases)
-		-->
-    <dependency>
-      <groupId>org.picketbox</groupId>
-      <artifactId>picketbox-bare</artifactId>
-    </dependency>
-	</dependencies>
-	<!--
-		Build configuration - run integration tests only in 'integration'
-		phase
-	-->
-	<build>
-    <testResources>
-      <testResource>
-           <filtering>false</filtering>
-           <directory>src/test/resources</directory>
-           <includes>
-             <include>*</include>
-             <include>**/*</include>
-           </includes>
-       </testResource>
-	    <!-- Apply the properties set in the POM to the resource files -->
-      <testResource>
-        <filtering>true</filtering>
-        <directory>src/test/resources</directory>
-        <includes>
-          <include>tck/basic-jpa/configRepository.xml</include>
-          <include>tck/simple-jpa/configRepository.xml</include>
-          <include>config/configRepository*.xml</include>
-        </includes>
-      </testResource>
-    </testResources>
-	</build>
-	<profiles>
-		<profile>
-			<id>preferIpv4</id>
-			<activation>
-				<activeByDefault>true</activeByDefault>
-			</activation>
-		  <build>
-		    <plugins>
-					<plugin>
-						<artifactId>maven-surefire-plugin</artifactId>
-						<configuration>
-							<skip>true</skip>
-						</configuration>
-						<executions>
-							<execution>
-								<id>integration-test-ipv4</id>
-								<phase>integration-test</phase>
-								<goals>
-									<goal>test</goal>
-								</goals>
-								<configuration>
-			             <systemProperties>
-											<property>
-												<name>java.net.preferIPv4Stack</name>
-												<value>true</value>
-											</property>
-			                 <!--property>
-			                     <name>org.jboss.byteman.verbose</name>
-			                     <value>true</value>
-			                 </property-->
-			                 <!--property>
-			                     <name>org.jboss.byteman.contrib.bmunit.verbose</name>
-			                     <value>true</value>
-			                 </property-->
-			                 <property>
-			                     <name>org.modeshape.jcr.profile.filename</name>
-			                     <value>target/byteman/modeshape-profile.log</value>
-			                 </property>
-			             </systemProperties>
-			             <skip>false</skip>
-			             <additionalClasspathElements>
-			                 <additionalClasspathElement>${env.JAVA_HOME}/lib/tools.jar</additionalClasspathElement>
-			             </additionalClasspathElements>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-		<profile>
-			<id>preferIpv6</id>
-			<activation>
-				<activeByDefault>false</activeByDefault>
-			</activation>
-		  <build>
-		    <plugins>
-					<plugin>
-						<artifactId>maven-surefire-plugin</artifactId>
-						<configuration>
-							<skip>true</skip>
-						</configuration>
-						<executions>
-							<execution>
-								<id>integration-test-ipv6</id>
-								<phase>integration-test</phase>
-								<goals>
-									<goal>test</goal>
-								</goals>
-								<configuration>
-			             <systemProperties>
-											<property>
-												<name>java.net.preferIPv6Addresses</name>
-												<value>true</value>
-											</property>
-			                 <!--property>
-			                     <name>org.jboss.byteman.verbose</name>
-			                     <value>true</value>
-			                 </property-->
-			                 <!--property>
-			                     <name>org.jboss.byteman.contrib.bmunit.verbose</name>
-			                     <value>true</value>
-			                 </property-->
-			                 <property>
-			                     <name>org.modeshape.jcr.profile.filename</name>
-			                     <value>target/byteman/modeshape-profile.log</value>
-			                 </property>
-			             </systemProperties>
-			             <skip>false</skip>
-			             <additionalClasspathElements>
-			                 <additionalClasspathElement>${env.JAVA_HOME}/lib/tools.jar</additionalClasspathElement>
-			             </additionalClasspathElements>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-  </profiles>
+        <dependency>
+            <groupId>javax.jcr</groupId>
+            <artifactId>jcr</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!--
+          JCR TCK unit tests
+          -->
+        <dependency>
+            <groupId>org.apache.jackrabbit</groupId>
+            <artifactId>jackrabbit-jcr-tests</artifactId>
+        </dependency>
+        <!--
+        Byteman Dependencies, used for the bytecode injection during performance tests
+        -->
+        <dependency>
+            <groupId>org.jboss.byteman</groupId>
+            <artifactId>byteman-bmunit</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.byteman</groupId>
+            <artifactId>byteman-install</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.byteman</groupId>
+            <artifactId>byteman</artifactId>
+        </dependency>
+        <!--
+          PicketBox (JAAS implementation used in test cases)
+          -->
+        <dependency>
+            <groupId>org.picketbox</groupId>
+            <artifactId>picketbox-bare</artifactId>
+        </dependency>
+    </dependencies>
+    <!--
+         Build configuration - run integration tests only in 'integration'
+         phase
+     -->
+    <build>
+        <testResources>
+            <testResource>
+                <filtering>false</filtering>
+                <directory>src/test/resources</directory>
+                <includes>
+                    <include>*</include>
+                    <include>**/*</include>
+                </includes>
+            </testResource>
+            <!-- Apply the properties set in the POM to the resource files -->
+            <testResource>
+                <filtering>true</filtering>
+                <directory>src/test/resources</directory>
+                <includes>
+                    <include>tck/basic-jpa/configRepository.xml</include>
+                    <include>tck/simple-jpa/configRepository.xml</include>
+                    <include>config/configRepository*.xml</include>
+                </includes>
+            </testResource>
+        </testResources>
+    </build>
+    <profiles>
+        <profile>
+            <id>preferIpv4</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>integration-test-ipv4</id>
+                                <phase>integration-test</phase>
+                                <goals>
+                                    <goal>test</goal>
+                                </goals>
+                                <configuration>
+                                    <systemProperties>
+                                        <property>
+                                            <name>java.net.preferIPv4Stack</name>
+                                            <value>true</value>
+                                        </property>
+                                        <!--property>
+                                           <name>org.jboss.byteman.verbose</name>
+                                           <value>true</value>
+                                       </property-->
+                                        <!--property>
+                                           <name>org.jboss.byteman.contrib.bmunit.verbose</name>
+                                           <value>true</value>
+                                       </property-->
+                                        <property>
+                                            <name>org.modeshape.jcr.profile.filename</name>
+                                            <value>target/byteman/modeshape-profile.log</value>
+                                        </property>
+                                    </systemProperties>
+                                    <skip>false</skip>
+                                    <additionalClasspathElements>
+                                        <additionalClasspathElement>${env.JAVA_HOME}/lib/tools.jar</additionalClasspathElement>
+                                    </additionalClasspathElements>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>preferIpv6</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>integration-test-ipv6</id>
+                                <phase>integration-test</phase>
+                                <goals>
+                                    <goal>test</goal>
+                                </goals>
+                                <configuration>
+                                    <systemProperties>
+                                        <property>
+                                            <name>java.net.preferIPv6Addresses</name>
+                                            <value>true</value>
+                                        </property>
+                                        <!--property>
+                                           <name>org.jboss.byteman.verbose</name>
+                                           <value>true</value>
+                                       </property-->
+                                        <!--property>
+                                           <name>org.jboss.byteman.contrib.bmunit.verbose</name>
+                                           <value>true</value>
+                                       </property-->
+                                        <property>
+                                            <name>org.modeshape.jcr.profile.filename</name>
+                                            <value>target/byteman/modeshape-profile.log</value>
+                                        </property>
+                                    </systemProperties>
+                                    <skip>false</skip>
+                                    <additionalClasspathElements>
+                                        <additionalClasspathElement>${env.JAVA_HOME}/lib/tools.jar</additionalClasspathElement>
+                                    </additionalClasspathElements>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>

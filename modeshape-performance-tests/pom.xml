@@ -1,288 +1,134 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>org.modeshape</groupId>
-    <artifactId>modeshape-parent</artifactId>
-    <version>3.0-SNAPSHOT</version>
-    <relativePath>../modeshape-parent</relativePath>
-  </parent>
+    <parent>
+        <groupId>org.modeshape</groupId>
+        <artifactId>modeshape-parent</artifactId>
+        <version>3.0-SNAPSHOT</version>
+        <relativePath>../modeshape-parent</relativePath>
+    </parent>
 
-  <!-- The groupId and version values are inherited from parent -->
-  <artifactId>modeshape-performance-tests</artifactId>
-  <packaging>jar</packaging>
-  <name>ModeShape Performance Tests</name>
-  <description>ModeShape performance tests</description>
-  <url>http://www.modeshape.org</url>
-  <!--
-    Define the dependencies. Note that all version and scopes default to those defined in the dependencyManagement section of the
-    parent pom.
-  -->
-  <dependencies>
-    <!-- Public API (beyond JCR 2.0) -->
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-jcr-api</artifactId>
-    </dependency>
-    <!-- ModeShape JCR -->
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-jcr</artifactId>
-    </dependency>
-    <!-- This should eventually get refactored into this project -->
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-common</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.modeshape</groupId>
-      <artifactId>modeshape-common</artifactId>
-      <version>${project.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
-    <!-- Infinispan -->
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>modeshape-schematic</artifactId>
-    </dependency>
-    <!--  Used in tests -->
-    <dependency>
-       <groupId>org.infinispan</groupId>
-       <artifactId>infinispan-core</artifactId>
-       <version>${infinispan.version}</version>
-       <type>test-jar</type>
-       <scope>test</scope>
-    </dependency>
-    <dependency>
-       <groupId>org.infinispan</groupId>
-       <artifactId>infinispan-cachestore-bdbje</artifactId>
-       <version>${infinispan.version}</version>
-       <scope>test</scope>
-    </dependency>
-    <dependency>
-       <groupId>org.infinispan</groupId>
-       <artifactId>infinispan-cachestore-jdbm</artifactId>
-       <version>${infinispan.version}</version>
-       <scope>test</scope>
-    </dependency>
-    <dependency>
-       <groupId>org.infinispan</groupId>
-       <artifactId>infinispan-cachestore-jdbc</artifactId>
-       <version>${infinispan.version}</version>
-       <scope>test</scope>
-    </dependency>
-    <dependency>
-       <groupId>com.h2database</groupId>
-       <artifactId>h2</artifactId>
-       <version>1.1.117</version>
-       <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>joda-time</groupId>
-      <artifactId>joda-time</artifactId>
-    </dependency>
+    <!-- The groupId and version values are inherited from parent -->
+    <artifactId>modeshape-performance-tests</artifactId>
+    <packaging>jar</packaging>
+    <name>ModeShape Performance Tests</name>
+    <description>ModeShape performance tests</description>
+    <url>http://www.modeshape.org</url>
     <!--
-    These following are defined as 'provided' in the parent POM, since ModeShape
-    has code that is optional if these APIs are available.
+      Define the dependencies. Note that all version and scopes default to those defined in the dependencyManagement section of the
+      parent pom.
     -->
-    <dependency>
-      <groupId>javax.servlet</groupId>
-      <artifactId>servlet-api</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.jboss.spec.javax.security.jacc</groupId>
-      <artifactId>jboss-jacc-api_1.4_spec</artifactId>
-    </dependency>
+    <dependencies>
+        <!-- Public API (beyond JCR 2.0) -->
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jcr-api</artifactId>
+        </dependency>
+        <!-- ModeShape JCR -->
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jcr</artifactId>
+        </dependency>
+        <!-- This should eventually get refactored into this project -->
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-common</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <!-- Infinispan -->
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-schematic</artifactId>
+        </dependency>
+        <!--  Used in tests -->
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-core</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-cachestore-bdbje</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-cachestore-jdbm</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-cachestore-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>joda-time</groupId>
+            <artifactId>joda-time</artifactId>
+        </dependency>
+        <!--
+        These following are defined as 'provided' in the parent POM, since ModeShape
+        has code that is optional if these APIs are available.
+        -->
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
+        </dependency>
 
-    <!-- 
-    Testing (note the scope)
-    -->
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.hamcrest</groupId>
-      <artifactId>hamcrest-library</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-all</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.jboss.jbossts</groupId>
-      <artifactId>jbossjta</artifactId>
-      <version>4.15.1.Final</version>
-      <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <artifactId>commons-httpclient</artifactId>
-          <groupId>commons-httpclient</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>ironjacamar-spec-api</artifactId>
-          <groupId>org.jboss.ironjacamar</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>jboss-logging-spi</artifactId>
-          <groupId>org.jboss.logging</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>jboss-logging</artifactId>
-          <groupId>org.jboss.logging</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>jboss-logging-processor</artifactId>
-          <groupId>org.jboss.logging</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>jboss-logging-generator</artifactId>
-          <groupId>org.jboss.logging</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>jbossws-native-core</artifactId>
-          <groupId>org.jboss.ws.native</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>emma</artifactId>
-          <groupId>emma</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>emma_ant</artifactId>
-          <groupId>emma</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>hornetq-core</artifactId>
-          <groupId>org.hornetq</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>netty</artifactId>
-          <groupId>org.jboss.netty</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>wrapper</artifactId>
-          <groupId>tanukisoft</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>jacorb</artifactId>
-          <groupId>jacorb</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>jfreechart</artifactId>
-          <groupId>jfree</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>jboss-corba-ots-spi</artifactId>
-          <groupId>org.jboss.integration</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>jboss-server-manager</artifactId>
-          <groupId>org.jboss.jbossas</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>jboss-ejb-api_3.1_spec</artifactId>
-          <groupId>org.jboss.spec.javax.ejb</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>jnp-client</artifactId>
-          <groupId>org.jboss.naming</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>jboss-servlet-api_3.0_spec</artifactId>
-          <groupId>org.jboss.spec.javax.servlet</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>jbossws-common</artifactId>
-          <groupId>org.jboss.ws</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>jcl-over-slf4j</artifactId>
-          <groupId>org.slf4j</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>stax-api</artifactId>
-          <groupId>stax</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>idl</artifactId>
-          <groupId>jacorb</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>jboss-logging-tools</artifactId>
-          <groupId>org.jboss.logging</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>jboss-connector-api_1.5_spec</artifactId>
-          <groupId>org.jboss.spec.javax.resource</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>jboss-transaction-spi</artifactId>
-          <groupId>org.jboss.integration</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>jboss-remoting</artifactId>
-          <groupId>org.jboss.remoting</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>slf4j-api</artifactId>
-          <groupId>org.slf4j</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>dom4j</artifactId>
-          <groupId>dom4j</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>commons-codec</artifactId>
-          <groupId>commons-codec</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>jboss-logmanager</artifactId>
-          <groupId>org.jboss.logmanager</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>hibernate-jpa-2.0-api</artifactId>
-          <groupId>org.hibernate.javax.persistence</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>commons-logging</artifactId>
-          <groupId>commons-logging</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>jcommon</artifactId>
-          <groupId>jfree</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>jboss-transaction-api_1.1_spec</artifactId>
-          <groupId>org.jboss.spec.javax.transaction</groupId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <!-- 
-    Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing) 
-    -->
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-log4j12</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>log4j</groupId>
-      <artifactId>log4j</artifactId>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
-  <build>
-    <resources>
-	    <!-- Apply the properties set in the POM to the resource files -->
-      <resource>
-        <filtering>true</filtering>
-        <directory>src/main/resources</directory>
-        <includes>
-          <include>**/repository.properties</include>
-        </includes>
-      </resource>
-    </resources>
-  </build>
+        <dependency>
+            <groupId>org.jboss.spec.javax.security.jacc</groupId>
+            <artifactId>jboss-jacc-api_1.4_spec</artifactId>
+        </dependency>
+
+        <!--
+        Testing (note the scope)
+        -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-library</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-all</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.jbossts</groupId>
+            <artifactId>jbossjta</artifactId>
+        </dependency>
+        <!--
+        Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing)
+        -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+        </dependency>
+    </dependencies>
+    <build>
+        <resources>
+            <!-- Apply the properties set in the POM to the resource files -->
+            <resource>
+                <filtering>true</filtering>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <include>**/repository.properties</include>
+                </includes>
+            </resource>
+        </resources>
+    </build>
 </project>
