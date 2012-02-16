@@ -5,35 +5,19 @@
         <groupId>org.modeshape</groupId>
         <artifactId>modeshape-parent</artifactId>
         <version>3.0-SNAPSHOT</version>
-        <relativePath>../../modeshape-parent</relativePath>
+        <relativePath>../modeshape-parent/pom.xml</relativePath>
     </parent>
     <!-- The groupId and version values are inherited from parent -->
-    <artifactId>modeshape-sequencer-wsdl</artifactId>
-    <packaging>jar</packaging>
-    <name>ModeShape Sequencer for WSDL Files</name>
-    <description>ModeShape Sequencer that processes Web Service Definition Language (WSDL) 1.1 files and extracts the
-        representation of the service definitions to repository
-    </description>
+    <artifactId>modeshape-sequencers</artifactId>
+    <packaging>pom</packaging>
+    <name>ModeShape Sequencers</name>
+    <description>ModeShape built-in sequencers </description>
     <url>http://www.modeshape.org</url>
     <dependencies>
-        <dependency>
-            <groupId>wsdl4j</groupId>
-            <artifactId>wsdl4j</artifactId>
-        </dependency>
-
+        <!-- Common -->
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-common</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-sequencer-sramp</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-sequencer-xsd</artifactId>
         </dependency>
 
         <dependency>
@@ -77,6 +61,11 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-library</artifactId>
+        </dependency>
         <!--
         Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing)
         -->
@@ -94,19 +83,24 @@
             <artifactId>log4j</artifactId>
         </dependency>
     </dependencies>
+
+    <modules>
+        <module>modeshape-sequencer-msoffice</module>
+        <module>modeshape-sequencer-images</module>
+        <module>modeshape-sequencer-java</module>
+        <module>modeshape-sequencer-zip</module>
+        <module>modeshape-sequencer-ddl</module>
+        <module>modeshape-sequencer-mp3</module>
+        <module>modeshape-sequencer-text</module>
+        <module>modeshape-sequencer-sramp</module>
+        <!--<module>sequencers/modeshape-sequencer-teiid</module>-->
+        <module>modeshape-sequencer-xsd</module>
+        <module>modeshape-sequencer-xml</module>
+        <module>modeshape-sequencer-wsdl</module>
+    </modules>
+
     <build>
         <plugins>
-            <!--
-                   Adding OSGI metadata to the JAR without changing the packaging type.
-               -->
-            <plugin>
-                <artifactId>maven-jar-plugin</artifactId>
-                <configuration>
-                    <archive>
-                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
-                    </archive>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
@@ -119,6 +113,21 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <supportedProjectTypes>
+                        <supportedProjectType>jar</supportedProjectType>
+                        <supportedProjectType>bundle</supportedProjectType>
+                        <supportedProjectType>pom</supportedProjectType>
+                    </supportedProjectTypes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+                    </archive>
+                </configuration>
             </plugin>
         </plugins>
     </build>
