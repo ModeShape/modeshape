@@ -553,6 +553,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 		conversation might start with a request to the server to check the available repositories.
 <programlisting>
 GET http://www.example.com/resources
+Content-Type: application/json
 </programlisting>		 
 		This request would generate a response that mapped the names of the available repositories to metadata information
 		about the repositories like so:
@@ -593,9 +594,10 @@ GET http://www.example.com/resources
 	<para>		
 		The only thing that you can do with a repository through the REST interface at this time is to
 		get a list of its workspaces.  A request to do so can be built up from the previous response like this:
-<programlisting>
+<programlisting><![CDATA[
 GET http://www.example.com/resources/modeshape%3arepository
-</programlisting>		 
+Content-Type: application/json
+]]></programlisting>		 
 		This request (and all of the following requests) actually create a JCR &Session; to service the request and
 		require that security be configured.  This process is described in more detail in 
 		<link linkend="modeshape_rest_server_configuration">a later section</link>.  Assuming that security has been properly
@@ -621,9 +623,10 @@ GET http://www.example.com/resources/modeshape%3arepository
 		</para>
 		<para>
 		Now a request can be built to retrieve the root item of the repository.
-<programlisting>
+<programlisting><![CDATA[
 GET http://www.example.com/resources/modeshape%3arepository/default/items
-</programlisting>		 
+Content-Type: application/json
+]]></programlisting>		 
 		Any other item in the repository could be accessed by appending its path to the URI above.  In a default
 		repository with no content, this would return the following response:  
 <programlisting><![CDATA[
@@ -641,9 +644,10 @@ GET http://www.example.com/resources/modeshape%3arepository/default/items
 	    <para>
 	    The items resource also contains an option query parameter: <code>mode:depth</code>.  This parameter, which defaults
 	    to 1, controls how deep the hierarchy of returned nodes should be.  Had the request had the parameter:
-<programlisting>
+<programlisting><![CDATA[
 GET http://www.example.com/resources/modeshape%3arepository/default/items?mode:depth=2
-</programlisting>		 
+Content-Type: application/json
+]]></programlisting>		 
 	    Then the response would have contained details for the children of the root node as well.
 <programlisting><![CDATA[
 {
@@ -663,9 +667,9 @@ GET http://www.example.com/resources/modeshape%3arepository/default/items?mode:d
 		<para>
 		It is also possible to use the RESTful API to add, modify and remove repository content.  Removes are simple -
 		a DELETE request with no body returns a response with no body.
-<programlisting>
+<programlisting><![CDATA[
 DELETE http://www.example.com/resources/modeshape%3arepository/default/items/path/to/deletedNode
-</programlisting>		 
+]]></programlisting>		 
 		</para>
 		<para>
 		Adding content simply requires a POST to the name of the <emphasis>relative</emphasis> root node of the
@@ -673,6 +677,7 @@ DELETE http://www.example.com/resources/modeshape%3arepository/default/items/pat
 		nodes at once is supported, as shown below.
 <programlisting><![CDATA[
 POST http://www.example.com/resources/modeshape%3arepository/default/items/newNode
+Content-Type: application/json
 
 {
 	"properties": {
@@ -697,6 +702,7 @@ POST http://www.example.com/resources/modeshape%3arepository/default/items/newNo
 		as a query parameter to your URL. 
 <programlisting><![CDATA[
 POST http://www.example.com/resources/modeshape%3arepository/default/items/newNode?mode:includeNode=false
+Content-Type: application/json
 
 {
 	"properties": {
@@ -720,6 +726,7 @@ POST http://www.example.com/resources/modeshape%3arepository/default/items/newNo
 		<link linkend="binary_properties_in_rest_representations">next section"</link>").
 <programlisting><![CDATA[
 PUT http://www.example.com/resources/modeshape%3arepository/default/items/some/existing/node/someProperty
+Content-Type: application/json
 
 {
 	"someProperty" : "bar"
@@ -729,6 +736,7 @@ PUT http://www.example.com/resources/modeshape%3arepository/default/items/some/e
 		body of the request should then be a JSON object that maps property names to their new values.
 <programlisting><![CDATA[
 PUT http://www.example.com/resources/modeshape%3arepository/default/items/some/existing/node
+Content-Type: application/json
 
 {
 	"someProperty": "foobar",
@@ -738,6 +746,7 @@ PUT http://www.example.com/resources/modeshape%3arepository/default/items/some/e
 		The JSON request can even contain a properties container:
 <programlisting><![CDATA[
 PUT http://www.example.com/resources/modeshape%3arepository/default/items/some/existing/node
+Content-Type: application/json
 
 {
 	"properties": {
@@ -760,6 +769,7 @@ PUT http://www.example.com/resources/modeshape%3arepository/default/items/some/e
 		Here is an example:
 <programlisting><![CDATA[
 PUT http://www.example.com/resources/modeshape%3arepository/default/items/some/existing/node
+Content-Type: application/json
 
 {
 	"properties": {
@@ -821,6 +831,7 @@ PUT http://www.example.com/resources/modeshape%3arepository/default/items/some/e
 		All queries for a given workspace are posted to the same URI and the request body is not JSON-encoded.
 <programlisting><![CDATA[
 POST http://www.example.com/resources/modeshape%3arepository/default/query
+Content-Type: application/json
 
 /a/b/c/d[@foo='bar']
 ]]></programlisting>		 
