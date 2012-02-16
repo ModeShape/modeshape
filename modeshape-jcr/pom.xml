@@ -84,10 +84,6 @@
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-cachestore-jdbc</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-        </dependency>
         <!--
         These following are defined as 'provided' in the parent POM, since ModeShape
         has code that is optional if these APIs are available.
