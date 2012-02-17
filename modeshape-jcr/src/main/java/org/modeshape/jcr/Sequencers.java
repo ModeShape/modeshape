@@ -310,7 +310,7 @@ public class Sequencers implements ChangeSetListener {
         String[] pathExpressions = sequencer.getPathExpressions();
         if (pathExpressions.length == 0) {
             String msg = RepositoryI18n.atLeastOneSequencerPathExpressionMustBeSpecified.text(repository.name(),
-                                                                                              sequencer.getDescription());
+                                                                                              sequencer.getName());
             throw new InvalidSequencerPathExpression(msg);
         }
 

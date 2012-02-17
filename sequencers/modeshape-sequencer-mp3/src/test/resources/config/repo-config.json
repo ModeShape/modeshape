@@ -4,12 +4,12 @@
         "removeDerivedContentWithOriginal" : true,
         "sequencers" : [
             {
-                "description" : "Mp3s in the same location",
+                "name" : "Mp3s in the same location",
                 "type" : "mp3",
                 "pathExpressions" : [ "default://(*.mp3)/jcr:content[@jcr:data]" ]
             },
             {
-                "description" : "Mp3s in different location",
+                "name" : "Mp3s in different location",
                 "type" : "org.modeshape.sequencer.mp3.Mp3MetadataSequencer",
                 "pathExpressions" : [ "default://(*.mp3)/jcr:content[@jcr:data] => /mp3s" ]
             }

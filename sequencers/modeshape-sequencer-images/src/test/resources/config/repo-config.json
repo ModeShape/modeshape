@@ -4,12 +4,12 @@
         "removeDerivedContentWithOriginal" : true,
         "sequencers" : [
             {
-                "description" : "Images in separate location",
+                "name" : "Images in separate location",
                 "type" : "ImageSequencer",
                 "pathExpression" : "default://(*.(gif|png|pict|jpg))/jcr:content[@jcr:data] => default:/sequenced/images"
             },
             {
-                "description" : "Images in the same location",
+                "name" : "Images in the same location",
                 "type" : "org.modeshape.sequencer.image.ImageMetadataSequencer",
                 "pathExpressions" : [ "default://(*.(gif|png|pict|jpg))/jcr:content[@jcr:data]" ]
             }

@@ -4,7 +4,7 @@
         "removeDerivedContentWithOriginal" : true,
         "sequencers" : [
             {
-                "description" : "Office sequencer",
+                "name" : "Office sequencer",
                 "type" : "msoffice",
                 "pathExpressions" : [ "default://(*.(xls|doc|ppt))/jcr:content[@jcr:data]" ]
             }

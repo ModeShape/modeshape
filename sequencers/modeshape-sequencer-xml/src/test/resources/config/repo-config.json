@@ -4,12 +4,12 @@
         "removeDerivedContentWithOriginal" : true,
         "sequencers" : [
             {
-                "description" : "XML sequencer",
+                "name" : "XML sequencer",
                 "type" : "xmlsequencer",
                 "pathExpressions" : [ "default:/(*.xml)/jcr:content[@jcr:data] => /xml" ]
             },
             {
-                "description" : "Inheriting XML sequencer",
+                "name" : "Inheriting XML sequencer",
                 "type" : "org.modeshape.sequencer.xml.InheritingXmlSequencer",
                 "pathExpressions" : [ "default:/(*.xsd)/jcr:content[@jcr:data] => /xml" ]
             }

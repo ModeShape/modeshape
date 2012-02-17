@@ -58,7 +58,7 @@ public final class TextExtractors implements TextExtractor {
                 TextExtractor extractor = component.createInstance(cl);
                 this.extractors.add(extractor);
             } catch (Throwable t) {
-                String desc = component.getDescription();
+                String desc = component.getName();
                 String repoName = repository.name();
                 Logger.getLogger(getClass()).error(t, JcrI18n.unableToInitializeTextExtractor, desc, repoName, t.getMessage());
             }

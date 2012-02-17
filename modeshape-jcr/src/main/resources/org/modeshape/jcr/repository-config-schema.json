@@ -205,9 +205,9 @@
                                 "type" : "string",
                                 "description" : "The optional name of the classloader that should be used to load the AuthenicationProvider implementation class. If empty or not provided, the classpath accessible to ModeShape will be used."
                             },
-                            "description" : {
+                            "name" : {
                                 "type" : "string",
-                                "description" : "The optional description of the security provider configuration, used for administration and reporting. If not specified, the classname will be used."
+                                "description" : "The optional unqiue name of the security provider configuration, used for administration and reporting. If not specified, the classname will be used."
                             }
                         }
                     }
@@ -247,9 +247,9 @@
                                 "type" : "string",
                                 "description" : "The optional name of the classloader that should be used to load the sequencer class. If empty or not provided, the classpath accessible to ModeShape will be used."
                             },
-                            "description" : {
+                            "name" : {
                                 "type" : "string",
-                                "description" : "The optional description of the extractor configuration, used for administration and reporting purposes. If not specified, the extractor's classname will be used."
+                                "description" : "The optional unique name of the extractor configuration, used for administration and reporting purposes. If not specified, the extractor's classname will be used."
                             }
                         }
                     }
@@ -699,9 +699,9 @@
                                 },
                                 "description" : "The expressions that describes the paths upon which this sequencer operates and the paths where the sequencer output is written."
                             },
-                            "description" : {
+                            "name" : {
                                 "type" : "string",
-                                "description" : "The optional description of the sequencer configuration, used for administration and reporting purposes. If not specified, the description will be a combination of the type and path expressions."
+                                "description" : "The optional unique name of the sequencer configuration, used for administration and reporting purposes. If not specified, the description will be a combination of the type and path expressions."
                             }
                         }
                     }
