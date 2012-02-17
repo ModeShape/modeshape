@@ -32,15 +32,15 @@ import java.util.Properties;
  * 
  * @author Horia Chiorean
  */
-public class DataSourceConfig {
+public class DatasourceConfig {
     
     private final Properties dsProperties;
 
-    public DataSourceConfig() {
+    public DatasourceConfig() {
         this("datasource.properties");
     }
 
-    public DataSourceConfig( String configFilePath ) {
+    public DatasourceConfig( String configFilePath ) {
         this.dsProperties = loadPropertiesFile(configFilePath);
     }
 

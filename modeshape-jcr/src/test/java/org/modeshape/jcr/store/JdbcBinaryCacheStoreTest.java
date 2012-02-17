@@ -28,7 +28,7 @@ import org.infinispan.loaders.CacheLoaderConfig;
 import org.infinispan.loaders.jdbc.binary.JdbcBinaryCacheStoreConfig;
 import org.junit.Ignore;
 import org.modeshape.common.util.FileUtil;
-import org.modeshape.jcr.DataSourceConfig;
+import org.modeshape.jcr.DatasourceConfig;
 
 /**
  * Currently ignored because of the time required to run it.
@@ -37,7 +37,7 @@ import org.modeshape.jcr.DataSourceConfig;
 public class JdbcBinaryCacheStoreTest extends InMemoryTest {
 
     private final File dbDir = new File("target/test/db");
-    private final DataSourceConfig dataSourceConfig = new DataSourceConfig();
+    private final DatasourceConfig dataSourceConfig = new DatasourceConfig();
 
     @Override
     protected void cleanUpFileSystem() throws Exception {
