@@ -1,117 +1,112 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>org.modeshape</groupId>
-    <artifactId>modeshape-parent</artifactId>
-    <version>3.0-SNAPSHOT</version>
-    <relativePath>../../modeshape-parent</relativePath>
-  </parent>
-  <!-- The groupId and version values are inherited from parent -->
-  <artifactId>modeshape-jdbc</artifactId>
-  <packaging>jar</packaging>
-  <name>ModeShape JDBC Driver</name>
-  <description>JDBC driver to allow clients to use JCR-SQL2 to query a local or remote ModeShape JCR repository.</description>
-  <url>http://www.modeshape.org</url>
-  <!--
-    Define the dependencies. Note that all version and scopes default to those defined in the dependencyManagement section of the
-    parent pom.
-  -->
-  <dependencies>
-    <dependency>
-      <groupId>javax.jcr</groupId>
-      <artifactId>jcr</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.modeshape</groupId>
-      <artifactId>modeshape-jdbc-local</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.modeshape</groupId>
-        <artifactId>modeshape-web-jcr-rest-client</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <!-- 
-    Testing (note the scope)
+    <parent>
+        <groupId>org.modeshape</groupId>
+        <artifactId>modeshape-parent</artifactId>
+        <version>3.0-SNAPSHOT</version>
+        <relativePath>../modeshape-parent/pom.xml</relativePath>
+    </parent>
+
+    <!-- The groupId and version values are inherited from parent -->
+    <artifactId>modeshape-jdbc</artifactId>
+    <packaging>jar</packaging>
+    <name>ModeShape JDBC Driver</name>
+    <description>JDBC driver to allow clients to use JCR-SQL2 to query a local or remote ModeShape JCR repository.</description>
+    <url>http://www.modeshape.org</url>
+    <!--
+      Define the dependencies. Note that all version and scopes default to those defined in the dependencyManagement section of the
+      parent pom.
     -->
-    <dependency>
-      <groupId>org.modeshape</groupId>
-      <artifactId>modeshape-common</artifactId>
-      <version>${project.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.modeshape</groupId>
-      <artifactId>modeshape-jcr</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.modeshape</groupId>
-      <artifactId>modeshape-jcr</artifactId>
-      <version>${project.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.infinispan</groupId>
-      <artifactId>infinispan-core</artifactId>
-      <version>${infinispan.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.modeshape</groupId>
-      <artifactId>modeshape-jdbc-local</artifactId>
-      <version>${project.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
-        
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.hamcrest</groupId>
-      <artifactId>hamcrest-library</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-all</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-    </dependency>
-	<dependency>
-		<groupId>org.slf4j</groupId>
-		<artifactId>slf4j-log4j12</artifactId>
-		<scope>runtime</scope>
-	</dependency>
-	<dependency>
-		<groupId>log4j</groupId>
-		<artifactId>log4j</artifactId>
-		<scope>runtime</scope>
-	</dependency>	
-		<!--
-		PicketBox (JAAS implementation used in test cases)
-		-->
-    <dependency>
-      <groupId>org.picketbox</groupId>
-      <artifactId>picketbox-bare</artifactId>
-    </dependency>
-    <!-- 
-    Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing) 
-    -->
-		<!-- 
-      ID Trust (JAAS Dependency) for testing
-    -->
-  </dependencies>
-  
+    <dependencies>
+        <dependency>
+            <groupId>javax.jcr</groupId>
+            <artifactId>jcr</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jdbc-local</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-web-jcr-rest-client</artifactId>
+        </dependency>
+        <!--
+        Testing (note the scope)
+        -->
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-common</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jcr</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jcr</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-core</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jdbc-local</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-library</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-all</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <!--
+          PicketBox (JAAS implementation used in test cases)
+          -->
+        <dependency>
+            <groupId>org.picketbox</groupId>
+            <artifactId>picketbox-bare</artifactId>
+        </dependency>
+        <!--
+        Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing)
+        -->
+        <!--
+          ID Trust (JAAS Dependency) for testing
+        -->
+    </dependencies>
+
     <profiles>
         <profile>
             <id>cargo-1</id>
@@ -120,34 +115,32 @@
             </activation>
 
             <build>
-             <resources>
-                 <resource>
-                  <filtering>false</filtering>
-                      <directory>src/main/resources</directory>
-                      <includes>
-                           <include>*</include>
-                           <include>**/*</include>
-                        </includes>
-                  </resource>
-                    <!-- Apply the properties set in the POM to the resource files -->
-                  <resource>
-                       <filtering>true</filtering>
+                <resources>
+                    <resource>
+                        <filtering>false</filtering>
                         <directory>src/main/resources</directory>
-                         <includes>
+                        <includes>
+                            <include>*</include>
+                            <include>**/*</include>
+                        </includes>
+                    </resource>
+                    <!-- Apply the properties set in the POM to the resource files -->
+                    <resource>
+                        <filtering>true</filtering>
+                        <directory>src/main/resources</directory>
+                        <includes>
                             <include>**/JdbcI18n.properties</include>
                         </includes>
                     </resource>
                 </resources>
                 <plugins>
-                <!--
+                    <!--
                         Override the default Surefire behavior to run during
                         integration-test phase
                     -->
                     <plugin>
-                        <groupId>org.apache.maven.plugins
-                        </groupId>
-                        <artifactId>maven-surefire-plugin
-                        </artifactId>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <skip>true</skip>
                         </configuration>
@@ -164,181 +157,166 @@
                             </execution>
                         </executions>
                     </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>assembly</id>
+            <build>
+                <resources>
+                    <resource>
+                        <filtering>false</filtering>
+                        <directory>src/main/resources</directory>
+                        <includes>
+                            <include>*</include>
+                            <include>**/*</include>
+                        </includes>
+                    </resource>
+                    <!-- Apply the properties set in the POM to the resource files -->
+                    <resource>
+                        <filtering>true</filtering>
+                        <directory>src/main/resources</directory>
+                        <includes>
+                            <include>**/JdbcI18n.properties</include>
+                        </includes>
+                    </resource>
+                </resources>
+                <plugins>
+                    <plugin>
+                        <!--
+                        We need to build a ZIP file so that the Ant task (below) can easily extract and rename the various files.
+                        However, this ZIP file is not needed for anything else, and we certainly don't want to install the ZIP
+                        file in the Maven repository, so we'll set "attach" to false.
+                        -->
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>src/assembly/kit.xml</descriptor>
+                            </descriptors>
+                            <archive>
+                                <manifest>
+                                    <addClasspath>true</addClasspath>
+                                </manifest>
+                            </archive>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
 
-				  <!--
-				   Adding OSGI metadata to the JAR without changing the packaging type.
-				  -->
-				  <plugin>
-					<artifactId>maven-jar-plugin</artifactId>
-					<configuration>
-					  <archive>
-						<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
-					  </archive>
-					</configuration>
-				  </plugin>
-				  <plugin>
-					<groupId>org.apache.felix</groupId>
-					<artifactId>maven-bundle-plugin</artifactId>
-					<executions>
-					  <execution>
-						<id>bundle-manifest</id>
-						<phase>process-classes</phase>
-						<goals>
-						  <goal>manifest</goal>
-						</goals>
-					  </execution>
-					</executions>
-				  </plugin>    
-				</plugins>
-			</build>
-		</profile>
-  	<profile>
-			<id>assembly</id>
-				<build>
-          <resources>
-            <resource>
-             <filtering>false</filtering>
-             <directory>src/main/resources</directory>
-             <includes>
-               <include>*</include>
-               <include>**/*</include>
-             </includes>
-             </resource>
-             <!-- Apply the properties set in the POM to the resource files -->
-             <resource>
-               <filtering>true</filtering>
-               <directory>src/main/resources</directory>
-               <includes>
-                 <include>**/JdbcI18n.properties</include>
-               </includes>
-             </resource>
-           </resources>
-           <plugins>
-             <plugin>
-               <!--
-               We need to build a ZIP file so that the Ant task (below) can easily extract and rename the various files.
-               However, this ZIP file is not needed for anything else, and we certainly don't want to install the ZIP
-               file in the Maven repository, so we'll set "attach" to false.
-               -->
-               <artifactId>maven-assembly-plugin</artifactId>
-               <configuration>
-                 <descriptors>
-                   <descriptor>src/assembly/kit.xml</descriptor>
-                 </descriptors>
-                 <archive>
-                   <manifest>
-                     <addClasspath>true</addClasspath>
-                   </manifest>
-                 </archive>
-               </configuration>
-               <executions>
-                 <execution>
-                   <phase>package</phase>
-                   <goals>
-                     <goal>single</goal>
-                   </goals>
-                 </execution>
-              </executions>
-            </plugin> 
-                        
-            <!-- 
-                The following ant tasks are used to remove any duplicates from the modeshape-jdbc jar. 
-                Unfortunately, maven has a bug in this regard and there's no way to resolve duplicates using
-                the 2.0.x version.  So, by using ant, the duplicate files (i.e., META-INF/..)  can
-                be eliminated.
-                
-                Note:  this is all changing in future releases.
-                
-                test dups:  unzip -l modeshape-jdbc-${project.version}-http-jar-with-dependencies.jar | awk '{print $NF}' | sort | uniq -c | grep -v "1 "
-             -->
-             
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
-                 <dependencies>
-                    <dependency>
-                        <groupId>org.apache.ant</groupId>
-                        <artifactId>ant</artifactId>
-                        <version>1.7.0</version>
-                    </dependency>
-                 </dependencies>
-                <executions>
-                <execution>
-                    <id>repackage-client-jar</id>
-                    <phase>package</phase>
-                    <configuration>
-                        <tasks>
-                            <unzip src="target/modeshape-jdbc-${project.version}-jar-with-dependencies.jar" dest="target/tempjars" />
-                            
-                            <unzip src="target/tempjars/jaxrs-api-1.2.1.GA.jar" dest="target/temploc" />                                   
-                            <unzip src="target/tempjars/jcr-2.0.jar" dest="target/temploc" />                                   
-                            <unzip src="target/tempjars/slf4j-api-1.6.1.jar" dest="target/temploc" />                                    
-                            <!--unzip src="target/tempjars/slf4j-log4j12-1.6.1.jar" dest="target/temploc" /-->                                                                           
-                            
-                            <unzip src="target/tempjars/commons-codec-1.4.jar" dest="target/temploc" />
-                            <move file="target/temploc/META-INF/LICENSE.txt" tofile="target/temploc/META-INF/LICENSE_commons-codec.txt" />
-                            
-                            <unzip src="target/tempjars/commons-logging-1.1.1.jar" dest="target/temploc" />                                   
-                            <move file="target/temploc/META-INF/LICENSE" tofile="target/temploc/META-INF/LICENSE_commons-logging.txt" />
-                            <move file="target/temploc/META-INF/NOTICE" tofile="target/temploc/META-INF/NOTICE_commons-logging.txt" />                                       
+                    <!--
+                       The following ant tasks are used to remove any duplicates from the modeshape-jdbc jar.
+                       Unfortunately, maven has a bug in this regard and there's no way to resolve duplicates using
+                       the 2.0.x version.  So, by using ant, the duplicate files (i.e., META-INF/..)  can
+                       be eliminated.
 
-                            <unzip src="target/tempjars/httpclient-4.1.2.jar" dest="target/temploc" />                                   
-                            <move file="target/temploc/META-INF/LICENSE.txt" tofile="target/temploc/META-INF/LICENSE_httpclient.txt" />
-                            <move file="target/temploc/META-INF/NOTICE.txt" tofile="target/temploc/META-INF/NOTICE_httpclient.txt" />
-                            
-                            <unzip src="target/tempjars/httpcore-4.1.2.jar" dest="target/temploc" />                                   
-                            <move file="target/temploc/META-INF/LICENSE.txt" tofile="target/temploc/META-INF/LICENSE_httpcore.txt" />
-                            <move file="target/temploc/META-INF/NOTICE.txt" tofile="target/temploc/META-INF/NOTICE_httpcore.txt" />
+                       Note:  this is all changing in future releases.
 
-                            <unzip src="target/tempjars/jettison-1.1.jar" dest="target/temploc" />                                   
-                            <move file="target/temploc/META-INF/LICENSE" tofile="target/temploc/META-INF/LICENSE_jettison.txt" />                                       
+                       test dups:  unzip -l modeshape-jdbc-${project.version}-http-jar-with-dependencies.jar | awk '{print $NF}' | sort | uniq -c | grep -v "1 "
+                    -->
 
-                            <!--unzip src="target/tempjars/log4j-1.2.16.jar" dest="target/temploc" />                                   
-                            <move file="target/temploc/META-INF/LICENSE" tofile="target/temploc/META-INF/LICENSE_log4j.txt" />
-                            <move file="target/temploc/META-INF/NOTICE" tofile="target/temploc/META-INF/NOTICE_log4j.txt" /-->
-                            
-                            <unzip src="target/tempjars/resteasy-jaxrs-1.2.1.GA.jar" dest="target/temploc" />                                   
-                            <move file="target/temploc/META-INF/services/javax.ws.rs.ext.Providers" tofile="target/tempproviders/jaxrs_providers" />
-                            
-                            <unzip src="target/tempjars/resteasy-jaxb-provider-1.2.1.GA.jar" dest="target/temploc" />                                   
-                            <move file="target/temploc/META-INF/services/javax.ws.rs.ext.Providers" tofile="target/tempproviders/jaxb_providers" />
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>repackage-client-jar</id>
+                                <phase>package</phase>
+                                <configuration>
+                                    <tasks>
+                                        <unzip src="target/modeshape-jdbc-${project.version}-jar-with-dependencies.jar"
+                                               dest="target/tempjars"/>
 
-                            <unzip src="target/tempjars/resteasy-jettison-provider-1.2.1.GA.jar" dest="target/temploc" />                                   
-                            <move file="target/temploc/META-INF/services/javax.ws.rs.ext.Providers" tofile="target/tempproviders/jet_providers" />
-                            
-                            <concat destfile="target/temploc/META-INF/services/javax.ws.rs.ext.Providers">
-                                    <fileset file="target/tempproviders/jaxrs_providers" />
-                                    <fileset file="target/tempproviders/jaxb_providers" />
-                                    <fileset file="target/tempproviders/jet_providers" />
-                            </concat>
-                                                               
-                            <unzip src="target/tempjars/modeshape-common-${project.version}.jar" dest="target/temploc" />
-                            <unzip src="target/tempjars/modeshape-jcr-api-${project.version}.jar" dest="target/temploc" />
-                            <unzip src="target/tempjars/modeshape-web-jcr-rest-client-${project.version}.jar" dest="target/temploc" />
-                            
-                             <copy todir="target/temploc/org">
-                                <fileset dir="target/tempjars/org" />
-                             </copy>
-                                                                                                     
-                            
-                            <delete file="target/modeshape-jdbc-${project.version}-jar-with-dependencies.jar" />
-                            <jar destfile="target/modeshape-jdbc-${project.version}-jar-with-dependencies.jar" basedir="target/temploc" />
-                            
-                             <delete dir="target/tempjars" />
-                             <delete dir="target/temploc" />
-                             <delete dir="target/tempproviders" />
-                             <delete file="target/modeshape-jdbc-${project.version}-jar-with-dependencies.zip" />
-                        </tasks>
-                    </configuration>
-                    <goals>
-                        <goal>run</goal>
-                    </goals>
-                </execution>
-              </executions>
-            </plugin>                         
-				</plugins>
-			</build>	
-		</profile>
- </profiles>
-        
+                                        <unzip src="target/tempjars/jaxrs-api-1.2.1.GA.jar" dest="target/temploc"/>
+                                        <unzip src="target/tempjars/jcr-2.0.jar" dest="target/temploc"/>
+                                        <unzip src="target/tempjars/slf4j-api-1.6.1.jar" dest="target/temploc"/>
+                                        <!--unzip src="target/tempjars/slf4j-log4j12-1.6.1.jar" dest="target/temploc" /-->
+
+                                        <unzip src="target/tempjars/commons-codec-1.4.jar" dest="target/temploc"/>
+                                        <move file="target/temploc/META-INF/LICENSE.txt"
+                                              tofile="target/temploc/META-INF/LICENSE_commons-codec.txt"/>
+
+                                        <unzip src="target/tempjars/commons-logging-1.1.1.jar" dest="target/temploc"/>
+                                        <move file="target/temploc/META-INF/LICENSE"
+                                              tofile="target/temploc/META-INF/LICENSE_commons-logging.txt"/>
+                                        <move file="target/temploc/META-INF/NOTICE"
+                                              tofile="target/temploc/META-INF/NOTICE_commons-logging.txt"/>
+
+                                        <unzip src="target/tempjars/httpclient-4.1.2.jar" dest="target/temploc"/>
+                                        <move file="target/temploc/META-INF/LICENSE.txt"
+                                              tofile="target/temploc/META-INF/LICENSE_httpclient.txt"/>
+                                        <move file="target/temploc/META-INF/NOTICE.txt"
+                                              tofile="target/temploc/META-INF/NOTICE_httpclient.txt"/>
+
+                                        <unzip src="target/tempjars/httpcore-4.1.2.jar" dest="target/temploc"/>
+                                        <move file="target/temploc/META-INF/LICENSE.txt"
+                                              tofile="target/temploc/META-INF/LICENSE_httpcore.txt"/>
+                                        <move file="target/temploc/META-INF/NOTICE.txt"
+                                              tofile="target/temploc/META-INF/NOTICE_httpcore.txt"/>
+
+                                        <unzip src="target/tempjars/jettison-1.1.jar" dest="target/temploc"/>
+                                        <move file="target/temploc/META-INF/LICENSE"
+                                              tofile="target/temploc/META-INF/LICENSE_jettison.txt"/>
+
+                                        <!--unzip src="target/tempjars/log4j-1.2.16.jar" dest="target/temploc" />
+                                     <move file="target/temploc/META-INF/LICENSE" tofile="target/temploc/META-INF/LICENSE_log4j.txt" />
+                                     <move file="target/temploc/META-INF/NOTICE" tofile="target/temploc/META-INF/NOTICE_log4j.txt" /-->
+
+                                        <unzip src="target/tempjars/resteasy-jaxrs-1.2.1.GA.jar" dest="target/temploc"/>
+                                        <move file="target/temploc/META-INF/services/javax.ws.rs.ext.Providers"
+                                              tofile="target/tempproviders/jaxrs_providers"/>
+
+                                        <unzip src="target/tempjars/resteasy-jaxb-provider-1.2.1.GA.jar" dest="target/temploc"/>
+                                        <move file="target/temploc/META-INF/services/javax.ws.rs.ext.Providers"
+                                              tofile="target/tempproviders/jaxb_providers"/>
+
+                                        <unzip src="target/tempjars/resteasy-jettison-provider-1.2.1.GA.jar"
+                                               dest="target/temploc"/>
+                                        <move file="target/temploc/META-INF/services/javax.ws.rs.ext.Providers"
+                                              tofile="target/tempproviders/jet_providers"/>
+
+                                        <concat destfile="target/temploc/META-INF/services/javax.ws.rs.ext.Providers">
+                                            <fileset file="target/tempproviders/jaxrs_providers"/>
+                                            <fileset file="target/tempproviders/jaxb_providers"/>
+                                            <fileset file="target/tempproviders/jet_providers"/>
+                                        </concat>
+
+                                        <unzip src="target/tempjars/modeshape-common-${project.version}.jar"
+                                               dest="target/temploc"/>
+                                        <unzip src="target/tempjars/modeshape-jcr-api-${project.version}.jar"
+                                               dest="target/temploc"/>
+                                        <unzip src="target/tempjars/modeshape-web-jcr-rest-client-${project.version}.jar"
+                                               dest="target/temploc"/>
+
+                                        <copy todir="target/temploc/org">
+                                            <fileset dir="target/tempjars/org"/>
+                                        </copy>
+
+
+                                        <delete file="target/modeshape-jdbc-${project.version}-jar-with-dependencies.jar"/>
+                                        <jar destfile="target/modeshape-jdbc-${project.version}-jar-with-dependencies.jar"
+                                             basedir="target/temploc"/>
+
+                                        <delete dir="target/tempjars"/>
+                                        <delete dir="target/temploc"/>
+                                        <delete dir="target/tempproviders"/>
+                                        <delete file="target/modeshape-jdbc-${project.version}-jar-with-dependencies.zip"/>
+                                    </tasks>
+                                </configuration>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
 </project>

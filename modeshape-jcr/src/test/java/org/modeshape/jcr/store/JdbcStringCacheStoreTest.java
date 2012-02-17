@@ -34,7 +34,8 @@ import org.junit.Ignore;
 @Ignore
 public class JdbcStringCacheStoreTest extends InMemoryTest {
 
-    private final File dbDir = new File("./target/database");
+    private final File dbDir = new File("target/test/db");
+    private final DataSourceConfig dataSourceConfig = new DataSourceConfig();
 
     @Override
     protected void cleanUpFileSystem() throws Exception {
@@ -47,13 +48,13 @@ public class JdbcStringCacheStoreTest extends InMemoryTest {
         JdbcStringBasedCacheStoreConfig config = new JdbcStringBasedCacheStoreConfig();
         config.setConnectionFactoryClass("org.infinispan.loaders.jdbc.connectionfactory.PooledConnectionFactory");
         // config.setConnectionUrl("jdbc:h2:mem:string_based_db;DB_CLOSE_DELAY=-1");
-        config.setConnectionUrl("jdbc:h2:file:" + dbDir.getAbsolutePath() + "/string_based_db;DB_CLOSE_DELAY=1");
+        config.setConnectionUrl(dataSourceConfig.getUrl() + "/string_based_db;DB_CLOSE_DELAY=1");
         config.setIdColumnName("ID_COLUMN");
         config.setDataColumnName("DATA_COLUMN");
         config.setTimestampColumnName("TIMESTAMP_COLUMN");
         config.setStringsTableNamePrefix("ISPN_STRING_TABLE");
-        config.setUserName("sa");
-        config.setDriverClass("org.h2.Driver");
+        config.setUserName(dataSourceConfig.getUsername());
+        config.setDriverClass(dataSourceConfig.getDriverClassName());
         config.setIdColumnType("VARCHAR(255)");
         config.setDataColumnType("BINARY");
         config.setTimestampColumnType("BIGINT");

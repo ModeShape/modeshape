@@ -1,0 +1,71 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.modeshape</groupId>
+        <artifactId>modeshape-sequencers</artifactId>
+        <version>3.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <!-- The groupId and version values are inherited from parent -->
+    <artifactId>modeshape-sequencer-java</artifactId>
+    <packaging>jar</packaging>
+    <name>ModeShape Sequencer for Java Class/Source Files</name>
+    <description>ModeShape Sequencer that processes Java class and source files</description>
+    <url>http://www.modeshape.org</url>
+
+    <!--
+    Define the dependencies.  Note that all version and scopes default to those
+    defined in the dependencyManagement section of the parent pom.
+    -->
+    <dependencies>
+        <dependency>
+            <groupId>javassist</groupId>
+            <artifactId>javassist</artifactId>
+        </dependency>
+        <!--
+              Eclipse Java Development Tools (JDT) parser and its (many) required libraries
+          -->
+        <dependency>
+            <groupId>org.eclipse.equinox</groupId>
+            <artifactId>common</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.eclipse.jdt</groupId>
+            <artifactId>core</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.eclipse.core.runtime.compatibility</groupId>
+                    <artifactId>auth</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.eclipse.equinox</groupId>
+                    <artifactId>app</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.eclipse</groupId>
+                    <artifactId>text</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.eclipse.core</groupId>
+                    <artifactId>filesystem</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <testResources>
+            <testResource>
+                <directory>${project.basedir}/src/test/resources</directory>
+            </testResource>
+            <testResource>
+                <directory>${project.basedir}/src/test/java</directory>
+                <includes>
+                    <include>org/modeshape/sequencer/testdata/*.*</include>
+                </includes>
+            </testResource>
+        </testResources>
+    </build>
+</project>

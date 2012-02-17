@@ -1,94 +1,69 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>org.modeshape</groupId>
-    <artifactId>modeshape-parent</artifactId>
-    <version>3.0-SNAPSHOT</version>
-    <relativePath>../modeshape-parent</relativePath>
-  </parent>
+    <parent>
+        <groupId>org.modeshape</groupId>
+        <artifactId>modeshape-parent</artifactId>
+        <version>3.0-SNAPSHOT</version>
+        <relativePath>../modeshape-parent/pom.xml</relativePath>
+    </parent>
 
-  <!-- The groupId and version values are inherited from parent -->
-  <artifactId>modeshape-jcr-api</artifactId>
-  <packaging>jar</packaging>
-  <name>ModeShape JCR Repository API</name>
-  <description>ModeShape JCR Repository API</description>
-  <url>http://www.modeshape.org</url>
-  
-  <!--
-  Define the dependencies.  Note that all version and scopes default to those 
-  defined in the dependencyManagement section of the parent pom.
-  -->
-  <dependencies>
-    <!-- 
-      Java Content Repository API 
-    -->
-    <dependency>
-      <groupId>javax.jcr</groupId>
-      <artifactId>jcr</artifactId>
-    </dependency>
+    <!-- The groupId and version values are inherited from parent -->
+    <artifactId>modeshape-jcr-api</artifactId>
+    <packaging>jar</packaging>
+    <name>ModeShape JCR Repository API</name>
+    <description>ModeShape JCR Repository API</description>
+    <url>http://www.modeshape.org</url>
 
     <!--
-    These following are defined as 'provided' in the parent POM, since ModeShape
-    has code that is optional if these APIs are available.
+    Define the dependencies.  Note that all version and scopes default to those
+    defined in the dependencyManagement section of the parent pom.
     -->
-    <dependency>
-      <groupId>javax.servlet</groupId>
-      <artifactId>servlet-api</artifactId>
-    </dependency>
+    <dependencies>
+        <!--
+          Java Content Repository API
+        -->
+        <dependency>
+            <groupId>javax.jcr</groupId>
+            <artifactId>jcr</artifactId>
+        </dependency>
 
-    <!-- See MODE-1140 -->
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>${junit.version}</version>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
+        <!--
+        These following are defined as 'provided' in the parent POM, since ModeShape
+        has code that is optional if these APIs are available.
+        -->
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
+        </dependency>
 
-  <build>
-	<plugins>
-	  <!--
-	Adding OSGI metadata to the JAR without changing the packaging type.
-			-->
-			<plugin>
-				<artifactId>maven-jar-plugin</artifactId>
-				<configuration>
-					<archive>
-						<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
-					</archive>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.felix</groupId>
-				<artifactId>maven-bundle-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>bundle-manifest</id>
-						<phase>process-classes</phase>
-						<goals>
-							<goal>manifest</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-      <plugin>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <configuration>
-          <descriptors>
-            <descriptor>src/main/assembly/with-dependencies.xml</descriptor>
-          </descriptors>
-        </configuration>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>single</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
+        <!-- See MODE-1140 -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <descriptors>
+                        <descriptor>src/main/assembly/with-dependencies.xml</descriptor>
+                    </descriptors>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
