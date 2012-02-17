@@ -51,7 +51,7 @@ import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 public abstract class Sequencer {
 
     private final UUID uuid = UUID.randomUUID();
-    private String description;
+    private String name;
     private String repositoryName;
     private Object[] pathExpressions;
     private String pathExpression;
@@ -66,12 +66,12 @@ public abstract class Sequencer {
     }
 
     /**
-     * Get the description for this sequencer.
+     * Get the name for this sequencer.
      * 
-     * @return the description, or null if there is no description
+     * @return the name, or null if there is no description
      */
-    public final String getDescription() {
-        return description;
+    public final String getName() {
+        return name;
     }
 
     /**
@@ -165,8 +165,7 @@ public abstract class Sequencer {
 
     @Override
     public String toString() {
-        return repositoryName + " -> " + getClass().getName() + " uuid=" + uuid
-               + (description != null ? (" : " + description) : "");
+        return repositoryName + " -> " + getClass().getName() + " uuid=" + uuid + (name != null ? (" : " + name) : "");
     }
 
     /**

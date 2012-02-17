@@ -36,8 +36,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.CommonI18n;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.i18n.I18n;
 
 /**
@@ -136,14 +136,14 @@ public class MimeTypeUtil {
      */
     protected static Map<String, String> getDefaultMappings() {
         Map<String, Set<String>> duplicates = new HashMap<String, Set<String>>();
-        ClassLoader contextClassLoader = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+        ClassLoader classLoader = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
             @Override
             public ClassLoader run() {
                 return Thread.currentThread().getContextClassLoader();
             }
         });
-        return load(contextClassLoader.getResourceAsStream(MIME_TYPE_EXTENSIONS_RESOURCE_PATH),
-                    duplicates);
+        if (classLoader == null) classLoader = MimeTypeUtil.class.getClassLoader();
+        return load(classLoader.getResourceAsStream(MIME_TYPE_EXTENSIONS_RESOURCE_PATH), duplicates);
     }
 
     /**

@@ -1,0 +1,53 @@
+{
+    "name" : "Text Sequencers Test Repository",
+    "sequencing" : {
+        "removeDerivedContentWithOriginal" : true,
+        "sequencers" : [
+            {
+                "name" : "Delimited text sequencer",
+                "type" : "delimitedtext",
+                "pathExpressions" : [ "default:/(*.csv)/jcr:content[@jcr:data] => /delimited" ],
+                "commentMarker" : "#"
+            },
+            {
+                "name" : "Delimited text sequencer with max lines to read",
+                "type" : "org.modeshape.sequencer.text.DelimitedTextSequencer",
+                "maximumLinesToRead" : 3,
+                "pathExpressions" : [ "default://maxlines/(*.csv)/jcr:content[@jcr:data] => /delimited/maxlines" ]
+            },
+            {
+                "name" : "Delimited text sequencer with custom row factory",
+                "type" : "org.modeshape.sequencer.text.DelimitedTextSequencer",
+                "rowFactoryClassName" : "org.modeshape.sequencer.text.CustomRowFactory",
+                "pathExpressions" : [ "default://customrowfactory/(*.csv)/jcr:content[@jcr:data] => /delimited/customrowfactory" ]
+            },
+            {
+                "name" : "Delimited text sequencer with custom split pattern",
+                "type" : "org.modeshape.sequencer.text.DelimitedTextSequencer",
+                "splitPattern" : "\\|",
+                "pathExpressions" : [ "default://customsplitpattern/(*.csv)/jcr:content[@jcr:data] => /delimited/customsplitpattern" ]
+            },
+            {
+                "name" : "Fixed width text sequencer",
+                "type" : "fixedwidthtext",
+                "pathExpressions" : [ "default:/(*.txt)/jcr:content[@jcr:data] => /fixed"] ,
+                "columnStartPositions" : [3,6],
+                "commentMarker" : "#"
+            },
+            {
+                "name" : "Fixed width text sequencer with custom row factory",
+                "type" : "org.modeshape.sequencer.text.FixedWidthTextSequencer",
+                "rowFactoryClassName" : "org.modeshape.sequencer.text.CustomRowFactory",
+                "columnStartPositions" : [3,6],
+                "pathExpressions" : [ "default://customrowfactory/(*.txt)/jcr:content[@jcr:data] => /fixed/customrowfactory" ]
+            },
+            {
+                "name" : "Fixed width text sequencer with max lines to read",
+                "type" : "org.modeshape.sequencer.text.FixedWidthTextSequencer",
+                "maximumLinesToRead" : 3,
+                "columnStartPositions" : [3,6],
+                "pathExpressions" : [ "default://maxline/(*.txt)/jcr:content[@jcr:data] => /delimited/maxlines" ]
+            }
+        ]
+    }
+}

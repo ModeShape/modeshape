@@ -35,12 +35,14 @@
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-common</artifactId>
+            <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-web-jcr-rest-war</artifactId>
+            <version>${project.version}</version>
             <scope>integration-test</scope>
         </dependency>
         <dependency>
@@ -207,6 +209,8 @@
                             </execution>
                         </executions>
                     </plugin>
+               </plugins>
+           </build>
         </profile>
 
         <profile>

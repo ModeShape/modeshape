@@ -61,10 +61,9 @@
         "removeDerivedContentWithOriginal" : true,
         "sequencers" : [
             {
-                "name" : "ZIP Files",
+                "name" : "ZIP Files loaded under '/files' and extracted into '/sequenced/zip/$1'",
                 "type" : "ZipSequencer",
                 "pathExpressions" : ["default:/files(//)(*.zip[*])/jcr:content[@jcr:data] => default:/sequenced/zip/$1"],
-                "description" : "Sequences ZIP files loaded under '/files' and extracting into '/sequenced/zip/$1'",
             },
             {
                 "name" : "Delimited Text File Sequencer",

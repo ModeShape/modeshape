@@ -75,7 +75,7 @@ public class SequencingTest extends SingleUseAbstractTest {
         EditableArray sequencers = sequencing.getOrCreateArray(FieldName.SEQUENCERS);
         // Create the sequencer doc ...
         EditableDocument sequencer = Schematic.newDocument();
-        sequencer.set(FieldName.DESCRIPTION, desc);
+        sequencer.set(FieldName.NAME, desc);
         sequencer.set(FieldName.TYPE, type);
         sequencer.setArray(FieldName.PATH_EXPRESSIONS, (Object[])pathExpressions);
         sequencers.add(sequencer);

@@ -1320,7 +1320,7 @@ public class RepositoryConfiguration {
                     Document component = (Document)value;
                     String classname = component.getString(FieldName.TYPE);
                     String classpath = component.getString(FieldName.CLASSPATH); // optional
-                    String description = component.getString(FieldName.DESCRIPTION); // optional
+                    String name = component.getString(FieldName.NAME); // optional
                     if (classname != null) {
                         String resolvedClassname = classnamesByAlias.get(classname.toLowerCase());
                         if (resolvedClassname != null) classname = resolvedClassname;
@@ -1329,8 +1329,8 @@ public class RepositoryConfiguration {
                         problems.addError(JcrI18n.missingComponentType, aliases);
                     }
                     if (classname != null) {
-                        if (description == null) description = classname;
-                        results.add(new Component(description, classname, classpath, component));
+                        if (name == null) name = classname;
+                        results.add(new Component(name, classname, classpath, component));
                     }
                 }
             }
@@ -1521,29 +1521,29 @@ public class RepositoryConfiguration {
 
     @Immutable
     public static class Component {
-        private final String description;
+        private final String name;
         private final String classname;
         private final String classpath;
         private final Document document;
 
-        protected Component( String description,
+        protected Component( String name,
                              String classname,
                              String classpath,
                              Document document ) {
             assert classname != null;
             this.classname = classname;
             this.classpath = classpath;
-            this.description = description != null ? description : classname;
+            this.name = name != null ? name : classname;
             this.document = document;
         }
 
         /**
-         * Get the component's description.
+         * Get the component's name.
          * 
-         * @return the description of this component; never null
+         * @return the name of this component; never null
          */
-        public String getDescription() {
-            return description;
+        public String getName() {
+            return name;
         }
 
         /**
@@ -1569,7 +1569,7 @@ public class RepositoryConfiguration {
 
         @Override
         public int hashCode() {
-            return description.hashCode();
+            return name.hashCode();
         }
 
         @Override
@@ -1578,7 +1578,7 @@ public class RepositoryConfiguration {
             if (obj instanceof Component) {
                 Component that = (Component)obj;
                 if (!this.getClassname().equals(that.getClassname())) return false;
-                if (!this.getDescription().equals(that.getDescription())) return false;
+                if (!this.getName().equals(that.getName())) return false;
                 if (!ObjectUtil.isEqualWithNulls(this.getClasspath(), that.getClasspath())) return false;
                 if (!this.getDocument().equals(that.getDocument())) return false;
                 return true;
@@ -1614,9 +1614,9 @@ public class RepositoryConfiguration {
         private <Type> Type createGenericComponent( ClassLoader classLoader ) {
             // Create the instance ...
             Type instance = Util.getInstance(getClassname(), classLoader);
-            // Always set the description; it may be set based upon the value in the document, but a name field in
+            // Always set the name; it may be set based upon the value in the document, but a name field in
             // documents is not required ...
-            ReflectionUtil.setValue(instance, "description", getDescription());
+            ReflectionUtil.setValue(instance, "name", getName());
             setTypeFields(instance, getDocument());
             return instance;
         }
@@ -1746,11 +1746,13 @@ public class RepositoryConfiguration {
 
         private java.lang.reflect.Field findField( Class<?> typeClass,
                                                    String fieldName ) {
-            java.lang.reflect.Field field;
-            try {
-                field = typeClass.getDeclaredField(fieldName);
-            } catch (NoSuchFieldException e) {
-                field = findField(typeClass.getSuperclass(), fieldName);
+            java.lang.reflect.Field field = null;
+            if (typeClass != null) {
+                try {
+                    field = typeClass.getDeclaredField(fieldName);
+                } catch (NoSuchFieldException e) {
+                    field = findField(typeClass.getSuperclass(), fieldName);
+                }
             }
             return field;
         }

@@ -1,22 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <parent>
         <groupId>org.modeshape</groupId>
         <artifactId>modeshape-parent</artifactId>
         <version>3.0-SNAPSHOT</version>
         <relativePath>../modeshape-parent/pom.xml</relativePath>
     </parent>
-    <!-- The groupId and version values are inherited from parent -->
+
     <artifactId>modeshape-unit-test</artifactId>
     <packaging>jar</packaging>
     <name>ModeShape Unit Test Framework</name>
-    <description>A simple framework for creating unit tests for ModeShape and which automatically brings in many libraries for
-        testing ModeShape.
-    </description>
-    <url>http://www.modeshape.org</url>
+    <description>A simple framework for creating unit tests for ModeShape and which automatically brings in many libraries for testing ModeShape.</description>
+
     <!--
       Define the dependencies. Note that all version and scopes default to those defined in the dependencyManagement section of the
       parent pom.
@@ -44,21 +42,25 @@
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-common</artifactId>
+            <version>${project.version}</version>
             <type>test-jar</type>
         </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jcr</artifactId>
+            <version>${project.version}</version>
             <type>test-jar</type>
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-core</artifactId>
+            <version>${infinispan.version}</version>
             <type>test-jar</type>
         </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jdbc-local</artifactId>
+            <version>${project.version}</version>
             <type>test-jar</type>
         </dependency>
 
@@ -109,10 +111,6 @@
         <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-cachestore-jdbc</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
         </dependency>
     </dependencies>
     <build>
