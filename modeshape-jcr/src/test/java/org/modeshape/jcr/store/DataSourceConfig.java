@@ -22,25 +22,25 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.modeshape.jcr;
+package org.modeshape.jcr.store;
 
 import java.io.IOException;
 import java.util.Properties;
 
 /**
  * Test helper class which loads a property file and provides DB-specific properties, triggered by Maven profiles.
- * 
+ *
  * @author Horia Chiorean
  */
-public class DatasourceConfig {
-    
+public class DataSourceConfig {
+
     private final Properties dsProperties;
 
-    public DatasourceConfig() {
+    public DataSourceConfig() {
         this("datasource.properties");
     }
 
-    public DatasourceConfig( String configFilePath ) {
+    public DataSourceConfig( String configFilePath ) {
         this.dsProperties = loadPropertiesFile(configFilePath);
     }
 
@@ -53,7 +53,7 @@ public class DatasourceConfig {
             throw new RuntimeException(e);
         }
     }
-    
+
     public String getUrl() {
         return dsProperties.getProperty("url");
     }
