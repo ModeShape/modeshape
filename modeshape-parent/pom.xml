@@ -297,6 +297,7 @@
           -->
         <maven.codehaus.cargo.plugin.version>1.1.3</maven.codehaus.cargo.plugin.version>
         <version.jar.plugin>2.4</version.jar.plugin>
+        <version.bundle.plugin>2.3.7</version.bundle.plugin>
     </properties>
 
     <profiles>
@@ -364,7 +365,9 @@
         <profile>
             <id>default_dbms</id>
             <activation>
-               <activeByDefault>true</activeByDefault>
+                <property>
+                    <name>!database</name>
+                </property>
             </activation>
             <dependencies>
                 <dependency>
@@ -375,12 +378,11 @@
                 </dependency>
             </dependencies>
             <properties>
-                <database>h2</database>
-                <jpaSource.dialect>org.hibernate.dialect.H2Dialect</jpaSource.dialect>
-                <jpaSource.driverClassName>org.h2.Driver</jpaSource.driverClassName>
-                <jpaSource.url>jdbc:h2:mem:target/test/db/h2/modeshape</jpaSource.url>
-                <jpaSource.username>sa</jpaSource.username>
-                <jpaSource.password/>
+                <dataSource.driverClassName>org.h2.Driver</dataSource.driverClassName>
+                <dataSource.driverClassName>org.h2.Driver</dataSource.driverClassName>
+                <dataSource.url>jdbc:h2:mem:${project.build.directory}/db/h2/modeshape</dataSource.url>
+                <dataSource.username>sa</dataSource.username>
+                <dataSource.password/>
             </properties>
         </profile>
     </profiles>
@@ -431,7 +433,7 @@
                     <showWarnings>false</showWarnings>
                 </configuration>
             </plugin>
-            <!-- Produce source jars during the 'verify' phase -->
+            <!-- Produce test-source jars during the 'verify' phase. The source jars are produced by the parent pom -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
@@ -440,8 +442,7 @@
                         <id>attach-sources</id>
                         <phase>verify</phase>
                         <goals>
-                            <goal>jar</goal>
-                            <goal>test-jar</goal>
+                            <goal>test-jar-no-fork</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -506,18 +507,27 @@
                         </goals>
                     </execution>
                 </executions>
+                <!--Used so that OSGI information can be added without changing the packaging type-->
                 <configuration>
                     <skipIfEmpty>true</skipIfEmpty>
                     <archive>
-                        <manifest>
-                            <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-                        </manifest>
-                        <manifestEntries>
-                            <Implementation-URL>${project.url}</Implementation-URL>
-                        </manifestEntries>
+                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
                     </archive>
                 </configuration>
+            </plugin>
+            <!--Add OSGI metadata to manifest-->
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>bundle-manifest</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>manifest</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
