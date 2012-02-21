@@ -192,13 +192,13 @@ class JoinRequestProcessor extends RequestProcessor {
             }
             mirrorProcessor.setFederatedRequest(forked);
             mirrorProcessor.process(original);
-            // If this is a change request, record it on this processor so it goes to the observer ...
-            if (original instanceof ChangeRequest && !original.hasError() && !original.isCancelled()) {
-                recordChange((ChangeRequest)original);
-            }
         } else {
             this.federatedRequest = forked;
             process(original);
+        }
+        // If this is a change request, record it on this processor so it goes to the observer ...
+        if (original instanceof ChangeRequest && !original.hasError() && !original.isCancelled()) {
+            recordChange((ChangeRequest)original);
         }
     }
 

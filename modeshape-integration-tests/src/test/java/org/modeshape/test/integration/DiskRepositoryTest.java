@@ -51,7 +51,7 @@ public class DiskRepositoryTest extends ModeShapeSingleUseTest {
 
     @Override
     public void beforeEach() throws Exception {
-        File repositoryFolder = new File("target/database");
+        File repositoryFolder = new File("target/database/ConfigurationTest/files");
         if (repositoryFolder.exists()) {
             assertTrue(FileUtil.delete(repositoryFolder));
         }

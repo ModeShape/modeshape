@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration xmlns:mode="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+    <!--
+      Define the JCR repositories
+    -->
+    <mode:repositories>
+        <mode:repository jcr:name="My repository" mode:source="federated">
+            <mode:options jcr:primaryType="mode:options">
+                <mode:option jcr:name="systemSourceName" mode:value="system@inmemory1"/>
+                <mode:option jcr:name="jaasLoginConfigName" mode:value="modeshape-jcr"/>
+                <mode:option jcr:name="queryIndexDirectory" mode:value="target/lucene/indexes"/>
+            </mode:options>
+        </mode:repository>
+    </mode:repositories>
+    <!--
+    Define the sources for the content.  These sources are directly accessible using the ModeShape-specific
+    Graph API.
+    -->
+    <mode:sources>
+        <mode:source jcr:name="inmemory1" mode:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource" mode:retryLimit="3" mode:defaultWorkspaceName="default">
+            <predefinedWorkspaceNames>system</predefinedWorkspaceNames>
+            <predefinedWorkspaceNames>default</predefinedWorkspaceNames>
+        </mode:source>
+        <mode:source jcr:name="inmemory2" mode:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource" mode:retryLimit="3" mode:defaultWorkspaceName="default">
+            <predefinedWorkspaceNames>default</predefinedWorkspaceNames>
+        </mode:source>
+        <mode:source jcr:name="federated">
+            <mode:classname>org.modeshape.graph.connector.federation.FederatedRepositorySource</mode:classname>
+            <mode:workspaces>
+                <mode:workspace jcr:name="default">
+                    <mode:projections>
+                        <mode:projection jcr:name="projection1" mode:source="inmemory1" mode:workspaceName="default">
+                            <mode:projectionRules>/inmemory1 => /</mode:projectionRules>
+                        </mode:projection>
+                        <mode:projection jcr:name="projection2" mode:source="inmemory2" mode:workspaceName="default">
+                            <mode:projectionRules>/inmemory2 => /</mode:projectionRules>
+                        </mode:projection>
+                    </mode:projections>
+                </mode:workspace>
+            </mode:workspaces>
+        </mode:source>
+    </mode:sources>
+</configuration>
