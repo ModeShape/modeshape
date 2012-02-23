@@ -19,7 +19,7 @@
 		<unsignjar jar="modeshape-jbossas-service/target/distribution/modeshape-services-jar-content/core-3.3.0-v_771.jar" />
 		<unsignjar jar="modeshape-jbossas-service/target/distribution/modeshape-services-jar-content/expressions-3.3.0-v20070606-0010.jar" />
 		<unsignjar jar="modeshape-jbossas-service/target/distribution/modeshape-services-jar-content/jobs-3.3.0-v20070423.jar" />
-		<unsignjar jar="modeshape-jbossas-service/target/distribution/modeshape-services-jar-content/osgi-3.4.3.R34x_v20081215-1030.jar" />
+		<unsignjar jar="modeshape-jbossas-service/target/distribution/modeshape-services-jar-content/osgi-3.3.0-v20070530.jar" />
 		<unsignjar jar="modeshape-jbossas-service/target/distribution/modeshape-services-jar-content/preferences-3.2.100-v20070522.jar" />
 		<unsignjar jar="modeshape-jbossas-service/target/distribution/modeshape-services-jar-content/registry-3.3.0-v20070522.jar" />
 		<unsignjar jar="modeshape-jbossas-service/target/distribution/modeshape-services-jar-content/resources-3.3.0-v20070604.jar" />
