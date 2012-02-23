@@ -57,6 +57,103 @@
 			<unpack>false</unpack>
 		</dependencySet>
 
+		<!-- Sequencers -->
+
+		<dependencySet>
+			<outputDirectory>modules/sequencer/ddl/main</outputDirectory>
+			<includes>
+				<include>org.modeshape:modeshape-sequencer-ddl</include>
+			</includes>
+			<unpack>false</unpack>
+		</dependencySet>
+
+		<dependencySet>
+			<outputDirectory>modules/sequencer/zip/main</outputDirectory>
+			<includes>
+				<include>org.modeshape:modeshape-sequencer-zip</include>
+			</includes>
+			<unpack>false</unpack>
+		</dependencySet>
+
+		<dependencySet>
+			<outputDirectory>modules/sequencer/wsdl/main</outputDirectory>
+			<includes>
+				<include>org.modeshape:modeshape-sequencer-wsdl</include>
+			</includes>
+			<unpack>false</unpack>
+		</dependencySet>
+
+		<dependencySet>
+			<outputDirectory>modules/sequencer/text/main</outputDirectory>
+			<includes>
+				<include>org.modeshape:modeshape-sequencer-text</include>
+			</includes>
+			<unpack>false</unpack>
+		</dependencySet>
+
+		<dependencySet>
+			<outputDirectory>modules/sequencer/teiid/main</outputDirectory>
+			<includes>
+				<include>org.modeshape:modeshape-sequencer-teiid</include>
+			</includes>
+			<unpack>false</unpack>
+		</dependencySet>
+
+		<dependencySet>
+			<outputDirectory>modules/sequencer/sramp/main</outputDirectory>
+			<includes>
+				<include>org.modeshape:modeshape-sequencer-sramp</include>
+			</includes>
+			<unpack>false</unpack>
+		</dependencySet>
+
+		<dependencySet>
+			<outputDirectory>modules/sequencer/msoffice/main</outputDirectory>
+			<includes>
+				<include>org.modeshape:modeshape-sequencer-msoffice</include>
+			</includes>
+			<unpack>false</unpack>
+		</dependencySet>
+
+		<dependencySet>
+			<outputDirectory>modules/sequencer/mp3/main</outputDirectory>
+			<includes>
+				<include>org.modeshape:modeshape-sequencer-mp3</include>
+			</includes>
+			<unpack>false</unpack>
+		</dependencySet>
+
+		<dependencySet>
+			<outputDirectory>modules/sequencer/java/main</outputDirectory>
+			<includes>
+				<include>org.modeshape:modeshape-sequencer-java</include>
+			</includes>
+			<unpack>false</unpack>
+		</dependencySet>
+
+		<dependencySet>
+			<outputDirectory>modules/sequencer/images/main</outputDirectory>
+			<includes>
+				<include>org.modeshape:modeshape-sequencer-images</include>
+			</includes>
+			<unpack>false</unpack>
+		</dependencySet>
+
+		<dependencySet>
+			<outputDirectory>modules/sequencer/xml/main</outputDirectory>
+			<includes>
+				<include>org.modeshape:modeshape-sequencer-xml</include>
+			</includes>
+			<unpack>false</unpack>
+		</dependencySet>
+
+		<dependencySet>
+			<outputDirectory>modules/sequencer/xsd/main</outputDirectory>
+			<includes>
+				<include>org.modeshape:modeshape-sequencer-xsd</include>
+			</includes>
+			<unpack>false</unpack>
+		</dependencySet>
 
 	</dependencySets>
 

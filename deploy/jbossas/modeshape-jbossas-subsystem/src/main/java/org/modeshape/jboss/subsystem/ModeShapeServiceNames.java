@@ -26,6 +26,7 @@ import org.jboss.msc.service.ServiceName;
 public class ModeShapeServiceNames {
 	public static ServiceName ENGINE = ServiceName.JBOSS.append("modeshape", "engine"); //$NON-NLS-1$ //$NON-NLS-2$
 	public static ServiceName REPOSITORY = ServiceName.JBOSS.append("modeshape", "repository");//$NON-NLS-1$ //$NON-NLS-2$
+	public static ServiceName SEQUENCER = ServiceName.JBOSS.append("modeshape", "sequencer");//$NON-NLS-1$ //$NON-NLS-2$
 		
 //	public static ServiceName translatorServiceName(String name) {
 //		return ServiceName.of(TRANSLATOR_BASE, name);
@@ -42,8 +43,8 @@ public class ModeShapeServiceNames {
 	public static ServiceName repositoryServiceName(String name) {
 		return ServiceName.of(REPOSITORY, name);
 	}
-//	
-//	public static ServiceName dsListenerServiceName(String name) {
-//		return ServiceName.of(DS_LISTENER_BASE, name);
-//	}
+
+	public static ServiceName sequencerServiceName(String name) {
+		return ServiceName.of(SEQUENCER, name);
+	}
 }
