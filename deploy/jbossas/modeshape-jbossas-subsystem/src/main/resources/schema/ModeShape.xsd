@@ -26,7 +26,7 @@
     </xs:simpleType>
     <xs:element name="repository">
         <xs:complexType>
-            <xs:sequence>
+            <xs:sequence minOccurs="0" maxOccurs="unbounded">
                <xs:element name="storage" minOccurs="0" maxOccurs="unbounded">
                     <xs:annotation>
                         <xs:documentation xml:lang="en">The specification of
@@ -389,7 +389,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:attribute>
-            <xs:attribute name="jndi-name" type="xs:string">
+            <xs:attribute name="jndiName" type="xs:string">
                 <xs:annotation>
                     <xs:documentation>The name in JNDI where this repository is to be
                         registered. This assumes that you have write access to the JNDI
@@ -398,35 +398,6 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:attribute>
-            <xs:attribute name="root-node-id" type="xs:string"
-                default="cafebabe-cafe-babe-cafe-babecafebabe">
-                <xs:annotation>
-                    <xs:documentation>The unique identifier that should be used for the
-                        root node in each workspace. This value will be used only upon
-                        initialization of a new repository and will be stored within the
-                        repository itself. The default value is a UUID with a value of
-                        'cafebabe-cafe-babe-cafe-babecafebabe'.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:attribute>
-            <xs:attribute name="large-value-size" type="xs:string" default="10240">
-                <xs:annotation>
-                    <xs:documentation>The size threshold that dictates how property
-                        values are stored. String and binary values smaller than this
-                        value
-                        are stored with the node, whereas string and binary values
-                        with a
-                        size equal to or greater than this limit may be stored
-                        separately
-                        from the node and keyed by the SHA-1 hash of the value.
-                        This is a
-                        space and performance optimization that stores each
-                        unique large
-                        value only once. The default value is '10240' bytes,
-                        or 10 kilobytes.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:attribute> 
         </xs:complexType>
     </xs:element>
 </xs:schema>

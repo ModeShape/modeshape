@@ -48,8 +48,10 @@ public class ModeShapeExtension implements Extension {
     public static final String NAMESPACE = "urn:jboss.domain.modeshape:3.0";
 	
     private static ModeShapeSubsystemParser parser = new ModeShapeSubsystemParser();
-	private static RepositoryAdd REPOSITORY_ADD = new RepositoryAdd();
-	private static RepositoryRemove REPOSITORY_REMOVE = new RepositoryRemove();
+	private static RepositoryAdd REPOSITORY_ADD = RepositoryAdd.INSTANCE;
+	private static RepositoryRemove REPOSITORY_REMOVE = RepositoryRemove.INSTANCE;
+	private static SequencerAdd SEQUENCER_ADD = SequencerAdd.INSTANCE;
+	private static SequencerRemove SEQUENCER_REMOVE = SequencerRemove.INSTANCE;
 	private static ModeShapeAdd MODESHAPE_BOOT_ADD = new ModeShapeAdd();
 	private static ModeShapeSubsystemDescribe MODESHAPE_DESCRIBE = new ModeShapeSubsystemDescribe();
 	
@@ -83,7 +85,25 @@ public class ModeShapeExtension implements Extension {
 		});
        repositorySubsystem.registerOperationHandler(ADD, REPOSITORY_ADD, REPOSITORY_ADD, false);
        repositorySubsystem.registerOperationHandler(REMOVE, REPOSITORY_REMOVE, REPOSITORY_REMOVE, false);
+      
+       // sequencer configuration
+       final ManagementResourceRegistration sequencerConfig = repositorySubsystem.registerSubModel(PathElement.pathElement(Element.SEQUENCER_ELEMENT.getLocalName()), new DescriptionProvider() {
+			@Override
+			public ModelNode getModelDescription(Locale locale) {
+				final ResourceBundle bundle = JBossSubsystemI18n.getResourceBundle(locale);
 
+				final ModelNode node = new ModelNode();
+	            node.get(DESCRIPTION).set(Element.SEQUENCER_ELEMENT.getDescription(bundle));
+	            node.get(HEAD_COMMENT_ALLOWED).set(true);
+	            SequencerAdd.sequencerDescribe(node, ATTRIBUTES, bundle);
+	            
+	            return node;
+			}
+		});
+       sequencerConfig.registerOperationHandler(ADD, SEQUENCER_ADD, SEQUENCER_ADD, false);
+       sequencerConfig.registerOperationHandler(REMOVE, SEQUENCER_REMOVE, SEQUENCER_REMOVE, false);
+    
+       
         
 //        modeShapeSubsystem.registerReadOnlyAttribute(RUNTIME_VERSION, new GetRuntimeVersion(RUNTIME_VERSION), Storage.RUNTIME); 
 		
