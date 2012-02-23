@@ -224,14 +224,14 @@ public class CompositeRequestChannel {
 
     private void cancelAllRequestsDueToError(Throwable t) {
         LOGGER.error(t, GraphI18n.executingRequest, sourceName);
-        for (Request request : this.composite.getRequests()) {
-            try {
-                request.cancel();
-            } finally {
-                request.freeze();
-            }
-        }
         try {
+            for (Request request : this.composite.getRequests()) {
+                try {
+                    request.cancel();
+                } finally {
+                    request.freeze();
+                }
+            }
             cancel(true);
         } finally {
             this.composite.freeze();
