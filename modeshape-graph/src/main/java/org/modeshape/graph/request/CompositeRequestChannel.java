@@ -23,6 +23,12 @@
  */
 package org.modeshape.graph.request;
 
+import org.modeshape.common.util.Logger;
+import org.modeshape.graph.ExecutionContext;
+import org.modeshape.graph.GraphI18n;
+import org.modeshape.graph.connector.RepositoryConnection;
+import org.modeshape.graph.connector.RepositoryConnectionFactory;
+import org.modeshape.graph.request.processor.RequestProcessor;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -36,11 +42,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.GraphI18n;
-import org.modeshape.graph.connector.RepositoryConnection;
-import org.modeshape.graph.connector.RepositoryConnectionFactory;
-import org.modeshape.graph.request.processor.RequestProcessor;
 
 /**
  * A channel for Request objects that can be submitted to a consumer (typically a {@link RequestProcessor} or
@@ -66,7 +67,8 @@ import org.modeshape.graph.request.processor.RequestProcessor;
  * </p>
  */
 public class CompositeRequestChannel {
-
+    private static final Logger LOGGER = Logger.getLogger(CompositeRequestChannel.class); 
+    
     protected final String sourceName;
     /** The list of all requests that are or have been processed as part of this channel */
     protected final LinkedList<Request> allRequests = new LinkedList<Request>();
@@ -204,16 +206,36 @@ public class CompositeRequestChannel {
              * @see java.util.concurrent.Callable#call()
              */
             public String call() throws Exception {
-                final RepositoryConnection connection = connectionFactory.createConnection(sourceName);
-                assert connection != null;
                 try {
-                    connection.execute(context, composite);
-                } finally {
-                    connection.close();
+                    final RepositoryConnection connection = connectionFactory.createConnection(sourceName);
+                    assert connection != null;
+                    try {
+                        connection.execute(context, composite);
+                    } finally {
+                        connection.close();
+                    }
+                } catch (Throwable t) {
+                    cancelAllRequestsDueToError(t);
                 }
                 return sourceName;
             }
         });
+    }
+
+    private void cancelAllRequestsDueToError(Throwable t) {
+        LOGGER.error(t, GraphI18n.executingRequest, sourceName);
+        for (Request request : this.composite.getRequests()) {
+            try {
+                request.cancel();
+            } finally {
+                request.freeze();
+            }
+        }
+        try {
+            cancel(true);
+        } finally {
+            this.composite.freeze();
+        }
     }
 
     /**
@@ -243,7 +265,11 @@ public class CompositeRequestChannel {
             public String call() throws Exception {
                 try {
                     processor.process(composite);
-                } finally {
+                }
+                catch (Throwable t) {
+                    cancelAllRequestsDueToError(t);
+                }
+                finally {
                     if (closeProcessorWhenCompleted) processor.close();
                 }
                 return sourceName;
