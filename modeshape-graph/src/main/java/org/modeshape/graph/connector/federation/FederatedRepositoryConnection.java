@@ -135,7 +135,7 @@ class FederatedRepositoryConnection implements RepositoryConnection {
     protected boolean shouldProcessSynchronously( Request request ) {
         if (RequestType.COMPOSITE == request.getType()) {
             CompositeRequest composite = (CompositeRequest)request;
-            if (composite.size() == 1) return true;
+            if (composite.size() <= 1) return true;
             // There is more than one request, and the JoinRequestProcessor needs to be able to run even if
             // the ForkRequestProcessor is processing incoming requests. Normally this would work fine,
             // but if the incoming request is a CompositeRequestChannel.CompositeRequest, the ForkRequestProcessor
