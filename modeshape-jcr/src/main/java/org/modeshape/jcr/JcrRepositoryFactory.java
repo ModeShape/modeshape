@@ -93,10 +93,21 @@ public class JcrRepositoryFactory implements RepositoryFactory {
      */
     private static final Map<String, JcrEngine> ENGINES = new HashMap<String, JcrEngine>();
 
-    /** The name of the key for the ModeShape JCR URL in the parameter map */
-    public static final String URL = "org.modeshape.jcr.URL";
+    /**
+     * @deprecated Use {@link RepositoryFactory#URL} instead
+     */
+    @Deprecated
+    public static final String URL = RepositoryFactory.URL;
 
-    /** The name of the URL parameter that specifies the repository name. */
+    /**
+     * @deprecated Use {@link RepositoryFactory#REPOSITORY_NAME} instead
+     */
+    @Deprecated
+    public static final String REPOSITORY_NAME = RepositoryFactory.REPOSITORY_NAME;
+
+    /**
+     * The name of the URL parameter that specifies the repository name.
+     */
     public static final String REPOSITORY_NAME_PARAM = "repositoryName";
 
     /**
@@ -127,9 +138,9 @@ public class JcrRepositoryFactory implements RepositoryFactory {
         LOG.debug("Trying to load ModeShape JCR Repository with parameters: " + parameters);
         if (parameters == null) return null;
 
-        Object rawUrl = parameters.get(URL);
+        Object rawUrl = parameters.get(RepositoryFactory.URL);
         if (rawUrl == null) {
-            LOG.debug("No parameter found with key: " + URL);
+            LOG.debug("No parameter found with key: " + RepositoryFactory.URL);
             return null;
         }
 
@@ -153,8 +164,12 @@ public class JcrRepositoryFactory implements RepositoryFactory {
         Repositories repositories = repositoriesFor(url, parameters);
         if (repositories == null) return null;
 
-        String repositoryName = repositoryNameFor(repositories, url);
-        if (repositoryName == null) return null;
+        Object repositoryNameValue = parameters.get(RepositoryFactory.REPOSITORY_NAME);
+        String repositoryName = repositoryNameValue != null ? repositoryNameValue.toString() : null;
+        if (repositoryName == null) {
+            repositoryName = repositoryNameFor(repositories, url);
+            if (repositoryName == null) return null;
+        }
 
         try {
             LOG.debug("Trying to access repository: " + repositoryName);
@@ -312,6 +327,15 @@ public class JcrRepositoryFactory implements RepositoryFactory {
             if (ob instanceof Repository) {
                 return (Repository)ob;
             }
+            if (ob instanceof Repositories) {
+                Object repositoryNameValue = parameters.get(RepositoryFactory.REPOSITORY_NAME);
+                String repositoryName = repositoryNameValue != null ? repositoryNameValue.toString() : null;
+                if (repositoryName != null) {
+                    return ((Repositories)ob).getRepository(repositoryName);
+                }
+            }
+            return null;
+        } catch (RepositoryException e) {
             return null;
         } catch (NamingException ne) {
             return null;
