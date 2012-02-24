@@ -150,12 +150,6 @@
 		</dependency>
 		<dependency>
 			<groupId>org.modeshape</groupId>
-			<artifactId>modeshape-connector-infinispan-5</artifactId>
-			<version>${project.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.modeshape</groupId>
 			<artifactId>modeshape-connector-svn</artifactId>
 			<version>${project.version}</version>
 			<scope>test</scope>
@@ -251,7 +245,7 @@
             <scope>test</scope>
         </dependency>
 
-		<!-- 
+		<!--
 			JPA Connector Dependencies
 		-->
 		<dependency>
@@ -279,8 +273,8 @@
 			<scope>test</scope>
 		</dependency>
 
-		<!-- 
-        Java Content Repository API 
+		<!--
+        Java Content Repository API
         -->
 		<dependency>
 			<groupId>javax.jcr</groupId>
@@ -442,6 +436,108 @@
 				</plugins>
 			</build>
 		</profile>
+        <!--By default, the integration tests should run with ISPN 4, unless the ispn5 property is activated -->
+        <profile>
+            <id>ispn4</id>
+            <activation>
+                <property>
+                    <name>!ispn5</name>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.modeshape</groupId>
+                    <artifactId>modeshape-connector-infinispan</artifactId>
+                    <version>${project.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+        <!--If the property ispn5 is active, the tests are run with ISPN 5 in the classpath and some dependencies need to be
+            excluded
+        -->
+        <profile>
+            <id>ispn5</id>
+            <activation>
+                <property>
+                    <name>ispn5</name>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.modeshape</groupId>
+                    <artifactId>modeshape-connector-infinispan-5</artifactId>
+                    <version>${project.version}</version>
+                    <scope>test</scope>
+                </dependency>
+                <!--ISPN 5 dependency tweaks -->
+                <dependency>
+                    <groupId>org.modeshape</groupId>
+                    <artifactId>modeshape-connector-store-jpa</artifactId>
+                    <version>${project.version}</version>
+                    <scope>test</scope>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>org.infinispan</groupId>
+                            <artifactId>infinispan-core</artifactId>
+                        </exclusion>
+                        <exclusion>
+                            <groupId>org.jboss.logging</groupId>
+                            <artifactId>jboss-logging-spi</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+                <dependency>
+                    <groupId>org.hibernate</groupId>
+                    <artifactId>hibernate-entitymanager</artifactId>
+                    <version>3.5.2-Final</version>
+                    <scope>test</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.hibernate</groupId>
+                    <artifactId>hibernate-c3p0</artifactId>
+                    <version>3.5.2-Final</version>
+                    <scope>test</scope>
+                </dependency>
+                <dependency>
+                    <groupId>hsqldb</groupId>
+                    <artifactId>hsqldb</artifactId>
+                    <version>1.8.0.2</version>
+                    <scope>test</scope>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.modeshape</groupId>
+                    <artifactId>modeshape-connector-jbosscache</artifactId>
+                    <version>${project.version}</version>
+                    <scope>test</scope>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>jgroups</groupId>
+                            <artifactId>jgroups</artifactId>
+                        </exclusion>
+                        <exclusion>
+                            <groupId>org.jboss.logging</groupId>
+                            <artifactId>jboss-logging-spi</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+
+                <!--
+                PicketBox (JAAS implementation used in test cases)
+                -->
+                <dependency>
+                    <groupId>org.picketbox</groupId>
+                    <artifactId>picketbox-bare</artifactId>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>org.jboss.logging</groupId>
+                            <artifactId>jboss-logging-spi</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+            </dependencies>
+        </profile>
   </profiles>
 
 </project>
