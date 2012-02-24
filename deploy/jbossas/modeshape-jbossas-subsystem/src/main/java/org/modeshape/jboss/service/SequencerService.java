@@ -48,8 +48,8 @@ public class SequencerService implements Service<JcrRepository> {
 	private final InjectedValue<JcrEngine> jcrEngineInjector = new InjectedValue<JcrEngine>();
 	private final InjectedValue<JcrRepository> jcrRepositoryInjector = new InjectedValue<JcrRepository>();
 
-	private Properties sequencerProperties;
-	private String repositoryName;
+	private final Properties sequencerProperties;
+	private final String repositoryName;
 
 	public SequencerService(String repositoryName,
 			Properties sequencerProperties) {
@@ -98,14 +98,12 @@ public class SequencerService implements Service<JcrRepository> {
 		Problems validationResults = repositoryConfig.validate(changes);
 		
 		if (validationResults.hasErrors()) {
-			// TODO i18n and parameterize
 			String msg = JcrI18n.errorsInRepositoryConfiguration.text(this.repositoryName,
 					validationResults.errorCount(),
 					validationResults.toString());
 			throw new StartException(msg);   
 		} else {
 			// Update the deployed repository's configuration with these changes
-			// ...
 			try {
 				engine.update(this.repositoryName, changes);
 			} catch (ConfigurationException e) {
