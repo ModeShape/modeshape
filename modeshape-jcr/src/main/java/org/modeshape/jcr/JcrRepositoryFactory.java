@@ -119,11 +119,8 @@ public class JcrRepositoryFactory implements RepositoryFactory {
 
     /**
      * The name of the URL parameter that specifies the repository name.
-     * 
-     * @deprecated use {@link RepositoryFactory#REPOSITORY_NAME_PARAM} instead
      */
-    @Deprecated
-    public static final String REPOSITORY_NAME_PARAM = RepositoryFactory.REPOSITORY_NAME_PARAM;
+    public static final String REPOSITORY_NAME_PARAM = "repositoryName";
 
     static {
         ENGINE.start();
@@ -186,31 +183,37 @@ public class JcrRepositoryFactory implements RepositoryFactory {
         LOG.debug("Trying to load ModeShape JCR Repository with parameters: " + parameters);
         if (parameters == null) return null;
 
-        Object rawUrl = parameters.get(URL);
+        Object rawUrl = parameters.get(RepositoryFactory.URL);
         if (rawUrl == null) {
-            LOG.debug("No parameter found with key: " + URL);
+            LOG.debug("No parameter found with key: " + RepositoryFactory.URL);
             return null;
         }
 
+        // Get the URL ...
         URL url = null;
         if (rawUrl instanceof URL) {
             url = (URL)rawUrl;
         } else {
             url = urlFor(rawUrl.toString(), null);
         }
-
         if (url == null) return null;
-        return getRepository(url, parameters);
+
+        // Get the name from the parameters or the URL ...
+        String repositoryName = getRepositoryNameFrom(url, parameters);
+
+        // Now look up the Repository instance using the URL, the repository name, and any extra parameters ...
+        return getRepository(url, repositoryName, parameters);
     }
 
     protected Repository getRepository( URL url,
-                                        Map<String, String> parameters ) {
+                                        String repositoryName,
+                                        Map<String, Object> parameters ) {
 
         // See if the URL refers to a Repository instance in JNDI, which is probably what would be required
         // when registering particular repository instances rather than the engine (e.g., via JndiRepositoryFactory).
         // This enables JCR-2.0-style lookups while using JCR-1.0-style of registering individual Repository instances in JNDI.
         if ("jndi".equals(url.getProtocol())) {
-            Repository repository = getRepositoryFromJndi(url.getPath(), parameters);
+            Repository repository = getRepositoryFromJndi(url.getPath(), repositoryName, parameters);
             if (repository != null) return repository;
         } else {
             // Otherwise just use the URL ...
@@ -240,6 +243,27 @@ public class JcrRepositoryFactory implements RepositoryFactory {
                 // do nothing ...
         }
         return ENGINE;
+    }
+
+    protected String getRepositoryNameFrom( URL url,
+                                            Map<String, Object> parameters ) {
+        // First look in the parameters ...
+        Object repoName = parameters.get(REPOSITORY_NAME);
+        if (repoName != null) {
+            return repoName.toString();
+        }
+        // Then look for a query parameter in the URL ...
+        String query = url.getQuery();
+        if (query != null) {
+            for (String keyValuePair : query.split("&")) {
+                String[] splitPair = keyValuePair.split("=");
+
+                if (splitPair.length == 2 && REPOSITORY_NAME_PARAM.equals(splitPair[0])) {
+                    return splitPair[1];
+                }
+            }
+        }
+        return null;
     }
 
     /**
@@ -364,13 +388,14 @@ public class JcrRepositoryFactory implements RepositoryFactory {
      * @param map the set of key/value mappings to convert; may not be null
      * @return a hashtable with the same key/value mappings as the given map; may be empty, never null
      */
-    private Hashtable<String, String> hashtable( Map<String, String> map ) {
+    private Hashtable<String, String> hashtable( Map<String, Object> map ) {
         assert map != null;
 
         Hashtable<String, String> hash = new Hashtable<String, String>(map.size());
 
-        for (Map.Entry<String, String> entry : map.entrySet()) {
-            hash.put(entry.getKey(), entry.getValue());
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+            Object value = entry.getValue();
+            hash.put(entry.getKey(), value != null ? value.toString() : null);
         }
 
         return hash;
@@ -381,18 +406,17 @@ public class JcrRepositoryFactory implements RepositoryFactory {
      * {@link InitialContext} constructor in a {@link Hashtable}.
      * 
      * @param jndiName the JNDI name of the JCR repository; may not be null
+     * @param repositoryName the name of the repository; may be null if it was not supplied in the parameters
      * @param parameters any additional parameters that should be passed to the {@code InitialContext}'s constructor; may be empty
      *        or null
      * @return the Repository object from JNDI, if one exists at the given name
      */
     private Repository getRepositoryFromJndi( String jndiName,
-                                              Map<String, String> parameters ) {
+                                              String repositoryName,
+                                              Map<String, Object> parameters ) {
         if (parameters == null) parameters = Collections.emptyMap();
 
         // There should be a parameter with the name ...
-        String repoName = parameters.get(RepositoryFactory.REPOSITORY_NAME_PARAM);
-        if (repoName != null && repoName.trim().length() == 0) repoName = null;
-
         try {
             InitialContext ic = new InitialContext(hashtable(parameters));
 
@@ -409,30 +433,30 @@ public class JcrRepositoryFactory implements RepositoryFactory {
                         break; // continue
                 }
                 // There should be a parameter with the name ...
-                if (repoName == null) {
+                if (repositoryName == null) {
                     // No repository name was specified, so see if there's just one in the engine ...
                     if (engine.getRepositories().size() == 1) {
-                        repoName = engine.getRepositories().keySet().iterator().next();
+                        repositoryName = engine.getRepositories().keySet().iterator().next();
                     }
                 }
-                if (repoName != null) {
-                    repoName = repoName.trim();
-                    if (repoName.length() != 0) {
+                if (repositoryName != null) {
+                    repositoryName = repositoryName.trim();
+                    if (repositoryName.length() != 0) {
                         // Look for a repository with the supplied name ...
                         try {
-                            JcrRepository repository = engine.getRepository(repoName);
+                            JcrRepository repository = engine.getRepository(repositoryName);
                             switch (repository.getState()) {
                                 case STARTING:
                                 case RUNNING:
                                     return repository;
                                 default:
                                     LOG.error(JcrI18n.repositoryIsNotRunningOrHasBeenShutDownInEngineAtJndiLocation,
-                                              repoName,
+                                              repositoryName,
                                               jndiName);
                                     return null;
                             }
                         } catch (NoSuchRepositoryException e) {
-                            LOG.warn(JcrI18n.repositoryNotFoundInEngineAtJndiLocation, repoName, jndiName);
+                            LOG.warn(JcrI18n.repositoryNotFoundInEngineAtJndiLocation, repositoryName, jndiName);
                             return null;
                         }
                     }
@@ -442,9 +466,9 @@ public class JcrRepositoryFactory implements RepositoryFactory {
             } else if (ob instanceof Repositories) {
                 Repositories repos = (Repositories)ob;
                 try {
-                    return repos.getRepository(repoName);
+                    return repos.getRepository(repositoryName);
                 } catch (RepositoryException e) {
-                    LOG.warn(JcrI18n.repositoryNotFoundInEngineAtJndiLocation, repoName, jndiName);
+                    LOG.warn(JcrI18n.repositoryNotFoundInEngineAtJndiLocation, repositoryName, jndiName);
                 }
             } else if (ob instanceof Repository) {
                 // Just return the repository instance ...
@@ -500,7 +524,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
                                      String repositoryName ) throws RepositoryException {
         URL url = urlFor(jcrUrl, repositoryName);
         if (url == null) return null;
-        return getRepository(url, null);
+        return getRepository(url, repositoryName, null);
     }
 
     @Override
