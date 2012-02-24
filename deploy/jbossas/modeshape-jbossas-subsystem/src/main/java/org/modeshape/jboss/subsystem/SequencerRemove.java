@@ -33,11 +33,11 @@ import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.dmr.ModelNode;
 
-class RepositoryRemove extends AbstractRemoveStepHandler implements DescriptionProvider {
+class SequencerRemove extends AbstractRemoveStepHandler implements DescriptionProvider {
 
-	public static final RepositoryRemove INSTANCE = new RepositoryRemove();
+	public static final SequencerRemove INSTANCE = new SequencerRemove();
 	   
-	private RepositoryRemove() {
+	private SequencerRemove() {
 	}
 	
 	@Override

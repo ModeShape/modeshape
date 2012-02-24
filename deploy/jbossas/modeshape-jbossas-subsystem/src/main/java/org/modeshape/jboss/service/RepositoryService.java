@@ -33,13 +33,16 @@ import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.RepositoryConfiguration;
 
-
+/**
+ * A <code>RepositoryService</code> instance is the service responsible 
+ * for initializing a {@link JcrRepository} in the ModeShape engine using the
+ * information from the configuration.
+ */
 public class RepositoryService implements Service<JcrRepository> {
 
 	private final InjectedValue<JcrEngine> jcrEngineInjector = new InjectedValue<JcrEngine>();
 	
-	private RepositoryConfiguration repositoryConfiguration;
-	
+	private final RepositoryConfiguration repositoryConfiguration;
 	
 	public RepositoryService(RepositoryConfiguration repositoryConfiguration) {
 		this.repositoryConfiguration = repositoryConfiguration;
@@ -70,7 +73,6 @@ public class RepositoryService implements Service<JcrRepository> {
 
 	@Override
 	public void stop(StopContext arg0) {
-		// TODO Auto-generated method stub
 		
 	}
 

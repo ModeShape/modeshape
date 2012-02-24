@@ -44,13 +44,16 @@ enum Element {
 	// Repository 
     REPOSITORY_ELEMENT("repository"),
     REPOSITORY_NAME_ATTRIBUTE("name", "name", ModelType.STRING, true, null),
-    REPOSITORY_JNDI_NAME_ATTRIBUTE("jndi-name", "jndi-name", ModelType.STRING, false, null),
-    REPOSITORY_ROOT_NODE_ID_ATTRIBUTE("root-node-id", "root-node-id", ModelType.STRING, false, "cafebabe-cafe-babe-cafe-babecafebabe"),
-    REPOSITORY_LARGE_VALUE_SIZE_ID_ATTRIBUTE("large-value-size", "large-value-size", ModelType.STRING, false, "10240"),
+    REPOSITORY_JNDI_NAME_ATTRIBUTE("jndiName", "jndiName", ModelType.STRING, false, null),
     
     //Sequencers
-    SEQUENCER_MODULE_ATTRIBUTE("module", "module", ModelType.BOOLEAN, true, "true");
-
+    SEQUENCING_ELEMENT("sequencing"),
+    SEQUENCER_ELEMENT("sequencer"),
+    SEQUENCER_NAME_ATTRIBUTE("name", "sequencer-name", ModelType.STRING, false, null),
+    SEQUENCER_DESCRIPTION_ATTRIBUTE("description", "sequencer-description", ModelType.STRING, false, null),
+    SEQUENCER_TYPE_ATTRIBUTE("type", "sequencer-type", ModelType.STRING, false, null),
+    SEQUENCER_EXPRESSIONS_ATTRIBUTE("path_expressions", "sequencer-path-expressions", ModelType.STRING, false, null);
+     
 //    REPOSITORY_STORAGE_ELEMENT("storage"),
 //    REPOSITORY_CACHE_NAME("cache-name", "cache-name", ModelType.STRING, true, null),
 //    REPOSITORY_CACHE_CONFIGURATION("cache-configuration", "cache-configuration", ModelType.STRING, true, null),

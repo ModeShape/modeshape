@@ -27,11 +27,14 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPE
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REQUEST_PROPERTIES;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.StringTokenizer;
 
 import org.infinispan.schematic.document.Document;
+import org.infinispan.schematic.document.Json;
 import org.infinispan.schematic.document.ParsingException;
 import org.infinispan.schematic.internal.document.JsonReader;
 import org.jboss.as.controller.AbstractAddStepHandler;
@@ -55,12 +58,18 @@ public class RepositoryAdd extends AbstractAddStepHandler implements Description
 	private static Element[] attributes = {
 		Element.REPOSITORY_NAME_ATTRIBUTE,
 		Element.REPOSITORY_JNDI_NAME_ATTRIBUTE,
-		Element.REPOSITORY_ROOT_NODE_ID_ATTRIBUTE,
-		Element.REPOSITORY_LARGE_VALUE_SIZE_ID_ATTRIBUTE
 		
+		Element.SEQUENCER_NAME_ATTRIBUTE,
+		Element.SEQUENCER_DESCRIPTION_ATTRIBUTE,
+		Element.SEQUENCER_TYPE_ATTRIBUTE,
+		Element.SEQUENCER_EXPRESSIONS_ATTRIBUTE
 	};
 	
 	private static String jndiBaseName = "java:jcr/local/";   
+	public static final RepositoryAdd INSTANCE = new RepositoryAdd();
+	   
+	private RepositoryAdd() {
+	}
 	
 	@Override
 	public ModelNode getModelDescription(Locale locale) {
@@ -112,15 +121,39 @@ public class RepositoryAdd extends AbstractAddStepHandler implements Description
     		jndiName.append(repositoryName);
     	}
     	
-    	//TODO Update model with proper JNDI name
+    	ArrayList<String> expressionList = new ArrayList<String>();
+   		if (Element.SEQUENCER_EXPRESSIONS_ATTRIBUTE.isDefined(operation)) {
+    		String domains = Element.SEQUENCER_EXPRESSIONS_ATTRIBUTE.asString(operation);
+    		StringTokenizer st = new StringTokenizer(domains, ","); //$NON-NLS-1$
+    		while(st.hasMoreTokens()) {
+    			expressionList.add(st.nextToken());
+    		}
+    	}  
     	
     	String jsonString = model.toJSONString(true);
     	Document configDoc;
     	try {
-			configDoc = new JsonReader().read(jsonString, false);
+			configDoc = Json.read(jsonString);
 		} catch (ParsingException e) {
 			throw new OperationFailedException(e, model);
 		}
+    	
+    	
+   		
+//   		if (Element.AUTHENTICATION_MAX_SESSIONS_ALLOWED_ATTRIBUTE.isDefined(operation)) {
+//   			transport.setSessionMaxLimit(Element.AUTHENTICATION_MAX_SESSIONS_ALLOWED_ATTRIBUTE.asLong(operation));
+//   		}
+//    	
+//   		if (Element.AUTHENTICATION_SESSION_EXPIRATION_TIME_LIMIT_ATTRIBUTE.isDefined(operation)) {
+//   			transport.setSessionExpirationTimeLimit(Element.AUTHENTICATION_SESSION_EXPIRATION_TIME_LIMIT_ATTRIBUTE.asLong(operation));
+//   		}   		
+//   		if (Element.AUTHENTICATION_KRB5_DOMAIN_ATTRIBUTE.isDefined(operation)) {
+//   			transport.setAuthenticationType(AuthenticationType.GSS);
+//   			transport.setKrb5Domain(Element.AUTHENTICATION_KRB5_DOMAIN_ATTRIBUTE.asString(operation));
+//   		}
+//   		else {
+//   			transport.setAuthenticationType(AuthenticationType.CLEARTEXT);
+//   		}
     	RepositoryService repositoryService = new RepositoryService(new RepositoryConfiguration(configDoc, repositoryName));
 		
     	ServiceBuilder<JcrRepository> repositoryBuilder = target.addService(ModeShapeServiceNames.repositoryServiceName(repositoryName), repositoryService);
