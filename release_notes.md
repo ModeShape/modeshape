@@ -1,22 +1,9 @@
 # Release Notes for ModeShape &version;
 
-ModeShape &version; includes several new features, improvements, and bug fixes since 2.6.0.Final:
+ModeShape &version; is primarily a bug-fix release, and the following changes have been made since 2.7.0.Final:
 
-- improved memory usage during export and indexing
-- fixed JPA connectors use of 2nd level cache for Hibernate 3.3 and later
-- JPA connector's background garbage collection can be disabled
-- JPA no longer caches large value entities
-- fixed race condition in RepositoryConnectionPool
-- added public API methods to register node types in CND files, eliminating need for depending upon implementation classes
-- deprecated public API interfaces/methods that were redundant with JCR 2.0
-- added support for setting values with custom javax.jcr.Binary implementations
-- added public API methods to get the SHA-1 hash of binary values
-- fixes to query processing
-- fixes to enable building on Windows
-- corrected Teiid sequencers generation of transformation queries
-- upgraded to Tika 1.0
-- upgraded versions of several Maven plugins
-
+- added limited support for using Infinispan 5.1 as a store
+- plus 19 other bug fixes
 
 ## JCR Supported Features
 
@@ -138,7 +125,8 @@ searchable than if it remains locked up inside the stored files. And ModeShape p
 - In-Memory Connector (read-write)
 - Disk-based Storage Connector (read-write)
 - JCR Connector (read-write)
-- Infinispan Connector (read-write/persistent storage)
+- Infinispan 4.x Connector (read-write/persistent storage)
+- Infinispan 5.x Connector (read-write/persistent storage, limited use)
 - JBoss Cache Connector (read-write/persistent storage)
 - File System Connector (read-write/persistent storage of files & folders)
 - Subversion Connector (read-write/persistent storage of files & folders)
