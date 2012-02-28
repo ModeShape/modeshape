@@ -577,8 +577,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
         // We have successfully authenticated ...
         try {
-            boolean readOnly = false; // assume not
-            JcrSession session = new JcrSession(this, workspaceName, sessionContext, attributes, readOnly);
+            // Look for whether this context is read-only ...
+            SecurityContext securityContext = sessionContext.getSecurityContext();
+            boolean writable = JcrSession.hasRole(securityContext, ModeShapeRoles.READWRITE, repoName, workspaceName)
+                               || JcrSession.hasRole(securityContext, ModeShapeRoles.ADMIN, repoName, workspaceName);
+            JcrSession session = new JcrSession(this, workspaceName, sessionContext, attributes, !writable);
 
             // Need to make sure that the user has access to this session
             session.checkPermission(workspaceName, null, ModeShapePermissions.READ);
@@ -708,7 +711,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
         descriptors.put(Repository.WRITE_SUPPORTED, valueFor(factories, true));
         // TODO: Change in 3.0
-        descriptors.put(Repository.IDENTIFIER_STABILITY, valueFor(factories, Repository.IDENTIFIER_STABILITY_METHOD_DURATION));
+        descriptors.put(Repository.IDENTIFIER_STABILITY, valueFor(factories, Repository.IDENTIFIER_STABILITY_INDEFINITE_DURATION));
         descriptors.put(Repository.OPTION_XML_IMPORT_SUPPORTED, valueFor(factories, true));
         descriptors.put(Repository.OPTION_XML_EXPORT_SUPPORTED, valueFor(factories, true));
         descriptors.put(Repository.OPTION_UNFILED_CONTENT_SUPPORTED, valueFor(factories, false));
@@ -721,7 +724,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         descriptors.put(Repository.OPTION_LIFECYCLE_SUPPORTED, valueFor(factories, false));
         descriptors.put(Repository.OPTION_NODE_AND_PROPERTY_WITH_SAME_NAME_SUPPORTED, valueFor(factories, true));
         // TODO: Change in 3.0
-        descriptors.put(Repository.OPTION_UPDATE_PRIMARY_NODE_TYPE_SUPPORTED, valueFor(factories, false));
+        descriptors.put(Repository.OPTION_UPDATE_PRIMARY_NODE_TYPE_SUPPORTED, valueFor(factories, true));
         descriptors.put(Repository.OPTION_UPDATE_MIXIN_NODE_TYPES_SUPPORTED, valueFor(factories, true));
         descriptors.put(Repository.OPTION_SHAREABLE_NODES_SUPPORTED, valueFor(factories, true));
         descriptors.put(Repository.OPTION_NODE_TYPE_MANAGEMENT_SUPPORTED, valueFor(factories, true));
@@ -738,7 +741,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         descriptors.put(Repository.NODE_TYPE_MANAGEMENT_MULTIPLE_BINARY_PROPERTIES_SUPPORTED, valueFor(factories, true));
         descriptors.put(Repository.NODE_TYPE_MANAGEMENT_VALUE_CONSTRAINTS_SUPPORTED, valueFor(factories, true));
         // TODO: Change in 3.0
-        descriptors.put(Repository.NODE_TYPE_MANAGEMENT_UPDATE_IN_USE_SUPORTED, valueFor(factories, false));
+        descriptors.put(Repository.NODE_TYPE_MANAGEMENT_UPDATE_IN_USE_SUPORTED, valueFor(factories, true));
         descriptors.put(Repository.QUERY_LANGUAGES,
                         new JcrValue[] {valueFor(factories, Query.XPATH), valueFor(factories, Query.JCR_SQL2),
                             valueFor(factories, Query.SQL), valueFor(factories, Query.JCR_JQOM)});

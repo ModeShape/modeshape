@@ -341,6 +341,19 @@ public class JcrEngine implements Repositories {
     }
 
     /**
+     * Get the immutable configuration for the repository with the supplied name.
+     * 
+     * @param repositoryName the name of the deployed repository
+     * @return the repository configuration; never null
+     * @throws IllegalArgumentException if the repository name is null, blank or invalid
+     * @throws NoSuchRepositoryException if there is no repository with the specified name
+     * @throws IllegalStateException if this engine is not {@link #getState() running}
+     */
+    public final RepositoryConfiguration getRepositoryConfiguration( String repositoryName ) throws NoSuchRepositoryException {
+        return getRepository(repositoryName).getConfiguration();
+    }
+
+    /**
      * Asynchronously start the deployed {@link Repository} instance with the given the name, and return a future that will return
      * the Repository instance. If the Repository is already running, this method returns a future that returns immediately.
      * <p>

@@ -112,13 +112,13 @@ public class JcrSession implements Session {
     private final ExecutionContext context;
     private final JcrRepository repository;
     private final SessionCache cache;
-    private final JcrValueFactory valueFactory;
     private final JcrRootNode rootNode;
     private final ConcurrentMap<NodeKey, AbstractJcrNode> jcrNodes = new ConcurrentHashMap<NodeKey, AbstractJcrNode>();
     private final Map<String, Object> sessionAttributes;
     private final JcrWorkspace workspace;
     private final JcrNamespaceRegistry sessionRegistry;
     private final AtomicReference<Map<NodeKey, NodeKey>> baseVersionKeys = new AtomicReference<Map<NodeKey, NodeKey>>();
+    private volatile JcrValueFactory valueFactory;
     private volatile boolean isLive = true;
     private final long nanosCreated;
 
@@ -134,18 +134,13 @@ public class JcrSession implements Session {
         final LocalNamespaceRegistry localRegistry = new LocalNamespaceRegistry(globalNamespaceRegistry); // not-thread-safe!
         this.context = context.with(localRegistry);
         this.sessionRegistry = new JcrNamespaceRegistry(Behavior.SESSION, localRegistry, globalNamespaceRegistry, this);
+        this.workspace = new JcrWorkspace(this, workspaceName);
 
         // Create the session cache ...
         this.cache = repository.repositoryCache().createSession(context, workspaceName, readOnly);
-        this.valueFactory = new JcrValueFactory(this.context);
         this.rootNode = new JcrRootNode(this, this.cache.getRootKey());
         this.jcrNodes.put(this.rootNode.key(), this.rootNode);
-        if (sessionAttributes == null) {
-            this.sessionAttributes = Collections.emptyMap();
-        } else {
-            this.sessionAttributes = Collections.unmodifiableMap(sessionAttributes);
-        }
-        this.workspace = new JcrWorkspace(this, workspaceName);
+        this.sessionAttributes = sessionAttributes != null ? sessionAttributes : Collections.<String, Object>emptyMap();
 
         // Pre-cache all of the namespaces to be a snapshot of what's in the global registry at this time.
         // This behavior is specified in Section 3.5.2 of the JCR 2.0 specification.
@@ -274,6 +269,10 @@ public class JcrSession implements Session {
     }
 
     final JcrValueFactory valueFactory() {
+        if (valueFactory == null) {
+            // Never gets unset, and this is idempotent so okay to create without a lock
+            valueFactory = new JcrValueFactory(this.context);
+        }
         return valueFactory;
     }
 
@@ -889,7 +888,7 @@ public class JcrSession implements Session {
     @Override
     public JcrValueFactory getValueFactory() throws UnsupportedRepositoryOperationException, RepositoryException {
         checkLive();
-        return valueFactory;
+        return valueFactory();
     }
 
     /**
@@ -944,10 +943,10 @@ public class JcrSession implements Session {
      *        workspace.
      * @return true if the user has the role and is logged in; false otherwise
      */
-    private final boolean hasRole( SecurityContext context,
-                                   String roleName,
-                                   String repositoryName,
-                                   String workspaceName ) {
+    final static boolean hasRole( SecurityContext context,
+                                  String roleName,
+                                  String repositoryName,
+                                  String workspaceName ) {
         if (context.hasRole(roleName)) return true;
         roleName = roleName + "." + repositoryName;
         if (context.hasRole(roleName)) return true;

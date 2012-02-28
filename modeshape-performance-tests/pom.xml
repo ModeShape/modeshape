@@ -122,7 +122,7 @@
             <!-- Apply the properties set in the POM to the resource files -->
             <resource>
                 <filtering>true</filtering>
-                <directory>src/main/resources</directory>
+                <directory>src/test/resources</directory>
                 <includes>
                     <include>**/repository.properties</include>
                 </includes>

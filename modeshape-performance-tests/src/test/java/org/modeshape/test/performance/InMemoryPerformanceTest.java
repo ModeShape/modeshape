@@ -156,7 +156,7 @@ public class InMemoryPerformanceTest {
             Node node = session.getRootNode().addNode("testNode");
             session.save();
 
-            int count = 1000;
+            int count = 10000;
             if (i > 2) sw.start();
             for (int j = 0; j != count; ++j) {
                 node.addNode("childNode");
