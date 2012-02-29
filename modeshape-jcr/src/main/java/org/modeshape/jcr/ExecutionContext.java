@@ -330,7 +330,7 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
      * @return the custom data; never null but possibly empty
      */
     public Map<String, String> getData() {
-        return data;
+        return Collections.unmodifiableMap(data);
     }
 
     /**

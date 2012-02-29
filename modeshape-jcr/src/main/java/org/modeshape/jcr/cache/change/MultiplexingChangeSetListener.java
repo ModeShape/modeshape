@@ -3,9 +3,10 @@ package org.modeshape.jcr.cache.change;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.jcr.ChangeBus;
 
 @ThreadSafe
-public class MultiplexingChangeSetListener implements ChangeSetListener, Observable {
+public class MultiplexingChangeSetListener implements ChangeBus {
 
     private final Set<ChangeSetListener> delegates = new CopyOnWriteArraySet<ChangeSetListener>();
 
