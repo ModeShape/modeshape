@@ -327,8 +327,10 @@ public class JcrSession implements Session {
         return repository().repositoryCache().createSession(context(), workspaceName(), readOnly);
     }
 
-    final void addData(String key, String value) {
+    final void addContextData( String key,
+                               String value ) {
         this.context = context.with(key, value);
+        this.cache.addContextData(key, value);
     }
 
     protected final String readableLocation( CachedNode node ) {

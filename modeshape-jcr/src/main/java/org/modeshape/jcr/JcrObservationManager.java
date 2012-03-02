@@ -67,8 +67,8 @@ class JcrObservationManager implements ObservationManager {
     /**
      * The keys which provide extra information in case of a reorder
      */
-    static final String ORDER_FROM_KEY = "srcChildRelPath";
-    static final String ORDER_TO_KEY = "destChildRelPath";
+    static final String ORDER_DEST_KEY = "srcChildRelPath";
+    static final String ORDER_SRC_KEY = "destChildRelPath";
 
     /**
      * The repository observable the JCR listeners will be registered with.
@@ -92,9 +92,9 @@ class JcrObservationManager implements ObservationManager {
     private final String systemWorkspaceName;
 
     /**
-     * A setting which controls whether system events are dispatched or not.
+     * An object recording various metrics
      */
-    private final boolean sendSystemEvents;
+    //private final RepositoryStatistics repositoryStatistics;
 
     /**
      * A lock used to provide thread-safe guarantees when working it the repository observable
@@ -104,18 +104,16 @@ class JcrObservationManager implements ObservationManager {
     /**
      * @param session the owning session (never <code>null</code>)
      * @param repositoryObservable the repository observable used to register JCR listeners (never <code>null</code>)
-     * @param sendSystemEvents a flag which controls whether events from the system workspace should be dispatched or not.
      * @throws IllegalArgumentException if either parameter is <code>null</code>
      */
     JcrObservationManager( JcrSession session,
-                           Observable repositoryObservable,
-                           boolean sendSystemEvents) {
+                           Observable repositoryObservable
+                          ) {
         CheckArg.isNotNull(session, "session");
         CheckArg.isNotNull(repositoryObservable, "repositoryObservable");
 
         this.lock = new ReentrantLock(true);
         this.session = session;
-        this.sendSystemEvents = sendSystemEvents;
         this.repositoryObservable = repositoryObservable;
         this.listeners = new HashMap<EventListener, JcrListenerAdapter>();
         this.workspaceName = this.session.getWorkspace().getName();
@@ -196,7 +194,7 @@ class JcrObservationManager implements ObservationManager {
     }
 
     String getSessionId() {
-        return this.session.sessionId();
+        return this.session.context().getProcessId();
     }
 
     final String getWorkspaceName() {
@@ -253,7 +251,7 @@ class JcrObservationManager implements ObservationManager {
      */
     public void setUserData( String userData ) {
         // User data value may be null
-        this.session.addData(OBSERVATION_USER_DATA_KEY, userData);
+        this.session.addContextData(OBSERVATION_USER_DATA_KEY, userData);
     }
 
     /**
@@ -614,8 +612,8 @@ class JcrObservationManager implements ObservationManager {
                     break;
                 case Event.NODE_MOVED:
                     sb.append("Node moved");
-                    String from = info.containsKey(MOVE_FROM_KEY) ? info.get(MOVE_FROM_KEY) : info.get(ORDER_FROM_KEY);
-                    String to = info.containsKey(MOVE_TO_KEY) ? info.get(MOVE_TO_KEY) : info.get(ORDER_TO_KEY);
+                    String from = info.containsKey(MOVE_FROM_KEY) ? info.get(MOVE_FROM_KEY) : info.get(ORDER_DEST_KEY);
+                    String to = info.containsKey(MOVE_TO_KEY) ? info.get(MOVE_TO_KEY) : info.get(ORDER_SRC_KEY);
                     sb.append(" from ").append(from).append(" to ").append(to).append(" by ").append(getUserID());
                     return sb.toString();
             }
@@ -630,6 +628,8 @@ class JcrObservationManager implements ObservationManager {
      */
     @NotThreadSafe
     class JcrListenerAdapter implements ChangeSetListener {
+
+        private final Logger logger = Logger.getLogger(getClass());
 
         /**
          * The node path whose events should be handled (or <code>null</code>) if all node paths should be handled.
@@ -750,23 +750,22 @@ class JcrObservationManager implements ObservationManager {
                     events.add(new JcrEvent(bundle, Event.NODE_MOVED, stringFor(newPath), nodeId, Collections.unmodifiableMap(
                             info)));
                 }
-                // For some bizarre reason, JCR 2.0 expects these methods <i>in addition to</i> the NODE_MOVED event
-                if (eventListenedFor(Event.NODE_ADDED)) {
-                    events.add(new JcrEvent(bundle, Event.NODE_ADDED, stringFor(newPath), nodeId));
-                }
-                if (eventListenedFor(Event.NODE_REMOVED)) {
-                    events.add(new JcrEvent(bundle, Event.NODE_REMOVED, stringFor(oldPath), nodeId));
-                }
-            } else if (nodeChange instanceof NodeReordered && eventListenedFor(Event.NODE_MOVED)) {
-                NodeReordered nodeReordered = (NodeReordered) nodeChange;
+                fireExtraEventsForMove(events, bundle, newPath, nodeId, oldPath);
 
-                Map<String, String> info = new HashMap<String, String>();
-                info.put(ORDER_FROM_KEY, stringFor(nodeReordered.getOldPath().getLastSegment()));
-                info.put(ORDER_TO_KEY, stringFor(newPath.getLastSegment()));
+            } else if (nodeChange instanceof NodeReordered) {
+                NodeReordered nodeReordered = (NodeReordered)nodeChange;
+                Path oldPath = nodeReordered.getOldPath();
 
-                events.add(new JcrEvent(bundle, Event.NODE_MOVED, stringFor(newPath), nodeId, Collections.unmodifiableMap(info)));
-            }            
-            else if (nodeChange instanceof NodeAdded && eventListenedFor(Event.NODE_ADDED)) {
+                if (eventListenedFor(Event.NODE_MOVED)) {
+                    Map<String, String> info = new HashMap<String, String>();
+                    info.put(ORDER_DEST_KEY, stringFor(oldPath.getLastSegment()));
+                    info.put(ORDER_SRC_KEY, stringFor(newPath.getLastSegment()));
+
+                    events.add(new JcrEvent(bundle, Event.NODE_MOVED, stringFor(newPath), nodeId,
+                                            Collections.unmodifiableMap(info)));
+                }
+                fireExtraEventsForMove(events, bundle, newPath, nodeId, oldPath);
+            } else if (nodeChange instanceof NodeAdded && eventListenedFor(Event.NODE_ADDED)) {
                 // create event for added node
                 events.add(new JcrEvent(bundle, Event.NODE_ADDED, stringFor(newPath), nodeId));
             } else if (nodeChange instanceof NodeRemoved && eventListenedFor(Event.NODE_REMOVED)) {
@@ -790,6 +789,20 @@ class JcrObservationManager implements ObservationManager {
             }
         }
 
+        private void fireExtraEventsForMove( Collection<Event> events,
+                                             JcrEventBundle bundle,
+                                             Path newPath,
+                                             String nodeId,
+                                             Path oldPath ) {
+            // For some bizarre reason, JCR 2.0 expects these methods <i>in addition to</i> the NODE_MOVED event
+            if (eventListenedFor(Event.NODE_ADDED)) {
+                events.add(new JcrEvent(bundle, Event.NODE_ADDED, stringFor(newPath), nodeId));
+            }
+            if (eventListenedFor(Event.NODE_REMOVED)) {
+                events.add(new JcrEvent(bundle, Event.NODE_REMOVED, stringFor(oldPath), nodeId));
+            }
+        }
+
         private boolean shouldReject( AbstractNodeChange nodeChange ) {
             return !acceptBasedOnNodeTypeName(nodeChange)
                     || !acceptBasedOnPath(nodeChange)
@@ -808,7 +821,7 @@ class JcrObservationManager implements ObservationManager {
          */
         private boolean acceptBasedOnPermission( AbstractNodeChange nodeChange ) {
             try {
-                session.checkPermission(nodeChange.getPath(), ModeShapePermissions.READ);
+                session.checkPermission(parentNodePathOfChange(nodeChange), ModeShapePermissions.READ);
                 return true;
             } catch (AccessDeniedException e) {
                 return false;
@@ -818,7 +831,7 @@ class JcrObservationManager implements ObservationManager {
         private boolean acceptBasedOnOriginatingWorkspace( ChangeSet changeSet ) {
             boolean sameWorkspace = getWorkspaceName().equalsIgnoreCase(changeSet.getWorkspaceName());
             boolean isSystemWorkspace = getSystemWorkspaceName().equalsIgnoreCase(changeSet.getWorkspaceName());
-            return (sameWorkspace && !isSystemWorkspace) || (sendSystemEvents && isSystemWorkspace);
+            return sameWorkspace || isSystemWorkspace;
         }
 
         /**
@@ -826,7 +839,10 @@ class JcrObservationManager implements ObservationManager {
          * @return <code>true</code> if event occurred in a different session or if events from same session should be processed
          */
         private boolean acceptBasedOnOriginatingSession( ChangeSet changeSet ) {
-            return !(this.noLocal && getSessionId().equals(changeSet.getProcessKey()));
+            if (this.noLocal) {
+                return !getSessionId().equals(changeSet.getProcessKey());
+            }
+            return true;
         }
 
         /**
@@ -843,22 +859,22 @@ class JcrObservationManager implements ObservationManager {
                 String primaryTypeName = null;
                 Set<String> mixinTypeNames = null;
                 try {
-                    Path parentPath = change.getPath().getParent();
-                    AbstractJcrNode node = session.node(parentPath);
+                    Path parentPath = parentNodePathOfChange(change);
+                    AbstractJcrNode parentNode = session.node(parentPath);
 
-                    mixinTypeNames = new HashSet<String>(node.getMixinTypeNames().size());
-                    for (Name mixinName : node.getMixinTypeNames()) {
+                    mixinTypeNames = new HashSet<String>(parentNode.getMixinTypeNames().size());
+                    for (Name mixinName : parentNode.getMixinTypeNames()) {
                         mixinTypeNames.add(stringFor(mixinName));
                     }
-                    primaryTypeName = stringFor(node.getPrimaryTypeName());
+                    primaryTypeName = stringFor(parentNode.getPrimaryTypeName());
                     return getNodeTypeManager().isDerivedFrom(this.nodeTypeNames, primaryTypeName, mixinTypeNames.toArray(
                             new String[mixinTypeNames.size()]));
                 } catch (RepositoryException e) {
-                    Logger.getLogger(getClass()).error(e,
-                                                       JcrI18n.cannotPerformNodeTypeCheck,
-                                                       primaryTypeName,
-                                                       mixinTypeNames,
-                                                       this.nodeTypeNames);
+                    logger.error(e,
+                                 JcrI18n.cannotPerformNodeTypeCheck,
+                                 primaryTypeName,
+                                 mixinTypeNames,
+                                 this.nodeTypeNames);
                     return false;
                 }
             }
@@ -873,7 +889,7 @@ class JcrObservationManager implements ObservationManager {
         private boolean acceptBasedOnPath( AbstractNodeChange change ) {
             if (!StringUtil.isBlank(absPath)) {
                 Path matchPath = session.pathFactory().create(this.absPath);
-                Path parentPath = change.getPath().getParent();
+                Path parentPath = parentNodePathOfChange(change);
 
                 return this.isDeep ? matchPath.isAtOrAbove(parentPath) : matchPath.equals(parentPath);
             } else {
@@ -898,6 +914,16 @@ class JcrObservationManager implements ObservationManager {
             }
 
             return true;
+        }
+
+        private Path parentNodePathOfChange( AbstractNodeChange change ) {
+            Path changePath = change.getPath();
+            if (change instanceof PropertyAdded || change instanceof PropertyRemoved || change instanceof  PropertyChanged) {
+                return changePath;
+            }
+            else {
+                return changePath.isRoot() ? changePath : changePath.getParent();
+            }
         }
 
         /**

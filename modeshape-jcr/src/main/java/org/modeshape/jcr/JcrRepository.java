@@ -876,7 +876,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final ExecutorService indexingExecutor;
         private final TextExtractors extractors;
         private final RepositoryChangeBus changeBus;
-        private final Executor changeDispatchingQueue;
+        private final ExecutorService changeDispatchingQueue;
 
         protected RunningState() throws IOException, NamingException {
             this(null, null);
@@ -976,8 +976,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.internalWorkerContext = this.context.with(new InternalSecurityContext(INTERNAL_WORKER_USERNAME));
 
                 //Create the event bus
-                this.changeDispatchingQueue = this.context.getThreadPool("eventDispatchingQueue");
-                this.changeBus = new RepositoryChangeBus(this.changeDispatchingQueue, this.statistics, systemWorkspaceName(), false);
+                this.changeDispatchingQueue = Executors.newCachedThreadPool(new NamedThreadFactory("modeshape-event-dispatcher"));
+                this.changeBus = new RepositoryChangeBus(this.changeDispatchingQueue, systemWorkspaceName(), false);
                 
                 // Set up the repository cache ...
                 SessionCacheMonitor monitor = statsRollupService != null ? new SessionMonitor(this.statistics) : null;
@@ -1311,11 +1311,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             }
             
             //shutdown the event bus
-            if (this.changeDispatchingQueue != null) {
-                this.context().releaseThreadPool(changeDispatchingQueue);
-            }
-
             if (this.changeBus != null) {
+                this.context().releaseThreadPool(changeDispatchingQueue);
                 this.changeBus.shutdown();
             }
         }

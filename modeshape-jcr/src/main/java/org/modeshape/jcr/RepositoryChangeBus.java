@@ -2,21 +2,20 @@ package org.modeshape.jcr;
 
 import org.modeshape.common.annotation.GuardedBy;
 import org.modeshape.common.annotation.ThreadSafe;
-import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * A standard {@link ChangeBus} implementation.
- * 
+ *
  * @author Horia Chiorean
  */
 @ThreadSafe
@@ -24,44 +23,43 @@ public class RepositoryChangeBus implements ChangeBus {
 
     private static final String NULL_WORKSPACE_NAME = "null_workspace_name";
 
-    private final Executor executor;
-    private final ConcurrentHashMap<String, BlockingQueue<ChangeSet>> eventQueues;
-    private final ConcurrentHashMap<String, EventsDispatcher> eventDispatchers;
-    private final Set<ChangeSetListener> listeners;
-    private final RepositoryStatistics statistics;
+    private final ExecutorService executor;
+    private final ConcurrentHashMap<String, ConcurrentHashMap<ChangeSetListener, BlockingQueue<ChangeSet>>> workspaceListenerQueues;
 
+    private final Set<ChangeSetListener> listeners;
     private final ReadWriteLock listenersLock = new ReentrantReadWriteLock(true);
 
-    //TODO author=Horia Chiorean date=2/29/12 description=Those 2 members and dependent code should be removed,
-    //once multi-threaded changes and the system workspace are fixed
+    private volatile boolean shutdown;
+
+    //TODO author=Horia Chiorean date=2/29/12 description=The following members can be removed once multi-threaded changes 
+    //and the system workspace are fixed
     private final String systemWorkspaceName;
     private final boolean separateThreadForSystemWorkspace;
 
-    RepositoryChangeBus( Executor executor,
-                         RepositoryStatistics statistics,
+    RepositoryChangeBus( ExecutorService executor,
                          String systemWorkspaceName,
                          boolean separateThreadForSystemWorkspace ) {
         this.systemWorkspaceName = systemWorkspaceName;
         this.separateThreadForSystemWorkspace = separateThreadForSystemWorkspace;
-
+        this.workspaceListenerQueues = new ConcurrentHashMap<String, ConcurrentHashMap<ChangeSetListener, BlockingQueue<ChangeSet>>>();
         this.executor = executor;
-        this.eventQueues = new ConcurrentHashMap<String, BlockingQueue<ChangeSet>>();
-        this.eventDispatchers = new ConcurrentHashMap<String, EventsDispatcher>();
         this.listeners = new HashSet<ChangeSetListener>();
-        this.statistics = statistics;
+        this.shutdown = false;
     }
 
-    RepositoryChangeBus( Executor executor,
-                         RepositoryStatistics statistics ) {
-        this(executor, statistics, null, false);                
+    RepositoryChangeBus( ExecutorService executor ) {
+        this(executor, null, false);
     }
 
     void shutdown() {
+        shutdown = true;
+        workspaceListenerQueues.clear();
         try {
-            eventQueues.clear();
-            eventDispatchers.clear();
             listenersLock.writeLock().lock();
             listeners.clear();
+            if (!executor.isShutdown()) {
+                executor.shutdownNow();
+            }
         } finally {
             listenersLock.writeLock().unlock();
         }
@@ -69,23 +67,55 @@ public class RepositoryChangeBus implements ChangeBus {
 
     @Override
     public void notify( ChangeSet changeSet ) {
+        if (shutdown) {
+            throw new IllegalStateException("Change bus has been already shut down, should not be receving events");
+        }
         String workspaceName = changeSet.getWorkspaceName() != null ? changeSet.getWorkspaceName() : NULL_WORKSPACE_NAME;
 
-        if (!separateThreadForSystemWorkspace && workspaceName.equalsIgnoreCase(systemWorkspaceName)) {
-            dispatchChanges(changeSet);
+        if (noListenersRegistered()) {
             return;
         }
-        
-        BlockingQueue<ChangeSet> processQue = eventQueues.get(workspaceName);
-        if (processQue == null) {
-            processQue = new LinkedBlockingQueue<ChangeSet>();
-            eventQueues.putIfAbsent(workspaceName, processQue);
 
-            eventDispatchers.putIfAbsent(workspaceName, new EventsDispatcher(processQue));
-            executor.execute(eventDispatchers.get(workspaceName));
+        if (!separateThreadForSystemWorkspace && workspaceName.equalsIgnoreCase(systemWorkspaceName)) {
+            for (ChangeSetListener listener : listeners) {
+                listener.notify(changeSet);
+            }
+            return;
         }
-        processQue.add(changeSet);
-        statistics.increment(ValueMetric.EVENT_QUEUE_SIZE);
+
+        ConcurrentHashMap<ChangeSetListener, BlockingQueue<ChangeSet>> listenersForWorkspace = workspaceListenerQueues.get(
+                workspaceName);        
+        if (listenersForWorkspace == null) {
+            listenersForWorkspace = new ConcurrentHashMap<ChangeSetListener, BlockingQueue<ChangeSet>>();           
+            workspaceListenerQueues.putIfAbsent(workspaceName, listenersForWorkspace);
+        }
+
+        try {
+            listenersLock.readLock().lock();
+            for (ChangeSetListener listener : listeners)  {
+                BlockingQueue<ChangeSet> listenerQueue = listenersForWorkspace.get(listener);
+                if (listenerQueue == null) {
+                   listenerQueue = new LinkedBlockingQueue<ChangeSet>();
+                   listenerQueue.add(changeSet);
+                   listenersForWorkspace.putIfAbsent(listener, listenerQueue);
+                   executor.execute(new ChangeSetDispatcher(listener, listenerQueue));
+                }
+                else {
+                    listenerQueue.add(changeSet);
+                }
+            }
+        } finally {
+            listenersLock.readLock().unlock();
+        }
+    }
+
+    private boolean noListenersRegistered() {
+        try {
+            listenersLock.readLock().lock();
+            return listeners.isEmpty();
+        } finally {
+            listenersLock.readLock().unlock();
+        }
     }
 
     @GuardedBy("listenersLock")
@@ -115,38 +145,28 @@ public class RepositoryChangeBus implements ChangeBus {
             listenersLock.writeLock().unlock();
         }
     }
+  
+    private class ChangeSetDispatcher implements Runnable {
 
-    private void dispatchChanges( ChangeSet changeSet ) {
-        statistics.decrement(ValueMetric.EVENT_QUEUE_SIZE);
-        try {
-            listenersLock.readLock().lock();
-            for (ChangeSetListener listener : listeners) {
-                listener.notify(changeSet);
-            }
-        } finally {
-            listenersLock.readLock().unlock();
-        }
-    }
+        private final ChangeSetListener listener;
+        private final BlockingQueue<ChangeSet> changeSetQueue;
 
-    private class EventsDispatcher implements Runnable {
-
-        private final BlockingQueue<ChangeSet> eventsQue;
-
-        private EventsDispatcher( BlockingQueue<ChangeSet> eventsQue ) {
-            this.eventsQue = eventsQue;
+        ChangeSetDispatcher( ChangeSetListener listener,
+                                     BlockingQueue<ChangeSet> changeSetQueue ) {
+            this.listener = listener;
+            this.changeSetQueue = changeSetQueue;
         }
 
         @Override
         public void run() {
-            ChangeSet changeSet;
             try {
-                while ((changeSet = eventsQue.take()) != null) {
-                    dispatchChanges(changeSet);
+                while (!shutdown) {
+                   ChangeSet changeSet = changeSetQueue.take();
+                   listener.notify(changeSet);
                 }
             } catch (InterruptedException e) {
                 //ignore   
             }
         }
     }
-
 }

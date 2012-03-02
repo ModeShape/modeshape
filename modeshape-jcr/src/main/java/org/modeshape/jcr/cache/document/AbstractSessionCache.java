@@ -65,11 +65,12 @@ public abstract class AbstractSessionCache implements SessionCache, DocumentCach
     }
 
     protected final WorkspaceCache workspaceCache;
-    private final ExecutionContext context;
     private final NameFactory nameFactory;
     private final PathFactory pathFactory;
     private final Path rootPath;
     private final SessionCacheMonitor monitor;
+
+    private ExecutionContext context;
 
     protected AbstractSessionCache( ExecutionContext context,
                                     WorkspaceCache workspaceCache,
@@ -115,6 +116,11 @@ public abstract class AbstractSessionCache implements SessionCache, DocumentCach
 
     final SessionCacheMonitor monitor() {
         return monitor;
+    }
+    
+    @Override
+    public final void addContextData(String key, String value) {
+        this.context = context.with(key, value);
     }
 
     @Override
