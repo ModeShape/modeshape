@@ -760,6 +760,22 @@ public class WritableSessionCache extends AbstractSessionCache {
                             changes.nodeRenamed(renamedKey, renamedToPath, renamedFromPath.getLastSegment());
                         }
                     }
+
+                    //generate reordering events for nodes which have not been reordered to the end
+                    //TODO author=Horia Chiorean date=3/2/12 description=This will only work when reordering inner nodes (i.e. not moving them at the end)
+                    Map<NodeKey, SessionNode.Insertions> insertionsByBeforeKey = changedChildren.getInsertionsByBeforeKey();
+                    for (SessionNode.Insertions insertion : insertionsByBeforeKey.values()) {
+                        for (ChildReference afterInsertionRef : insertion.inserted()) {
+                            CachedNode afterInsertionNode = workspaceCache.getNode(afterInsertionRef); 
+                            Path afterInsertionPath = workspacePaths.getPath(afterInsertionNode);
+
+                            CachedNode beforeInsertionNode = workspaceCache.getNode(insertion.insertedBefore());
+                            Path beforeInsertionPath = workspacePaths.getPath(beforeInsertionNode);
+                                    
+                            changes.nodeReordered(afterInsertionRef.getKey(), afterInsertionNode.getParentKey(this), afterInsertionPath,
+                                                  beforeInsertionPath);
+                        }
+                    }
                 }
 
                 ReferrerChanges referrerChanges = node.getReferrerChanges();

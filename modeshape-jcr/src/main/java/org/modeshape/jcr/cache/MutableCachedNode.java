@@ -215,7 +215,7 @@ public interface MutableCachedNode extends CachedNode {
                     Name name );
 
     /**
-     * Remove the node from being a child of this node and append it as a child of the supplied node.
+     * Remove the node from being a child of this node and append it as a child before the supplied node.
      * 
      * @param cache the cache to which this node belongs; may not be null
      * @param key the key for the child that is to be removed; may not be null

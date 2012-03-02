@@ -1251,7 +1251,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         }
 
         // Now that we've verified the parameters, perform the move ...
-        mutableParent().reorderChild(cache, srcRef.getKey(), destKey);
+        mutable().reorderChild(cache, srcRef.getKey(), destKey);
     }
 
     @Override
