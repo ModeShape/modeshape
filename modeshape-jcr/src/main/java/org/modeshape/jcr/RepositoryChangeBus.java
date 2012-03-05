@@ -36,9 +36,9 @@ public class RepositoryChangeBus implements ChangeBus {
     private final String systemWorkspaceName;
     private final boolean separateThreadForSystemWorkspace;
 
-    RepositoryChangeBus( ExecutorService executor,
-                         String systemWorkspaceName,
-                         boolean separateThreadForSystemWorkspace ) {
+    public RepositoryChangeBus( ExecutorService executor,
+                                String systemWorkspaceName,
+                                boolean separateThreadForSystemWorkspace ) {
         this.systemWorkspaceName = systemWorkspaceName;
         this.separateThreadForSystemWorkspace = separateThreadForSystemWorkspace;
         this.workspaceListenerQueues = new ConcurrentHashMap<String, ConcurrentHashMap<ChangeSetListener, BlockingQueue<ChangeSet>>>();
@@ -84,23 +84,22 @@ public class RepositoryChangeBus implements ChangeBus {
         }
 
         ConcurrentHashMap<ChangeSetListener, BlockingQueue<ChangeSet>> listenersForWorkspace = workspaceListenerQueues.get(
-                workspaceName);        
+                workspaceName);
         if (listenersForWorkspace == null) {
-            listenersForWorkspace = new ConcurrentHashMap<ChangeSetListener, BlockingQueue<ChangeSet>>();           
+            listenersForWorkspace = new ConcurrentHashMap<ChangeSetListener, BlockingQueue<ChangeSet>>();
             workspaceListenerQueues.putIfAbsent(workspaceName, listenersForWorkspace);
         }
 
         try {
             listenersLock.readLock().lock();
-            for (ChangeSetListener listener : listeners)  {
+            for (ChangeSetListener listener : listeners) {
                 BlockingQueue<ChangeSet> listenerQueue = listenersForWorkspace.get(listener);
                 if (listenerQueue == null) {
-                   listenerQueue = new LinkedBlockingQueue<ChangeSet>();
-                   listenerQueue.add(changeSet);
-                   listenersForWorkspace.putIfAbsent(listener, listenerQueue);
-                   executor.execute(new ChangeSetDispatcher(listener, listenerQueue));
-                }
-                else {
+                    listenerQueue = new LinkedBlockingQueue<ChangeSet>();
+                    listenerQueue.add(changeSet);
+                    listenersForWorkspace.putIfAbsent(listener, listenerQueue);
+                    executor.execute(new ChangeSetDispatcher(listener, listenerQueue));
+                } else {
                     listenerQueue.add(changeSet);
                 }
             }
@@ -118,7 +117,7 @@ public class RepositoryChangeBus implements ChangeBus {
         }
     }
 
-    @GuardedBy("listenersLock")
+    @GuardedBy( "listenersLock" )
     @Override
     public boolean register( ChangeSetListener listener ) {
         if (listener == null) {
@@ -132,7 +131,7 @@ public class RepositoryChangeBus implements ChangeBus {
         }
     }
 
-    @GuardedBy("listenersLock")
+    @GuardedBy( "listenersLock" )
     @Override
     public boolean unregister( ChangeSetListener listener ) {
         if (listener == null) {
@@ -145,14 +144,14 @@ public class RepositoryChangeBus implements ChangeBus {
             listenersLock.writeLock().unlock();
         }
     }
-  
+
     private class ChangeSetDispatcher implements Runnable {
 
         private final ChangeSetListener listener;
         private final BlockingQueue<ChangeSet> changeSetQueue;
 
         ChangeSetDispatcher( ChangeSetListener listener,
-                                     BlockingQueue<ChangeSet> changeSetQueue ) {
+                             BlockingQueue<ChangeSet> changeSetQueue ) {
             this.listener = listener;
             this.changeSetQueue = changeSetQueue;
         }
@@ -161,8 +160,8 @@ public class RepositoryChangeBus implements ChangeBus {
         public void run() {
             try {
                 while (!shutdown) {
-                   ChangeSet changeSet = changeSetQueue.take();
-                   listener.notify(changeSet);
+                    ChangeSet changeSet = changeSetQueue.take();
+                    listener.notify(changeSet);
                 }
             } catch (InterruptedException e) {
                 //ignore   
