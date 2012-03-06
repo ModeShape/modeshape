@@ -183,10 +183,13 @@ public class ReferenceResolver {
             return null;
         }
         UUID mmuuid = null;
-        if (href.startsWith("mmuuid/")) {
-            // It's a local reference ...
+        if (href.contains("mmuuid/")) {
+            // It's a local (or cross-model) reference ...
             try {
-                mmuuid = uuidFactory.create(href.substring(7));
+                int index = href.indexOf("mmuuid/");
+                if (index >= 0) {
+                    mmuuid = this.uuidFactory.create(href.substring(index + 7));
+                }
             } catch (ValueFormatException e) {
                 // ignore
             }
