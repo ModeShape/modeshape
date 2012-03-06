@@ -74,6 +74,14 @@ public class VdbSequencerTest extends AbstractStreamSequencerTest {
     }
 
     @Test
+    public void shouldSequenceVdbForOracleBQT() throws Exception {
+        // print = true;
+        sequence("vdb/OracleBQT.vdb");
+        assertNoProblems();
+        printOutput();
+    }
+
+    @Test
     public void shouldExtractVersionInformation() {
         assertVersionInfo("something", "something", 1);
         assertVersionInfo("something.else", "something.else", 1);
