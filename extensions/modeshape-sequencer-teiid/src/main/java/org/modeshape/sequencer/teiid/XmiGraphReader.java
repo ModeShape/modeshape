@@ -474,6 +474,23 @@ public class XmiGraphReader {
                             }
                             result.add(uuid);
                         }
+                    } else if (str.contains("#mmuuid/")) {
+                        // This is a cross-model reference ...
+                        String[] references = str.split("\\s");
+                        for (String reference : references) {
+                            int index = reference.indexOf("mmuuid/");
+                            if (index == -1) continue;
+                            UUID uuid = this.uuidFactory.create(reference.substring(index + 7));
+                            if (result == null) {
+                                if (property.isSingle() && references.length == 1) {
+                                    // This is the only property value, and only one reference in it ...
+                                    return Collections.singletonList(uuid);
+                                }
+                                // This isn't the only property value ...
+                                result = new LinkedList<UUID>();
+                            }
+                            result.add(uuid);
+                        }
                     } else {
                         assert result == null;
                         return null;

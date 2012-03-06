@@ -137,4 +137,20 @@ public class ModelSequencerTest extends AbstractStreamSequencerTest {
         assertNoProblems();
         printOutput();
     }
+
+    @Test
+    public void shouldSequenceOracleBqtPhysicalModel() throws Exception {
+        // print = true;
+        sequence("model/bqt/Oracle_BQT.xmi");
+        assertNoProblems();
+        printOutput();
+    }
+
+    @Test
+    public void shouldSequenceOracleBqtVirtualModel() throws Exception {
+        // print = true;
+        sequence("model/bqt/oraclev.xmi");
+        assertNoProblems();
+        printOutput();
+    }
 }
