@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -720,7 +721,22 @@ public class XmiModelReader extends XmiGraphReader {
                              Subgraph subgraph,
                              XmiModelReader reader,
                              SequencerOutput output ) {
-            List<UUID> mmuuids = reader.references(annotation.getProperty("annotatedObject"));
+            Property property = annotation.getProperty("annotatedObject");
+            List<UUID> mmuuids = null;
+            if (property != null) {
+                mmuuids = reader.references(annotation.getProperty("annotatedObject"));
+            } else {
+                // Look for a child node, since XMI can write out references as child nodes ...
+                mmuuids = new LinkedList<UUID>();
+                for (Location location : annotation.getChildren()) {
+                    SubgraphNode annotatedObject = subgraph.getNode(location);
+                    Property href = annotatedObject.getProperty("href");
+                    if (href != null) {
+                        List<UUID> uuids = reader.references(href);
+                        if (uuids != null) mmuuids.addAll(uuids);
+                    }
+                }
+            }
             if (mmuuids != null) {
                 for (UUID mmuuid : mmuuids) {
                     PropertySet props = reader.propertiesFor(mmuuid, true);
@@ -739,6 +755,7 @@ public class XmiModelReader extends XmiGraphReader {
                     }
                 }
             }
+
             return null; // don't process any children
         }
     }
