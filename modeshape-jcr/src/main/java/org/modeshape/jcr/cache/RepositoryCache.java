@@ -37,6 +37,7 @@ import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.common.collection.Collections;
 import org.modeshape.common.util.Logger;
+import org.modeshape.jcr.ChangeBus;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrLexicon;
@@ -46,7 +47,6 @@ import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.change.Change;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
-import org.modeshape.jcr.cache.change.MultiplexingChangeSetListener;
 import org.modeshape.jcr.cache.change.Observable;
 import org.modeshape.jcr.cache.change.RecordingChanges;
 import org.modeshape.jcr.cache.change.WorkspaceAdded;
@@ -77,7 +77,7 @@ public class RepositoryCache implements Observable {
     private final String sourceKey;
     private final String rootNodeId;
     private final TransactionManager txnMgr;
-    private final MultiplexingChangeSetListener changeListener;
+    private final ChangeBus changeBus;
     private final NodeKey systemMetadataKey;
     private final NodeKey systemKey;
     private final Set<String> workspaceNames;
@@ -90,7 +90,8 @@ public class RepositoryCache implements Observable {
                             RepositoryConfiguration configuration,
                             TransactionManager transactionManager,
                             ContentInitializer initializer,
-                            SessionCacheMonitor monitor ) {
+                            SessionCacheMonitor monitor,
+                            ChangeBus changeBus ) {
         this.context = context;
         this.configuration = configuration;
         this.database = database;
@@ -111,9 +112,10 @@ public class RepositoryCache implements Observable {
         this.workspaceNames = new CopyOnWriteArraySet<String>(configuration.getAllWorkspaceNames());
         refreshWorkspaces(false);
 
-        // TODO: Events : Change this to a real bus; in lieu of that, we'll process the requests locally ...
-        this.changeListener = new MultiplexingChangeSetListener();
-        this.changeListener.register(new LocalChangeListener());
+        //this.eventBus = eventBus;
+        this.changeBus = changeBus;
+//        this.eventBus = new MultiplexingChangeSetListener();
+        this.changeBus.register(new LocalChangeListener());
 
         // Make sure the system workspace is configured to have a 'jcr:system' node ...
         SessionCache system = createSession(context, systemWorkspaceName, false);
@@ -143,12 +145,12 @@ public class RepositoryCache implements Observable {
 
     @Override
     public boolean register( ChangeSetListener observer ) {
-        return changeListener.register(observer);
+        return changeBus.register(observer);
     }
 
     @Override
     public boolean unregister( ChangeSetListener observer ) {
-        return changeListener.unregister(observer);
+        return changeBus.unregister(observer);
     }
 
     public void setLargeValueSizeInBytes( long sizeInBytes ) {
@@ -294,7 +296,8 @@ public class RepositoryCache implements Observable {
             trans.setProperty(rootDoc, context.getPropertyFactory().create(JcrLexicon.UUID, rootKey.toString()), null);
 
             database.putIfAbsent(rootKey.toString(), rootDoc, null);
-            cache = new WorkspaceCache(context, getKey(), name, database, minimumBinarySizeInBytes.get(), rootKey, changeListener);
+            cache = new WorkspaceCache(context, getKey(), name, database, minimumBinarySizeInBytes.get(), rootKey,
+                                       changeBus);
             WorkspaceCache existing = workspaceCachesByName.putIfAbsent(name, cache);
             if (existing != null) {
                 // Some other thread snuck in and created the cache for this workspace, so use it instead ...
@@ -357,7 +360,7 @@ public class RepositoryCache implements Observable {
             RecordingChanges changes = new RecordingChanges(context.getId(), this.getKey());
             changes.workspaceAdded(name);
             changes.freeze(userId, userData, timestamp);
-            this.changeListener.notify(changes);
+            this.changeBus.notify(changes);
         }
         return workspace(name);
     }
@@ -398,7 +401,7 @@ public class RepositoryCache implements Observable {
             RecordingChanges changes = new RecordingChanges(context.getId(), this.getKey());
             changes.workspaceRemoved(name);
             changes.freeze(userId, userData, timestamp);
-            this.changeListener.notify(changes);
+            this.changeBus.notify(changes);
             return true;
         }
         return false;

@@ -77,6 +77,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
     private JcrVersionManager versionManager;
     private JcrQueryManager queryManager;
     private JcrRepositoryMonitor monitor;
+    private JcrObservationManager observationManager;
 
     JcrWorkspace( JcrSession session,
                   String workspaceName ) {
@@ -239,8 +240,21 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
     @Override
     public ObservationManager getObservationManager() throws UnsupportedRepositoryOperationException, RepositoryException {
         session.checkLive();
-        // TODO: Observation
-        return null;
+        return observationManager();
+    }
+
+    final JcrObservationManager observationManager() {
+        if (observationManager == null) {
+            try {
+                lock.lock();
+                if (observationManager == null) {
+                    observationManager = new JcrObservationManager(session, repository().repositoryCache(), repository().getRepositoryStatistics());
+                }
+            } finally {
+                lock.unlock();
+            }
+        }
+        return observationManager;
     }
 
     @Override

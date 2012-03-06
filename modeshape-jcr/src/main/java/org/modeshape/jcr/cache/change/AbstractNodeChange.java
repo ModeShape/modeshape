@@ -44,6 +44,15 @@ public abstract class AbstractNodeChange extends Change {
     }
 
     /**
+     * Get the path to the node involved in the change.
+     *
+     * @return the path; may not be null
+     */
+    public Path getPath() {
+        return path;
+    }
+
+    /**
      * @return key
      */
     public NodeKey getKey() {

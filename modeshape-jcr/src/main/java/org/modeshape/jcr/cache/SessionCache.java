@@ -79,6 +79,11 @@ public interface SessionCache extends NodeCache {
     public ExecutionContext getContext();
 
     /**
+     * Adds a [key,value] data pair for this cache's context
+     */
+    public void addContextData(String key, String value);
+
+    /**
      * Saves all changes made within this session.
      * 
      * @throws LockFailureException if a requested lock could not be made

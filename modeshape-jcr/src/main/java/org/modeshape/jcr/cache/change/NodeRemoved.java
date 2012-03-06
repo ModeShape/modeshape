@@ -49,15 +49,6 @@ public class NodeRemoved extends AbstractNodeChange {
         return parentKey;
     }
 
-    /**
-     * Get the path to the node that was added, if the path is known.
-     * 
-     * @return the path; may be null
-     */
-    public Path getPath() {
-        return path;
-    }
-
     @Override
     public String toString() {
         return "Removed node '" + this.getKey() + "' at \"" + path + "\" from under " + parentKey;

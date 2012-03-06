@@ -875,6 +875,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final RepositoryQueryManager repositoryQueryManager;
         private final ExecutorService indexingExecutor;
         private final TextExtractors extractors;
+        private final RepositoryChangeBus changeBus;
+        private final ExecutorService changeDispatchingQueue;
 
         protected RunningState() throws IOException, NamingException {
             this(null, null);
@@ -946,6 +948,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.cache.register(this.lockManager);
                 other.cache.unregister(other.lockManager);
                 this.persistentRegistry = other.persistentRegistry;
+                this.changeDispatchingQueue = other.changeDispatchingQueue;
+                this.changeBus = other.changeBus;
             } else {
                 // find the Schematic database and Infinispan Cache ...
                 CacheContainer container = config.getCacheContainer();
@@ -971,9 +975,14 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.persistentRegistry.setContext(this.context);
                 this.internalWorkerContext = this.context.with(new InternalSecurityContext(INTERNAL_WORKER_USERNAME));
 
+                //Create the event bus
+                this.changeDispatchingQueue = Executors.newCachedThreadPool(new NamedThreadFactory("modeshape-event-dispatcher"));
+                this.changeBus = new RepositoryChangeBus(this.changeDispatchingQueue, systemWorkspaceName(), false);
+                
                 // Set up the repository cache ...
                 SessionCacheMonitor monitor = statsRollupService != null ? new SessionMonitor(this.statistics) : null;
-                this.cache = new RepositoryCache(context, database, config, txnMgr, new SystemContentInitializer(), monitor);
+                this.cache = new RepositoryCache(context, database, config, txnMgr, new SystemContentInitializer(), monitor,
+                                                 changeBus);
                 assert this.cache != null;
 
                 // Set up the node type manager ...
@@ -1297,8 +1306,14 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             }
 
             // Shutdown the binary store ...
-            if (this.binaryStore instanceof AbstractBinaryStore) {
-                ((AbstractBinaryStore)this.binaryStore).shutdown();
+            if (this.binaryStore != null) {
+                this.binaryStore.shutdown();
+            }
+            
+            //shutdown the event bus
+            if (this.changeBus != null) {
+                this.context().releaseThreadPool(changeDispatchingQueue);
+                this.changeBus.shutdown();
             }
         }
 

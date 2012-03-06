@@ -300,13 +300,7 @@ public class WritableSessionCache extends AbstractSessionCache {
             logger.debug("Completing SessionCache.save()");
         }
 
-        if (events != null && events.size() != 0) {
-            // Then there were changes made, so first record metrics for the changes ...
-            recordMetrics(events);
-
-            // and now notify the workspace (outside of the lock, but still before the save returns) ...
-            workspaceCache.changed(events);
-        }
+        fireChanges(events);
     }
 
     @Override
@@ -399,20 +393,9 @@ public class WritableSessionCache extends AbstractSessionCache {
         }
 
         // TODO: Events ... these events should be combined, but cannot each ChangeSet only has a single workspace
-
         // Notify the workspaces of the changes made. This is done outside of our lock but still before the save returns ...
-        if (events1 != null && events1.size() != 0) {
-            // Then there were changes made, so first record metrics for the changes ...
-            recordMetrics(events1);
-            // and now notify the workspace (outside of the lock, but still before the save returns) ...
-            workspaceCache.changed(events1);
-        }
-        if (events2 != null) {
-            // Then there were changes made, so first record metrics for the changes ...
-            recordMetrics(events2);
-            // and now notify the workspace (outside of the lock, but still before the save returns) ...
-            workspaceCache.changed(events2);
-        }
+        fireChanges(events1);
+        fireChanges(events2);
     }
 
     /**
@@ -540,19 +523,17 @@ public class WritableSessionCache extends AbstractSessionCache {
         }
 
         // TODO: Events ... these events should be combined, but cannot each ChangeSet only has a single workspace
+        fireChanges(events1);
+        fireChanges(events2);
+    }
 
+    private void fireChanges( ChangeSet changeSet ) {
         // Notify the workspaces of the changes made. This is done outside of our lock but still before the save returns ...
-        if (events1 != null && events1.size() != 0) {
+        if (changeSet != null && changeSet.size() != 0) {
             // Then there were changes made, so first record metrics for the changes ...
-            recordMetrics(events1);
+            recordMetrics(changeSet);
             // and now notify the workspace (outside of the lock, but still before the save returns) ...
-            workspaceCache.changed(events1);
-        }
-        if (events2 != null) {
-            // Then there were changes made, so first record metrics for the changes ...
-            recordMetrics(events2);
-            // and now notify the workspace (outside of the lock, but still before the save returns) ...
-            workspaceCache.changed(events2);
+            workspaceCache.changed(changeSet);
         }
     }
 
@@ -650,12 +631,18 @@ public class WritableSessionCache extends AbstractSessionCache {
                         // The node has moved (either within the same parent or to another parent) ...
                         Path oldPath = workspacePaths.getPath(persisted);
                         NodeKey oldParent = persisted.getParentKey(workspaceCache);
-                        if (!oldParent.equals(newParent) || !additionalParents.isEmpty()) {
-                            // Don't need to change the doc, since we've moved within the same parent ...
-                            translator.setParents(doc, node.newParent(), oldParent, additionalParents);
+                        if (oldParent.equals(newParent)) {
+                            //parent hasn't change, this should mean a reoder has happened
+                            changes.nodeReordered(key, oldParent, newPath, oldPath);
                         }
-                        // Generate a move even either way ...
-                        changes.nodeMoved(key, newParent, oldParent, newPath, oldPath);
+                        else {
+                            if (!oldParent.equals(newParent) || !additionalParents.isEmpty()) {
+                                // Don't need to change the doc, since we've moved within the same parent ...
+                                translator.setParents(doc, node.newParent(), oldParent, additionalParents);
+                            }
+                            // Generate a move even either way ...
+                            changes.nodeMoved(key, newParent, oldParent, newPath, oldPath);
+                        }
                     } else if (additionalParents != null) {
                         // The node in another workspace has been linked to this workspace ...
                         translator.setParents(doc, null, null, additionalParents);
@@ -771,6 +758,22 @@ public class WritableSessionCache extends AbstractSessionCache {
                             Path renamedFromPath = workspacePaths.getPath(oldRenamedNode);
                             Path renamedToPath = sessionPaths.getPath(renamedNode);
                             changes.nodeRenamed(renamedKey, renamedToPath, renamedFromPath.getLastSegment());
+                        }
+                    }
+
+                    //generate reordering events for nodes which have not been reordered to the end
+                    //TODO author=Horia Chiorean date=3/2/12 description=This will only work when reordering inner nodes (i.e. not moving them at the end)
+                    Map<NodeKey, SessionNode.Insertions> insertionsByBeforeKey = changedChildren.getInsertionsByBeforeKey();
+                    for (SessionNode.Insertions insertion : insertionsByBeforeKey.values()) {
+                        for (ChildReference afterInsertionRef : insertion.inserted()) {
+                            CachedNode afterInsertionNode = workspaceCache.getNode(afterInsertionRef); 
+                            Path afterInsertionPath = workspacePaths.getPath(afterInsertionNode);
+
+                            CachedNode beforeInsertionNode = workspaceCache.getNode(insertion.insertedBefore());
+                            Path beforeInsertionPath = workspacePaths.getPath(beforeInsertionNode);
+                                    
+                            changes.nodeReordered(afterInsertionRef.getKey(), afterInsertionNode.getParentKey(this), afterInsertionPath,
+                                                  beforeInsertionPath);
                         }
                     }
                 }

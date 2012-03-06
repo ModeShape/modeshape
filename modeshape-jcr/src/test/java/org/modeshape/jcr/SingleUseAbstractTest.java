@@ -211,7 +211,7 @@ public abstract class SingleUseAbstractTest extends AbstractJcrRepositoryTest {
      */
     protected void startRepositoryWithConfiguration( RepositoryConfiguration configuration ) throws Exception {
         config = configuration;
-        if (repository == null) {
+        if (repository != null) {
             try {
                 repository.shutdown().get(10, TimeUnit.SECONDS);
             } finally {

@@ -745,8 +745,7 @@ public class SessionNode implements MutableCachedNode {
         // Add it to the new parent ...
         if (newName == null) newName = node.getName(session);
         ((SessionNode)newParent).appended(true).append(key, newName);
-        NodeKey newParentKey = newParent.getKey();
-        node.newParent = newParentKey;
+        node.newParent = newParent.getKey();
     }
 
     protected SessionNode removeChildFromNode( AbstractSessionCache session,
@@ -794,7 +793,7 @@ public class SessionNode implements MutableCachedNode {
         ChildReference before = null;
         if (nextNode != null) {
             before = references.getChild(nextNode);
-            if (before != null) throw new NodeNotFoundException(key);
+            if (before == null) throw new NodeNotFoundException(key);
         }
 
         // Remove the node from where it is ...
@@ -806,16 +805,15 @@ public class SessionNode implements MutableCachedNode {
         }
 
         // We need a mutable node in the session for the child, so that we can find changes in the parent ...
-        cache.mutable(key);
+        //cache.mutable(key);
 
         if (toBeMoved == null) {
             // It wasn't appended, so verify it is really a child ...
             toBeMoved = references.getChild(key);
-            if (toBeMoved != null) throw new NodeNotFoundException(key);
+            if (toBeMoved == null) throw new NodeNotFoundException(key);
             // And mark it as removed ...
             changedChildren.remove(key);
         }
-        assert toBeMoved != null;
 
         if (nextNode == null) {
             // The node is to be placed at the end of the children ...
@@ -1292,12 +1290,14 @@ public class SessionNode implements MutableCachedNode {
                 inserted = inserted.with(1);
 
                 // Add to the key ...
-                Insertions insertions = insertedBefore.get(before);
+                Insertions insertions = insertedBefore.get(before.getKey());
                 if (insertions == null) {
                     insertions = new Insertions(before, inserted);
                     insertedBefore.put(before.getKey(), insertions); // locked, so no need to 'putIfAbsent'
                 }
-                insertions.add(inserted);
+                else {
+                    insertions.add(inserted);
+                }
 
                 // Add to the names and keys ...
                 AtomicInteger count = this.insertedNames.get(inserted.getName());
@@ -1425,7 +1425,7 @@ public class SessionNode implements MutableCachedNode {
 
         public ChildReference remove( NodeKey key ) {
             for (ChildReference ref : this.inserted) {
-                if (ref.equals(key) && remove(ref)) return ref;
+                if (ref.getKey().equals(key) && remove(ref)) return ref;
             }
             return null;
         }

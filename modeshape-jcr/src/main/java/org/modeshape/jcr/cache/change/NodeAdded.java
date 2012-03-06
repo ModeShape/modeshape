@@ -64,15 +64,6 @@ public class NodeAdded extends AbstractNodeChange {
     }
 
     /**
-     * Get the path to the node that was added.
-     * 
-     * @return the path; never null
-     */
-    public Path getPath() {
-        return path;
-    }
-
-    /**
      * Get the immutable map of properties that were added as part of this node.
      * 
      * @return the properties keyed by their name; never null but possibly empty

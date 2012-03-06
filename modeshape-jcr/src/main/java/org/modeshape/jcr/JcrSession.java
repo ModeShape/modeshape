@@ -109,7 +109,6 @@ public class JcrSession implements Session {
 
     private static final String[] NO_ATTRIBUTES_NAMES = new String[] {};
 
-    private final ExecutionContext context;
     private final JcrRepository repository;
     private final SessionCache cache;
     private final JcrRootNode rootNode;
@@ -121,6 +120,8 @@ public class JcrSession implements Session {
     private volatile JcrValueFactory valueFactory;
     private volatile boolean isLive = true;
     private final long nanosCreated;
+
+    private ExecutionContext context;
 
     protected JcrSession( JcrRepository repository,
                           String workspaceName,
@@ -192,8 +193,7 @@ public class JcrSession implements Session {
 
         isLive = false;
 
-        // TODO: Observation
-        // this.workspace().observationManager().removeAllEventListeners();
+        observationManager().removeAllEventListeners();
 
         try {
             lockManager().cleanLocks();
@@ -299,6 +299,10 @@ public class JcrSession implements Session {
     final JcrLockManager lockManager() {
         return workspace().lockManager();
     }
+    
+    final JcrObservationManager observationManager() {
+        return workspace().observationManager();
+    }
 
     final void signalNamespaceChanges( boolean global ) {
         nodeTypeManager().signalNamespaceChanges();
@@ -321,6 +325,12 @@ public class JcrSession implements Session {
 
     final SessionCache spawnSessionCache( boolean readOnly ) {
         return repository().repositoryCache().createSession(context(), workspaceName(), readOnly);
+    }
+
+    final void addContextData( String key,
+                               String value ) {
+        this.context = context.with(key, value);
+        this.cache.addContextData(key, value);
     }
 
     protected final String readableLocation( CachedNode node ) {
