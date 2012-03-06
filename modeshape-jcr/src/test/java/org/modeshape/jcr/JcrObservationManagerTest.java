@@ -356,8 +356,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     public void shouldReceiveNodeRemovedEventWhenRegisteredToReceiveAllEvents() throws Exception {
         // add the node that will be removed
         Node addedNode = getRoot().addNode("node1", UNSTRUCTURED);
-        save();
-        System.out.println("committed first transaction");
+        save();        
 
         // register listener (add + 3 property events)
         TestListener listener = addListener(1, ALL_EVENTS, null, false, null, null, false);
@@ -366,7 +365,6 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         String path = addedNode.getPath();
         addedNode.remove();
         save();
-        System.out.println("committed second transaction");
 
         // event handling
         listener.waitForEvents();

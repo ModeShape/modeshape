@@ -4,7 +4,7 @@ import org.modeshape.common.annotation.GuardedBy;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -43,7 +43,7 @@ public class RepositoryChangeBus implements ChangeBus {
         this.separateThreadForSystemWorkspace = separateThreadForSystemWorkspace;
         this.workspaceListenerQueues = new ConcurrentHashMap<String, ConcurrentHashMap<ChangeSetListener, BlockingQueue<ChangeSet>>>();
         this.executor = executor;
-        this.listeners = new HashSet<ChangeSetListener>();
+        this.listeners = new LinkedHashSet<ChangeSetListener>();
         this.shutdown = false;
     }
 
@@ -68,7 +68,7 @@ public class RepositoryChangeBus implements ChangeBus {
     @Override
     public void notify( ChangeSet changeSet ) {
         if (shutdown) {
-            throw new IllegalStateException("Change bus has been already shut down, should not be receving events");
+            throw new IllegalStateException("Change bus has been already shut down, should not be receiving events");
         }
         String workspaceName = changeSet.getWorkspaceName() != null ? changeSet.getWorkspaceName() : NULL_WORKSPACE_NAME;
 

@@ -248,7 +248,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
             try {
                 lock.lock();
                 if (observationManager == null) {
-                    observationManager = new JcrObservationManager(session, repository().repositoryCache());
+                    observationManager = new JcrObservationManager(session, repository().repositoryCache(), repository().getRepositoryStatistics());
                 }
             } finally {
                 lock.unlock();
