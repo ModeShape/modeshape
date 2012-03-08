@@ -257,13 +257,13 @@
 		<dependency>
 			<groupId>org.hibernate</groupId>
 			<artifactId>hibernate-entitymanager</artifactId>
-			<version>3.5.2-Final</version>
+			<version>${hibernate.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.hibernate</groupId>
 			<artifactId>hibernate-c3p0</artifactId>
-			<version>3.5.2-Final</version>
+			<version>${hibernate.c3p0.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

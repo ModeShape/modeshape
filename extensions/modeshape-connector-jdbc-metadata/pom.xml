@@ -20,7 +20,7 @@
 		<dependency>
 			<groupId>org.hibernate</groupId>
 			<artifactId>hibernate-c3p0</artifactId>
-			<version>3.3.0.GA</version>
+			<version>${hibernate.c3p0.version}</version>
 		</dependency>
 		<!--
 			Logging (require SLF4J API for compiling, but use Log4J and its SLF4J
