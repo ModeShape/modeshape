@@ -10,7 +10,7 @@
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- * 
+ *
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -21,53 +21,20 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.cache.change;
 
-import java.io.Serializable;
-import java.util.Map;
-import java.util.Set;
-import org.modeshape.jcr.api.value.DateTime;
-import org.modeshape.jcr.cache.NodeKey;
+package org.modeshape.jcr.bus;
+
+import org.modeshape.common.AbstractI18nTest;
 
 /**
+ * Unit test for {@link BusI18n}
  * 
+ * @author Horia Chiorean
  */
-public interface ChangeSet extends Iterable<Change>, Serializable {
+public class BusI18nTest extends AbstractI18nTest{
 
-    /**
-     * Return the number of individual changes.
-     * 
-     * @return the number of changes
-     */
-    public int size();
-
-    public String getUserId();
-
-    public Map<String, String> getUserData();
-
-    public DateTime getTimestamp();
-
-    /**
-     * Get the key of the process in which the changes were made.
-     * 
-     * @return the process key; never null
-     */
-    public String getProcessKey();
-
-    /**
-     * Get the key of the repository in which the changes were made.
-     * 
-     * @return the repository key; never null
-     */
-    public String getRepositoryKey();
-
-    /**
-     * Get the name of the workspace in which the changes were made.
-     * 
-     * @return the workspace name; may be null only when workspaces are added or removed
-     */
-    public String getWorkspaceName();
-
-    public Set<NodeKey> changedNodes();
-
+    public BusI18nTest() {
+        super(BusI18nTest.class);
+    }
 }
+

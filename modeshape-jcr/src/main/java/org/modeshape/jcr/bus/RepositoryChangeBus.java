@@ -1,4 +1,28 @@
-package org.modeshape.jcr;
+/*
+ * ModeShape (http://www.modeshape.org)
+ * See the COPYRIGHT.txt file distributed with this work for information
+ * regarding copyright ownership.  Some portions may be licensed
+ * to Red Hat, Inc. under one or more contributor license agreements.
+ * See the AUTHORS.txt file in the distribution for a full listing of
+ * individual contributors.
+ *
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * ModeShape is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+
+package org.modeshape.jcr.bus;
 
 import org.modeshape.common.annotation.GuardedBy;
 import org.modeshape.common.annotation.ThreadSafe;
@@ -19,7 +43,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @author Horia Chiorean
  */
 @ThreadSafe
-public class RepositoryChangeBus implements ChangeBus {
+final class RepositoryChangeBus implements ChangeBus {
 
     private static final String NULL_WORKSPACE_NAME = "null_workspace_name";
 
@@ -36,9 +60,9 @@ public class RepositoryChangeBus implements ChangeBus {
     private final String systemWorkspaceName;
     private final boolean separateThreadForSystemWorkspace;
 
-    public RepositoryChangeBus( ExecutorService executor,
-                                String systemWorkspaceName,
-                                boolean separateThreadForSystemWorkspace ) {
+    RepositoryChangeBus( ExecutorService executor,
+                         String systemWorkspaceName,
+                         boolean separateThreadForSystemWorkspace ) {
         this.systemWorkspaceName = systemWorkspaceName;
         this.separateThreadForSystemWorkspace = separateThreadForSystemWorkspace;
         this.workspaceListenerQueues = new ConcurrentHashMap<String, ConcurrentHashMap<ChangeSetListener, BlockingQueue<ChangeSet>>>();
@@ -51,7 +75,12 @@ public class RepositoryChangeBus implements ChangeBus {
         this(executor, null, false);
     }
 
-    void shutdown() {
+    @Override
+    public void start() {
+    }
+
+    @Override
+    public void shutdown() {
         shutdown = true;
         workspaceListenerQueues.clear();
         try {
@@ -65,16 +94,45 @@ public class RepositoryChangeBus implements ChangeBus {
         }
     }
 
+    @GuardedBy( "listenersLock" )
+    @Override
+    public boolean register( ChangeSetListener listener ) {
+        if (listener == null) {
+            return false;
+        }
+        try {
+            listenersLock.writeLock().lock();
+            return listeners.add(listener);
+        } finally {
+            listenersLock.writeLock().unlock();
+        }
+    }
+
+    @GuardedBy( "listenersLock" )
+    @Override
+    public boolean unregister( ChangeSetListener listener ) {
+        if (listener == null) {
+            return false;
+        }
+        try {
+            listenersLock.writeLock().lock();
+            return listeners.remove(listener);
+        } finally {
+            listenersLock.writeLock().unlock();
+        }
+    }
+
     @Override
     public void notify( ChangeSet changeSet ) {
+        if (changeSet == null || !hasObservers()) {
+            return;
+        }
+
         if (shutdown) {
             throw new IllegalStateException("Change bus has been already shut down, should not be receiving events");
         }
-        String workspaceName = changeSet.getWorkspaceName() != null ? changeSet.getWorkspaceName() : NULL_WORKSPACE_NAME;
 
-        if (noListenersRegistered()) {
-            return;
-        }
+        String workspaceName = changeSet.getWorkspaceName() != null ? changeSet.getWorkspaceName() : NULL_WORKSPACE_NAME;
 
         if (!separateThreadForSystemWorkspace && workspaceName.equalsIgnoreCase(systemWorkspaceName)) {
             for (ChangeSetListener listener : listeners) {
@@ -108,40 +166,13 @@ public class RepositoryChangeBus implements ChangeBus {
         }
     }
 
-    private boolean noListenersRegistered() {
+    @Override
+    public boolean hasObservers() {
         try {
             listenersLock.readLock().lock();
-            return listeners.isEmpty();
+            return !listeners.isEmpty();
         } finally {
             listenersLock.readLock().unlock();
-        }
-    }
-
-    @GuardedBy( "listenersLock" )
-    @Override
-    public boolean register( ChangeSetListener listener ) {
-        if (listener == null) {
-            return false;
-        }
-        try {
-            listenersLock.writeLock().lock();
-            return listeners.add(listener);
-        } finally {
-            listenersLock.writeLock().unlock();
-        }
-    }
-
-    @GuardedBy( "listenersLock" )
-    @Override
-    public boolean unregister( ChangeSetListener listener ) {
-        if (listener == null) {
-            return false;
-        }
-        try {
-            listenersLock.writeLock().lock();
-            return listeners.remove(listener);
-        } finally {
-            listenersLock.writeLock().unlock();
         }
     }
 

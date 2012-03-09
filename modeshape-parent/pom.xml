@@ -229,6 +229,8 @@
         <hibernate.tools.version>3.2.4.GA</hibernate.tools.version>
         <hibernate.search.version>4.0.0.Final</hibernate.search.version>
         <infinispan.version>5.1.0.BETA3</infinispan.version>
+        <!--Make sure the jgroups version is the same as the one used by ISPN -->
+        <jgroups.version>3.0.0.CR5</jgroups.version>
         <sun.xml.bind.jaxbimpl.version>2.1.12</sun.xml.bind.jaxbimpl.version>
         <jdbc.mysql.version>5.0.7</jdbc.mysql.version>
         <jdbc.derby.version>10.8.1.2</jdbc.derby.version>
@@ -787,6 +789,16 @@
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-core</artifactId>
                 <version>${infinispan.version}</version>
+            </dependency>
+            <!--
+                JGroups is used for the changes bus, but it's optional. Most of the times though, this will be in the classpath
+                because of ISPN.
+             -->
+            <dependency>
+                <groupId>org.jgroups</groupId>
+                <artifactId>jgroups</artifactId>
+                <version>${jgroups.version}</version>
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.infinispan</groupId>
