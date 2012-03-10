@@ -1852,7 +1852,7 @@ try {
 <programlisting language="XML" role="XML"><![CDATA[<dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-jcr</artifactId>
-  <version>2.8-SNAPSHOT</version>
+  <version>2.9-SNAPSHOT</version>
 </dependency>
 ]]></programlisting>
 				<para>
@@ -1862,7 +1862,7 @@ try {
 <programlisting language="XML" role="XML"><![CDATA[<dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-clustering</artifactId>
-  <version>2.8-SNAPSHOT</version>
+  <version>2.9-SNAPSHOT</version>
 </dependency>
 ]]></programlisting>
 				<para>
@@ -1872,57 +1872,57 @@ try {
 <programlisting language="XML" role="XML"><![CDATA[<dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-sequencer-cnd</artifactId>
-  <version>2.8-SNAPSHOT</version>
+  <version>2.9-SNAPSHOT</version>
 </dependency>
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-sequencer-ddl</artifactId>
-  <version>2.8-SNAPSHOT</version>
+  <version>2.9-SNAPSHOT</version>
 </dependency>
 <dependency>
   <groupId>org.modeshapce</groupId>
   <artifactId>modeshape-sequencer-images</artifactId>
-  <version>2.8-SNAPSHOT</version>
+  <version>2.9-SNAPSHOT</version>
 </dependency>
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-sequencer-classfile</artifactId>
-  <version>2.8-SNAPSHOT</version>
+  <version>2.9-SNAPSHOT</version>
 </dependency>
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-sequencer-java</artifactId>
-  <version>2.8-SNAPSHOT</version>
+  <version>2.9-SNAPSHOT</version>
 </dependency>
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-sequencer-mp3</artifactId>
-  <version>2.8-SNAPSHOT</version>
+  <version>2.9-SNAPSHOT</version>
 </dependency>
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-sequencer-msoffice</artifactId>
-  <version>2.8-SNAPSHOT</version>
+  <version>2.9-SNAPSHOT</version>
 </dependency>
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-sequencer-xml</artifactId>
-  <version>2.8-SNAPSHOT</version>
+  <version>2.9-SNAPSHOT</version>
 </dependency>
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-sequencer-teiid</artifactId>
-  <version>2.8-SNAPSHOT</version>
+  <version>2.9-SNAPSHOT</version>
 </dependency>
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-sequencer-text</artifactId>
-  <version>2.8-SNAPSHOT</version>
+  <version>2.9-SNAPSHOT</version>
 </dependency>
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-sequencer-zip</artifactId>
-  <version>2.8-SNAPSHOT</version>
+  <version>2.9-SNAPSHOT</version>
 </dependency>
 ]]></programlisting>
 			<para>
@@ -1931,37 +1931,37 @@ try {
 <programlisting language="XML" role="XML"><![CDATA[<dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-connector-filesystem</artifactId>
-  <version>2.8-SNAPSHOT</version>
+  <version>2.9-SNAPSHOT</version>
 </dependency>
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-connector-infinispan</artifactId>
-  <version>2.8-SNAPSHOT</version>
+  <version>2.9-SNAPSHOT</version>
 </dependency>
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-connector-jcr</artifactId>
-  <version>2.8-SNAPSHOT</version>
+  <version>2.9-SNAPSHOT</version>
 </dependency>
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-connector-jbosscache</artifactId>
-  <version>2.8-SNAPSHOT</version>
+  <version>2.9-SNAPSHOT</version>
 </dependency>
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-connector-jdbc-metadata</artifactId>
-  <version>2.8-SNAPSHOT</version>
+  <version>2.9-SNAPSHOT</version>
 </dependency>
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-connector-store-jpa</artifactId>
-  <version>2.8-SNAPSHOT</version>
+  <version>2.9-SNAPSHOT</version>
 </dependency>
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-connector-svn</artifactId>
-  <version>2.8-SNAPSHOT</version>
+  <version>2.9-SNAPSHOT</version>
 </dependency>]]></programlisting>
 	      <para>
 		      The sequencer and connector libraries you choose, plus every third-party library they need, will be pulled in automatically 
