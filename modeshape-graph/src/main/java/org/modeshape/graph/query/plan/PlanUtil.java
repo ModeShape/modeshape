@@ -705,6 +705,8 @@ public class PlanUtil {
                         node.getSelectors().clear();
                         node.addSelectors(Visitors.getSelectorsReferencedBy(newConstraint));
                         node.setProperty(Property.SELECT_CRITERIA, newConstraint);
+                    } else {
+                        node.addSelector(viewName);
                     }
                     break;
                 case SOURCE:
