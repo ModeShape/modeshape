@@ -43,7 +43,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @author Horia Chiorean
  */
 @ThreadSafe
-final class RepositoryChangeBus implements ChangeBus {
+public final class RepositoryChangeBus implements ChangeBus {
 
     private static final String NULL_WORKSPACE_NAME = "null_workspace_name";
 
@@ -60,7 +60,7 @@ final class RepositoryChangeBus implements ChangeBus {
     private final String systemWorkspaceName;
     private final boolean separateThreadForSystemWorkspace;
 
-    RepositoryChangeBus( ExecutorService executor,
+    public RepositoryChangeBus( ExecutorService executor,
                          String systemWorkspaceName,
                          boolean separateThreadForSystemWorkspace ) {
         this.systemWorkspaceName = systemWorkspaceName;

@@ -31,18 +31,15 @@ import org.jgroups.JChannel;
 import org.jgroups.Message;
 import org.jgroups.ReceiverAdapter;
 import org.jgroups.View;
-import org.jgroups.conf.ProtocolStackConfigurator;
-import org.jgroups.conf.XmlConfigurator;
 import org.jgroups.util.Util;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
+import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import org.modeshape.jcr.clustering.ChannelProvider;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -52,7 +49,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author Horia Chiorean
  */
 @ThreadSafe
-final class ClusteredRepositoryChangeBus implements ChangeBus {
+public final class ClusteredRepositoryChangeBus implements ChangeBus {
 
     private static final Logger LOGGER = Logger.getLogger(ClusteredRepositoryChangeBus.class);
 
@@ -83,14 +80,9 @@ final class ClusteredRepositoryChangeBus implements ChangeBus {
     private final AtomicBoolean multipleAddressesInCluster = new AtomicBoolean(false);
 
     /**
-     * The name of the JGroups cluster.
+     * The clustering configuration
      */
-    private final String clusterName;
-
-    /**
-     * The configuration for JGroups
-     */
-    private String configuration;
+    private final RepositoryConfiguration.Clustering clusteringConfiguration;
 
     /**
      * The JGroups channel to which all {@link #notify(ChangeSet) change notifications} will be sent and from which all changes will
@@ -102,45 +94,16 @@ final class ClusteredRepositoryChangeBus implements ChangeBus {
      */
     private JChannel channel;
 
-    ClusteredRepositoryChangeBus( String clusterName,
-                                  ChangeBus delegate ) {
-        CheckArg.isNotNull(clusterName, "clusterName");
+    public ClusteredRepositoryChangeBus( RepositoryConfiguration.Clustering clusteringConfiguration,
+                                         ChangeBus delegate ) {
+        CheckArg.isNotNull(clusteringConfiguration, "clusteringConfiguration");
         CheckArg.isNotNull(delegate, "delegate");
 
-        this.clusterName = clusterName;
+        this.clusteringConfiguration = clusteringConfiguration;
+        assert clusteringConfiguration.isEnabled();
         this.delegate = delegate;
     }
-
-    ClusteredRepositoryChangeBus( String clusterName,
-                                  String configuration,
-                                  RepositoryChangeBus delegate ) {
-        this(clusterName, delegate);
-
-        CheckArg.isNotNull(configuration, "configuration");
-        this.configuration = configuration;
-    }
-
-    /**
-     * Get the configuration for JGroups. This configuration may be a string that refers to a resource on the classpath, the path
-     * of the local configuration, the URL to the configuration file, or the configuration specified using the newer-style XML
-     * form or older-style string form.
-     *
-     * @return the location of the JGroups configuration, or null if no configuration has been defined
-     */
-    public String getConfiguration() {
-        return configuration;
-    }
-
-    /**
-     * Get the name of the JGroups cluster.
-     *
-     * @return the cluster name, or null if the cluster name was not yet defined
-     * @see JChannel#connect(String)
-     */
-    public String getClusterName() {
-        return clusterName;
-    }
-
+      
     /**
      * {@inheritDoc}
      *
@@ -148,6 +111,7 @@ final class ClusteredRepositoryChangeBus implements ChangeBus {
      */
     @Override
     public synchronized void start() {
+        String clusterName = clusteringConfiguration.getClusterName();
         if (clusterName == null) {
             throw new IllegalStateException(BusI18n.clusterNameRequired.text());
         }
@@ -158,8 +122,7 @@ final class ClusteredRepositoryChangeBus implements ChangeBus {
         }
         try {
             // Create the new channel by calling the delegate method ...
-            channel = newChannel(configuration);
-            assert channel != null;
+            channel = newChannel();
             // Add a listener through which we'll know what's going on within the cluster ...
             channel.addChannelListener(listener);
 
@@ -172,40 +135,24 @@ final class ClusteredRepositoryChangeBus implements ChangeBus {
             //start the delegate
             delegate.start();
         } catch (Exception e) {
-            throw new IllegalStateException(BusI18n.errorWhileStartingJGroups.text(configuration), e);
+            throw new IllegalStateException(BusI18n.errorWhileStartingJGroups.text(clusteringConfiguration.getChannelConfiguration()), e);
         }
     }
 
-    /**
-     * A method that is used to instantiate the {@link JChannel} object with the supplied configuration.
-     *
-     * @param configuration the configuration; may be null or empty string, if the default configuration should be used
-     * @return the JChannel instance; never null
-     * @throws Exception if there is a problem creating the new channel object
-     */
-    private JChannel newChannel( String configuration ) throws Exception {
-        if (configuration == null || configuration.trim().length() == 0) {
-            return new JChannel();
-        }
-        // Try the XML configuration first ...
-        ProtocolStackConfigurator configurator = null;
-        InputStream stream = new ByteArrayInputStream(configuration.getBytes());
+    private JChannel newChannel() {
+        String lookupClassName = clusteringConfiguration.getChannelProviderClassName();
+        assert lookupClassName != null;
+
         try {
-            configurator = XmlConfigurator.getInstance(stream);
-        } catch (IOException e) {
-            // ignore, since the configuration may be of another form ...
-        } finally {
-            try {
-                stream.close();
-            } catch (IOException e) {
-                // ignore this
+            Class<?> lookupClass = Class.forName(lookupClassName);
+            if (!ChannelProvider.class.isAssignableFrom(lookupClass)) {
+                throw new IllegalArgumentException(
+                        "Invalid channel lookup class configured. Expected a subclass of org.modeshape.jcr.clustering.ChannelProvider. Actual class:" + lookupClass);
             }
+            return  ((ChannelProvider)lookupClass.newInstance()).getChannel(clusteringConfiguration);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-        if (configurator != null) {
-            return new JChannel(configurator);
-        }
-        // Otherwise, just try the regular configuration ...
-        return new JChannel(configuration);
     }
 
     /**
@@ -279,7 +226,7 @@ final class ClusteredRepositoryChangeBus implements ChangeBus {
             channel.send(message);
         } catch (IllegalStateException e) {
             LOGGER.warn(BusI18n.unableToNotifyChanges,
-                        clusterName,
+                        clusteringConfiguration.getClusterName(),
                         changeSet.size(),
                         changeSet.getWorkspaceName(),
                         changeSet.getUserId(),
@@ -287,7 +234,7 @@ final class ClusteredRepositoryChangeBus implements ChangeBus {
                         changeSet.getTimestamp());
         } catch (Exception e) {
             // Something went wrong here (this should not happen) ...
-            String msg = BusI18n.errorSerializingChanges.text(clusterName,
+            String msg = BusI18n.errorSerializingChanges.text(clusteringConfiguration.getClusterName(),
                                                               changeSet.size(),
                                                               changeSet.getWorkspaceName(),
                                                               changeSet.getUserId(),
@@ -301,7 +248,7 @@ final class ClusteredRepositoryChangeBus implements ChangeBus {
     private void logSendOperation( ChangeSet changeSet ) {
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("Sending to cluster '{0}' {1} changes on workspace {2} made by {3} from process '{4}' at {5}",
-                         clusterName,
+                         clusteringConfiguration.getClusterName(),
                          changeSet.size(),
                          changeSet.getWorkspaceName(),
                          changeSet.getUserData(),
@@ -313,7 +260,7 @@ final class ClusteredRepositoryChangeBus implements ChangeBus {
     private void logReceivedOperation( ChangeSet changeSet ) {
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("Received on cluster '{0}' {1} changes on workspace {2} made by {3} from process '{4}' at {5}",
-                         getClusterName(),
+                         clusteringConfiguration.getClusterName(),
                          changeSet.size(),
                          changeSet.getWorkspaceName(),
                          changeSet.getUserId(),
@@ -372,7 +319,7 @@ final class ClusteredRepositoryChangeBus implements ChangeBus {
                 logReceivedOperation(changes);
             } catch (Exception e) {
                 // Something went wrong here (this should not happen) ...
-                String msg = BusI18n.errorDeserializingChanges.text(getClusterName());
+                String msg = BusI18n.errorDeserializingChanges.text(clusteringConfiguration.getClusterName());
                 throw new SystemFailureException(msg, e);
             }
         }
@@ -384,7 +331,7 @@ final class ClusteredRepositoryChangeBus implements ChangeBus {
          */
         @Override
         public void suspect( Address suspectedMbr ) {
-            LOGGER.error(BusI18n.memberOfClusterIsSuspect, getClusterName(), suspectedMbr);
+            LOGGER.error(BusI18n.memberOfClusterIsSuspect, clusteringConfiguration.getClusterName(), suspectedMbr);
         }
 
         /**
@@ -394,17 +341,17 @@ final class ClusteredRepositoryChangeBus implements ChangeBus {
          */
         @Override
         public void viewAccepted( View newView ) {
-            LOGGER.trace("Members of '{0}' cluster have changed: {1}", getClusterName(), newView);
+            LOGGER.trace("Members of '{0}' cluster have changed: {1}", clusteringConfiguration.getClusterName(), newView);
             if (newView.getMembers().size() > 1) {
                 if (multipleAddressesInCluster.compareAndSet(false, true)) {
                     LOGGER.debug(
                             "There are now multiple members of cluster '{0}'; changes will be propagated throughout the cluster",
-                            getClusterName());
+                            clusteringConfiguration.getClusterName());
                 }
             } else {
                 if (multipleAddressesInCluster.compareAndSet(true, false)) {
                     LOGGER.debug("There is only one member of cluster '{0}'; changes will be propagated locally only",
-                                 getClusterName());
+                                 clusteringConfiguration.getClusterName());
                 }
             }
         }

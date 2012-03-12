@@ -94,6 +94,8 @@ import org.modeshape.jcr.api.Repository;
 import org.modeshape.jcr.api.Workspace;
 import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.api.query.Query;
+import org.modeshape.jcr.bus.ClusteredRepositoryChangeBus;
+import org.modeshape.jcr.bus.RepositoryChangeBus;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.cache.SessionCache;
@@ -105,7 +107,7 @@ import org.modeshape.jcr.cache.change.ChangeSetListener;
 import org.modeshape.jcr.cache.change.WorkspaceAdded;
 import org.modeshape.jcr.cache.change.WorkspaceRemoved;
 import org.modeshape.jcr.bus.ChangeBus;
-import org.modeshape.jcr.bus.ChangeBusFactory;
+
 import org.modeshape.jcr.query.parse.FullTextSearchParser;
 import org.modeshape.jcr.query.parse.JcrQomQueryParser;
 import org.modeshape.jcr.query.parse.JcrSql2QueryParser;
@@ -979,7 +981,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
                 //Create the event bus
                 this.changeDispatchingQueue = Executors.newCachedThreadPool(new NamedThreadFactory("modeshape-event-dispatcher"));
-                this.changeBus = ChangeBusFactory.createBus(false, this.changeDispatchingQueue, systemWorkspaceName(), false);
+                this.changeBus = createBus(config.getClustering(), this.changeDispatchingQueue, systemWorkspaceName(), false);
                 this.changeBus.start();
                 
                 // Set up the repository cache ...
@@ -1471,6 +1473,16 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             } catch (WorkspaceNotFoundException e) {
                 throw new NoSuchWorkspaceException(e.getMessage(), e);
             }
+        }
+
+        protected ChangeBus createBus( RepositoryConfiguration.Clustering clusteringConfiguration,
+                                       ExecutorService executor,
+                                       String systemWorkspaceName,
+                                       boolean separateThreadForSystemWorkspace ) {
+            RepositoryChangeBus standaloneBus = new RepositoryChangeBus(executor, systemWorkspaceName,
+                                                                        separateThreadForSystemWorkspace);
+            return clusteringConfiguration.isEnabled() ? new ClusteredRepositoryChangeBus(clusteringConfiguration,
+                                                                                          standaloneBus) : standaloneBus;
         }
     }
 

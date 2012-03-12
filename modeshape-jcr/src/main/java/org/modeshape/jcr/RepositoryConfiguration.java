@@ -74,6 +74,7 @@ import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.ObjectUtil;
+import org.modeshape.jcr.clustering.DefaultChannelProvider;
 import org.modeshape.jcr.security.AnonymousProvider;
 import org.modeshape.jcr.security.JaasProvider;
 import org.modeshape.jcr.value.binary.AbstractBinaryStore;
@@ -371,6 +372,26 @@ public class RepositoryConfiguration {
         public static final String INDEXING_BACKEND_JMS_QUEUE_JNDI_NAME = "queueJndiName";
         public static final String INDEXING_BACKEND_JGROUPS_CHANNEL_NAME = "channelName";
         public static final String INDEXING_BACKEND_JGROUPS_CHANNEL_CONFIGURATION = "channelConfiguration";
+    
+        /**
+         * The name of the clustering top-level configuration document
+         */
+        public static final String CLUSTERING = "clustering";
+
+        /**
+         * The name of the cluster as used by JChannel.connect
+         */
+        private static final String CLUSTER_NAME = "clusterName";
+
+        /**
+         * The fully qualified name of the {@link org.modeshape.jcr.clustering.ChannelProvider} implementation which will provide the JChannel instance
+         */
+        private static final String CHANNEL_PROVIDER = "channelProvider";
+
+        /**
+         * The optional string representing a valid JGroups channel configuration object
+         */
+        private static final String CHANNEL_CONFIGURATION = "channelConfiguration";
     }
 
     public static class Default {
@@ -443,12 +464,20 @@ public class RepositoryConfiguration {
         public static final String INDEX_STORAGE_INFINISPAN_CHUNK_SIZE_IN_BYTES = "16834";
 
         public static final String INDEXING_BACKEND_TYPE = "lucene";
+
+        public static final String CLUSTER_NAME = "ModeShape-JCR";
+        public static final String CHANNEL_PROVIDER = DefaultChannelProvider.class.getName();
     }
 
     /**
      * The set of field names that should be skipped when {@link Component#createInstance(ClassLoader) instantiating a component}.
      */
     protected static final Set<String> COMPONENT_SKIP_PROPERTIES;
+
+    /**
+     * Flag which is used to determine whether clustering should be enabled or not
+     */
+    protected static final boolean JGROUPS_PRESENT = isJGroupsInClasspath();
 
     static {
         Set<String> skipProps = new HashSet<String>();
@@ -666,6 +695,22 @@ public class RepositoryConfiguration {
         return document;
     }
 
+    private static boolean isJGroupsInClasspath() {
+        List<String> requiredJGroupsClasses = Arrays.asList("org.jgroups.JChannel",
+                                                            "org.jgroups.ReceiverAdapter",
+                                                            "org.jgroups.ChannelListener");
+        try {
+            ClassLoader classLoader = RepositoryConfiguration.class.getClassLoader();
+
+            for (String jGroupsClass : requiredJGroupsClasses) {
+                Class.forName(jGroupsClass, false, classLoader);
+            }
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
+
     /**
      * An empty {@link RepositoryConfiguration} that uses all the defaults.
      */
@@ -763,6 +808,10 @@ public class RepositoryConfiguration {
             storage = Schematic.newDocument();
         }
         return new BinaryStorage(storage.getDocument(FieldName.BINARY_STORAGE));
+    }
+    
+    public Clustering getClustering() {
+        return new Clustering(doc.getDocument(FieldName.CLUSTERING));
     }
 
     /**
@@ -1304,6 +1353,43 @@ public class RepositoryConfiguration {
          */
         protected void validateSequencers( Problems problems ) {
             readComponents(sequencing, FieldName.SEQUENCERS, FieldName.TYPE, SEQUENCER_ALIASES, problems);
+        }
+    }
+
+    /**
+     * Class holding the clustering configuration for a repository.
+     */
+    @Immutable
+    public class Clustering {
+
+        private final Document clusteringDoc;
+
+        public Clustering( Document clusteringDoc ) {
+            this.clusteringDoc = (clusteringDoc != null && JGROUPS_PRESENT) ? clusteringDoc : EMPTY;
+        }
+
+        /**
+         * Checks whether clustering is enabled or not, based on a) JGroups being in the classpath and b) a clustering configuration
+         * having been provided
+         */
+        public boolean isEnabled() {
+            return this.clusteringDoc != EMPTY;
+        }
+
+        public String getChannelProviderClassName() {
+            return clusteringDoc.getString(FieldName.CHANNEL_PROVIDER, Default.CHANNEL_PROVIDER);
+        }
+
+        public String getClusterName() {
+            return clusteringDoc.getString(FieldName.CLUSTER_NAME, Default.CLUSTER_NAME);
+        }
+
+        public String getChannelConfiguration() {
+            return clusteringDoc.getString(FieldName.CHANNEL_CONFIGURATION);
+        }
+
+        public Document getDocument() {
+            return clusteringDoc;
         }
     }
 

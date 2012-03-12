@@ -27,7 +27,11 @@ package org.modeshape.jcr.bus;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import org.junit.Test;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.cache.change.ChangeSet;
+import org.modeshape.jcr.clustering.DefaultChannelProvider;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -65,7 +69,7 @@ public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
         defaultBus = null;
     }
 
-    @Test( expected = IllegalArgumentException.class )
+    @Test( expected = IllegalStateException.class )
     public void shouldNotAllowSettingClusterNameToNull() {
         startNewBus(null);
     }
@@ -88,16 +92,6 @@ public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
     @Test
     public void shouldAllowSettingClusterNameToStringWithAlphaNumericAndWhitespaceCharacters() {
         startNewBus("valid cluster name");
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void shouldNotAllowSettingConfigurationToNull() {
-        startNewBus(CLUSTER_NAME, null);
-    }
-
-    @Test
-    public void shouldAllowSettingConfigurationToBlankString() {
-        startNewBus(CLUSTER_NAME, "");
     }
 
     @Test
@@ -329,16 +323,17 @@ public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
     }
 
     private ClusteredRepositoryChangeBus startNewBus( String name) {
-        ClusteredRepositoryChangeBus bus = new ClusteredRepositoryChangeBus(name, super.createRepositoryChangeBus());
+        ClusteredRepositoryChangeBus bus = new ClusteredRepositoryChangeBus(createClusteringConfiguration(name), super.createRepositoryChangeBus());
         bus.start();
         buses.add(bus);
         return bus;
     }
-
-    private ClusteredRepositoryChangeBus startNewBus( String name, String configuration) {
-        ClusteredRepositoryChangeBus bus = new ClusteredRepositoryChangeBus(name, configuration, super.createRepositoryChangeBus());
-        bus.start(); 
-        buses.add(bus);
-        return bus;
+    
+    private RepositoryConfiguration.Clustering createClusteringConfiguration(String clusterName) {
+        RepositoryConfiguration.Clustering repositoryConfiguration = mock(RepositoryConfiguration.Clustering.class);
+        when(repositoryConfiguration.isEnabled()).thenReturn(true);
+        when(repositoryConfiguration.getClusterName()).thenReturn(clusterName);
+        when(repositoryConfiguration.getChannelProviderClassName()).thenReturn(DefaultChannelProvider.class.getName());
+        return repositoryConfiguration;
     }
 }
