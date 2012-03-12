@@ -142,6 +142,11 @@ public class CanonicalPlanner implements Planner {
         plan = attachSorting(context, plan, query.orderings());
         plan = attachLimits(context, plan, query.getLimits());
 
+        // Capture if we're limiting the results to 1 row and no offset and no sorting ...
+        if (query.getLimits().isLimitedToSingleRowWithNoOffset() && query.orderings().isEmpty()) {
+            context.getHints().isExistsQuery = true;
+        }
+
         // Now add in the subqueries as dependent joins, in reverse order ...
         plan = attachSubqueries(context, plan, subqueriesByVariableName);
 
@@ -202,6 +207,11 @@ public class CanonicalPlanner implements Planner {
         // Process the orderings and limits ...
         plan = attachSorting(context, plan, query.orderings());
         plan = attachLimits(context, plan, query.getLimits());
+
+        // Capture if we're limiting the results to 1 row and no offset and no sorting ...
+        if (query.getLimits().isLimitedToSingleRowWithNoOffset() && query.orderings().isEmpty()) {
+            context.getHints().isExistsQuery = true;
+        }
         return plan;
     }
 
@@ -467,7 +477,7 @@ public class CanonicalPlanner implements Planner {
                             newColumns.add(column);
                             org.modeshape.jcr.query.validate.Schemata.Column schemaColumn = table.getColumn(columnName);
                             if (schemaColumn != null) {
-                                newTypes.add(schemaColumn.getPropertyType());
+                                newTypes.add(schemaColumn.getPropertyTypeName());
                             } else {
                                 newTypes.add(context.getTypeSystem().getDefaultType());
                             }
@@ -497,7 +507,7 @@ public class CanonicalPlanner implements Planner {
             Column newColumn = new Column(tableName, propertyName, columnName);
             if (!columns.contains(column)) {
                 columns.add(newColumn);
-                columnTypes.add(column.getPropertyType());
+                columnTypes.add(column.getPropertyTypeName());
             }
         }
     }

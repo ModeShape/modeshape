@@ -732,5 +732,9 @@ public interface QueryResults extends Serializable {
             return false;
         }
 
+        @Override
+        public String toString() {
+            return path + " @ " + key;
+        }
     }
 }

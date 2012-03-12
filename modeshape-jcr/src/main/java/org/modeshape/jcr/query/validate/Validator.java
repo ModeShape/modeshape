@@ -122,7 +122,7 @@ public class Validator extends AbstractVisitor {
             Schemata.Column column = verify(selector, propertyName, this.validateColumnExistence);
             if (column != null) {
                 // Check the type ...
-                String columnType = column.getPropertyType();
+                String columnType = column.getPropertyTypeName();
                 TypeSystem types = context.getTypeSystem();
                 String longType = types.getLongFactory().getTypeName();
                 String doubleType = types.getDoubleFactory().getTypeName();

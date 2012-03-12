@@ -27,6 +27,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -35,7 +36,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import javax.jcr.query.InvalidQueryException;
 import javax.transaction.Synchronization;
 import org.hibernate.search.backend.TransactionContext;
-import org.hibernate.search.cfg.spi.SearchConfiguration;
 import org.hibernate.search.engine.spi.SearchFactoryImplementor;
 import org.hibernate.search.spi.SearchFactoryBuilder;
 import org.modeshape.common.annotation.GuardedBy;
@@ -53,6 +53,7 @@ import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.query.QueryIndexing;
 import org.modeshape.jcr.query.QueryResults;
 import org.modeshape.jcr.query.lucene.LuceneQueryEngine;
+import org.modeshape.jcr.query.lucene.LuceneSearchConfiguration;
 import org.modeshape.jcr.query.lucene.basic.BasicLuceneConfiguration;
 import org.modeshape.jcr.query.optimize.Optimizer;
 import org.modeshape.jcr.query.optimize.RuleBasedOptimizer;
@@ -70,7 +71,7 @@ class RepositoryQueryManager {
 
     private final RunningState runningState;
     private final ExecutorService indexingExecutorService;
-    private final SearchConfiguration config;
+    private final LuceneSearchConfiguration config;
     private final Lock engineInitLock = new ReentrantLock();
     @GuardedBy( "engineInitLock" )
     private volatile LuceneQueryEngine queryEngine;
@@ -89,15 +90,17 @@ class RepositoryQueryManager {
     }
 
     public QueryResults query( ExecutionContext context,
-                               NodeCache nodeCache,
-                               String workspaceName,
+                               RepositoryCache repositoryCache,
+                               Set<String> workspaceNames,
+                               Map<String, NodeCache> overriddenNodeCachesByWorkspaceName,
                                QueryCommand query,
                                Schemata schemata,
                                PlanHints hints,
                                Map<String, Object> variables ) throws InvalidQueryException {
         return queryEngine().query(context,
-                                   nodeCache,
-                                   workspaceName,
+                                   repositoryCache,
+                                   workspaceNames,
+                                   overriddenNodeCachesByWorkspaceName,
                                    (org.modeshape.jcr.query.model.QueryCommand)query,
                                    schemata,
                                    hints,
@@ -118,7 +121,7 @@ class RepositoryQueryManager {
                     SearchFactoryImplementor searchFactory = new SearchFactoryBuilder().configuration(config)
                                                                                        .buildSearchFactory();
                     queryEngine = new LuceneQueryEngine(runningState.context(), runningState.name(), planner, optimizer,
-                                                        searchFactory);
+                                                        searchFactory, config.getVersion());
                 }
             } finally {
                 engineInitLock.unlock();
@@ -162,18 +165,22 @@ class RepositoryQueryManager {
             node = cache.getNode(ref);
         }
 
+        // The node type schemata changes every time a node type is (un)registered, so get the snapshot that we'll use throughout
+        NodeTypeSchemata schemata = runningState.nodeTypeManager().getRepositorySchemata();
+
         // If the node is in the system workspace ...
         String systemWorkspaceKey = runningState.repositoryCache().getSystemWorkspaceKey();
         if (node.getKey().getWorkspaceKey().equals(systemWorkspaceKey)) {
-            reindexSystemContent(node, depth);
+            reindexSystemContent(node, depth, schemata);
         } else {
             // It's just a regular node in the workspace ...
-            reindexContent(workspaceName, cache, node, depth, path.isRoot());
+            reindexContent(workspaceName, schemata, cache, node, depth, path.isRoot());
         }
 
     }
 
     protected void reindexContent( final String workspaceName,
+                                   final NodeTypeSchemata schemata,
                                    NodeCache cache,
                                    CachedNode node,
                                    int depth,
@@ -186,7 +193,14 @@ class RepositoryQueryManager {
         final int maxPathSize = nodePath.size() + depth;
         final QueryIndexing indexes = getIndexes();
         final TransactionContext txnCtx = NO_TRANSACTION;
-        indexes.updateIndex(workspaceName, node.getKey(), nodePath, node.getProperties(cache), txnCtx);
+        indexes.updateIndex(workspaceName,
+                            node.getKey(),
+                            nodePath,
+                            node.getPrimaryType(cache),
+                            node.getMixinTypes(cache),
+                            node.getProperties(cache),
+                            schemata,
+                            txnCtx);
 
         if (depth == 1) return;
 
@@ -203,7 +217,7 @@ class RepositoryQueryManager {
                 if (childKey.equals(systemKey)) {
                     // This is the "/jcr:system" node ...
                     node = cache.getNode(childKey);
-                    reindexSystemContent(node, depth - 1);
+                    reindexSystemContent(node, depth - 1, schemata);
                 } else {
                     queue.add(childKey);
                 }
@@ -225,7 +239,14 @@ class RepositoryQueryManager {
             nodePath = paths.getPath(node);
 
             // Index the node ...
-            indexes.updateIndex(workspaceName, node.getKey(), nodePath, node.getProperties(cache), txnCtx);
+            indexes.updateIndex(workspaceName,
+                                node.getKey(),
+                                nodePath,
+                                node.getPrimaryType(cache),
+                                node.getMixinTypes(cache),
+                                node.getProperties(cache),
+                                schemata,
+                                txnCtx);
 
             // Check the depth ...
             if (nodePath.size() <= maxPathSize) {
@@ -238,11 +259,12 @@ class RepositoryQueryManager {
     }
 
     protected void reindexSystemContent( CachedNode nodeInSystemBranch,
-                                         int depth ) {
+                                         int depth,
+                                         NodeTypeSchemata schemata ) {
         RepositoryCache repoCache = runningState.repositoryCache();
         String workspaceName = repoCache.getSystemWorkspaceName();
         NodeCache systemWorkspaceCache = repoCache.getWorkspaceCache(workspaceName);
-        reindexContent(workspaceName, systemWorkspaceCache, nodeInSystemBranch, depth, false);
+        reindexContent(workspaceName, schemata, systemWorkspaceCache, nodeInSystemBranch, depth, false);
     }
 
     /**

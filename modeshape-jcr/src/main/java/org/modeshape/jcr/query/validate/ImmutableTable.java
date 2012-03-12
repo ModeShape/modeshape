@@ -180,34 +180,6 @@ class ImmutableTable implements Table {
         return extraColumns;
     }
 
-    public ImmutableTable withColumn( String name,
-                                      String type ) {
-        return withColumn(name, type, ImmutableColumn.DEFAULT_FULL_TEXT_SEARCHABLE);
-    }
-
-    public ImmutableTable withColumn( String name,
-                                      String type,
-                                      boolean fullTextSearchable ) {
-        // Create the new column ...
-        Column newColumn = new ImmutableColumn(name, type, fullTextSearchable);
-        // Add to the list and map ...
-        List<Column> newColumns = new LinkedList<Column>(columns);
-        newColumns.add(newColumn);
-        List<Column> selectStarColumns = new LinkedList<Column>(this.selectStarColumns);
-        Map<String, Column> selectStarColumnMap = new HashMap<String, Column>(this.selectStarColumnsByName);
-        Map<String, Column> columnMap = new HashMap<String, Column>(columnsByName);
-        Column existing = columnMap.put(newColumn.getName(), newColumn);
-        if (existing != null) {
-            newColumns.remove(existing);
-            if (selectStarColumnMap.containsKey(existing.getName())) {
-                // The old column was in the SELECT * list, so the new one should be, too...
-                selectStarColumnMap.put(newColumn.getName(), newColumn);
-                selectStarColumns.add(newColumn);
-            }
-        }
-        return new ImmutableTable(getName(), columnMap, newColumns, keys, extraColumns, selectStarColumnMap, selectStarColumns);
-    }
-
     public ImmutableTable withColumns( Iterable<Column> columns ) {
         // Add to the list and map ...
         List<Column> newColumns = new LinkedList<Column>(this.getColumns());
@@ -215,7 +187,9 @@ class ImmutableTable implements Table {
         Map<String, Column> selectStarColumnMap = new HashMap<String, Column>(this.selectStarColumnsByName);
         Map<String, Column> columnMap = new HashMap<String, Column>(columnsByName);
         for (Column column : columns) {
-            Column newColumn = new ImmutableColumn(column.getName(), column.getPropertyType(), column.isFullTextSearchable());
+            Column newColumn = new ImmutableColumn(column.getName(), column.getPropertyTypeName(), column.getRequiredType(),
+                                                   column.isFullTextSearchable(), column.isOrderable(), column.getMinimum(),
+                                                   column.getMaximum(), column.getOperators());
             newColumns.add(newColumn);
             Column existing = columnMap.put(newColumn.getName(), newColumn);
             if (existing != null) {

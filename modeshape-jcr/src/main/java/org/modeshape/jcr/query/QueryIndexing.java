@@ -25,9 +25,12 @@ package org.modeshape.jcr.query;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Set;
 import org.hibernate.search.backend.TransactionContext;
+import org.modeshape.jcr.NodeTypeSchemata;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Property;
 
@@ -42,13 +45,19 @@ public interface QueryIndexing {
      * @param workspace the workspace in which the node information should be available; may not be null
      * @param key the unique key for the node; may not be null
      * @param path the path of the node; may not be null
+     * @param primaryType the primary type of the node; may not be null
+     * @param mixinTypes the mixin types for the node; may not be null but may be empty
      * @param properties the properties of the node; may not be null but may be empty
+     * @param schemata the node type schemata that should be used to determine how the node is to be indexed; may not be null
      * @param txnCtx the transaction context in which the index updates should be made; may not be null
      */
     void addToIndex( String workspace,
                      NodeKey key,
                      Path path,
+                     Name primaryType,
+                     Set<Name> mixinTypes,
                      Collection<Property> properties,
+                     NodeTypeSchemata schemata,
                      TransactionContext txnCtx );
 
     /**
@@ -57,28 +66,19 @@ public interface QueryIndexing {
      * @param workspace the workspace in which the node information should be available; may not be null
      * @param key the unique key for the node; may not be null
      * @param path the path of the node; may not be null
+     * @param primaryType the primary type of the node; may not be null
+     * @param mixinTypes the mixin types for the node; may not be null but may be empty
      * @param properties the properties of the node; may not be null but may be empty
+     * @param schemata the node type schemata that should be used to determine how the node is to be indexed; may not be null
      * @param txnCtx the transaction context in which the index updates should be made; may not be null
      */
     void updateIndex( String workspace,
                       NodeKey key,
                       Path path,
+                      Name primaryType,
+                      Set<Name> mixinTypes,
                       Iterator<Property> properties,
-                      TransactionContext txnCtx );
-
-    /**
-     * Update the index to reflect the new state of the node.
-     * 
-     * @param workspace the workspace in which the node information should be available; may not be null
-     * @param key the unique key for the node; may not be null
-     * @param path the path of the node; may not be null
-     * @param properties the properties of the node; may not be null but may be empty
-     * @param txnCtx the transaction context in which the index updates should be made; may not be null
-     */
-    void updateIndex( String workspace,
-                      NodeKey key,
-                      Path path,
-                      Collection<Property> properties,
+                      NodeTypeSchemata schemata,
                       TransactionContext txnCtx );
 
     void removeFromIndex( String workspace,

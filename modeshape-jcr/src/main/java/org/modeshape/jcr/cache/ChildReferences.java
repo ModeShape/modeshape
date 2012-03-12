@@ -105,6 +105,14 @@ public interface ChildReferences extends Iterable<ChildReference> {
     ChildReference getChild( Segment segment );
 
     /**
+     * Determine if this contains a reference to the specified child.
+     * 
+     * @param key the node key of the child
+     * @return true if there is a child reference, or false if there is none
+     */
+    boolean hasChild( NodeKey key );
+
+    /**
      * Look for the child reference that has the node key.
      * 
      * @param key the node key of the child

@@ -89,6 +89,8 @@ public class PropertyTypeUtil {
                 return org.modeshape.jcr.value.PropertyType.URI;
             case PropertyType.WEAKREFERENCE:
                 return org.modeshape.jcr.value.PropertyType.WEAKREFERENCE;
+            case PropertyType.UNDEFINED:
+                return org.modeshape.jcr.value.PropertyType.OBJECT;
             default:
                 // All JCR PropertyType values should be explicitly handled above ...
                 throw new SystemFailureException(JcrI18n.invalidPropertyType.text(jcrPropertyType));

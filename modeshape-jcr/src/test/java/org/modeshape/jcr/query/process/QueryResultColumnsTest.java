@@ -29,6 +29,7 @@ import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import org.junit.Before;
@@ -36,7 +37,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.modeshape.common.util.StringUtil;
-import org.modeshape.jcr.cache.NodeCache;
+import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.QueryResults.Columns;
 import org.modeshape.jcr.query.QueryResults.Cursor;
@@ -64,7 +65,7 @@ public class QueryResultColumnsTest extends AbstractQueryResultsTest {
     @Before
     public void beforeEach() {
         MockitoAnnotations.initMocks(this);
-        context = new QueryContext(executionContext, mock(NodeCache.class), "workspace", schemata);
+        context = new QueryContext(executionContext, mock(RepositoryCache.class), Collections.singleton("workspace"), schemata);
         columnList = new ArrayList<Column>();
         columnList.add(new Column(selector("table1"), "colA", "colA"));
         columnList.add(new Column(selector("table1"), "colB", "colB"));

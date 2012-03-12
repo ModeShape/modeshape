@@ -80,8 +80,12 @@ public interface SessionCache extends NodeCache {
 
     /**
      * Adds a [key,value] data pair for this cache's context
+     * 
+     * @param key the key for the context data
+     * @param value the value for the context data
      */
-    public void addContextData(String key, String value);
+    public void addContextData( String key,
+                                String value );
 
     /**
      * Saves all changes made within this session.

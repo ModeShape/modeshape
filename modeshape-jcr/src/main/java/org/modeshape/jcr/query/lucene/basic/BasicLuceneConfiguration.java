@@ -51,7 +51,7 @@ public class BasicLuceneConfiguration extends LuceneSearchConfiguration {
                                      Properties backend,
                                      Properties indexing,
                                      Properties storage ) {
-        super(BinaryInfo.class, NodeInfo.class, NodeInfoBridge.class);
+        super(NodeInfo.class, DynamicFieldBridge.class);
 
         // ------------------------------
         // Set the storage properties ...

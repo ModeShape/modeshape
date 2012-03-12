@@ -51,6 +51,7 @@ import org.modeshape.jcr.query.plan.CanonicalPlanner;
 import org.modeshape.jcr.query.plan.PlanHints;
 import org.modeshape.jcr.query.plan.PlanNode;
 import org.modeshape.jcr.query.plan.PlanNode.Property;
+import org.modeshape.jcr.value.PropertyType;
 
 /**
  * An immutable {@link Schemata} implementation.
@@ -201,8 +202,11 @@ public class ImmutableSchemata implements Schemata {
             return addColumn(tableName,
                              columnName,
                              type,
+                             ImmutableColumn.DEFAULT_REQUIRED_TYPE,
                              ImmutableColumn.DEFAULT_FULL_TEXT_SEARCHABLE,
                              ImmutableColumn.DEFAULT_ORDERABLE,
+                             null,
+                             null,
                              ImmutableColumn.ALL_OPERATORS);
         }
 
@@ -213,8 +217,11 @@ public class ImmutableSchemata implements Schemata {
          * @param tableName the name of the new table
          * @param columnName the names of the column
          * @param type the type for the column
+         * @param requiredType the requiredType for the column; never null
          * @param fullTextSearchable true if the column should be full-text searchable, or false if not
          * @param orderable true if the column can be used in order clauses, or false if not
+         * @param minimum the minimum value for the column; may be null
+         * @param maximum the maximum value for the column; may be null
          * @param operations the set operations that can be applied to this column within comparisons; may be empty or null if all
          *        operations apply
          * @return this builder, for convenience in method chaining; never null
@@ -224,14 +231,18 @@ public class ImmutableSchemata implements Schemata {
         public Builder addColumn( String tableName,
                                   String columnName,
                                   String type,
+                                  PropertyType requiredType,
                                   boolean fullTextSearchable,
                                   boolean orderable,
+                                  Object minimum,
+                                  Object maximum,
                                   Set<Operator> operations ) {
             CheckArg.isNotEmpty(tableName, "tableName");
             CheckArg.isNotEmpty(columnName, "columnName");
             CheckArg.isNotNull(type, "type");
             MutableTable existing = tables.get(tableName);
-            Column column = new ImmutableColumn(columnName, type, fullTextSearchable, orderable, operations);
+            Column column = new ImmutableColumn(columnName, type, requiredType, fullTextSearchable, orderable, minimum, maximum,
+                                                operations);
             if (existing == null) {
                 List<Column> columns = new ArrayList<Column>();
                 columns.add(column);
@@ -258,8 +269,8 @@ public class ImmutableSchemata implements Schemata {
             MutableTable existing = tables.get(tableName);
             if (existing == null) {
                 List<Column> columns = new ArrayList<Column>();
-                columns.add(new ImmutableColumn(columnName, typeSystem.getDefaultType(), true, ImmutableColumn.DEFAULT_ORDERABLE,
-                                                ImmutableColumn.ALL_OPERATORS));
+                columns.add(new ImmutableColumn(columnName, typeSystem.getDefaultType(), ImmutableColumn.DEFAULT_REQUIRED_TYPE,
+                                                true));
                 existing = new MutableTable(tableName, columns, false);
                 tables.put(tableName, existing);
             } else {
@@ -267,7 +278,8 @@ public class ImmutableSchemata implements Schemata {
                 if (column != null && !column.isFullTextSearchable()) {
                     boolean orderable = column.isOrderable();
                     Set<Operator> operators = column.getOperators();
-                    column = new ImmutableColumn(columnName, column.getPropertyType(), true, orderable, operators);
+                    column = new ImmutableColumn(columnName, column.getPropertyTypeName(), column.getRequiredType(), true,
+                                                 orderable, column.getMinimum(), column.getMaximum(), operators);
                 }
                 existing.addColumn(column);
             }
@@ -378,8 +390,7 @@ public class ImmutableSchemata implements Schemata {
             MutableTable existing = tables.get(tableName);
             if (existing == null) {
                 List<Column> columns = new ArrayList<Column>();
-                columns.add(new ImmutableColumn(columnName, typeSystem.getDefaultType(), true, ImmutableColumn.DEFAULT_ORDERABLE,
-                                                ImmutableColumn.ALL_OPERATORS));
+                columns.add(new ImmutableColumn(columnName, typeSystem.getDefaultType()));
                 existing = new MutableTable(tableName, columns, false);
                 tables.put(tableName, existing);
             }
@@ -447,7 +458,9 @@ public class ImmutableSchemata implements Schemata {
                     // Create the canonical plan for the definition ...
                     PlanHints hints = new PlanHints();
                     hints.validateColumnExistance = false;
-                    QueryContext queryContext = new QueryContext(context, null, "", schemata, hints, null);
+                    // Create a query context that queries all workspaces (we won't actually query using it) ...
+                    Set<String> allWorkspaces = Collections.emptySet();
+                    QueryContext queryContext = new QueryContext(context, null, allWorkspaces, schemata, hints, null);
                     CanonicalPlanner planner = new CanonicalPlanner();
                     PlanNode plan = planner.createPlan(queryContext, command);
                     if (queryContext.getProblems().hasErrors()) {
@@ -491,8 +504,10 @@ public class ImmutableSchemata implements Schemata {
                         }
                         Set<Operator> operators = operators(name, viewColumnName, sourceColumn.getOperators());
                         boolean orderable = orderable(name, viewColumnName, sourceColumn.isOrderable());
-                        Column newColumn = new ImmutableColumn(viewColumnName, sourceColumn.getPropertyType(),
-                                                               sourceColumn.isFullTextSearchable(), orderable, operators);
+                        Column newColumn = new ImmutableColumn(viewColumnName, sourceColumn.getPropertyTypeName(),
+                                                               sourceColumn.getRequiredType(),
+                                                               sourceColumn.isFullTextSearchable(), orderable,
+                                                               sourceColumn.getMinimum(), sourceColumn.getMaximum(), operators);
                         viewColumns.add(newColumn);
                         if (source.getSelectAllColumnsByName().containsKey(sourceColumnName)) {
                             viewColumnsInSelectStar.add(newColumn);

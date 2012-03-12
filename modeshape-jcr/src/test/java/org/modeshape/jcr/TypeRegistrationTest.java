@@ -743,23 +743,23 @@ public class TypeRegistrationTest extends SingleUseAbstractTest {
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowUnregisteringNullCollection() throws Exception {
-        repoTypeManager.unregisterNodeType(null);
+        repoTypeManager.unregisterNodeType(null, true);
     }
 
     @Test( expected = NoSuchNodeTypeException.class )
     public void shouldNotAllowUnregisteringInvalidTypeNames() throws Exception {
-        repoTypeManager.unregisterNodeType(Arrays.asList(new Name[] {JcrNtLexicon.FILE, JcrLexicon.DATA}));
+        repoTypeManager.unregisterNodeType(Arrays.asList(new Name[] {JcrNtLexicon.FILE, JcrLexicon.DATA}), true);
     }
 
     @Test( expected = InvalidNodeTypeDefinitionException.class )
     public void shouldNotAllowUnregisteringSupertype() throws Exception {
-        repoTypeManager.unregisterNodeType(Arrays.asList(new Name[] {JcrNtLexicon.HIERARCHY_NODE,}));
+        repoTypeManager.unregisterNodeType(Arrays.asList(new Name[] {JcrNtLexicon.HIERARCHY_NODE,}), true);
 
     }
 
     @Test( expected = InvalidNodeTypeDefinitionException.class )
     public void shouldNotAllowUnregisteringRequiredPrimaryType() throws Exception {
-        repoTypeManager.unregisterNodeType(Arrays.asList(new Name[] {JcrNtLexicon.FROZEN_NODE,}));
+        repoTypeManager.unregisterNodeType(Arrays.asList(new Name[] {JcrNtLexicon.FROZEN_NODE,}), true);
     }
 
     @Test( expected = InvalidNodeTypeDefinitionException.class )
@@ -776,7 +776,7 @@ public class TypeRegistrationTest extends SingleUseAbstractTest {
             fail(ex.getMessage());
         }
 
-        repoTypeManager.unregisterNodeType(Arrays.asList(new Name[] {JcrNtLexicon.FILE,}));
+        repoTypeManager.unregisterNodeType(Arrays.asList(new Name[] {JcrNtLexicon.FILE,}), true);
     }
 
     @Test
@@ -795,7 +795,7 @@ public class TypeRegistrationTest extends SingleUseAbstractTest {
 
         Name typeNameAsName = nameFactory.create(TEST_TYPE_NAME);
         int nodeTypeCount = nodeTypes().getAllNodeTypes().size();
-        repoTypeManager.unregisterNodeType(Arrays.asList(new Name[] {typeNameAsName}));
+        repoTypeManager.unregisterNodeType(Arrays.asList(new Name[] {typeNameAsName}), true);
         assertThat(nodeTypes().getAllNodeTypes().size(), is(nodeTypeCount - 1));
         assertThat(nodeTypes().getNodeType(typeNameAsName), is(nullValue()));
     }
@@ -825,7 +825,7 @@ public class TypeRegistrationTest extends SingleUseAbstractTest {
         Name typeNameAsName = nameFactory.create(TEST_TYPE_NAME);
         Name type2NameAsName = nameFactory.create(TEST_TYPE_NAME2);
         int nodeTypeCount = nodeTypes().getAllNodeTypes().size();
-        repoTypeManager.unregisterNodeType(Arrays.asList(new Name[] {typeNameAsName, type2NameAsName}));
+        repoTypeManager.unregisterNodeType(Arrays.asList(new Name[] {typeNameAsName, type2NameAsName}), true);
         assertThat(nodeTypes().getAllNodeTypes().size(), is(nodeTypeCount - 2));
         assertThat(nodeTypes().getNodeType(typeNameAsName), is(nullValue()));
         assertThat(nodeTypes().getNodeType(type2NameAsName), is(nullValue()));

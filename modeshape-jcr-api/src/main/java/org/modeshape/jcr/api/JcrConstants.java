@@ -25,13 +25,15 @@ package org.modeshape.jcr.api;
 
 /**
  * Class which should hold string constants defined by the JCR spec.
- *
+ * 
  * @author Horia Chiorean
  */
 public final class JcrConstants {
     public static final String JCR_MIMETYPE = "jcr:mimetype";
     public static final String JCR_CONTENT = "jcr:content";
     public static final String JCR_NAME = "jcr:name";
+    public static final String JCR_PATH = "jcr:path";
+    public static final String JCR_SCORE = "jcr:score";
     public static final String JCR_DATA = "jcr:data";
     public static final String JCR_MIXIN_TYPES = "jcr:mixinTypes";
     public static final String JCR_PRIMARY_TYPE = "jcr:primaryType";
@@ -43,6 +45,9 @@ public final class JcrConstants {
     public static final String NT_RESOURCE = "nt:resource";
 
     public static final String MIX_LAST_MODIFIED = "mix:lastModified";
+
+    public static final String MODE_LOCAL_NAME = "mode:localName";
+    public static final String MODE_DEPTH = "mode:depth";
 
     private JcrConstants() {
     }

@@ -67,7 +67,8 @@ import org.modeshape.jcr.cache.NodeNotFoundException;
 import org.modeshape.jcr.cache.PathCache;
 import org.modeshape.jcr.cache.ReferentialIntegrityException;
 import org.modeshape.jcr.cache.SessionCache;
-import org.modeshape.jcr.cache.SessionCacheMonitor;
+import org.modeshape.jcr.cache.SessionEnvironment;
+import org.modeshape.jcr.cache.SessionEnvironment.Monitor;
 import org.modeshape.jcr.cache.WrappedException;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.RecordingChanges;
@@ -102,18 +103,15 @@ public class WritableSessionCache extends AbstractSessionCache {
      * 
      * @param context the execution context; may not be null
      * @param workspaceCache the (shared) workspace cache; may not be null
-     * @param txnMgr the transaction manager that should be used; may be null if this session should not explicitly begin and
-     *        commit transactions
-     * @param monitor the cache monitor; may be null
+     * @param sessionContext the context for the session; may not be null
      */
     public WritableSessionCache( ExecutionContext context,
                                  WorkspaceCache workspaceCache,
-                                 TransactionManager txnMgr,
-                                 SessionCacheMonitor monitor ) {
-        super(context, workspaceCache, monitor);
+                                 SessionEnvironment sessionContext ) {
+        super(context, workspaceCache, sessionContext);
         this.changedNodes = new HashMap<NodeKey, SessionNode>();
         this.changedNodesInOrder = new LinkedHashSet<NodeKey>();
-        this.tm = txnMgr;
+        this.tm = sessionContext.getTransactionManager();
     }
 
     protected final void assertInSession( SessionNode node ) {
@@ -250,9 +248,12 @@ public class WritableSessionCache extends AbstractSessionCache {
                     closeTxn = true;
                 }
 
+                // Get a monitor ...
+                Monitor monitor = sessionContext().createMonitor();
+
                 try {
                     // Now persist the changes ...
-                    events = persistChanges(this.changedNodesInOrder);
+                    events = persistChanges(this.changedNodesInOrder, monitor);
                 } catch (RuntimeException e) {
                     // Some error occurred (likely within our code) ...
                     if (tm != null) tm.rollback();
@@ -264,6 +265,8 @@ public class WritableSessionCache extends AbstractSessionCache {
                     // Commit the transaction ...
                     tm.commit();
                 }
+
+                if (events != null && monitor != null) monitor.recordChanged(events.changedNodes().size());
 
             } catch (NotSupportedException err) {
                 // No nested transactions are supported ...
@@ -335,10 +338,13 @@ public class WritableSessionCache extends AbstractSessionCache {
                     closeTxn = true;
                 }
 
+                // Get a monitor ...
+                Monitor monitor = sessionContext().createMonitor();
+
                 try {
                     // Now persist the changes ...
-                    events1 = persistChanges(this.changedNodesInOrder);
-                    events2 = that.persistChanges(that.changedNodesInOrder);
+                    events1 = persistChanges(this.changedNodesInOrder, monitor);
+                    events2 = that.persistChanges(that.changedNodesInOrder, monitor);
                 } catch (RuntimeException e) {
                     // Some error occurred (likely within our code) ...
                     if (tm != null) tm.rollback();
@@ -349,6 +355,10 @@ public class WritableSessionCache extends AbstractSessionCache {
                     assert tm != null;
                     // Commit the transaction ...
                     tm.commit();
+                }
+                if (monitor != null) {
+                    if (events1 != null) monitor.recordChanged(events1.changedNodes().size());
+                    if (events2 != null) monitor.recordChanged(events2.changedNodes().size());
                 }
 
             } catch (NotSupportedException err) {
@@ -463,10 +473,13 @@ public class WritableSessionCache extends AbstractSessionCache {
                     closeTxn = true;
                 }
 
+                // Get a monitor ...
+                Monitor monitor = sessionContext().createMonitor();
+
                 try {
                     // Now persist the changes ...
-                    events1 = persistChanges(savedNodesInOrder);
-                    events2 = that.persistChanges(that.changedNodesInOrder);
+                    events1 = persistChanges(savedNodesInOrder, monitor);
+                    events2 = that.persistChanges(that.changedNodesInOrder, monitor);
                 } catch (RuntimeException e) {
                     // Some error occurred (likely within our code) ...
                     if (tm != null) tm.rollback();
@@ -477,6 +490,11 @@ public class WritableSessionCache extends AbstractSessionCache {
                     assert tm != null;
                     // Commit the transaction ...
                     tm.commit();
+                }
+
+                if (monitor != null) {
+                    if (events1 != null) monitor.recordChanged(events1.changedNodes().size());
+                    if (events2 != null) monitor.recordChanged(events2.changedNodes().size());
                 }
 
             } catch (NotSupportedException err) {
@@ -530,31 +548,16 @@ public class WritableSessionCache extends AbstractSessionCache {
     private void fireChanges( ChangeSet changeSet ) {
         // Notify the workspaces of the changes made. This is done outside of our lock but still before the save returns ...
         if (changeSet != null && changeSet.size() != 0) {
-            // Then there were changes made, so first record metrics for the changes ...
-            recordMetrics(changeSet);
-            // and now notify the workspace (outside of the lock, but still before the save returns) ...
+            // Notify the workspace (outside of the lock, but still before the save returns) ...
             workspaceCache.changed(changeSet);
         }
-    }
-
-    /**
-     * Track any metrics given the supplied changes that have already been committed.
-     * 
-     * @param changeSet
-     */
-    protected void recordMetrics( ChangeSet changeSet ) {
-        SessionCacheMonitor monitor = monitor();
-        if (monitor != null) {
-            int count = changeSet.changedNodes().size();
-            monitor.performChange(count);
-        }
-
     }
 
     /**
      * Persist the changes within an already-established transaction.
      * 
      * @param changedNodesInOrder the nodes that are to be persisted; may not be null
+     * @param monitor the monitor for these changes; may be null if not needed
      * @return the ChangeSet encapsulating the changes that were made
      * @throws LockFailureException if a requested lock could not be made
      * @throws DocumentAlreadyExistsException if this session attempts to create a document that has the same key as an existing
@@ -562,7 +565,8 @@ public class WritableSessionCache extends AbstractSessionCache {
      * @throws DocumentNotFoundException if one of the modified documents was removed by another session
      */
     @GuardedBy( "lock" )
-    protected ChangeSet persistChanges( Iterable<NodeKey> changedNodesInOrder ) {
+    protected ChangeSet persistChanges( Iterable<NodeKey> changedNodesInOrder,
+                                        Monitor monitor ) {
         // Compute the save meta-info ...
         ExecutionContext context = context();
         String userId = context.getSecurityContext().getUserName();
@@ -603,7 +607,8 @@ public class WritableSessionCache extends AbstractSessionCache {
                     removedNodes.add(key);
                     // Note 1: Do not actually remove the document from the database yet; see below (note 2)
                 }
-                // Otherwise, it's a new node created in the session, so we don't have to do anything ...
+                // Otherwise, the removed node was created in the session (but not ever persisteD),
+                // so we don't have to do anything ...
             } else {
                 CachedNode persisted = null;
                 Path newPath = sessionPaths.getPath(node);
@@ -618,6 +623,16 @@ public class WritableSessionCache extends AbstractSessionCache {
                     translator.setParents(doc, newParent, null, additionalParents);
                     // Create an event ...
                     changes.nodeCreated(key, newParent, newPath, node.changedProperties());
+
+                    // And record the new node via the monitor ...
+                    if (monitor != null) {
+                        // Get the primary and mixin type names; even though we're passing in the session, the two properties
+                        // should be there and shouldn't require a looking in the cache...
+                        Name primaryType = node.getPrimaryType(this);
+                        Set<Name> mixinTypes = node.getMixinTypes(this);
+                        monitor.recordAdd(workspaceName, key, newPath, primaryType, mixinTypes, node.changedProperties().values());
+                    }
+
                 } else {
                     SchematicEntry nodeEntry = database.get(keyStr);
                     if (nodeEntry == null) {
@@ -632,10 +647,9 @@ public class WritableSessionCache extends AbstractSessionCache {
                         Path oldPath = workspacePaths.getPath(persisted);
                         NodeKey oldParent = persisted.getParentKey(workspaceCache);
                         if (oldParent.equals(newParent)) {
-                            //parent hasn't change, this should mean a reoder has happened
+                            // parent hasn't change, this should mean a reoder has happened
                             changes.nodeReordered(key, oldParent, newPath, oldPath);
-                        }
-                        else {
+                        } else {
                             if (!oldParent.equals(newParent) || !additionalParents.isEmpty()) {
                                 // Don't need to change the doc, since we've moved within the same parent ...
                                 translator.setParents(doc, node.newParent(), oldParent, additionalParents);
@@ -761,18 +775,21 @@ public class WritableSessionCache extends AbstractSessionCache {
                         }
                     }
 
-                    //generate reordering events for nodes which have not been reordered to the end
-                    //TODO author=Horia Chiorean date=3/2/12 description=This will only work when reordering inner nodes (i.e. not moving them at the end)
+                    // generate reordering events for nodes which have not been reordered to the end
+                    // TODO author=Horia Chiorean date=3/2/12 description=This will only work when reordering inner nodes (i.e.
+                    // not moving them at the end)
                     Map<NodeKey, SessionNode.Insertions> insertionsByBeforeKey = changedChildren.getInsertionsByBeforeKey();
                     for (SessionNode.Insertions insertion : insertionsByBeforeKey.values()) {
                         for (ChildReference afterInsertionRef : insertion.inserted()) {
-                            CachedNode afterInsertionNode = workspaceCache.getNode(afterInsertionRef); 
+                            CachedNode afterInsertionNode = workspaceCache.getNode(afterInsertionRef);
                             Path afterInsertionPath = workspacePaths.getPath(afterInsertionNode);
 
                             CachedNode beforeInsertionNode = workspaceCache.getNode(insertion.insertedBefore());
                             Path beforeInsertionPath = workspacePaths.getPath(beforeInsertionNode);
-                                    
-                            changes.nodeReordered(afterInsertionRef.getKey(), afterInsertionNode.getParentKey(this), afterInsertionPath,
+
+                            changes.nodeReordered(afterInsertionRef.getKey(),
+                                                  afterInsertionNode.getParentKey(this),
+                                                  afterInsertionPath,
                                                   beforeInsertionPath);
                         }
                     }
@@ -799,6 +816,12 @@ public class WritableSessionCache extends AbstractSessionCache {
                             throw new DocumentAlreadyExistsException(keyStr);
                         }
                     }
+                } else if (monitor != null) {
+                    // Get the primary and mixin type names; even though we're passing in the session, the two properties
+                    // should be there and shouldn't require a looking in the cache...
+                    Name primaryType = node.getPrimaryType(this);
+                    Set<Name> mixinTypes = node.getMixinTypes(this);
+                    monitor.recordUpdate(workspaceName, key, newPath, primaryType, mixinTypes, node.getProperties(this));
                 }
             }
         }
@@ -818,6 +841,9 @@ public class WritableSessionCache extends AbstractSessionCache {
             for (NodeKey removedKey : removedNodes) {
                 database.remove(removedKey.toString());
             }
+
+            // And record the removals via the monitor ...
+            if (monitor != null) monitor.recordRemove(workspaceName, removedNodes);
         }
 
         if (!unusedBinaryKeys.isEmpty()) {

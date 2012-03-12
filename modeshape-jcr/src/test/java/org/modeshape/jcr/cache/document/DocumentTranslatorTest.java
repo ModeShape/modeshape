@@ -47,7 +47,7 @@ public class DocumentTranslatorTest extends AbstractSessionCacheTest {
     @Override
     protected SessionCache createSession( ExecutionContext context,
                                           WorkspaceCache cache ) {
-        return new WritableSessionCache(context, workspaceCache, txnManager(), null);
+        return new WritableSessionCache(context, workspaceCache, createSessionContext());
     }
 
     @Test

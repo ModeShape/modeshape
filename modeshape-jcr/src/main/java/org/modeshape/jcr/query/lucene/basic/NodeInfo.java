@@ -23,7 +23,6 @@
  */
 package org.modeshape.jcr.query.lucene.basic;
 
-import java.util.Map;
 import org.hibernate.search.annotations.Analyze;
 import org.hibernate.search.annotations.DocumentId;
 import org.hibernate.search.annotations.Field;
@@ -35,7 +34,10 @@ import org.hibernate.search.annotations.Store;
 import org.modeshape.common.annotation.Immutable;
 
 /**
- * A record object used to encapsulate the indexable information about a node.
+ * A record object used to encapsulate the indexable information about a node. Some fields are known ahead of time, such as the
+ * {@link #id}, {@link #name}, {@link #localName}, {@link #depth}, etc., but other fields are used to store the properties that
+ * cannot be known at compile time. These fields are represented on this object using {@link DynamicField} instances, which can be
+ * chained together.
  */
 @Immutable
 @Indexed( index = NodeInfoIndex.INDEX_NAME )
@@ -45,28 +47,25 @@ public class NodeInfo {
     @DocumentId( name = NodeInfoIndex.FieldName.ID )
     private final String id;
 
-    @Field( name = NodeInfoIndex.FieldName.WORKSPACE, analyze = Analyze.NO, store = Store.NO, index = Index.YES )
+    @Field( name = NodeInfoIndex.FieldName.WORKSPACE, analyze = Analyze.NO, store = Store.YES, index = Index.YES )
     private final String workspace;
 
-    @Field( name = NodeInfoIndex.FieldName.PATH, analyze = Analyze.NO, store = Store.NO, index = Index.YES )
+    @Field( name = NodeInfoIndex.FieldName.PATH, analyze = Analyze.NO, store = Store.YES, index = Index.YES )
     private final String path;
 
-    @Field( name = NodeInfoIndex.FieldName.NODE_NAME, analyze = Analyze.NO, store = Store.NO, index = Index.YES )
+    @Field( name = NodeInfoIndex.FieldName.NODE_NAME, analyze = Analyze.NO, store = Store.YES, index = Index.YES )
     private final String name;
 
-    @Field( name = NodeInfoIndex.FieldName.LOCAL_NAME, analyze = Analyze.NO, store = Store.NO, index = Index.YES )
+    @Field( name = NodeInfoIndex.FieldName.LOCAL_NAME, analyze = Analyze.NO, store = Store.YES, index = Index.YES )
     private final String localName;
 
     @Field( name = NodeInfoIndex.FieldName.DEPTH, analyze = Analyze.NO, store = Store.NO, index = Index.YES )
     @NumericField( forField = NodeInfoIndex.FieldName.DEPTH )
     private final int depth;
 
-    @Field( analyze = Analyze.NO, store = Store.NO )
-    @FieldBridge( impl = NodeInfoBridge.class )
-    private final Map<String, Object> properties;
-
-    @Field( name = NodeInfoIndex.FieldName.FULL_TEXT, analyze = Analyze.YES, store = Store.NO, index = Index.YES )
-    private final String fullText;
+    @Field( analyze = Analyze.YES, store = Store.NO )
+    @FieldBridge( impl = DynamicFieldBridge.class )
+    private final DynamicField firstDynamicField;
 
     public NodeInfo( String nodeKey,
                      String workspace,
@@ -74,16 +73,14 @@ public class NodeInfo {
                      String localName,
                      String name,
                      int depth,
-                     Map<String, Object> properties,
-                     String fullText ) {
+                     DynamicField firstDynamicField ) {
         this.id = nodeKey;
         this.workspace = workspace;
         this.path = path;
         this.name = name;
         this.localName = localName;
         this.depth = depth;
-        this.properties = properties;
-        this.fullText = fullText;
+        this.firstDynamicField = firstDynamicField;
     }
 
     /**
@@ -132,12 +129,13 @@ public class NodeInfo {
     }
 
     /**
-     * Get the properties for the node. Note the type of each property value dictates how that property will be indexed.
+     * Get the information about the first dynamic field for this node. Additional dynamic fields are changed and can be access
+     * via the {@link DynamicField#getNext()} method.
      * 
-     * @return the collection of property objects; never null
+     * @return the first dynamic field; may be null
      */
-    public Map<String, Object> getProperties() {
-        return properties;
+    public DynamicField getFirstDynamicField() {
+        return firstDynamicField;
     }
 
     /**
@@ -149,19 +147,9 @@ public class NodeInfo {
         return workspace;
     }
 
-    /**
-     * Get the text terms that should be included in the {@link NodeInfoIndex.FieldName#FULL_TEXT full-text search field}. Note
-     * that this should never include text from binary values.
-     * 
-     * @return the full-text search terms; may be null
-     */
-    public String getFullText() {
-        return fullText;
-    }
-
     @Override
     public String toString() {
-        return id + " @ " + path + " in '" + workspace + "' with " + properties;
+        return id + " @ " + path + " in '" + workspace + "' with " + firstDynamicField;
     }
 
 }

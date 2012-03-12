@@ -23,6 +23,22 @@
  */
 package org.modeshape.jcr;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.Property;
@@ -49,21 +65,12 @@ import org.apache.jackrabbit.test.api.observation.PropertyAddedTest;
 import org.apache.jackrabbit.test.api.observation.PropertyChangedTest;
 import org.apache.jackrabbit.test.api.observation.PropertyRemovedTest;
 import org.apache.jackrabbit.test.api.observation.WorkspaceOperationTest;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.hamcrest.core.IsNull.nullValue;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
 import org.junit.After;
 import org.junit.AfterClass;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -71,13 +78,6 @@ import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.JcrObservationManager.JcrEventBundle;
 import org.modeshape.jcr.api.value.DateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 /**
  * The {@link JcrObservationManager} test class.
@@ -85,7 +85,7 @@ import java.util.concurrent.TimeUnit;
 public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
     private static final int ALL_EVENTS = Event.NODE_ADDED | Event.NODE_REMOVED | Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED
-            | Event.PROPERTY_REMOVED;
+                                          | Event.PROPERTY_REMOVED;
 
     private static final String LOCK_MIXIN = "mix:lockable"; // extends referenceable
     private static final String LOCK_OWNER = "jcr:lockOwner"; // property
@@ -97,7 +97,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
     protected static final String WORKSPACE = "ws1";
     protected static final String WORKSPACE2 = "ws2";
-    
+
     private List<Session> sessions;
     private Node testRootNode;
 
@@ -117,29 +117,31 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
      * <p>
      * The configuration for "repositoryName" as the repository name, anonymous logins disabled, and "modeshape-jcr" as the JAAS
      * policy looks as follows:
-     *
+     * 
      * <pre>
-     * {
-     *     "name" : "repositoryNameParameter",
-     *     "security" : {
-     *         "anonymous" : {
-     *             "roles" : ["readonly"],
-     *             "useOnFailedLogin" : true
-     *         },
-     *         "providers" : [
-     *             {
-     *                 "type" : "JAAS",
-     *                 "policyName" : "modeshape-jcr"
-     *             }
-     *         ]
-     *     },
-     *      "workspaces" : {
-     *           "predefined" : ["ws1","ws2"],
-     *           "default" : "default",
-     *           "allowCreation" : true
-     *       }
-     *}
+     *  {
+     *      "name" : "repositoryNameParameter",
+     *      "security" : {
+     *          "anonymous" : {
+     *              "roles" : ["readonly"],
+     *              "useOnFailedLogin" : true
+     *          },
+     *          "providers" : [
+     *              {
+     *                  "type" : "JAAS",
+     *                  "policyName" : "modeshape-jcr"
+     *              }
+     *          ]
+     *      },
+     *       "workspaces" : {
+     *            "predefined" : ["ws1","ws2"],
+     *            "default" : "default",
+     *            "allowCreation" : true
+     *        }
+     * }
      * </pre>
+     * 
+     * @return the configuration document
      */
     protected Document createRepositoryConfiguration() {
         EditableDocument doc = Schematic.newDocument("name", "ObservationTestRepo");
@@ -162,8 +164,10 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         return doc;
     }
 
+    @Override
     @Before
     public void beforeEach() throws Exception {
+        super.beforeEach();
         sessions = new ArrayList<Session>();
         startRepositoryWithConfiguration(createRepositoryConfiguration());
         session = login(WORKSPACE);
@@ -172,8 +176,10 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         save();
     }
 
+    @Override
     @After
     public void afterEach() throws Exception {
+        super.afterEach();
         try {
             for (Session session : sessions) {
                 if (session != null && session.isLive()) session.logout();
@@ -184,7 +190,6 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         }
         stopRepository();
     }
-
 
     TestListener addListener( int expectedEventsCount,
                               int eventTypes,
@@ -204,7 +209,14 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
                               String[] uuids,
                               String[] nodeTypeNames,
                               boolean noLocal ) throws Exception {
-        return addListener(this.session, expectedEventsCount, numIterators, eventTypes, absPath, isDeep, uuids, nodeTypeNames,
+        return addListener(this.session,
+                           expectedEventsCount,
+                           numIterators,
+                           eventTypes,
+                           absPath,
+                           isDeep,
+                           uuids,
+                           nodeTypeNames,
                            noLocal);
     }
 
@@ -229,8 +241,9 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
                               String[] nodeTypeNames,
                               boolean noLocal ) throws Exception {
         TestListener listener = new TestListener(expectedEventsCount, numIterators, eventTypes);
-        session.getWorkspace().getObservationManager().addEventListener(listener, eventTypes, absPath, isDeep, uuids,
-                                                                        nodeTypeNames, noLocal);
+        session.getWorkspace()
+               .getObservationManager()
+               .addEventListener(listener, eventTypes, absPath, isDeep, uuids, nodeTypeNames, noLocal);
         return listener;
     }
 
@@ -270,7 +283,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         return this.session.getWorkspace().getObservationManager();
     }
 
-    Node getRoot() throws RepositoryException {
+    Node getRoot() {
         return testRootNode;
     }
 
@@ -286,9 +299,6 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         this.session.save();
     }
 
-    /**
-     * @see AddEventListenerTest#testUUID()
-     */
     @Test
     public void shouldNotReceiveEventIfUuidDoesNotMatch() throws Exception {
         // setup
@@ -297,8 +307,13 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         save();
 
         // register listener
-        TestListener listener = addListener(0, Event.PROPERTY_ADDED, getRoot().getPath(), true,
-                                            new String[] {UUID.randomUUID().toString()}, null, false);
+        TestListener listener = addListener(0,
+                                            Event.PROPERTY_ADDED,
+                                            getRoot().getPath(),
+                                            true,
+                                            new String[] {UUID.randomUUID().toString()},
+                                            null,
+                                            false);
 
         // create properties
         n1.setProperty("prop1", "foo");
@@ -349,14 +364,15 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         // tests
         checkResults(listener);
         assertTrue("Path for added node is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
-                           + addedNode.getPath(), containsPath(listener, addedNode.getPath()));
+                   + addedNode.getPath(),
+                   containsPath(listener, addedNode.getPath()));
     }
 
     @Test
     public void shouldReceiveNodeRemovedEventWhenRegisteredToReceiveAllEvents() throws Exception {
         // add the node that will be removed
         Node addedNode = getRoot().addNode("node1", UNSTRUCTURED);
-        save();        
+        save();
 
         // register listener (add + 3 property events)
         TestListener listener = addListener(1, ALL_EVENTS, null, false, null, null, false);
@@ -396,7 +412,8 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         // tests
         checkResults(listener);
         assertTrue("Path for added property is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
-                           + prop1.getPath(), containsPath(listener, prop1.getPath()));
+                   + prop1.getPath(),
+                   containsPath(listener, prop1.getPath()));
     }
 
     @Test
@@ -420,7 +437,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         // tests
         checkResults(listener);
         assertTrue("Path for changed property is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
-                           + prop1.getPath(),
+                   + prop1.getPath(),
                    containsPath(listener, prop1.getPath()));
     }
 
@@ -446,7 +463,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         // tests
         checkResults(listener);
         assertTrue("Path for removed property is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
-                           + propPath, containsPath(listener, propPath));
+                   + propPath, containsPath(listener, propPath));
     }
 
     @Test
@@ -466,8 +483,8 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         // tests
         checkResults(listener);
         String propPath = "/fooProp";
-        assertTrue("Path for added property is wrong: actual=" + listener.getEvents().get(0).getPath()
-                           + ", expected=" + propPath, containsPath(listener, propPath));
+        assertTrue("Path for added property is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected=" + propPath,
+                   containsPath(listener, propPath));
     }
 
     // ===========================================================================================================================
@@ -476,6 +493,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
     /**
      * @see EventIteratorTest#testGetPosition()
+     * @throws Exception
      */
     @Test
     public void shouldTestEventIteratorTest_testGetPosition() throws Exception {
@@ -498,6 +516,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
     /**
      * @see EventIteratorTest#testGetSize()
+     * @throws Exception
      */
     @Test
     public void shouldTestEventIteratorTest_testGetSize() throws Exception {
@@ -518,6 +537,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
     /**
      * @see EventIteratorTest#testSkip()
+     * @throws Exception
      */
     @Test
     public void shouldTestEventIteratorTest_testSkip() throws Exception {
@@ -528,12 +548,9 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         String id1 = UUID.randomUUID().toString();
         String id2 = UUID.randomUUID().toString();
         String id3 = UUID.randomUUID().toString();
-        events.add(((JcrObservationManager)getObservationManager()).new JcrEvent(bundle, Event.NODE_ADDED, "/testroot/node1",
-                                                                                 id1));
-        events.add(((JcrObservationManager)getObservationManager()).new JcrEvent(bundle, Event.NODE_ADDED, "/testroot/node2",
-                                                                                 id2));
-        events.add(((JcrObservationManager)getObservationManager()).new JcrEvent(bundle, Event.NODE_ADDED, "/testroot/node3",
-                                                                                 id3));
+        events.add(((JcrObservationManager)getObservationManager()).new JcrEvent(bundle, Event.NODE_ADDED, "/testroot/node1", id1));
+        events.add(((JcrObservationManager)getObservationManager()).new JcrEvent(bundle, Event.NODE_ADDED, "/testroot/node2", id2));
+        events.add(((JcrObservationManager)getObservationManager()).new JcrEvent(bundle, Event.NODE_ADDED, "/testroot/node3", id3));
 
         // create iterator
         EventIterator itr = ((JcrObservationManager)getObservationManager()).new JcrEventIterator(events);
@@ -559,6 +576,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
     /**
      * @see EventTest#testGetNodePath()
+     * @throws Exception
      */
     @Test
     public void shouldTestEventTest_testGetNodePath() throws Exception {
@@ -576,12 +594,13 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         // tests
         checkResults(listener);
         assertTrue("Path added node is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
-                           + addedNode.getPath(),
+                   + addedNode.getPath(),
                    containsPath(listener, addedNode.getPath()));
     }
 
     /**
      * @see EventTest#testGetType()
+     * @throws Exception
      */
     @Test
     public void shouldTestEventTest_testGetType() throws Exception {
@@ -603,6 +622,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
     /**
      * @see EventTest#testGetUserId()
+     * @throws Exception
      */
     @Test
     public void shouldTestEventTest_testGetUserId() throws Exception {
@@ -628,6 +648,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
     /**
      * @see GetRegisteredEventListenersTest#testGetSize()
+     * @throws Exception
      */
     @Test
     public void shouldTestGetRegisteredEventListenersTest_testGetSize() throws Exception {
@@ -642,13 +663,13 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
         // make sure same listener isn't added again
         getObservationManager().addEventListener(listener, ALL_EVENTS, null, false, null, null, false);
-        assertThat("The same listener should not be added more than once.",
-                   getObservationManager().getRegisteredEventListeners()
-                           .getSize(), is(2L));
+        assertThat("The same listener should not be added more than once.", getObservationManager().getRegisteredEventListeners()
+                                                                                                   .getSize(), is(2L));
     }
 
     /**
      * @see GetRegisteredEventListenersTest#testRemoveEventListener()
+     * @throws Exception
      */
     @Test
     public void shouldTestGetRegisteredEventListenersTest_testRemoveEventListener() throws Exception {
@@ -673,9 +694,10 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
     /**
      * @see LockingTest#testAddLockToNode()
+     * @throws Exception
      */
     @Test
-    @FixFor("MODE-1407")
+    @FixFor( "MODE-1407" )
     @Ignore
     public void shouldTestLockingTest_testAddLockToNode() throws Exception {
         // setup
@@ -702,9 +724,10 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
     /**
      * @see LockingTest#testRemoveLockFromNode()
+     * @throws Exception
      */
     @Test
-    @FixFor("MODE-1407")
+    @FixFor( "MODE-1407" )
     @Ignore
     public void shouldTestLockingTest_testRemoveLockFromNode() throws Exception {
         // setup
@@ -736,6 +759,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
     /**
      * @see NodeAddedTest#testMultipleNodeAdded1()
+     * @throws Exception
      */
     @Test
     public void shouldTestNodeAddedTest_testMultipleNodeAdded1() throws Exception {
@@ -759,6 +783,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
     /**
      * @see NodeAddedTest#testMultipleNodeAdded2()
+     * @throws Exception
      */
     @Test
     public void shouldTestNodeAddedTest_testMultipleNodeAdded2() throws Exception {
@@ -782,6 +807,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
     /**
      * @see NodeAddedTest#testSingleNodeAdded()
+     * @throws Exception
      */
     @Test
     public void shouldTestNodeAddedTest_testSingleNodeAdded() throws Exception {
@@ -799,12 +825,13 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         // tests
         checkResults(listener);
         assertTrue("Path for added node is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
-                           + addedNode.getPath(),
+                   + addedNode.getPath(),
                    containsPath(listener, addedNode.getPath()));
     }
 
     /**
      * @see NodeAddedTest#testTransientNodeAddedRemoved()
+     * @throws Exception
      */
     @Test
     public void shouldTestNodeAddedTest_testTransientNodeAddedRemoved() throws Exception {
@@ -825,7 +852,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         // tests
         checkResults(listener);
         assertTrue("Path for added node is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
-                           + addedNode.getPath(),
+                   + addedNode.getPath(),
                    containsPath(listener, addedNode.getPath()));
     }
 
@@ -835,6 +862,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
     /**
      * @see NodeRemovedTest#testMultiNodesRemoved()
+     * @throws Exception
      */
     @Test
     public void shouldTestNodeRemovedTest_testMultiNodesRemoved() throws Exception {
@@ -864,6 +892,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
     /**
      * @see NodeRemovedTest#testSingleNodeRemoved()
+     * @throws Exception
      */
     @Test
     public void shouldTestNodeRemovedTest_testSingleNodeRemoved() throws Exception {
@@ -895,6 +924,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
     /**
      * @see NodeMovedTest#testMoveNode()
+     * @throws Exception
      */
     @SuppressWarnings( "unchecked" )
     @Test
@@ -935,19 +965,20 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         assertThat(info.get(JcrObservationManager.ORDER_SRC_KEY), is(nullValue()));
         assertThat(info.get(JcrObservationManager.ORDER_DEST_KEY), is(nullValue()));
         assertTrue("Path for new location of moved node is wrong: actual=" + moveNodeListener.getEvents().get(0).getPath()
-                           + ", expected=" + newPath, containsPath(moveNodeListener, newPath));
+                   + ", expected=" + newPath, containsPath(moveNodeListener, newPath));
         assertTrue("Path for new location of added node is wrong: actual=" + addNodeListener.getEvents().get(0).getPath()
-                           + ", expected=" + newPath, containsPath(addNodeListener, newPath));
+                   + ", expected=" + newPath, containsPath(addNodeListener, newPath));
         assertTrue("Path for new location of removed node is wrong: actual=" + removeNodeListener.getEvents().get(0).getPath()
-                           + ", expected=" + oldPath, containsPath(removeNodeListener, oldPath));
+                   + ", expected=" + oldPath, containsPath(removeNodeListener, oldPath));
     }
 
     /**
      * @see NodeMovedTest#testMoveTree()
+     * @throws Exception
      */
     @SuppressWarnings( "unchecked" )
     @Test
-    @FixFor("MODE-1410")
+    @FixFor( "MODE-1410" )
     @Ignore
     public void shouldTestNodeMovedTest_testMoveTree() throws Exception {
         // setup
@@ -984,15 +1015,16 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         assertThat(info.get(JcrObservationManager.ORDER_SRC_KEY), is(nullValue()));
         assertThat(info.get(JcrObservationManager.ORDER_DEST_KEY), is(nullValue()));
         assertTrue("Path for new location of moved node is wrong: actual=" + moveNodeListener.getEvents().get(0).getPath()
-                           + ", expected=" + newPath, containsPath(moveNodeListener, newPath));
+                   + ", expected=" + newPath, containsPath(moveNodeListener, newPath));
         assertTrue("Path for new location of added node is wrong: actual=" + addNodeListener.getEvents().get(0).getPath()
-                           + ", expected=" + newPath, containsPath(addNodeListener, newPath));
+                   + ", expected=" + newPath, containsPath(addNodeListener, newPath));
         assertTrue("Path for new location of removed node is wrong: actual=" + removeNodeListener.getEvents().get(0).getPath()
-                           + ", expected=" + oldPath, containsPath(removeNodeListener, oldPath));
+                   + ", expected=" + oldPath, containsPath(removeNodeListener, oldPath));
     }
 
     /**
      * @see NodeMovedTest#testMoveWithRemove()
+     * @throws Exception
      */
     @SuppressWarnings( "unchecked" )
     @Test
@@ -1037,11 +1069,11 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         assertThat(info.get(JcrObservationManager.MOVE_FROM_KEY), is(oldPath));
         assertThat(info.get(JcrObservationManager.MOVE_TO_KEY), is(newPath));
         assertTrue("Path for new location of moved node is wrong: actual=" + moveNodeListener.getEvents().get(0).getPath()
-                           + ", expected=" + newPath, containsPath(moveNodeListener, newPath));
+                   + ", expected=" + newPath, containsPath(moveNodeListener, newPath));
         assertTrue("Path for new location of added node is wrong: actual=" + addNodeListener.getEvents().get(0).getPath()
-                           + ", expected=" + newPath, containsPath(addNodeListener, newPath));
+                   + ", expected=" + newPath, containsPath(addNodeListener, newPath));
         assertTrue("Path for new location of removed node is wrong: actual=" + removeNodeListener.getEvents().get(0).getPath()
-                           + ", expected=" + oldPath, containsPath(removeNodeListener, oldPath));
+                   + ", expected=" + oldPath, containsPath(removeNodeListener, oldPath));
         assertTrue("Path for removed node is wrong", containsPath(removeNodeListener, removedNodePath));
     }
 
@@ -1051,6 +1083,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
     /**
      * @see NodeReorderTest#testNodeReorder()
+     * @throws Exception
      */
     @SuppressWarnings( "unchecked" )
     @Test
@@ -1088,19 +1121,20 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         assertThat(info.get(JcrObservationManager.ORDER_SRC_KEY), is("node3"));
         assertThat(info.get(JcrObservationManager.ORDER_DEST_KEY), is("node2"));
         assertTrue("Path for new location of moved node is wrong: actual=" + moveNodeListener.getEvents().get(0).getPath()
-                           + ", expected=" + n3.getPath(), containsPath(moveNodeListener, n3.getPath()));
+                   + ", expected=" + n3.getPath(), containsPath(moveNodeListener, n3.getPath()));
         assertTrue("Added reordered node has wrong path: actual=" + addNodeListener.getEvents().get(0).getPath() + ", expected="
-                           + n3.getPath(), containsPath(addNodeListener, n3.getPath()));
+                   + n3.getPath(), containsPath(addNodeListener, n3.getPath()));
         assertTrue("Removed reordered node has wrong path: actual=" + removeNodeListener.getEvents().get(0).getPath()
-                           + ", expected=" + n3.getPath(), containsPath(addNodeListener, n3.getPath()));
+                   + ", expected=" + n3.getPath(), containsPath(addNodeListener, n3.getPath()));
     }
 
     /**
      * @see NodeReorderTest#testNodeReorderSameName()
+     * @throws Exception
      */
     @SuppressWarnings( "unchecked" )
     @Test
-    @FixFor("MODE-1409")
+    @FixFor( "MODE-1409" )
     @Ignore
     public void shouldTestNodeReorderTest_testNodeReorderSameName() throws Exception {
         // setup
@@ -1137,20 +1171,21 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         assertThat(info.get(JcrObservationManager.ORDER_SRC_KEY), is(node1 + "[3]"));
         assertThat(info.get(JcrObservationManager.ORDER_DEST_KEY), is(node1 + "[2]"));
         assertTrue("Path for new location of moved node is wrong: actual=" + moveNodeListener.getEvents().get(0).getPath()
-                           + ", expected=" + getRoot().getPath() + "/" + node1 + "[2]",
+                   + ", expected=" + getRoot().getPath() + "/" + node1 + "[2]",
                    containsPath(moveNodeListener, getRoot().getPath() + "/" + node1 + "[2]"));
         assertTrue("Added reordered node has wrong path: actual=" + addNodeListener.getEvents().get(0).getPath() + ", expected="
-                           + n1.getPath() + "[2]", containsPath(addNodeListener, n1.getPath() + "[2]"));
+                   + n1.getPath() + "[2]", containsPath(addNodeListener, n1.getPath() + "[2]"));
         assertTrue("Removed reordered node has wrong path: actual=" + removeNodeListener.getEvents().get(0).getPath()
-                           + ", expected=" + n1.getPath() + "[3]", containsPath(removeNodeListener, n1.getPath() + "[3]"));
+                   + ", expected=" + n1.getPath() + "[3]", containsPath(removeNodeListener, n1.getPath() + "[3]"));
     }
 
     /**
      * @see NodeReorderTest#testNodeReorderSameNameWithRemove()
+     * @throws Exception
      */
     @SuppressWarnings( "unchecked" )
     @Test
-    @FixFor("MODE-1409")
+    @FixFor( "MODE-1409" )
     @Ignore
     public void shouldTestNodeReorderTest_testNodeReorderSameNameWithRemove() throws Exception {
         // setup
@@ -1190,10 +1225,10 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         assertThat(info.get(JcrObservationManager.ORDER_SRC_KEY), is(node1 + "[2]"));
         assertThat(info.get(JcrObservationManager.ORDER_DEST_KEY), is(nullValue()));
         assertTrue("Path for new location of moved node is wrong: actual=" + moveNodeListenerEvents.get(0).getPath()
-                           + ", expected=" + getRoot().getPath() + "/" + node1 + "[3]",
+                   + ", expected=" + getRoot().getPath() + "/" + node1 + "[3]",
                    containsPath(moveNodeListener, getRoot().getPath() + "/" + node1 + "[3]"));
         assertTrue("Added reordered node has wrong path: actual=" + addNodeListener.getEvents().get(0).getPath() + ", expected="
-                           + n1.getPath() + "[3]", containsPath(addNodeListener, n1.getPath() + "[3]"));
+                   + n1.getPath() + "[3]", containsPath(addNodeListener, n1.getPath() + "[3]"));
         assertTrue("Removed reordered node path not found: " + n1.getPath() + "[2]",
                    containsPath(removeNodeListener, n1.getPath() + "[2]"));
         assertTrue("Removed node path not found: " + removedPath, containsPath(removeNodeListener, removedPath));
@@ -1205,6 +1240,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
     /**
      * @see PropertyAddedTest#testMultiPropertyAdded()
+     * @throws Exception
      */
     @Test
     public void shouldTestPropertyAddedTest_testMultiPropertyAdded() throws Exception {
@@ -1232,6 +1268,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
     /**
      * @see PropertyAddedTest#testSinglePropertyAdded()
+     * @throws Exception
      */
     @Test
     public void shouldTestPropertyAddedTest_testSinglePropertyAdded() throws Exception {
@@ -1253,12 +1290,13 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         // tests
         checkResults(listener);
         assertTrue("Path for added property is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
-                           + prop1.getPath(),
+                   + prop1.getPath(),
                    containsPath(listener, prop1.getPath()));
     }
 
     /**
      * @see PropertyAddedTest#testSystemGenerated()
+     * @throws Exception
      */
     @Test
     public void shouldTestPropertyAddedTest_testSystemGenerated() throws Exception {
@@ -1285,6 +1323,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
     /**
      * @see PropertyChangedTest#testMultiPropertyChanged()
+     * @throws Exception
      */
     @Test
     public void shouldTestPropertyChangedTests_testMultiPropertyChanged() throws Exception {
@@ -1314,6 +1353,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
     /**
      * @see PropertyChangedTest#testPropertyRemoveCreate()
+     * @throws Exception
      */
     @Test
     public void shouldTestPropertyChangedTests_testPropertyRemoveCreate() throws Exception {
@@ -1343,18 +1383,19 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         if (listener1.getEvents().size() == 1) {
             checkResults(listener1);
             assertTrue("Path for removed then added property is wrong: actual=" + listener1.getEvents().get(0).getPath()
-                               + ", expected=" + propPath, containsPath(listener1, propPath));
+                       + ", expected=" + propPath, containsPath(listener1, propPath));
         } else {
             checkResults(listener2);
             assertTrue("Path for removed then added property is wrong: actual=" + listener2.getEvents().get(0).getPath()
-                               + ", expected=" + propPath, containsPath(listener2, propPath));
+                       + ", expected=" + propPath, containsPath(listener2, propPath));
             assertTrue("Path for removed then added property is wrong: actual=" + listener2.getEvents().get(1).getPath()
-                               + ", expected=" + propPath, containsPath(listener2, propPath));
+                       + ", expected=" + propPath, containsPath(listener2, propPath));
         }
     }
 
     /**
      * @see PropertyChangedTest#testSinglePropertyChanged()
+     * @throws Exception
      */
     @Test
     public void shouldTestPropertyChangedTests_testSinglePropertyChanged() throws Exception {
@@ -1377,12 +1418,13 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         // tests
         checkResults(listener);
         assertTrue("Path for changed property is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
-                           + prop1.getPath(),
+                   + prop1.getPath(),
                    containsPath(listener, prop1.getPath()));
     }
 
     /**
      * @see PropertyChangedTest#testSinglePropertyChangedWithAdded()
+     * @throws Exception
      */
     @Test
     public void shouldTestPropertyChangedTests_testSinglePropertyChangedWithAdded() throws Exception {
@@ -1406,7 +1448,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         // tests
         checkResults(listener);
         assertTrue("Path for changed property is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
-                           + prop1.getPath(),
+                   + prop1.getPath(),
                    containsPath(listener, prop1.getPath()));
     }
 
@@ -1416,6 +1458,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
     /**
      * @see PropertyRemovedTest#testMultiPropertyRemoved()
+     * @throws Exception
      */
     @Test
     public void shouldTestPropertyRemovedTest_testMultiPropertyRemoved() throws Exception {
@@ -1448,6 +1491,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
     /**
      * @see PropertyRemovedTest#testSinglePropertyRemoved()
+     * @throws Exception
      */
     @Test
     public void shouldTestPropertyRemovedTest_testSinglePropertyRemoved() throws Exception {
@@ -1471,7 +1515,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         // tests
         checkResults(listener);
         assertTrue("Path for removed property is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
-                           + propPath, containsPath(listener, propPath));
+                   + propPath, containsPath(listener, propPath));
     }
 
     // ===========================================================================================================================
@@ -1480,6 +1524,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
     /**
      * @see AddEventListenerTest#testIsDeepFalseNodeAdded()
+     * @throws Exception
      */
     @Test
     public void shouldTestAddEventListenerTest_testIsDeepFalseNodeAdded() throws Exception {
@@ -1501,12 +1546,13 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
         checkResults(listener);
         assertTrue("Child node path is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
-                           + childNode.getPath(),
+                   + childNode.getPath(),
                    containsPath(listener, childNode.getPath()));
     }
 
     /**
      * @see AddEventListenerTest#testIsDeepFalsePropertyAdded()
+     * @throws Exception
      */
     @Test
     public void shouldTestAddEventListenerTest_testIsDeepFalsePropertyAdded() throws Exception {
@@ -1531,12 +1577,13 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         // tests
         checkResults(listener);
         assertTrue("Path for added property is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
-                           + n1Prop.getPath(),
+                   + n1Prop.getPath(),
                    containsPath(listener, n1Prop.getPath()));
     }
 
     /**
      * @see AddEventListenerTest#testNodeType()
+     * @throws Exception
      */
     @Test
     public void shouldTestAddEventListenerTest_testNodeType() throws Exception {
@@ -1573,6 +1620,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
     /**
      * @see AddEventListenerTest#testNoLocalTrue()
+     * @throws Exception
      */
     @Test
     public void shouldTestAddEventListenerTest_testNoLocalTrue() throws Exception {
@@ -1593,6 +1641,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
     /**
      * @see AddEventListenerTest#testPath()
+     * @throws Exception
      */
     @Test
     public void shouldTestAddEventListenerTest_testPath() throws Exception {
@@ -1615,12 +1664,13 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         // tests
         checkResults(listener);
         assertTrue("Child node path is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
-                           + childNode.getPath(),
+                   + childNode.getPath(),
                    containsPath(listener, childNode.getPath()));
     }
 
     /**
      * @see AddEventListenerTest#testUUID()
+     * @throws Exception
      */
     @Test
     public void shouldTestAddEventListenerTest_testUUID() throws Exception {
@@ -1662,8 +1712,9 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
     /**
      * @see WorkspaceOperationTest#testCopy()
+     * @throws Exception
      */
-    //TODO author=Horia Chiorean date=3/2/12 description=Enable when workspace.copy is implemented
+    // TODO author=Horia Chiorean date=3/2/12 description=Enable when workspace.copy is implemented
     @Ignore
     @Test
     public void shouldTestWorkspaceOperationTest_testCopy() throws Exception {
@@ -1693,6 +1744,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
     /**
      * @see WorkspaceOperationTest#testMove()
+     * @throws Exception
      */
     @SuppressWarnings( "unchecked" )
     @Test
@@ -1733,19 +1785,20 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         assertThat(info.get(JcrObservationManager.ORDER_SRC_KEY), is(nullValue()));
         assertThat(info.get(JcrObservationManager.ORDER_DEST_KEY), is(nullValue()));
         assertTrue("Path for new location of moved node is wrong: actual=" + moveNodeListener.getEvents().get(0).getPath()
-                           + ", expected=" + targetPath, containsPath(moveNodeListener, targetPath));
+                   + ", expected=" + targetPath, containsPath(moveNodeListener, targetPath));
         assertTrue("Path for new location of moved node is wrong: actual=" + addNodeListener.getEvents().get(0).getPath()
-                           + ", expected=" + targetPath, containsPath(addNodeListener, targetPath));
+                   + ", expected=" + targetPath, containsPath(addNodeListener, targetPath));
         assertTrue("Path for old location of moved node is wrong: actual=" + removeNodeListener.getEvents().get(0).getPath()
-                           + ", expected=" + oldPath, containsPath(removeNodeListener, oldPath));
+                   + ", expected=" + oldPath, containsPath(removeNodeListener, oldPath));
     }
 
     /**
      * @see WorkspaceOperationTest#testRename()
+     * @throws Exception
      */
     @SuppressWarnings( "unchecked" )
     @Test
-    @FixFor("MODE-1410")
+    @FixFor( "MODE-1410" )
     @Ignore
     public void shouldTestWorkspaceOperationTest_testRename() throws Exception {
         // setup
@@ -1782,11 +1835,11 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         assertThat(info.get(JcrObservationManager.ORDER_SRC_KEY), is(nullValue()));
         assertThat(info.get(JcrObservationManager.ORDER_DEST_KEY), is(nullValue()));
         assertTrue("Path for new location of moved node is wrong: actual=" + moveNodeListener.getEvents().get(0).getPath()
-                           + ", expected=" + renamedPath, containsPath(moveNodeListener, renamedPath));
+                   + ", expected=" + renamedPath, containsPath(moveNodeListener, renamedPath));
         assertTrue("Path for renamed node is wrong: actual=" + addNodeListener.getEvents().get(0).getPath() + ", expected="
-                           + renamedPath, containsPath(addNodeListener, renamedPath));
+                   + renamedPath, containsPath(addNodeListener, renamedPath));
         assertTrue("Path for old name of renamed node is wrong: actual=" + removeNodeListener.getEvents().get(0).getPath()
-                           + ", expected=" + oldPath, containsPath(removeNodeListener, oldPath));
+                   + ", expected=" + oldPath, containsPath(removeNodeListener, oldPath));
     }
 
     @Test
@@ -1843,12 +1896,12 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         checkResults(listener);
     }
 
-    //TODO author=Horia Chiorean date=3/2/12 description=Decide if this still applies to 3.x. If yes, fix and re-enable
+    // TODO author=Horia Chiorean date=3/2/12 description=Decide if this still applies to 3.x. If yes, fix and re-enable
     @FixFor( "MODE-786" )
     @Test
     @Ignore
     public void shouldReceiveEventsForChangesToRepositoryNamespacesInSystemContent() throws Exception {
-        //JIRA issue opened for this is: MODE-1408
+        // JIRA issue opened for this is: MODE-1408
         String uri = "http://acme.com/example/foobar/";
         String prefix = "foobar";
         assertNoRepositoryNamespace(uri, prefix);
@@ -1936,8 +1989,9 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     @FixFor( " MODE-1315 " )
     @Test
     public void shouldReceiveEventWhenPropertyDeletedOnCustomNode() throws Exception {
-        session.getWorkspace().getNodeTypeManager().registerNodeTypes(getClass().getClassLoader().getResourceAsStream(
-                "cars.cnd"), true);
+        session.getWorkspace()
+               .getNodeTypeManager()
+               .registerNodeTypes(getClass().getClassLoader().getResourceAsStream("cars.cnd"), true);
 
         Node car = getRoot().addNode("car", "car:Car");
         car.setProperty("car:maker", "Audi");
@@ -1975,8 +2029,8 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
         // tests
         checkResults(listener);
-        assertTrue("Path for added node is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected=" + addedNode
-                .getPath(),
+        assertTrue("Path for added node is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
+                   + addedNode.getPath(),
                    containsPath(listener, addedNode.getPath()));
 
         // Now check the userdata in the events ...
@@ -2018,7 +2072,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         // tests
         checkResults(listener);
         assertTrue("Path for added node is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
-                           + addedNode.getPath(),
+                   + addedNode.getPath(),
                    containsPath(listener, addedNode.getPath()));
 
         // Now check the userdata in the events ...
@@ -2062,7 +2116,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         // tests
         checkResults(listener);
         assertTrue("Path for added node is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
-                           + addedNode.getPath(),
+                   + addedNode.getPath(),
                    containsPath(listener, addedNode.getPath()));
 
         // Now check the userdata in the events ...
@@ -2112,7 +2166,6 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         session.getWorkspace().getLockManager().lock(node.getPath(), isDeep, isSessionScoped, 1L, "owner");
     }
 
-
     /**
      * Test implementation of an {@link javax.jcr.observation.EventListener}
      */
@@ -2154,7 +2207,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see javax.jcr.observation.EventListener#onEvent(javax.jcr.observation.EventIterator)
          */
         public void onEvent( EventIterator itr ) {
@@ -2167,7 +2220,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
                 if (position == 0) {
                     while (itr.hasNext()) {
                         Event event = itr.nextEvent();
-//                        System.out.println(event + " from " + this);
+                        // System.out.println(event + " from " + this);
 
                         // check iterator position
                         if (++position != itr.getPosition()) {

@@ -90,6 +90,10 @@ public class Limit implements LanguageObject, org.modeshape.jcr.api.query.qom.Li
         return rowLimit != Integer.MAX_VALUE;
     }
 
+    public final boolean isLimitedToSingleRowWithNoOffset() {
+        return rowLimit == 1 && offset == 0;
+    }
+
     @Override
     public final boolean isOffset() {
         return offset > 0;

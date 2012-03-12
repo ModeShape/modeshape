@@ -28,6 +28,7 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import org.junit.Before;
@@ -37,7 +38,7 @@ import org.modeshape.common.collection.Problems;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.GraphI18n;
 import org.modeshape.jcr.api.query.qom.Operator;
-import org.modeshape.jcr.cache.NodeCache;
+import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.query.AbstractQueryTest;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.model.ArithmeticOperand;
@@ -98,7 +99,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         builder.addView("type2",
                         "SELECT all.a3, all.a4 FROM all WHERE all.primaryType IN ('t2','t0') AND all.mixins IN ('t4','t5')");
         Schemata schemata = builder.build();
-        context = new QueryContext(executionContext, mock(NodeCache.class), "workspace", schemata);
+        context = new QueryContext(executionContext, mock(RepositoryCache.class), Collections.singleton("workspace"), schemata);
 
         node = new PlanNode(Type.ACCESS);
 

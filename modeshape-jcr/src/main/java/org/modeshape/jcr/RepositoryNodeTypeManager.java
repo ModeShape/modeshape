@@ -33,6 +33,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.jcr.PropertyType;
@@ -178,22 +179,37 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
     /**
      * Allows the collection of node types to be unregistered if they are not referenced by other node types as supertypes,
      * default primary types of child nodes, or required primary types of child nodes.
-     * <p>
-     * <b>NOTE: This method does not check to see if any of the node types are currently being used. Unregistering a node type
-     * that is being used will cause the system to become unstable</b>
-     * </p>
      * 
      * @param nodeTypeNames the names of the node types to be unregistered
+     * @param failIfNodeTypesAreUsed true if this method should fail to unregister the named node types if any of the node types
+     *        are still in use by nodes, or false if this method should not perform such a check
      * @throws NoSuchNodeTypeException if any of the node type names do not correspond to a registered node type
      * @throws InvalidNodeTypeDefinitionException if any of the node types with the given names cannot be unregistered because
      *         they are the supertype, one of the required primary types, or a default primary type of a node type that is not
      *         being unregistered.
      * @throws RepositoryException if any other error occurs
      */
-    void unregisterNodeType( Collection<Name> nodeTypeNames )
+    void unregisterNodeType( Collection<Name> nodeTypeNames,
+                             boolean failIfNodeTypesAreUsed )
         throws NoSuchNodeTypeException, InvalidNodeTypeDefinitionException, RepositoryException {
         CheckArg.isNotNull(nodeTypeNames, "nodeTypeNames");
         if (nodeTypeNames.isEmpty()) return;
+
+        if (failIfNodeTypesAreUsed) {
+            long start = System.nanoTime();
+            // Search the content graph to make sure that this type isn't being used
+            for (Name nodeTypeName : nodeTypeNames) {
+                if (isNodeTypeInUse(nodeTypeName)) {
+                    String name = nodeTypeName.getString(context.getNamespaceRegistry());
+                    throw new InvalidNodeTypeDefinitionException(JcrI18n.cannotUnregisterInUseType.text(name));
+                }
+            }
+            long time = TimeUnit.MILLISECONDS.convert(System.nanoTime() - start, TimeUnit.NANOSECONDS);
+            logger.debug("{0} milliseconds to check if any of these node types are unused before unregistering them: {1}",
+                         time,
+                         nodeTypeNames);
+        }
+
         try {
             /*
              * Grab an exclusive lock on this data to keep other nodes from being added/saved while the unregistration checks are occurring
@@ -250,14 +266,6 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
                         }
                     }
                 }
-
-                /*
-                 * Search the content graph to make sure that this type isn't being used
-                 */
-                if (isNodeTypeInUse(nodeTypeName)) {
-                    throw new InvalidNodeTypeDefinitionException(JcrI18n.cannotUnregisterInUseType.text(name));
-
-                }
             }
 
             // Create the new cache ...
@@ -272,6 +280,7 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
 
             // Now change the cache ...
             this.nodeTypesCache = newNodeTypes;
+            this.schemata = null;
         } finally {
             nodeTypesLock.writeLock().unlock();
         }
@@ -308,19 +317,13 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
 
         Schemata schemata = getRepositorySchemata();
 
+        // Now query the entire repository for any nodes that use this node type ...
         RepositoryCache repoCache = repository.repositoryCache();
         RepositoryQueryManager queryManager = repository.queryManager();
         Set<String> workspaceNames = repoCache.getWorkspaceNames();
-        for (String workspaceName : workspaceNames) {
-            NodeCache nodeCache = repoCache.getWorkspaceCache(workspaceName);
-            QueryResults result = queryManager.query(context, nodeCache, workspaceName, command, schemata, null, null);
-
-            if (result.getRowCount() > 0) {
-                return true;
-            }
-        }
-
-        return false;
+        Map<String, NodeCache> overridden = null;
+        QueryResults result = queryManager.query(context, repoCache, workspaceNames, overridden, command, schemata, null, null);
+        return result.getRowCount() > 0;
     }
 
     /**
@@ -528,6 +531,7 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
 
                 // And finally update the capabilities cache ...
                 this.nodeTypesCache = newNodeTypes;
+                this.schemata = null;
             }
         } finally {
             nodeTypesLock.writeLock().unlock();
@@ -692,7 +696,7 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
             registerNodeTypes(nodeTypes, false, false, false);
 
             // Unregister those that were removed ...
-            unregisterNodeType(nodeTypesToDelete);
+            unregisterNodeType(nodeTypesToDelete, false);
         } catch (Throwable e) {
             logger.error(e, JcrI18n.errorRefreshingNodeTypes, repository.name());
         } finally {
@@ -720,6 +724,11 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
             this.nodeTypesLock.writeLock().unlock();
         }
         return true;
+    }
+
+    @Override
+    public String toString() {
+        return getNodeTypes().toString();
     }
 
     @Immutable

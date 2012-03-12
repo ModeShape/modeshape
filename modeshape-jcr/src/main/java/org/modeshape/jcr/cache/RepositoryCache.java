@@ -29,7 +29,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicLong;
-import javax.transaction.TransactionManager;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
@@ -76,21 +75,19 @@ public class RepositoryCache implements Observable {
     private final String repoKey;
     private final String sourceKey;
     private final String rootNodeId;
-    private final TransactionManager txnMgr;
     private final ChangeBus changeBus;
     private final NodeKey systemMetadataKey;
     private final NodeKey systemKey;
     private final Set<String> workspaceNames;
     private final String systemWorkspaceName;
     private final Logger logger;
-    private final SessionCacheMonitor sessionCacheMonitor;
+    private final SessionEnvironment sessionContext;
 
     public RepositoryCache( ExecutionContext context,
                             SchematicDb database,
                             RepositoryConfiguration configuration,
-                            TransactionManager transactionManager,
                             ContentInitializer initializer,
-                            SessionCacheMonitor monitor,
+                            SessionEnvironment sessionContext,
                             ChangeBus changeBus ) {
         this.context = context;
         this.configuration = configuration;
@@ -100,10 +97,9 @@ public class RepositoryCache implements Observable {
         this.repoKey = NodeKey.keyForSourceName(this.name);
         this.sourceKey = NodeKey.keyForSourceName(configuration.getStoreName());
         this.rootNodeId = RepositoryConfiguration.ROOT_NODE_ID;
-        this.txnMgr = transactionManager;
         this.logger = Logger.getLogger(getClass());
         this.workspaceCachesByName = new ConcurrentHashMap<String, WorkspaceCache>();
-        this.sessionCacheMonitor = monitor;
+        this.sessionContext = sessionContext;
 
         // Initialize the workspaces ..
         this.systemWorkspaceName = RepositoryConfiguration.SYSTEM_WORKSPACE_NAME;
@@ -112,9 +108,9 @@ public class RepositoryCache implements Observable {
         this.workspaceNames = new CopyOnWriteArraySet<String>(configuration.getAllWorkspaceNames());
         refreshWorkspaces(false);
 
-        //this.eventBus = eventBus;
+        // this.eventBus = eventBus;
         this.changeBus = changeBus;
-//        this.eventBus = new MultiplexingChangeSetListener();
+        // this.eventBus = new MultiplexingChangeSetListener();
         this.changeBus.register(new LocalChangeListener());
 
         // Make sure the system workspace is configured to have a 'jcr:system' node ...
@@ -296,8 +292,7 @@ public class RepositoryCache implements Observable {
             trans.setProperty(rootDoc, context.getPropertyFactory().create(JcrLexicon.UUID, rootKey.toString()), null);
 
             database.putIfAbsent(rootKey.toString(), rootDoc, null);
-            cache = new WorkspaceCache(context, getKey(), name, database, minimumBinarySizeInBytes.get(), rootKey,
-                                       changeBus);
+            cache = new WorkspaceCache(context, getKey(), name, database, minimumBinarySizeInBytes.get(), rootKey, changeBus);
             WorkspaceCache existing = workspaceCachesByName.putIfAbsent(name, cache);
             if (existing != null) {
                 // Some other thread snuck in and created the cache for this workspace, so use it instead ...
@@ -438,9 +433,9 @@ public class RepositoryCache implements Observable {
                                        String workspaceName,
                                        boolean readOnly ) {
         if (readOnly) {
-            return new ReadOnlySessionCache(context, workspace(workspaceName), sessionCacheMonitor);
+            return new ReadOnlySessionCache(context, workspace(workspaceName), sessionContext);
         }
-        return new WritableSessionCache(context, workspace(workspaceName), txnMgr, sessionCacheMonitor);
+        return new WritableSessionCache(context, workspace(workspaceName), sessionContext);
     }
 
     public static interface ContentInitializer {

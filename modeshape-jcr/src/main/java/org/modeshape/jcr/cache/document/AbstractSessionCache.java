@@ -32,7 +32,7 @@ import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.SessionCache;
-import org.modeshape.jcr.cache.SessionCacheMonitor;
+import org.modeshape.jcr.cache.SessionEnvironment;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PathFactory;
@@ -68,20 +68,20 @@ public abstract class AbstractSessionCache implements SessionCache, DocumentCach
     private final NameFactory nameFactory;
     private final PathFactory pathFactory;
     private final Path rootPath;
-    private final SessionCacheMonitor monitor;
+    private final SessionEnvironment sessionContext;
 
     private ExecutionContext context;
 
     protected AbstractSessionCache( ExecutionContext context,
                                     WorkspaceCache workspaceCache,
-                                    SessionCacheMonitor monitor ) {
+                                    SessionEnvironment sessionContext ) {
         this.context = context;
         this.workspaceCache = workspaceCache;
         ValueFactories factories = this.context.getValueFactories();
         this.nameFactory = factories.getNameFactory();
         this.pathFactory = factories.getPathFactory();
         this.rootPath = this.pathFactory.createRootPath();
-        this.monitor = monitor;
+        this.sessionContext = sessionContext;
     }
 
     @Override
@@ -114,8 +114,8 @@ public abstract class AbstractSessionCache implements SessionCache, DocumentCach
         return rootPath;
     }
 
-    final SessionCacheMonitor monitor() {
-        return monitor;
+    final SessionEnvironment sessionContext() {
+        return sessionContext;
     }
     
     @Override

@@ -28,6 +28,7 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -36,20 +37,24 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Set;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import javax.jcr.SimpleCredentials;
+import javax.jcr.Value;
 import javax.jcr.nodetype.InvalidNodeTypeDefinitionException;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
+import org.infinispan.schematic.document.Document;
+import org.infinispan.schematic.document.Json;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -69,8 +74,18 @@ import org.modeshape.jcr.value.Path.Segment;
  * Also, because queries are read-only, the engine is set up once and used for the entire set of test methods.
  * </p>
  */
-@Ignore
 public class JcrQueryManagerTest extends MultiUseAbstractTest {
+
+    private static final boolean WRITE_INDEXES_TO_FILE = false;
+
+    /** The total number of nodes at or below '/jcr:system' */
+    protected static final int TOTAL_SYSTEM_NODE_COUNT = 54;
+
+    /** The total number of nodes excluding '/jcr:system' */
+    protected static final int TOTAL_NON_SYSTEM_NODE_COUNT = 25;
+
+    /** The total number of nodes */
+    protected static final int TOTAL_NODE_COUNT = TOTAL_SYSTEM_NODE_COUNT + TOTAL_NON_SYSTEM_NODE_COUNT;
 
     protected static URI resourceUri( String name ) throws URISyntaxException {
         return resourceUrl(name).toURI();
@@ -85,13 +100,15 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     }
 
     protected static String[] carColumnNames() {
-        return new String[] {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:engine", "car:mpgHighway",
-            "car:valueRating", "jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model", "car:msrp", "jcr:created",
-            "jcr:createdBy", "jcr:name", "jcr:path", "jcr:score", "mode:depth", "mode:localName", "car:alternateModels"};
+        return new String[] {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:mpgHighway", "car:engine",
+            "car:valueRating", "jcr:primaryType", "jcr:mixinTypes", "car:wheelbaseInInches", "car:model", "car:year", "car:msrp",
+            "jcr:created", "jcr:createdBy", "jcr:name", "jcr:path", "jcr:score", "mode:depth", "mode:localName",
+            "car:alternateModels"};
     }
 
     protected static String[] minimumColumnNames() {
-        return new String[] {"jcr:primaryType", "jcr:name", "jcr:path", "jcr:score", "mode:depth", "mode:localName"};
+        return new String[] {"jcr:primaryType", "jcr:mixinTypes", "jcr:name", "jcr:path", "jcr:score", "mode:depth",
+            "mode:localName"};
     }
 
     protected static String[] searchColumnNames() {
@@ -103,7 +120,19 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     @SuppressWarnings( "deprecation" )
     @BeforeClass
     public static void beforeAll() throws Exception {
-        MultiUseAbstractTest.beforeAll();
+        if (WRITE_INDEXES_TO_FILE) {
+            String configFileName = JcrQueryManagerTest.class.getSimpleName() + ".json";
+            String configFilePath = "config/" + configFileName;
+            InputStream configStream = JcrQueryManagerTest.class.getClassLoader().getResourceAsStream(configFilePath);
+            assertThat("Unable to find configuration file '" + configFilePath, configStream, is(notNullValue()));
+
+            Document configDoc = Json.read(configStream);
+            RepositoryConfiguration config = new RepositoryConfiguration(configDoc, configFileName);
+            startRepository(config);
+        } else {
+            startRepository(null);
+        }
+
         try {
             // Use a session to load the contents ...
             JcrSession session = repository.login();
@@ -236,34 +265,119 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         }
     }
 
-    public class RowResult {
+    public interface RowResult {
+        public RowResult has( String columnName,
+                              String value ) throws RepositoryException;
+
+        public RowResult has( String columnName,
+                              long value ) throws RepositoryException;
+
+        public RowResult and( String columnName,
+                              String value ) throws RepositoryException;
+
+        public RowResult and( String columnName,
+                              long value ) throws RepositoryException;
+    }
+
+    public class SpecificRowResult implements RowResult {
         private final Row row;
 
-        public RowResult( Row row ) {
+        public SpecificRowResult( Row row ) {
             this.row = row;
         }
 
+        @Override
         public RowResult has( String columnName,
                               String value ) throws RepositoryException {
             assertThat(row.getValue(columnName).getString(), is(value));
             return this;
         }
 
+        @Override
         public RowResult has( String columnName,
                               long value ) throws RepositoryException {
             assertThat(row.getValue(columnName).getLong(), is(value));
             return this;
         }
 
+        @Override
         public RowResult and( String columnName,
                               String value ) throws RepositoryException {
             return has(columnName, value);
         }
 
+        @Override
         public RowResult and( String columnName,
                               long value ) throws RepositoryException {
             return has(columnName, value);
         }
+    }
+
+    public class SomeRowResult implements RowResult {
+        private final QueryResult result;
+        private final List<Row> matchingRows = new LinkedList<Row>();
+
+        public SomeRowResult( QueryResult result ) throws RepositoryException {
+            this.result = result;
+            for (RowIterator iterator = result.getRows(); iterator.hasNext();) {
+                Row row = iterator.nextRow();
+                matchingRows.add(row);
+            }
+        }
+
+        @Override
+        public RowResult has( String columnName,
+                              long value ) throws RepositoryException {
+            // Remove all the rows that don't have a matching value ...
+            ListIterator<Row> iter = matchingRows.listIterator();
+            while (iter.hasNext()) {
+                Row row = iter.next();
+                if (row.getValue(columnName).getLong() != value) iter.remove();
+            }
+            if (matchingRows.isEmpty()) {
+                fail("Failed to find row");
+            }
+            return this;
+        }
+
+        @Override
+        public RowResult has( String columnName,
+                              String value ) throws RepositoryException {
+            // Remove all the rows that don't have a matching value ...
+            ListIterator<Row> iter = matchingRows.listIterator();
+            while (iter.hasNext()) {
+                Row row = iter.next();
+                Value actualValue = row.getValue(columnName);
+                if (actualValue == null && value == null) continue;
+                if (actualValue != null && actualValue.getString().equals(value)) continue;
+                iter.remove();
+            }
+            if (matchingRows.isEmpty()) {
+                fail("Failed to find row");
+            }
+            return this;
+        }
+
+        @Override
+        public RowResult and( String columnName,
+                              long value ) throws RepositoryException {
+            return has(columnName, value);
+        }
+
+        @Override
+        public RowResult and( String columnName,
+                              String value ) throws RepositoryException {
+            return has(columnName, value);
+        }
+
+        @Override
+        public String toString() {
+            return result.toString();
+        }
+    }
+
+    protected RowResult assertRow( QueryResult result ) throws RepositoryException {
+        return new SomeRowResult(result);
     }
 
     protected RowResult assertRow( QueryResult result,
@@ -274,7 +388,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
             row = rowIter.nextRow();
         }
         assertThat(row, is(notNullValue()));
-        return new RowResult(row);
+        return new SpecificRowResult(row);
     }
 
     @Test
@@ -309,7 +423,19 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 25);
+        assertResults(query, result, TOTAL_NODE_COUNT);
+        assertResultsHaveColumns(result, minimumColumnNames());
+    }
+
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllNodesWithOrderByPath() throws RepositoryException {
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("SELECT * FROM [nt:base] ORDER BY [jcr:path]", Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, TOTAL_NODE_COUNT);
         assertResultsHaveColumns(result, minimumColumnNames());
     }
 
@@ -370,7 +496,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 25);
+        assertResults(query, result, TOTAL_NODE_COUNT);
         assertResultsHaveColumns(result, "bogus", "laughable", "argle", "car:year");
     }
 
@@ -494,12 +620,27 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 3L);
         assertResultsHaveColumns(result, "car:maker", "car:model", "car:year", "car:msrp");
-        assertRow(result, 1).has("car:model", "Altima").and("car:msrp", "$18,260").and("car:year", 2008);
-        assertRow(result, 2).has("car:model", "Prius").and("car:msrp", "$21,500").and("car:year", 2008);
-        assertRow(result, 3).has("car:model", "Highlander").and("car:msrp", "$34,200").and("car:year", 2008);
+        assertRow(result).has("car:model", "Altima").and("car:msrp", "$18,260").and("car:year", 2008);
+        assertRow(result).has("car:model", "Highlander").and("car:msrp", "$34,200").and("car:year", 2008);
+        assertRow(result).has("car:model", "Prius").and("car:msrp", "$21,500").and("car:year", 2008);
     }
 
-    @Ignore
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllCarsUnderHybridWithOrderBy() throws RepositoryException {
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("SELECT car.[car:maker], car.[car:model], car.[car:year], car.[car:msrp] FROM [car:Car] AS car WHERE PATH(car) LIKE '%/Hybrid/%' ORDER BY [jcr:name]",
+                                          Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 3L);
+        assertResultsHaveColumns(result, "car:maker", "jcr:name", "car:model", "car:year", "car:msrp");
+        assertRow(result, 1).has("car:model", "Altima").and("car:msrp", "$18,260").and("car:year", 2008);
+        assertRow(result, 2).has("car:model", "Highlander").and("car:msrp", "$34,200").and("car:year", 2008);
+        assertRow(result, 3).has("car:model", "Prius").and("car:msrp", "$21,500").and("car:year", 2008);
+    }
+
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryUsingJoinToFindAllCarsUnderHybrid() throws RepositoryException {
         Query query = session.getWorkspace()
@@ -509,8 +650,11 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 12);
-        assertResultsHaveColumns(result, carColumnNames());
+        assertResults(query, result, 3L);
+        assertResultsHaveColumns(result, "car:maker", "car:model", "car:year", "car:msrp");
+        assertRow(result).has("car:model", "Altima").and("car:msrp", "$18,260").and("car:year", 2008);
+        assertRow(result).has("car:model", "Highlander").and("car:msrp", "$34,200").and("car:year", 2008);
+        assertRow(result).has("car:model", "Prius").and("car:msrp", "$21,500").and("car:year", 2008);
     }
 
     @Test
@@ -529,7 +673,6 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         String sql = "SELECT x.propA AS pa, y.propB as pb FROM [nt:unstructured] AS x INNER JOIN [nt:unstructured] AS y ON x.propA = y.propB WHERE x.propA = 'value1'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
-        // print = true;
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 2);
@@ -641,8 +784,8 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResults(query, result, 5L);
         String[] expectedColumnNames = {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:engine",
             "car:mpgHighway", "car:valueRating", "car.jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model",
-            "car:msrp", "jcr:created", "jcr:createdBy", "category.jcr:primaryType", "jcr:name", "jcr:path", "jcr:score",
-            "mode:depth", "mode:localName", "car:alternateModels"};
+            "car:msrp", "jcr:created", "jcr:createdBy", "category.jcr:primaryType", "jcr:mixinTypes", "jcr:name", "jcr:path",
+            "jcr:score", "mode:depth", "mode:localName", "car:alternateModels"};
         assertResultsHaveColumns(result, expectedColumnNames);
     }
 
@@ -659,10 +802,10 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 26L);
         String[] expectedColumnNames = {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:engine",
-            "car:mpgHighway", "car:valueRating", "car.jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model",
-            "car:msrp", "jcr:created", "jcr:createdBy", "all.jcr:primaryType", "car.jcr:name", "car.jcr:path", "car.jcr:score",
-            "car.mode:depth", "car.mode:localName", "all.jcr:name", "all.jcr:path", "all.jcr:score", "all.mode:depth",
-            "all.mode:localName", "car:alternateModels"};
+            "car:mpgHighway", "car:valueRating", "car.jcr:primaryType", "car.jcr:mixinTypes", "car:wheelbaseInInches",
+            "car:year", "car:model", "car:msrp", "jcr:created", "jcr:createdBy", "all.jcr:primaryType", "car.jcr:name",
+            "car.jcr:path", "car.jcr:score", "car.mode:depth", "car.mode:localName", "all.jcr:mixinTypes", "all.jcr:name",
+            "all.jcr:path", "all.jcr:score", "all.mode:depth", "all.mode:localName", "car:alternateModels"};
         assertResultsHaveColumns(result, expectedColumnNames);
     }
 
@@ -675,10 +818,11 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 13L);
         String[] expectedColumnNames = {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:engine",
-            "car:mpgHighway", "car:valueRating", "car.jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model",
-            "car:msrp", "jcr:created", "jcr:createdBy", "category.jcr:primaryType", "car.jcr:name", "car.jcr:path",
-            "car.jcr:score", "car.mode:depth", "car.mode:localName", "category.jcr:name", "category.jcr:path",
-            "category.jcr:score", "category.mode:depth", "category.mode:localName", "car:alternateModels"};
+            "car:mpgHighway", "car:valueRating", "car.jcr:primaryType", "car.jcr:mixinTypes", "car:wheelbaseInInches",
+            "car:year", "car:model", "car:msrp", "jcr:created", "jcr:createdBy", "category.jcr:primaryType", "car.jcr:name",
+            "car.jcr:path", "car.jcr:score", "car.mode:depth", "car.mode:localName", "category.jcr:mixinTypes",
+            "category.jcr:name", "category.jcr:path", "category.jcr:score", "category.mode:depth", "category.mode:localName",
+            "car:alternateModels"};
         assertResultsHaveColumns(result, expectedColumnNames);
     }
 
@@ -704,8 +848,8 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResults(query, result, 5L);
         String[] expectedColumnNames = {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:engine",
             "car:mpgHighway", "car:valueRating", "car.jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model",
-            "car:msrp", "jcr:created", "jcr:createdBy", "category.jcr:primaryType", "jcr:name", "jcr:path", "jcr:score",
-            "mode:depth", "mode:localName", "car:alternateModels"};
+            "car:msrp", "jcr:created", "jcr:createdBy", "category.jcr:primaryType", "jcr:mixinTypes", "jcr:name", "jcr:path",
+            "jcr:score", "mode:depth", "mode:localName", "car:alternateModels"};
         assertResultsHaveColumns(result, expectedColumnNames);
     }
 
@@ -718,9 +862,10 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 13L);
-        String[] expectedColumns = {"category.jcr:primaryType", "cars.jcr:primaryType", "cars.jcr:name", "cars.jcr:path",
-            "cars.jcr:score", "cars.mode:depth", "cars.mode:localName", "category.jcr:name", "category.jcr:path",
-            "category.jcr:score", "category.mode:depth", "category.mode:localName"};
+        String[] expectedColumns = {"category.jcr:primaryType", "cars.jcr:primaryType", "cars.jcr:mixinTypes",
+            "category.jcr:mixinTypes", "cars.jcr:name", "cars.jcr:path", "cars.jcr:score", "cars.mode:depth",
+            "cars.mode:localName", "category.jcr:name", "category.jcr:path", "category.jcr:score", "category.mode:depth",
+            "category.mode:localName"};
 
         assertResultsHaveColumns(result, expectedColumns);
     }
@@ -735,9 +880,10 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 3L);
-        String[] expectedColumns = {"category.jcr:primaryType", "cars.jcr:primaryType", "cars.jcr:name", "cars.jcr:path",
-            "cars.jcr:score", "cars.mode:depth", "cars.mode:localName", "category.jcr:name", "category.jcr:path",
-            "category.jcr:score", "category.mode:depth", "category.mode:localName"};
+        String[] expectedColumns = {"category.jcr:primaryType", "cars.jcr:primaryType", "cars.jcr:mixinTypes",
+            "category.jcr:mixinTypes", "cars.jcr:name", "cars.jcr:path", "cars.jcr:score", "cars.mode:depth",
+            "cars.mode:localName", "category.jcr:name", "category.jcr:path", "category.jcr:score", "category.mode:depth",
+            "category.mode:localName"};
         assertResultsHaveColumns(result, expectedColumns);
     }
 
@@ -751,9 +897,10 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 0L); // no nodes have a 'name' property (strictly speaking)
-        String[] expectedColumns = {"category.jcr:primaryType", "cars.jcr:primaryType", "cars.jcr:name", "cars.jcr:path",
-            "cars.jcr:score", "cars.mode:depth", "cars.mode:localName", "category.jcr:name", "category.jcr:path",
-            "category.jcr:score", "category.mode:depth", "category.mode:localName"};
+        String[] expectedColumns = {"category.jcr:primaryType", "cars.jcr:primaryType", "cars.jcr:mixinTypes",
+            "category.jcr:mixinTypes", "cars.jcr:name", "cars.jcr:path", "cars.jcr:score", "cars.mode:depth",
+            "cars.mode:localName", "category.jcr:name", "category.jcr:path", "category.jcr:score", "category.mode:depth",
+            "category.mode:localName"};
         assertResultsHaveColumns(result, expectedColumns);
     }
 
@@ -767,9 +914,11 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 0); // no results, because it is a join on an invalid column
-        assertResultsHaveColumns(result, new String[] {"cars.mode:depth", "cars.mode:localName", "category.jcr:primaryType",
-            "category.jcr:score", "cars.jcr:score", "category.jcr:path", "cars.jcr:primaryType", "category.mode:localName",
-            "cars.jcr:path", "category.mode:depth", "cars.jcr:name", "category.jcr:name"});
+        String[] expectedColumns = {"category.jcr:primaryType", "cars.jcr:primaryType", "cars.jcr:mixinTypes",
+            "category.jcr:mixinTypes", "cars.jcr:name", "cars.jcr:path", "cars.jcr:score", "cars.mode:depth",
+            "cars.mode:localName", "category.jcr:name", "category.jcr:path", "category.jcr:score", "category.mode:depth",
+            "category.mode:localName"};
+        assertResultsHaveColumns(result, expectedColumns);
     }
 
     @FixFor( "MODE-869" )
@@ -810,7 +959,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         // print = true;
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 25);
+        assertResults(query, result, TOTAL_NODE_COUNT);
         assertResultsHaveColumns(result, new String[] {"jcr:primaryType"});
         RowIterator iter = result.getRows();
         String primaryType = "";
@@ -856,7 +1005,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         // print = true;
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 25);
+        assertResults(query, result, TOTAL_NODE_COUNT);
         assertResultsHaveColumns(result, new String[] {"jcr:primaryType", "jcr:path"});
         RowIterator iter = result.getRows();
         while (iter.hasNext()) {
@@ -956,7 +1105,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         // print = true;
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 25);
+        assertResults(query, result, TOTAL_NODE_COUNT);
         assertResultsHaveColumns(result, minimumColumnNames());
         RowIterator iter = result.getRows();
         while (iter.hasNext()) {
@@ -1003,10 +1152,10 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertThat(query, is(notNullValue()));
         result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 25L);
+        assertResults(query, result, TOTAL_NODE_COUNT);
 
         // Find all nodes that are NOT children of '/Cars' ... there should be 4 ...
-        sql = "SELECT [jcr:path] FROM [nt:base] WHERE NOT(ISCHILDNODE([nt:base],'/Cars')) ORDER BY [jcr:path]";
+        sql = "SELECT [jcr:path] FROM [nt:base] WHERE NOT(ISCHILDNODE([nt:base],'/Cars')) AND NOT(ISDESCENDANTNODE([nt:base],'/jcr:system')) ORDER BY [jcr:path]";
         query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
         // print = true;
@@ -1049,16 +1198,17 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
                      + " WHERE ISDESCENDANTNODE( mythirdnodetypes, '/') OR " + "myfirstnodetypes.[jcr:primaryType] IS NOT NULL";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
-        // print = true;
+        print = true;
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 47L); // currently no records
+        assertResults(query, result, 310L);
         assertResultsHaveColumns(result, new String[] {"myfirstnodetypes.jcr:path", "mythirdnodetypes.mode:depth",
             "mysecondnodetypes.mode:depth", "mythirdnodetypes.jcr:path", "mysecondnodetypes.jcr:path",
-            "mythirdnodetypes.jcr:score", "myfirstnodetypes.jcr:score", "mythirdnodetypes.jcr:name",
-            "mysecondnodetypes.jcr:score", "mythirdnodetypes.mode:localName", "myfirstnodetypes.jcr:primaryType",
-            "mysecondnodetypes.jcr:primaryType", "mysecondnodetypes.jcr:name", "myfirstnodetypes.jcr:name",
-            "mythirdnodetypes.jcr:primaryType", "myfirstnodetypes.mode:localName", "myfirstnodetypes.mode:depth",
+            "mythirdnodetypes.jcr:mixinTypes", "mythirdnodetypes.jcr:score", "myfirstnodetypes.jcr:score",
+            "mythirdnodetypes.jcr:name", "mysecondnodetypes.jcr:mixinTypes", "mysecondnodetypes.jcr:score",
+            "mythirdnodetypes.mode:localName", "myfirstnodetypes.jcr:primaryType", "mysecondnodetypes.jcr:primaryType",
+            "mysecondnodetypes.jcr:name", "myfirstnodetypes.jcr:name", "mythirdnodetypes.jcr:primaryType",
+            "myfirstnodetypes.jcr:mixinTypes", "myfirstnodetypes.mode:localName", "myfirstnodetypes.mode:depth",
             "mysecondnodetypes.mode:localName"});
         RowIterator iter = result.getRows();
         while (iter.hasNext()) {
@@ -1071,6 +1221,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     // Full-text Search Queries
     // ----------------------------------------------------------------------------------------------------------------
 
+    @Ignore
     @FixFor( "MODE-905" )
     @Test
     public void shouldBeAbleToCreateAndExecuteFullTextSearchQuery() throws RepositoryException {
@@ -1083,6 +1234,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResultsHaveColumns(result, searchColumnNames());
     }
 
+    @Ignore
     @FixFor( "MODE-905" )
     @Test
     public void shouldBeAbleToCreateAndExecuteFullTextSearchQueryWithName() throws RepositoryException {
@@ -1211,7 +1363,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         // print = true;
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 25);
+        assertResults(query, result, TOTAL_NODE_COUNT);
         assertResultsHaveColumns(result, new String[] {"jcr:primaryType", "jcr:path", "jcr:score"});
         RowIterator iter = result.getRows();
         while (iter.hasNext()) {
@@ -1314,7 +1466,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         // print = true;
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 25);
+        assertResults(query, result, TOTAL_NODE_COUNT);
         assertResultsHaveColumns(result, minimumColumnNames());
         RowIterator iter = result.getRows();
         while (iter.hasNext()) {
@@ -1345,7 +1497,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         Query query = session.getWorkspace().getQueryManager().createQuery("//element(*,nt:base)", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertResults(query, result, 25);
+        assertResults(query, result, TOTAL_NODE_COUNT);
         assertResultsHaveColumns(result, minimumColumnNames());
     }
 
@@ -1357,7 +1509,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
                              .createQuery("//element(*,nt:base) order by @jcr:path", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertResults(query, result, 25);
+        assertResults(query, result, TOTAL_NODE_COUNT);
         assertResultsHaveColumns(result, minimumColumnNames());
     }
 
@@ -1530,6 +1682,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResults(query, result, 13);
         assertResultsHaveColumns(result,
                                  "jcr:primaryType",
+                                 "jcr:mixinTypes",
                                  "jcr:path",
                                  "jcr:score",
                                  "jcr:created",
@@ -1655,7 +1808,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         Session adminSession = null;
 
         try {
-            adminSession = repository.login(new SimpleCredentials("superuser", "superuser".toCharArray()));
+            adminSession = repository.login();
             adminSession.setNamespacePrefix("cars", "http://www.modeshape.org/examples/cars/1.0");
 
             JcrNodeTypeManager nodeTypeManager = (JcrNodeTypeManager)adminSession.getWorkspace().getNodeTypeManager();
@@ -1665,6 +1818,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         }
     }
 
+    @Ignore
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithContainsCriteria() throws RepositoryException {
@@ -1676,6 +1830,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @Ignore
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteria() throws RepositoryException {
@@ -1689,6 +1844,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @Ignore
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphen() throws RepositoryException {
@@ -1702,6 +1858,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @Ignore
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphenAndNumberAndWildcard()
@@ -1716,6 +1873,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @Ignore
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithNoHyphenAndNoWildcard() throws RepositoryException {
@@ -1729,6 +1887,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @Ignore
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphenAndNoWildcard() throws RepositoryException {
@@ -1742,6 +1901,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @Ignore
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithNoHyphenAndWildcard() throws RepositoryException {
@@ -1755,6 +1915,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @Ignore
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphenAndWildcard() throws RepositoryException {
@@ -1768,6 +1929,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @Ignore
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphenAndLeadingWildcard()
@@ -1782,6 +1944,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @Ignore
     @FixFor( "MODE-790" )
     @SuppressWarnings( "deprecation" )
     @Test
@@ -1835,7 +1998,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 3);
+        assertResults(query, result, 4L);
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
@@ -1846,7 +2009,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 25);
+        assertResults(query, result, TOTAL_NODE_COUNT);
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
@@ -1894,6 +2057,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @Ignore
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithRangeCriteria() throws RepositoryException {

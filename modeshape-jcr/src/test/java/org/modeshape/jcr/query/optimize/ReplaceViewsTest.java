@@ -27,13 +27,14 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.api.query.qom.Operator;
-import org.modeshape.jcr.cache.NodeCache;
+import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.query.AbstractQueryTest;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.model.Column;
@@ -67,7 +68,8 @@ public class ReplaceViewsTest extends AbstractQueryTest {
         builder.addView("v1", "SELECT c11, c12 FROM t1 WHERE c13 < CAST('3' AS LONG)");
         builder.addView("v2", "SELECT t1.c11, t1.c12, t2.c23 FROM t1 JOIN t2 ON t1.c11 = t2.c21");
         schemata = builder.build();
-        context = new QueryContext(executionContext, mock(NodeCache.class), "workspace", mock(Schemata.class));
+        context = new QueryContext(executionContext, mock(RepositoryCache.class), Collections.singleton("workspace"),
+                                   mock(Schemata.class));
     }
 
     /**

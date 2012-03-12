@@ -25,17 +25,26 @@ package org.modeshape.jcr.query.lucene.basic;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.FieldSelector;
 import org.apache.lucene.document.FieldSelectorResult;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
+import org.infinispan.schematic.document.NotThreadSafe;
+import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.PathCache;
+import org.modeshape.jcr.cache.RepositoryCache;
+import org.modeshape.jcr.cache.RepositoryPathCache;
+import org.modeshape.jcr.cache.SessionCache;
+import org.modeshape.jcr.cache.document.WorkspaceCache;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.QueryResults.Columns;
 import org.modeshape.jcr.query.QueryResults.Location;
@@ -46,15 +55,28 @@ import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Property;
 
 /**
- * 
+ * The {@link BasicLuceneSchema} does not store any fields in the indexes, with the exception of the document identifier in which
+ * we're storing the key of the node that the document represents. Thus, in order to provide for each document the column values
+ * for each tuple, this collector looks up the {@link CachedNode} for each tuple using the {@link QueryContext}'s
+ * {@link QueryContext#getRepositoryCache() RepositoryCache} and then finds the property value for each required column.
+ * <p>
+ * In all cases, only the persisted workspace content appears in the indexes, so every Lucene {@link Query} only operates against
+ * this persisted content. However, the query results might reflect either only the persisted workspace content or the session's
+ * view of the content (which includes both its transient state as well as the persisted workspace content), depending upon
+ * whether the QueryContext's NodeCache is actually a {@link WorkspaceCache} or a {@link SessionCache}.
+ * </p>
+ * <p>
+ * This class's constructor prepares the information that's ncessary to access the tuple values as fast as possible.
+ * </p>
  */
+@NotThreadSafe
 public class BasicTupleCollector extends TupleCollector {
 
-    private QueryContext queryContext;
-    private NodeCache nodeCache;
+    private final QueryContext queryContext;
+    private final RepositoryCache repositoryCache;
     private final Columns columns;
     private final LinkedList<Object[]> tuples = new LinkedList<Object[]>();
-    private final PathCache pathCache;
+    private final RepositoryPathCache repositoryPathCache;
     private final Name[] columnNames;
     private final int numValues;
     private final FieldSelector fieldSelector;
@@ -63,12 +85,15 @@ public class BasicTupleCollector extends TupleCollector {
     private Scorer scorer;
     private IndexReader currentReader;
     private int docOffset;
+    private String lastWorkspaceName;
+    private NodeCache lastWorkspaceCache;
+    private PathCache lastWorkspacePathCache;
 
     public BasicTupleCollector( QueryContext queryContext,
                                 Columns columns ) {
         this.queryContext = queryContext;
-        this.nodeCache = queryContext.getNodeCache();
-        this.pathCache = new PathCache(nodeCache);
+        this.repositoryCache = queryContext.getRepositoryCache();
+        this.repositoryPathCache = new RepositoryPathCache();
         this.columns = columns;
         this.numValues = this.columns.getTupleSize();
         assert this.numValues >= 0;
@@ -82,7 +107,6 @@ public class BasicTupleCollector extends TupleCollector {
             int scoreIndex = this.columns.getFullTextSearchScoreIndexFor(selectorName);
             assignments.add(new ScoreColumnAssignment(scoreIndex));
         }
-        this.assignments = assignments.toArray(new PseudoColumnAssignment[assignments.size()]);
 
         // Get the names of the properties for each of the tuple fields ...
         this.columnNames = new Name[this.numValues];
@@ -91,15 +115,15 @@ public class BasicTupleCollector extends TupleCollector {
         for (String columnName : columnNames) {
             int index = this.columns.getColumnIndexForName(columnName);
             String propertyName = this.columns.getPropertyNameForColumn(index);
-            if ("jcr:score".equals(propertyName)) {
+            if (JcrConstants.JCR_SCORE.equals(propertyName)) {
                 continue; // already added
-            } else if ("jcr:path".equals(propertyName)) {
+            } else if (JcrConstants.JCR_PATH.equals(propertyName)) {
                 assignments.add(new PathColumnAssignment(index));
-            } else if ("jcr:name".equals(propertyName)) {
+            } else if (JcrConstants.JCR_NAME.equals(propertyName)) {
                 assignments.add(new NameColumnAssignment(index));
-            } else if ("mode:localName".equals(propertyName)) {
+            } else if (JcrConstants.MODE_LOCAL_NAME.equals(propertyName)) {
                 assignments.add(new LocalNameColumnAssignment(index));
-            } else if ("mode:depth".equals(propertyName)) {
+            } else if (JcrConstants.MODE_DEPTH.equals(propertyName)) {
                 assignments.add(new LocalNameColumnAssignment(index));
             } else {
                 Name propName = nameFactory.create(propertyName);
@@ -107,13 +131,20 @@ public class BasicTupleCollector extends TupleCollector {
             }
         }
 
+        // Create the array of assignments ...
+        this.assignments = assignments.toArray(new PseudoColumnAssignment[assignments.size()]);
+
+        // Create a FieldSelector that instructs Lucene to load only the ID field ...
+        final Set<String> loadedFieldNames = new HashSet<String>();
+        loadedFieldNames.add(NodeInfoIndex.FieldName.ID);
+        loadedFieldNames.add(NodeInfoIndex.FieldName.WORKSPACE);
         this.fieldSelector = new FieldSelector() {
             private static final long serialVersionUID = 1L;
 
             @Override
             public FieldSelectorResult accept( String fieldName ) {
                 // We only want to load the ID field; all other fields we want to get from the actual node ...
-                return NodeInfoIndex.FieldName.ID.equals(fieldName) ? FieldSelectorResult.LOAD : FieldSelectorResult.NO_LOAD;
+                return loadedFieldNames.contains(fieldName) ? FieldSelectorResult.LOAD : FieldSelectorResult.NO_LOAD;
             }
         };
     }
@@ -132,30 +163,42 @@ public class BasicTupleCollector extends TupleCollector {
 
     @Override
     public boolean acceptsDocsOutOfOrder() {
-        return true;
+        return false;
     }
 
     @Override
-    public void collect( int doc ) throws IOException {
-        int docId = doc + docOffset;
+    public float doCollect( int doc ) throws IOException {
+        // int docId = doc + docOffset;
         Object[] tuple = new Object[numValues];
-        Document document = currentReader.document(docId, fieldSelector);
+        Document document = currentReader.document(doc, fieldSelector);
         // Read the id ...
         String id = document.get(NodeInfoIndex.FieldName.ID);
+        String workspace = document.get(NodeInfoIndex.FieldName.WORKSPACE);
         float score = scorer.score();
 
         // And get the node ...
         NodeKey key = new NodeKey(id);
-        CachedNode node = nodeCache.getNode(key);
-        Path path = pathCache.getPath(node);
-        Location location = new Location(path);
+        if (!workspace.equals(lastWorkspaceName)) {
+            lastWorkspaceName = workspace;
+            lastWorkspaceCache = queryContext.getNodeCache(workspace);
+            lastWorkspacePathCache = repositoryPathCache.getPathCache(workspace, lastWorkspaceCache);
+        }
+        CachedNode node = lastWorkspaceCache.getNode(key);
+
+        // Every tuple has the location ...
+        Path path = lastWorkspacePathCache.getPath(node);
+        Location location = new Location(path, key);
         tuple[locationIndex] = location;
 
         // Set the column values ...
         for (int i = 0; i != numValues; ++i) {
             Name propName = columnNames[i];
-            if (propName == null) continue;
-            Property property = node.getProperty(propName, nodeCache);
+            if (propName == null) {
+                // This value in the tuple is a pseudo-column, which we'll set later ...
+                continue;
+            }
+            // Find the node's named property for this tuple column ...
+            Property property = node.getProperty(propName, lastWorkspaceCache);
             if (property == null) continue;
             if (property.isEmpty()) continue;
             if (property.isMultiple()) {
@@ -173,6 +216,7 @@ public class BasicTupleCollector extends TupleCollector {
         }
 
         tuples.add(tuple);
+        return score;
     }
 
     @Override

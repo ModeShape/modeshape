@@ -27,11 +27,12 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
+import java.util.Collections;
 import java.util.LinkedList;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.jcr.ExecutionContext;
-import org.modeshape.jcr.cache.NodeCache;
+import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.query.AbstractQueryTest;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.model.EquiJoinCondition;
@@ -48,7 +49,8 @@ public class AddJoinConditionColumnsToSourcesTest extends AbstractQueryTest {
 
     @Before
     public void beforeEach() {
-        context = new QueryContext(new ExecutionContext(), mock(NodeCache.class), "workspace", mock(Schemata.class));
+        context = new QueryContext(new ExecutionContext(), mock(RepositoryCache.class), Collections.singleton("workspace"),
+                                   mock(Schemata.class));
         rule = AddJoinConditionColumnsToSources.INSTANCE;
         context.getHints().hasJoin = true;
     }

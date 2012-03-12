@@ -55,6 +55,12 @@ public final class PlanHints implements Serializable, Cloneable {
 
     public boolean hasLimit = false;
 
+    /**
+     * Set when the query results are not ordered or offset but are limited to a single row, implying that the query is just
+     * trying to see if a row exists.
+     */
+    public boolean isExistsQuery = false;
+
     public boolean hasOptionalJoin = false;
 
     public boolean hasFullTextSearch = false;

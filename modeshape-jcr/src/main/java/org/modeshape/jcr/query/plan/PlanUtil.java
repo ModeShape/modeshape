@@ -217,7 +217,7 @@ public class PlanUtil {
                     for (Schemata.Column sourceColumn : sourceColumns) {
                         if (sourceColumn.getName().equals(column.getColumnName())
                             || sourceColumn.getName().equals(column.getPropertyName())) {
-                            types.add(sourceColumn.getPropertyType());
+                            types.add(sourceColumn.getPropertyTypeName());
                             added = true;
                             break;
                         }

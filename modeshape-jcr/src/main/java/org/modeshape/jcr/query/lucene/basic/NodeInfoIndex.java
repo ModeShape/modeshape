@@ -104,31 +104,56 @@ public class NodeInfoIndex {
 
         /**
          * The name of the {@link Field string field} used to store the full-text search analyzed terms for this node, which are
-         * derived from the node's property values. Note that this field does not include the terms derived from the node's name
-         * or path, nor does it include any of the terms for any of the node's binary values (see {@link #BINARY_SHA1S}).
+         * derived from the node's property values.
          * 
-         * @see BinaryInfoIndex.FieldName#FULL_TEXT
+         * @see NodeInfoIndex.FieldName#FULL_TEXT_PREFIX
          */
         public static final String FULL_TEXT = "::fts";
+
+        /**
+         * The prefix of the name of the {@link Field string field} used to store the full-text search analyzed terms of the
+         * property's value(s). The remainder of the field name has the form "&lt;namespace>:&lt;local>" (where &lt;namespace> can
+         * be zero-length). Note that the prefix uses a single leading ':', which means that it cannot result in the same field
+         * name for a property. Also, even if the namespace is zero-length, the free-text search field will be named
+         * ":ft::&lt;local>" and will not clash with any other property name.
+         * 
+         * @see NodeInfoIndex.FieldName#FULL_TEXT
+         */
+        protected static final String FULL_TEXT_PREFIX = ":ft:";
+
+        /**
+         * The prefix of the name of the {@link Field string field} used to store the length of the property value. Note that the
+         * prefix uses a single leading ':', which means that it cannot result in the same field name for a property.
+         */
+        public static final String LENGTH_PREFIX = ":len:";
+
+        /**
+         * The prefix of the name of the {@link Field string field} used to store the SHA-1 of the binary values for the property.
+         * Note that the prefix uses a single leading ':', which means that it cannot result in the same field name for a
+         * property.
+         * 
+         * @see NodeInfoIndex.FieldName#BINARY_SHA1S
+         */
+        public static final String BINARY_SHA1_PREFIX = ":sha1:";
+
+        /**
+         * The name of the {@link Field string field} used to store the {@link Binary#getHexHash() SHA-1 hash in hexadecimal form}
+         * of all {@link javax.jcr.Binary Binary} values from all BINARY properties on the node.
+         * 
+         * @see NodeInfoIndex.FieldName#BINARY_SHA1_PREFIX
+         */
+        public static final String BINARY_SHA1S = "::binRef";
 
         /**
          * The name of the {@link Field string field} used to store the {@link NodeKey}s from all WEAKREFERENCE and REFERENCE
          * properties on the node.
          */
-        public static final String WEAK_REFERENCES = "::wref";
+        public static final String ALL_REFERENCES = "::ref";
 
         /**
          * The name of the {@link Field string field} used to store the {@link NodeKey}s from all REFERENCE properties on the
          * node.
          */
         public static final String STRONG_REFERENCES = "::sref";
-
-        /**
-         * The name of the {@link Field string field} used to store the {@link Binary#getHexHash() SHA-1 hash in hexadecimal form}
-         * of all {@link javax.jcr.Binary Binary} values from all BINARY properties on the node.
-         * 
-         * @see BinaryInfoIndex.FieldName#SHA1
-         */
-        public static final String BINARY_SHA1S = "::binRef";
     }
 }

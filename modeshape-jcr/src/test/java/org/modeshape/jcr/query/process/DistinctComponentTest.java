@@ -27,10 +27,11 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
-import org.modeshape.jcr.cache.NodeCache;
+import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.QueryResults.Columns;
 import org.modeshape.jcr.query.validate.Schemata;
@@ -48,7 +49,8 @@ public class DistinctComponentTest extends AbstractQueryResultsTest {
 
     @Before
     public void beforeEach() {
-        context = new QueryContext(executionContext, mock(NodeCache.class), "workspace", mock(Schemata.class));
+        Schemata schemata = mock(Schemata.class);
+        context = new QueryContext(executionContext, mock(RepositoryCache.class), Collections.singleton("workspace"), schemata);
         inputTuples = new ArrayList<Object[]>();
         // Define the columns for the results ...
         columns = resultColumns("Selector1",

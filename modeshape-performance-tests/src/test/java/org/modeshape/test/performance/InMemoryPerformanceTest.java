@@ -26,6 +26,7 @@ package org.modeshape.test.performance;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
+import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Node;
 import javax.jcr.Repository;
@@ -37,6 +38,8 @@ import org.infinispan.config.GlobalConfiguration;
 import org.infinispan.loaders.CacheLoaderConfig;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.schematic.Schematic;
+import org.infinispan.schematic.document.Document;
+import org.infinispan.schematic.document.Json;
 import org.infinispan.test.TestingUtil;
 import org.infinispan.test.fwk.TestCacheManagerFactory;
 import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
@@ -53,8 +56,6 @@ public class InMemoryPerformanceTest {
     private static final String LARGE_STRING_VALUE = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed fermentum iaculis placerat. Mauris condimentum dapibus pretium. Vestibulum gravida sodales tellus vitae porttitor. Nunc dictum, eros vel adipiscing pellentesque, sem mi iaculis dui, a aliquam neque magna non turpis. Maecenas imperdiet est eu lorem placerat mattis. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Vestibulum scelerisque molestie tristique. Mauris nibh diam, vestibulum eu condimentum at, facilisis at nisi. Maecenas vehicula accumsan lacus in venenatis. Nulla nisi eros, fringilla at dapibus mollis, pharetra at urna. Praesent in risus magna, at iaculis sapien. Fusce id velit id dui tempor hendrerit semper a nunc. Nam eget mauris tellus.";
     private static final String SMALL_STRING_VALUE = "The quick brown fox jumped over the moon. What? ";
 
-    private final String REPO_NAME = "testRepo";
-
     private static final Stopwatch STARTUP = new Stopwatch();
     private static final Stopwatch INFINISPAN_STARTUP = new Stopwatch();
     private static final Stopwatch MODESHAPE_STARTUP = new Stopwatch();
@@ -70,8 +71,14 @@ public class InMemoryPerformanceTest {
     public void beforeEach() throws Exception {
         cleanUpFileSystem();
 
-        STARTUP.start();
-        INFINISPAN_STARTUP.start();
+        // Read the configuration file, which will be named the same as the class name ...
+        String configFileName = getClass().getSimpleName() + ".json";
+        String configFilePath = "config/" + configFileName;
+        InputStream configStream = getClass().getClassLoader().getResourceAsStream(configFilePath);
+        assertThat("Unable to find configuration file '" + configFilePath, configStream, is(notNullValue()));
+
+        Document configDoc = Json.read(configStream);
+
         GlobalConfiguration global = new GlobalConfiguration();
         global = global.fluent().serialization().addAdvancedExternalizer(Schematic.externalizers()).build();
 
@@ -81,11 +88,15 @@ public class InMemoryPerformanceTest {
             c = c.fluent().loaders().addCacheLoader(loaderConfig).build();
         }
         c = c.fluent().transaction().transactionManagerLookup(new DummyTransactionManagerLookup()).build();
+
+        STARTUP.start();
+        INFINISPAN_STARTUP.start();
         cm = TestCacheManagerFactory.createCacheManager(global, c);
-        txnMgr = TestingUtil.getTransactionManager(cm.getCache(REPO_NAME));
+        config = new RepositoryConfiguration(configDoc, configFileName, cm);
+        txnMgr = TestingUtil.getTransactionManager(cm.getCache(config.getCacheName()));
         INFINISPAN_STARTUP.stop();
+
         MODESHAPE_STARTUP.start();
-        config = new RepositoryConfiguration(REPO_NAME, cm);
         engine = new JcrEngine();
         engine.start();
         engine.deploy(config);

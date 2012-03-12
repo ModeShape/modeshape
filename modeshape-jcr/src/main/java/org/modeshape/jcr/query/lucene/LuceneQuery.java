@@ -63,8 +63,15 @@ public class LuceneQuery {
             return;
         }
 
+        if (pushDownQuery == null) {
+            // This is the first query we've seen, so just record it ...
+            pushDownQuery = query;
+            return;
+        }
+
         // We can simply AND these Lucene queries together, since they're going to the same index ...
         BooleanQuery booleanQuery = null;
+        assert this.pushDownQuery != null;
         if (pushDownQuery instanceof BooleanQuery) {
             // The existing pushdown query is already a BooleanQuery, so try to merge ...
             booleanQuery = (BooleanQuery)pushDownQuery;
@@ -78,38 +85,38 @@ public class LuceneQuery {
             if (canMerge) {
                 // The boolean query has all MUST occurs, so we can just add another one ...
                 booleanQuery.add(query, Occur.MUST);
+                return;
             }
-        } else {
-            // The existing pushdown query is not yet a BooleanQuery, so we need to wrap it ...
-            booleanQuery = new BooleanQuery();
-            booleanQuery.add(this.pushDownQuery, Occur.MUST);
+        }
+        // The existing pushdown query is not yet a BooleanQuery, so we need to wrap it ...
+        booleanQuery = new BooleanQuery();
+        booleanQuery.add(this.pushDownQuery, Occur.MUST);
 
-            // If the new query is a BooleanQuery, then it is probably a 'NOT(query)'
-            if (query instanceof BooleanQuery) {
-                // See if the query can be merged ...
-                boolean merged = false;
-                BooleanQuery booleanSecond = (BooleanQuery)query;
-                if (booleanSecond.getClauses().length == 1) {
-                    BooleanClause onlyClause = booleanSecond.getClauses()[0];
-                    if (onlyClause.isProhibited()) {
-                        booleanQuery.add(onlyClause.getQuery(), Occur.MUST_NOT);
-                        merged = true;
-                    } else if (onlyClause.isRequired()) {
-                        booleanQuery.add(onlyClause.getQuery(), Occur.MUST);
-                        merged = true;
-                    }
+        // If the new query is a BooleanQuery, then it is probably a 'NOT(query)'
+        if (query instanceof BooleanQuery) {
+            // See if the query can be merged ...
+            boolean merged = false;
+            BooleanQuery booleanSecond = (BooleanQuery)query;
+            if (booleanSecond.getClauses().length == 1) {
+                BooleanClause onlyClause = booleanSecond.getClauses()[0];
+                if (onlyClause.isProhibited()) {
+                    booleanQuery.add(onlyClause.getQuery(), Occur.MUST_NOT);
+                    merged = true;
+                } else if (onlyClause.isRequired()) {
+                    booleanQuery.add(onlyClause.getQuery(), Occur.MUST);
+                    merged = true;
                 }
-                if (!merged) {
-                    booleanQuery.add(query, Occur.MUST);
-                }
-            } else {
-                // Just add the query to our boolean query ...
+            }
+            if (!merged) {
                 booleanQuery.add(query, Occur.MUST);
             }
-
-            // And re-assign the pushdown query to be the new BooleanQuery that wraps the old pushdown and 'query' ...
-            this.pushDownQuery = booleanQuery;
+        } else {
+            // Just add the query to our boolean query ...
+            booleanQuery.add(query, Occur.MUST);
         }
+
+        // And re-assign the pushdown query to be the new BooleanQuery that wraps the old pushdown and 'query' ...
+        this.pushDownQuery = booleanQuery;
     }
 
     /**
@@ -160,5 +167,11 @@ public class LuceneQuery {
      */
     public Constraint getPostProcessingConstraints() {
         return postProcessingConstraints;
+    }
+
+    @Override
+    public String toString() {
+        return pushDownQuery.toString()
+               + (postProcessingConstraints != null ? (" w/ postprocessing:" + postProcessingConstraints) : "");
     }
 }

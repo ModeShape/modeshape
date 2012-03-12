@@ -66,6 +66,7 @@ public abstract class AbstractAccessComponent extends ProcessingComponent {
         } else {
             throw new IllegalArgumentException();
         }
+        assert this.sourceName != null;
 
         // Find the project ...
         PlanNode project = accessNode.findAtOrBelow(Type.PROJECT);
@@ -88,6 +89,7 @@ public abstract class AbstractAccessComponent extends ProcessingComponent {
         } else {
             throw new IllegalArgumentException();
         }
+        assert this.projectedColumns != null;
 
         // Add the criteria ...
         List<Constraint> andedConstraints = null;
@@ -97,6 +99,7 @@ public abstract class AbstractAccessComponent extends ProcessingComponent {
             andedConstraints.add(selectConstraint);
         }
         this.andedConstraints = andedConstraints != null ? andedConstraints : Collections.<Constraint>emptyList();
+        assert this.andedConstraints != null;
 
         // Find the limit ...
         Limit limit = Limit.NONE;
@@ -108,6 +111,7 @@ public abstract class AbstractAccessComponent extends ProcessingComponent {
             if (offset != null) limit = limit.withOffset(offset.intValue());
         }
         this.limit = limit;
+        assert this.limit != null;
     }
 
 }

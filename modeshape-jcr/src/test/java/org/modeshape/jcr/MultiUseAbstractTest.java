@@ -55,13 +55,21 @@ public abstract class MultiUseAbstractTest extends AbstractJcrRepositoryTest {
     protected static JcrSession session;
 
     protected static void startRepository() throws Exception {
+        startRepository(null);
+    }
+
+    protected static void startRepository( RepositoryConfiguration configuration ) throws Exception {
         Configuration c = new Configuration();
         c = c.fluent().transaction().transactionManagerLookup(new DummyTransactionManagerLookup()).build();
         cm = TestCacheManagerFactory.createCacheManager(c);
 
         // Configuration c = new Configuration();
         // cm = TestCacheManagerFactory.createCacheManager(c, true);
-        config = new RepositoryConfiguration(REPO_NAME, cm);
+        if (configuration != null) {
+            config = new RepositoryConfiguration(configuration.getDocument(), configuration.getName(), cm);
+        } else {
+            config = new RepositoryConfiguration(REPO_NAME, cm);
+        }
         repository = new JcrRepository(config);
         repository.start();
         session = repository.login();

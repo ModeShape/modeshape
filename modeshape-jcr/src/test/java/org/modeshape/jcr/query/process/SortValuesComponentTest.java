@@ -27,10 +27,11 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
-import org.modeshape.jcr.cache.NodeCache;
+import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.QueryResults.Columns;
 import org.modeshape.jcr.query.model.Ordering;
@@ -60,7 +61,7 @@ public class SortValuesComponentTest extends AbstractQueryResultsTest {
                                 PropertyType.STRING);
         schemata = schemataFor(columns, PropertyType.STRING, PropertyType.LONG, PropertyType.STRING);
         // Define the context ...
-        context = new QueryContext(executionContext, mock(NodeCache.class), "workspace", schemata);
+        context = new QueryContext(executionContext, mock(RepositoryCache.class), Collections.singleton("workspace"), schemata);
         inputTuples = new ArrayList<Object[]>();
         // And define the delegating component ...
         delegate = new ProcessingComponent(context, columns) {

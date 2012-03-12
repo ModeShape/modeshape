@@ -128,10 +128,15 @@ public class MutableChildReferences extends AbstractChildReferences {
 
     @Override
     public ChildReference getChild( NodeKey key ) {
+        return getChild(key, new BasicContext());
+    }
+
+    @Override
+    public boolean hasChild( NodeKey key ) {
         Lock lock = this.lock.readLock();
         try {
             lock.lock();
-            return childReferencesByKey.get(key);
+            return childReferencesByKey.containsKey(key);
         } finally {
             lock.unlock();
         }

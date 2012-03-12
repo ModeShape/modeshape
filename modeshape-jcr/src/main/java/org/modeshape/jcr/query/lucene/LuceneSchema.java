@@ -24,21 +24,37 @@
 package org.modeshape.jcr.query.lucene;
 
 import java.util.List;
+import org.hibernate.search.SearchFactory;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.QueryIndexing;
 import org.modeshape.jcr.query.QueryResults.Columns;
 import org.modeshape.jcr.query.lucene.LuceneQueryEngine.TupleCollector;
 import org.modeshape.jcr.query.model.Constraint;
+import org.modeshape.jcr.query.model.SelectorName;
 
 /**
  * A component that is aware of the particular structure and layout of an index design.
  */
 public interface LuceneSchema extends QueryIndexing {
 
-    public LuceneQuery createQuery( List<Constraint> andedConstraints,
+    /**
+     * Create a {@link LuceneQuery} for the supplied ANDed constraints of the ModeShape access query, which comes from the leaves
+     * of a query plan.
+     * 
+     * @param selectorName the name of the selector (or node type); never null
+     * @param andedConstraints the constraints of the access query that are all ANDed together; never null
+     * @param context the processing context; never null
+     * @return the query that represents the Lucene Query object(s) to be executed; never null
+     * @throws LuceneException
+     */
+    public LuceneQuery createQuery( SelectorName selectorName,
+                                    List<Constraint> andedConstraints,
                                     LuceneProcessingContext context ) throws LuceneException;
 
     public TupleCollector createTupleCollector( QueryContext queryContext,
                                                 Columns columns );
+
+    public LuceneQueryFactory createLuceneQueryFactory( QueryContext context,
+                                                        SearchFactory searchFactory );
 
 }
