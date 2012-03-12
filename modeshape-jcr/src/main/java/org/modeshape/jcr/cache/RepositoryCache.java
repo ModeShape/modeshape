@@ -37,7 +37,7 @@ import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.common.collection.Collections;
 import org.modeshape.common.util.Logger;
-import org.modeshape.jcr.ChangeBus;
+import org.modeshape.jcr.bus.ChangeBus;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrLexicon;

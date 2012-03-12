@@ -40,6 +40,11 @@
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-schematic</artifactId>
         </dependency>
+        <!--Event bus clustering. Note the scope in the parent (provided) - this should be optional from a MS perspective -->
+        <dependency>
+            <groupId>org.jgroups</groupId>
+            <artifactId>jgroups</artifactId>
+        </dependency>
         <!-- Hibernate Search engine (does not use Hibernate Core or JPA!) -->
         <dependency>
             <groupId>org.hibernate</groupId>

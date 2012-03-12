@@ -707,6 +707,27 @@
                     }
                 }
             }
+        },
+        "clustering" : {
+            "type" : "object",
+            "description" : "The clustering configuration. If absent, clustering will be disabled",
+            "additionalProperties" : true,
+            "properties" : {
+                "clusterName" : {
+                    "type" : "string",
+                    "description" : "The name of the cluster to which a JGroups channel will connect",
+                    "default" : "ModeShape-JCR"
+                },
+                "channelProvider" : {
+                    "type" : "string",
+                    "description" : "The fully qualified class name of a org.modeshape.jcr.clustering.ChannelProvider implementation which is expected to provide a JChannel instance",
+                    "default" : "org.modeshape.jcr.clustering.DefaultChannelProvider"
+                },
+                "channelConfiguration" : {
+                    "type" : "string",
+                    "description" : "An optional string which represents a JChannel configuration file. Normally, a CDATA wrapped XML section should be used"
+                }
+            }
         }
     }
 }
