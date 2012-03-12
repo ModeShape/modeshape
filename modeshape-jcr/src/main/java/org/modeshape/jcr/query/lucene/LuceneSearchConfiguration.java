@@ -107,7 +107,9 @@ public abstract class LuceneSearchConfiguration implements SearchConfiguration {
 
     @Override
     public boolean isTransactionManagerExpected() {
-        return true;
+        // See MODE-1420; we use a transaction manager when updating indexes with changes made by sessions,
+        // but a transaction is not used when manually re-indexing
+        return false;
     }
 
     @Override
