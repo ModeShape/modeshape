@@ -372,7 +372,7 @@ public class RepositoryConfiguration {
         public static final String INDEXING_BACKEND_JMS_QUEUE_JNDI_NAME = "queueJndiName";
         public static final String INDEXING_BACKEND_JGROUPS_CHANNEL_NAME = "channelName";
         public static final String INDEXING_BACKEND_JGROUPS_CHANNEL_CONFIGURATION = "channelConfiguration";
-    
+
         /**
          * The name of the clustering top-level configuration document
          */
@@ -384,7 +384,8 @@ public class RepositoryConfiguration {
         private static final String CLUSTER_NAME = "clusterName";
 
         /**
-         * The fully qualified name of the {@link org.modeshape.jcr.clustering.ChannelProvider} implementation which will provide the JChannel instance
+         * The fully qualified name of the {@link org.modeshape.jcr.clustering.ChannelProvider} implementation which will provide
+         * the JChannel instance
          */
         private static final String CHANNEL_PROVIDER = "channelProvider";
 
@@ -809,7 +810,7 @@ public class RepositoryConfiguration {
         }
         return new BinaryStorage(storage.getDocument(FieldName.BINARY_STORAGE));
     }
-    
+
     public Clustering getClustering() {
         return new Clustering(doc.getDocument(FieldName.CLUSTERING));
     }
@@ -1369,8 +1370,10 @@ public class RepositoryConfiguration {
         }
 
         /**
-         * Checks whether clustering is enabled or not, based on a) JGroups being in the classpath and b) a clustering configuration
-         * having been provided
+         * Checks whether clustering is enabled or not, based on a) JGroups being in the classpath and b) a clustering
+         * configuration having been provided.
+         * 
+         * @return true if clustering is enabled, or false otherwise
          */
         public boolean isEnabled() {
             return this.clusteringDoc != EMPTY;
