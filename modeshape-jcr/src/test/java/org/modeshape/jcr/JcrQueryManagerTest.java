@@ -158,7 +158,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
                 a.setProperty("somethingElse", "value2");
                 a.setProperty("propA", "value1");
                 Node other2 = other.addNode("NodeA", "nt:unstructured");
-                other2.setProperty("something", "value2 quick brown cat");
+                other2.setProperty("something", "value2 quick brown cat wearing hat");
                 other2.setProperty("propB", "value1");
                 other2.setProperty("propC", "value2");
                 Node other3 = other.addNode("NodeA", "nt:unstructured");
@@ -1217,9 +1217,64 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         }
     }
 
+    @Ignore
+    @FixFor( "MODE-1418" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchWithSelectorAndOneProperty()
+        throws RepositoryException {
+        String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.something, 'cat wearing')";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        // print = true;
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1L);
+    }
+
+    @Ignore
+    @FixFor( "MODE-1418" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchWithSelectorAndAllProperties()
+        throws RepositoryException {
+        String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.*, 'cat wearing')";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        // print = true;
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1L);
+    }
+
+    @Ignore
+    @FixFor( "MODE-1418" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchWithNoSelectorAndOneProperty()
+        throws RepositoryException {
+        String sql = "select [jcr:path] from [nt:unstructured] as n where contains(something,'cat wearing')";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        // print = true;
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1L);
+    }
+
     // ----------------------------------------------------------------------------------------------------------------
     // Full-text Search Queries
     // ----------------------------------------------------------------------------------------------------------------
+
+    @Ignore
+    @FixFor( "MODE-1418" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteFullTextSearchQueryOfPhrase() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("cat wearing", JcrRepository.QueryLanguage.SEARCH);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        // print = true;
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1);
+        assertResultsHaveColumns(result, searchColumnNames());
+    }
 
     @Ignore
     @FixFor( "MODE-905" )
