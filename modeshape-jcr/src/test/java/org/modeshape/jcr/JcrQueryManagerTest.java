@@ -76,7 +76,7 @@ import org.slf4j.LoggerFactory;
  * </p>
  */
 public class JcrQueryManagerTest {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(JcrQueryManagerTest.class);
 
     protected static URI resourceUri( String name ) throws URISyntaxException {
@@ -167,7 +167,7 @@ public class JcrQueryManagerTest {
                 a.setProperty("somethingElse", "value2");
                 a.setProperty("propA", "value1");
                 Node other2 = other.addNode("NodeA", "nt:unstructured");
-                other2.setProperty("something", "value2 quick brown cat");
+                other2.setProperty("something", "value2 quick brown cat wearing hat");
                 other2.setProperty("propB", "value1");
                 other2.setProperty("propC", "value2");
                 Node other3 = other.addNode("NodeA", "nt:unstructured");
@@ -1124,9 +1124,60 @@ public class JcrQueryManagerTest {
         }
     }
 
+    @FixFor( "MODE-1418" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchWithSelectorAndOneProperty()
+        throws RepositoryException {
+        String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.something, 'cat wearing')";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        print = true;
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1L);
+    }
+
+    @FixFor( "MODE-1418" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchWithSelectorAndAllProperties()
+        throws RepositoryException {
+        String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.*, 'cat wearing')";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        print = true;
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1L);
+    }
+
+    @FixFor( "MODE-1418" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchWithNoSelectorAndOneProperty()
+        throws RepositoryException {
+        String sql = "select [jcr:path] from [nt:unstructured] as n where contains(something,'cat wearing')";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        print = true;
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1L);
+    }
+
     // ----------------------------------------------------------------------------------------------------------------
     // Full-text Search Queries
     // ----------------------------------------------------------------------------------------------------------------
+
+    @FixFor( "MODE-1418" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteFullTextSearchQueryOfPhrase() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("cat wearing", JcrRepository.QueryLanguage.SEARCH);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        print = true;
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1);
+        assertResultsHaveColumns(result, searchColumnNames());
+    }
 
     @FixFor( "MODE-905" )
     @Test
@@ -1152,7 +1203,7 @@ public class JcrQueryManagerTest {
     }
 
     @Test
-    @FixFor( "MODE-1279")
+    @FixFor( "MODE-1279" )
     public void shouldBeAbleToCreateAndExecuteFullTextSearchQueryMultipleTimes() throws RepositoryException {
         for (int i = 0; i != 1; ++i) {
             Query query = session.getWorkspace().getQueryManager().createQuery("quick", JcrRepository.QueryLanguage.SEARCH);
@@ -1185,7 +1236,7 @@ public class JcrQueryManagerTest {
             assertResults(query, result, 5);
             assertResultsHaveColumns(result, searchColumnNames());
         }
-        
+
         session.getRootNode().getNode("Other1").remove();
         session.save();
     }
