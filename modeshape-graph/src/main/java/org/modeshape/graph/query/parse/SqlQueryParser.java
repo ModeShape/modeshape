@@ -709,7 +709,7 @@ public class SqlQueryParser implements QueryParser {
                     String msg = GraphI18n.functionIsAmbiguous.text("CONTAINS()", pos.getLine(), pos.getColumn());
                     throw new ParsingException(pos, msg);
                 }
-                selectorName = ((Selector)source).name();
+                selectorName = ((Selector)source).aliasOrName();
                 propertyName = removeBracketsAndQuotes(first);
             }
             tokens.consume(',');
