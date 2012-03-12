@@ -1131,7 +1131,7 @@ public class JcrQueryManagerTest {
         String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.something, 'cat wearing')";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
-        print = true;
+        // print = true;
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 1L);
@@ -1144,7 +1144,7 @@ public class JcrQueryManagerTest {
         String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.*, 'cat wearing')";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
-        print = true;
+        // print = true;
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 1L);
@@ -1157,7 +1157,7 @@ public class JcrQueryManagerTest {
         String sql = "select [jcr:path] from [nt:unstructured] as n where contains(something,'cat wearing')";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
-        print = true;
+        // print = true;
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 1L);
@@ -1173,7 +1173,7 @@ public class JcrQueryManagerTest {
         Query query = session.getWorkspace().getQueryManager().createQuery("cat wearing", JcrRepository.QueryLanguage.SEARCH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        print = true;
+        // print = true;
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 1);
         assertResultsHaveColumns(result, searchColumnNames());
