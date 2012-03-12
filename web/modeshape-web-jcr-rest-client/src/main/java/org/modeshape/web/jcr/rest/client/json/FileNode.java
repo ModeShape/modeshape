@@ -101,6 +101,9 @@ public final class FileNode extends JsonNode {
         JSONObject properties = new JSONObject();
         put(IJsonConstants.PROPERTIES_KEY, properties);
         properties.put(IJcrConstants.PRIMARY_TYPE_PROPERTY, IJcrConstants.FILE_NODE_TYPE);
+        if (versionable) {
+            properties.put(IJcrConstants.MIXIN_TYPES_PROPERTY, IJcrConstants.VERSIONABLE_NODE_TYPE);
+        }
 
         // add children
         JSONObject children = new JSONObject();
@@ -114,9 +117,6 @@ public final class FileNode extends JsonNode {
         properties = new JSONObject();
         kid.put(IJsonConstants.PROPERTIES_KEY, properties);
         properties.put(IJcrConstants.PRIMARY_TYPE_PROPERTY, IJcrConstants.RESOURCE_NODE_TYPE);
-        if (versionable) {
-            properties.put(IJcrConstants.MIXIN_TYPES_PROPERTY, IJcrConstants.VERSIONABLE_NODE_TYPE);
-        }
 
         // add required jcr:lastModified property
         Calendar lastModified = Calendar.getInstance();
