@@ -200,4 +200,10 @@ public class LocalNamespaceRegistry extends SimpleNamespaceRegistry {
         return super.unregister(namespaceUri);
     }
 
+    /**
+     * @return delegate
+     */
+    public NamespaceRegistry getDelegate() {
+        return delegate;
+    }
 }

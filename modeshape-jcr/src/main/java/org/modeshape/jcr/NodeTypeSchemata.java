@@ -479,13 +479,23 @@ class NodeTypeSchemata implements Schemata {
     private boolean overridesNamespaceMappings( JcrSession session ) {
         NamespaceRegistry registry = session.getExecutionContext().getNamespaceRegistry();
         if (registry instanceof LocalNamespaceRegistry) {
-            Set<Namespace> localNamespaces = ((LocalNamespaceRegistry)registry).getLocalNamespaces();
+            LocalNamespaceRegistry localRegistry = (LocalNamespaceRegistry)registry;
+            Set<Namespace> localNamespaces = localRegistry.getLocalNamespaces();
             if (localNamespaces.isEmpty()) {
                 // There are no local mappings ...
                 return false;
             }
+            NamespaceRegistry global = localRegistry.getDelegate();
             for (Namespace namespace : localNamespaces) {
-                if (prefixesByUris.containsKey(namespace.getNamespaceUri())) return true;
+                String uri = namespace.getNamespaceUri();
+                String globalPrefix = global.getPrefixForNamespaceUri(uri, false);
+                if (namespace.getPrefix().equals(globalPrefix)) {
+                    // The local namespace is just redefining the same global prefix ...
+                    continue;
+                }
+                if (prefixesByUris.containsKey(uri)) {
+                    return true;
+                }
             }
             // None of the local namespace mappings overrode any namespaces used by this schemata ...
             return false;
@@ -519,7 +529,7 @@ class NodeTypeSchemata implements Schemata {
             this.nameFactory = context.getValueFactories().getNameFactory();
             this.builder = ImmutableSchemata.createBuilder(context.getValueFactories().getTypeSystem());
             // Add the "AllNodes" table ...
-            addAllNodesTable(builder, null, context, null);
+            addAllNodesTable(builder, null, context, pseudoProperties);
             this.schemata = builder.build();
         }
 
