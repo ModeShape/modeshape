@@ -28,8 +28,7 @@ import java.util.Set;
 import org.infinispan.Cache;
 import org.infinispan.atomic.Delta;
 import org.infinispan.atomic.DeltaAware;
-import org.infinispan.batch.BatchContainer;
-import org.infinispan.context.InvocationContextContainer;
+import org.infinispan.context.FlagContainer;
 import org.infinispan.marshall.AbstractExternalizer;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Binary;
@@ -54,6 +53,7 @@ import org.infinispan.util.Util;
  * @author Randall Hauch <rhauch@redhat.com> (C) 2011 Red Hat Inc.
  * @since 5.1
  * @see org.infinispan.atomic.AtomicHashMap
+ * @SerializeWith(SchematicEntryLiteral.Externalizer.class)
  */
 public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
 
@@ -140,18 +140,16 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
      * 
      * @param cache the cache
      * @param mapKey the key
-     * @param batchContainer the container
-     * @param icc the invocation context container
+     * @param flagContainer the flag container
      * @return an instance of {@link SchematicEntryProxy}
      */
     public SchematicEntry getProxy( Cache<String, SchematicEntry> cache,
                                     String mapKey,
-                                    BatchContainer batchContainer,
-                                    InvocationContextContainer icc ) {
+                                    FlagContainer flagContainer ) {
         // construct the proxy lazily
         if (proxy == null) { // DCL is OK here since proxy is volatile (and we live in a post-JDK 5 world)
             synchronized (this) {
-                if (proxy == null) proxy = new SchematicEntryProxy(cache, mapKey, batchContainer, icc);
+                if (proxy == null) proxy = new SchematicEntryProxy(cache.getAdvancedCache(), mapKey, flagContainer);
             }
         }
         return proxy;
@@ -291,6 +289,9 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
         return new ObservableDocumentEditor(mutableMetadata(), FieldPath.METADATA, getDelta(), null);
     }
 
+    /**
+     * The {@link org.infinispan.marshall.Externalizer Externalizer} for {@link SchematicEntryLiteral} instances.
+     */
     public static class Externalizer extends AbstractExternalizer<SchematicEntryLiteral> {
         /** The serialVersionUID */
         private static final long serialVersionUID = 1L;
