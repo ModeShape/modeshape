@@ -127,6 +127,13 @@
             <artifactId>jbossjta</artifactId>
         </dependency>
         <!--
+        Used for Base64 testing.
+        -->
+        <dependency>
+            <groupId>org.jboss</groupId>
+            <artifactId>jboss-common-core</artifactId>
+        </dependency>
+        <!--
         Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing)
         -->
         <dependency>

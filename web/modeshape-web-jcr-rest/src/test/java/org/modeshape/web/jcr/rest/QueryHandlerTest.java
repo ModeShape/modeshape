@@ -224,7 +224,7 @@ public class QueryHandlerTest {
     public void shouldBindQueryParametersAsVariables() throws Exception {
         URI absoluteUri = uri("query?var1=value1&var2=value2&var3=value3&limit=100");
         UriInfo uriInfo = new UriInfoImpl(absoluteUri, absoluteUri, absoluteUri.getRawPath(), absoluteUri.getRawQuery(),
-                                          PathSegmentImpl.parseSegments(absoluteUri.getRawPath()));
+                                          PathSegmentImpl.parseSegments(absoluteUri.getRawPath(), false));
 
         String statement = "//element(" + NODE_NAME + ") order by @foo";
         String response = handler.postItem(request, REPOSITORY_NAME, WORKSPACE_NAME, Query.XPATH, statement, -1, 100, uriInfo);

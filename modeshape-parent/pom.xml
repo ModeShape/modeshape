@@ -248,8 +248,9 @@
         <javax.servlet.version>2.5</javax.servlet.version>
         <javax.jacc.version>1.0.0.Final</javax.jacc.version>
         <jboss.seam.version>2.2.2.Final</jboss.seam.version>
+        <jboss.common.core.version>2.2.17.GA</jboss.common.core.version>
         <webdav.servlet.version>2.0.1</webdav.servlet.version>
-        <resteasy.version>1.2.1.GA</resteasy.version>
+        <resteasy.version>2.3.2.Final</resteasy.version>
         <jettison.version>1.1</jettison.version>
         <httpclient.version>4.1.2</httpclient.version>
         <javaassist.version>3.11.0.GA</javaassist.version>
@@ -817,6 +818,16 @@
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-cachestore-jdbc</artifactId>
                 <version>${infinispan.version}</version>
+                <scope>test</scope>
+            </dependency>
+            
+            <!--
+                Used for Base64 testing.
+            -->
+            <dependency>
+                <groupId>org.jboss</groupId>
+                <artifactId>jboss-common-core</artifactId>
+                <version>${jboss.common.core.version}</version>
                 <scope>test</scope>
             </dependency>
 
