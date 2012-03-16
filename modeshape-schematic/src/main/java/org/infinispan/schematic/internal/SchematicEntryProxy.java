@@ -21,18 +21,22 @@
  */
 package org.infinispan.schematic.internal;
 
+import javax.transaction.SystemException;
+import javax.transaction.Transaction;
+import javax.transaction.TransactionManager;
+import org.infinispan.AdvancedCache;
 import org.infinispan.Cache;
 import org.infinispan.batch.AutoBatchSupport;
-import org.infinispan.batch.BatchContainer;
 import org.infinispan.container.entries.CacheEntry;
 import org.infinispan.context.Flag;
-import org.infinispan.context.InvocationContext;
-import org.infinispan.context.InvocationContextContainer;
+import org.infinispan.context.FlagContainer;
 import org.infinispan.marshall.MarshalledValue;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Binary;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
+import org.infinispan.transaction.LocalTransaction;
+import org.infinispan.transaction.TransactionTable;
 import org.infinispan.util.logging.Log;
 import org.infinispan.util.logging.LogFactory;
 
@@ -43,8 +47,7 @@ import org.infinispan.util.logging.LogFactory;
  * follow software transactional memory approaches to dealing with concurrency. <br />
  * <br />
  * Implementations of this class are rarely created on their own;
- * {@link SchematicEntryLiteral#getProxy(Cache, String, BatchContainer, InvocationContextContainer)} should be used to retrieve an
- * instance of this proxy. <br />
+ * {@link SchematicEntryLiteral#getProxy(Cache, String, FlagContainer)} should be used to retrieve an instance of this proxy. <br />
  * <br />
  * Typically proxies are only created by the {@link SchematicEntryLookup} helper, and would not be created by end-user code
  * directly.
@@ -57,19 +60,22 @@ public class SchematicEntryProxy extends AutoBatchSupport implements SchematicEn
     private static final Log log = LogFactory.getLog(SchematicEntryProxy.class);
     private static final boolean trace = log.isTraceEnabled();
 
-    final Cache<String, SchematicEntry> cache;
+    final AdvancedCache<String, SchematicEntry> cache;
     final String key;
-    final InvocationContextContainer icc;
+    final FlagContainer flagContainer;
+    protected TransactionTable transactionTable;
+    protected TransactionManager transactionManager;
     volatile boolean startedReadingValue = false;
 
-    SchematicEntryProxy( Cache<String, SchematicEntry> cache,
+    SchematicEntryProxy( AdvancedCache<String, SchematicEntry> cache,
                          String key,
-                         BatchContainer batchContainer,
-                         InvocationContextContainer icc ) {
+                         FlagContainer flagContainer ) {
         this.key = key;
         this.cache = cache;
-        this.batchContainer = batchContainer;
-        this.icc = icc;
+        this.batchContainer = cache.getBatchContainer();
+        this.flagContainer = flagContainer;
+        transactionTable = cache.getComponentRegistry().getComponent(TransactionTable.class);
+        transactionManager = cache.getTransactionManager();
     }
 
     /**
@@ -99,6 +105,28 @@ public class SchematicEntryProxy extends AutoBatchSupport implements SchematicEn
     }
 
     /**
+     * Looks up the CacheEntry stored in transactional context corresponding to this AtomicMap. If this AtomicMap has yet to be
+     * touched by the current transaction, this method will return a null.
+     * 
+     * @return the cache entry
+     */
+    protected CacheEntry lookupEntryFromCurrentTransaction() {
+        // Prior to 5.1, this used to happen by grabbing any InvocationContext in ThreadLocal. Since ThreadLocals
+        // can no longer be relied upon in 5.1, we need to grab the TransactionTable and check if an ongoing
+        // transaction exists, peeking into transactional state instead.
+        try {
+            Transaction tx = transactionManager.getTransaction();
+            LocalTransaction localTransaction = tx == null ? null : transactionTable.getLocalTransaction(tx);
+
+            // The stored localTransaction could be null, if this is the first call in a transaction. In which case
+            // we know that there is no transactional state to refer to - i.e., no entries have been looked up as yet.
+            return localTransaction == null ? null : localTransaction.lookupEntry(key);
+        } catch (SystemException e) {
+            return null;
+        }
+    }
+
+    /**
      * Utility method that gets the {@link SchematicEntryLiteral literal value} for this proxy, and which marks the value for
      * reading and performs various assertion checks. Comment this
      * 
@@ -114,16 +142,16 @@ public class SchematicEntryProxy extends AutoBatchSupport implements SchematicEn
         return value;
     }
 
-    private SchematicEntryLiteral getDeltaValueForWrite( InvocationContext ctx ) {
-        CacheEntry lookedUpEntry = ctx.lookupEntry(key);
+    private SchematicEntryLiteral getDeltaValueForWrite() {
+        CacheEntry lookedUpEntry = lookupEntryFromCurrentTransaction();
         boolean lockedAndCopied = lookedUpEntry != null && lookedUpEntry.isChanged() && toValue(lookedUpEntry.getValue()).copied;
 
         if (lockedAndCopied) {
             return getDeltaValueForRead();
         }
         // Otherwise, acquire the write lock ...
-        boolean suppressLocks = ctx.hasFlag(Flag.SKIP_LOCKING);
-        if (!suppressLocks) ctx.setFlags(Flag.FORCE_WRITE_LOCK);
+        boolean suppressLocks = flagContainer != null && flagContainer.hasFlag(Flag.SKIP_LOCKING);
+        if (!suppressLocks && flagContainer != null) flagContainer.setFlags(Flag.FORCE_WRITE_LOCK);
 
         if (trace) {
             if (suppressLocks) {
@@ -139,7 +167,7 @@ public class SchematicEntryProxy extends AutoBatchSupport implements SchematicEn
         copy.initForWriting();
         // reinstate the flag
         if (suppressLocks) {
-            ctx.setFlags(Flag.SKIP_LOCKING);
+            flagContainer.setFlags(Flag.SKIP_LOCKING);
         }
         cache.put(key, copy);
         return copy;
@@ -206,8 +234,7 @@ public class SchematicEntryProxy extends AutoBatchSupport implements SchematicEn
                             String defaultContentType ) {
         try {
             startAtomic();
-            InvocationContext ic = icc.createInvocationContext(true);
-            getDeltaValueForWrite(ic).setContent(content, metadata, defaultContentType);
+            getDeltaValueForWrite().setContent(content, metadata, defaultContentType);
         } finally {
             endAtomic();
         }
@@ -219,8 +246,7 @@ public class SchematicEntryProxy extends AutoBatchSupport implements SchematicEn
                             String defaultContentType ) {
         try {
             startAtomic();
-            InvocationContext ic = icc.createInvocationContext(true);
-            getDeltaValueForWrite(ic).setContent(content, metadata, defaultContentType);
+            getDeltaValueForWrite().setContent(content, metadata, defaultContentType);
         } finally {
             endAtomic();
         }
@@ -230,8 +256,7 @@ public class SchematicEntryProxy extends AutoBatchSupport implements SchematicEn
     public EditableDocument editDocumentContent() {
         try {
             startAtomic();
-            InvocationContext ic = icc.createInvocationContext(true);
-            return getDeltaValueForWrite(ic).editDocumentContent();
+            return getDeltaValueForWrite().editDocumentContent();
         } finally {
             endAtomic();
         }
@@ -241,8 +266,7 @@ public class SchematicEntryProxy extends AutoBatchSupport implements SchematicEn
     public EditableDocument editMetadata() {
         try {
             startAtomic();
-            InvocationContext ic = icc.createInvocationContext(true);
-            return getDeltaValueForWrite(ic).editMetadata();
+            return getDeltaValueForWrite().editMetadata();
         } finally {
             endAtomic();
         }

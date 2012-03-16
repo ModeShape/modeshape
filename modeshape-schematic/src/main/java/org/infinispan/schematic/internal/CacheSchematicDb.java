@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import org.infinispan.Cache;
+import org.infinispan.context.FlagContainer;
 import org.infinispan.distexec.mapreduce.Collector;
 import org.infinispan.distexec.mapreduce.MapReduceTask;
 import org.infinispan.schematic.SchemaLibrary;
@@ -208,8 +209,8 @@ public class CacheSchematicDb implements SchematicDb {
                                     SchematicEntry entry ) {
         if (entry == null) return null;
         SchematicEntryLiteral literal = (SchematicEntryLiteral)entry;
-        return literal.getProxy(store, key, store.getAdvancedCache().getBatchContainer(), store.getAdvancedCache()
-                                                                                               .getInvocationContextContainer());
+        FlagContainer flagContainer = null;
+        return literal.getProxy(store, key, flagContainer);
     }
 
     protected SchematicEntry removedResult( String key,
