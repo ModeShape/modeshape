@@ -54,6 +54,7 @@ import org.infinispan.util.Util;
  * @author Randall Hauch <rhauch@redhat.com> (C) 2011 Red Hat Inc.
  * @since 5.1
  * @see org.infinispan.atomic.AtomicHashMap
+ * @SerializeWith(SchematicEntryLiteral.Externalizer.class)
  */
 public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
 
@@ -291,6 +292,9 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
         return new ObservableDocumentEditor(mutableMetadata(), FieldPath.METADATA, getDelta(), null);
     }
 
+    /**
+     * The {@link org.infinispan.marshall.Externalizer Externalizer} for {@link SchematicEntryLiteral} instances.
+     */
     public static class Externalizer extends AbstractExternalizer<SchematicEntryLiteral> {
         /** The serialVersionUID */
         private static final long serialVersionUID = 1L;
