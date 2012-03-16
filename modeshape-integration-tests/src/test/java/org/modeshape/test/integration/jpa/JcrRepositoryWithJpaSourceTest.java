@@ -23,26 +23,22 @@
  */
 package org.modeshape.test.integration.jpa;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.GregorianCalendar;
 import javax.jcr.Credentials;
 import javax.jcr.ImportUUIDBehavior;
+import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import javax.jcr.Workspace;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 import org.junit.After;
 import org.junit.AfterClass;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -51,8 +47,15 @@ import org.modeshape.jcr.CndNodeTypeReader;
 import org.modeshape.jcr.JaasTestUtil;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
+import org.modeshape.test.ModeShapeUnitTest;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.GregorianCalendar;
 
-public class JcrRepositoryWithJpaSourceTest {
+public class JcrRepositoryWithJpaSourceTest extends ModeShapeUnitTest {
 
     private JcrEngine engine;
     private Repository repository;
@@ -272,6 +275,22 @@ public class JcrRepositoryWithJpaSourceTest {
         content.setProperty("jcr:encoding", "");
         content.setProperty("jcr:lastModified", lastModified);
 
+        session.save();
+    }
+
+    @Test
+    @FixFor("MODE-1421")
+    public void removeItemAfterRegisteringSessionNamespace() throws Exception {
+        NamespaceRegistry namespaceRegistry = session.getWorkspace().getNamespaceRegistry();
+        namespaceRegistry.registerNamespace("rh", "http://www.redhat.com");
+        session.setNamespacePrefix("rh", "http://www.redhat.com");
+
+        assertNotNull(namespaceRegistry.getURI("rh"));
+        Node rootNode = session.getRootNode();
+        rootNode.addNode("folder", "nt:folder");
+        session.save();
+        
+        session.removeItem("/folder");
         session.save();
     }
 
