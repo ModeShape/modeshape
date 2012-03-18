@@ -48,7 +48,6 @@ public class TestModeShapeConfiguration extends AbstractSubsystemTest {
     public void testDescribeHandler() throws Exception {
         String subsystemXml = ObjectConverterUtil.convertToString(new FileReader("src/test/resources/modeshape-sample-config.xml"));
         KernelServices servicesA = super.installInController(new AdditionalInitialization() {
-            @Override
             protected Type getType() {
                 return Type.MANAGEMENT;
             }
@@ -91,7 +90,6 @@ public class TestModeShapeConfiguration extends AbstractSubsystemTest {
         // String triggered = outputModel(testModel);
 
         KernelServices services = super.installInController(new AdditionalInitialization() {
-            @Override
             protected Type getType() {
                 return Type.MANAGEMENT;
             }

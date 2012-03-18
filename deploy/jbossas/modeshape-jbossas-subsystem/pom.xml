@@ -13,7 +13,7 @@
     <description>ModeShape deployment as a subsystem within the JBoss Application Server</description>
     <url>http://www.modeshape.org</url>
     <properties>
-        <jbossas-version>7.1.0.Alpha1-SNAPSHOT</jbossas-version>
+        <jbossas-version>7.1.1.Final</jbossas-version>
     </properties>
     <!--
          Define the dependencies. Note that all version and scopes default to
