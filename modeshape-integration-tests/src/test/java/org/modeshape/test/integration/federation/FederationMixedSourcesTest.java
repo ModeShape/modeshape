@@ -1,13 +1,17 @@
 package org.modeshape.test.integration.federation;
 
+import javax.jcr.NamespaceException;
+import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.Session;
 import javax.jcr.nodetype.NodeType;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.fail;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.jcr.JcrNodeTypeManager;
 import org.modeshape.test.ModeShapeSingleUseTest;
 import java.io.ByteArrayInputStream;
 
@@ -21,7 +25,7 @@ public class FederationMixedSourcesTest extends ModeShapeSingleUseTest {
     private static final String FS_PROJECTION = "fs";
     private static final String JPA_PROJECTION = "jpa";
     private static final String INMEMORY_PROJECTION = "inmemory";
-    
+
     private Session session;
 
     @Override
@@ -61,6 +65,40 @@ public class FederationMixedSourcesTest extends ModeShapeSingleUseTest {
         assertEquals(fileContentUuid, contentRef.getString());
         assertNotNull(contentRef.getNode());
         assertEquals(fileContentUuid, contentRef.getNode().getIdentifier());
+    }
+
+    @Test
+    @FixFor("MODE-1424")
+    public void shouldAllowUsedNamespacesToBeUnregistered() throws Exception {
+        NamespaceRegistry namespaceRegistry = session.getWorkspace().getNamespaceRegistry();
+        String namespacePrefix = "rh";
+        namespaceRegistry.registerNamespace(namespacePrefix, "http://www.redhat.com");
+        session.save();
+        assertNotNull(session.getNamespaceURI(namespacePrefix));
+
+        JcrNodeTypeManager nodeTypeManager = (JcrNodeTypeManager)session.getWorkspace().getNodeTypeManager();
+        nodeTypeManager.registerNodeTypes(
+                getClass().getClassLoader().getResourceAsStream("federated/redhatMixin.cnd"),
+                true);
+        session.save();
+
+        assertNotNull(nodeTypeManager.getNodeType("rh:product"));
+
+        Node folder = session.getRootNode().addNode(INMEMORY_PROJECTION + "/jbossas", "nt:folder");
+        folder.addMixin("rh:product");
+        session.save();
+
+        // attempt to delete the namespace first. according to JCR 2.0 specs this
+        // operation should succeed
+        namespaceRegistry.unregisterNamespace(namespacePrefix);
+        try {
+            namespaceRegistry.getURI(namespacePrefix);
+            fail("Namespace not unregistered");
+        } catch (NamespaceException e) {
+            //expected
+        }
+        folder.remove();
+        session.save();
     }
 
 }

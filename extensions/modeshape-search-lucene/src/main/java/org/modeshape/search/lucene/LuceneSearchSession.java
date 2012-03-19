@@ -107,14 +107,13 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 
 /**
@@ -154,12 +153,11 @@ public class LuceneSearchSession implements WorkspaceSession {
     protected static final int MAX_SNS_INDEX = 1000; // assume there won't be more than 1000 same-name-siblings
 
     /**
-     *  A [workspaceName -> binary semaphore] map, which is used to make sure that only 1 index writer is active per thread
+     *  A [workspaceName -> lock] map, which is used to make sure that only 1 index writer is active per thread
      *  per workspace, when updating indexes. Otherwise, if multiple threads were using multiple index writers on the same
      *  workspace, content could potentially be lost when indexing.
      */
-    private static final Map<String, Semaphore> INDEX_WRITER_LOCKS = Collections.synchronizedMap(
-            new HashMap<String, Semaphore>());
+    private static final ConcurrentHashMap<String, ReentrantLock> INDEX_WRITER_LOCKS = new ConcurrentHashMap<String, ReentrantLock>();
 
     private final LuceneSearchWorkspace workspace;
     protected final LuceneSearchProcessor processor;
@@ -227,11 +225,17 @@ public class LuceneSearchSession implements WorkspaceSession {
 
     private void lockIndexWriterAccess() {
         String workspaceName = getWorkspaceName();
-        if (INDEX_WRITER_LOCKS.containsKey(workspaceName)) {
-            INDEX_WRITER_LOCKS.get(workspaceName).acquireUninterruptibly();
-        } else {
-            INDEX_WRITER_LOCKS.put(workspaceName, new Semaphore(1, true));
-            INDEX_WRITER_LOCKS.get(workspaceName).acquireUninterruptibly();
+        if (!INDEX_WRITER_LOCKS.containsKey(workspaceName)) {
+            INDEX_WRITER_LOCKS.putIfAbsent(workspaceName, new ReentrantLock(true));
+        }
+        INDEX_WRITER_LOCKS.get(workspaceName).lock();
+    }
+
+    private void unlockIndexWriterAccess() {
+        String workspaceName = getWorkspaceName();
+        ReentrantLock lock = INDEX_WRITER_LOCKS.get(workspaceName);
+        while(lock.getHoldCount() > 0) {
+            lock.unlock();
         }
     }
 
@@ -342,10 +346,6 @@ public class LuceneSearchSession implements WorkspaceSession {
             throw new LuceneException(msg, ioError);
         }
         if (runtimeError != null) throw runtimeError;
-    }
-
-    private void unlockIndexWriterAccess() {
-        INDEX_WRITER_LOCKS.get(getWorkspaceName()).release();
     }
 
     /**
