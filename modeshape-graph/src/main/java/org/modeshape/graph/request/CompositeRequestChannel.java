@@ -93,10 +93,7 @@ public class CompositeRequestChannel {
      *        be null or empty
      */
     public CompositeRequestChannel( final String sourceName ) {
-        assert sourceName != null;
-        this.sourceName = sourceName;
-        this.composite = new ChannelCompositeRequest();
-        this.keepRequests = true;
+        this(sourceName, true, false);
     }
 
     /**
@@ -108,9 +105,21 @@ public class CompositeRequestChannel {
      */
     public CompositeRequestChannel( final String sourceName,
                                     boolean keepRequests ) {
+        this(sourceName, keepRequests, false);
+    }
+    
+    /**
+     * @see CompositeRequestChannel#CompositeRequestChannel(String, boolean)
+     * 
+     * @param readOnlyRequest a boolean which indicates whether the {@link ChannelCompositeRequest} is created as a read-only
+     * request or not.
+     */
+    public CompositeRequestChannel( final String sourceName,
+                                    boolean keepRequests,
+                                    boolean readOnlyRequest) {
         assert sourceName != null;
         this.sourceName = sourceName;
-        this.composite = new ChannelCompositeRequest();
+        this.composite = new ChannelCompositeRequest(readOnlyRequest);
         this.keepRequests = keepRequests;
     }
 
@@ -417,8 +426,8 @@ public class CompositeRequestChannel {
         private static final long serialVersionUID = 1L;
         private final LinkedList<Request> allRequests = CompositeRequestChannel.this.allRequests;
 
-        protected ChannelCompositeRequest() {
-            super(false);
+        protected ChannelCompositeRequest( boolean readOnly ) {
+            super(readOnly);
         }
 
         /**
