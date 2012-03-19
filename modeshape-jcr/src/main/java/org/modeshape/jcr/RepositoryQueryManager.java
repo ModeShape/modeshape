@@ -444,10 +444,14 @@ abstract class RepositoryQueryManager {
                                     int maxRowCount,
                                     int offset ) {
             SearchEngineProcessor processor = searchEngine.createProcessor(context, null, true);
-            FullTextSearchRequest request = new FullTextSearchRequest(searchExpression, workspaceName, maxRowCount, offset);
-            processor.process(request);
-            return new org.modeshape.graph.query.process.QueryResults(request.getResultColumns(), request.getStatistics(),
-                                                                      request.getTuples());
+            try {
+                FullTextSearchRequest request = new FullTextSearchRequest(searchExpression, workspaceName, maxRowCount, offset);
+                processor.process(request);
+                return new org.modeshape.graph.query.process.QueryResults(request.getResultColumns(), request.getStatistics(),
+                                                                          request.getTuples());
+            } finally {
+                processor.close();
+            }
         }
 
         /**
