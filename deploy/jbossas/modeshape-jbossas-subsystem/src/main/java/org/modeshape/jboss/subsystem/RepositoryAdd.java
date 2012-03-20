@@ -65,7 +65,7 @@ public class RepositoryAdd extends AbstractAddStepHandler implements Description
 		Element.SEQUENCER_EXPRESSIONS_ATTRIBUTE
 	};
 	
-	private static String jndiBaseName = "java:jcr/local/";   
+	public static String jndiBaseName = "jcr/local/";   
 	public static final RepositoryAdd INSTANCE = new RepositoryAdd();
 	   
 	private RepositoryAdd() {

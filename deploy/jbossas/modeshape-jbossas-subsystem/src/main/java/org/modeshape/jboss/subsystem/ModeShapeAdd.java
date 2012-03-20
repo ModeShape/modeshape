@@ -31,25 +31,42 @@ import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
+import org.jboss.as.naming.ManagedReferenceFactory;
+import org.jboss.as.naming.ServiceBasedNamingStore;
+import org.jboss.as.naming.deployment.ContextNames;
+import org.jboss.as.naming.service.BinderService;
 import org.jboss.dmr.ModelNode;
 import org.jboss.modules.Module;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
+import org.modeshape.common.naming.SingletonInitialContextFactory;
 import org.modeshape.jboss.lifecycle.JBossLifeCycleListener;
 import org.modeshape.jboss.service.EngineService;
+import org.modeshape.jboss.service.ReferenceFactoryService;
 import org.modeshape.jcr.JcrEngine;
+import org.modeshape.jcr.JcrRepository;
 
 class ModeShapeAdd extends AbstractAddStepHandler implements DescriptionProvider {
 
 	private static Element[] attributes = {
 	};
+	
+	// Jcr Engine
+	EngineService engine;
+	
+	SingletonInitialContextFactory scf = new SingletonInitialContextFactory();
 	
 	final JBossLifeCycleListener shutdownListener = new JBossLifeCycleListener();
 	
@@ -101,16 +118,32 @@ class ModeShapeAdd extends AbstractAddStepHandler implements DescriptionProvider
 		
 		final JBossLifeCycleListener shutdownListener = new JBossLifeCycleListener();
 		    	
-    	// Jcr Engine
-    	final EngineService engine = buildModeShapeEngine(operation);
-    	
-        ServiceBuilder<JcrEngine> engineBuilder = target.addService(ModeShapeServiceNames.ENGINE, engine);      
-        engineBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
-        ServiceController<JcrEngine> controller = engineBuilder.install(); 
+    	engine = buildModeShapeEngine(operation);
+      
+    	//Engine service
+    	ServiceBuilder<JcrEngine> engineBuilder = target.addService(ModeShapeServiceNames.ENGINE, engine);
+    	engineBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
+    	ServiceController<JcrEngine> controller = engineBuilder.install();
+    	controller.getServiceContainer().addTerminateListener(shutdownListener);
         newControllers.add(controller);
-        ServiceContainer container =  controller.getServiceContainer();
-        container.addTerminateListener(shutdownListener);
-     
+    	
+    	//JNDI Binding
+        final ReferenceFactoryService<JcrEngine> referenceFactoryService = new ReferenceFactoryService<JcrEngine>();
+		final ServiceName referenceFactoryServiceName = ModeShapeServiceNames.ENGINE.append("reference-factory"); //$NON-NLS-1$
+		final ServiceBuilder<?> referenceBuilder = target.addService(referenceFactoryServiceName,referenceFactoryService);
+		referenceBuilder.addDependency(ModeShapeServiceNames.ENGINE, JcrEngine.class, referenceFactoryService.getInjector());
+		referenceBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
+		  
+		final ContextNames.BindInfo bindInfo = ContextNames.bindInfoFor(RepositoryAdd.jndiBaseName);
+		final BinderService binderService = new BinderService(bindInfo.getBindName());
+		final ServiceBuilder<?> binderBuilder = target.addService(bindInfo.getBinderServiceName(), binderService);
+		binderBuilder.addDependency(referenceFactoryServiceName, ManagedReferenceFactory.class, binderService.getManagedObjectInjector());
+		binderBuilder.addDependency(bindInfo.getParentContextServiceName(), ServiceBasedNamingStore.class, binderService.getNamingStoreInjector());        
+		binderBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
+			
+		newControllers.add(referenceBuilder.install());
+		newControllers.add(binderBuilder.install());      
+        
   }
 	
 	private EngineService buildModeShapeEngine(ModelNode node) {
