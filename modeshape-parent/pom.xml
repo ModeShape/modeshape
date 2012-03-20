@@ -649,7 +649,7 @@
 				<database>oracle11g</database>
 				<jpaSource.dialect>org.hibernate.dialect.Oracle10gDialect</jpaSource.dialect>
 				<jpaSource.driverClassName>oracle.jdbc.driver.OracleDriver</jpaSource.driverClassName>
-				<jpaSource.url>jdbc:oracle:thin:@dev04.qa.atl2.redhat.com:1521:qaora11</jpaSource.url>
+				<jpaSource.url>jdbc:oracle:thin:@dev04.mw.lab.eng.bos.redhat.com:1521:qaora11</jpaSource.url>
 				<jpaSource.username>modeshape</jpaSource.username>
 				<jpaSource.password>modeshape</jpaSource.password>
 			</properties>
