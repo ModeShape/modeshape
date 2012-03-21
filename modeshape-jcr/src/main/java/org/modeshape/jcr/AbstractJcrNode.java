@@ -1265,7 +1265,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         if (jcrValue.value() == null) {
             throw new ValueFormatException(JcrI18n.valueMayNotContainNull.text(name));
         }
-        return setProperty(nameFrom(name), jcrValue, false);
+        return setProperty(nameFrom(name), jcrValue, false, false); // don't skip constraint checks or protected checks
+
     }
 
     @Override
@@ -1280,7 +1281,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         if (jcrValue.value() == null) {
             throw new ValueFormatException(JcrI18n.valueMayNotContainNull.text(name));
         }
-        return setProperty(nameFrom(name), jcrValue.asType(type), false);
+        // don't skip constraint checks or protected checks
+        return setProperty(nameFrom(name), jcrValue.asType(type), false, false);
     }
 
     @Override
@@ -1359,7 +1361,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         CheckArg.isNotNull(name, "name");
         checkSession();
         if (value == null) return removeExistingProperty(nameFrom(name));
-        return setProperty(nameFrom(name), valueFrom(PropertyType.STRING, value), false);
+        // don't skip constraint checks or protected checks
+        return setProperty(nameFrom(name), valueFrom(PropertyType.STRING, value), false, false);
     }
 
     @Override
@@ -1370,7 +1373,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         CheckArg.isNotNull(name, "name");
         checkSession();
         if (value == null) return removeExistingProperty(nameFrom(name));
-        return setProperty(nameFrom(name), valueFrom(type, value), false);
+        // don't skip constraint checks or protected checks
+        return setProperty(nameFrom(name), valueFrom(type, value), false, false);
     }
 
     @Override
@@ -1380,7 +1384,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         CheckArg.isNotNull(name, "name");
         checkSession();
         if (value == null) return removeExistingProperty(nameFrom(name));
-        return setProperty(nameFrom(name), valueFrom(value), false);
+        // don't skip constraint checks or protected checks
+        return setProperty(nameFrom(name), valueFrom(value), false, false);
     }
 
     @Override
@@ -1389,7 +1394,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
         CheckArg.isNotNull(name, "name");
         checkSession();
-        return setProperty(nameFrom(name), valueFrom(PropertyType.BINARY, value), false);
+        // don't skip constraint checks or protected checks
+        return setProperty(nameFrom(name), valueFrom(PropertyType.BINARY, value), false, false);
     }
 
     @Override
@@ -1398,7 +1404,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
         CheckArg.isNotNull(name, "name");
         checkSession();
-        return setProperty(nameFrom(name), valueFrom(PropertyType.BOOLEAN, value), false);
+        // don't skip constraint checks or protected checks
+        return setProperty(nameFrom(name), valueFrom(PropertyType.BOOLEAN, value), false, false);
     }
 
     @Override
@@ -1407,7 +1414,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
         CheckArg.isNotNull(name, "name");
         checkSession();
-        return setProperty(nameFrom(name), valueFrom(PropertyType.DOUBLE, value), false);
+        // don't skip constraint checks or protected checks
+        return setProperty(nameFrom(name), valueFrom(PropertyType.DOUBLE, value), false, false);
     }
 
     @Override
@@ -1416,7 +1424,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
         CheckArg.isNotNull(name, "name");
         checkSession();
-        return setProperty(nameFrom(name), valueFrom(PropertyType.DECIMAL, value), false);
+        // don't skip constraint checks or protected checks
+        return setProperty(nameFrom(name), valueFrom(PropertyType.DECIMAL, value), false, false);
     }
 
     @Override
@@ -1425,7 +1434,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
         CheckArg.isNotNull(name, "name");
         checkSession();
-        return setProperty(nameFrom(name), valueFrom(PropertyType.LONG, value), false);
+        // don't skip constraint checks or protected checks
+        return setProperty(nameFrom(name), valueFrom(PropertyType.LONG, value), false, false);
     }
 
     @Override
@@ -1435,7 +1445,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         CheckArg.isNotNull(name, "name");
         checkSession();
         if (value == null) return removeExistingProperty(nameFrom(name));
-        return setProperty(nameFrom(name), valueFrom(value), false);
+        // don't skip constraint checks or protected checks
+        return setProperty(nameFrom(name), valueFrom(value), false, false);
     }
 
     @Override
@@ -1445,7 +1456,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         CheckArg.isNotNull(name, "name");
         checkSession();
         if (value == null) return removeExistingProperty(nameFrom(name));
-        return setProperty(nameFrom(name), valueFrom(value), false);
+        // don't skip constraint checks or protected checks
+        return setProperty(nameFrom(name), valueFrom(value), false, false);
     }
 
     /**
@@ -1473,6 +1485,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @param name the name of the property; may not be null
      * @param value the value of the property; may not be null
      * @param skipReferenceValidation indicates whether constraints on REFERENCE properties should be enforced
+     * @param skipProtectedValidation true if protected properties can be set by the caller of this method, or false if the method
+     *        should validate that protected methods are not being called
      * @return the new JCR property object
      * @throws VersionException if the node is checked out
      * @throws LockException if the node is locked
@@ -1481,7 +1495,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      */
     final AbstractJcrProperty setProperty( Name name,
                                            JcrValue value,
-                                           boolean skipReferenceValidation )
+                                           boolean skipReferenceValidation,
+                                           boolean skipProtectedValidation )
         throws VersionException, LockException, ConstraintViolationException, RepositoryException {
         assert value != null;
         assert value.value() != null;
@@ -1511,12 +1526,13 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         Set<Name> mixinTypes = node.getMixinTypes(cache);
         NodeTypes nodeTypes = session.nodeTypes();
         JcrPropertyDefinition defn = null;
-        defn = nodeTypes.findPropertyDefinition(session, primaryType, mixinTypes, name, value, true, true, true);
+        final boolean skipProtected = !skipProtectedValidation;
+        defn = nodeTypes.findPropertyDefinition(session, primaryType, mixinTypes, name, value, true, skipProtected, true);
 
         if (defn == null) {
             // Failed to find a valid property definition,
             // so figure out if there's a definition that would work if it had no constraints ...
-            defn = nodeTypes.findPropertyDefinition(session, primaryType, mixinTypes, name, value, true, true, false);
+            defn = nodeTypes.findPropertyDefinition(session, primaryType, mixinTypes, name, value, true, skipProtected, false);
 
             String propName = readable(name);
             if (defn != null) {
@@ -2049,7 +2065,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                             setProperty(propDefn.getInternalName(), defaultValues, propDefn.getRequiredType(), true);
                         } else {
                             assert propDefn.getDefaultValues().length == 1;
-                            setProperty(propDefn.getInternalName(), defaultValues[0], false); // don't skip constraint checks
+                            // don't skip constraint checks or protected checks
+                            setProperty(propDefn.getInternalName(), defaultValues[0], false, false);
                         }
                     }
                     // otherwise, we don't care

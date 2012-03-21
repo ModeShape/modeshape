@@ -1435,7 +1435,8 @@ public class JcrSession implements Session {
                             if (defn.isMultiple()) {
                                 jcrNode.setProperty(propName, defaultValues, defn.getRequiredType(), false);
                             } else {
-                                jcrNode.setProperty(propName, defaultValues[0], false);
+                                // don't skip constraint checks or protected checks
+                                jcrNode.setProperty(propName, defaultValues[0], false,false);
                             }
                         } else {
                             // There is no default for this mandatory property, so this is a constraint violation ...

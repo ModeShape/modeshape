@@ -1671,7 +1671,7 @@ final class JcrVersionManager implements VersionManager {
                 }
 
             } else {
-                targetNode.setProperty(JcrLexicon.MERGE_FAILED, targetNode.valueFrom(sourceVersion), false);
+                targetNode.setProperty(JcrLexicon.MERGE_FAILED, targetNode.valueFrom(sourceVersion), false, false);
             }
             failures.add(targetNode);
 

@@ -123,6 +123,32 @@ public class ImportExportTest extends SingleUseAbstractTest {
         assertThat(newSourceNode.getProperty("badcharacters").getString(), is(BAD_CHARACTER_STRING));
     }
 
+    @FixFor( "MODE-1405" )
+    @Test
+    public void shouldImportProtectedContentUsingWorkpace() throws Exception {
+        String testName = "importExportEscapedXmlCharacters";
+        Node rootNode = session.getRootNode();
+        Node sourceNode = rootNode.addNode(testName + "Source", "nt:unstructured");
+        Node targetNode = rootNode.addNode(testName + "Target", "nt:unstructured");
+
+        // Test data
+        Node child = sourceNode.addNode("child");
+        child.addMixin("mix:created");
+        session.save();
+
+        // Verify there are 'jcr:createdBy' and 'jcr:created' properties ...
+        assertThat(child.getProperty("jcr:createdBy").getString(), is(notNullValue()));
+        assertThat(child.getProperty("jcr:created").getString(), is(notNullValue()));
+
+        testImportExport(sourceNode.getPath(), targetNode.getPath(), ExportType.SYSTEM, false, false, true);
+        Node newSourceNode = targetNode.getNode(testName + "Source");
+        Node newChild = newSourceNode.getNode("child");
+        // Verify there are 'jcr:createdBy' and 'jcr:created' properties ...
+        assertThat(newChild.getProperty("jcr:createdBy").getString(), is(notNullValue()));
+        assertThat(newChild.getProperty("jcr:created").getString(), is(notNullValue()));
+
+    }
+
     @Ignore( "JR TCK is broken" )
     @Test
     public void shouldImportExportEscapedXmlCharactersInDocumentViewUsingSession() throws Exception {
