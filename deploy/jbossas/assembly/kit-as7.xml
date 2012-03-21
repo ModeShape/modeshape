@@ -129,6 +129,17 @@
 				<include>modeshape-sequencer-xsd-${project.version}.jar</include>
 			</includes>
 		</fileSet>
+		
+    <!--
+    JDBC Driver for ModeShape
+    -->
+		<fileSet>
+			<directory>../../modeshape-jdbc-local/target</directory>
+			<outputDirectory>modules/org/modeshape/jdbc/main</outputDirectory>
+			<includes>
+				<include>modeshape-jdbc-local-${project.version}.jar</include>
+			</includes>
+		</fileSet>
 
     <!--
     Deployment for the ModeShape RESTful service WAR file
