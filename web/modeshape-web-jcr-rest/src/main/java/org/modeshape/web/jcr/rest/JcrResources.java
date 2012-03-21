@@ -165,7 +165,10 @@ public class JcrResources extends AbstractHandler {
     @Path( "/" )
     @Produces( "application/json" )
     public String getRepositories( @Context HttpServletRequest request ) throws JSONException, RepositoryException {
-        return serverHandler.getRepositories(request);
+        String result = serverHandler.getRepositories(request);
+        // System.out.println("Request:  " + request);
+        // System.out.println("Response: " + result);
+        return result;
     }
 
     /**
