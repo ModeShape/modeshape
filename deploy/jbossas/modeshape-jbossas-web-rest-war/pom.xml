@@ -44,6 +44,14 @@
     <resources>
         <resource>
             <filtering>false</filtering>
+            <directory>src/main/resources</directory>
+            <includes>
+                <include>*</include>
+                <include>**/*</include>
+            </includes>
+        </resource>
+        <resource>
+            <filtering>false</filtering>
             <directory>src/main/webapp</directory>
             <includes>
                 <include>*</include>
@@ -74,6 +82,12 @@
                         <directory>${project.basedir}/src/test/webapp/</directory>
                       </resource>
                     </webResources>
+                    <archive>
+                      <!-- Explicitly specify the dependencies on our modules JBoss AS 7 -->
+                      <manifestEntries>
+                        <Dependencies>javax.jcr,org.modeshape.jcr.api</Dependencies>
+                      </manifestEntries>
+                    </archive>
                 </configuration>
             </plugin>
 			<plugin>
