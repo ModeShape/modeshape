@@ -245,6 +245,14 @@
                         <policy-module code="Delegating" flag="required"/>
                     </authorization>
                 </security-domain>
+                <security-domain name="modeshape-security" cache-type="default">
+                    <authentication>
+                        <login-module code="UsersRoles" flag="required">
+                            <module-option name="usersProperties" value="modeshape-security-users.properties"/>
+                            <module-option name="rolesProperties" value="modeshape-security-roles.properties"/>
+                        </login-module>
+                    </authentication>
+                </security-domain>   
             </security-domains>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:threads:1.1"/>
