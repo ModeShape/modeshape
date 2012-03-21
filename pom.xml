@@ -26,10 +26,10 @@
 		<module>modeshape-jcr</module>
         <module>sequencers</module>
     <!--module>extractors/modeshape-extractor-tika</module-->
-    <!--module>modeshape-jdbc-local</module-->
+    <module>modeshape-jdbc-local</module>
+    <module>modeshape-unit-test</module>
+		<module>web</module>
     <!--module>modeshape-jdbc</module-->
-    <!--module>modeshape-unit-test</module-->
-		<!--module>web</module-->
 		<module>deploy/jbossas</module>
     <!--module>modeshape-integration-tests</module-->
 		<module>demos</module>

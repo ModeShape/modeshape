@@ -43,6 +43,7 @@ import org.junit.Test;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.JcrRepository.QueryLanguage;
 import org.modeshape.jcr.MultiUseAbstractTest;
+import org.modeshape.jcr.RepositoryConfiguration;
 
 /**
  * This is a test suite that operates against a complete JcrRepository instance created and managed using the JcrEngine.
@@ -74,7 +75,8 @@ public abstract class AbstractJdbcDriverTest extends MultiUseAbstractTest {
 
     @BeforeClass
     public static void beforeAll() throws Exception {
-        MultiUseAbstractTest.beforeAll();
+        RepositoryConfiguration config = new RepositoryConfiguration("cars");
+        startRepository(config);
 
         registerNodeTypes("cars.cnd");
         importContent("/", "cars-system-view.xml", ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);

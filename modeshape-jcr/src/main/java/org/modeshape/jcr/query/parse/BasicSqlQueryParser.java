@@ -244,7 +244,7 @@ import org.modeshape.jcr.value.ValueFormatException;
  * <pre>
  * Comparison ::= DynamicOperand Operator StaticOperand
  * 
- * Operator ::= '=' | '!=' | '<' | '<=' | '>' | '>=' | 'LIKE'
+ * Operator ::= '=' | '!=' | '<' | '<=' | '>' | '>=' | 'LIKE' | 'NOT LIKE'
  * </pre>
  * 
  * <h5>Between constraint</h5>
@@ -775,6 +775,12 @@ public class BasicSqlQueryParser implements QueryParser {
                         boolean upperInclusive = !tokens.canConsume("EXCLUSIVE");
                         constraint = between(left, lowerBound, upperBound, lowerInclusive, upperInclusive);
                         if (not) constraint = not(constraint);
+                    } else if (tokens.matches("NOT", "LIKE")) {
+                        tokens.consume("NOT");
+                        Operator operator = parseComparisonOperator(tokens);
+                        StaticOperand right = parseStaticOperand(tokens, typeSystem);
+                        constraint = comparison(left, operator, right);
+                        constraint = not(constraint);
                     } else {
                         Operator operator = parseComparisonOperator(tokens);
                         StaticOperand right = parseStaticOperand(tokens, typeSystem);

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<module xmlns="urn:jboss:module:1.1" name="org.modeshape.sequencer.images">
+<module xmlns="urn:jboss:module:1.1" name="org.modeshape.jdbc">
     <resources>
-        <resource-root path="modeshape-sequencer-images-${project.version}.jar" />
+        <resource-root path="modeshape-jdbc-local-${project.version}.jar" />
         <!-- Insert resources here -->
     </resources>
 

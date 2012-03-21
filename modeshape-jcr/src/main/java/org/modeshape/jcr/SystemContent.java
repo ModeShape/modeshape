@@ -635,6 +635,9 @@ public class SystemContent {
     public Collection<Namespace> readAllNamespaces() {
         CachedNode namespaces = namespacesNode();
         List<Namespace> results = new ArrayList<Namespace>();
+        // Add in the empty namespace ...
+        results.add(new BasicNamespace("", ""));
+        // Now read in the persisted namespaces ...
         for (ChildReference ref : namespaces.getChildReferences(system)) {
             CachedNode namespace = system.getNode(ref);
             String prefix = prefixFor(ref.getSegment());

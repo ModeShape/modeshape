@@ -61,12 +61,25 @@ class SystemContentInitializer implements ContentInitializer {
         namespaces = createNode(session, system, "mode:namespaces", ModeShapeLexicon.NAMESPACES, ModeShapeLexicon.NAMESPACES);
 
         // Create the standard namespaces ...
-        createNamespace(session, namespaces, "", "");
+        // createNamespace(session, namespaces, "", ""); // Don't initialize the "" namespaces
         createNamespace(session, namespaces, JcrLexicon.Namespace.PREFIX, JcrLexicon.Namespace.URI);
         createNamespace(session, namespaces, JcrNtLexicon.Namespace.PREFIX, JcrNtLexicon.Namespace.URI);
         createNamespace(session, namespaces, JcrMixLexicon.Namespace.PREFIX, JcrMixLexicon.Namespace.URI);
         createNamespace(session, namespaces, JcrSvLexicon.Namespace.PREFIX, JcrSvLexicon.Namespace.URI);
         createNamespace(session, namespaces, ModeShapeLexicon.Namespace.PREFIX, ModeShapeLexicon.Namespace.URI);
+        createNamespace(session, namespaces, JcrNamespaceRegistry.XML_NAMESPACE_PREFIX, JcrNamespaceRegistry.XML_NAMESPACE_URI);
+        createNamespace(session,
+                        namespaces,
+                        JcrNamespaceRegistry.XMLNS_NAMESPACE_PREFIX,
+                        JcrNamespaceRegistry.XMLNS_NAMESPACE_URI);
+        createNamespace(session,
+                        namespaces,
+                        JcrNamespaceRegistry.XML_SCHEMA_NAMESPACE_PREFIX,
+                        JcrNamespaceRegistry.XML_SCHEMA_NAMESPACE_URI);
+        createNamespace(session,
+                        namespaces,
+                        JcrNamespaceRegistry.XML_SCHEMA_INSTANCE_NAMESPACE_PREFIX,
+                        JcrNamespaceRegistry.XML_SCHEMA_INSTANCE_NAMESPACE_URI);
 
         // Create the "/jcr:system/mode:locks" node ...
         createNode(session, system, "mode:locks", ModeShapeLexicon.LOCKS, ModeShapeLexicon.LOCKS);

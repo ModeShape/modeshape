@@ -21,39 +21,30 @@
     <dependencySets>
         <dependencySet>
           <outputDirectory>WEB-INF/lib</outputDirectory>
-        <useTransitiveDependencies>true</useTransitiveDependencies>
-
-
-           <includes>
+          <useTransitiveDependencies>true</useTransitiveDependencies>
+          <includes>
             <include>org.modeshape:modeshape-web-jcr</include>
-            <include>org.modeshape:modeshape-jcr</include>
             <include>org.modeshape:modeshape-web-jcr-rest</include>
-
             <include>org.scannotation:scannotation</include>
             <include>org.codehaus.jettison:jettison</include>
-
           </includes>
           <excludes>
-             <exclude>org.modeshape:modeshape-jcr-api</exclude>
+            <exclude>org.modeshape:modeshape-jcr</exclude>
+            <exclude>org.modeshape:modeshape-jcr-api</exclude>
             <exclude>javax.jcr:jcr</exclude>
-           </excludes>
-    
+          </excludes>
         </dependencySet>
 
         <dependencySet>
           <outputDirectory>WEB-INF/lib</outputDirectory>
-            <useTransitiveDependencies>true</useTransitiveDependencies>
-
-           <includes>
+          <useTransitiveDependencies>true</useTransitiveDependencies>
+          <includes>
             <include>org.jboss.resteasy:resteasy-jaxrs</include>
             <include>org.jboss.resteasy:resteasy-jaxb-provider</include>
             <include>org.jboss.resteasy:resteasy-jettison-provider</include>
             <include>org.jboss.resteasy:jaxrs-api</include>
-            
           </includes>
-    
         </dependencySet>
-
     </dependencySets>
 
     <fileSets>

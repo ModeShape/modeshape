@@ -41,6 +41,24 @@
 	</dependencies>
 	<build>
 		<finalName>modeshape-test</finalName>
+    <resources>
+        <resource>
+            <filtering>false</filtering>
+            <directory>src/main/resources</directory>
+            <includes>
+                <include>*</include>
+                <include>**/*</include>
+            </includes>
+        </resource>
+        <resource>
+            <filtering>false</filtering>
+            <directory>src/main/webapp</directory>
+            <includes>
+                <include>*</include>
+                <include>**/*</include>
+            </includes>
+        </resource>
+    </resources>
 
 <!--   
         there are 2 wars being built, a test war and a deployment war
@@ -49,7 +67,6 @@
         in passing to cargo an overriding classpath 
     -->
 		<plugins>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
@@ -65,6 +82,12 @@
                         <directory>${project.basedir}/src/test/webapp/</directory>
                       </resource>
                     </webResources>
+                    <archive>
+                      <!-- Explicitly specify the dependencies on our modules JBoss AS 7 -->
+                      <manifestEntries>
+                        <Dependencies>javax.jcr,org.modeshape.jcr.api</Dependencies>
+                      </manifestEntries>
+                    </archive>
                 </configuration>
             </plugin>
 			<plugin>

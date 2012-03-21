@@ -1,6 +1,7 @@
 package org.modeshape.web.jcr.rest;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
@@ -38,7 +39,8 @@ class ServerHandler extends AbstractHandler {
             uri = uri.substring(0, uri.length() - 1);
         }
 
-        for (String repoName : RepositoryFactory.getJcrRepositoryNames()) {
+        Collection<String> repoNames = RepositoryFactory.getJcrRepositoryNames();
+        for (String repoName : repoNames) {
             if (repoName.trim().length() == 0) {
                 repoName = EMPTY_REPOSITORY_NAME;
             }
@@ -64,9 +66,9 @@ class ServerHandler extends AbstractHandler {
                 jsonRepositories.put(name, mapped);
             } catch (RepositoryException e) {
                 // Ignore, because we can't log in and thus cannot figure out any of the workspace names ...
+                e.printStackTrace();
             }
         }
-
         return jsonRepositories.toString();
     }
 

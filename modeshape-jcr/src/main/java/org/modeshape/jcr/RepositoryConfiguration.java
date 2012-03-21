@@ -1703,9 +1703,11 @@ public class RepositoryConfiguration {
         private <Type> Type createGenericComponent( ClassLoader classLoader ) {
             // Create the instance ...
             Type instance = Util.getInstance(getClassname(), classLoader);
-            // Always set the name; it may be set based upon the value in the document, but a name field in
-            // documents is not required ...
-            ReflectionUtil.setValue(instance, "name", getName());
+            if (ReflectionUtil.getField("name", instance.getClass()) != null) {
+                // Always try to set the name (if there is such a field). The name may be set based upon
+                // the value in the document, but a name field in documents is not required ...
+                ReflectionUtil.setValue(instance, "name", getName());
+            }
             setTypeFields(instance, getDocument());
             return instance;
         }

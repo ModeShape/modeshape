@@ -40,7 +40,7 @@
 	-->
     <context-param>
         <param-name>org.modeshape.web.jcr.JCR_URL</param-name>
-        <param-value>file:/configRepository.xml</param-value>
+        <param-value>file:/repository-config.json</param-value>
     </context-param>
 
 	<!--
