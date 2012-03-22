@@ -248,8 +248,8 @@
                 <security-domain name="modeshape-security" cache-type="default">
                     <authentication>
                         <login-module code="UsersRoles" flag="required">
-                            <module-option name="usersProperties" value="modeshape-security-users.properties"/>
-                            <module-option name="rolesProperties" value="modeshape-security-roles.properties"/>
+                            <module-option name="usersProperties" value="modeshape-users.properties"/>
+                            <module-option name="rolesProperties" value="modeshape-roles.properties"/>
                         </login-module>
                     </authentication>
                 </security-domain>   

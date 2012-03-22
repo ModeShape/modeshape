@@ -4,13 +4,13 @@
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
  * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors. 
+ * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- *
+ * 
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -21,17 +21,20 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
+package org.modeshape.jcr.api;
+
+import javax.jcr.Repository;
+
 /**
- * This package contains the core components for the ModeShape REST server implementation.
- * <p>
- * The key classes are:
- * <ul>
- * <li>{@link org.modeshape.web.jcr.rest.JcrResources} - the class that handles requests for valid URIs</li>
- * <li>{@link org.modeshape.web.jcr.rest.JcrApplication} - the JAX-RS application class that indicates that JcrResources should be used to handle URIs</li>
- * <li>{@link org.modeshape.web.jcr.RepositoryManager} - the interface to the ModeShape JCR SPI</li> 
- * </ul>
- * </p>
+ * 
  */
-package org.modeshape.web.jcr.rest;
+public interface NamedRepository extends Repository {
 
+    /**
+     * Get the name of the repository
+     * 
+     * @return the repository name; never null
+     */
+    public String getName();
 
+}

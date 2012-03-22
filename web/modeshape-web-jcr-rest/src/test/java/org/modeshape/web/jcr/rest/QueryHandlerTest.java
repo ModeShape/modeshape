@@ -3,9 +3,14 @@ package org.modeshape.web.jcr.rest;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import java.net.URI;
 import java.net.URLEncoder;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.Vector;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -24,15 +29,18 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+import org.modeshape.jcr.api.RepositoryFactory;
 import org.modeshape.web.jcr.ModeShapeJcrDeployer;
-import org.modeshape.web.jcr.RepositoryFactory;
-import org.modeshape.web.jcr.spi.FactoryRepositoryProvider;
+import org.modeshape.web.jcr.RepositoryManager;
 
 @Ignore
 // TODO: Query
 public class QueryHandlerTest {
 
     private final String VALID_JCR_URL = "file:src/test/resources/repo-config.json";
+    protected final List<String> PARAM_NAMES = Collections.singletonList(RepositoryFactory.URL);
     private final String REPOSITORY_NAME = "Test Repository";
     private final String WORKSPACE_NAME = "default";
     private final String NODE_NAME = "testNode";
@@ -50,8 +58,16 @@ public class QueryHandlerTest {
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
 
-        when(context.getInitParameter(FactoryRepositoryProvider.JCR_URL)).thenReturn(VALID_JCR_URL);
-        when(context.getInitParameter(RepositoryFactory.PROVIDER_KEY)).thenReturn(FactoryRepositoryProvider.class.getName());
+        context = mock(ServletContext.class);
+        when(context.getInitParameterNames()).thenAnswer(new Answer<Enumeration<?>>() {
+            @SuppressWarnings( {"unchecked", "rawtypes"} )
+            @Override
+            public Enumeration<?> answer( InvocationOnMock invocation ) throws Throwable {
+                return new Vector(PARAM_NAMES).elements();
+            }
+        });
+        when(context.getInitParameter(RepositoryFactory.URL)).thenReturn(VALID_JCR_URL);
+
         when(event.getServletContext()).thenReturn(context);
 
         deployer = new ModeShapeJcrDeployer();
@@ -287,7 +303,7 @@ public class QueryHandlerTest {
     }
 
     private Session getSession() throws RepositoryException {
-        return RepositoryFactory.getSession(request, REPOSITORY_NAME, WORKSPACE_NAME);
+        return RepositoryManager.getSession(request, REPOSITORY_NAME, WORKSPACE_NAME);
     }
 
 }

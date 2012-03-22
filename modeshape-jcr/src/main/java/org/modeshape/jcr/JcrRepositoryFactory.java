@@ -120,7 +120,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
     /**
      * The name of the URL parameter that specifies the repository name.
      */
-    public static final String REPOSITORY_NAME_PARAM = "repositoryName";
+    public static final String REPOSITORY_NAME_PARAM = org.modeshape.jcr.api.JndiRepositoryFactory.REPOSITORY_NAME_PARAM;
 
     static {
         ENGINE.start();
@@ -217,10 +217,15 @@ public class JcrRepositoryFactory implements RepositoryFactory {
             if (repository != null) return repository;
         } else {
             // Otherwise just use the URL ...
-            return getRepositoryFromConfigFile(url);
+            JcrRepository repo = getRepositoryFromConfigFile(url);
+            // The name might not match the configuration's name ...
+            if (repositoryName == null || repo.getName().equals(repositoryName)) return repo;
         }
 
-        LOG.debug("Could not load or find a ModeShape repository using the URL '{1}'", url);
+        LOG.debug("Could not load or find a ModeShape repository named '{0}' using the URL '{1}' and params: {2}",
+                  repositoryName,
+                  url,
+                  parameters);
         return null;
     }
 

@@ -51,7 +51,7 @@ public class JcrRepositoryFactoryTest {
 
     @Test
     public void shouldReturnRepositoryFromConfigurationFile() {
-        url = "file:src/test/resources/config/sample-repo-config.json";
+        url = "file:src/test/resources/config/simple-repo-config.json";
         params = Collections.singletonMap(JcrRepositoryFactory.URL, url);
 
         repository = repositoryFor(params);
@@ -60,7 +60,7 @@ public class JcrRepositoryFactoryTest {
 
     @Test
     public void shouldReturnRepositoryFromConfigurationClasspathResourceUsingFileScheme() {
-        url = "file:///config/sample-repo-config.json";
+        url = "file:///config/simple-repo-config.json";
         params = Collections.singletonMap(JcrRepositoryFactory.URL, url);
 
         repository = repositoryFor(params);
@@ -69,7 +69,7 @@ public class JcrRepositoryFactoryTest {
 
     @Test
     public void shouldReturnSameRepositoryFromSameConfigurationFile() {
-        url = "file:///config/sample-repo-config.json";
+        url = "file:///config/simple-repo-config.json";
         params = Collections.singletonMap(JcrRepositoryFactory.URL, url);
 
         repository = repositoryFor(params);
