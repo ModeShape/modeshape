@@ -12,7 +12,7 @@ import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.modeshape.common.annotation.Immutable;
-import org.modeshape.web.jcr.RepositoryFactory;
+import org.modeshape.web.jcr.RepositoryManager;
 
 /**
  * Resource handler that implements REST methods for servers.
@@ -39,7 +39,7 @@ class ServerHandler extends AbstractHandler {
             uri = uri.substring(0, uri.length() - 1);
         }
 
-        Collection<String> repoNames = RepositoryFactory.getJcrRepositoryNames();
+        Collection<String> repoNames = RepositoryManager.getJcrRepositoryNames();
         for (String repoName : repoNames) {
             if (repoName.trim().length() == 0) {
                 repoName = EMPTY_REPOSITORY_NAME;

@@ -25,9 +25,9 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.modeshape.common.util.IoUtil;
+import org.modeshape.jcr.api.RepositoryFactory;
 import org.modeshape.web.jcr.ModeShapeJcrDeployer;
-import org.modeshape.web.jcr.RepositoryFactory;
-import org.modeshape.web.jcr.spi.FactoryRepositoryProvider;
+import org.modeshape.web.jcr.RepositoryManager;
 import org.modeshape.web.jcr.webdav.ModeShapeWebdavStore.JcrSessionTransaction;
 
 public class ModeShapeWebdavStoreTest {
@@ -38,7 +38,7 @@ public class ModeShapeWebdavStoreTest {
     private JcrSessionTransaction tx;
     private ServletContextListener contextListener = new ModeShapeJcrDeployer();
     private Session session;
-    private String repositoryName = "mode:repository";
+    private String repositoryName = "repo";
     private String workspaceName = "default";
 
     @Mock
@@ -57,10 +57,9 @@ public class ModeShapeWebdavStoreTest {
         when(principal.getName()).thenReturn("testuser");
         when(request.getUserPrincipal()).thenReturn(principal);
         when(request.isUserInRole("readwrite")).thenReturn(true);
-        when(context.getInitParameter(RepositoryFactory.PROVIDER_KEY)).thenReturn(FactoryRepositoryProvider.class.getName());
-        when(context.getInitParameter(FactoryRepositoryProvider.JCR_URL)).thenReturn("file:///configRepository.xml");
-        when(context.getInitParameter(SingleRepositoryRequestResolver.INIT_REPOSITORY_NAME)).thenReturn("mode:repository");
-        when(context.getInitParameter(SingleRepositoryRequestResolver.INIT_WORKSPACE_NAME)).thenReturn("default");
+        when(context.getInitParameter(RepositoryFactory.URL)).thenReturn("file:///repository-config.json");
+        when(context.getInitParameter(SingleRepositoryRequestResolver.INIT_REPOSITORY_NAME)).thenReturn(repositoryName);
+        when(context.getInitParameter(SingleRepositoryRequestResolver.INIT_WORKSPACE_NAME)).thenReturn(workspaceName);
         when(event.getServletContext()).thenReturn(context);
 
         RequestResolver uriResolver = new SingleRepositoryRequestResolver();
@@ -74,7 +73,7 @@ public class ModeShapeWebdavStoreTest {
 
         ModeShapeWebdavStore.setRequest(request);
 
-        session = RepositoryFactory.getSession(request, repositoryName, workspaceName);
+        session = RepositoryManager.getSession(request, repositoryName, workspaceName);
 
         tx = (JcrSessionTransaction)store.begin(principal);
 

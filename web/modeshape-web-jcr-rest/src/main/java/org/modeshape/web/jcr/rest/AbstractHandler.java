@@ -9,7 +9,7 @@ import javax.jcr.Value;
 import javax.servlet.http.HttpServletRequest;
 import org.modeshape.common.text.UrlEncoder;
 import org.modeshape.common.util.Base64;
-import org.modeshape.web.jcr.RepositoryFactory;
+import org.modeshape.web.jcr.RepositoryManager;
 
 abstract class AbstractHandler {
 
@@ -36,7 +36,7 @@ abstract class AbstractHandler {
                                   String rawWorkspaceName ) throws RepositoryException {
         assert request != null;
 
-        return RepositoryFactory.getSession(request, repositoryNameFor(rawRepositoryName), workspaceNameFor(rawWorkspaceName));
+        return RepositoryManager.getSession(request, repositoryNameFor(rawRepositoryName), workspaceNameFor(rawWorkspaceName));
     }
 
     private String workspaceNameFor( String rawWorkspaceName ) {

@@ -1,4 +1,4 @@
-package org.modeshape.web.jcr.spi;
+package org.modeshape.web.jcr;
 
 import javax.jcr.RepositoryException;
 

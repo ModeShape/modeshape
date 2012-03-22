@@ -25,11 +25,10 @@ package org.modeshape.web.jcr;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
-import org.modeshape.web.jcr.spi.RepositoryProvider;
 
 /**
- * Servlet context listener that is responsible for {@link RepositoryFactory#initialize(javax.servlet.ServletContext)
- * initializing} the {@link RepositoryFactory repository factory}.
+ * Servlet context listener that is responsible for {@link RepositoryManager#initialize(javax.servlet.ServletContext)
+ * initializing} the {@link RepositoryManager repository factory}.
  * <p>
  * This class is not thread safe, but in practice this does not matter as the servlet container must ensure that only a single
  * instance of this exists per web context and that it is only called in a single-threaded manner.
@@ -38,7 +37,7 @@ import org.modeshape.web.jcr.spi.RepositoryProvider;
  * This class is not thread-safe.
  * </p>
  * 
- * @see RepositoryFactory
+ * @see RepositoryManager
  */
 public class ModeShapeJcrDeployer implements ServletContextListener {
 
@@ -46,22 +45,21 @@ public class ModeShapeJcrDeployer implements ServletContextListener {
      * Alerts the repository factory that the web application is shutting down
      * 
      * @param event the servlet context event
-     * @see RepositoryFactory#shutdown()
-     * @see RepositoryProvider#shutdown()
+     * @see RepositoryManager#shutdown()
      */
     @Override
     public void contextDestroyed( ServletContextEvent event ) {
-        RepositoryFactory.shutdown();
+        RepositoryManager.shutdown();
     }
 
     /**
      * Initializes the repository factory
      * 
      * @param event the servlet context event
-     * @see RepositoryFactory#initialize(javax.servlet.ServletContext)
+     * @see RepositoryManager#initialize(javax.servlet.ServletContext)
      */
     @Override
     public void contextInitialized( ServletContextEvent event ) {
-        RepositoryFactory.initialize(event.getServletContext());
+        RepositoryManager.initialize(event.getServletContext());
     }
 }

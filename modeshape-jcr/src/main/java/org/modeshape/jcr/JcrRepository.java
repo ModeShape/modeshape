@@ -238,6 +238,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
      * 
      * @return the name; never null
      */
+    @Override
     public String getName() {
         return repositoryName.get();
     }

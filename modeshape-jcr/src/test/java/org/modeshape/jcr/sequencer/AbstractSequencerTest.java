@@ -23,30 +23,30 @@
  */
 package org.modeshape.jcr.sequencer;
 
-import javax.jcr.Node;
-import javax.jcr.RepositoryException;
-import javax.jcr.Workspace;
-import javax.jcr.observation.EventIterator;
-import javax.jcr.observation.EventListener;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
-import org.infinispan.manager.CacheContainer;
-import org.modeshape.jcr.RepositoryConfiguration;
-import org.modeshape.jcr.SingleUseAbstractTest;
-import org.modeshape.jcr.api.JcrConstants;
-import org.modeshape.jcr.api.observation.Event;
 import static org.modeshape.jcr.api.observation.Event.NODE_SEQUENCED;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import javax.jcr.Node;
+import javax.jcr.RepositoryException;
+import javax.jcr.Workspace;
+import javax.jcr.observation.EventIterator;
+import javax.jcr.observation.EventListener;
+import org.infinispan.manager.CacheContainer;
+import org.modeshape.jcr.RepositoryConfiguration;
+import org.modeshape.jcr.SingleUseAbstractTest;
+import org.modeshape.jcr.api.JcrConstants;
+import org.modeshape.jcr.api.observation.Event;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Class which serves as base for various sequencer unit tests.
- *
+ * 
  * @author Horia Chiorean
  */
 public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
@@ -59,8 +59,8 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
     private ConcurrentHashMap<String, Node> sequencedNodes = new ConcurrentHashMap<String, Node>();
 
     /**
-     * A [node path, latch] map which is used to block tests waiting for sequenced output, until either the node has been sequenced
-     * or a timeout occurs
+     * A [node path, latch] map which is used to block tests waiting for sequenced output, until either the node has been
+     * sequenced or a timeout occurs
      */
     private ConcurrentHashMap<String, CountDownLatch> waitingLatches = new ConcurrentHashMap<String, CountDownLatch>();
 
@@ -70,8 +70,13 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
     public void beforeEach() throws Exception {
         super.beforeEach();
         rootNode = session.getRootNode();
-        ((Workspace)session.getWorkspace()).getObservationManager().addEventListener(new SequencingListener(), NODE_SEQUENCED,
-                                                                                     null, true, null, null, false);
+        ((Workspace)session.getWorkspace()).getObservationManager().addEventListener(new SequencingListener(),
+                                                                                     NODE_SEQUENCED,
+                                                                                     null,
+                                                                                     true,
+                                                                                     null,
+                                                                                     null,
+                                                                                     false);
     }
 
     @Override
@@ -92,8 +97,9 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
     }
 
     /**
-     * Returns an input stream to a JSON file which will be used to configure the repository. By default, this is config/repot-config.json
-     *
+     * Returns an input stream to a JSON file which will be used to configure the repository. By default, this is
+     * config/repot-config.json
+     * 
      * @return a {@code InputStream} instance
      */
     protected InputStream getRepositoryConfigStream() {
@@ -102,7 +108,7 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
 
     /**
      * Creates a nt:file node, under the root node, at the given path and with the jcr:data property pointing at the filepath.
-     *
+     * 
      * @param nodePath the path under the root node, where the nt:file will be created.
      * @param filePath a path relative to {@link Class#getResourceAsStream(String)} where a file is expected at runtime
      * @return the new node
@@ -115,41 +121,45 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
             parent = parent.addNode(pathSegment);
         }
         Node content = parent.addNode(JcrConstants.JCR_CONTENT);
-        content.setProperty(JcrConstants.JCR_DATA, ((javax.jcr.Session)session).getValueFactory().createBinary(resourceStream(
-                filePath)));
+        content.setProperty(JcrConstants.JCR_DATA,
+                            ((javax.jcr.Session)session).getValueFactory().createBinary(resourceStream(filePath)));
         session.save();
         return parent;
     }
 
     /**
      * Retrieves a sequenced node using 5 seconds as maximum wait time.
-     *
+     * 
+     * @param parentNode an existing {@link Node}
+     * @param relativePath the path under the parent node at which the sequenced node is expected to appear (note that this must
+     *        be the path to the "new" node, always.
+     * @return either the sequenced node or null, if something has failed.
+     * @throws Exception if anything unexpected happens
      * @see AbstractSequencerTest#getSequencedNode(javax.jcr.Node, String, int)
      */
     protected Node getSequencedNode( Node parentNode,
                                      String relativePath ) throws Exception {
-      return getSequencedNode(parentNode, relativePath, 5);
+        return getSequencedNode(parentNode, relativePath, 5);
     }
 
     /**
      * Attempts to retrieve a node (which is expected to have been sequenced) under an existing parent node at a relative path.
      * The sequenced node "appears" when the {@link SequencingListener} is notified of the sequencing process. The thread which
-     * calls this method either returns immediately if the node has already been sequenced, or waits a number of seconds for it
-     * to become available.
-     *
+     * calls this method either returns immediately if the node has already been sequenced, or waits a number of seconds for it to
+     * become available.
+     * 
      * @param parentNode an existing {@link Node}
      * @param relativePath the path under the parent node at which the sequenced node is expected to appear (note that this must
-     * be the path to the "new" node, always.
+     *        be the path to the "new" node, always.
      * @param waitTimeSeconds the max number of seconds to wait.
      * @return either the sequenced node or null, if something has failed.
      * @throws Exception if anything unexpected happens
      */
     protected Node getSequencedNode( Node parentNode,
                                      String relativePath,
-                                     int waitTimeSeconds) throws Exception {
+                                     int waitTimeSeconds ) throws Exception {
         String parentNodePath = parentNode.getPath();
-        String expectedPath = parentNodePath.endsWith(
-                "/") ? parentNodePath + relativePath : parentNodePath + "/" + relativePath;
+        String expectedPath = parentNodePath.endsWith("/") ? parentNodePath + relativePath : parentNodePath + "/" + relativePath;
 
         if (!sequencedNodes.containsKey(expectedPath)) {
             createWaitingLatchIfNecessary(expectedPath);
@@ -189,7 +199,7 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
                     logger.debug("New sequenced node at: " + nodePath);
                     sequencedNodes.put(nodePath, session.getNode(nodePath));
 
-                    //signal the node is available
+                    // signal the node is available
                     createWaitingLatchIfNecessary(nodePath);
                     waitingLatches.get(nodePath).countDown();
                 } catch (Exception e) {

@@ -51,7 +51,7 @@ import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.Logger;
-import org.modeshape.web.jcr.RepositoryFactory;
+import org.modeshape.web.jcr.RepositoryManager;
 
 /**
  * Implementation of the {@code IWebdavStore} interface that uses a JCR repository as a backing store.
@@ -560,7 +560,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
             SessionKey key = new SessionKey(repositoryName, workspaceName);
             Session result = sessions.get(key);
             if (result == null) {
-                result = RepositoryFactory.getSession(request.getRequest(), repositoryName, workspaceName);
+                result = RepositoryManager.getSession(request.getRequest(), repositoryName, workspaceName);
                 sessions.put(key, result);
             }
             return result;
@@ -588,7 +588,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
                     }
                 }
                 // See if the repository exists ...
-                return RepositoryFactory.getJcrRepositoryNames().contains(request.getRepositoryName());
+                return RepositoryManager.getJcrRepositoryNames().contains(request.getRepositoryName());
             }
             // Otherwise, the request doesn't even specify the repository name, so we'll treat this as existing ...
             return true;
@@ -624,7 +624,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
                     // Didn't have an existing session for that repository, so create one ...
                     Session session = null;
                     try {
-                        session = RepositoryFactory.getSession(request.getRequest(), repositoryName, null);
+                        session = RepositoryManager.getSession(request.getRequest(), repositoryName, null);
                         return session.getWorkspace().getAccessibleWorkspaceNames();
                     } finally {
                         if (session != null) {
@@ -634,7 +634,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
                 }
             } else {
                 // Get the list of repository names ...
-                names = RepositoryFactory.getJcrRepositoryNames();
+                names = RepositoryManager.getJcrRepositoryNames();
             }
             return names == null ? null : names.toArray(new String[names.size()]);
         }

@@ -22,24 +22,20 @@
 <web-app>
 	<display-name>ModeShape JCR RESTful Interface</display-name>
 
-	<!--
-		This parameter provides the fully-qualified name of a class that implements
-		the o.m.w.jcr.spi.RepositoryProvider interface.  It is required
-		by the ModeShapeJcrDeployer that controls the lifecycle for the ModeShape REST server.
-	-->
-    <context-param>
-        <param-name>org.modeshape.web.jcr.REPOSITORY_PROVIDER</param-name>
-        <param-value>org.modeshape.web.jcr.spi.FactoryRepositoryProvider</param-value>
-    </context-param>
+    <!--
+        This servlet uses the ServiceLoader to find a RepositoryFactory that returns a non-null
+        Repository instance. (This is the idiomatic way to obtain a JCR Repository.)
+        This parameter defines the location of the configuration file, or can specify
+        the JNDI location of the Repository or Repositories implementation.
+        (If the object in JNDI is a ModeShape Repositories instance, then this web application
+        will support multiple repositories.)
 
-	<!--
-		This parameter, specific to the ModeShapeJcrRepositoryProvider implementation, specifies
-		the name of the configuration file to initialize the repository or repositories.
-		This configuration file must be on the classpath and is given as a classpath-relative
-		directory.
-	-->
+        If a file is specified, ModeShape will first check for a file at this path in the filesystem.
+        If not file exists at this path, ModeShape will attempt to load this as a resource
+        from the classpath.
+    -->
     <context-param>
-        <param-name>org.modeshape.web.jcr.JCR_URL</param-name>
+        <param-name>org.modeshape.jcr.URL</param-name>
         <param-value>file:/repository-config.json</param-value>
     </context-param>
 

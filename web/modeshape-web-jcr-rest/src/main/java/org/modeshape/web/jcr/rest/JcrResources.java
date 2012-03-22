@@ -24,6 +24,7 @@
 package org.modeshape.web.jcr.rest;
 
 import java.io.IOException;
+import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.query.InvalidQueryException;
@@ -50,7 +51,7 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.UnauthorizedException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.Base64;
-import org.modeshape.web.jcr.spi.NoSuchRepositoryException;
+import org.modeshape.web.jcr.NoSuchRepositoryException;
 
 /**
  * RESTEasy handler to provide the JCR resources at the URIs below. Please note that these URIs assume a context of
@@ -495,6 +496,16 @@ public class JcrResources extends AbstractHandler {
 
         @Override
         public Response toResponse( NotFoundException exception ) {
+            return Response.status(Status.NOT_FOUND).entity(exception.getMessage()).build();
+        }
+
+    }
+
+    @Provider
+    public static class NoSuchWorkspaceExceptionMapper implements ExceptionMapper<NoSuchWorkspaceException> {
+
+        @Override
+        public Response toResponse( NoSuchWorkspaceException exception ) {
             return Response.status(Status.NOT_FOUND).entity(exception.getMessage()).build();
         }
 
