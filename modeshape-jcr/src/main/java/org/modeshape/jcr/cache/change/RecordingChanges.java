@@ -23,6 +23,7 @@
  */
 package org.modeshape.jcr.cache.change;
 
+import java.util.Collections;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.Map;
@@ -48,8 +49,8 @@ public class RecordingChanges implements Changes, ChangeSet {
     private final String repositoryKey;
     private final String workspaceName;
     private final Queue<Change> events = new ConcurrentLinkedQueue<Change>();
-    private Set<NodeKey> nodeKeys;
-    private Map<String, String> userData;
+    private Set<NodeKey> nodeKeys = Collections.emptySet();
+    private Map<String, String> userData = Collections.emptyMap();
     private String userId;
     private DateTime timestamp;
 
@@ -125,6 +126,14 @@ public class RecordingChanges implements Changes, ChangeSet {
     }
 
     @Override
+    public void nodeSequenced( NodeKey originalNodeKey,
+                               Path originalNodePath,
+                               NodeKey sequencedNodeKey,
+                               Path sequencedNodePath ) {
+        events.add(new NodeSequenced(sequencedNodeKey, sequencedNodePath, originalNodeKey, originalNodePath));
+    }
+
+    @Override
     public void propertyAdded( NodeKey key,
                                Path nodePath,
                                Property property ) {
@@ -175,14 +184,18 @@ public class RecordingChanges implements Changes, ChangeSet {
     }
 
     public void setChangedNodes( Set<NodeKey> keys ) {
-        this.nodeKeys = keys;
+        if (keys != null) {
+            this.nodeKeys = Collections.unmodifiableSet(keys);
+        }
     }
 
     public void freeze( String userId,
                         Map<String, String> userData,
                         DateTime timestamp ) {
         this.userId = userId;
-        this.userData = userData;
+        if (userData != null) {
+            this.userData = Collections.unmodifiableMap(userData);
+        }
         this.timestamp = timestamp;
     }
 

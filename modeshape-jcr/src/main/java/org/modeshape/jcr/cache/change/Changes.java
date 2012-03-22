@@ -72,6 +72,11 @@ public interface Changes {
     void nodeChanged( NodeKey key,
                       Path path );
 
+    void nodeSequenced( NodeKey originalNodeKey,
+                        Path originalNodePath,
+                        NodeKey sequencedNodeKey,
+                        Path sequencedNodePath );
+
     void propertyAdded( NodeKey key,
                         Path nodePath,
                         Property property );

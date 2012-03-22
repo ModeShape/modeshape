@@ -49,7 +49,7 @@ public class XsdSequencerTest extends AbstractSequencerTest {
 
         createNodeWithContentFromFile(nodeName, filename);
 
-        Node sequencedNode = getSequencedNode(rootNode, nodeName + "/" + XsdLexicon.SCHEMA_DOCUMENT, 4);
+        Node sequencedNode = getSequencedNode(rootNode, nodeName + "/" + XsdLexicon.SCHEMA_DOCUMENT);
         assertNotNull(sequencedNode);
         assertEquals(XsdLexicon.SCHEMA_DOCUMENT, sequencedNode.getPrimaryNodeType().getName());
         assertTrue(sequencedNode.getNodes().getSize() > 0);

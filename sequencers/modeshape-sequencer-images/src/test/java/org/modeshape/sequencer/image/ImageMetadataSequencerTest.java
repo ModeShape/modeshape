@@ -81,8 +81,8 @@ public class ImageMetadataSequencerTest extends AbstractSequencerTest {
     public void shouldGenerateNoMetadataforPictImageFiles() throws Exception {
         String filename = "caution.pict";
         Node imageNode = createNodeWithContentFromFile(filename, filename);
-        assertNull(getSequencedNode(rootNode, "sequenced/images/" + filename));
-        assertNull(getSequencedNode(imageNode, ImageMetadataLexicon.METADATA_NODE));
+        assertNull(getSequencedNode(rootNode, "sequenced/images/" + filename, 1));
+        assertNull(getSequencedNode(imageNode, ImageMetadataLexicon.METADATA_NODE, 1));
     }   
 
     private void assertMetaDataProperties( Node metadataNode, String mimeType, String format, int width, int height, int bitsPerPixel,
