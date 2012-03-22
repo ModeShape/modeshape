@@ -199,6 +199,10 @@
 				<include>org.modeshape:modeshape-jcr</include>
 				<include>org.modeshape:modeshape-common</include>
 				<include>org.modeshape:modeshape-schematic</include>
+				<!-- include Lucene for now (rather than putting into separate module) -->
+				<include>org.apache.lucene:lucene-core</include>
+				<include>org.apache.lucene:lucene-regex</include>
+				<include>jakarta-regexp:jakarta-regexp</include>
 			</includes>
 			<unpack>false</unpack>
 		</dependencySet>

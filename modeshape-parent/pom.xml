@@ -226,6 +226,7 @@
         <byteman.version>1.5.1</byteman.version>
         <lucene.version>3.5.0</lucene.version>
         <lucene.regex.version>3.0.3</lucene.regex.version>
+        <lucene.regex.jakarta.version>1.4</lucene.regex.jakarta.version>
         <hibernate.search.version>4.0.0.Final</hibernate.search.version>
         <infinispan.version>5.1.2.FINAL</infinispan.version>
         <!--Make sure the jgroups version is the same as the one used by ISPN -->

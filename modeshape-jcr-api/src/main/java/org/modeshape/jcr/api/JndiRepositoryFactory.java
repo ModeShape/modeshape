@@ -90,6 +90,8 @@ import javax.naming.NamingException;
  */
 public class JndiRepositoryFactory implements javax.jcr.RepositoryFactory {
 
+    private static final Set<String> EMPTY_NAME_SET = Collections.emptySet();
+
     /**
      * The name of the key for the ModeShape JCR URL in the parameter map.
      * <p>
@@ -293,11 +295,11 @@ public class JndiRepositoryFactory implements javax.jcr.RepositoryFactory {
      */
     public Set<String> getRepositoryNames( Map<String, Object> parameters ) throws RepositoryException {
         URL url = getUrlFrom(parameters);
-        if (url == null) return null;
+        if (url == null) return EMPTY_NAME_SET;
 
         if (!"jndi".equals(url.getProtocol())) {
             // This URL is not a JNDI URL and therefore we don't understand it ...
-            return null;
+            return EMPTY_NAME_SET;
         }
 
         String jndiName = url.getPath();
@@ -319,7 +321,7 @@ public class JndiRepositoryFactory implements javax.jcr.RepositoryFactory {
         } catch (NamingException ne) {
             // do nothing ...
         }
-        return Collections.emptySet();
+        return EMPTY_NAME_SET;
     }
 
 }
