@@ -17,8 +17,8 @@ import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.monitor.ValueMetric;
 import static org.modeshape.jcr.api.observation.Event.NODE_SEQUENCED;
-import static org.modeshape.jcr.api.observation.Event.Info.ORIGINAL_NODE_ID;
-import static org.modeshape.jcr.api.observation.Event.Info.ORIGINAL_NODE_PATH;
+import static org.modeshape.jcr.api.observation.Event.Info.SEQUENCED_NODE_ID;
+import static org.modeshape.jcr.api.observation.Event.Info.SEQUENCED_NODE_PATH;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.change.AbstractNodeChange;
 import org.modeshape.jcr.cache.change.Change;
@@ -687,8 +687,9 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                     return sb.toString();
                 case org.modeshape.jcr.api.observation.Event.NODE_SEQUENCED:
                     sb.append("Node sequenced");
-                    sb.append(" original node:").append(info.get(ORIGINAL_NODE_ID)).append(" at path:").append(info.get(ORIGINAL_NODE_PATH));
-                    sb.append(" ,sequenced node:").append(getIdentifier()).append(" at path:").append(getPath());
+                    sb.append(" sequenced node:").append(info.get(SEQUENCED_NODE_ID)).append(" at path:").append(info.get(
+                            SEQUENCED_NODE_PATH));
+                    sb.append(" ,output node:").append(getIdentifier()).append(" at path:").append(getPath());
                     return sb.toString();
             }
             sb.append(" at ").append(path).append(" by ").append(getUserID());
@@ -867,10 +868,10 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                 NodeSequenced sequencedChange = (NodeSequenced)nodeChange;
 
                 Map<String, String> infoMap = new HashMap<String, String>();
-                infoMap.put(ORIGINAL_NODE_PATH, stringFor(sequencedChange.getOriginalNodePath()));
-                infoMap.put(ORIGINAL_NODE_ID, sequencedChange.getOriginalNodeKey().getIdentifier());
+                infoMap.put(SEQUENCED_NODE_PATH, stringFor(sequencedChange.getSequencedNodePath()));
+                infoMap.put(SEQUENCED_NODE_ID, sequencedChange.getSequencedNodeKey().getIdentifier());
                 
-                events.add(new JcrEvent(bundle, NODE_SEQUENCED, stringFor(sequencedChange.getSequencedNodePath()), nodeId, infoMap));
+                events.add(new JcrEvent(bundle, NODE_SEQUENCED, stringFor(sequencedChange.getPath()), nodeId, infoMap));
             }
         }
 

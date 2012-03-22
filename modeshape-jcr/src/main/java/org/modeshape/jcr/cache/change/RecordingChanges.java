@@ -126,11 +126,11 @@ public class RecordingChanges implements Changes, ChangeSet {
     }
 
     @Override
-    public void nodeSequenced( NodeKey originalNodeKey,
-                               Path originalNodePath,
-                               NodeKey sequencedNodeKey,
-                               Path sequencedNodePath ) {
-        events.add(new NodeSequenced(sequencedNodeKey, sequencedNodePath, originalNodeKey, originalNodePath));
+    public void nodeSequenced( NodeKey sequencedNodeKey,
+                               Path sequencedNodePath,
+                               NodeKey outputNodeKey,
+                               Path outputNodePath) {
+        events.add(new NodeSequenced(sequencedNodeKey, sequencedNodePath, outputNodeKey, outputNodePath));
     }
 
     @Override

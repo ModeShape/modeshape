@@ -60,7 +60,7 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
 
     /**
      * A [node path, latch] map which is used to block tests waiting for sequenced output, until either the node has been sequenced
-     * or a timeout expires
+     * or a timeout occurs
      */
     private ConcurrentHashMap<String, CountDownLatch> waitingLatches = new ConcurrentHashMap<String, CountDownLatch>();
 
@@ -152,9 +152,7 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
                 "/") ? parentNodePath + relativePath : parentNodePath + "/" + relativePath;
 
         if (!sequencedNodes.containsKey(expectedPath)) {
-            if (!waitingLatches.containsKey(expectedPath)) {
-                createWaitingLatch(expectedPath);
-            }
+            createWaitingLatchIfNecessary(expectedPath);
             logger.debug("Waiting for sequenced node at: " + expectedPath);
             waitingLatches.get(expectedPath).await(waitTimeSeconds, TimeUnit.SECONDS);
         }
@@ -162,10 +160,8 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
         return sequencedNodes.remove(expectedPath);
     }
 
-    private CountDownLatch createWaitingLatch( String expectedPath ) throws InterruptedException {
-        CountDownLatch countDownLatch = new CountDownLatch(1);
-        waitingLatches.putIfAbsent(expectedPath, countDownLatch);
-        return countDownLatch;
+    private void createWaitingLatchIfNecessary( String expectedPath ) throws InterruptedException {
+        waitingLatches.putIfAbsent(expectedPath, new CountDownLatch(1));
     }
 
     private void assertSequencingEvent( Event event ) throws RepositoryException {
@@ -173,8 +169,8 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
 
         Map info = event.getInfo();
         assertNotNull(info);
-        assertNotNull(info.get(Event.Info.ORIGINAL_NODE_ID));
-        assertNotNull(info.get(Event.Info.ORIGINAL_NODE_PATH));
+        assertNotNull(info.get(Event.Info.SEQUENCED_NODE_ID));
+        assertNotNull(info.get(Event.Info.SEQUENCED_NODE_PATH));
 
         assertNotNull(event.getIdentifier());
         assertNotNull(event.getPath());
@@ -194,9 +190,7 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
                     sequencedNodes.put(nodePath, session.getNode(nodePath));
 
                     //signal the node is available
-                    if (!waitingLatches.containsKey(nodePath)) {
-                        createWaitingLatch(nodePath);
-                    }
+                    createWaitingLatchIfNecessary(nodePath);
                     waitingLatches.get(nodePath).countDown();
                 } catch (Exception e) {
                     throw new RuntimeException(e);

@@ -28,7 +28,7 @@ public interface Event extends javax.jcr.observation.Event {
         private Info() {
         }
 
-        public static final String ORIGINAL_NODE_PATH = "originalNodePath";
-        public static final String ORIGINAL_NODE_ID = "originalNodeId";
+        public static final String SEQUENCED_NODE_PATH = "sequencedNodePath";
+        public static final String SEQUENCED_NODE_ID = "sequencedNodeId";
     }
 }

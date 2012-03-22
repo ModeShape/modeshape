@@ -11,42 +11,34 @@ import org.modeshape.jcr.value.Path;
  */
 public class NodeSequenced extends AbstractNodeChange {
 
-    private final NodeKey originalNodeKey;
-    private final Path originalNodePath;
+    private final NodeKey sequencedNodeKey;
+    private final Path sequencedNodePath;
 
     public NodeSequenced( NodeKey sequencedNodeKey,
                           Path sequencedNodePath,
-                          NodeKey originalNodeKey,
-                          Path originalNodePath ) {
-        super(sequencedNodeKey, sequencedNodePath);
+                          NodeKey outputNodeKey,
+                          Path outputNodePath ) {
+        super(outputNodeKey, outputNodePath);
 
-        CheckArg.isNotNull(originalNodeKey, " original node key");
-        CheckArg.isNotNull(originalNodePath, " original node path");
-        this.originalNodeKey = originalNodeKey;
-        this.originalNodePath = originalNodePath;
-    }
-
-    public NodeKey getOriginalNodeKey() {
-        return originalNodeKey;
-    }
-
-    public Path getOriginalNodePath() {
-        return originalNodePath;
+        CheckArg.isNotNull(outputNodeKey, " original node key");
+        CheckArg.isNotNull(outputNodePath, " original node path");
+        this.sequencedNodeKey = sequencedNodeKey;
+        this.sequencedNodePath = sequencedNodePath;
     }
 
     public NodeKey getSequencedNodeKey() {
-        return super.getKey();
+        return sequencedNodeKey;
     }
 
     public Path getSequencedNodePath() {
-        return super.getPath();
+        return sequencedNodePath;
     }
 
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         sb.append("Sequenced new node: ").append(getSequencedNodeKey()).append(" at path: ").append(getSequencedNodePath());
-        sb.append(" from the node: ").append(getOriginalNodeKey()).append(" at path: ").append(originalNodePath);
+        sb.append(" from the node: ").append(getSequencedNodeKey()).append(" at path: ").append(sequencedNodePath);
         return sb.toString();
     }
 }
