@@ -137,7 +137,7 @@ public class MSOfficeMetadataSequencerTest extends AbstractSequencerTest {
     @Test
     public void shouldSequencePowerpointFiles() throws Exception {
         createNodeWithContentFromFile("powerpoint.ppt", "powerpoint.ppt");
-        Node sequencedNode = getSequencedNode(rootNode, "powerpoint.ppt/" + METADATA_NODE, 5);
+        Node sequencedNode = getSequencedNode(rootNode, "powerpoint.ppt/" + METADATA_NODE);
         assertNotNull(sequencedNode);
 
         assertEquals(METADATA_NODE, sequencedNode.getPrimaryNodeType().getName());

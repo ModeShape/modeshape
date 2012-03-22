@@ -23,6 +23,8 @@
  */
 package org.modeshape.sequencer.javafile;
 
+import javax.jcr.Node;
+import static junit.framework.Assert.assertNotNull;
 import org.junit.Test;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
 import static org.modeshape.sequencer.JavaSequencerHelper.JAVA_FILE_HELPER;
@@ -39,21 +41,27 @@ public class JavaFileSequencerTest extends AbstractSequencerTest {
 
     @Test
     public void sequenceEnum() throws Exception {
-        String rootPath = MockEnum.class.getName().replaceAll("\\.", "/");
-        createNodeWithContentFromFile("enum.java", rootPath + ".java");
+        String packagePath = MockEnum.class.getName().replaceAll("\\.", "/");
+        createNodeWithContentFromFile("enum.java", packagePath + ".java");
 
-        //expected by sequencer in the same location
-        String expectedOutputPath = "java/enum.java/" + rootPath;
-        JAVA_FILE_HELPER.assertSequencedMockEnum(getSequencedNode(rootNode, expectedOutputPath));
+        //expected by sequencer in a different location
+        String expectedOutputPath = "java/enum.java";
+        Node sequencedNode = getSequencedNode(rootNode, expectedOutputPath);
+        assertNotNull(sequencedNode);
+        Node enumNode = sequencedNode.getNode(packagePath);
+        JAVA_FILE_HELPER.assertSequencedMockEnum(enumNode);
     }
 
     @Test
     public void sequenceJavaFile() throws Exception {
-        String rootPath = MockClass.class.getName().replaceAll("\\.", "/");
-        createNodeWithContentFromFile("mockclass.java", rootPath + ".java");
+        String packagePath = MockClass.class.getName().replaceAll("\\.", "/");
+        createNodeWithContentFromFile("mockclass.java", packagePath + ".java");
 
         //expected by sequencer in a different location
-        String expectedOutputPath = "java/mockclass.java/" + rootPath;
-        JAVA_FILE_HELPER.assertSequencedMockClass(getSequencedNode(rootNode, expectedOutputPath, 3));
+        String expectedOutputPath = "java/mockclass.java";
+        Node sequencedNode = getSequencedNode(rootNode, expectedOutputPath);
+        assertNotNull(sequencedNode);
+        Node javaNode = sequencedNode.getNode(packagePath);
+        JAVA_FILE_HELPER.assertSequencedMockClass(javaNode);
     }
 }

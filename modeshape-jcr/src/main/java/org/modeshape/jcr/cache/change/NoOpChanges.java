@@ -112,4 +112,11 @@ public final class NoOpChanges implements Changes {
                                Path newPath,
                                Path oldPath ) {
     }
+
+    @Override
+    public void nodeSequenced( NodeKey sequencedNodeKey,
+                               Path sequencedNodePath,
+                               NodeKey outputNodeKey,
+                               Path outputNodePath ) {
+    }
 }
