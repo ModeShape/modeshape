@@ -16,6 +16,9 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.monitor.ValueMetric;
+import static org.modeshape.jcr.api.observation.Event.NODE_SEQUENCED;
+import static org.modeshape.jcr.api.observation.Event.Info.SEQUENCED_NODE_ID;
+import static org.modeshape.jcr.api.observation.Event.Info.SEQUENCED_NODE_PATH;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.change.AbstractNodeChange;
 import org.modeshape.jcr.cache.change.Change;
@@ -25,6 +28,7 @@ import org.modeshape.jcr.cache.change.NodeAdded;
 import org.modeshape.jcr.cache.change.NodeMoved;
 import org.modeshape.jcr.cache.change.NodeRemoved;
 import org.modeshape.jcr.cache.change.NodeReordered;
+import org.modeshape.jcr.cache.change.NodeSequenced;
 import org.modeshape.jcr.cache.change.Observable;
 import org.modeshape.jcr.cache.change.PropertyAdded;
 import org.modeshape.jcr.cache.change.PropertyChanged;
@@ -536,10 +540,10 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
     }
 
     /**
-     * An implementation of JCR {@link Event}.
+     * An implementation of JCR {@link org.modeshape.jcr.api.observation.Event}.
      */
     @Immutable
-    class JcrEvent implements Event {
+    class JcrEvent implements org.modeshape.jcr.api.observation.Event {
 
         private final String id;
 
@@ -681,6 +685,12 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                     String to = info.containsKey(MOVE_TO_KEY) ? info.get(MOVE_TO_KEY) : info.get(ORDER_SRC_KEY);
                     sb.append(" from ").append(from).append(" to ").append(to).append(" by ").append(getUserID());
                     return sb.toString();
+                case org.modeshape.jcr.api.observation.Event.NODE_SEQUENCED:
+                    sb.append("Node sequenced");
+                    sb.append(" sequenced node:").append(info.get(SEQUENCED_NODE_ID)).append(" at path:").append(info.get(
+                            SEQUENCED_NODE_PATH));
+                    sb.append(" ,output node:").append(getIdentifier()).append(" at path:").append(getPath());
+                    return sb.toString();
             }
             sb.append(" at ").append(path).append(" by ").append(getUserID());
             return sb.toString();
@@ -744,7 +754,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
          * @param nodeTypeNames node type names or <code>null</code>
          * @param noLocal indicates if events from this listener's session should be ignored
          */
-        public JcrListenerAdapter( EventListener delegate,
+        JcrListenerAdapter( EventListener delegate,
                                    int eventTypes,
                                    String absPath,
                                    boolean isDeep,
@@ -853,6 +863,15 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                 Name propertyName = ((PropertyRemoved)nodeChange).getProperty().getName();
                 Path propertyPath = pathFactory().create(newPath, propertyName);
                 events.add(new JcrEvent(bundle, Event.PROPERTY_REMOVED, stringFor(propertyPath), nodeId));
+            } else if (nodeChange instanceof NodeSequenced && eventListenedFor(NODE_SEQUENCED)) {
+                //create event for the sequenced node
+                NodeSequenced sequencedChange = (NodeSequenced)nodeChange;
+
+                Map<String, String> infoMap = new HashMap<String, String>();
+                infoMap.put(SEQUENCED_NODE_PATH, stringFor(sequencedChange.getSequencedNodePath()));
+                infoMap.put(SEQUENCED_NODE_ID, sequencedChange.getSequencedNodeKey().getIdentifier());
+                
+                events.add(new JcrEvent(bundle, NODE_SEQUENCED, stringFor(sequencedChange.getPath()), nodeId, infoMap));
             }
         }
 

@@ -55,7 +55,7 @@ public final class RepositoryChangeBus implements ChangeBus {
 
     private volatile boolean shutdown;
 
-    //TODO author=Horia Chiorean date=2/29/12 description=The following members can be removed once multi-threaded changes 
+    //TODO author=Horia Chiorean date=2/29/12 description=The following members can be removed once multi-threaded changes (MODE-1411)
     //and the system workspace are fixed
     private final String systemWorkspaceName;
     private final boolean separateThreadForSystemWorkspace;
@@ -134,10 +134,7 @@ public final class RepositoryChangeBus implements ChangeBus {
 
         String workspaceName = changeSet.getWorkspaceName() != null ? changeSet.getWorkspaceName() : NULL_WORKSPACE_NAME;
 
-        if (!separateThreadForSystemWorkspace && workspaceName.equalsIgnoreCase(systemWorkspaceName)) {
-            for (ChangeSetListener listener : listeners) {
-                listener.notify(changeSet);
-            }
+        if (notifiedSystemWorkspaceListenersInline(changeSet, workspaceName)) {
             return;
         }
 
@@ -164,6 +161,22 @@ public final class RepositoryChangeBus implements ChangeBus {
         } finally {
             listenersLock.readLock().unlock();
         }
+    }
+
+    private boolean notifiedSystemWorkspaceListenersInline( ChangeSet changeSet,
+                                                            String workspaceName ) {
+        if (!separateThreadForSystemWorkspace && workspaceName.equalsIgnoreCase(systemWorkspaceName)) {
+            listenersLock.readLock().lock();
+            try {
+                for (ChangeSetListener listener : listeners) {
+                    listener.notify(changeSet);
+                }
+                return true;
+            } finally {
+                listenersLock.readLock().unlock();
+            }
+        }
+        return false;
     }
 
     @Override

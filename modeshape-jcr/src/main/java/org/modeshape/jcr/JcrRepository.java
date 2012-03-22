@@ -434,6 +434,14 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
     protected final String systemWorkspaceKey() {
         return runningState().systemWorkspaceKey();
     }
+    
+    protected final ChangeBus changeBus() {
+        return runningState().changeBus();
+    }
+    
+    protected final String repositoryKey() {
+        return runningState().repositoryKey();
+    }
 
     protected final JcrRepository.RunningState runningState() {
         RunningState running = runningState.get();
@@ -1220,6 +1228,14 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
         protected final Credentials anonymousCredentials() {
             return anonymousCredentialsIfSuppliedCredentialsFail;
+        }
+
+        protected final ChangeBus changeBus() {
+            return changeBus;
+        }
+        
+        protected final String repositoryKey() {
+            return cache.getKey();
         }
 
         private AuthenticationProviders createAuthenticationProviders( AtomicBoolean useAnonymouOnFailedLogins ) {

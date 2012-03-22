@@ -23,9 +23,6 @@
  */
 package org.modeshape.jcr;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
@@ -43,6 +40,13 @@ import org.modeshape.jcr.api.monitor.DurationMetric;
 import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.modeshape.jcr.api.value.DateTime;
+import org.modeshape.jcr.cache.change.RecordingChanges;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 final class SequencingRunner implements Runnable {
     private final JcrRepository repository;
@@ -75,7 +79,7 @@ final class SequencingRunner implements Runnable {
             if (sequencer == null) return;
 
             // Find the selected node ...
-            Node selectedNode = inputSession.getNode(work.getSelectedPath());
+            AbstractJcrNode selectedNode = inputSession.getNode(work.getSelectedPath());
 
             // Find the input that has changed and is to be sequenced ...
             Item inputItem = inputSession.getItem(work.getInputPath());
@@ -89,7 +93,7 @@ final class SequencingRunner implements Runnable {
             }
             assert changedProperty != null;
 
-            Node outputNode = null;
+            AbstractJcrNode outputNode = null;
             String primaryType = null;
             if (work.getSelectedPath().equals(work.getOutputPath())) {
                 // The output is to go directly under the sequenced node ...
@@ -112,7 +116,7 @@ final class SequencingRunner implements Runnable {
                 removeExistingOutputNodes(parentOfOutput, outputNodeName, work.getSelectedPath());
 
                 // Create the output node ...
-                outputNode = parentOfOutput.addNode(outputNodeName, JcrConstants.NT_UNSTRUCTURED);
+                outputNode = (AbstractJcrNode)parentOfOutput.addNode(outputNodeName, JcrConstants.NT_UNSTRUCTURED);
 
                 // and make sure the output node has the 'mode:derived' mixin ...
                 outputNode.addMixin(DERIVED_NODE_TYPE_NAME);
@@ -131,14 +135,23 @@ final class SequencingRunner implements Runnable {
                         String msg = RepositoryI18n.sequencersMayNotChangeThePrimaryTypeOfTheSelectedNode.text();
                         throw new RepositoryException(msg);
                     }
+
+                    //find the new nodes created by the sequencing before saving, so we can properly fire the events
+                    List<AbstractJcrNode> outputNodes = findOutputNodes(outputNode);
+
                     // Save the session
                     outputSession.save();
+
+                    //fire the sequencing event after save (hopefully by this time the transaction has been committed)
+                    fireSequencingEvent(selectedNode, outputNodes, outputSession);
+
                     long durationInNanos = System.nanoTime() - start;
                     Map<String, String> payload = new HashMap<String, String>();
                     payload.put("sequencerName", sequencer.getClass().getName());
                     payload.put("sequencedPath", changedProperty.getPath());
                     payload.put("outputPath", outputNode.getPath());
-                    stats.recordDuration(DurationMetric.SEQUENCER_EXECUTION_TIME, durationInNanos, TimeUnit.NANOSECONDS, payload);
+                    stats.recordDuration(DurationMetric.SEQUENCER_EXECUTION_TIME, durationInNanos, TimeUnit.NANOSECONDS,
+                                         payload);
                 }
             }
         } catch (Throwable t) {
@@ -170,11 +183,47 @@ final class SequencingRunner implements Runnable {
         }
     }
 
+    private void fireSequencingEvent( AbstractJcrNode sequencedNode,
+                                      List<AbstractJcrNode> outputNodes,
+                                      JcrSession outputSession ) throws RepositoryException {
+
+        RecordingChanges sequencingChanges = new RecordingChanges(outputSession.context().getProcessId(),
+                                                                  outputSession.getRepository().repositoryKey(),
+                                                                  outputSession.workspaceName());
+        for (AbstractJcrNode outputNode : outputNodes) {
+            sequencingChanges.nodeSequenced(sequencedNode.key(), sequencedNode.path(), outputNode.key(),
+                                            outputNode.path());
+        }
+
+        repository.changeBus().notify(sequencingChanges);
+    }
+
+    /**
+     * Finds the top nodes which have been created during the sequencing process, based on the original output node. It is important
+     * that this is called before the session is save, because it uses the new flag.
+     */
+    private List<AbstractJcrNode> findOutputNodes( AbstractJcrNode rootOutputNode ) throws RepositoryException {
+        if (rootOutputNode.isNew()) {
+            return Arrays.asList(rootOutputNode);
+        }
+
+        //if the node was not new, we need to find the new sequenced nodes
+        List<AbstractJcrNode> nodes = new ArrayList<AbstractJcrNode>();
+        NodeIterator childrenIt = rootOutputNode.getNodes();
+        while (childrenIt.hasNext()) {
+            Node child = childrenIt.nextNode();
+            if (child.isNew()) {
+                nodes.add((AbstractJcrNode)child);
+            }
+        }
+        return nodes;
+    }
+
     /**
      * Compute the name of the output node. If the selected node is named "jcr:content", this method assumes that the selected
      * node is a child of an 'nt:file' node, and so it returns the name of that 'nt:file' node. Otherwise, this method returns the
      * name of the selected node.
-     * 
+     *
      * @param selectedNode the node that was selected for sequencing; may not be null
      * @return the name that should be used for the output node; never null
      * @throws RepositoryException if there is a problem accessing the repository content
@@ -196,7 +245,7 @@ final class SequencingRunner implements Runnable {
 
     /**
      * Remove any existing nodes that were generated by previous sequencing operations of the node at the selected path.
-     * 
+     *
      * @param parentOfOutput the parent of the output; may not be null
      * @param outputNodeName the name of the output node; may not be null or empty
      * @param selectedPath the path of the node that was selected for sequencing
