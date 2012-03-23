@@ -1237,7 +1237,74 @@
 				<version>${sun.xml.bind.jaxbimpl.version}</version>
 				<scope>runtime</scope>
 			</dependency>
+
+            <!-- Eclipse JDT artifacts declare their dependencies using ranges. (yikes!)
+                 So we need to specify exact versions, and we can do that in a dependencyManagement section.
+                 Here are the dependencies showing the last combination that we could get working:
+
+                    +- org.eclipse.equinox:common:jar:3.3.0-v20070426:compile
+                    +- org.eclipse.jdt:core:jar:3.3.0-v_771:compile
+                       +- org.eclipse.core:resources:jar:3.3.0-v20070604:compile
+                       |  \- org.eclipse.core:expressions:jar:3.3.0-v20070606-0010:compile
+                       \- org.eclipse.core:runtime:jar:3.3.100-v20070530:compile
+                          +- org.eclipse:osgi:jar:3.3.0-v20070530:compile
+                          +- org.eclipse.core:jobs:jar:3.3.0-v20070423:compile
+                          +- org.eclipse.equinox:registry:jar:3.3.0-v20070522:compile
+                          +- org.eclipse.equinox:preferences:jar:3.2.100-v20070522:compile
+                          \- org.eclipse.core:contenttype:jar:3.2.100-v20070319:compile
+            -->
+            <dependency>
+                <groupId>org.eclipse.equinox</groupId>
+                <artifactId>common</artifactId>
+                <version>3.3.0-v20070426</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jdt</groupId>
+                <artifactId>core</artifactId>
+                <version>3.3.0-v_771</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.core</groupId>
+                <artifactId>resources</artifactId>
+                <version>3.3.0-v20070604</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.core</groupId>
+                <artifactId>expressions</artifactId>
+                <version>3.3.0-v20070606-0010</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.core</groupId>
+                <artifactId>runtime</artifactId>
+                <version>3.3.100-v20070530</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse</groupId>
+                <artifactId>osgi</artifactId>
+                <version>3.3.0-v20070530</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.core</groupId>
+                <artifactId>jobs</artifactId>
+                <version>3.3.0-v20070423</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.equinox</groupId>
+                <artifactId>registry</artifactId>
+                <version>3.3.0-v20070522</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.equinox</groupId>
+                <artifactId>preferences</artifactId>
+                <version>3.2.100-v20070522</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.core</groupId>
+                <artifactId>contenttype</artifactId>
+                <version>3.2.100-v20070319</version>
+            </dependency>
 		</dependencies>
+
 	</dependencyManagement>
 	<reporting>
 		<plugins>
