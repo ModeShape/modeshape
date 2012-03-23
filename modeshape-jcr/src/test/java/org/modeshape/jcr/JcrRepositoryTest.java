@@ -96,8 +96,8 @@ public class JcrRepositoryTest {
 
     @Test
     public void shouldCreateRepositoryInstanceWithoutPassingInCacheManager() throws Exception {
-        // This will use log: "Falling back to DummyTransactionManager from Infinispan"
-        // since we're not specifying a transaction manager ...
+        JTATestUtil.setJBossJTADefaultStoreLocations();
+        
         RepositoryConfiguration config = new RepositoryConfiguration("repoName");
         JcrRepository repository = new JcrRepository(config);
         repository.start();
@@ -106,6 +106,7 @@ public class JcrRepositoryTest {
             assertThat(session, is(notNullValue()));
         } finally {
             repository.shutdown().get(3L, TimeUnit.SECONDS);
+            JTATestUtil.clearJBossJTADefaultStoreLocation();
         }
     }
 
