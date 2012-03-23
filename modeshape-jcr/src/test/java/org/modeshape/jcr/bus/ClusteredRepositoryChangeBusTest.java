@@ -25,13 +25,17 @@
 package org.modeshape.jcr.bus;
 
 import static org.hamcrest.core.Is.is;
+import org.junit.AfterClass;
 import static org.junit.Assert.assertThat;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.clustering.DefaultChannelProvider;
+import java.net.Inet6Address;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,10 +47,22 @@ import java.util.List;
 public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
 
     private static final String CLUSTER_NAME = "testcluster-event-bus";
-
+    private static final String JGROUPS_BIND_ADDRESS_PROP = "jgroups.bind_addr";
+    
     private ClusteredRepositoryChangeBus defaultBus;
 
     private List<ChangeBus> buses;
+    
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        String loopbackAddress = (InetAddress.getLocalHost() instanceof Inet6Address) ? "::1" : "127.0.0.1";
+        System.setProperty(JGROUPS_BIND_ADDRESS_PROP, loopbackAddress);
+    }
+    
+    @AfterClass
+    public static void afterClass() throws Exception {
+        System.clearProperty(JGROUPS_BIND_ADDRESS_PROP);
+    }
     
     @Override
     public void beforeEach() {
