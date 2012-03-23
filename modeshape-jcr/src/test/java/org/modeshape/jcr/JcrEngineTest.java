@@ -2,6 +2,7 @@ package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import org.junit.AfterClass;
 import static org.junit.Assert.assertThat;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -12,6 +13,7 @@ import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Editor;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.jcr.ClientLoad.Client;
 import org.modeshape.jcr.ClientLoad.ClientResultProcessor;
@@ -23,7 +25,17 @@ public class JcrEngineTest {
 
     private RepositoryConfiguration config;
     private JcrEngine engine;
-
+    
+    @BeforeClass
+    public static void beforeSuite() {
+        JTATestUtil.setJBossJTADefaultStoreLocations();        
+    }
+    
+    @AfterClass
+    public static void afterSuite() {
+        JTATestUtil.clearJBossJTADefaultStoreLocation();
+    }
+    
     @Before
     public void beforeEach() throws Exception {
         config = RepositoryConfiguration.read("{ \"name\":\"my-repo\" }");
