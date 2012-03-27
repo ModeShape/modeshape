@@ -36,14 +36,10 @@ import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
-import org.infinispan.config.Configuration;
-import org.infinispan.manager.CacheContainer;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
-import org.infinispan.test.fwk.TestCacheManagerFactory;
-import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -66,15 +62,13 @@ public class AuthenticationAndAuthorizationTest {
         JaasTestUtil.releaseJaas();
     }
 
-    private CacheContainer cm;
+    private Environment environment;
     protected JcrRepository repository;
     protected JcrSession session;
 
     @Before
     public void beforeEach() throws Exception {
-        Configuration c = new Configuration();
-        c = c.fluent().transaction().transactionManagerLookup(new DummyTransactionManagerLookup()).build();
-        cm = TestCacheManagerFactory.createCacheManager(c);
+        environment = new TestingEnvironment();
     }
 
     @After
@@ -85,11 +79,7 @@ public class AuthenticationAndAuthorizationTest {
             } finally {
                 repository = null;
                 session = null;
-                try {
-                    org.infinispan.test.TestingUtil.killCacheManagers(cm);
-                } finally {
-                    cm = null;
-                }
+                environment.shutdown();
             }
         }
     }
@@ -103,7 +93,7 @@ public class AuthenticationAndAuthorizationTest {
      */
     protected void startRepositoryWith( Document doc,
                                         String repoName ) throws Exception {
-        RepositoryConfiguration config = new RepositoryConfiguration(doc, repoName, cm);
+        RepositoryConfiguration config = new RepositoryConfiguration(doc, repoName, environment);
         repository = new JcrRepository(config);
         repository.start();
     }

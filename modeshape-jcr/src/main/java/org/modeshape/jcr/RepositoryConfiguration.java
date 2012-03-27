@@ -47,10 +47,7 @@ import javax.security.auth.login.LoginException;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.search.DefaultSimilarity;
 import org.apache.lucene.util.Version;
-import org.infinispan.config.Configuration;
-import org.infinispan.config.FluentConfiguration;
 import org.infinispan.manager.CacheContainer;
-import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.schematic.SchemaLibrary;
 import org.infinispan.schematic.SchemaLibrary.Problem;
 import org.infinispan.schematic.SchemaLibrary.Results;
@@ -311,9 +308,12 @@ public class RepositoryConfiguration {
 
         public static final String PROVIDERS = "providers";
         public static final String TYPE = "type";
-        public static final String DIRECTORY = "type";
-        public static final String CLASSPATH = "classpath";
+        public static final String DIRECTORY = "directory";
+        public static final String CLASSLOADER = "classloader";
         public static final String CLASSNAME = "classname";
+        public static final String DATA_SOURCE_JNDI_NAME = "dataSourceJndiName";
+        public static final String DATA_CACHE_NAME = "dataCacheName";
+        public static final String METADATA_CACHE_NAME = "metadataCacheName";
         public static final String QUERY = "query";
         public static final String QUERY_ENABLED = "enabled";
         public static final String REBUILD_UPON_STARTUP = "rebuildUponStartup";
@@ -335,6 +335,7 @@ public class RepositoryConfiguration {
         public static final String REMOVE_DERIVED_CONTENT_WITH_ORIGINAL = "removeDerivedContentWithOriginal";
 
         public static final String INDEXING_ANALYZER = "analyzer";
+        public static final String INDEXING_ANALYZER_CLASSPATH = "analyzerClasspath";
         public static final String INDEXING_SIMILARITY = "similarity";
         public static final String INDEXING_BATCH_SIZE = "batchSize";
         public static final String INDEXING_INDEX_FORMAT = "indexFormat";
@@ -351,23 +352,12 @@ public class RepositoryConfiguration {
         public static final String INDEX_STORAGE_COPY_BUFFER_SIZE_IN_MEGABYTES = "copyBufferSizeInMegabytes";
         public static final String INDEX_STORAGE_RETRY_MARKER_LOOKUP = "retryMarkerLookup";
         public static final String INDEX_STORAGE_RETRY_INITIALIZE_PERIOD_IN_SECONDS = "retryInitializePeriodInSeconds";
+        public static final String INDEX_STORAGE_INFINISPAN_LOCK_CACHE = "lockCacheName";
+        public static final String INDEX_STORAGE_INFINISPAN_DATA_CACHE = "dataCacheName";
+        public static final String INDEX_STORAGE_INFINISPAN_META_CACHE = "metadataCacheName";
+        public static final String INDEX_STORAGE_INFINISPAN_CONTAINER = "cacheConfiguration";
         public static final String INDEX_STORAGE_INFINISPAN_CHUNK_SIZE_IN_BYTES = "chunkSizeInBytes";
 
-        public static final String INDEX_STORAGE_RAM = "ram";
-        public static final String INDEX_STORAGE_FILESYSTEM = "filesystem";
-        public static final String INDEX_STORAGE_FILESYSTEM_MASTER = "filesystem-master";
-        public static final String INDEX_STORAGE_FILESYSTEM_SLAVE = "filesystem-slave";
-        public static final String INDEX_STORAGE_INFINISPAN = "infinispan";
-        public static final String INDEX_STORAGE_BLACKHOLE = "blackhole";
-        public static final String INDEX_STORAGE_CUSTOM = "custom";
-
-        public static final String INDEXING_BACKEND_TYPE_LUCENE = "lucene";
-        public static final String INDEXING_BACKEND_TYPE_JMS_MASTER = "jms-master";
-        public static final String INDEXING_BACKEND_TYPE_JMS_SLAVE = "jms-slave";
-        public static final String INDEXING_BACKEND_TYPE_JGROUPS_MASTER = "jgroups-master";
-        public static final String INDEXING_BACKEND_TYPE_JGROUPS_SLAVE = "jgroups-slave";
-        public static final String INDEXING_BACKEND_TYPE_BLACKHOLE = "blackhole";
-        public static final String INDEXING_BACKEND_TYPE_CUSTOM = "custom";
         public static final String INDEXING_BACKEND_JMS_CONNECTION_FACTORY_JNDI_NAME = "connectionFactoryJndiName";
         public static final String INDEXING_BACKEND_JMS_QUEUE_JNDI_NAME = "queueJndiName";
         public static final String INDEXING_BACKEND_JGROUPS_CHANNEL_NAME = "channelName";
@@ -451,13 +441,13 @@ public class RepositoryConfiguration {
         public static final String INDEXING_BATCH_SIZE = "-1";
         @SuppressWarnings( "deprecation" )
         public static final String INDEXING_INDEX_FORMAT = Version.LUCENE_CURRENT.name();
-        public static final String INDEXING_READER_STRATEGY = "shared";
-        public static final String INDEXING_MODE = "sync";
+        public static final IndexReaderStrategy INDEXING_READER_STRATEGY = IndexReaderStrategy.SHARED;
+        public static final IndexingMode INDEXING_MODE = IndexingMode.SYNC;
         public static final String INDEXING_ASYNC_THREAD_POOL_SIZE = "1";
         public static final String INDEXING_ASYNC_MAX_QUEUE_SIZE = "1";
 
-        public static final String INDEX_STORAGE_LOCKING_STRATEGY = "native";
-        public static final String INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE = "auto";
+        public static final FileSystemLockingStrategy INDEX_STORAGE_LOCKING_STRATEGY = FileSystemLockingStrategy.NATIVE;
+        public static final FileSystemAccessType INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE = FileSystemAccessType.AUTO;
         public static final String INDEX_STORAGE_REFRESH_IN_SECONDS = "3600";
         public static final String INDEX_STORAGE_COPY_BUFFER_SIZE_IN_MEGABYTES = "16";
         public static final String INDEX_STORAGE_RETRY_MARKER_LOOKUP = "0";
@@ -468,6 +458,53 @@ public class RepositoryConfiguration {
 
         public static final String CLUSTER_NAME = "ModeShape-JCR";
         public static final String CHANNEL_PROVIDER = DefaultChannelProvider.class.getName();
+    }
+
+    public static final class FieldValue {
+        public static final String INDEX_STORAGE_RAM = "ram";
+        public static final String INDEX_STORAGE_FILESYSTEM = "filesystem";
+        public static final String INDEX_STORAGE_FILESYSTEM_MASTER = "filesystem-master";
+        public static final String INDEX_STORAGE_FILESYSTEM_SLAVE = "filesystem-slave";
+        public static final String INDEX_STORAGE_INFINISPAN = "infinispan";
+        public static final String INDEX_STORAGE_CUSTOM = "custom";
+
+        public static final String INDEXING_BACKEND_TYPE_LUCENE = "lucene";
+        public static final String INDEXING_BACKEND_TYPE_JMS_MASTER = "jms-master";
+        public static final String INDEXING_BACKEND_TYPE_JMS_SLAVE = "jms-slave";
+        public static final String INDEXING_BACKEND_TYPE_JGROUPS_MASTER = "jgroups-master";
+        public static final String INDEXING_BACKEND_TYPE_JGROUPS_SLAVE = "jgroups-slave";
+        public static final String INDEXING_BACKEND_TYPE_BLACKHOLE = "blackhole";
+        public static final String INDEXING_BACKEND_TYPE_CUSTOM = "custom";
+
+        public static final String BINARY_STORAGE_TYPE_FILE = "file";
+        public static final String BINARY_STORAGE_TYPE_CACHE = "cache";
+        public static final String BINARY_STORAGE_TYPE_DATABASE = "database";
+        public static final String BINARY_STORAGE_TYPE_CUSTOM = "custom";
+
+    }
+
+    public enum IndexingMode {
+        SYNC,
+        ASYNC;
+    }
+
+    public enum IndexReaderStrategy {
+        SHARED,
+        NOT_SHARED;
+    }
+
+    public enum FileSystemLockingStrategy {
+        SIMPLE,
+        NATIVE,
+        SINGLE,
+        NONE;
+    }
+
+    public enum FileSystemAccessType {
+        AUTO,
+        SIMPLE,
+        NIO,
+        MMAP;
     }
 
     /**
@@ -482,7 +519,7 @@ public class RepositoryConfiguration {
 
     static {
         Set<String> skipProps = new HashSet<String>();
-        skipProps.add(FieldName.CLASSPATH);
+        skipProps.add(FieldName.CLASSLOADER);
         skipProps.add(FieldName.TYPE);
         COMPONENT_SKIP_PROPERTIES = Collections.unmodifiableSet(skipProps);
 
@@ -719,8 +756,7 @@ public class RepositoryConfiguration {
 
     private final String docName;
     private final Document doc;
-    private transient CacheContainer cacheContainer = null;
-    protected transient CacheContainer binaryStoreCacheContainer = null;
+    private transient Environment environment = new LocalEnvironment();
     private volatile Problems problems = null;
 
     public RepositoryConfiguration() {
@@ -739,18 +775,18 @@ public class RepositoryConfiguration {
     }
 
     public RepositoryConfiguration( String name,
-                                    CacheContainer cacheContainer ) {
+                                    Environment environment ) {
         this(Schematic.newDocument(), name != null ? name : Default.DEFAULT);
-        this.cacheContainer = cacheContainer;
+        this.environment = environment;
     }
 
     public RepositoryConfiguration( Document document,
                                     String documentName,
-                                    CacheContainer cacheContainer ) {
+                                    Environment environment ) {
         Document replaced = replaceSystemPropertyVariables(document);
         this.doc = ensureNamed(replaced, documentName);
         this.docName = documentName;
-        this.cacheContainer = cacheContainer;
+        this.environment = environment;
     }
 
     public String getName() {
@@ -791,6 +827,15 @@ public class RepositoryConfiguration {
             return storage.getString(FieldName.CACHE_TRANSACTION_MANAGER_LOOKUP, Default.CACHE_TRANSACTION_MANAGER_LOOKUP);
         }
         return Default.CACHE_TRANSACTION_MANAGER_LOOKUP;
+    }
+
+    CacheContainer getContentCacheContainer() throws IOException, NamingException {
+        return getCacheContainer(null);
+    }
+
+    protected CacheContainer getCacheContainer( String config ) throws IOException, NamingException {
+        if (config == null) config = getCacheConfiguration();
+        return environment.getCacheContainer(config);
     }
 
     @SuppressWarnings( "unchecked" )
@@ -845,16 +890,8 @@ public class RepositoryConfiguration {
             } else if (type.equalsIgnoreCase("cache")) {
                 String cacheName = binaryStorage.getString(FieldName.CACHE_NAME, getName());
                 String cacheConfiguration = binaryStorage.getString(FieldName.CACHE_CONFIGURATION); // may be null
-                CacheContainer cacheContainer = null;
-                if (cacheConfiguration != null) {
-                    if (binaryStoreCacheContainer == null) {
-                        binaryStoreCacheContainer = createCacheContainer(cacheConfiguration);
-                    }
-                    cacheContainer = binaryStoreCacheContainer;
-                } else {
-                    // Use the cache container for the content store ...
-                    cacheContainer = getCacheContainer();
-                }
+                if (cacheConfiguration == null) cacheConfiguration = getCacheConfiguration();
+                CacheContainer cacheContainer = getCacheContainer(cacheConfiguration);
 
                 // String cacheTransactionManagerLookupClass = binaryStorage.getString(FieldName.CACHE_TRANSACTION_MANAGER_LOOKUP,
                 // Default.CACHE_TRANSACTION_MANAGER_LOOKUP);
@@ -1185,18 +1222,27 @@ public class RepositoryConfiguration {
             }
 
             // Set the defaults ...
-            setDefProp(props, FieldName.TYPE, FieldName.INDEX_STORAGE_RAM);
+            setDefProp(props, FieldName.TYPE, FieldValue.INDEX_STORAGE_RAM);
             String type = props.getProperty(FieldName.TYPE);
-            if (FieldName.INDEX_STORAGE_FILESYSTEM.equalsIgnoreCase(type)) {
-                setDefProp(props, FieldName.INDEX_STORAGE_LOCKING_STRATEGY, Default.INDEX_STORAGE_LOCKING_STRATEGY);
-                setDefProp(props, FieldName.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE, Default.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE);
-            } else if (FieldName.INDEX_STORAGE_FILESYSTEM_MASTER.equalsIgnoreCase(type)) {
-                setDefProp(props, FieldName.INDEX_STORAGE_LOCKING_STRATEGY, Default.INDEX_STORAGE_LOCKING_STRATEGY);
-                setDefProp(props, FieldName.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE, Default.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE);
+            if (FieldValue.INDEX_STORAGE_FILESYSTEM.equalsIgnoreCase(type)) {
+                setDefProp(props, FieldName.INDEX_STORAGE_LOCKING_STRATEGY, Default.INDEX_STORAGE_LOCKING_STRATEGY.toString()
+                                                                                                                  .toLowerCase());
+                setDefProp(props,
+                           FieldName.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE,
+                           Default.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE.toString().toLowerCase());
+            } else if (FieldValue.INDEX_STORAGE_FILESYSTEM_MASTER.equalsIgnoreCase(type)) {
+                setDefProp(props, FieldName.INDEX_STORAGE_LOCKING_STRATEGY, Default.INDEX_STORAGE_LOCKING_STRATEGY.toString()
+                                                                                                                  .toLowerCase());
+                setDefProp(props,
+                           FieldName.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE,
+                           Default.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE.toString().toLowerCase());
                 setDefProp(props, FieldName.INDEX_STORAGE_REFRESH_IN_SECONDS, Default.INDEX_STORAGE_REFRESH_IN_SECONDS);
-            } else if (FieldName.INDEX_STORAGE_FILESYSTEM_SLAVE.equalsIgnoreCase(type)) {
-                setDefProp(props, FieldName.INDEX_STORAGE_LOCKING_STRATEGY, Default.INDEX_STORAGE_LOCKING_STRATEGY);
-                setDefProp(props, FieldName.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE, Default.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE);
+            } else if (FieldValue.INDEX_STORAGE_FILESYSTEM_SLAVE.equalsIgnoreCase(type)) {
+                setDefProp(props, FieldName.INDEX_STORAGE_LOCKING_STRATEGY, Default.INDEX_STORAGE_LOCKING_STRATEGY.toString()
+                                                                                                                  .toLowerCase());
+                setDefProp(props,
+                           FieldName.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE,
+                           Default.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE.toString().toLowerCase());
                 setDefProp(props, FieldName.INDEX_STORAGE_REFRESH_IN_SECONDS, Default.INDEX_STORAGE_REFRESH_IN_SECONDS);
                 setDefProp(props,
                            FieldName.INDEX_STORAGE_COPY_BUFFER_SIZE_IN_MEGABYTES,
@@ -1205,7 +1251,7 @@ public class RepositoryConfiguration {
                 setDefProp(props,
                            FieldName.INDEX_STORAGE_RETRY_INITIALIZE_PERIOD_IN_SECONDS,
                            Default.INDEX_STORAGE_RETRY_INITIALIZE_PERIOD_IN_SECONDS);
-            } else if (FieldName.INDEX_STORAGE_INFINISPAN.equalsIgnoreCase(type)) {
+            } else if (FieldValue.INDEX_STORAGE_INFINISPAN.equalsIgnoreCase(type)) {
                 setDefProp(props,
                            FieldName.INDEX_STORAGE_INFINISPAN_CHUNK_SIZE_IN_BYTES,
                            Default.INDEX_STORAGE_INFINISPAN_CHUNK_SIZE_IN_BYTES);
@@ -1236,8 +1282,8 @@ public class RepositoryConfiguration {
             setDefProp(props, FieldName.INDEXING_SIMILARITY, Default.INDEXING_SIMILARITY);
             setDefProp(props, FieldName.INDEXING_BATCH_SIZE, Default.INDEXING_BATCH_SIZE);
             setDefProp(props, FieldName.INDEXING_INDEX_FORMAT, Default.INDEXING_INDEX_FORMAT);
-            setDefProp(props, FieldName.INDEXING_READER_STRATEGY, Default.INDEXING_READER_STRATEGY);
-            setDefProp(props, FieldName.INDEXING_MODE, Default.INDEXING_MODE);
+            setDefProp(props, FieldName.INDEXING_READER_STRATEGY, Default.INDEXING_READER_STRATEGY.toString().toLowerCase());
+            setDefProp(props, FieldName.INDEXING_MODE, Default.INDEXING_MODE.toString().toLowerCase());
             setDefProp(props, FieldName.INDEXING_ASYNC_THREAD_POOL_SIZE, Default.INDEXING_ASYNC_THREAD_POOL_SIZE);
             setDefProp(props, FieldName.INDEXING_ASYNC_MAX_QUEUE_SIZE, Default.INDEXING_ASYNC_MAX_QUEUE_SIZE);
             return props;
@@ -1408,7 +1454,7 @@ public class RepositoryConfiguration {
                 if (value instanceof Document) {
                     Document component = (Document)value;
                     String classname = component.getString(FieldName.TYPE);
-                    String classpath = component.getString(FieldName.CLASSPATH); // optional
+                    String classpath = component.getString(FieldName.CLASSLOADER); // optional
                     String name = component.getString(FieldName.NAME); // optional
                     if (classname != null) {
                         String resolvedClassname = classnamesByAlias.get(classname.toLowerCase());
@@ -1448,37 +1494,6 @@ public class RepositoryConfiguration {
             props.put(name, field.getValue());
         }
         return props;
-    }
-
-    protected CacheContainer getCacheContainer() throws IOException, NamingException {
-        if (this.cacheContainer == null) {
-            this.cacheContainer = createCacheContainer(getCacheConfiguration());
-        }
-        return this.cacheContainer;
-    }
-
-    protected CacheContainer createCacheContainer( String configFile ) throws IOException, NamingException {
-        CacheContainer container = null;
-        // First try finding the cache configuration ...
-        if (configFile != null) {
-            configFile = configFile.trim();
-            try {
-                container = new DefaultCacheManager(configFile);
-            } catch (FileNotFoundException e) {
-                // Configuration file was not found, so try JNDI ...
-                String jndiName = configFile;
-                container = (CacheContainer)jndiContext().lookup(jndiName);
-            }
-        }
-        if (container == null) {
-            // The default Infinispan configuration is in-memory, local and non-clustered.
-            // But we need a transaction manager, so use the generic TM which is a good default ...
-            FluentConfiguration configurator = new FluentConfiguration(new Configuration());
-            Class<? extends TransactionManagerLookup> lookupClass = getCacheTransactionManagerLookupClass();
-            configurator.transaction().transactionManagerLookupClass(lookupClass);
-            container = new DefaultCacheManager(configurator.build());
-        }
-        return container;
     }
 
     protected Context jndiContext() throws NamingException {
@@ -1591,11 +1606,11 @@ public class RepositoryConfiguration {
     /**
      * Create a copy of this configuration that uses the supplied Infinispan {@link CacheContainer} instance.
      * 
-     * @param cacheContainer the new cache container; may be null
+     * @param environment the environment that should be used for the repository; may be null
      * @return the new configuration; never null
      */
-    public RepositoryConfiguration with( CacheContainer cacheContainer ) {
-        return new RepositoryConfiguration(doc.clone(), docName, cacheContainer);
+    public RepositoryConfiguration with( Environment environment ) {
+        return new RepositoryConfiguration(doc.clone(), docName, environment);
     }
 
     /**
@@ -1605,7 +1620,7 @@ public class RepositoryConfiguration {
      * @return the new configuration; never null
      */
     public RepositoryConfiguration withName( String docName ) {
-        return new RepositoryConfiguration(doc.clone(), docName, cacheContainer);
+        return new RepositoryConfiguration(doc.clone(), docName, environment);
     }
 
     @Immutable

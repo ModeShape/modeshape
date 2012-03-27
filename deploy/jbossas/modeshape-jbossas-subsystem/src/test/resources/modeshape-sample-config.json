@@ -1,0 +1,88 @@
+{
+    "deployment" : null,
+    "subsystem" : {"modeshape" : {"repository" : {
+        "sample1" : {
+            "allow-workspace-creation" : true,
+            "anonymous-roles" : null,
+            "anonymous-username" : "<anonymous>",
+            "binary-storage" : null,
+            "cache-container" : null,
+            "cache-name" : null,
+            "default-workspace" : "default",
+            "enable-monitoring" : true,
+            "index-storage" : null,
+            "indexing-analyzer-classname" : "org.apache.lucene.analysis.standard.StandardAnalyzer",
+            "indexing-analyzer-module" : null,
+            "indexing-async-max-queue-size" : 0,
+            "indexing-async-thread-pool-size" : 1,
+            "indexing-batch-size" : -1,
+            "indexing-mode" : "SYNC",
+            "indexing-reader-strategy" : "SHARED",
+            "indexing-thread-pool" : "modeshape-workers",
+            "jndi-name" : "java:jcr/local/modeshape_repo1",
+            "minimum-binary-size" : 4096,
+            "name" : "sample1",
+            "predefined-workspace-names" : null,
+            "rebuild-indexes-upon-startup" : "IF_MISSING",
+            "security-domain" : "modeshape-security",
+            "use-anonymous-upon-failed-authentication" : false,
+            "sequencer" : {
+                "modeshape-sequencer-ddl" : {
+                    "classname" : "ddl",
+                    "module" : null,
+                    "name" : "modeshape-sequencer-ddl",
+                    "path-expressions" : ["//a/b"]
+                },
+                "modeshape-sequencer-java" : {
+                    "classname" : "java",
+                    "module" : null,
+                    "name" : "modeshape-sequencer-java",
+                    "path-expressions" : ["//a/b"]
+                }
+            }
+        },
+        "sample2" : {
+            "allow-workspace-creation" : true,
+            "anonymous-roles" : null,
+            "anonymous-username" : "<anonymous>",
+            "binary-storage" : null,
+            "cache-container" : null,
+            "cache-name" : null,
+            "default-workspace" : "default",
+            "enable-monitoring" : true,
+            "index-storage" : null,
+            "indexing-analyzer-classname" : "org.apache.lucene.analysis.standard.StandardAnalyzer",
+            "indexing-analyzer-module" : null,
+            "indexing-async-max-queue-size" : 0,
+            "indexing-async-thread-pool-size" : 1,
+            "indexing-batch-size" : -1,
+            "indexing-mode" : "SYNC",
+            "indexing-reader-strategy" : "SHARED",
+            "indexing-thread-pool" : "modeshape-workers",
+            "jndi-name" : null,
+            "minimum-binary-size" : 4096,
+            "name" : "sample2",
+            "predefined-workspace-names" : null,
+            "rebuild-indexes-upon-startup" : "IF_MISSING",
+            "security-domain" : "modeshape-security",
+            "use-anonymous-upon-failed-authentication" : false,
+            "sequencer" : {
+                "modeshape-sequencer-ddl" : {
+                    "classname" : "ddl",
+                    "module" : null,
+                    "name" : "modeshape-sequencer-ddl",
+                    "path-expressions" : [
+                        "//a/b/",
+                        "//a/b2/"
+                    ]
+                },
+                "modeshape-sequencer-java" : {
+                    "classname" : "java",
+                    "module" : null,
+                    "name" : "modeshape-sequencer-java",
+                    "path-expressions" : ["//a/b"]
+                }
+            }
+        }
+    }}}
+}

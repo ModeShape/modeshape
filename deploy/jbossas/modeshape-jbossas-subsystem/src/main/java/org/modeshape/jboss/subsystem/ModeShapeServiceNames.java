@@ -22,29 +22,43 @@
 package org.modeshape.jboss.subsystem;
 
 import org.jboss.msc.service.ServiceName;
+import org.modeshape.jboss.service.IndexStorage;
 
 public class ModeShapeServiceNames {
-	public static ServiceName ENGINE = ServiceName.JBOSS.append("modeshape", "engine"); //$NON-NLS-1$ //$NON-NLS-2$
-	public static ServiceName REPOSITORY = ServiceName.JBOSS.append("modeshape", "repository");//$NON-NLS-1$ //$NON-NLS-2$
-	public static ServiceName SEQUENCER = ServiceName.JBOSS.append("modeshape", "sequencer");//$NON-NLS-1$ //$NON-NLS-2$
-		
-//	public static ServiceName translatorServiceName(String name) {
-//		return ServiceName.of(TRANSLATOR_BASE, name);
-//	}
-//	
-//	public static ServiceName vdbServiceName(String vdbName, int version) {
-//		return VDB_SVC_BASE.append(vdbName, String.valueOf(version)); 
-//	}
-//	
-//	public static ServiceName executorServiceName(String poolName) {
-//		return ServiceName.JBOSS.append("thread", "executor", poolName); //$NON-NLS-1$ //$NON-NLS-2$
-//	}
-//	
-	public static ServiceName repositoryServiceName(String name) {
-		return ServiceName.of(REPOSITORY, name);
-	}
+    public static ServiceName ENGINE = ServiceName.JBOSS.append("modeshape", "engine");
 
-	public static ServiceName sequencerServiceName(String name) {
-		return ServiceName.of(SEQUENCER, name);
-	}
+    public static ServiceName repositoryServiceName( String name ) {
+        return ServiceName.of(ServiceName.JBOSS, "modeshape", name, "repository");
+    }
+
+    public static ServiceName sequencerServiceName( String name ) {
+        return ServiceName.of(ServiceName.JBOSS, "modeshape", name, "sequencers");
+    }
+
+    public static ServiceName dataDirectoryServiceName( String name ) {
+        return ServiceName.of(ServiceName.JBOSS, "modeshape", name, "data");
+    }
+
+    /**
+     * Obtain the name of the service for the {@link IndexStorage} for the given repository name
+     * 
+     * @param name the repository name
+     * @return the service name
+     */
+    public static ServiceName indexStorageServiceName( String name ) {
+        return ServiceName.of(ServiceName.JBOSS, "modeshape", name, "indexes");
+    }
+
+    public static ServiceName indexStorageDirectoryServiceName( String name ) {
+        return ServiceName.of(ServiceName.JBOSS, "modeshape", name, "indexDir");
+    }
+
+    public static ServiceName indexSourceStorageDirectoryServiceName( String name ) {
+        return ServiceName.of(ServiceName.JBOSS, "modeshape", name, "indexSourceDir");
+    }
+
+    public static ServiceName binaryStorageServiceName( String name ) {
+        return ServiceName.of(ServiceName.JBOSS, "modeshape", name, "binaries");
+    }
+
 }

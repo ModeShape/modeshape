@@ -29,6 +29,7 @@ import java.util.Properties;
 import org.hibernate.search.cfg.spi.SearchConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
+import org.modeshape.jcr.RepositoryConfiguration.FieldValue;
 import org.modeshape.jcr.query.lucene.LuceneSearchConfiguration;
 
 /**
@@ -57,10 +58,10 @@ public class BasicLuceneConfiguration extends LuceneSearchConfiguration {
         // Set the storage properties ...
         // ------------------------------
         String storageType = storage.getProperty(FieldName.TYPE);
-        if (storageType.equals(FieldName.INDEX_STORAGE_RAM)) {
+        if (storageType.equals(FieldValue.INDEX_STORAGE_RAM)) {
             // RAM directory provider ...
             setProperty("hibernate.search.default.directory_provider", "ram");
-        } else if (storageType.equals(FieldName.INDEX_STORAGE_FILESYSTEM)) {
+        } else if (storageType.equals(FieldValue.INDEX_STORAGE_FILESYSTEM)) {
             // Filesystem directory provider ...
             String indexBase = storage.getProperty(FieldName.INDEX_STORAGE_LOCATION);
             String lockingStrategy = storage.getProperty(FieldName.INDEX_STORAGE_LOCKING_STRATEGY);
@@ -69,7 +70,7 @@ public class BasicLuceneConfiguration extends LuceneSearchConfiguration {
             setProperty("hibernate.search.default.indexBase", indexBase);
             setProperty("hibernate.search.default.locking_strategy", lockingStrategy);
             setProperty("hibernate.search.default.filesystem_access_type", accessType);
-        } else if (storageType.equals(FieldName.INDEX_STORAGE_FILESYSTEM_MASTER)) {
+        } else if (storageType.equals(FieldValue.INDEX_STORAGE_FILESYSTEM_MASTER)) {
             // Filesystem-master directory provider ...
             String indexBase = storage.getProperty(FieldName.INDEX_STORAGE_LOCATION);
             String sourceBase = storage.getProperty(FieldName.INDEX_STORAGE_SOURCE_LOCATION);
@@ -84,7 +85,7 @@ public class BasicLuceneConfiguration extends LuceneSearchConfiguration {
             setProperty("hibernate.search.default.buffer_size_on_copy", bufferSize);
             setProperty("hibernate.search.default.locking_strategy", lockingStrategy);
             setProperty("hibernate.search.default.filesystem_access_type", accessType);
-        } else if (storageType.equals(FieldName.INDEX_STORAGE_FILESYSTEM_SLAVE)) {
+        } else if (storageType.equals(FieldValue.INDEX_STORAGE_FILESYSTEM_SLAVE)) {
             // Filesystem-master directory provider ...
             String indexBase = storage.getProperty(FieldName.INDEX_STORAGE_LOCATION);
             String sourceBase = storage.getProperty(FieldName.INDEX_STORAGE_SOURCE_LOCATION);
@@ -103,7 +104,7 @@ public class BasicLuceneConfiguration extends LuceneSearchConfiguration {
             setProperty("hibernate.search.default.retry_initialize_period", retryInitializePeriod);
             setProperty("hibernate.search.default.locking_strategy", lockingStrategy);
             setProperty("hibernate.search.default.filesystem_access_type", accessType);
-        } else if (storageType.equals(FieldName.INDEX_STORAGE_INFINISPAN)) {
+        } else if (storageType.equals(FieldValue.INDEX_STORAGE_INFINISPAN)) {
             // Filesystem-master directory provider ...
             String lockCacheName = repositoryName + "-index-lock";
             String dataCacheName = repositoryName + "-index-data";
@@ -114,13 +115,13 @@ public class BasicLuceneConfiguration extends LuceneSearchConfiguration {
             setProperty("hibernate.search.default.data_cachename", dataCacheName);
             setProperty("hibernate.search.default.metadata_cachename", metaCacheName);
             setProperty("hibernate.search.default.chunk_size", chunkSize);
-        } else if (storageType.equals(FieldName.INDEX_STORAGE_CUSTOM)) {
+        } else if (storageType.equals(FieldValue.INDEX_STORAGE_CUSTOM)) {
             storageType = storage.getProperty(FieldName.CLASSNAME);
             setProperty("hibernate.search.default.directory_provider", storageType);
             // Now set the extra properties ...
             for (Object keyObj : storage.keySet()) {
                 String key = keyObj.toString();
-                if (key.equals(FieldName.CLASSNAME) || key.equals(FieldName.CLASSPATH) || key.equals(FieldName.TYPE)) continue;
+                if (key.equals(FieldName.CLASSNAME) || key.equals(FieldName.CLASSLOADER) || key.equals(FieldName.TYPE)) continue;
                 setProperty("hibernate.search.default." + key, storage.getProperty(key));
             }
         }
@@ -158,17 +159,17 @@ public class BasicLuceneConfiguration extends LuceneSearchConfiguration {
         // Define the backend properties ...
         // ---------------------------------
         String backendType = backend.getProperty(FieldName.TYPE);
-        if (backendType.equals(FieldName.INDEXING_BACKEND_TYPE_LUCENE)) {
+        if (backendType.equals(FieldValue.INDEXING_BACKEND_TYPE_LUCENE)) {
             setProperty("hibernate.search.default.worker.backend", "lucene");
-        } else if (backendType.equals(FieldName.INDEXING_BACKEND_TYPE_BLACKHOLE)) {
+        } else if (backendType.equals(FieldValue.INDEXING_BACKEND_TYPE_BLACKHOLE)) {
             setProperty("hibernate.search.default.worker.backend", "blackhole");
-        } else if (backendType.equals(FieldName.INDEXING_BACKEND_TYPE_JMS_MASTER)) {
+        } else if (backendType.equals(FieldValue.INDEXING_BACKEND_TYPE_JMS_MASTER)) {
             String queueJndiName = backend.getProperty(FieldName.INDEXING_BACKEND_JMS_QUEUE_JNDI_NAME);
             String factoryJndiName = backend.getProperty(FieldName.INDEXING_BACKEND_JMS_CONNECTION_FACTORY_JNDI_NAME);
             setProperty("hibernate.search.default.worker.backend", "lucene");
             // Now create a component that pulls from the JMS object and writes to the local Lucene backend ...
             // TODO: Query (JMS)
-        } else if (backendType.equals(FieldName.INDEXING_BACKEND_TYPE_JMS_SLAVE)) {
+        } else if (backendType.equals(FieldValue.INDEXING_BACKEND_TYPE_JMS_SLAVE)) {
             String queueJndiName = backend.getProperty(FieldName.INDEXING_BACKEND_JMS_QUEUE_JNDI_NAME);
             String factoryJndiName = backend.getProperty(FieldName.INDEXING_BACKEND_JMS_CONNECTION_FACTORY_JNDI_NAME);
             setProperty("hibernate.search.default.worker.backend", "jms");
@@ -181,9 +182,9 @@ public class BasicLuceneConfiguration extends LuceneSearchConfiguration {
                     || key.equals(FieldName.INDEXING_BACKEND_JMS_CONNECTION_FACTORY_JNDI_NAME)) continue;
                 setProperty("hibernate.search.default.worker.jndi." + key, backend.getProperty(key));
             }
-        } else if (backendType.equals(FieldName.INDEXING_BACKEND_TYPE_JGROUPS_MASTER)
-                   || backendType.equals(FieldName.INDEXING_BACKEND_TYPE_JGROUPS_SLAVE)) {
-            String type = backendType.equals(FieldName.INDEXING_BACKEND_TYPE_JGROUPS_MASTER) ? "jgroupsMaster" : "jgroupsSlave";
+        } else if (backendType.equals(FieldValue.INDEXING_BACKEND_TYPE_JGROUPS_MASTER)
+                   || backendType.equals(FieldValue.INDEXING_BACKEND_TYPE_JGROUPS_SLAVE)) {
+            String type = backendType.equals(FieldValue.INDEXING_BACKEND_TYPE_JGROUPS_MASTER) ? "jgroupsMaster" : "jgroupsSlave";
             String channel = backend.getProperty(FieldName.INDEXING_BACKEND_JGROUPS_CHANNEL_NAME);
             String config = backend.getProperty(FieldName.INDEXING_BACKEND_JGROUPS_CHANNEL_CONFIGURATION);
             setProperty("hibernate.search.default.worker.backend", type);
@@ -195,7 +196,7 @@ public class BasicLuceneConfiguration extends LuceneSearchConfiguration {
             } else {
                 setProperty("hibernate.search.default.worker.backend.jgroups.configurationString", config);
             }
-        } else if (storageType.equals(FieldName.INDEX_STORAGE_CUSTOM)) {
+        } else if (storageType.equals(FieldValue.INDEX_STORAGE_CUSTOM)) {
             String classname = backend.getProperty(FieldName.CLASSNAME);
             setProperty("hibernate.search.default.worker.backend", classname);
         }

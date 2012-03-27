@@ -160,8 +160,20 @@
                     <eviction strategy="NONE"/>
                 </local-cache>
             </cache-container>
+            <!-- Each ModeShape repository uses one (or more) cache in a cache container. We define a single container
+                 named "modeshape" (other names require specifying the container names in each repository configuration,
+                 with a "sample" cache (each repository assumes the cache name matches the repository name). -->
+            <cache-container name="modeshape" default-cache="sample">
+                <local-cache name="sample">
+                    <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
+                    <file-store passivation="false" path="modeshape/store/sample" relative-to="jboss.server.data.dir" />
+                </local-cache>
+            </cache-container>
         </subsystem>
-        <subsystem xmlns="urn:jboss:domain:modeshape:3.0">
+        <subsystem xmlns="urn:jboss:domain:modeshape:1.0">
+            <!-- A sample repository that uses the "sample" cache in the "modeshape" container. All content, binary values,
+                 and indexes are stored within the server's data directory. This is the simplest way to configure a repository
+                 that uses defaults for everything; feel free to change and specify other configuration options.  -->
             <repository name="sample" />
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:jaxrs:1.0"/>

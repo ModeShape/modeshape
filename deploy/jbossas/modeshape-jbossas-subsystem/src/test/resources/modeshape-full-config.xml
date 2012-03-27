@@ -1,0 +1,90 @@
+<subsystem xmlns="urn:jboss:domain:modeshape:1.0">
+  <repository name="sample"
+              cache-name="sample" cache-container="modeshape"
+              jndi-name="jcr/local/sample"
+              enable-monitoring="true"
+              security-domain="modeshape-security"
+              anonymous-roles="readonly readwrite admin connect" 
+              anonymous-username="&lt;anonymous&gt;" 
+              use-anonymous-upon-failed-authentication="false">
+    <workspaces default-workspace="default" allow-workspace-creation="true">
+      <workspace name="predefinedWorkspace1" />
+      <workspace name="predefinedWorkspace2" />
+      <workspace name="predefinedWorkspace3" />
+    </workspaces>
+    <indexing rebuild-upon-startup="if_missing" 
+              thread-pool="modeshape-workers" 
+              batch-size="-1" 
+              reader-strategy="shared" 
+              mode="sync" 
+              async-thread-pool-size="1" 
+              async-max-queue-size="1"
+              analyzer-classname="org.apache.lucene.analysis.standard.StandardAnalyzer"
+              analyzer-module="something" />
+    <!-- Choose one of the following '*-index-storage' fragments -->
+    <!--
+    <cache-index-storage 
+              format="LUCENE_CURRENT"
+              data-cache-name="sample-index-data"
+              metadata-cache-name="sample-index-metadata"
+              lock-cache-name="sample-index-locks"
+              cache-container-name="modeshape">
+    </cache-index-storage>
+    -->
+    <local-file-index-storage 
+              format="LUCENE_CURRENT"
+              path="modeshape/sample/indexes" 
+              relative-to="jboss.server.data.dir"
+              access-type="auto" 
+              locking-strategy="native">
+    </local-file-index-storage>
+    <!-- 
+    <master-file-index-storage 
+              format="LUCENE_CURRENT"
+              path="modeshape/sample/indexes" 
+              relative-to="jboss.server.data.dir"
+              access-type="auto" 
+              locking-strategy="native"
+              refresh-period="3600"
+              source-path="modeshape/sample/clustering/index/"
+              source-relative-to="jboss.server.data.dir"
+              connection-factory-jndi-name="factoryNameInJndi" 
+              queue-jndi-name="queueNameInJndi">
+    </master-file-index-storage>
+    <slave-file-index-storage 
+              format="LUCENE_CURRENT"
+              path="modeshape/sample/indexes" 
+              relative-to="jboss.server.data.dir"
+              access-type="auto" 
+              locking-strategy="native"
+              refresh-period="3600"
+              source-path="modeshape/sample/clustering/index/"
+              source-relative-to="jboss.server.data.dir"
+              connection-factory-jndi-name="factoryNameInJndi" 
+              queue-jndi-name="queueNameInJndi">
+    </slave-file-index-storage>
+    <ram-index-storage/>
+    <custom-index-storage
+              classname=""
+              module="">
+    </custom-index-storage>
+    -->
+    
+    <!--
+    <file-binary-storage min-value-size="4096" 
+                         path="modeshape/sample/binaries" 
+                         relative-to="jboss.server.data.dir" />
+    <authenticators>
+      <authenticator name="jaas" 
+                     classname="jaas" 
+                     module="else" 
+                     description="The JAAS authenticator is added automatically; we're specifying it here because we need one"
+                     custom-attribute="foo" />
+    </authenticators>
+    -->
+    <sequencers>
+      <sequencer name="modeshape-sequencer-ddl" classname="ddl" path-expression="//a/b" />
+      <sequencer name="modeshape-sequencer-java" classname="java" path-expression="//a/b" />
+    </sequencers>
+  </repository>
+</subsystem>

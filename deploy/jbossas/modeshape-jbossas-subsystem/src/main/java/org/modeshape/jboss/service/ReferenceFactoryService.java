@@ -28,34 +28,36 @@ import org.jboss.as.naming.ValueManagedReference;
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
-import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.ImmediateValue;
 import org.jboss.msc.value.InjectedValue;
-
 
 public class ReferenceFactoryService<T> implements Service<ManagedReferenceFactory>, ManagedReferenceFactory {
     private final InjectedValue<T> injector = new InjectedValue<T>();
 
     private ManagedReference reference;
 
-    public synchronized void start(StartContext startContext) throws StartException {
+    @Override
+    public synchronized void start( StartContext startContext ) {
         reference = new ValueManagedReference(new ImmediateValue<Object>(injector.getValue()));
     }
 
-    public synchronized void stop(StopContext stopContext) {
+    @Override
+    public synchronized void stop( StopContext stopContext ) {
         reference = null;
     }
 
+    @Override
     public synchronized ManagedReferenceFactory getValue() throws IllegalStateException, IllegalArgumentException {
         return this;
     }
 
+    @Override
     public synchronized ManagedReference getReference() {
         return reference;
     }
 
     public Injector<T> getInjector() {
-        return injector; 
+        return injector;
     }
 }
