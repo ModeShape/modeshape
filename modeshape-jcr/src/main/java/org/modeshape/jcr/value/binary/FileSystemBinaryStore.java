@@ -46,7 +46,7 @@ import org.modeshape.common.util.SecureHash;
 import org.modeshape.common.util.SecureHash.Algorithm;
 import org.modeshape.common.util.SecureHash.HashingInputStream;
 import org.modeshape.jcr.JcrI18n;
-import org.modeshape.jcr.value.Binary;
+import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.binary.FileLocks.WrappedLock;
 
@@ -207,7 +207,7 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
     }
 
     protected final File findFile( File directory,
-                                   BinaryKey key,
+                                   Binary.Key key,
                                    boolean createParentDirsIfMissing ) throws BinaryStoreException {
         if (!initialized) {
             initializeStorage(directory);
@@ -223,7 +223,7 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
     }
 
     @Override
-    public InputStream getInputStream( BinaryKey key ) throws BinaryStoreException {
+    public InputStream getInputStream( Binary.Key key ) throws BinaryStoreException {
         // Now that we know the SHA-1, find the File object that corresponds to the existing persisted file ...
         File persistedFile = findFile(directory, key, false);
         if (!persistedFile.exists() || !persistedFile.canRead()) {
@@ -258,14 +258,14 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
     }
 
     @Override
-    public void markAsUnused( Iterable<BinaryKey> keys ) throws BinaryStoreException {
+    public void markAsUnused( Iterable<? extends Binary.Key> keys ) throws BinaryStoreException {
         if (keys == null) return;
-        for (BinaryKey key : keys) {
+        for (Binary.Key key : keys) {
             markAsUnused(key);
         }
     }
 
-    protected void markAsUnused( BinaryKey key ) throws BinaryStoreException {
+    protected void markAsUnused( Binary.Key key ) throws BinaryStoreException {
         // Look for an existing file ...
         File persisted = findFile(directory, key, false);
         if (persisted == null || !persisted.exists()) return;

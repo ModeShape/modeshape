@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.Immutable;
-import org.modeshape.jcr.value.Binary;
+import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.value.BinaryKey;
 
 /**

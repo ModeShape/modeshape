@@ -26,8 +26,7 @@ package org.modeshape.jcr.value.binary;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 import org.modeshape.common.annotation.ThreadSafe;
-import org.modeshape.jcr.value.Binary;
-import org.modeshape.jcr.value.BinaryKey;
+import org.modeshape.jcr.api.Binary;
 
 /**
  * A {@link BinaryStore} implementation that uses a database for persisting binary values.
@@ -41,12 +40,12 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
     }
 
     @Override
-    public InputStream getInputStream( BinaryKey key ) throws BinaryStoreException {
+    public InputStream getInputStream( Binary.Key key ) throws BinaryStoreException {
         throw new BinaryStoreException("Not implemented");
     }
 
     @Override
-    public void markAsUnused( Iterable<BinaryKey> keys ) throws BinaryStoreException {
+    public void markAsUnused( Iterable<? extends Binary.Key> keys ) throws BinaryStoreException {
         throw new BinaryStoreException("Not implemented");
     }
 

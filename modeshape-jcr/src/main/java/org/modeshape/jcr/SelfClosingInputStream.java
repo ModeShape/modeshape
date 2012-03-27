@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.NotThreadSafe;
-import org.modeshape.jcr.value.Binary;
+import org.modeshape.jcr.api.Binary;
 
 /**
  * An {@link InputStream} implementation that can be used to access the content of a supplied {@link Binary} value. This class,

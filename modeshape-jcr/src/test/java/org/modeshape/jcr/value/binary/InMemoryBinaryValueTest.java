@@ -34,7 +34,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.StringUtil;
-import org.modeshape.jcr.value.Binary;
+import org.modeshape.jcr.api.Binary;
 
 /**
  * @author Randall Hauch

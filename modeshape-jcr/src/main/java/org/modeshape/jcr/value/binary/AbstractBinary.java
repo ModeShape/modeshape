@@ -32,7 +32,7 @@ import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.SecureHash;
 import org.modeshape.common.util.SecureHash.Algorithm;
-import org.modeshape.jcr.value.Binary;
+import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.ValueComparators;
 

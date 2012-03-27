@@ -27,11 +27,11 @@ import java.util.HashSet;
 import java.util.Set;
 import org.modeshape.common.util.Logger;
 import org.modeshape.jcr.JcrI18n;
+import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.cache.change.BinaryValueUnused;
 import org.modeshape.jcr.cache.change.Change;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
-import org.modeshape.jcr.value.BinaryKey;
 
 /**
  * 
@@ -49,11 +49,11 @@ public class UnusedBinaryChangeSetListener implements ChangeSetListener {
 
     @Override
     public void notify( ChangeSet changeSet ) {
-        Set<BinaryKey> unusedKeys = null;
+        Set<Binary.Key> unusedKeys = null;
         for (Change change : changeSet) {
             if (change instanceof BinaryValueUnused) {
                 BinaryValueUnused unused = (BinaryValueUnused)change;
-                if (unusedKeys == null) unusedKeys = new HashSet<BinaryKey>();
+                if (unusedKeys == null) unusedKeys = new HashSet<Binary.Key>();
                 unusedKeys.add(unused.getKey());
             }
         }

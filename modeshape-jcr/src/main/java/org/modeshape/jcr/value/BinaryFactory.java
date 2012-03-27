@@ -24,6 +24,7 @@
 package org.modeshape.jcr.value;
 
 import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.value.binary.BinaryStoreException;
 
 /**

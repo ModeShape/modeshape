@@ -23,7 +23,6 @@
  */
 package org.modeshape.jcr.value;
 
-import java.io.Serializable;
 import java.security.NoSuchAlgorithmException;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -31,12 +30,13 @@ import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.SecureHash;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.jcr.api.Binary;
 
 /**
  * The internal key used to identify a unique BINARY value.
  */
 @Immutable
-public class BinaryKey implements Serializable, Comparable<BinaryKey> {
+public final class BinaryKey implements Binary.Key {
     private static final long serialVersionUID = 1L;
 
     protected static final Set<String> ALGORITHMS_NOT_FOUND_AND_LOGGED = new CopyOnWriteArraySet<String>();
@@ -68,6 +68,7 @@ public class BinaryKey implements Serializable, Comparable<BinaryKey> {
      * 
      * @return the bytes that make up this key; never null and always a copy to prevent modification
      */
+    @Override
     public byte[] toBytes() {
         return StringUtil.fromHexString(key);
     }
@@ -88,9 +89,13 @@ public class BinaryKey implements Serializable, Comparable<BinaryKey> {
     }
 
     @Override
-    public int compareTo( BinaryKey other ) {
+    public int compareTo( Binary.Key other ) {
         if (other == this) return 0;
-        return this.key.compareTo(other.key);
+        if (other instanceof BinaryKey) {
+            return this.key.compareTo(((BinaryKey)other).key);
+        }
+        String otherKey = StringUtil.getHexString(other.toBytes());
+        return this.key.compareTo(otherKey);
     }
 
     @Override

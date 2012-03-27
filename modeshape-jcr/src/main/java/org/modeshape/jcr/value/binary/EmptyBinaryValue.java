@@ -26,7 +26,7 @@ package org.modeshape.jcr.value.binary;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import org.modeshape.common.annotation.Immutable;
-import org.modeshape.jcr.value.Binary;
+import org.modeshape.jcr.api.Binary;
 
 /**
  * An empty {@link Binary} value.
