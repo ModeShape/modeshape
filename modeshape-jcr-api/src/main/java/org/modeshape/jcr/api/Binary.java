@@ -24,13 +24,14 @@
 package org.modeshape.jcr.api;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.security.MessageDigest;
 import javax.jcr.RepositoryException;
 
 /**
  * An extension of the standard {@link javax.jcr.Binary} interface, with methods to obtain the SHA-1 hash of the binary value.
  */
-public interface Binary extends javax.jcr.Binary {
+public interface Binary extends javax.jcr.Binary, Comparable<Binary> {
 
     /**
      * Get the SHA-1 hash of the contents. This hash can be used to determine whether two Binary instances contain the same
@@ -78,5 +79,33 @@ public interface Binary extends javax.jcr.Binary {
      * @throws RepositoryException if an error occurs.
      */
     public String getMimeType( String name ) throws IOException, RepositoryException;
+
+    /**
+     * Get the length of this binary data.
+     * <p>
+     * Note that this method, unlike the standard {@link javax.jcr.Binary#getSize()} method, does not throw an exception.
+     * </p>
+     * 
+     * @return the number of bytes in this binary data
+     */
+    @Override
+    public long getSize();
+
+    /**
+     * Get the key for the binary value.
+     * 
+     * @return the key; never null
+     */
+    public Key getKey();
+
+    /** A binary key that is serializable and comparable, and slightly more efficient than using byte[] for identifiers. */
+    static interface Key extends Serializable, Comparable<Key> {
+        /**
+         * Get this binary key in the form of a byte array.
+         * 
+         * @return the bytes that make up this key; never null and always a copy to prevent modification
+         */
+        byte[] toBytes();
+    }
 
 }

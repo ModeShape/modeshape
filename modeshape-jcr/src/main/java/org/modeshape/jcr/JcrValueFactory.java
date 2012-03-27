@@ -28,10 +28,14 @@ import java.math.BigDecimal;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import javax.jcr.*;
+import javax.jcr.Node;
+import javax.jcr.PropertyType;
+import javax.jcr.RepositoryException;
+import javax.jcr.ValueFactory;
+import javax.jcr.ValueFormatException;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.value.DateTime;
-import org.modeshape.jcr.value.Binary;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Reference;
 import org.modeshape.jcr.value.ReferenceFactory;
@@ -157,7 +161,7 @@ class JcrValueFactory implements org.modeshape.jcr.api.ValueFactory {
     }
 
     @Override
-    public Binary createBinary( byte[] value )  {
+    public Binary createBinary( byte[] value ) {
         return valueFactories.getBinaryFactory().create(value);
     }
 

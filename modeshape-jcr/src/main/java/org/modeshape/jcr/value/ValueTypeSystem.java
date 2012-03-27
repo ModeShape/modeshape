@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.modeshape.common.util.Base64;
+import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.query.model.TypeSystem;
 

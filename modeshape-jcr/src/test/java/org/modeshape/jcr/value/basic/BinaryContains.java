@@ -32,7 +32,7 @@ import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 import org.modeshape.common.util.IoUtil;
-import org.modeshape.jcr.value.Binary;
+import org.modeshape.jcr.api.Binary;
 
 /**
  * @author Randall Hauch

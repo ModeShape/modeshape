@@ -946,8 +946,8 @@ public class DocumentTranslator {
         if (value instanceof URI) {
             return Schematic.newDocument("$uri", this.strings.create((URI)value));
         }
-        if (value instanceof org.modeshape.jcr.value.Binary) {
-            org.modeshape.jcr.value.Binary binary = (org.modeshape.jcr.value.Binary)value;
+        if (value instanceof org.modeshape.jcr.api.Binary) {
+            org.modeshape.jcr.api.Binary binary = (org.modeshape.jcr.api.Binary)value;
             if (binary instanceof InMemoryBinaryValue) {
                 return new Binary(((InMemoryBinaryValue)binary).getBytes());
             }
@@ -976,7 +976,7 @@ public class DocumentTranslator {
      * @param binaryKey the key for the binary value; never null
      * @param unusedBinaryKeys the set of binary keys that are considered unused; may be null
      */
-    protected void incrementBinaryReferenceCount( BinaryKey binaryKey,
+    protected void incrementBinaryReferenceCount( org.modeshape.jcr.api.Binary.Key binaryKey,
                                                   Set<BinaryKey> unusedBinaryKeys ) {
         // Find the document metadata and increment the usage count ...
         String sha1 = binaryKey.toString();

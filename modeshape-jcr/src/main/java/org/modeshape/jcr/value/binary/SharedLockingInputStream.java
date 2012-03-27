@@ -29,6 +29,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.locks.Lock;
+import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.value.BinaryKey;
 
 /**
@@ -38,7 +39,7 @@ import org.modeshape.jcr.value.BinaryKey;
  */
 public final class SharedLockingInputStream extends InputStream {
 
-    private final BinaryKey key;
+    private final Binary.Key key;
     private final File file;
     private final NamedLocks lockManager;
     private InputStream stream;
@@ -53,7 +54,7 @@ public final class SharedLockingInputStream extends InputStream {
      * @param lockManager the manager of the locks, from which a read lock is to be obtained; may be null if no read lock is
      *        needed
      */
-    public SharedLockingInputStream( BinaryKey key,
+    public SharedLockingInputStream( Binary.Key key,
                                      File file,
                                      NamedLocks lockManager ) {
         assert key != null;

@@ -305,7 +305,7 @@ public class JcrValueTest {
         Binary customBinary = createCustomBinary(stringValue);
         JcrValue jcrValue = new JcrValue(factories, PropertyType.BINARY, customBinary);
 
-        org.modeshape.jcr.value.Binary actualValue = jcrValue.getBinary();
+        org.modeshape.jcr.api.Binary actualValue = jcrValue.getBinary();
 
         assertNotNull(actualValue);
         byte[] actualBytes = IoUtil.readBytes(actualValue.getStream());

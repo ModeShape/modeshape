@@ -28,10 +28,9 @@ import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.api.text.TextExtractor;
-import org.modeshape.jcr.value.Binary;
-import org.modeshape.jcr.value.BinaryKey;
 
 /**
  * The basic interface for a store for Binary value objects. All binary values that are of a
@@ -91,7 +90,7 @@ public interface BinaryStore {
      * @return the input stream through which the content can be read
      * @throws BinaryStoreException if there is a problem reading the content from the store
      */
-    InputStream getInputStream( BinaryKey key ) throws BinaryStoreException;
+    InputStream getInputStream( Binary.Key key ) throws BinaryStoreException;
 
     /**
      * Mark the supplied binary keys as unused, but key them in quarantine until needed again (at which point they're removed from
@@ -104,7 +103,7 @@ public interface BinaryStore {
      * @param keys the keys for the binary values that are no longer needed
      * @throws BinaryStoreException if there is a problem marking any of the supplied binary values as unused
      */
-    void markAsUnused( Iterable<BinaryKey> keys ) throws BinaryStoreException;
+    void markAsUnused( Iterable<? extends Binary.Key> keys ) throws BinaryStoreException;
 
     /**
      * Remove binary values that have been {@link #markAsUnused(Iterable) unused} for at least the specified amount of time.
