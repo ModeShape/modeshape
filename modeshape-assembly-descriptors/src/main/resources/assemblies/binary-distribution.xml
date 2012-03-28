@@ -64,7 +64,7 @@
                 <include>*:modeshape-jdbc:*:jar-with-dependencies</include>
             </includes>
             <outputFileNameMapping>modeshape-client-${project.version}.jar</outputFileNameMapping>
-            <outputDirectory>/</outputDirectory>
+            <outputDirectory>/client</outputDirectory>
         </dependencySet>
         -->
     </dependencySets>
