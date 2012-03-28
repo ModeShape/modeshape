@@ -39,6 +39,7 @@ import javax.jcr.version.VersionException;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
+import org.modeshape.jcr.value.ValueFactories;
 
 /**
  * A {@link javax.jcr.Property JCR Property} implementation that has multiple values.
@@ -148,14 +149,27 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
         checkForCheckedOut();
 
         Object[] literals = new Object[values.length];
+        ValueFactories factories = null;
         for (int i = 0; i < values.length; i++) {
-            // Force a conversion as per SetValueValueFormatExceptionTest in JR TCK
-            JcrValue value = (JcrValue)values[i];
+            Value value = values[i];
             if (value != null) {
-                if (value.value() == null) {
-                    throw new ValueFormatException(JcrI18n.valueMayNotContainNull.text(getName()));
+                JcrValue jcrValue = null;
+                int type = getType();
+                if (value instanceof JcrValue) {
+                    // This is ModeShape's implementation (created with the session's ValueFactory)
+                    jcrValue = (JcrValue)value;
+                    if (jcrValue.value() == null) {
+                        throw new ValueFormatException(JcrI18n.valueMayNotContainNull.text(getName()));
+                    }
+                } else {
+                    // This is a non-ModeShape Value object (from another implementation), so we need to replace it
+                    // with our own implementation. The easiest way to do this is to create a wrapper JcrValue object
+                    // and simply force the conversion ...
+                    if (factories == null) factories = context().getValueFactories();
+                    jcrValue = new JcrValue(factories, value).asType(type, true);
                 }
-                literals[i] = value.asType(this.getType()).value();
+                // Force a conversion (iff the types don't match) as per SetValueValueFormatExceptionTest in JR TCK
+                literals[i] = jcrValue.asType(type, false).value();
             } else {
                 literals[i] = null;
             }

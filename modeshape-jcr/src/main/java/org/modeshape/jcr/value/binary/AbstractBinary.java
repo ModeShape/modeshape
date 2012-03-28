@@ -32,15 +32,15 @@ import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.SecureHash;
 import org.modeshape.common.util.SecureHash.Algorithm;
-import org.modeshape.jcr.value.Binary;
+import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.ValueComparators;
 
 /**
- * An abstract implementation of {@link Binary} that provides some common capabilities for other implementations.
+ * An abstract implementation of {@link BinaryValue} that provides some common capabilities for other implementations.
  */
 @Immutable
-public abstract class AbstractBinary implements Binary {
+public abstract class AbstractBinary implements BinaryValue {
 
     protected static final byte[] EMPTY_CONTENT = new byte[0];
 
@@ -123,7 +123,7 @@ public abstract class AbstractBinary implements Binary {
     }
 
     @Override
-    public int compareTo( Binary o ) {
+    public int compareTo( BinaryValue o ) {
         if (o == this) return 0;
         return ValueComparators.BINARY_COMPARATOR.compare(this, o);
     }
@@ -139,8 +139,8 @@ public abstract class AbstractBinary implements Binary {
     @Override
     public boolean equals( Object obj ) {
         if (obj == this) return true;
-        if (obj instanceof Binary) {
-            Binary that = (Binary)obj;
+        if (obj instanceof BinaryValue) {
+            BinaryValue that = (BinaryValue)obj;
             return ValueComparators.BINARY_COMPARATOR.compare(this, that) == 0;
         }
         return false;

@@ -40,7 +40,7 @@ import org.modeshape.common.text.NoOpEncoder;
 import org.modeshape.common.text.TextDecoder;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.NodeKey;
-import org.modeshape.jcr.value.Binary;
+import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.IoException;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
@@ -155,7 +155,7 @@ public class AbstractValueFactoryTest {
         }
 
         @Override
-        public String create( Binary value ) throws ValueFormatException, IoException {
+        public String create( BinaryValue value ) throws ValueFormatException, IoException {
             return null;
         }
 

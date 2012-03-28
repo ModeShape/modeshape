@@ -946,8 +946,8 @@ public class DocumentTranslator {
         if (value instanceof URI) {
             return Schematic.newDocument("$uri", this.strings.create((URI)value));
         }
-        if (value instanceof org.modeshape.jcr.value.Binary) {
-            org.modeshape.jcr.value.Binary binary = (org.modeshape.jcr.value.Binary)value;
+        if (value instanceof org.modeshape.jcr.value.BinaryValue) {
+            org.modeshape.jcr.value.BinaryValue binary = (org.modeshape.jcr.value.BinaryValue)value;
             if (binary instanceof InMemoryBinaryValue) {
                 return new Binary(((InMemoryBinaryValue)binary).getBytes());
             }

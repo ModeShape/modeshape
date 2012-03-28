@@ -559,7 +559,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     }
 
     final JcrValue valueFrom( InputStream value ) {
-        org.modeshape.jcr.value.Binary binary = context().getValueFactories().getBinaryFactory().create(value);
+        org.modeshape.jcr.value.BinaryValue binary = context().getValueFactories().getBinaryFactory().create(value);
         return valueFrom(PropertyType.BINARY, binary);
     }
 

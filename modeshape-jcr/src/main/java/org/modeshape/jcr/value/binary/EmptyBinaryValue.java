@@ -26,15 +26,15 @@ package org.modeshape.jcr.value.binary;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import org.modeshape.common.annotation.Immutable;
-import org.modeshape.jcr.value.Binary;
+import org.modeshape.jcr.value.BinaryValue;
 
 /**
- * An empty {@link Binary} value.
+ * An empty {@link BinaryValue} value.
  */
 @Immutable
 public final class EmptyBinaryValue extends AbstractBinary {
 
-    public static final Binary INSTANCE = new EmptyBinaryValue();
+    public static final BinaryValue INSTANCE = new EmptyBinaryValue();
 
     private static final long serialVersionUID = 1L;
 
@@ -43,7 +43,7 @@ public final class EmptyBinaryValue extends AbstractBinary {
     }
 
     @Override
-    public int compareTo( Binary other ) {
+    public int compareTo( BinaryValue other ) {
         if (other == this) return 0;
         if (other instanceof EmptyBinaryValue) return 0;
         return super.compareTo(other);

@@ -32,12 +32,12 @@ import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 import org.modeshape.common.util.IoUtil;
-import org.modeshape.jcr.value.Binary;
+import org.modeshape.jcr.value.BinaryValue;
 
 /**
  * @author Randall Hauch
  */
-public class BinaryContains extends TypeSafeMatcher<Binary> {
+public class BinaryContains extends TypeSafeMatcher<BinaryValue> {
 
     private byte[] expectedContent;
 
@@ -45,7 +45,7 @@ public class BinaryContains extends TypeSafeMatcher<Binary> {
         this.expectedContent = expectedContent;
     }
 
-    public BinaryContains( Binary expectedContent ) {
+    public BinaryContains( BinaryValue expectedContent ) {
         try {
             this.expectedContent = IoUtil.readBytes(expectedContent.getStream());
         } catch (RepositoryException e) {
@@ -58,7 +58,7 @@ public class BinaryContains extends TypeSafeMatcher<Binary> {
     }
 
     @Override
-    public boolean matchesSafely( Binary content ) {
+    public boolean matchesSafely( BinaryValue content ) {
         try {
             byte[] actualContents = IoUtil.readBytes(content.getStream());
             if (actualContents.length != expectedContent.length) return false;
@@ -92,22 +92,22 @@ public class BinaryContains extends TypeSafeMatcher<Binary> {
     }
 
     @Factory
-    public static Matcher<Binary> hasContent( Binary expectedContent ) {
+    public static Matcher<BinaryValue> hasContent( BinaryValue expectedContent ) {
         return new BinaryContains(expectedContent);
     }
 
     @Factory
-    public static Matcher<Binary> hasContent( String expectedContent ) throws UnsupportedEncodingException {
+    public static Matcher<BinaryValue> hasContent( String expectedContent ) throws UnsupportedEncodingException {
         return new BinaryContains(expectedContent.getBytes("UTF-8"));
     }
 
     @Factory
-    public static Matcher<Binary> hasContent( byte[] expectedContent ) {
+    public static Matcher<BinaryValue> hasContent( byte[] expectedContent ) {
         return new BinaryContains(expectedContent);
     }
 
     @Factory
-    public static Matcher<Binary> hasNoContent() {
+    public static Matcher<BinaryValue> hasNoContent() {
         return new BinaryContains(new byte[0]);
     }
 

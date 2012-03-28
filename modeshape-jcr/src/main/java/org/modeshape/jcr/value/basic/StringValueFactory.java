@@ -41,7 +41,7 @@ import org.modeshape.common.util.Logger;
 import org.modeshape.jcr.GraphI18n;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.NodeKey;
-import org.modeshape.jcr.value.Binary;
+import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.IoException;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
@@ -244,7 +244,7 @@ public class StringValueFactory extends AbstractValueFactory<String> {
     }
 
     @Override
-    public String create( Binary value ) throws ValueFormatException, IoException {
+    public String create( BinaryValue value ) throws ValueFormatException, IoException {
         if (value == null) return null;
         try {
             InputStream stream = value.getStream();

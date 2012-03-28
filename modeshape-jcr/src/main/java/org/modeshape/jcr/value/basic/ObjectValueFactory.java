@@ -34,7 +34,7 @@ import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.NodeKey;
-import org.modeshape.jcr.value.Binary;
+import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.IoException;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
@@ -49,11 +49,11 @@ import org.modeshape.jcr.value.ValueFormatException;
 @Immutable
 public class ObjectValueFactory extends AbstractValueFactory<Object> {
 
-    private final ValueFactory<Binary> binaryValueFactory;
+    private final ValueFactory<BinaryValue> binaryValueFactory;
 
     public ObjectValueFactory( TextDecoder decoder,
                                ValueFactory<String> stringValueFactory,
-                               ValueFactory<Binary> binaryValueFactory ) {
+                               ValueFactory<BinaryValue> binaryValueFactory ) {
         super(PropertyType.OBJECT, decoder, stringValueFactory);
         CheckArg.isNotNull(binaryValueFactory, "binaryValueFactory");
         this.binaryValueFactory = binaryValueFactory;
@@ -62,7 +62,7 @@ public class ObjectValueFactory extends AbstractValueFactory<Object> {
     /**
      * @return binaryValueFactory
      */
-    protected ValueFactory<Binary> getBinaryValueFactory() {
+    protected ValueFactory<BinaryValue> getBinaryValueFactory() {
         return this.binaryValueFactory;
     }
 
@@ -173,7 +173,7 @@ public class ObjectValueFactory extends AbstractValueFactory<Object> {
     }
 
     @Override
-    public Object create( Binary value ) throws ValueFormatException, IoException {
+    public Object create( BinaryValue value ) throws ValueFormatException, IoException {
         return value;
     }
 

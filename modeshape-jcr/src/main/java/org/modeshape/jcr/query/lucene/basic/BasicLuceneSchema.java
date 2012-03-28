@@ -65,7 +65,7 @@ import org.modeshape.jcr.query.model.Literal;
 import org.modeshape.jcr.query.model.PropertyValue;
 import org.modeshape.jcr.query.model.SelectorName;
 import org.modeshape.jcr.query.model.SetCriteria;
-import org.modeshape.jcr.value.Binary;
+import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Path;
@@ -236,8 +236,8 @@ public class BasicLuceneSchema implements LuceneSchema {
                 fullText.append(' ').append(str);
             }
 
-        } else if (value instanceof Binary) {
-            Binary binary = (Binary)value;
+        } else if (value instanceof BinaryValue) {
+            BinaryValue binary = (BinaryValue)value;
 
             // Add a field with the length of the binary value ...
             previous = new DynamicField(previous, FieldName.LENGTH_PREFIX + propertyName, binary.getSize(), false, true);

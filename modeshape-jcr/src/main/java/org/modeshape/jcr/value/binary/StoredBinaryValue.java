@@ -27,11 +27,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.Immutable;
-import org.modeshape.jcr.value.Binary;
+import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.BinaryKey;
 
 /**
- * A {@link Binary} implementation that gets the content from the {@link BinaryStore}.
+ * A {@link BinaryValue} implementation that gets the content from the {@link BinaryStore}.
  */
 @Immutable
 public class StoredBinaryValue extends AbstractBinary {

@@ -29,7 +29,7 @@ import org.infinispan.Cache;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.modeshape.common.annotation.ThreadSafe;
-import org.modeshape.jcr.value.Binary;
+import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.BinaryKey;
 
 /**
@@ -108,7 +108,7 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
     }
 
     @Override
-    public Binary storeValue( InputStream stream ) throws BinaryStoreException {
+    public BinaryValue storeValue( InputStream stream ) throws BinaryStoreException {
         throw new BinaryStoreException("Not implemented");
     }
 
@@ -129,12 +129,12 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
     }
 
     @Override
-    public String getText( Binary binary ) throws BinaryStoreException {
+    public String getText( BinaryValue binary ) throws BinaryStoreException {
         throw new BinaryStoreException("Not implemented");
     }
 
     @Override
-    public String getMimeType( Binary binary,
+    public String getMimeType( BinaryValue binary,
                                String name ) /* throws IOException, RepositoryException*/{
         throw new UnsupportedOperationException("Not implemented");
     }

@@ -103,15 +103,15 @@ public class ValueComparators {
         }
     };
     /**
-     * A comparator of binary values. Although {@link Binary} is {@link Comparable}, this comparator does not rely upon any
+     * A comparator of binary values. Although {@link BinaryValue} is {@link Comparable}, this comparator does not rely upon any
      * particular Binary implementation. Thus, Binary implementations can use this for their {@link Comparable#compareTo(Object)}
      * implementation.
      */
-    public static final Comparator<Binary> BINARY_COMPARATOR = new Comparator<Binary>() {
+    public static final Comparator<BinaryValue> BINARY_COMPARATOR = new Comparator<BinaryValue>() {
 
         @Override
-        public int compare( Binary o1,
-                            Binary o2 ) {
+        public int compare( BinaryValue o1,
+                            BinaryValue o2 ) {
             if (o1 == o2) return 0;
             if (o1 == null) return -1;
             if (o2 == null) return 1;
@@ -384,12 +384,12 @@ public class ValueComparators {
                     if (type1 == PropertyType.BINARY) {
                         value2 = stringFactory.create(o2);
                         hash2 = SecureHash.getHash(SecureHash.Algorithm.SHA_1, value2.getBytes());
-                        hash1 = ((Binary)o1).getHash();
+                        hash1 = ((BinaryValue)o1).getHash();
                     } else {
                         assert type2 == PropertyType.BINARY;
                         value1 = stringFactory.create(o1);
                         hash1 = SecureHash.getHash(SecureHash.Algorithm.SHA_1, value1.getBytes());
-                        hash2 = ((Binary)o2).getHash();
+                        hash2 = ((BinaryValue)o2).getHash();
                     }
                     // Compute the difference in the hashes ...
                     if (hash1.length == hash2.length) {

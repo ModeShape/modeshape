@@ -57,7 +57,7 @@ import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.NodeNotFoundException;
 import org.modeshape.jcr.cache.SessionCache;
-import org.modeshape.jcr.value.Binary;
+import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.NamespaceRegistry;
@@ -868,8 +868,8 @@ public class SessionNode implements MutableCachedNode {
             Property prop = iter.next();
             if (prop.isEmpty()) continue;
             for (Object value : prop) {
-                if (value instanceof Binary) {
-                    Binary binary = (Binary)value;
+                if (value instanceof BinaryValue) {
+                    BinaryValue binary = (BinaryValue)value;
                     // we don't care about the string encoding, as long as its consistent and will change if a property changes
                     sb.append(binary.getHexHash());
                 }

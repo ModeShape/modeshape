@@ -48,7 +48,7 @@ import org.modeshape.jcr.api.value.DateTime;
 public enum PropertyType {
 
     STRING("String", ValueComparators.STRING_COMPARATOR, new ObjectCanonicalizer(), String.class),
-    BINARY("Binary", ValueComparators.BINARY_COMPARATOR, new ObjectCanonicalizer(), Binary.class),
+    BINARY("Binary", ValueComparators.BINARY_COMPARATOR, new ObjectCanonicalizer(), BinaryValue.class),
     LONG("Long", ValueComparators.LONG_COMPARATOR, new LongCanonicalizer(), Long.class, Integer.class, Short.class),
     DOUBLE("Double", ValueComparators.DOUBLE_COMPARATOR, new DoubleCanonicalizer(), Double.class, Float.class),
     DECIMAL("Decimal", ValueComparators.DECIMAL_COMPARATOR, new ObjectCanonicalizer(), BigDecimal.class),

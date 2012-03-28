@@ -25,12 +25,14 @@ package org.modeshape.jcr.value;
 
 import java.io.Serializable;
 import org.modeshape.common.annotation.Immutable;
+import org.modeshape.jcr.api.Binary;
 
 /**
- * Value holder for binary data. Binary instances are not mutable.
+ * Value holder for binary data. BinaryValue extends the public {@link Binary} interface (which itself extends
+ * {@link javax.jcr.Binary}) and adds requirements such as being serializable and comparable.
  */
 @Immutable
-public interface Binary extends Comparable<Binary>, Serializable, org.modeshape.jcr.api.Binary {
+public interface BinaryValue extends Comparable<BinaryValue>, Serializable, org.modeshape.jcr.api.Binary {
 
     /**
      * Get the length of this binary data.

@@ -27,11 +27,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.NotThreadSafe;
-import org.modeshape.jcr.value.Binary;
+import org.modeshape.jcr.value.BinaryValue;
 
 /**
- * An {@link InputStream} implementation that can be used to access the content of a supplied {@link Binary} value. This class,
- * however, guarantees that the binary lock is {@link Binary#dispose() released} whenever this class throws an exception or when
+ * An {@link InputStream} implementation that can be used to access the content of a supplied {@link BinaryValue} value. This class,
+ * however, guarantees that the binary lock is {@link BinaryValue#dispose() released} whenever this class throws an exception or when
  * the instance is {@link #close() closed}.
  * <p>
  * The draft version of the JSR-283 specification outlines a new mechanism for obtaining a lock on a binary value, and in fact
@@ -42,15 +42,15 @@ import org.modeshape.jcr.value.Binary;
 @NotThreadSafe
 class SelfClosingInputStream extends InputStream {
 
-    private final Binary binary;
+    private final BinaryValue binary;
     private InputStream stream;
 
     /**
-     * Create a self-closing {@link InputStream} to access the content of the supplied {@link Binary} value.
+     * Create a self-closing {@link InputStream} to access the content of the supplied {@link BinaryValue} value.
      * 
-     * @param binary the {@link Binary} object that this stream accesses; may not be null
+     * @param binary the {@link BinaryValue} object that this stream accesses; may not be null
      */
-    public SelfClosingInputStream( Binary binary ) {
+    public SelfClosingInputStream( BinaryValue binary ) {
         assert binary != null;
         this.binary = binary;
     }

@@ -34,7 +34,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.StringUtil;
-import org.modeshape.jcr.value.Binary;
+import org.modeshape.jcr.value.BinaryValue;
 
 /**
  * @author Randall Hauch
@@ -94,7 +94,7 @@ public class InMemoryBinaryValueTest {
 
     @Test
     public void shouldConsiderEquivalentThoseInstancesWithSameContent() {
-        Binary another = new InMemoryBinaryValue(store, validByteArrayContent);
+        BinaryValue another = new InMemoryBinaryValue(store, validByteArrayContent);
         assertThat(binary.equals(another), is(true));
         assertThat(binary.compareTo(another), is(0));
         assertThat(binary, is(another));
@@ -108,7 +108,7 @@ public class InMemoryBinaryValueTest {
         for (int i = 0; i != shorterContent.length; ++i) {
             shorterContent[i] = validByteArrayContent[i];
         }
-        Binary another = new InMemoryBinaryValue(store, shorterContent);
+        BinaryValue another = new InMemoryBinaryValue(store, shorterContent);
         assertThat(binary.equals(another), is(false));
         assertThat(binary.compareTo(another) > 0, is(true));
         assertThat(another.compareTo(binary) < 0, is(true));

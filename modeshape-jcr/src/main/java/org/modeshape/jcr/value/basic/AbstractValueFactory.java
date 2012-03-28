@@ -36,7 +36,7 @@ import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.NodeKey;
-import org.modeshape.jcr.value.Binary;
+import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.IoException;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
@@ -117,7 +117,7 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
         if (value instanceof NodeKey) return create((NodeKey)value);
         if (value instanceof UUID) return create((UUID)value);
         if (value instanceof URI) return create((URI)value);
-        if (value instanceof Binary) return create((Binary)value);
+        if (value instanceof BinaryValue) return create((BinaryValue)value);
         if (value instanceof javax.jcr.Binary) {
             javax.jcr.Binary jcrBinary = (javax.jcr.Binary)value;
             try {
@@ -344,7 +344,7 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
     }
 
     @Override
-    public T[] create( Binary[] values ) throws ValueFormatException, IoException {
+    public T[] create( BinaryValue[] values ) throws ValueFormatException, IoException {
         if (values == null) return null;
         final int length = values.length;
         T[] result = createEmptyArray(length);

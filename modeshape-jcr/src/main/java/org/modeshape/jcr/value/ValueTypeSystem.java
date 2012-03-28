@@ -93,17 +93,17 @@ public class ValueTypeSystem implements TypeSystem {
         };
         this.pathFactory = new Factory<Path>(valueFactories.getPathFactory());
         this.referenceFactory = new Factory<Reference>(valueFactories.getReferenceFactory());
-        this.binaryFactory = new Factory<Binary>(valueFactories.getBinaryFactory()) {
+        this.binaryFactory = new Factory<BinaryValue>(valueFactories.getBinaryFactory()) {
             @Override
             public String asReadableString( Object value ) {
-                Binary binary = this.valueFactory.create(value);
+                BinaryValue binary = this.valueFactory.create(value);
                 // Just print out the SHA-1 hash in Base64, plus length
                 return "(Binary,length=" + binary.getSize() + ",SHA1=" + Base64.encodeBytes(binary.getHash()) + ")";
             }
 
             @Override
             public long length( Object value ) {
-                Binary binary = this.valueFactory.create(value);
+                BinaryValue binary = this.valueFactory.create(value);
                 return binary != null ? binary.getSize() : 0;
             }
         };
