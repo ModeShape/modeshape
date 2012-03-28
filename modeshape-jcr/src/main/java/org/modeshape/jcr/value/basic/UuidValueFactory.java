@@ -34,7 +34,7 @@ import org.modeshape.common.text.TextDecoder;
 import org.modeshape.jcr.GraphI18n;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.NodeKey;
-import org.modeshape.jcr.value.Binary;
+import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.IoException;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
@@ -215,7 +215,7 @@ public class UuidValueFactory extends AbstractValueFactory<UUID> implements Uuid
     }
 
     @Override
-    public UUID create( Binary value ) throws ValueFormatException, IoException {
+    public UUID create( BinaryValue value ) throws ValueFormatException, IoException {
         // First create a string and then create the boolean from the string value ...
         return create(getStringValueFactory().create(value));
     }

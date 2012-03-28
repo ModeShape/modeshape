@@ -36,7 +36,7 @@ import org.modeshape.common.text.TextDecoder;
 import org.modeshape.jcr.GraphI18n;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.NodeKey;
-import org.modeshape.jcr.value.Binary;
+import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.BinaryFactory;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.IoException;
@@ -53,10 +53,10 @@ import org.modeshape.jcr.value.basic.AbstractValueFactory;
  * concrete implementations.
  */
 @Immutable
-public class BinaryStoreValueFactory extends AbstractValueFactory<Binary> implements BinaryFactory {
+public class BinaryStoreValueFactory extends AbstractValueFactory<BinaryValue> implements BinaryFactory {
 
     private static final String CHAR_SET_NAME = "UTF-8";
-    private static final Binary[] EMPTY_BINARY_ARRAY = new Binary[] {};
+    private static final BinaryValue[] EMPTY_BINARY_ARRAY = new BinaryValue[] {};
 
     private final BinaryStore store;
 
@@ -86,133 +86,133 @@ public class BinaryStoreValueFactory extends AbstractValueFactory<Binary> implem
     }
 
     @Override
-    protected Binary[] createEmptyArray( int length ) {
+    protected BinaryValue[] createEmptyArray( int length ) {
         return EMPTY_BINARY_ARRAY;
     }
 
     @Override
-    public Binary create( String value ) {
+    public BinaryValue create( String value ) {
         if (value == null) return null;
         try {
             return create(value.getBytes(CHAR_SET_NAME));
         } catch (UnsupportedEncodingException err) {
             throw new ValueFormatException(value, getPropertyType(),
                                            GraphI18n.errorConvertingType.text(String.class.getSimpleName(),
-                                                                              Binary.class.getSimpleName(),
+                                                                              BinaryValue.class.getSimpleName(),
                                                                               value), err);
         }
     }
 
     @Override
-    public Binary create( String value,
+    public BinaryValue create( String value,
                           TextDecoder decoder ) {
         if (value == null) return null;
         return create(getDecoder(decoder).decode(value));
     }
 
     @Override
-    public Binary create( int value ) {
+    public BinaryValue create( int value ) {
         // Convert the value to a string, then to a binary ...
         return create(this.getStringValueFactory().create(value));
     }
 
     @Override
-    public Binary create( long value ) {
+    public BinaryValue create( long value ) {
         // Convert the value to a string, then to a binary ...
         return create(this.getStringValueFactory().create(value));
     }
 
     @Override
-    public Binary create( boolean value ) {
+    public BinaryValue create( boolean value ) {
         // Convert the value to a string, then to a binary ...
         return create(this.getStringValueFactory().create(value));
     }
 
     @Override
-    public Binary create( float value ) {
+    public BinaryValue create( float value ) {
         // Convert the value to a string, then to a binary ...
         return create(this.getStringValueFactory().create(value));
     }
 
     @Override
-    public Binary create( double value ) {
+    public BinaryValue create( double value ) {
         // Convert the value to a string, then to a binary ...
         return create(this.getStringValueFactory().create(value));
     }
 
     @Override
-    public Binary create( BigDecimal value ) {
+    public BinaryValue create( BigDecimal value ) {
         // Convert the value to a string, then to a binary ...
         return create(this.getStringValueFactory().create(value));
     }
 
     @Override
-    public Binary create( Calendar value ) {
+    public BinaryValue create( Calendar value ) {
         // Convert the value to a string, then to a binary ...
         return create(this.getStringValueFactory().create(value));
     }
 
     @Override
-    public Binary create( Date value ) {
+    public BinaryValue create( Date value ) {
         // Convert the value to a string, then to a binary ...
         return create(this.getStringValueFactory().create(value));
     }
 
     @Override
-    public Binary create( DateTime value ) throws ValueFormatException {
+    public BinaryValue create( DateTime value ) throws ValueFormatException {
         // Convert the value to a string, then to a binary ...
         return create(this.getStringValueFactory().create(value));
     }
 
     @Override
-    public Binary create( Name value ) {
+    public BinaryValue create( Name value ) {
         // Convert the value to a string, then to a binary ...
         return create(this.getStringValueFactory().create(value));
     }
 
     @Override
-    public Binary create( Path value ) {
+    public BinaryValue create( Path value ) {
         // Convert the value to a string, then to a binary ...
         return create(this.getStringValueFactory().create(value));
     }
 
     @Override
-    public Binary create( Path.Segment value ) {
+    public BinaryValue create( Path.Segment value ) {
         // Convert the value to a string, then to a binary ...
         return create(this.getStringValueFactory().create(value));
     }
 
     @Override
-    public Binary create( Reference value ) {
+    public BinaryValue create( Reference value ) {
         // Convert the value to a string, then to a binary ...
         return create(this.getStringValueFactory().create(value));
     }
 
     @Override
-    public Binary create( URI value ) {
+    public BinaryValue create( URI value ) {
         // Convert the value to a string, then to a binary ...
         return create(this.getStringValueFactory().create(value));
     }
 
     @Override
-    public Binary create( UUID value ) {
+    public BinaryValue create( UUID value ) {
         // Convert the value to a string, then to a binary ...
         return create(this.getStringValueFactory().create(value));
     }
 
     @Override
-    public Binary create( NodeKey value ) throws ValueFormatException {
+    public BinaryValue create( NodeKey value ) throws ValueFormatException {
         // Convert the value to a string, then to a binary ...
         return create(this.getStringValueFactory().create(value));
     }
 
     @Override
-    public Binary create( Binary value ) throws ValueFormatException, IoException {
+    public BinaryValue create( BinaryValue value ) throws ValueFormatException, IoException {
         return value;
     }
 
     @Override
-    public Binary create( byte[] value ) throws ValueFormatException {
+    public BinaryValue create( byte[] value ) throws ValueFormatException {
         if (value.length <= store.getMinimumBinarySizeInBytes()) {
             // It's small enough, so just create an in-memory value ...
             return new InMemoryBinaryValue(store, value);
@@ -226,7 +226,7 @@ public class BinaryStoreValueFactory extends AbstractValueFactory<Binary> implem
     }
 
     @Override
-    public Binary create( InputStream stream ) throws IoException {
+    public BinaryValue create( InputStream stream ) throws IoException {
         if (stream == null) return null;
         try {
             // Store the value in the store ...
@@ -238,7 +238,7 @@ public class BinaryStoreValueFactory extends AbstractValueFactory<Binary> implem
 
     @SuppressWarnings( "unused" )
     @Override
-    public Binary find( BinaryKey secureHash,
+    public BinaryValue find( BinaryKey secureHash,
                         long size ) throws BinaryStoreException {
         // In-memory binaries never need to be found, so it must be stored ...
         return new StoredBinaryValue(store, secureHash, size);

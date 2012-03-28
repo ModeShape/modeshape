@@ -37,8 +37,8 @@ import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.api.value.DateTime;
-import org.modeshape.jcr.value.Binary;
 import org.modeshape.jcr.value.BinaryFactory;
+import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.DateTimeFactory;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
@@ -179,7 +179,7 @@ final class JcrValue implements javax.jcr.Value {
         if (value == null) return null;
         try {
             if (asStream == null) {
-                Binary binary = factories().getBinaryFactory().create(value);
+                BinaryValue binary = factories().getBinaryFactory().create(value);
                 asStream = new SelfClosingInputStream(binary);
             }
             return asStream;
@@ -189,10 +189,10 @@ final class JcrValue implements javax.jcr.Value {
     }
 
     @Override
-    public Binary getBinary() throws RepositoryException {
+    public BinaryValue getBinary() throws RepositoryException {
         if (value == null) return null;
         try {
-            Binary binary = factories().getBinaryFactory().create(value);
+            BinaryValue binary = factories().getBinaryFactory().create(value);
             return binary;
         } catch (RuntimeException error) {
             throw createValueFormatException(InputStream.class);
@@ -232,8 +232,8 @@ final class JcrValue implements javax.jcr.Value {
                         return this.getString().equals(that.getString());
                     case PropertyType.BINARY:
                         BinaryFactory binaryFactory = factories().getBinaryFactory();
-                        Binary thisValue = binaryFactory.create(this.value);
-                        Binary thatValue = binaryFactory.create(that.value);
+                        BinaryValue thisValue = binaryFactory.create(this.value);
+                        BinaryValue thatValue = binaryFactory.create(that.value);
                         return thisValue.equals(thatValue);
                     case PropertyType.BOOLEAN:
                         return this.getBoolean() == that.getBoolean();
@@ -313,16 +313,42 @@ final class JcrValue implements javax.jcr.Value {
     }
 
     /**
-     * Returns a copy of the current {@link JcrValue} cast to the JCR type specified by the <code>type</code> argument. If the
-     * value cannot be converted base don the JCR type conversion rules, a {@link ValueFormatException} will be thrown.
+     * Returns a copy of the current {@link JcrValue} cast to the JCR type specified by the <code>type</code> argument. This
+     * method will attempt to convert the value (using the JCR type conversion rules) only if the existing type does not match the
+     * supplied type, and if the conversion fails a {@link ValueFormatException} will be thrown. See the
+     * {@link #asType(int, boolean)} method, which is the same as this method except that the conversion can be forced.
+     * <p>
+     * Calling this method is equivalent to calling:
+     * 
+     * <pre>
+     * asType(type, false);
+     * </pre>
+     * 
+     * </p>
      * 
      * @param type the JCR type from {@link PropertyType} that the new {@link JcrValue} should have.
      * @return a new {@link JcrValue} with the given JCR type and an equivalent value.
      * @throws ValueFormatException if the value contained by this {@link JcrValue} cannot be converted to the desired type.
      * @see PropertyType
+     * @see #asType(int, boolean)
      */
-    JcrValue asType( int type ) throws ValueFormatException {
-        if (type == this.type) {
+    final JcrValue asType( int type ) throws ValueFormatException {
+        return asType(type, false);
+    }
+
+    /**
+     * Returns a copy of the current {@link JcrValue} cast to the JCR type specified by the <code>type</code> argument. If the
+     * value cannot be converted base don the JCR type conversion rules, a {@link ValueFormatException} will be thrown.
+     * 
+     * @param type the JCR type from {@link PropertyType} that the new {@link JcrValue} should have.
+     * @param force true if the conversion should always be done, even if this value's type is the same as the expected type
+     * @return a new {@link JcrValue} with the given JCR type and an equivalent value.
+     * @throws ValueFormatException if the value contained by this {@link JcrValue} cannot be converted to the desired type.
+     * @see PropertyType
+     */
+    final JcrValue asType( int type,
+                           boolean force ) throws ValueFormatException {
+        if (!force && type == this.type) {
             return this.withTypeAndValue(this.type, this.value);
         }
 

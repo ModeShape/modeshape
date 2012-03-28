@@ -46,7 +46,7 @@ import org.modeshape.common.util.SecureHash;
 import org.modeshape.common.util.SecureHash.Algorithm;
 import org.modeshape.common.util.SecureHash.HashingInputStream;
 import org.modeshape.jcr.JcrI18n;
-import org.modeshape.jcr.value.Binary;
+import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.binary.FileLocks.WrappedLock;
 
@@ -97,7 +97,7 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
     }
 
     @Override
-    public Binary storeValue( InputStream stream ) throws BinaryStoreException {
+    public BinaryValue storeValue( InputStream stream ) throws BinaryStoreException {
         File tmpFile = null;
         try {
             // Write the contents to a temporary file, and while we do grab the SHA-1 hash and the length ...
@@ -383,12 +383,12 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
     }
 
     @Override
-    public String getText( Binary binary ) throws BinaryStoreException {
+    public String getText( BinaryValue binary ) throws BinaryStoreException {
         return null;
     }
 
     @Override
-    public String getMimeType( Binary binary,
+    public String getMimeType( BinaryValue binary,
                                String name ) throws IOException, RepositoryException {
         return detector().mimeTypeOf(name, binary.getStream());
     }

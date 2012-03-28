@@ -31,7 +31,7 @@ import java.util.List;
 import javax.jcr.*;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.value.DateTime;
-import org.modeshape.jcr.value.Binary;
+import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Reference;
 import org.modeshape.jcr.value.ReferenceFactory;
@@ -116,12 +116,12 @@ class JcrValueFactory implements org.modeshape.jcr.api.ValueFactory {
 
     @Override
     public JcrValue createValue( InputStream value ) {
-        Binary binary = valueFactories.getBinaryFactory().create(value);
+        BinaryValue binary = valueFactories.getBinaryFactory().create(value);
         return new JcrValue(valueFactories, PropertyType.BINARY, binary);
     }
 
     @Override
-    public Binary createBinary( InputStream value ) {
+    public BinaryValue createBinary( InputStream value ) {
         return valueFactories.getBinaryFactory().create(value);
     }
 
@@ -157,7 +157,7 @@ class JcrValueFactory implements org.modeshape.jcr.api.ValueFactory {
     }
 
     @Override
-    public Binary createBinary( byte[] value )  {
+    public BinaryValue createBinary( byte[] value )  {
         return valueFactories.getBinaryFactory().create(value);
     }
 

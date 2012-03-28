@@ -30,7 +30,7 @@ import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.api.text.TextExtractor;
-import org.modeshape.jcr.value.Binary;
+import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.BinaryKey;
 
 /**
@@ -82,7 +82,7 @@ public interface BinaryStore {
      * @return the binary value representing the stored binary value; never null
      * @throws BinaryStoreException
      */
-    Binary storeValue( InputStream stream ) throws BinaryStoreException;
+    BinaryValue storeValue( InputStream stream ) throws BinaryStoreException;
 
     /**
      * Get an {@link InputStream} to the binary content with the supplied key.
@@ -127,7 +127,7 @@ public interface BinaryStore {
      * @return the extracted text, or null if none could be extracted
      * @throws BinaryStoreException if the binary content could not be accessed
      */
-    String getText( Binary binary ) throws BinaryStoreException;
+    String getText( BinaryValue binary ) throws BinaryStoreException;
 
     /**
      * Get the MIME type for this binary value.
@@ -138,6 +138,6 @@ public interface BinaryStore {
      * @throws IOException if there is a problem reading the binary content
      * @throws RepositoryException if an error occurs.
      */
-    public String getMimeType( Binary binary,
+    public String getMimeType( BinaryValue binary,
                                String name ) throws IOException, RepositoryException;
 }

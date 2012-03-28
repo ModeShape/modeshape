@@ -29,11 +29,11 @@ import java.io.InputStream;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.jcr.value.Binary;
+import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.BinaryKey;
 
 /**
- * An implementation of {@link Binary} that keeps the binary data in-memory.
+ * An implementation of {@link BinaryValue} that keeps the binary data in-memory.
  */
 @Immutable
 public class InMemoryBinaryValue extends AbstractBinary {

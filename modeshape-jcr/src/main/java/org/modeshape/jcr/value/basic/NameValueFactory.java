@@ -37,7 +37,7 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.GraphI18n;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.NodeKey;
-import org.modeshape.jcr.value.Binary;
+import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.IoException;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
@@ -294,7 +294,7 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
     }
 
     @Override
-    public Name create( Binary value ) throws ValueFormatException, IoException {
+    public Name create( BinaryValue value ) throws ValueFormatException, IoException {
         // First create a string and then create the boolean from the string value ...
         return create(getStringValueFactory().create(value));
     }

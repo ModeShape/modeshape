@@ -26,7 +26,7 @@ package org.modeshape.jcr.value.binary;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 import org.modeshape.common.annotation.ThreadSafe;
-import org.modeshape.jcr.value.Binary;
+import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.BinaryKey;
 
 /**
@@ -36,7 +36,7 @@ import org.modeshape.jcr.value.BinaryKey;
 public class DatabaseBinaryStore extends AbstractBinaryStore {
 
     @Override
-    public Binary storeValue( InputStream stream ) throws BinaryStoreException {
+    public BinaryValue storeValue( InputStream stream ) throws BinaryStoreException {
         throw new BinaryStoreException("Not implemented");
     }
 
@@ -57,12 +57,12 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
     }
 
     @Override
-    public String getText( Binary binary ) throws BinaryStoreException {
+    public String getText( BinaryValue binary ) throws BinaryStoreException {
         throw new BinaryStoreException("Not implemented");
     }
 
     @Override
-    public String getMimeType( Binary binary,
+    public String getMimeType( BinaryValue binary,
                                String name ) {
         throw new UnsupportedOperationException("Not implemented");
     }

@@ -245,7 +245,7 @@ public interface ValueFactory<T> {
      * @throws IoException If an unexpected problem occurs while accessing the supplied binary value (such as an
      *         {@link IOException}).
      */
-    T create( Binary value ) throws ValueFormatException, IoException;
+    T create( BinaryValue value ) throws ValueFormatException, IoException;
 
     /**
      * Create a value from the binary content given by the supplied stream.
@@ -444,7 +444,7 @@ public interface ValueFactory<T> {
      * @throws ValueFormatException if the conversion from an array of objects could not be performed
      * @throws IoException If an unexpected problem occurs during the conversion.
      */
-    T[] create( Binary[] values ) throws ValueFormatException, IoException;
+    T[] create( BinaryValue[] values ) throws ValueFormatException, IoException;
 
     /**
      * Create an array of values from the specified information by determining which other <code>create</code> method applies for

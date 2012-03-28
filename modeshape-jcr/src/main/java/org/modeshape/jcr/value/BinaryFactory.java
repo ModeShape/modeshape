@@ -27,23 +27,23 @@ import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.jcr.value.binary.BinaryStoreException;
 
 /**
- * A factory for creating {@link Binary} instances. This interface extends the {@link ValueFactory} generic interface and adds
+ * A factory for creating {@link BinaryValue} instances. This interface extends the {@link ValueFactory} generic interface and adds
  * specific methods for creating binary objects.
  */
 @ThreadSafe
-public interface BinaryFactory extends ValueFactory<Binary> {
+public interface BinaryFactory extends ValueFactory<BinaryValue> {
 
     /**
      * Find an existing binary value given the supplied binary key. If no such binary value exists, null is returned. This method
      * can be used when the caller knows the secure hash (e.g., from a previously-held Binary object), and would like to reuse an
      * existing binary value (if possible).
      * 
-     * @param secureHash the secure hash of the binary content, which was probably {@link Binary#getHexHash() obtained} from a
-     *        previously-held {@link Binary} object; a null or empty value is allowed, but will always result in returning null
+     * @param secureHash the secure hash of the binary content, which was probably {@link BinaryValue#getHexHash() obtained} from a
+     *        previously-held {@link BinaryValue} object; a null or empty value is allowed, but will always result in returning null
      * @param size the size of the binary content
      * @return the existing Binary value that has the same secure hash; never null
      * @throws BinaryStoreException if there is a problem accessing the binary store
      */
-    Binary find( BinaryKey secureHash,
+    BinaryValue find( BinaryKey secureHash,
                  long size ) throws BinaryStoreException;
 }

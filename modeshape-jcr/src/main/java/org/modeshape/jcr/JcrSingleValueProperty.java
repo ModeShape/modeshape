@@ -39,7 +39,7 @@ import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.version.VersionException;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.jcr.cache.NodeKey;
-import org.modeshape.jcr.value.Binary;
+import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Property;
@@ -196,7 +196,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
     public InputStream getStream() throws RepositoryException {
         checkSession();
         try {
-            Binary binary = context().getValueFactories().getBinaryFactory().create(property().getFirstValue());
+            BinaryValue binary = context().getValueFactories().getBinaryFactory().create(property().getFirstValue());
             return new SelfClosingInputStream(binary);
         } catch (org.modeshape.jcr.value.ValueFormatException e) {
             throw new ValueFormatException(e.getMessage(), e);
@@ -207,7 +207,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
     public javax.jcr.Binary getBinary() throws ValueFormatException, RepositoryException {
         checkSession();
         try {
-            Binary binary = context().getValueFactories().getBinaryFactory().create(property().getFirstValue());
+            BinaryValue binary = context().getValueFactories().getBinaryFactory().create(property().getFirstValue());
             return binary;
         } catch (org.modeshape.jcr.value.ValueFormatException e) {
             throw new ValueFormatException(e.getMessage(), e);
@@ -405,9 +405,9 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         checkForLock();
         checkForCheckedOut();
 
-        Binary binary = null;
-        if (value instanceof Binary) {
-            binary = (Binary)value;
+        BinaryValue binary = null;
+        if (value instanceof BinaryValue) {
+            binary = (BinaryValue)value;
         } else {
             // Otherwise, this isn't our instance, so copy the data ...
             binary = context().getValueFactories().getBinaryFactory().create(value.getStream());

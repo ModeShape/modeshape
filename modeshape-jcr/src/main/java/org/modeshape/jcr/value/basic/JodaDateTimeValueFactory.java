@@ -35,7 +35,7 @@ import org.modeshape.common.text.TextDecoder;
 import org.modeshape.jcr.GraphI18n;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.NodeKey;
-import org.modeshape.jcr.value.Binary;
+import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.DateTimeFactory;
 import org.modeshape.jcr.value.IoException;
 import org.modeshape.jcr.value.Name;
@@ -192,7 +192,7 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
     }
 
     @Override
-    public DateTime create( Binary value ) throws ValueFormatException, IoException {
+    public DateTime create( BinaryValue value ) throws ValueFormatException, IoException {
         // First create a string and then create the boolean from the string value ...
         return create(getStringValueFactory().create(value));
     }
