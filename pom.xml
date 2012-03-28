@@ -29,7 +29,7 @@
     <module>modeshape-jdbc-local</module>
     <module>modeshape-unit-test</module>
 		<module>web</module>
-    <!--module>modeshape-jdbc</module-->
+    <!--<module>modeshape-jdbc</module>-->
 		<module>deploy/jbossas</module>
     <!--module>modeshape-integration-tests</module-->
 		<module>demos</module>
@@ -66,6 +66,12 @@
 				<module>modeshape-distribution</module>
 			</modules>
 		</profile>
+        <profile>
+            <id>dist</id>
+            <modules>
+                <module>modeshape-distribution</module>
+            </modules>
+        </profile>
 		<profile>
 			<!-- 
 			  This profile is used to run longer-running performance tests,

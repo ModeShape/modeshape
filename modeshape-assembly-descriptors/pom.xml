@@ -24,6 +24,11 @@
                         <!-- We don't want to run this -->
                         <phase>non-existant</phase>
                     </execution>
+                    <execution>
+                        <id>attach-test-sources</id>
+                        <!-- We don't want to run this -->
+                        <phase>non-existant</phase>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>

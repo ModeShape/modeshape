@@ -1,61 +1,61 @@
 <!--This script builds a kit for the ctc-client -->
 <assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0 http://maven.apache.org/xsd/assembly-1.1.0.xsd">
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0 http://maven.apache.org/xsd/assembly-1.1.0.xsd">
 
-  <id>jar-with-dependencies</id>
-      
-  <formats>
-    <format>jar</format>
-  </formats>
-  <includeBaseDirectory>false</includeBaseDirectory>
+    <id>jar-with-dependencies</id>
 
-  <baseDirectory>/</baseDirectory>
- 
-  <dependencySets>
-    <dependencySet>
-      <unpack>false</unpack>
-      <scope>runtime</scope>
-      <useTransitiveDependencies>true</useTransitiveDependencies>
-  		<unpackOptions>
-			  <!-- Excluding duplicates where LICENSE and NOTICE are already included, but don't have the .txt extension 
-			 
-				========================================================================
-				NOTE: this was validated that the current dependencies produce duplicates that are all Apache files.
-						However, if additional dependencies are added, the excludes should be removed, 
-						build the jar, and then verify if there are new LICENSE and/or NOTICE files
-						because all the unique license / notices may need to be kept for legal reasons
-				=====
-		  
-			  -->		  
-				<excludes>
-					<exclude>META-INF/LICENSE</exclude>
-					<exclude>META-INF/NOTICE</exclude>
-				</excludes>
-			</unpackOptions>
-      <includes>
-        <include>org.modeshape:modeshape-jcr-api</include>   
-        <include>javax.jcr:jcr</include>
-        <include>org.slf4j:slf4j-api</include>
+    <formats>
+        <format>jar</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
 
-				<!-- Needed for the driver's HTTP communication -->
-        <include>org.modeshape:modeshape-web-jcr-rest-client</include>         
-        <include>org.jboss.resteasy:*</include>    
-        <include>org.apache.httpcomponents:httpclient</include>    
-        <include>org.apache.httpcomponents:httpcore</include>
-        <include>org.modeshape:modeshape-common</include> 
-        <include>org.codehaus.jettison:jettison</include>
-        <include>commons-codec:commons-codec</include>
-        <include>commons-logging:commons-logging</include>
-      </includes>
-    </dependencySet>
-	  <dependencySet>
-      <unpack>true</unpack>
-      <useTransitiveDependencies>false</useTransitiveDependencies>
-      <includes>
-        <include>org.modeshape:modeshape-jdbc</include>
-        <include>org.modeshape:modeshape-jdbc-local</include>
-      </includes>
-    </dependencySet>
-  </dependencySets>
+    <baseDirectory>/</baseDirectory>
+
+    <dependencySets>
+        <dependencySet>
+            <unpack>false</unpack>
+            <scope>runtime</scope>
+            <useTransitiveDependencies>true</useTransitiveDependencies>
+            <unpackOptions>
+                <!-- Excluding duplicates where LICENSE and NOTICE are already included, but don't have the .txt extension
+
+                    ========================================================================
+                    NOTE: this was validated that the current dependencies produce duplicates that are all Apache files.
+                            However, if additional dependencies are added, the excludes should be removed,
+                            build the jar, and then verify if there are new LICENSE and/or NOTICE files
+                            because all the unique license / notices may need to be kept for legal reasons
+                    =====
+
+                  -->
+                <excludes>
+                    <exclude>META-INF/LICENSE</exclude>
+                    <exclude>META-INF/NOTICE</exclude>
+                </excludes>
+            </unpackOptions>
+            <includes>
+                <include>org.modeshape:modeshape-jcr-api</include>
+                <include>javax.jcr:jcr</include>
+                <include>org.slf4j:slf4j-api</include>
+                <!-- Needed for the driver's HTTP communication -->
+                <include>org.modeshape:modeshape-web-jcr-rest-client</include>
+                <include>org.jboss.resteasy:*</include>
+                <include>org.apache.httpcomponents:httpclient</include>
+                <include>org.apache.httpcomponents:httpcore</include>
+                <include>org.modeshape:modeshape-common</include>
+                <include>org.codehaus.jettison:jettison</include>
+                <include>commons-codec:commons-codec</include>
+                <include>commons-logging:commons-logging</include>
+            </includes>
+        </dependencySet>
+
+        <dependencySet>
+            <unpack>true</unpack>
+            <useTransitiveDependencies>false</useTransitiveDependencies>
+            <includes>
+                <include>org.modeshape:modeshape-jdbc</include>
+                <include>org.modeshape:modeshape-jdbc-local</include>
+            </includes>
+        </dependencySet>
+    </dependencySets>
 </assembly>

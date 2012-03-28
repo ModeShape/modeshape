@@ -46,6 +46,7 @@
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jcr</artifactId>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -111,32 +112,34 @@
         -->
     </dependencies>
 
+    <build>
+        <resources>
+            <resource>
+                <filtering>false</filtering>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <include>*</include>
+                    <include>**/*</include>
+                </includes>
+            </resource>
+            <!-- Apply the properties set in the POM to the resource files -->
+            <resource>
+                <filtering>true</filtering>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <include>**/JdbcI18n.properties</include>
+                </includes>
+            </resource>
+        </resources>
+    </build>
+
     <profiles>
         <profile>
             <id>cargo-1</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
-
-            <build>
-                <resources>
-                    <resource>
-                        <filtering>false</filtering>
-                        <directory>src/main/resources</directory>
-                        <includes>
-                            <include>*</include>
-                            <include>**/*</include>
-                        </includes>
-                    </resource>
-                    <!-- Apply the properties set in the POM to the resource files -->
-                    <resource>
-                        <filtering>true</filtering>
-                        <directory>src/main/resources</directory>
-                        <includes>
-                            <include>**/JdbcI18n.properties</include>
-                        </includes>
-                    </resource>
-                </resources>
+               <build>
                 <plugins>
                     <!--
                         Override the default Surefire behavior to run during
@@ -164,27 +167,10 @@
                 </plugins>
             </build>
         </profile>
+
         <profile>
             <id>assembly</id>
             <build>
-                <resources>
-                    <resource>
-                        <filtering>false</filtering>
-                        <directory>src/main/resources</directory>
-                        <includes>
-                            <include>*</include>
-                            <include>**/*</include>
-                        </includes>
-                    </resource>
-                    <!-- Apply the properties set in the POM to the resource files -->
-                    <resource>
-                        <filtering>true</filtering>
-                        <directory>src/main/resources</directory>
-                        <includes>
-                            <include>**/JdbcI18n.properties</include>
-                        </includes>
-                    </resource>
-                </resources>
                 <plugins>
                     <plugin>
                         <!--
@@ -202,6 +188,7 @@
                                     <addClasspath>true</addClasspath>
                                 </manifest>
                             </archive>
+                            <attach>false</attach>
                         </configuration>
                         <executions>
                             <execution>
@@ -318,9 +305,29 @@
                             </execution>
                         </executions>
                     </plugin>
+                    <!--Install the re-packaged assembly file in the repo, so it can be picked up by the distribution module-->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-install-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>install-modified-jdbc-assembly</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>install-file</goal>
+                                </goals>
+                                <configuration>
+                                    <file>${project.build.directory}/modeshape-jdbc-${project.version}-jar-with-dependencies.jar</file>
+                                    <groupId>${project.groupId}</groupId>
+                                    <artifactId>${project.artifactId}</artifactId>
+                                    <version>${project.version}</version>
+                                    <classifier>jar-with-dependencies</classifier>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                 </plugins>
             </build>
         </profile>
     </profiles>
-
 </project>

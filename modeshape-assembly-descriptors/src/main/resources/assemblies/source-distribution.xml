@@ -1,0 +1,48 @@
+<assembly>
+    <id>source</id>
+    <formats>
+        <format>zip</format>
+    </formats>
+    <fileSets>
+        <fileSet>
+            <!--
+               Gather into the distribution the various text files for inclusion
+             -->
+            <directory>src/main/resources</directory>
+            <outputDirectory>/</outputDirectory>
+            <includes>
+                <include>README*</include>
+                <include>LICENSE*</include>
+                <include>NOTICE*</include>
+                <include>AUTHORS*</include>
+                <include>COPYRIGHT*</include>
+                <include>*.txt</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <!--
+               Gather into the distribution the source for all projects
+             -->
+            <directory>../</directory>
+            <outputDirectory>/</outputDirectory>
+            <useDefaultExcludes>true</useDefaultExcludes>
+            <excludes>
+                <exclude>**/.idea/**</exclude>
+                <exclude>**/*.iml/**</exclude>
+                <exclude>**/*.ipr/**</exclude>
+                <exclude>**/*.iws/**</exclude>
+                <exclude>**/*.log/**</exclude>
+                <exclude>**/*.epf/**</exclude>
+                <exclude>**/${project.build.directory}</exclude>
+                <exclude>**/${project.build.directory}/**</exclude>
+                <exclude>.project</exclude>
+                <exclude>.classpath</exclude>
+                <exclude>.settings</exclude>
+                <exclude>.metadata</exclude>
+                <exclude>.scala_dependencies</exclude>
+                <exclude>.externalToolBuilders</exclude>
+                <exclude>.metadata</exclude>
+            </excludes>
+        </fileSet>
+    </fileSets>
+</assembly>

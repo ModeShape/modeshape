@@ -422,6 +422,25 @@
                         </instructions>
                     </configuration>
                 </plugin>
+
+                <plugin>
+                    <artifactId>maven-assembly-plugin</artifactId>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.modeshape</groupId>
+                            <artifactId>modeshape-assembly-descriptors</artifactId>
+                            <version>${project.version}</version>
+                        </dependency>
+                    </dependencies>
+                    <executions>
+                        <execution>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>single</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -436,14 +455,19 @@
                     <showWarnings>false</showWarnings>
                 </configuration>
             </plugin>
-            <!-- Produce test-source jars during the 'verify' phase. The source jars are produced by the parent pom -->
+            <!-- Produce source jars during package and test-source jars during the 'verify' phase -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>attach-sources</id>
-                        <phase>verify</phase>
+                    <id>attach-sources</id>
+                    <goals>
+                        <goal>jar-no-fork</goal>
+                    </goals>
+                    </execution>
+                    <execution>
+                        <id>attach-test-sources</id>
                         <goals>
                             <goal>test-jar-no-fork</goal>
                         </goals>
@@ -1073,17 +1097,16 @@
             <!-- Eclipse JDT artifacts declare their dependencies using ranges. (yikes!)
                  So we need to specify exact versions, and we can do that in a dependencyManagement section.
                  Here are the dependencies showing the last combination that we could get working:
-
-                    +- org.eclipse.equinox:common:jar:3.3.0-v20070426:compile
-                    +- org.eclipse.jdt:core:jar:3.3.0-v_771:compile
-                       +- org.eclipse.core:resources:jar:3.3.0-v20070604:compile
-                       |  \- org.eclipse.core:expressions:jar:3.3.0-v20070606-0010:compile
-                       \- org.eclipse.core:runtime:jar:3.3.100-v20070530:compile
-                          +- org.eclipse:osgi:jar:3.3.0-v20070530:compile
-                          +- org.eclipse.core:jobs:jar:3.3.0-v20070423:compile
-                          +- org.eclipse.equinox:registry:jar:3.3.0-v20070522:compile
-                          +- org.eclipse.equinox:preferences:jar:3.2.100-v20070522:compile
-                          \- org.eclipse.core:contenttype:jar:3.2.100-v20070319:compile
+                 +- org.eclipse.equinox:common:jar:3.3.0-v20070426:compile
+                     +- org.eclipse.jdt:core:jar:3.3.0-v_771:compile
+                     |  +- org.eclipse.core:resources:jar:3.3.0-v20070604:compile
+                     |  |  \- org.eclipse.core:expressions:jar:3.3.0-v20070606-0010:compile
+                     |  \- org.eclipse.core:runtime:jar:3.3.100-v20070530:compile
+                     |     +- org.eclipse:osgi:jar:3.3.0-v20070530:compile
+                     |     +- org.eclipse.core:jobs:jar:3.3.0-v20070423:compile
+                     |     +- org.eclipse.equinox:registry:jar:3.3.0-v20070522:compile
+                     |     +- org.eclipse.equinox:preferences:jar:3.2.100-v20070522:compile
+                     |     \- org.eclipse.core:contenttype:jar:3.2.100-v20070319:compile
             -->
             <!--Java sequencer-->
             <dependency>
