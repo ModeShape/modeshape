@@ -3,7 +3,7 @@
   <parent>
     <groupId>org.modeshape</groupId>
     <artifactId>modeshape-parent</artifactId>
-    <version>3.0-SNAPSHOT</version>
+    <version>3.0.0.Alpha3</version>
     <relativePath>../../../modeshape-parent/pom.xml</relativePath>
   </parent>
 	<artifactId>modeshape-jbossas-web-rest-war</artifactId>
