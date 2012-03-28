@@ -133,18 +133,10 @@
                     <plugin>
                         <artifactId>maven-assembly-plugin</artifactId>
                         <configuration>
-                            <descriptors>
-                                <descriptor>src/main/assembly/with-dependencies.xml</descriptor>
-                            </descriptors>
+                            <descriptorRefs>
+                                <descriptorRef>module-with-dependencies</descriptorRef>
+                            </descriptorRefs>
                         </configuration>
-                        <executions>
-                            <execution>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>single</goal>
-                                </goals>
-                            </execution>
-                        </executions>
                     </plugin>
                 </plugins>
             </build>

@@ -315,6 +315,7 @@
             </testResource>
         </testResources>
     </build>
+
     <profiles>
         <profile>
             <id>preferIpv4</id>

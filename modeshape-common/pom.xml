@@ -53,4 +53,22 @@
             <artifactId>log4j</artifactId>
         </dependency>
     </dependencies>
+
+    <profiles>
+        <profile>
+            <id>assembly</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <configuration>
+                            <descriptorRefs>
+                                <descriptorRef>component-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
