@@ -12,8 +12,7 @@
             <useProjectArtifact>false</useProjectArtifact>
             <excludes>
                 <exclude>${project.groupId}:*</exclude>
-                <!-- Cannot ship the JCR jar -->
-                <exclude>javax.jcr:jcr</exclude>
+                <!--<exclude>javax.jcr:jcr</exclude>-->
             </excludes>
         </dependencySet>
         <dependencySet>
