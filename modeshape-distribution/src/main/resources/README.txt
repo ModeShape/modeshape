@@ -7,16 +7,13 @@ It's fully open source with a business-friendly license and written in Java, so 
 
 For the complete documentation, please visit: https://docs.jboss.org/author/display/MODE/Home
 
-# Using Maven
+# Using ModeShape
 
 By far the easiest way to use ModeShape is to use Maven, because with just a few lines of code, Maven will automatically pull
 all the JARs and source for all of the ModeShape libraries as well as everything those libraries need.
-
 For all the details, please visit http://www.jboss.org/modeshape/downloads/maven
 
-# Distribution Structure
-
-The modeshape-dist.zip contains the following structure:
+If you're not using Maven, the easiest way use ModeShape is via the files in this distribution, which have the following structure:
 
 /- modeshape-version
 
