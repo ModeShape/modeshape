@@ -806,7 +806,7 @@ class JcrContentHandler extends DefaultHandler {
                         return;
                     }
                     // Otherwise, it's just a regular node...
-                    child = parent.editor().createChild(nodeName, uuid, primaryTypeName, false);
+                    child = parent.editor().createChild(nodeName, uuid, primaryTypeName, true);
                 } else {
                     child = existingNode;
                 }
