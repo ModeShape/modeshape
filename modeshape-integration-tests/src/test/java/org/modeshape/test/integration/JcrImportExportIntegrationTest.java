@@ -80,4 +80,19 @@ public class JcrImportExportIntegrationTest extends ModeShapeSingleUseTest {
         assertNode("/drools:repository", "nt:folder");
     }
 
+    @FixFor( "MODE-1450" )
+    @Test
+    public void shouldBeAbleToImportEmptyGuvnorRepositoryIntoSystemView() throws Exception {
+        startEngineUsing("config/configRepositoryForDroolsImportExport.xml");
+        importContent(getClass(), "io/drools/guvnor-empty-repository.xml");
+        assertNode("/drools:repository", "nt:folder");
+        assertNode("/drools:repository/drools:package_area", "nt:folder");
+        assertNode("/drools:repository/drools:package_area/defaultPackage", "drools:packageNodeType");
+        assertNode("/drools:repository/drools:package_area/defaultPackage/assets", "drools:versionableAssetFolder");
+        assertNode("/drools:repository/drools:package_area/defaultPackage/assets/drools", "drools:assetNodeType");
+        assertNode("/drools:repository/drools:packagesnapshot_area", "nt:folder");
+        assertNode("/drools:repository/drools:tag_area", "nt:folder");
+        assertNode("/drools:repository/drools:state_area", "nt:folder");
+        assertNode("/drools:repository/drools.package.migrated", "nt:folder");
+    }
 }
