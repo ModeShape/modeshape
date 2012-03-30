@@ -493,7 +493,7 @@ public class JcrRepository implements Repository {
         public static final String INDEX_READ_DEPTH = "4";
 
         /**
-         * The default value for the {@link Option#ANONYMOUS_USER_ROLES} option is {@value} .
+         * The default value for the {@link Option#ANONYMOUS_USER_ROLES} option is {@value} (if the supplied option is null).
          */
         public static final String ANONYMOUS_USER_ROLES = ModeShapeRoles.ADMIN;
 
@@ -959,22 +959,7 @@ public class JcrRepository implements Repository {
             LOGGER.debug("Failed to find 'javax.servlet.http.HttpServletRequest' class, so not loading ModeShape's optional ServletProvider");
         }
 
-        // Set up the anonymous provider (if appropriate) ...
-        String rawAnonRoles = this.options.get(Option.ANONYMOUS_USER_ROLES);
-        if (rawAnonRoles != null) {
-            final Set<String> roles = new HashSet<String>();
-            for (String role : rawAnonRoles.split("\\s*,\\s*")) {
-                roles.add(role);
-            }
-            if (roles.size() > 0) {
-                AnonymousProvider anonProvider = new AnonymousProvider(ANONYMOUS_USER_NAME, roles);
-                authenticators = authenticators.with(anonProvider);
-                LOGGER.debug("Enabling anonymous authentication and authorization.");
-            }
-        }
-
         // Set up the SecurityContext provider (for backward compatibility) unless configured otherwise ...
-        // Set up the JAAS providers ...
         boolean useSecurityContextCredentials = Boolean.parseBoolean(this.options.get(Option.USE_SECURITY_CONTEXT_CREDENTIALS));
         if (useSecurityContextCredentials) {
             SecurityContextProvider provider = new SecurityContextProvider();
@@ -988,8 +973,24 @@ public class JcrRepository implements Repository {
             }
         }
 
-        // Set up the authenticator and authorizer ...
+        // Set up the anonymous provider (if appropriate) AFTER all the other providers ...
+        String rawAnonRoles = this.options.get(Option.ANONYMOUS_USER_ROLES);
+        if (rawAnonRoles != null) {
+            final Set<String> roles = new HashSet<String>();
+            for (String role : rawAnonRoles.split("\\s*,\\s*")) {
+                if (role.trim().length() != 0) roles.add(role);
+            }
+            if (roles.size() > 0) {
+                AnonymousProvider anonProvider = new AnonymousProvider(ANONYMOUS_USER_NAME, roles);
+                authenticators = authenticators.with(anonProvider);
+                LOGGER.debug("Enabling anonymous authentication and authorization.");
+            }
+        }
+
+        // And whether to use anonymous if credentials fail ...
         this.anonymousCredentialsIfSuppliedCredentialsFail = Boolean.valueOf(this.options.get(Option.USE_ANONYMOUS_ACCESS_ON_FAILED_LOGIN)) ? new AnonymousCredentials() : null;
+
+        // Set up the authenticator (which is also the authorizer) ...
         this.authenticator = authenticators;
         LOGGER.debug("Finished initializing the authentication providers for the '{0}' repository.", repositoryName());
 

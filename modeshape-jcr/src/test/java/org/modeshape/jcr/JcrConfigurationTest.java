@@ -547,6 +547,47 @@ public class JcrConfigurationTest {
         }
     }
 
+    @Test
+    public void shouldLoadConfigurationWithNoAnonymousRoles() throws Exception {
+        File file = new File("src/test/resources/config/configRepositoryWithNoAnonymousRoles.xml");
+        assertThat(file.exists(), is(true));
+        assertThat(file.canRead(), is(true));
+        assertThat(file.isFile(), is(true));
+    
+        configuration.loadFrom("src/test/resources/config/configRepositoryWithNoAnonymousRoles.xml");
+    
+        assertThat(configuration.getProblems().isEmpty(), is(true));
+    
+        // Initialize PicketBox ...
+        JaasTestUtil.initJaas("security/jaas.conf.xml");
+    
+        // Create and start the engine ...
+        engine = configuration.build();
+        engine.start();
+        Repository repository = engine.getRepository("My Repository");
+        assertThat(repository, is(notNullValue()));
+    
+        // Create a session, authenticating using one of the usernames defined by our JAAS policy file(s) ...
+        Session session = null;
+        try {
+            session = repository.login(new SimpleCredentials("superuser", "superuser".toCharArray()));
+            assertThat(session.getUserID(), is("superuser"));
+        } finally {
+            if (session != null) session.logout();
+        }
+    
+        // Create a session for anonymous users ...
+        try {
+            session = repository.login();
+            fail("Should not have allowed anonymous login");
+        } catch (LoginException e) {
+            // expected
+        } finally {
+            if (session != null) session.logout();
+        }
+    
+    }
+
     @Test( expected = LoginException.class )
     public void shouldAllowDisablingAnonymousLogins() throws Exception {
         configuration.repositorySource("Source2")
@@ -566,47 +607,6 @@ public class JcrConfigurationTest {
         JcrRepository repository = engine.getRepository("JCR Repository");
 
         repository.login("ws");
-    }
-
-    @Test
-    public void shouldLoadConfigurationWithNoAnonymousRoles() throws Exception {
-        File file = new File("src/test/resources/config/configRepositoryWithNoAnonymousRoles.xml");
-        assertThat(file.exists(), is(true));
-        assertThat(file.canRead(), is(true));
-        assertThat(file.isFile(), is(true));
-
-        configuration.loadFrom("src/test/resources/config/configRepositoryWithNoAnonymousRoles.xml");
-
-        assertThat(configuration.getProblems().isEmpty(), is(true));
-
-        // Initialize PicketBox ...
-        JaasTestUtil.initJaas("security/jaas.conf.xml");
-
-        // Create and start the engine ...
-        engine = configuration.build();
-        engine.start();
-        Repository repository = engine.getRepository("My Repository");
-        assertThat(repository, is(notNullValue()));
-
-        // Create a session, authenticating using one of the usernames defined by our JAAS policy file(s) ...
-        Session session = null;
-        try {
-            session = repository.login(new SimpleCredentials("superuser", "superuser".toCharArray()));
-            assertThat(session.getUserID(), is("superuser"));
-        } finally {
-            if (session != null) session.logout();
-        }
-
-        // Create a session for anonymous users ...
-        try {
-            session = repository.login();
-            fail("Should not have allowed anonymous login");
-        } catch (LoginException e) {
-            // expected
-        } finally {
-            if (session != null) session.logout();
-        }
-
     }
 
     public static class TestSecurityContextCredentials implements Credentials {
