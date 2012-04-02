@@ -812,6 +812,10 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
                                 JcrSession session ) {
             assert value instanceof JcrValue;
 
+            if (session == null) {
+                return false;
+            }
+
             JcrValue jcrValue = (JcrValue)value;
             Node node = null;
             try {
@@ -863,7 +867,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
 
             JcrValue jcrValue = (JcrValue)value;
             // Need to use the session execution context to handle the remaps
-            Name name = session.context().getValueFactories().getNameFactory().create(jcrValue.value());
+            Name name = valueFactory.create(jcrValue.value());
 
             for (int i = 0; i < constraints.length; i++) {
                 if (constraints[i].equals(name)) {
@@ -932,6 +936,10 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         public boolean matches( Value valueToMatch,
                                 JcrSession session ) {
             assert valueToMatch instanceof JcrValue;
+
+            if (session == null) {
+                return false;
+            }
 
             /*
              * Need two path factories here.  One uses the permanent namespace mappings to parse the constraints.

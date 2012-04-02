@@ -221,7 +221,7 @@
         <slf4j.log4j.version>1.6.1</slf4j.log4j.version>
         <log4j.version>1.2.16</log4j.version>
         <jcr.version>2.0</jcr.version>
-        <jackrabbit.jcr.tck.version>2.1.0</jackrabbit.jcr.tck.version>
+        <jackrabbit.jcr.tck.version>2.4.0</jackrabbit.jcr.tck.version>
         <picketbox.version>4.0.7.Final</picketbox.version>
         <byteman.version>1.5.1</byteman.version>
         <lucene.version>3.5.0</lucene.version>

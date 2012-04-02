@@ -566,7 +566,7 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
         boolean orderableChildNodes = nodeType.hasOrderableChildNodes();
 
         NodeKey prototypeKey = repository.repositoryCache().getSystemKey();
-        return new JcrNodeType(prototypeKey, this.context, this, name, supertypes, primaryItemName, childNodes, properties,
+        return new JcrNodeType(prototypeKey, this.context, null, this, name, supertypes, primaryItemName, childNodes, properties,
                                mixin, isAbstract, queryable, orderableChildNodes);
     }
 

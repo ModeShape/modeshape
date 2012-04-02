@@ -127,7 +127,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
 
         // Need to return a version of the node type with the current context
         for (JcrNodeType type : rawTypes) {
-            types.add(type.with(context()));
+            types.add(type.with(context(), session));
         }
 
         return new JcrNodeTypeIterator(types);
@@ -139,7 +139,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         Name ntName = context().getValueFactories().getNameFactory().create(nodeTypeName);
         JcrNodeType type = nodeTypes().getNodeType(ntName);
         if (type != null) {
-            type = type.with(context());
+            type = type.with(context(), session);
             return type;
         }
         throw new NoSuchNodeTypeException(JcrI18n.typeNotFound.text(nodeTypeName));
@@ -156,7 +156,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         JcrNodeType nodeType = nodeTypes().getNodeType(nodeTypeName);
 
         if (nodeType != null) {
-            nodeType = nodeType.with(context());
+            nodeType = nodeType.with(context(), session);
         }
 
         return nodeType;
@@ -197,7 +197,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
 
         // Need to return a version of the node type with the current context
         for (JcrNodeType type : rawTypes) {
-            types.add(type.with(context()));
+            types.add(type.with(context(), session));
         }
 
         return new JcrNodeTypeIterator(types);
