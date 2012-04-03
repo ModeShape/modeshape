@@ -281,12 +281,19 @@ class JcrNodeType implements NodeType {
         Name childPrimaryTypeName = context.getValueFactories().getNameFactory().create(primaryNodeTypeName);
 
         NodeTypes nodeTypes = nodeTypes();
+        JcrNodeDefinition childNodeDefinition = nodeTypes.findChildNodeDefinition(this.name, null, childName,
+                                                                                  childPrimaryTypeName, 0, true);
+
+        if (childNodeDefinition != null && RESIDUAL_ITEM_NAME.equals(childNodeDefinition.getName())) {
+            //the TCK expects that for residual children definitions, this returns true
+            return true;
+        }
+
         if (primaryNodeTypeName != null) {
             JcrNodeType childType = nodeTypes.getNodeType(childPrimaryTypeName);
             if (childType.isAbstract() || childType.isMixin()) return false;
         }
-
-        return nodeTypes.findChildNodeDefinition(this.name, null, childName, childPrimaryTypeName, 0, true) != null;
+        return childNodeDefinition != null;
     }
 
     @Override
