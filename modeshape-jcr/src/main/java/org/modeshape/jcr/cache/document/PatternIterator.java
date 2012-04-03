@@ -47,6 +47,9 @@ abstract class PatternIterator<Type> extends DelegatingIterator<Type> {
 
     @Override
     public boolean hasNext() {
+        if (last != null) {
+            return true;
+        }
         while (super.hasNext()) {
             last = super.next();
             String childName = matchable(last);
@@ -60,22 +63,23 @@ abstract class PatternIterator<Type> extends DelegatingIterator<Type> {
                 }
             }
         }
+        last = null;
         return false;
     }
 
     @Override
     public Type next() {
-        if (last == null) {
-            if (!hasNext()) {
-                throw new NoSuchElementException();
+        try {
+            if (last == null) {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
             }
-        }
-        if (last != null) {
-            try {
+            if (last != null) {
                 return last;
-            } finally {
-                last = null;
             }
+        } finally {
+            last = null;
         }
         throw new NoSuchElementException();
     }

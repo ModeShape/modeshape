@@ -151,11 +151,14 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
             }
             // STRING, PATH and NAME values will be convertable to a graph Path object ...
             Path path = factories.getPathFactory().create(value);
-            // We're throwing a PathNotFoundException here because that's what the TCK unit tests expect.
-            // See https://issues.apache.org/jira/browse/JCR-2648 for details
+
             return path.isAbsolute() ? session().node(path) : session().node(getParent().node(), path);
         } catch (org.modeshape.jcr.value.ValueFormatException e) {
             throw new ValueFormatException(e.getMessage(), e);
+        }
+        catch (PathNotFoundException pathNotFound) {
+            //expected by the TCK
+            throw new ItemNotFoundException(pathNotFound.getMessage(), pathNotFound);
         }
     }
 
@@ -171,11 +174,13 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         }
         // Find the parent node of the referenced property ...
         AbstractJcrNode referencedNode = null;
-        if (path.isAbsolute()) {
-            referencedNode = session().node(path);
-        } else {
-            referencedNode = session().node(cachedNode(), path);
+        try {
+            referencedNode = path.isAbsolute() ? session().node(path) :session().node(cachedNode(), path);
+        } catch (PathNotFoundException e) {
+            //expected by the TCK
+            throw new ItemNotFoundException(e.getMessage(), e);
         }
+
         // Now get the property from the referenced node ...
         Name propertyName = path.getLastSegment().getName();
         if (!referencedNode.hasProperty(propertyName)) {

@@ -238,7 +238,7 @@ public class JcrTckTest {
         // Or uncomment the following lines to execute the different sets/suites of tests ...
         TestSuite suite = new TestSuite("JCR 2.0 API tests");
 
-        //suite.addTest(levelOneSuite());
+        suite.addTest(levelOneSuite());
         //suite.addTest(levelTwoSuite());
         //suite.addTest(new OptionalFeatureTests());
 
@@ -284,6 +284,7 @@ public class JcrTckTest {
         suite.addTestSuite(NodeIteratorTest.class);
         suite.addTestSuite(PropertyReadMethodsTest.class);
         suite.addTestSuite(RepositoryDescriptorTest.class);
+        suite.addTestSuite(RepositoryLoginTest.class);
         suite.addTestSuite(SessionReadMethodsTest.class);
         suite.addTestSuite(WorkspaceReadMethodsTest.class);
         suite.addTestSuite(ReferenceableRootNodesTest.class);
@@ -292,32 +293,7 @@ public class JcrTckTest {
         suite.addTestSuite(ExportDocViewTest.class);
 
         // The tests in this suite are level one
-        // suite.addTest(org.apache.jackrabbit.test.api.nodetype.TestAll.suite());
-
-        suite.addTestSuite(NodeDefTest.class);
-        suite.addTestSuite(NodeTypeManagerTest.class);
-        suite.addTestSuite(NodeTypeTest.class);
-        suite.addTestSuite(PropertyDefTest.class);
-
-        suite.addTestSuite(PredefinedNodeTypeTest.class);
-
-        suite.addTestSuite(CanSetPropertyBinaryTest.class);
-        suite.addTestSuite(CanSetPropertyBooleanTest.class);
-        suite.addTestSuite(CanSetPropertyDateTest.class);
-        suite.addTestSuite(CanSetPropertyDoubleTest.class);
-        suite.addTestSuite(CanSetPropertyLongTest.class);
-        suite.addTestSuite(CanSetPropertyMultipleTest.class);
-        suite.addTestSuite(CanSetPropertyNameTest.class);
-        suite.addTestSuite(CanSetPropertyPathTest.class);
-        suite.addTestSuite(CanSetPropertyStringTest.class);
-        suite.addTestSuite(CanSetPropertyTest.class);
-
-        // suite.addTestSuite(CanAddChildNodeCallWithNodeTypeTest.class);
-        suite.addTestSuite(CanAddChildNodeCallWithoutNodeTypeTest.class);
-
-        suite.addTestSuite(CanRemoveItemTest.class);
-
-        // JCR 2.0
+        suite.addTest(org.apache.jackrabbit.test.api.nodetype.TestAll.suite());
 
         return suite;
     }
@@ -396,7 +372,6 @@ public class JcrTckTest {
         suite.addTestSuite(WorkspaceMoveTest.class);
         suite.addTestSuite(WorkspaceMoveVersionableTest.class);
 
-        suite.addTestSuite(RepositoryLoginTest.class);
         suite.addTestSuite(ImpersonateTest.class);
         suite.addTestSuite(CheckPermissionTest.class);
 
