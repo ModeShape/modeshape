@@ -238,6 +238,61 @@ String jaasRealm = ...
 		    and many others.  Plus, JBoss Security also provides other capabilities, such as using XACML policies or using federated single sign-on. 
 				For more detail, see the <ulink url="http://www.jboss.org/jbosssecurity/">JBoss Security</ulink> project.
 		  </para>
+
+            <sect3 id="user_roles_configuration">
+                <title>User-Roles Configuration</title>
+                <para>
+                    When assigning users to roles via properties files (e.g. when using the User-Roles Login Module), each line
+                    contains the comma-separated list of roles for a particular user, and is of the form:
+                </para>
+                <programlisting>&lt;username&gt;=&lt;role&gt;[,&lt;role&gt;,...] where:</programlisting>
+
+                <itemizedlist>
+                    <listitem>
+                        <para>
+                            <emphasis role="strong">&lt;username&gt;</emphasis> is the name of the user
+                        </para>
+                    </listitem>
+                    <listitem>
+                        <para>
+                            <emphasis role="strong">&lt;role&gt;</emphasis> is an expression describing a role for the user and
+                            which adheres to the format
+                        </para>
+                    </listitem>
+                </itemizedlist>
+
+                <programlisting>&lt;role&gt;=&lt;roleName&gt;[.&lt;sourceName&gt;[.&lt;workspaceName&gt;]] where:</programlisting>
+
+                <itemizedlist>
+                    <listitem>
+                        <para>
+                            <emphasis role="strong">&lt;roleName&gt;</emphasis>
+                            is one of "admin", "readonly", "readwrite", or (for WebDAV and RESTful access) "connect"
+                        </para>
+                    </listitem>
+                    <listitem>
+                        <para>
+                            <emphasis role="strong">&lt;sourceName&gt;</emphasis>, is the name of the repository source to which
+                            the role is granted; if absent, the role will be granted for all repository sources
+                        </para>
+                    </listitem>
+                    <listitem>
+                        <para>
+                            <emphasis role="strong">&lt;workspaceName&gt;</emphasis>, is the name of the repository workspace to
+                            which the role is granted; if absent, the role will be granted for all workspaces in the repository
+                        </para>
+                    </listitem>
+                </itemizedlist>
+
+                <para>
+                    For example, the following line provides all roles to user 'jsmith' for all workspaces in all repositories:
+                    <emphasis role="strong">jsmith=admin,connect,readonly,readwrite</emphasis> while <emphasis role="strong">jsmith=connect,readonly,readwrite.customers</emphasis>
+                    provides connect and read access to all repositories, but only write access to all workspaces in the 'customers' repository
+                </para>
+                <para>
+                    When using the JBoss AS kit, the properties file handling these assignments is: <emphasis role="strong">modeshape-roles.properties</emphasis>
+                </para>
+            </sect3>
 		</sect2>
 		<sect2 id="web_security">
 			<title>Web application security</title>
