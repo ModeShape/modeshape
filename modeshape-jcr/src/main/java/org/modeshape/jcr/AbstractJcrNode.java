@@ -2919,6 +2919,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     public void save()
         throws AccessDeniedException, ItemExistsException, ConstraintViolationException, InvalidItemStateException,
         ReferentialIntegrityException, VersionException, LockException, NoSuchNodeTypeException, RepositoryException {
+        if (this.isNew()) {
+            //expected by TCK
+            throw new RepositoryException(JcrI18n.unableToSaveNodeThatWasCreatedSincePreviousSave.text(getPath(), workspaceName()));
+        }
         session.save(this);
     }
 

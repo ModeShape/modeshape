@@ -520,7 +520,9 @@ public class WritableSessionCache extends AbstractSessionCache {
             for (NodeKey savedNode : savedNodesInOrder) {
                 this.changedNodes.remove(savedNode);
                 this.changedNodesInOrder.remove(savedNode);
-                this.replacedNodes.remove(savedNode);
+                if (this.replacedNodes != null) {
+                    this.replacedNodes.remove(savedNode);
+                }
             }
 
             // And in the referenced session ...

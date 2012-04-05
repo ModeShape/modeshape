@@ -109,9 +109,11 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
         throws ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException,
         LockException, RepositoryException {
         session.checkLive();
-        // TODO: copy
         CheckArg.isNotEmpty(srcAbsPath, "srcAbsPath");
         CheckArg.isNotEmpty(destAbsPath, "destAbsPath");
+
+        throw new UnsupportedOperationException("Not implemented yet");
+        // TODO: copy
     }
 
     @Override
@@ -121,10 +123,11 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
         throws NoSuchWorkspaceException, ConstraintViolationException, VersionException, AccessDeniedException,
         PathNotFoundException, ItemExistsException, LockException, RepositoryException {
         session.checkLive();
-        // TODO: copy
         CheckArg.isNotEmpty(srcWorkspace, "srcWorkspace");
         CheckArg.isNotEmpty(srcAbsPath, "srcAbsPath");
         CheckArg.isNotEmpty(destAbsPath, "destAbsPath");
+        // TODO: copy
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
@@ -139,6 +142,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
         CheckArg.isNotEmpty(srcWorkspace, "srcWorkspace");
         CheckArg.isNotEmpty(srcAbsPath, "srcAbsPath");
         CheckArg.isNotEmpty(destAbsPath, "destAbsPath");
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
