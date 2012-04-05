@@ -757,6 +757,18 @@ public class JcrSession implements Session {
         AbstractJcrNode srcNode = node(srcPath);
         AbstractJcrNode destParentNode = node(destPath.getParent());
 
+        //Check whether the destination parent already has a child with the same name and allows SNS (TCK)
+        SessionCache sessionCache = cache();
+        boolean hasChildWithSameName = destParentNode.node().getChildReferences(sessionCache).getChild(srcNode.name()) != null;
+        if (hasChildWithSameName) {
+            boolean allowsSns = nodeTypes().findChildNodeDefinition(destParentNode.getPrimaryTypeName(), null, srcNode.name(),
+                                                                    srcNode.getPrimaryTypeName(), 2, true) != null;
+            if (!allowsSns) {
+                String msg = JcrI18n.noSnsDefinitionForNode.text(destPath.getParent(), workspaceName());
+                throw new ItemExistsException(msg);
+            }
+        }
+
         // Check whether these nodes are locked ...
         if (srcNode.isLocked() && !srcNode.getLock().isLockOwningSession()) {
             javax.jcr.lock.Lock sourceLock = srcNode.getLock();
@@ -785,10 +797,10 @@ public class JcrSession implements Session {
             MutableCachedNode mutableDestParent = destParentNode.mutable();
             if (mutableSrcParent.equals(mutableDestParent)) {
                 // It's just a rename ...
-                mutableSrcParent.renameChild(cache, srcNode.key(), destPath.getLastSegment().getName());
+                mutableSrcParent.renameChild(sessionCache, srcNode.key(), destPath.getLastSegment().getName());
             } else {
                 // It is a move from one parent to another ...
-                mutableSrcParent.moveChild(cache, srcNode.key(), mutableDestParent, destPath.getLastSegment().getName());
+                mutableSrcParent.moveChild(sessionCache, srcNode.key(), mutableDestParent, destPath.getLastSegment().getName());
             }
         } catch (NodeNotFoundException e) {
             // Not expected ...
@@ -845,6 +857,16 @@ public class JcrSession implements Session {
      * @see AbstractJcrNode#save()
      */
     void save( AbstractJcrNode node ) throws RepositoryException {
+        if (node.isNew()) {
+            //expected by TCK
+            throw new RepositoryException(JcrI18n.unableToSaveNodeThatWasCreatedSincePreviousSave.text(node.getPath(), workspaceName()));
+        }
+
+        if (node.containsChangesWithExternalDependencies()) {
+            //expected by TCK
+            I18n msg = JcrI18n.unableToSaveBranchBecauseChangesDependOnChangesToNodesOutsideOfBranch;
+            throw new ConstraintViolationException(msg.text(node.path(), workspaceName()));
+        }
 
         // Perform the save, using 'JcrPreSave' operations ...
         SessionCache systemCache = createSystemCache(false);

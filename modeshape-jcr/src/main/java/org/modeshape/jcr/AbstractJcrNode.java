@@ -2919,10 +2919,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     public void save()
         throws AccessDeniedException, ItemExistsException, ConstraintViolationException, InvalidItemStateException,
         ReferentialIntegrityException, VersionException, LockException, NoSuchNodeTypeException, RepositoryException {
-        if (this.isNew()) {
-            //expected by TCK
-            throw new RepositoryException(JcrI18n.unableToSaveNodeThatWasCreatedSincePreviousSave.text(getPath(), workspaceName()));
-        }
         session.save(this);
     }
 
@@ -3037,6 +3033,18 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         } catch (RepositoryException re) {
             return re.getMessage();
         }
+    }
+
+    /**
+     * Determines whether this node, or any nodes below it, contain changes that depend on nodes that are outside
+     * of this node's hierarchy.
+     *
+     * @return true if this node's hierarchy has nodes with changes dependent on nodes from outside the hierarchy
+     */
+    protected boolean containsChangesWithExternalDependencies() {
+        Set<NodeKey> allChanges = sessionCache().getChangedNodeKeys();
+        Set<NodeKey> changesAtOrBelowThis = sessionCache().getChangedNodeKeysAtOrBelow(this.key);
+        return !changesAtOrBelowThis.containsAll(allChanges);
     }
 
     protected static final class ChildNodeResolver implements JcrChildNodeIterator.NodeResolver {

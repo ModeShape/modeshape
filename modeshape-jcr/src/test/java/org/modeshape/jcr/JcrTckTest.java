@@ -239,7 +239,7 @@ public class JcrTckTest {
         TestSuite suite = new TestSuite("JCR 2.0 API tests");
 
         suite.addTest(levelOneSuite());
-        //suite.addTest(levelTwoSuite());
+        suite.addTest(levelTwoSuite());
         //suite.addTest(new OptionalFeatureTests());
 
         return suite;
@@ -306,101 +306,101 @@ public class JcrTckTest {
     private static TestSuite levelTwoSuite() {
         TestSuite suite = new TestSuite("JCR Level 2 API Tests");
         // level 2 tests
-        suite.addTestSuite(AddNodeTest.class);
-        suite.addTestSuite(NamespaceRegistryTest.class);
-        suite.addTestSuite(ReferencesTest.class);
-        suite.addTestSuite(SessionTest.class);
-        suite.addTestSuite(SessionUUIDTest.class);
-        suite.addTestSuite(NodeTest.class);
-        suite.addTestSuite(NodeUUIDTest.class);
-        suite.addTestSuite(NodeOrderableChildNodesTest.class);
-        suite.addTestSuite(PropertyTest.class);
-
-        suite.addTestSuite(SetValueBinaryTest.class);
-        suite.addTestSuite(SetValueBooleanTest.class);
-        suite.addTestSuite(SetValueDateTest.class);
-        suite.addTestSuite(SetValueDecimalTest.class);
-        suite.addTestSuite(SetValueDoubleTest.class);
-        suite.addTestSuite(SetValueLongTest.class);
-        suite.addTestSuite(SetValueReferenceTest.class);
-        suite.addTestSuite(SetValueStringTest.class);
-        suite.addTestSuite(SetValueConstraintViolationExceptionTest.class);
-        suite.addTestSuite(SetValueValueFormatExceptionTest.class);
-        suite.addTestSuite(SetValueVersionExceptionTest.class);
-
-        suite.addTestSuite(SetPropertyBooleanTest.class);
-        suite.addTestSuite(SetPropertyCalendarTest.class);
-        suite.addTestSuite(SetPropertyDecimalTest.class);
-        suite.addTestSuite(SetPropertyDoubleTest.class);
-        suite.addTestSuite(SetPropertyInputStreamTest.class);
-        suite.addTestSuite(SetPropertyLongTest.class);
-        suite.addTestSuite(SetPropertyNodeTest.class);
-        suite.addTestSuite(SetPropertyStringTest.class);
-        suite.addTestSuite(SetPropertyValueTest.class);
-        suite.addTestSuite(SetPropertyConstraintViolationExceptionTest.class);
-        suite.addTestSuite(SetPropertyAssumeTypeTest.class);
-
-        suite.addTestSuite(NodeItemIsModifiedTest.class);
-        suite.addTestSuite(NodeItemIsNewTest.class);
-        suite.addTestSuite(PropertyItemIsModifiedTest.class);
-        suite.addTestSuite(PropertyItemIsNewTest.class);
-
-        suite.addTestSuite(NodeAddMixinTest.class);
-        suite.addTestSuite(NodeCanAddMixinTest.class);
-        suite.addTestSuite(NodeRemoveMixinTest.class);
-
-        suite.addTestSuite(NodeSetPrimaryTypeTest.class);
-
-        // These two tests aren't marked as read-only, so they causes problems for read-only connectors with the L1 tests
-        suite.addTestSuite(NameTest.class);
-        suite.addTestSuite(PathTest.class);
-
-        suite.addTestSuite(WorkspaceCloneReferenceableTest.class);
-        suite.addTestSuite(WorkspaceCloneSameNameSibsTest.class);
-        suite.addTestSuite(WorkspaceCloneTest.class);
-        suite.addTestSuite(WorkspaceCloneVersionableTest.class);
-        suite.addTestSuite(WorkspaceCopyBetweenWorkspacesReferenceableTest.class);
-       suite.addTestSuite(WorkspaceCopyBetweenWorkspacesSameNameSibsTest.class);
-        suite.addTestSuite(WorkspaceCopyBetweenWorkspacesTest.class);
-        suite.addTestSuite(WorkspaceCopyBetweenWorkspacesVersionableTest.class);
-        suite.addTestSuite(WorkspaceCopyReferenceableTest.class);
-        suite.addTestSuite(WorkspaceCopySameNameSibsTest.class);
-        suite.addTestSuite(WorkspaceCopyTest.class);
-        suite.addTestSuite(WorkspaceCopyVersionableTest.class);
-        suite.addTestSuite(WorkspaceMoveReferenceableTest.class);
-        suite.addTestSuite(WorkspaceMoveSameNameSibsTest.class);
-        suite.addTestSuite(WorkspaceMoveTest.class);
-        suite.addTestSuite(WorkspaceMoveVersionableTest.class);
-
-        suite.addTestSuite(ImpersonateTest.class);
-        suite.addTestSuite(CheckPermissionTest.class);
-
-        suite.addTestSuite(DocumentViewImportTest.class);
-        suite.addTestSuite(SerializationTest.class);
-
-        suite.addTestSuite(ValueFactoryTest.class);
-
-        // JCR 2.0
-        suite.addTestSuite(NodeTypeCreationTest.class);
-
-        // // new node types
-        suite.addTestSuite(GetWeakReferencesTest.class);
-
-        // // new Session features
-        suite.addTestSuite(SessionRemoveItemTest.class);
-        suite.addTestSuite(HasPermissionTest.class);
-
-        // // new Workspace features
-        suite.addTestSuite(WorkspaceTest.class);
-
-        // // shareable nodes
-        suite.addTestSuite(ShareableNodeTest.class);
-
-        // repository factory
-        suite.addTestSuite(RepositoryFactoryTest.class);
-
-        // lifecycle management
-        suite.addTestSuite(LifecycleTest.class);
+//        suite.addTestSuite(AddNodeTest.class);
+//        suite.addTestSuite(NamespaceRegistryTest.class);
+//        suite.addTestSuite(ReferencesTest.class); //TODO author=Horia Chiorean date=4/4/12 description=https://issues.jboss.org/browse/MODE-1453
+          suite.addTestSuite(SessionTest.class);
+//        suite.addTestSuite(SessionUUIDTest.class);
+//        suite.addTestSuite(NodeTest.class);
+//        suite.addTestSuite(NodeUUIDTest.class);
+//        suite.addTestSuite(NodeOrderableChildNodesTest.class);
+//        suite.addTestSuite(PropertyTest.class);
+//
+//        suite.addTestSuite(SetValueBinaryTest.class);
+//        suite.addTestSuite(SetValueBooleanTest.class);
+//        suite.addTestSuite(SetValueDateTest.class);
+//        suite.addTestSuite(SetValueDecimalTest.class);
+//        suite.addTestSuite(SetValueDoubleTest.class);
+//        suite.addTestSuite(SetValueLongTest.class);
+//        suite.addTestSuite(SetValueReferenceTest.class);
+//        suite.addTestSuite(SetValueStringTest.class);
+//        suite.addTestSuite(SetValueConstraintViolationExceptionTest.class);
+//        suite.addTestSuite(SetValueValueFormatExceptionTest.class);
+//        suite.addTestSuite(SetValueVersionExceptionTest.class);
+//
+//        suite.addTestSuite(SetPropertyBooleanTest.class);
+//        suite.addTestSuite(SetPropertyCalendarTest.class);
+//        suite.addTestSuite(SetPropertyDecimalTest.class);
+//        suite.addTestSuite(SetPropertyDoubleTest.class);
+//        suite.addTestSuite(SetPropertyInputStreamTest.class);
+//        suite.addTestSuite(SetPropertyLongTest.class);
+//        suite.addTestSuite(SetPropertyNodeTest.class);
+//        suite.addTestSuite(SetPropertyStringTest.class);
+//        suite.addTestSuite(SetPropertyValueTest.class);
+//        suite.addTestSuite(SetPropertyConstraintViolationExceptionTest.class);
+//        suite.addTestSuite(SetPropertyAssumeTypeTest.class);
+//
+//        suite.addTestSuite(NodeItemIsModifiedTest.class);
+//        suite.addTestSuite(NodeItemIsNewTest.class);
+//        suite.addTestSuite(PropertyItemIsModifiedTest.class);
+//        suite.addTestSuite(PropertyItemIsNewTest.class);
+//
+//        suite.addTestSuite(NodeAddMixinTest.class);
+//        suite.addTestSuite(NodeCanAddMixinTest.class);
+//        suite.addTestSuite(NodeRemoveMixinTest.class);
+//
+//        suite.addTestSuite(NodeSetPrimaryTypeTest.class);
+//
+//        // These two tests aren't marked as read-only, so they causes problems for read-only connectors with the L1 tests
+//        suite.addTestSuite(NameTest.class);
+//        suite.addTestSuite(PathTest.class);
+//
+//        suite.addTestSuite(WorkspaceCloneReferenceableTest.class);
+//        suite.addTestSuite(WorkspaceCloneSameNameSibsTest.class);
+//        suite.addTestSuite(WorkspaceCloneTest.class);
+//        suite.addTestSuite(WorkspaceCloneVersionableTest.class);
+//        suite.addTestSuite(WorkspaceCopyBetweenWorkspacesReferenceableTest.class);
+//       suite.addTestSuite(WorkspaceCopyBetweenWorkspacesSameNameSibsTest.class);
+//        suite.addTestSuite(WorkspaceCopyBetweenWorkspacesTest.class);
+//        suite.addTestSuite(WorkspaceCopyBetweenWorkspacesVersionableTest.class);
+//        suite.addTestSuite(WorkspaceCopyReferenceableTest.class);
+//        suite.addTestSuite(WorkspaceCopySameNameSibsTest.class);
+//        suite.addTestSuite(WorkspaceCopyTest.class);
+//        suite.addTestSuite(WorkspaceCopyVersionableTest.class);
+//        suite.addTestSuite(WorkspaceMoveReferenceableTest.class);
+//        suite.addTestSuite(WorkspaceMoveSameNameSibsTest.class);
+//        suite.addTestSuite(WorkspaceMoveTest.class);
+//        suite.addTestSuite(WorkspaceMoveVersionableTest.class);
+//
+//        suite.addTestSuite(ImpersonateTest.class);
+//        suite.addTestSuite(CheckPermissionTest.class);
+//
+//        suite.addTestSuite(DocumentViewImportTest.class);
+//        suite.addTestSuite(SerializationTest.class);
+//
+//        suite.addTestSuite(ValueFactoryTest.class);
+//
+//        // JCR 2.0
+//        suite.addTestSuite(NodeTypeCreationTest.class);
+//
+//        // // new node types
+//        suite.addTestSuite(GetWeakReferencesTest.class);
+//
+//        // // new Session features
+//        suite.addTestSuite(SessionRemoveItemTest.class);
+//        suite.addTestSuite(HasPermissionTest.class);
+//
+//        // // new Workspace features
+//        suite.addTestSuite(WorkspaceTest.class);
+//
+//        // // shareable nodes
+//        suite.addTestSuite(ShareableNodeTest.class);
+//
+//        // repository factory
+//        suite.addTestSuite(RepositoryFactoryTest.class);
+//
+//        // lifecycle management
+//        suite.addTestSuite(LifecycleTest.class);
         return suite;
     }
 

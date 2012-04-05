@@ -264,7 +264,12 @@ public class SessionNode implements MutableCachedNode {
 
     @Override
     public NodeKey getParentKey( NodeCache cache ) {
-        return newParent != null ? newParent : nodeInWorkspace(session(cache)).getParentKey(cache);
+        if (newParent != null) {
+            return newParent;
+        }
+        CachedNode cachedNode = nodeInWorkspace(session(cache));
+        //if it is null, it means it has been removed in the meantime from the ws
+        return cachedNode != null ? cachedNode.getParentKey(cache) : null;
     }
 
     protected CachedNode parent( AbstractSessionCache session ) {

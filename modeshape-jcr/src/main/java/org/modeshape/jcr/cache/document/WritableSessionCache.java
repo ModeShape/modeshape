@@ -49,6 +49,7 @@ import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.GuardedBy;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.i18n.I18n;
+import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
@@ -194,6 +195,43 @@ public class WritableSessionCache extends AbstractSessionCache {
     }
 
     @Override
+    public Set<NodeKey> getChangedNodeKeys() {
+        Lock readLock = this.lock.readLock();
+        try {
+            readLock.lock();
+            return new HashSet<NodeKey>(changedNodes.keySet());
+        } finally {
+            readLock.unlock();
+        }
+    }
+
+    @Override
+    public Set<NodeKey> getChangedNodeKeysAtOrBelow( NodeKey sourceKey ) {
+        CheckArg.isNotNull(sourceKey, "sourceKey");
+        Lock readLock  = this.lock.readLock();
+        Set<NodeKey> result = new HashSet<NodeKey>();
+        try {
+            readLock.lock();
+            if (!changedNodes.containsKey(sourceKey)) {
+                return result;
+            }
+            SessionNode sourceNode = changedNodes.get(sourceKey);
+            Path sourcePath = sourceNode.getPath(this);
+
+            for (Map.Entry<NodeKey, SessionNode> entry : changedNodes.entrySet()) {
+                SessionNode changedNode = entry.getValue();
+                Path changedPath = changedNode.getPath(this);
+                if (changedPath.isAtOrBelow(sourcePath)) {
+                    result.add(entry.getKey());
+                }
+            }
+            return result;
+        } finally {
+            readLock.unlock();
+        }
+    }
+
+    @Override
     public boolean hasChanges() {
         Lock lock = this.lock.readLock();
         try {
@@ -235,6 +273,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                 SaveContext saveContext = new BasicSaveContext(context());
                 for (MutableCachedNode node : this.changedNodes.values()) {
                     if (node == REMOVED) continue;
+                    checkNodeNotRemovedByAnotherTransaction(node);
                     preSaveOperation.process(node, saveContext);
                 }
             }
@@ -325,7 +364,10 @@ public class WritableSessionCache extends AbstractSessionCache {
                 if (preSaveOperation != null) {
                     SaveContext saveContext = new BasicSaveContext(context());
                     for (MutableCachedNode node : this.changedNodes.values()) {
-                        if (node == REMOVED) continue;
+                        if (node == REMOVED) {
+                            continue;
+                        }
+                        checkNodeNotRemovedByAnotherTransaction(node);
                         preSaveOperation.process(node, saveContext);
                     }
                 }
@@ -408,6 +450,14 @@ public class WritableSessionCache extends AbstractSessionCache {
         fireChanges(events2);
     }
 
+    private void checkNodeNotRemovedByAnotherTransaction( MutableCachedNode node ) {
+        String keyString = node.getKey().toString();
+        // if the node is not new and also missing from the document, another transaction has deleted it
+        if (!node.isNew() && !workspaceCache.database().containsKey(keyString)) {
+            throw new DocumentNotFoundException(keyString);
+        }
+    }
+
     /**
      * This method saves the changes made by both sessions within a single transaction. <b>Note that this must be used with
      * caution, as this method attempts to get write locks on both sessions, meaning they <i>cannot<i> be concurrently used
@@ -449,6 +499,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                 for (NodeKey key : this.changedNodesInOrder) {
                     MutableCachedNode changedNode = this.changedNodes.get(key);
                     if (changedNode == REMOVED) continue;
+                    checkNodeNotRemovedByAnotherTransaction(changedNode);
                     Path path = changedNode.getPath(this);
                     if (topPath.isAtOrAbove(path)) {
                         preSaveOperation.process(changedNode, saveContext);

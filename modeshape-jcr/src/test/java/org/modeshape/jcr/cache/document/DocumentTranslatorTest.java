@@ -45,8 +45,8 @@ import org.modeshape.jcr.value.Path.Segment;
 public class DocumentTranslatorTest extends AbstractSessionCacheTest {
 
     @Override
-    protected SessionCache createSession( ExecutionContext context,
-                                          WorkspaceCache cache ) {
+    protected SessionCache createSessionCache( ExecutionContext context,
+                                               WorkspaceCache cache ) {
         return new WritableSessionCache(context, workspaceCache, createSessionContext());
     }
 
