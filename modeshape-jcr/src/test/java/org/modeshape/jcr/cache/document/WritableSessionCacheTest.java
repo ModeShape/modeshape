@@ -363,7 +363,7 @@ public class WritableSessionCacheTest extends AbstractSessionCacheTest {
     }
 
     @Test
-    public void shouldReturnTransientKeysAtOrBelowAnotherKey() {
+    public void shouldReturnTransientKeysAtOrBelowNode() {
         NodeKey rootKey = session1.getRootKey();
         MutableCachedNode root = session1.mutable(rootKey);
         //root/childA
@@ -373,9 +373,22 @@ public class WritableSessionCacheTest extends AbstractSessionCacheTest {
         //root/childC
         MutableCachedNode childC = root.createChild(session(), newKey("x-childC"), name("childC"), property("p1", "value C"));
 
-        assertEquals(new HashSet<NodeKey>(Arrays.asList(childA.getKey(), childB.getKey())), session1.getChangedNodeKeysAtOrBelow(childA.getKey()));
-        assertEquals(new HashSet<NodeKey>(Arrays.asList(rootKey, childA.getKey(), childB.getKey(), childC.getKey())), session1.getChangedNodeKeysAtOrBelow(rootKey));
-        assertEquals(new HashSet<NodeKey>(Arrays.asList(childC.getKey())), session1.getChangedNodeKeysAtOrBelow(childC.getKey()));
+        assertEquals(new HashSet<NodeKey>(Arrays.asList(childA.getKey(), childB.getKey())), session1.getChangedNodeKeysAtOrBelow(childA));
+        assertEquals(new HashSet<NodeKey>(Arrays.asList(rootKey, childA.getKey(), childB.getKey(), childC.getKey())), session1.getChangedNodeKeysAtOrBelow(root));
+        assertEquals(new HashSet<NodeKey>(Arrays.asList(childC.getKey())), session1.getChangedNodeKeysAtOrBelow(childC));
+    }
+
+    @Test
+    public void shouldReturnTransientKeysAtOrBelowNodeWithRemovedChild() {
+        NodeKey rootKey = session1.getRootKey();
+        MutableCachedNode root = session1.mutable(rootKey);
+
+        SessionCache sessionCache = session();
+        NodeKey childKey = newKey("x-childA");
+        root.createChild(sessionCache, childKey, name("childA"), property("p1", "value A"));
+        root.removeChild(sessionCache, childKey);
+
+        assertEquals(new HashSet<NodeKey>(Arrays.asList(rootKey, childKey)), session1.getChangedNodeKeysAtOrBelow(root));
     }
 
     @Test

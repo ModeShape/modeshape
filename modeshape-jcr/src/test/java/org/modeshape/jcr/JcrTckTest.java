@@ -120,24 +120,7 @@ import org.apache.jackrabbit.test.api.WorkspaceMoveTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveVersionableTest;
 import org.apache.jackrabbit.test.api.WorkspaceReadMethodsTest;
 import org.apache.jackrabbit.test.api.WorkspaceTest;
-import org.apache.jackrabbit.test.api.nodetype.CanAddChildNodeCallWithoutNodeTypeTest;
-import org.apache.jackrabbit.test.api.nodetype.CanRemoveItemTest;
-import org.apache.jackrabbit.test.api.nodetype.CanSetPropertyBinaryTest;
-import org.apache.jackrabbit.test.api.nodetype.CanSetPropertyBooleanTest;
-import org.apache.jackrabbit.test.api.nodetype.CanSetPropertyDateTest;
-import org.apache.jackrabbit.test.api.nodetype.CanSetPropertyDoubleTest;
-import org.apache.jackrabbit.test.api.nodetype.CanSetPropertyLongTest;
-import org.apache.jackrabbit.test.api.nodetype.CanSetPropertyMultipleTest;
-import org.apache.jackrabbit.test.api.nodetype.CanSetPropertyNameTest;
-import org.apache.jackrabbit.test.api.nodetype.CanSetPropertyPathTest;
-import org.apache.jackrabbit.test.api.nodetype.CanSetPropertyStringTest;
-import org.apache.jackrabbit.test.api.nodetype.CanSetPropertyTest;
-import org.apache.jackrabbit.test.api.nodetype.NodeDefTest;
 import org.apache.jackrabbit.test.api.nodetype.NodeTypeCreationTest;
-import org.apache.jackrabbit.test.api.nodetype.NodeTypeManagerTest;
-import org.apache.jackrabbit.test.api.nodetype.NodeTypeTest;
-import org.apache.jackrabbit.test.api.nodetype.PredefinedNodeTypeTest;
-import org.apache.jackrabbit.test.api.nodetype.PropertyDefTest;
 import org.apache.jackrabbit.test.api.observation.AddEventListenerTest;
 import org.apache.jackrabbit.test.api.observation.EventIteratorTest;
 import org.apache.jackrabbit.test.api.observation.EventTest;
@@ -240,7 +223,7 @@ public class JcrTckTest {
 
         suite.addTest(levelOneSuite());
         suite.addTest(levelTwoSuite());
-        //suite.addTest(new OptionalFeatureTests());
+//        suite.addTest(new OptionalFeatureTests());
 
         return suite;
     }
@@ -305,14 +288,39 @@ public class JcrTckTest {
      */
     private static TestSuite levelTwoSuite() {
         TestSuite suite = new TestSuite("JCR Level 2 API Tests");
-        // level 2 tests
-//        suite.addTestSuite(AddNodeTest.class);
-//        suite.addTestSuite(NamespaceRegistryTest.class);
-//        suite.addTestSuite(ReferencesTest.class); //TODO author=Horia Chiorean date=4/4/12 description=https://issues.jboss.org/browse/MODE-1453
-          suite.addTestSuite(SessionTest.class);
+        suite.addTestSuite(AddNodeTest.class);
+        suite.addTestSuite(NamespaceRegistryTest.class);
+        suite.addTestSuite(SessionTest.class);
+
+        /**
+         * The failures are caused by:  https://issues.jboss.org/browse/MODE-1453
+         */
+//        suite.addTestSuite(ReferencesTest.class);
+
+
+        /**
+         * The failures are caused by:  https://issues.jboss.org/browse/MODE-1453
+         */
 //        suite.addTestSuite(SessionUUIDTest.class);
-//        suite.addTestSuite(NodeTest.class);
+
+        /**
+         * The following fail:
+         *
+         * testUpdate - https://issues.jboss.org/browse/MODE-1455
+         * testRemoveInvalidItemStateException - https://issues.jboss.org/browse/MODE-1456
+         * testRemoveMandatoryNode - https://issues.jboss.org/browse/MODE-1456
+         * testSaveInvalidStateException -  https://issues.jboss.org/browse/MODE-1456
+         *      (might not seem related at first, but it's because a path of a node is determined incorrectly)
+         *
+         *
+         */
+        //suite.addTestSuite(NodeTest.class);
+
+        /**
+         * The failures are caused by:  https://issues.jboss.org/browse/MODE-1453
+         */
 //        suite.addTestSuite(NodeUUIDTest.class);
+
 //        suite.addTestSuite(NodeOrderableChildNodesTest.class);
 //        suite.addTestSuite(PropertyTest.class);
 //
@@ -351,7 +359,7 @@ public class JcrTckTest {
 //
 //        suite.addTestSuite(NodeSetPrimaryTypeTest.class);
 //
-//        // These two tests aren't marked as read-only, so they causes problems for read-only connectors with the L1 tests
+        // These two tests aren't marked as read-only, so they causes problems for read-only connectors with the L1 tests
 //        suite.addTestSuite(NameTest.class);
 //        suite.addTestSuite(PathTest.class);
 //
@@ -360,7 +368,7 @@ public class JcrTckTest {
 //        suite.addTestSuite(WorkspaceCloneTest.class);
 //        suite.addTestSuite(WorkspaceCloneVersionableTest.class);
 //        suite.addTestSuite(WorkspaceCopyBetweenWorkspacesReferenceableTest.class);
-//       suite.addTestSuite(WorkspaceCopyBetweenWorkspacesSameNameSibsTest.class);
+//        suite.addTestSuite(WorkspaceCopyBetweenWorkspacesSameNameSibsTest.class);
 //        suite.addTestSuite(WorkspaceCopyBetweenWorkspacesTest.class);
 //        suite.addTestSuite(WorkspaceCopyBetweenWorkspacesVersionableTest.class);
 //        suite.addTestSuite(WorkspaceCopyReferenceableTest.class);
@@ -380,26 +388,26 @@ public class JcrTckTest {
 //
 //        suite.addTestSuite(ValueFactoryTest.class);
 //
-//        // JCR 2.0
+        // JCR 2.0
 //        suite.addTestSuite(NodeTypeCreationTest.class);
-//
-//        // // new node types
+
+        // // new node types
 //        suite.addTestSuite(GetWeakReferencesTest.class);
-//
-//        // // new Session features
+
+        // // new Session features
 //        suite.addTestSuite(SessionRemoveItemTest.class);
 //        suite.addTestSuite(HasPermissionTest.class);
-//
-//        // // new Workspace features
+
+        // // new Workspace features
 //        suite.addTestSuite(WorkspaceTest.class);
-//
-//        // // shareable nodes
+
+        // // shareable nodes
 //        suite.addTestSuite(ShareableNodeTest.class);
-//
-//        // repository factory
+
+        // repository factory
 //        suite.addTestSuite(RepositoryFactoryTest.class);
-//
-//        // lifecycle management
+
+        // lifecycle management
 //        suite.addTestSuite(LifecycleTest.class);
         return suite;
     }

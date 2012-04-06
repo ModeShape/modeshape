@@ -26,7 +26,6 @@ package org.modeshape.jcr;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import org.modeshape.jcr.cache.NodeKey;
-import org.modeshape.jcr.value.Path;
 
 /**
  *
@@ -43,7 +42,7 @@ public class JcrSystemNode extends JcrNode {
     }
 
     @Override
-    protected void doRemove( Path path ) throws ConstraintViolationException, RepositoryException {
+    protected void doRemove() throws ConstraintViolationException, RepositoryException {
         String msg = JcrI18n.unableToRemoveSystemNodes.text(location(), workspaceName());
         throw new ConstraintViolationException(msg);
     }
@@ -51,7 +50,7 @@ public class JcrSystemNode extends JcrNode {
     @Override
     protected void checkNodeTypeCanBeModified() throws RepositoryException {
         String msg = JcrI18n.unableToModifySystemNodes.text(location(), workspaceName());
-        throw new RepositoryException(msg);
+        throw new ConstraintViolationException(msg);
     }
 
 }

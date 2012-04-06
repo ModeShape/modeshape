@@ -756,7 +756,13 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             String msg = JcrI18n.childNotFoundUnderNode.text(readable(segment), location(), session.workspaceName());
             throw new PathNotFoundException(msg);
         }
-        return session().node(ref.getKey(), null);
+        try {
+            return session().node(ref.getKey(), null);
+        } catch (ItemNotFoundException e) {
+            //expected by TCK
+            String msg = JcrI18n.pathNotFoundRelativeTo.text(relativePath, location(), workspaceName());
+            throw new PathNotFoundException(msg);
+        }
     }
 
     AbstractJcrNode getNode( Name childName ) throws PathNotFoundException, RepositoryException {
@@ -1513,6 +1519,11 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 // The cardinality of the new values does not match the cardinality of the existing property ...
                 I18n msg = JcrI18n.unableToSetMultiValuedPropertyUsingSingleValue;
                 throw new javax.jcr.ValueFormatException(msg.text(readable(name), location(), workspaceName()));
+            }
+
+            if (!skipProtectedValidation && existing.getDefinition().isProtected()) {
+                String text = JcrI18n.cannotSetProtectedPropertyValue.text(value, name, location(), workspaceName());
+                throw new ConstraintViolationException(text);
             }
             // Delegate to the existing JCR property ...
             existing.setValue(value);
@@ -2588,8 +2599,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
         // Find the relative path from the nearest referenceable node to this node (or null if this node is referenceable) ...
         Path relativePath = path().equals(referenceableRoot.path()) ? null : path().relativeTo(referenceableRoot.path());
-        String identifier = referenceableRoot.getIdentifier();
-        NodeKey nodeKey = new NodeKey(identifier).withWorkspaceKey(NodeKey.keyForWorkspaceName(workspaceName));
+        NodeKey key = referenceableRoot.key();
+        NodeKey nodeKey = new NodeKey(key.getSourceKey(), NodeKey.keyForWorkspaceName(workspaceName), key.getIdentifier());
         return session.getPathForCorrespondingNode(workspaceName, nodeKey, relativePath);
     }
 
@@ -2716,20 +2727,19 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         }
         // If we get to here, either there are no other nodes in the shared set or this node is a non-shareable node,
         // so simply remove this node (per section 14.2 of the JCR 2.0 specification) ...
-        doRemove(path);
+        doRemove();
     }
 
     /**
      * Perform a real remove of this node.
      * 
-     * @param path the path of this node; never null
      * @throws VersionException
      * @throws LockException
      * @throws ConstraintViolationException
      * @throws AccessDeniedException
      * @throws RepositoryException
      */
-    protected abstract void doRemove( Path path )
+    protected abstract void doRemove()
         throws VersionException, LockException, ConstraintViolationException, AccessDeniedException, RepositoryException;
 
     @Override
@@ -2924,8 +2934,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     @Override
     public void refresh( boolean keepChanges ) throws RepositoryException {
+        CachedNode node = node(); //TCK: this should throw an exception if the node has been removed
         if (!keepChanges) {
-            session.cache().clear(node());
+            session.cache().clear(node);
         }
     }
 
@@ -2947,6 +2958,12 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     @Override
     public void remove()
         throws VersionException, LockException, ConstraintViolationException, AccessDeniedException, RepositoryException {
+
+        boolean nodeAlreadyRemoved = cache().getNode(this.key) == null;
+        if (nodeAlreadyRemoved) {
+            //this node has been removed by someone else
+            //TODO author=Horia Chiorean date=4/6/12 description=This case needs special handling and will cause a NPE
+        }
         // Since this node might be shareable, we want to implement 'remove()' by calling 'removeShare()',
         // which will behave correctly even if it is not shareable ...
         removeShare();
@@ -3041,9 +3058,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      *
      * @return true if this node's hierarchy has nodes with changes dependent on nodes from outside the hierarchy
      */
-    protected boolean containsChangesWithExternalDependencies() {
+    protected boolean containsChangesWithExternalDependencies() throws InvalidItemStateException, ItemNotFoundException {
         Set<NodeKey> allChanges = sessionCache().getChangedNodeKeys();
-        Set<NodeKey> changesAtOrBelowThis = sessionCache().getChangedNodeKeysAtOrBelow(this.key);
+        Set<NodeKey> changesAtOrBelowThis = sessionCache().getChangedNodeKeysAtOrBelow(this.node());
         return !changesAtOrBelowThis.containsAll(allChanges);
     }
 

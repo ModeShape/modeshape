@@ -60,7 +60,7 @@ public class ReadOnlySessionCache extends AbstractSessionCache {
     }
 
     @Override
-    public Set<NodeKey> getChangedNodeKeysAtOrBelow( NodeKey sourceKey ) {
+    public Set<NodeKey> getChangedNodeKeysAtOrBelow( CachedNode node ) {
         return Collections.emptySet();
     }
 

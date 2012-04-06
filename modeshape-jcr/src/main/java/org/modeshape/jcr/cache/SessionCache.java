@@ -143,13 +143,13 @@ public interface SessionCache extends NodeCache {
     public Set<NodeKey> getChangedNodeKeys();
 
     /**
-     * Returns a set with the {@link NodeKey}s of the transient nodes from this cache which are at or below the path of the node
-     * with the given key.
+     * Returns a set with the {@link NodeKey}s of the transient nodes from this cache which are at or below the path of the given
+     * node
      *
-     * @param sourceKey a non-null {@link NodeKey} instance
+     * @param node a non-null {@link CachedNode} instance
      * @return a <set>Set</set> of nodekeys, or an empty set if no nodes are found
      */
-    public Set<NodeKey> getChangedNodeKeysAtOrBelow(NodeKey sourceKey);
+    public Set<NodeKey> getChangedNodeKeysAtOrBelow(CachedNode node);
 
     /**
      * Clears all changes in the cache that are at or below the supplied node.

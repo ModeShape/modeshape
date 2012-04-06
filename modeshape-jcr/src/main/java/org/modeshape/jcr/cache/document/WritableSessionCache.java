@@ -206,22 +206,30 @@ public class WritableSessionCache extends AbstractSessionCache {
     }
 
     @Override
-    public Set<NodeKey> getChangedNodeKeysAtOrBelow( NodeKey sourceKey ) {
-        CheckArg.isNotNull(sourceKey, "sourceKey");
+    public Set<NodeKey> getChangedNodeKeysAtOrBelow( CachedNode srcNode ) {
+        CheckArg.isNotNull(srcNode, "srcNode");
+        Path sourcePath = srcNode.getPath(this);
+
         Lock readLock  = this.lock.readLock();
         Set<NodeKey> result = new HashSet<NodeKey>();
         try {
             readLock.lock();
-            if (!changedNodes.containsKey(sourceKey)) {
-                return result;
-            }
-            SessionNode sourceNode = changedNodes.get(sourceKey);
-            Path sourcePath = sourceNode.getPath(this);
-
             for (Map.Entry<NodeKey, SessionNode> entry : changedNodes.entrySet()) {
                 SessionNode changedNode = entry.getValue();
-                Path changedPath = changedNode.getPath(this);
-                if (changedPath.isAtOrBelow(sourcePath)) {
+                boolean shouldAddNode = false;
+                if (changedNode == REMOVED) {
+                    if (!changedNodes.containsKey(srcNode.getKey())) {
+                        //the source node isn't in this session, so we can't really check whether this is its child
+                        continue;
+                    }
+                    SessionNode sessionNode = changedNodes.get(srcNode.getKey());
+                    //Not nice at all - there should be a better way - hasChild explicitly excludes removed children
+                    shouldAddNode = sessionNode.changedChildren().isRemoved(new ChildReference(entry.getKey(), null));
+                } else {
+                    Path changedPath = changedNode.getPath(this);
+                    shouldAddNode = changedPath.isAtOrBelow(sourcePath);
+                }
+                if (shouldAddNode) {
                     result.add(entry.getKey());
                 }
             }

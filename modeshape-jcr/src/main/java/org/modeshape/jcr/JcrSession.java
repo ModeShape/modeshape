@@ -71,6 +71,7 @@ import org.modeshape.jcr.api.monitor.DurationMetric;
 import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
+import org.modeshape.jcr.cache.ChildReferences;
 import org.modeshape.jcr.cache.DocumentAlreadyExistsException;
 import org.modeshape.jcr.cache.DocumentNotFoundException;
 import org.modeshape.jcr.cache.MutableCachedNode;
@@ -757,17 +758,10 @@ public class JcrSession implements Session {
         AbstractJcrNode srcNode = node(srcPath);
         AbstractJcrNode destParentNode = node(destPath.getParent());
 
-        //Check whether the destination parent already has a child with the same name and allows SNS (TCK)
         SessionCache sessionCache = cache();
-        boolean hasChildWithSameName = destParentNode.node().getChildReferences(sessionCache).getChild(srcNode.name()) != null;
-        if (hasChildWithSameName) {
-            boolean allowsSns = nodeTypes().findChildNodeDefinition(destParentNode.getPrimaryTypeName(), null, srcNode.name(),
-                                                                    srcNode.getPrimaryTypeName(), 2, true) != null;
-            if (!allowsSns) {
-                String msg = JcrI18n.noSnsDefinitionForNode.text(destPath.getParent(), workspaceName());
-                throw new ItemExistsException(msg);
-            }
-        }
+
+        //Check whether the destination parent already has a child with the same name and allows SNS (TCK)
+        checkSnsAreAllowed(srcNode, destParentNode);
 
         // Check whether these nodes are locked ...
         if (srcNode.isLocked() && !srcNode.getLock().isLockOwningSession()) {
@@ -806,6 +800,29 @@ public class JcrSession implements Session {
             // Not expected ...
             String msg = JcrI18n.nodeNotFound.text(stringFactory().create(srcPath.getParent()), workspaceName());
             throw new PathNotFoundException(msg);
+        }
+    }
+
+    private void checkSnsAreAllowed( AbstractJcrNode srcNode,
+                                     AbstractJcrNode parentNode ) throws RepositoryException {
+        SessionCache sessionCache = cache();
+        ChildReferences childReferences = parentNode.node().getChildReferences(sessionCache);
+
+        boolean hasChildWithSameName = false;
+        for (ChildReference childReference : childReferences) {
+            if (childReference.getName().equals(srcNode.name()) && !childReference.getKey().equals(srcNode.key())) {
+                hasChildWithSameName = true;
+                break;
+            }
+        }
+
+        if (hasChildWithSameName) {
+            boolean allowsSns = nodeTypes().findChildNodeDefinition(parentNode.getPrimaryTypeName(), null, srcNode.name(),
+                                                                    srcNode.getPrimaryTypeName(), 2, true) != null;
+            if (!allowsSns) {
+                String msg = JcrI18n.noSnsDefinitionForNode.text(parentNode.path().getParent(), workspaceName());
+                throw new ItemExistsException(msg);
+            }
         }
     }
 
@@ -868,12 +885,27 @@ public class JcrSession implements Session {
             throw new ConstraintViolationException(msg.text(node.path(), workspaceName()));
         }
 
+        SessionCache sessionCache = cache();
+
+        //validate possible SNS
+        for (NodeKey changedNodeKey : sessionCache.getChangedNodeKeys()) {
+            CachedNode changedNode = sessionCache.getNode(changedNodeKey);
+            if (changedNode == null) {
+                //must've been removed
+                continue;
+            }
+            AbstractJcrNode changedJcrNode = node(changedNode, (Type)null);
+            if (changedJcrNode.isNew()) {
+                checkSnsAreAllowed(changedJcrNode, changedJcrNode.getParent());
+            }
+        }
+
         // Perform the save, using 'JcrPreSave' operations ...
         SessionCache systemCache = createSystemCache(false);
         SystemContent systemContent = new SystemContent(systemCache);
         Map<NodeKey, NodeKey> baseVersionKeys = this.baseVersionKeys.get();
         try {
-            cache().save(node.node(), systemContent.cache(), new JcrPreSave(systemContent, baseVersionKeys));
+            sessionCache.save(node.node(), systemContent.cache(), new JcrPreSave(systemContent, baseVersionKeys));
         } catch (WrappedException e) {
             Throwable cause = e.getCause();
             throw (cause instanceof RepositoryException) ? (RepositoryException)cause : new RepositoryException(e.getCause());
@@ -1303,15 +1335,19 @@ public class JcrSession implements Session {
             NodeCache cache = repository.repositoryCache().getWorkspaceCache(workspaceName);
             CachedNode node = cache.getNode(key);
             if (node == null) {
-                throw new ItemNotFoundException(JcrI18n.itemNotFoundWithUuid.text(key.toString()));
+                throw new ItemNotFoundException(JcrI18n.itemNotFoundWithUuid.text(key.toString(), workspaceName));
             }
             if (relativePath != null) {
                 for (Segment segment : relativePath) {
                     ChildReference child = node.getChildReferences(cache).getChild(segment);
+                    if (child == null) {
+                        Path path = pathFactory().create(node.getPath(cache), segment);
+                        throw new ItemNotFoundException(JcrI18n.itemNotFoundAtPath.text(path.getString(namespaces()), workspaceName()));
+                    }
                     CachedNode childNode = cache.getNode(child);
                     if (childNode == null) {
                         Path path = pathFactory().create(node.getPath(cache), segment);
-                        throw new ItemNotFoundException(JcrI18n.itemNotFoundAtPath.text(path.getString(namespaces())));
+                        throw new ItemNotFoundException(JcrI18n.itemNotFoundAtPath.text(path.getString(namespaces()), workspaceName()));
                     }
                     node = childNode;
                 }
