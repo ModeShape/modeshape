@@ -61,7 +61,8 @@ public interface Changes {
     void nodeReordered( NodeKey key, 
                         NodeKey parent,
                         Path newPath,
-                        Path oldPath );
+                        Path oldPath,
+                        Path reorderedBeforePath);
 
     /**
      * Create an event signifying that something about the node (other than the properties or location) changed.

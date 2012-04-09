@@ -1125,7 +1125,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         assertTrue("Added reordered node has wrong path: actual=" + addNodeListener.getEvents().get(0).getPath() + ", expected="
                    + n3.getPath(), containsPath(addNodeListener, n3.getPath()));
         assertTrue("Removed reordered node has wrong path: actual=" + removeNodeListener.getEvents().get(0).getPath()
-                   + ", expected=" + n3.getPath(), containsPath(addNodeListener, n3.getPath()));
+                   + ", expected=" + n3.getPath(), containsPath(removeNodeListener, n3.getPath()));
     }
 
     /**
@@ -1135,7 +1135,6 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     @SuppressWarnings( "unchecked" )
     @Test
     @FixFor( "MODE-1409" )
-    @Ignore
     public void shouldTestNodeReorderTest_testNodeReorderSameName() throws Exception {
         // setup
         String node1 = "node1";
@@ -1186,7 +1185,6 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     @SuppressWarnings( "unchecked" )
     @Test
     @FixFor( "MODE-1409" )
-    @Ignore
     public void shouldTestNodeReorderTest_testNodeReorderSameNameWithRemove() throws Exception {
         // setup
         String node1 = "node1";
@@ -1716,6 +1714,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
      */
     // TODO author=Horia Chiorean date=3/2/12 description=Enable when workspace.copy is implemented
     @Ignore
+    @FixFor("MODE-1312")
     @Test
     public void shouldTestWorkspaceOperationTest_testCopy() throws Exception {
         // setup
@@ -2262,7 +2261,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         }
 
         public void waitForEvents() throws Exception {
-            long millis = this.expectedEventsCount == 0 ? 50 : 250;
+            long millis = this.expectedEventsCount == 0 ? 50 : 500;
             this.latch.await(millis, TimeUnit.MILLISECONDS);
         }
     }

@@ -74,8 +74,8 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
     /**
      * The keys which provide extra information in case of a reorder
      */
-    static final String ORDER_DEST_KEY = "srcChildRelPath";
-    static final String ORDER_SRC_KEY = "destChildRelPath";
+    static final String ORDER_DEST_KEY = "destChildRelPath";
+    static final String ORDER_SRC_KEY = "srcChildRelPath";
 
     /**
      * The repository observable the JCR listeners will be registered with.
@@ -680,10 +680,18 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                     sb.append("Property removed");
                     break;
                 case Event.NODE_MOVED:
-                    sb.append("Node moved");
-                    String from = info.containsKey(MOVE_FROM_KEY) ? info.get(MOVE_FROM_KEY) : info.get(ORDER_DEST_KEY);
-                    String to = info.containsKey(MOVE_TO_KEY) ? info.get(MOVE_TO_KEY) : info.get(ORDER_SRC_KEY);
-                    sb.append(" from ").append(from).append(" to ").append(to).append(" by ").append(getUserID());
+                    if (info.containsKey(MOVE_FROM_KEY) || info.containsKey(MOVE_TO_KEY)) {
+                        sb.append("Node moved");
+                        sb.append(" from ").append(info.get(MOVE_FROM_KEY)).append(" to ").append(info.get(MOVE_TO_KEY));
+                    } else {
+                        sb.append("Node reordered");
+                        String destination = info.get(ORDER_DEST_KEY);
+                        if (destination == null) {
+                            destination = " at the end of the children list";
+                        }
+                        sb.append(" from ").append(info.get(ORDER_SRC_KEY)).append(" to ").append(destination);
+                    }
+                    sb.append(" by ").append(getUserID());
                     return sb.toString();
                 case org.modeshape.jcr.api.observation.Event.NODE_SEQUENCED:
                     sb.append("Node sequenced");
@@ -835,12 +843,18 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
                 if (eventListenedFor(Event.NODE_MOVED)) {
                     Map<String, String> info = new HashMap<String, String>();
-                    info.put(ORDER_DEST_KEY, stringFor(oldPath.getLastSegment()));
-                    info.put(ORDER_SRC_KEY, stringFor(newPath.getLastSegment()));
-
+                    //check if the reordering wasn't at the end by any chance
+                    if (nodeReordered.getReorderedBeforePath() != null) {
+                        info.put(ORDER_DEST_KEY, stringFor(nodeReordered.getReorderedBeforePath().getLastSegment()));
+                    }
+                    else {
+                        info.put(ORDER_DEST_KEY, null);
+                    }
+                    info.put(ORDER_SRC_KEY, stringFor(oldPath.getLastSegment()));
                     events.add(new JcrEvent(bundle, Event.NODE_MOVED, stringFor(newPath), nodeId,
                                             Collections.unmodifiableMap(info)));
                 }
+
                 fireExtraEventsForMove(events, bundle, newPath, nodeId, oldPath);
             } else if (nodeChange instanceof NodeAdded && eventListenedFor(Event.NODE_ADDED)) {
                 // create event for added node
@@ -880,7 +894,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                                              Path newPath,
                                              String nodeId,
                                              Path oldPath ) {
-            // For some bizarre reason, JCR 2.0 expects these methods <i>in addition to</i> the NODE_MOVED event
+            // JCR 1.0 expects these methods <i>in addition to</i> the NODE_MOVED event
             if (eventListenedFor(Event.NODE_ADDED)) {
                 events.add(new JcrEvent(bundle, Event.NODE_ADDED, stringFor(newPath), nodeId));
             }

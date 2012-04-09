@@ -291,6 +291,7 @@ public class JcrTckTest {
         suite.addTestSuite(AddNodeTest.class);
         suite.addTestSuite(NamespaceRegistryTest.class);
         suite.addTestSuite(SessionTest.class);
+        suite.addTestSuite(NodeOrderableChildNodesTest.class);
 
         /**
          * The failures are caused by:  https://issues.jboss.org/browse/MODE-1453
@@ -321,7 +322,6 @@ public class JcrTckTest {
          */
 //        suite.addTestSuite(NodeUUIDTest.class);
 
-//        suite.addTestSuite(NodeOrderableChildNodesTest.class);
 //        suite.addTestSuite(PropertyTest.class);
 //
 //        suite.addTestSuite(SetValueBinaryTest.class);

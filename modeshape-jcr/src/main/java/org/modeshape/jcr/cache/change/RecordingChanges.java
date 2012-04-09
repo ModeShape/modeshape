@@ -116,8 +116,9 @@ public class RecordingChanges implements Changes, ChangeSet {
     public void nodeReordered( NodeKey key,
                                NodeKey parent,
                                Path newPath,
-                               Path oldPath ) {
-        events.add(new NodeReordered(key, parent, newPath, oldPath));
+                               Path oldPath,
+                               Path reorderedBeforePath) {
+        events.add(new NodeReordered(key, parent, newPath, oldPath, reorderedBeforePath));
     }
 
     @Override

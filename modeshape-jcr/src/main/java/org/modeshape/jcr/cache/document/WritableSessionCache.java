@@ -501,27 +501,7 @@ public class WritableSessionCache extends AbstractSessionCache {
             thatLock.lock();
 
             // Before we start the transaction, apply the pre-save operations to the new and changed nodes below the path ...
-            List<NodeKey> savedNodesInOrder = new LinkedList<NodeKey>();
-            if (preSaveOperation != null) {
-                SaveContext saveContext = new BasicSaveContext(context());
-                for (NodeKey key : this.changedNodesInOrder) {
-                    MutableCachedNode changedNode = this.changedNodes.get(key);
-                    if (changedNode == REMOVED) continue;
-                    checkNodeNotRemovedByAnotherTransaction(changedNode);
-                    Path path = changedNode.getPath(this);
-                    if (topPath.isAtOrAbove(path)) {
-                        preSaveOperation.process(changedNode, saveContext);
-                        savedNodesInOrder.add(key);
-                    }
-                }
-            } else {
-                for (NodeKey key : this.changedNodesInOrder) {
-                    MutableCachedNode changedNode = this.changedNodes.get(key);
-                    if (changedNode == REMOVED) continue;
-                    Path path = changedNode.getPath(this);
-                    if (topPath.isAtOrAbove(path)) savedNodesInOrder.add(key);
-                }
-            }
+            List<NodeKey> savedNodesInOrder = filterChangesAtOrBelowPath(topPath, preSaveOperation);
 
             try {
                 // Try to begin a transaction, if there is a transaction manager ...
@@ -604,6 +584,37 @@ public class WritableSessionCache extends AbstractSessionCache {
         // TODO: Events ... these events should be combined, but cannot each ChangeSet only has a single workspace
         fireChanges(events1);
         fireChanges(events2);
+    }
+
+    private List<NodeKey> filterChangesAtOrBelowPath( Path topPath,
+                                                      PreSave preSaveOperation ) throws Exception {
+        List<NodeKey> savedNodesInOrder = new LinkedList<NodeKey>();
+        SaveContext saveContext = new BasicSaveContext(context());
+
+        for (NodeKey key : this.changedNodesInOrder) {
+            MutableCachedNode changedNode = this.changedNodes.get(key);
+            if (changedNode != REMOVED) {
+                Path path = changedNode.getPath(this);
+                if (topPath.isAtOrAbove(path)) {
+                    if (preSaveOperation != null) {
+                        checkNodeNotRemovedByAnotherTransaction(changedNode);
+                        preSaveOperation.process(changedNode, saveContext);
+                    }
+                    savedNodesInOrder.add(key);
+                }
+            } else {
+                //we can't ignore removed nodes below the top path
+                CachedNode removedNode = workspaceCache().getNode(key);
+                if (removedNode == null) {
+                    //probably removed by someone else
+                    continue;
+                }
+                if (topPath.isAtOrAbove(removedNode.getPath(this))) {
+                    savedNodesInOrder.add(key);
+                }
+            }
+        }
+        return savedNodesInOrder;
     }
 
     private void fireChanges( ChangeSet changeSet ) {
@@ -706,18 +717,13 @@ public class WritableSessionCache extends AbstractSessionCache {
                         persisted = workspaceCache.getNode(key);
                         // The node has moved (either within the same parent or to another parent) ...
                         Path oldPath = workspacePaths.getPath(persisted);
-                        NodeKey oldParent = persisted.getParentKey(workspaceCache);
-                        if (oldParent.equals(newParent)) {
-                            // parent hasn't change, this should mean a reoder has happened
-                            changes.nodeReordered(key, oldParent, newPath, oldPath);
-                        } else {
-                            if (!oldParent.equals(newParent) || !additionalParents.isEmpty()) {
-                                // Don't need to change the doc, since we've moved within the same parent ...
-                                translator.setParents(doc, node.newParent(), oldParent, additionalParents);
-                            }
-                            // Generate a move even either way ...
-                            changes.nodeMoved(key, newParent, oldParent, newPath, oldPath);
+                        NodeKey oldParentKey = persisted.getParentKey(workspaceCache);
+                        if (!oldParentKey.equals(newParent) || !additionalParents.isEmpty()) {
+                            // Don't need to change the doc, since we've moved within the same parent ...
+                            translator.setParents(doc, node.newParent(), oldParentKey, additionalParents);
                         }
+                        // Generate a move even either way ...
+                        changes.nodeMoved(key, newParent, oldParentKey, newPath, oldPath);
                     } else if (additionalParents != null) {
                         // The node in another workspace has been linked to this workspace ...
                         translator.setParents(doc, null, null, additionalParents);
@@ -812,7 +818,16 @@ public class WritableSessionCache extends AbstractSessionCache {
                         // of the removed nodes before we actually change the child references of this node.
                         for (NodeKey removed : changedChildren.getRemovals()) {
                             CachedNode persistent = workspaceCache.getNode(removed);
-                            if (persistent != null) workspacePaths.getPath(persistent);
+                            if (persistent != null) {
+                                Path oldPath = workspacePaths.getPath(persistent);
+                                if (appended != null && appended.hasChild(persistent.getKey())) {
+                                    //the same node has been both removed and appended => reordered at the end
+                                    ChildReference appendedChildRef = node.getChildReferences(this).getChild(persistent.getKey());
+                                    newPath = pathFactory().create(sessionPaths.getPath(node), appendedChildRef.getSegment());
+                                    changes.nodeReordered(persistent.getKey(), node.getKey(), newPath, oldPath, null);
+                                }
+                            }
+
                         }
                     }
 
@@ -837,21 +852,23 @@ public class WritableSessionCache extends AbstractSessionCache {
                     }
 
                     // generate reordering events for nodes which have not been reordered to the end
-                    // TODO author=Horia Chiorean date=3/2/12 description=This will only work when reordering inner nodes (i.e.
-                    // not moving them at the end)
                     Map<NodeKey, SessionNode.Insertions> insertionsByBeforeKey = changedChildren.getInsertionsByBeforeKey();
                     for (SessionNode.Insertions insertion : insertionsByBeforeKey.values()) {
-                        for (ChildReference afterInsertionRef : insertion.inserted()) {
-                            CachedNode afterInsertionNode = workspaceCache.getNode(afterInsertionRef);
-                            Path afterInsertionPath = workspacePaths.getPath(afterInsertionNode);
+                        for (ChildReference insertedRef : insertion.inserted()) {
+                            CachedNode insertedNodePersistent = workspaceCache.getNode(insertedRef);
+                            Path oldPath = workspacePaths.getPath(insertedNodePersistent);
 
-                            CachedNode beforeInsertionNode = workspaceCache.getNode(insertion.insertedBefore());
-                            Path beforeInsertionPath = workspacePaths.getPath(beforeInsertionNode);
+                            CachedNode insertedBeforeNode = workspaceCache.getNode(insertion.insertedBefore());
+                            Path insertedBeforePath = workspacePaths.getPath(insertedBeforeNode);
 
-                            changes.nodeReordered(afterInsertionRef.getKey(),
-                                                  afterInsertionNode.getParentKey(this),
-                                                  afterInsertionPath,
-                                                  beforeInsertionPath);
+                            boolean isSnsReordering = oldPath.getLastSegment().getName().equals(insertedBeforePath.getLastSegment().getName());
+                            newPath = isSnsReordering ? insertedBeforePath : oldPath;
+
+                            changes.nodeReordered(insertedRef.getKey(),
+                                                  node.getKey(),
+                                                  newPath,
+                                                  oldPath,
+                                                  insertedBeforePath);
                         }
                     }
                 }

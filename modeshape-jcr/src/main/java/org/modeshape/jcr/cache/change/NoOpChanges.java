@@ -110,7 +110,8 @@ public final class NoOpChanges implements Changes {
     public void nodeReordered( NodeKey key,
                                NodeKey parent,
                                Path newPath,
-                               Path oldPath ) {
+                               Path oldPath,
+                               Path reorderedBeforePath) {
     }
 
     @Override
