@@ -135,7 +135,9 @@ public class BasicPropertyFactory implements PropertyFactory {
         List<Object> valueList = new ArrayList<Object>(len);
         for (int i = 0; i != len; ++i) {
             Object value = factory.create(values[i]);
-            valueList.add(value);
+            if (value != null) {
+                valueList.add(value);
+            }
         }
         return new BasicMultiValueProperty(name, valueList);
     }
@@ -161,7 +163,10 @@ public class BasicPropertyFactory implements PropertyFactory {
         if (desiredType == null) desiredType = PropertyType.OBJECT;
         final ValueFactory<?> factory = factories.getValueFactory(desiredType);
         for (Object value : values) {
-            valueList.add(factory.create(value));
+            Object newValue = factory.create(value);
+            if (newValue != null) {
+                valueList.add(newValue);
+            }
         }
         if (valueList.isEmpty()) { // may not have been a collection earlier
             return new BasicEmptyProperty(name);
@@ -180,7 +185,9 @@ public class BasicPropertyFactory implements PropertyFactory {
         while (values.hasNext()) {
             Object value = values.next();
             value = factory.create(value);
-            valueList.add(value);
+            if (value != null) {
+                valueList.add(value);
+            }
         }
         if (valueList.isEmpty()) {
             return new BasicEmptyProperty(name);

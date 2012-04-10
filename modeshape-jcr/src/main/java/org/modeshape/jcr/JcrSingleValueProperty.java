@@ -149,7 +149,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
                 }
                 return session().node(key, null);
             }
-            // STRING, PATH and NAME values will be convertable to a graph Path object ...
+            // STRING, PATH and NAME values will be convertable to a Path object ...
             Path path = factories.getPathFactory().create(value);
 
             return path.isAbsolute() ? session().node(path) : session().node(getParent().node(), path);
@@ -212,8 +212,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
     public javax.jcr.Binary getBinary() throws ValueFormatException, RepositoryException {
         checkSession();
         try {
-            BinaryValue binary = context().getValueFactories().getBinaryFactory().create(property().getFirstValue());
-            return binary;
+            return context().getValueFactories().getBinaryFactory().create(property().getFirstValue());
         } catch (org.modeshape.jcr.value.ValueFormatException e) {
             throw new ValueFormatException(e.getMessage(), e);
         }
@@ -345,7 +344,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         checkSession();
         checkForLock();
         checkForCheckedOut();
-        setValue(createValue(new Long(value), PropertyType.LONG).asType(this.getType()));
+        setValue(createValue(value, PropertyType.LONG).asType(this.getType()));
     }
 
     @Override
@@ -354,7 +353,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         checkSession();
         checkForLock();
         checkForCheckedOut();
-        setValue(createValue(new Double(value), PropertyType.DOUBLE).asType(this.getType()));
+        setValue(createValue(value, PropertyType.DOUBLE).asType(this.getType()));
     }
 
     @Override
@@ -376,7 +375,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         checkSession();
         checkForLock();
         checkForCheckedOut();
-        setValue(createValue(new Boolean(value), PropertyType.BOOLEAN).asType(this.getType()));
+        setValue(createValue(value, PropertyType.BOOLEAN).asType(this.getType()));
     }
 
     @Override
@@ -394,8 +393,8 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
             throw new ValueFormatException(JcrI18n.nodeNotReferenceable.text());
         }
 
-        String id = value.getIdentifier();
-        setValue(createValue(id, PropertyType.REFERENCE).asType(this.getType()));
+        AbstractJcrNode jcrNode = session.getNodeByIdentifier(value.getIdentifier());
+        setValue(createValue(jcrNode.key(), PropertyType.REFERENCE).asType(this.getType()));
     }
 
     @Override

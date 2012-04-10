@@ -1621,6 +1621,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         checkNodeTypeCanBeModified();
         session.checkPermission(path(), ModeShapePermissions.SET_PROPERTY);
 
+        values = compactValues(values);
+        checkAllValuesHaveTheSameType(values, name);
+
         // Force a conversion to the specified property type (if required) ...
         if (jcrPropertyType != PropertyType.UNDEFINED) {
             int len = values.length;
@@ -1631,7 +1634,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 List<JcrValue> valuesWithDesiredType = new ArrayList<JcrValue>(len);
                 for (int i = 0; i != len; ++i) {
                     JcrValue value = (JcrValue)values[i];
-                    if (value == null) continue; // null values are removed
                     value = value.asType(jcrPropertyType);
                     valuesWithDesiredType.add(value);
                 }
@@ -1708,14 +1710,11 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             }
         }
 
-        // Create the JCR Property object ...
-        if (requiredType == PropertyType.UNDEFINED) {
-            for (Value value : values) {
-                if (value == null) continue;
-                requiredType = value.getType();
-                break;
-            }
+        if (requiredType == PropertyType.UNDEFINED && values.length > 0) {
+            requiredType = values[0].getType();
         }
+
+        // Create the JCR Property object ...
         AbstractJcrProperty jcrProp = new JcrMultiValueProperty(this, name, requiredType);
         jcrProp.setPropertyDefinitionId(defn.getId(), nodeTypes.getVersion());
         AbstractJcrProperty otherProp = this.jcrProperties.putIfAbsent(name, jcrProp);
@@ -1755,6 +1754,42 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         Property newProperty = session.propertyFactory().create(name, objValues);
         node.setProperty(cache, newProperty);
         return jcrProp;
+    }
+
+    /**
+     * Compacts the given array of input values, by removing all those which are <code>null</code>
+     * @return an array without null elements.
+     */
+    private Value[] compactValues(Value[] inputValues) {
+        if (inputValues == null) {
+            return null;
+        }
+        List<Value> compactedList = new ArrayList<Value>();
+        for (Value inputValue : inputValues) {
+            if (inputValue != null) {
+                compactedList.add(inputValue);
+            }
+        }
+        return compactedList.toArray(new Value[0]);
+    }
+
+    private void checkAllValuesHaveTheSameType( Value[] values,
+                                                Name name ) throws ValueFormatException {
+        int valueType = -1;
+        for (Value value : values) {
+            if (value == null) {
+                continue;
+            }
+            if (valueType == -1) {
+                valueType = value.getType();
+            } else if (value.getType() != valueType) {
+                // Make sure the type of each value is the same, as per Javadoc in section 10.4.2.6 of the JCR 2.0 spec
+                String msg = JcrI18n.allPropertyValuesMustHaveSameType.text(readable(name), values,
+                                                                            PropertyType.nameFromValue(valueType),
+                                                                            location(), workspaceName());
+                throw new javax.jcr.ValueFormatException(msg);
+            }
+        }
     }
 
     final Collection<AbstractJcrProperty> findJcrProperties( Iterator<Property> propertyIterator )

@@ -288,14 +288,43 @@ public class JcrTckTest {
      */
     private static TestSuite levelTwoSuite() {
         TestSuite suite = new TestSuite("JCR Level 2 API Tests");
+
         suite.addTestSuite(AddNodeTest.class);
         suite.addTestSuite(NamespaceRegistryTest.class);
         suite.addTestSuite(SessionTest.class);
         suite.addTestSuite(NodeOrderableChildNodesTest.class);
 
+        suite.addTestSuite(PropertyTest.class);
+
+        suite.addTestSuite(SetValueBinaryTest.class);
+        suite.addTestSuite(SetValueBooleanTest.class);
+        suite.addTestSuite(SetValueDateTest.class);
+        suite.addTestSuite(SetValueDecimalTest.class);
+        suite.addTestSuite(SetValueDoubleTest.class);
+        suite.addTestSuite(SetValueLongTest.class);
+        suite.addTestSuite(SetValueReferenceTest.class);
+
+        suite.addTestSuite(SetValueStringTest.class);
+        suite.addTestSuite(SetValueConstraintViolationExceptionTest.class);
+        suite.addTestSuite(SetValueValueFormatExceptionTest.class);
+
+        suite.addTestSuite(SetPropertyBooleanTest.class);
+        suite.addTestSuite(SetPropertyCalendarTest.class);
+        suite.addTestSuite(SetPropertyDecimalTest.class);
+        suite.addTestSuite(SetPropertyDoubleTest.class);
+        suite.addTestSuite(SetPropertyInputStreamTest.class);
+        suite.addTestSuite(SetPropertyLongTest.class);
+        suite.addTestSuite(SetPropertyStringTest.class);
+        suite.addTestSuite(SetPropertyValueTest.class);
+        suite.addTestSuite(SetPropertyConstraintViolationExceptionTest.class);
+        suite.addTestSuite(SetPropertyAssumeTypeTest.class);
+
+        suite.addTestSuite(SetValueVersionExceptionTest.class);
+       //suite.addTestSuite(SetPropertyNodeTest.class);
+
         /**
-         * The failures are caused by:  https://issues.jboss.org/browse/MODE-1453
-         */
+        * The failures are caused by:  https://issues.jboss.org/browse/MODE-1453
+        */
 //        suite.addTestSuite(ReferencesTest.class);
 
 
@@ -322,31 +351,6 @@ public class JcrTckTest {
          */
 //        suite.addTestSuite(NodeUUIDTest.class);
 
-//        suite.addTestSuite(PropertyTest.class);
-//
-//        suite.addTestSuite(SetValueBinaryTest.class);
-//        suite.addTestSuite(SetValueBooleanTest.class);
-//        suite.addTestSuite(SetValueDateTest.class);
-//        suite.addTestSuite(SetValueDecimalTest.class);
-//        suite.addTestSuite(SetValueDoubleTest.class);
-//        suite.addTestSuite(SetValueLongTest.class);
-//        suite.addTestSuite(SetValueReferenceTest.class);
-//        suite.addTestSuite(SetValueStringTest.class);
-//        suite.addTestSuite(SetValueConstraintViolationExceptionTest.class);
-//        suite.addTestSuite(SetValueValueFormatExceptionTest.class);
-//        suite.addTestSuite(SetValueVersionExceptionTest.class);
-//
-//        suite.addTestSuite(SetPropertyBooleanTest.class);
-//        suite.addTestSuite(SetPropertyCalendarTest.class);
-//        suite.addTestSuite(SetPropertyDecimalTest.class);
-//        suite.addTestSuite(SetPropertyDoubleTest.class);
-//        suite.addTestSuite(SetPropertyInputStreamTest.class);
-//        suite.addTestSuite(SetPropertyLongTest.class);
-//        suite.addTestSuite(SetPropertyNodeTest.class);
-//        suite.addTestSuite(SetPropertyStringTest.class);
-//        suite.addTestSuite(SetPropertyValueTest.class);
-//        suite.addTestSuite(SetPropertyConstraintViolationExceptionTest.class);
-//        suite.addTestSuite(SetPropertyAssumeTypeTest.class);
 //
 //        suite.addTestSuite(NodeItemIsModifiedTest.class);
 //        suite.addTestSuite(NodeItemIsNewTest.class);
