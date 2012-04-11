@@ -221,7 +221,7 @@ public class JcrTckTest {
         // Or uncomment the following lines to execute the different sets/suites of tests ...
         TestSuite suite = new TestSuite("JCR 2.0 API tests");
 
-        suite.addTest(levelOneSuite());
+//        suite.addTest(levelOneSuite());
         suite.addTest(levelTwoSuite());
 //        suite.addTest(new OptionalFeatureTests());
 
@@ -289,6 +289,7 @@ public class JcrTckTest {
     private static TestSuite levelTwoSuite() {
         TestSuite suite = new TestSuite("JCR Level 2 API Tests");
 
+        /*
         suite.addTestSuite(AddNodeTest.class);
         suite.addTestSuite(NamespaceRegistryTest.class);
         suite.addTestSuite(SessionTest.class);
@@ -332,48 +333,40 @@ public class JcrTckTest {
         suite.addTestSuite(NodeCanAddMixinTest.class);
         suite.addTestSuite(NodeRemoveMixinTest.class);
 
-        /**
-        * The failures are caused by:  https://issues.jboss.org/browse/MODE-1453
-        */
+        suite.addTestSuite(NodeSetPrimaryTypeTest.class);
+
+        suite.addTestSuite(NameTest.class);
+        suite.addTestSuite(PathTest.class);
+
+        suite.addTestSuite(WorkspaceMoveReferenceableTest.class);
+
+
+        //TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1453
 //        suite.addTestSuite(ReferencesTest.class);
 
+        //TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1453
 
+        //        suite.addTestSuite(SessionUUIDTest.class); */
         /**
-         * The failures are caused by:  https://issues.jboss.org/browse/MODE-1453
-         */
-//        suite.addTestSuite(SessionUUIDTest.class);
-
-        /**
-         * The following fail:
+         * //TODO author=Horia Chiorean date=4/11/12 description=The following fail:
          *
          * testUpdate - https://issues.jboss.org/browse/MODE-1455
          * testRemoveInvalidItemStateException - https://issues.jboss.org/browse/MODE-1456
          * testRemoveMandatoryNode - https://issues.jboss.org/browse/MODE-1456
          * testSaveInvalidStateException -  https://issues.jboss.org/browse/MODE-1456
          *      (might not seem related at first, but it's because a path of a node is determined incorrectly)
-         *
-         *
          */
         //suite.addTestSuite(NodeTest.class);
 
-        /**
-         * The failures are caused by:  https://issues.jboss.org/browse/MODE-1453
-         */
+        //TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1453
 //        suite.addTestSuite(NodeUUIDTest.class);
 
-//
-
-//
-//        suite.addTestSuite(NodeSetPrimaryTypeTest.class);
-//
-        // These two tests aren't marked as read-only, so they causes problems for read-only connectors with the L1 tests
-//        suite.addTestSuite(NameTest.class);
-//        suite.addTestSuite(PathTest.class);
-//
+//      //TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1312
 //        suite.addTestSuite(WorkspaceCloneReferenceableTest.class);
 //        suite.addTestSuite(WorkspaceCloneSameNameSibsTest.class);
 //        suite.addTestSuite(WorkspaceCloneTest.class);
 //        suite.addTestSuite(WorkspaceCloneVersionableTest.class);
+//
 //        suite.addTestSuite(WorkspaceCopyBetweenWorkspacesReferenceableTest.class);
 //        suite.addTestSuite(WorkspaceCopyBetweenWorkspacesSameNameSibsTest.class);
 //        suite.addTestSuite(WorkspaceCopyBetweenWorkspacesTest.class);
@@ -382,9 +375,8 @@ public class JcrTckTest {
 //        suite.addTestSuite(WorkspaceCopySameNameSibsTest.class);
 //        suite.addTestSuite(WorkspaceCopyTest.class);
 //        suite.addTestSuite(WorkspaceCopyVersionableTest.class);
-//        suite.addTestSuite(WorkspaceMoveReferenceableTest.class);
 //        suite.addTestSuite(WorkspaceMoveSameNameSibsTest.class);
-//        suite.addTestSuite(WorkspaceMoveTest.class);
+        suite.addTestSuite(WorkspaceMoveTest.class);
 //        suite.addTestSuite(WorkspaceMoveVersionableTest.class);
 //
 //        suite.addTestSuite(ImpersonateTest.class);

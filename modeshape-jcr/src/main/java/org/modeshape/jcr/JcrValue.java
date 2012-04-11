@@ -202,8 +202,7 @@ final class JcrValue implements javax.jcr.Value {
     @Override
     public String getString() throws ValueFormatException {
         try {
-            String convertedValue = factories().getStringFactory().create(value);
-            return convertedValue;
+            return factories().getStringFactory().create(value);
         } catch (RuntimeException error) {
             throw createValueFormatException(String.class);
         }

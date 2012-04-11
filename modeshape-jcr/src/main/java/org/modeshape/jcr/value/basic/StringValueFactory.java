@@ -171,7 +171,7 @@ public class StringValueFactory extends AbstractValueFactory<String> {
             assert segment.isIdentifier();
             try {
                 // The local part of the segment's name should be the identifier ...
-                return segment.getName().getLocalName();
+                return segment.getString(getEncoder());
             } catch (IllegalArgumentException err) {
                 throw new ValueFormatException(value, PropertyType.UUID,
                                                GraphI18n.unableToCreateValue.text(getPropertyType().getName(),

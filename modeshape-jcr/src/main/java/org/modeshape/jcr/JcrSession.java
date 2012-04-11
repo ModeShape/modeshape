@@ -476,7 +476,7 @@ public class JcrSession implements Session {
         if (absolutePath.isRoot()) return getRootNode();
         if (absolutePath.isIdentifier()) {
             // Look up the node by identifier ...
-            String identifierString = stringFactory().create(absolutePath);
+            String identifierString = stringFactory().create(absolutePath).replaceAll("\\[","").replaceAll("\\]","");
             return getNodeByIdentifier(identifierString);
         }
         CachedNode node = getRootNode().node();
@@ -691,15 +691,7 @@ public class JcrSession implements Session {
         checkLive();
         CheckArg.isNotEmpty(absPath, "absPath");
         Path absolutePath = absolutePathFor(absPath);
-
-        if (absolutePath.isRoot()) return true;
-        if (absolutePath.isIdentifier()) {
-            // Look up the node by identifier ...
-            NodeKey key = new NodeKey(stringFactory().create(absolutePath));
-            return cache().getNode(key) != null;
-        }
-
-        return cachedNode(absolutePath) != null;
+        return node(absolutePath) != null;
     }
 
     @Override

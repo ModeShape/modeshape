@@ -2151,9 +2151,17 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         Name newPrimaryTypeName = nameFrom(nodeTypeName);
         NodeTypes nodeTypes = session.nodeTypes();
         if (newPrimaryTypeName.equals(getPrimaryTypeName())) return;
+
         final JcrNodeType newPrimaryType = nodeTypes.getNodeType(newPrimaryTypeName);
+        //validate the new primary type
+        if (newPrimaryType == null) {
+            throw new NoSuchNodeTypeException(JcrI18n.typeNotFound.text(newPrimaryType));
+        }
         if (newPrimaryType.isMixin()) {
             throw new ConstraintViolationException(JcrI18n.cannotUseMixinTypeAsPrimaryType.text(nodeTypeName));
+        }
+        if (newPrimaryType.isAbstract()) {
+            throw new ConstraintViolationException(JcrI18n.primaryTypeCannotBeAbstract.text(newPrimaryType));
         }
 
         // Make sure that all existing properties will have a valid property definition with the new primary type ...
