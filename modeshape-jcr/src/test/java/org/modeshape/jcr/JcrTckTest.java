@@ -322,6 +322,16 @@ public class JcrTckTest {
         suite.addTestSuite(SetValueVersionExceptionTest.class);
         suite.addTestSuite(SetPropertyNodeTest.class);
 
+        suite.addTestSuite(NodeItemIsModifiedTest.class);
+        suite.addTestSuite(NodeItemIsNewTest.class);
+
+        suite.addTestSuite(PropertyItemIsModifiedTest.class);
+        suite.addTestSuite(PropertyItemIsNewTest.class);
+
+        suite.addTestSuite(NodeAddMixinTest.class);
+        suite.addTestSuite(NodeCanAddMixinTest.class);
+        suite.addTestSuite(NodeRemoveMixinTest.class);
+
         /**
         * The failures are caused by:  https://issues.jboss.org/browse/MODE-1453
         */
@@ -352,14 +362,7 @@ public class JcrTckTest {
 //        suite.addTestSuite(NodeUUIDTest.class);
 
 //
-//        suite.addTestSuite(NodeItemIsModifiedTest.class);
-//        suite.addTestSuite(NodeItemIsNewTest.class);
-//        suite.addTestSuite(PropertyItemIsModifiedTest.class);
-//        suite.addTestSuite(PropertyItemIsNewTest.class);
-//
-//        suite.addTestSuite(NodeAddMixinTest.class);
-//        suite.addTestSuite(NodeCanAddMixinTest.class);
-//        suite.addTestSuite(NodeRemoveMixinTest.class);
+
 //
 //        suite.addTestSuite(NodeSetPrimaryTypeTest.class);
 //

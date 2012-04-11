@@ -2252,6 +2252,25 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         for (AbstractJcrProperty prop : this.jcrProperties.values()) {
             prop.releasePropertyDefinitionId();
         }
+
+        //per JCR 2.0 10.10.3.1, the change should be reflected immediately in the property
+        updateMixinsProperty();
+    }
+
+    private void updateMixinsProperty() throws RepositoryException {
+        MutableCachedNode mutable = mutable();
+        SessionCache sessionCache = sessionCache();
+
+        //as per JCR, we need to make sure the change is reflected immediately in the jcr property
+        List<Name> currentMixins = new ArrayList<Name>(mutable.getMixinTypes(sessionCache()));
+        Value[] mixinValues = session.valueFactory().createValues(currentMixins, PropertyType.NAME);
+        AbstractJcrProperty mixinProperty = this.jcrProperties.get(JcrLexicon.MIXIN_TYPES);
+        if (mixinProperty == null) {
+            mixinProperty = new JcrMultiValueProperty(this, JcrLexicon.MIXIN_TYPES, PropertyType.NAME);
+            //this will overwrite another property which may've appeared in the meantime
+            this.jcrProperties.put(JcrLexicon.MIXIN_TYPES, mixinProperty);
+        }
+        mixinProperty.setValue(mixinValues);
     }
 
     @Override
@@ -2272,7 +2291,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
         NodeTypes nodeTypes = session.nodeTypes();
         Name removedMixinName = nameFrom(mixinName);
-        if (!isNodeType(mixinName)) return;
+        if (!isNodeType(mixinName)) {
+            throw new NoSuchNodeTypeException(JcrI18n.invalidMixinTypeForNode.text(mixinName, location()));
+        }
 
         // Get the information from the node ...
         SessionCache cache = sessionCache();
@@ -2369,6 +2390,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             AbstractJcrNode child = (AbstractJcrNode)iter.nextNode();
             child.releaseNodeDefinitionId();
         }
+
+        //per JCR 2.0 10.10.3.1, the change should be reflected immediately in the property
+        updateMixinsProperty();
     }
 
     @Override
