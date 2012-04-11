@@ -252,8 +252,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     }
 
     @Override
-    public final String getIdentifier() {
-        return key.getIdentifier();
+    public String getIdentifier() {
+        return key.toString();
     }
 
     /**

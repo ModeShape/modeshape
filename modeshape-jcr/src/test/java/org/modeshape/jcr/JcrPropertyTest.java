@@ -185,7 +185,7 @@ public class JcrPropertyTest extends MultiUseAbstractTest {
         // Use the same id and location; use 'Toyota Prius'
         String priusUuid2 = prius2.getIdentifier();
         String priusUuid = prius.getIdentifier();
-        assertThat(priusUuid, is(priusUuid2));
+        assertThat(priusUuid.equals(priusUuid2), is(false));
         assertThat(prius2.isSame(prius), is(false));
 
         // Check the properties ...

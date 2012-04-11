@@ -815,7 +815,7 @@ final class JcrVersionManager implements VersionManager {
                                                                           .property()
                                                                           .getFirstValue());
             AbstractJcrProperty uuidProp = sourceNode.getProperty(JcrLexicon.FROZEN_UUID);
-            NodeKey desiredKey = parentNode.key().withId(session.stringFactory().create(uuidProp.property().getFirstValue()));
+            NodeKey desiredKey = new NodeKey(session.stringFactory().create(uuidProp.property().getFirstValue()));
 
             Property primaryType = propFactory.create(JcrLexicon.PRIMARY_TYPE, primaryTypeName);
             MutableCachedNode newChild = parentNode.mutable().createChild(cache,
@@ -1190,7 +1190,7 @@ final class JcrVersionManager implements VersionManager {
                     if (JcrNtLexicon.FROZEN_NODE.equals(resolvedPrimaryTypeName)) {
                         primaryTypeName = name(resolvedChild.getProperty(JcrLexicon.FROZEN_PRIMARY_TYPE, cache).getFirstValue());
                         Property idProp = resolvedChild.getProperty(JcrLexicon.FROZEN_UUID, cache);
-                        desiredKey = target.getKey().withId(string(idProp.getFirstValue()));
+                        desiredKey = new NodeKey(target.getKey(), string(idProp.getFirstValue()));
                     } else {
                         primaryTypeName = resolvedChild.getPrimaryType(cache);
                         Property idProp = resolvedChild.getProperty(JcrLexicon.UUID, cache);

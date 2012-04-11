@@ -62,6 +62,9 @@ public class ReferenceValueFactory extends AbstractValueFactory<Reference> imple
     @Override
     public Reference create( String value ) {
         if (value == null) return null;
+        if (NodeKey.isValidFormat(value)) {
+            return new NodeKeyReference(new NodeKey(value), weak);
+        }
         try {
             UUID uuid = UUID.fromString(value);
             return new UuidReference(uuid, weak);

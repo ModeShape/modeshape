@@ -90,7 +90,7 @@ class RepositoryLockManager implements ChangeSetListener {
 
     protected final NodeKey lockedNodeKeyFromLockKey( NodeKey key ) {
         // The identifier of the lock key contains "mode:lock-" followed by the full key of the locked node ...
-        String identifier = key.getIdentifier();
+        String identifier = key.toString();
         return new NodeKey(identifier.substring(KEY_OFFSET));
     }
 

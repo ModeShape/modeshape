@@ -47,6 +47,7 @@ import javax.jcr.nodetype.ConstraintViolationException;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.value.Path;
 
 /**
@@ -184,7 +185,8 @@ public class ImportExportTest extends SingleUseAbstractTest {
 
         // Now delete the '/someNode/Cars' node (which is everything that was imported) ...
         Node cars = assertNode("/someNode/Cars");
-        assertThat(cars.getIdentifier(), is("e41075cb-a09a-4910-87b1-90ce8b4ca9dd"));
+        NodeKey expectedNodeKey = new NodeKey(cars.getParent().getIdentifier(), "e41075cb-a09a-4910-87b1-90ce8b4ca9dd");
+        assertThat(cars.getIdentifier(), is(expectedNodeKey.toString()));
         assertNoNode("/someNode/Cars[2]");
         assertNoNode("/someNode[2]");
         cars.remove();
@@ -196,7 +198,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
 
         // Verify the same Cars node exists ...
         cars = assertNode("/someNode/Cars");
-        assertThat(cars.getIdentifier(), is("e41075cb-a09a-4910-87b1-90ce8b4ca9dd"));
+        assertThat(cars.getIdentifier(), is(expectedNodeKey.toString()));
         assertNoNode("/someNode/Cars[2]");
         assertNoNode("/someNode[2]");
     }
@@ -216,7 +218,9 @@ public class ImportExportTest extends SingleUseAbstractTest {
 
         // Now delete the '/someNode/Cars' node (which is everything that was imported) ...
         Node cars = assertNode("/someNode/Cars");
-        assertThat(cars.getIdentifier(), is("e41075cb-a09a-4910-87b1-90ce8b4ca9dd"));
+
+        NodeKey expectedNodeKey = new NodeKey(cars.getParent().getIdentifier(), "e41075cb-a09a-4910-87b1-90ce8b4ca9dd");
+        assertThat(cars.getIdentifier(), is(expectedNodeKey.toString()));
         assertNoNode("/someNode/Cars[2]");
         assertNoNode("/someNode[2]");
         cars.remove();
@@ -229,7 +233,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
 
         // Verify the same Cars node exists ...
         cars = assertNode("/someNode/Cars");
-        assertThat(cars.getIdentifier(), is("e41075cb-a09a-4910-87b1-90ce8b4ca9dd"));
+        assertThat(cars.getIdentifier(), is(expectedNodeKey.toString()));
         assertNoNode("/someNode/Cars[2]");
         assertNoNode("/someNode[2]");
     }
@@ -251,7 +255,9 @@ public class ImportExportTest extends SingleUseAbstractTest {
 
         // Now delete the '/someNode/Cars' node (which is everything that was imported) ...
         Node cars = assertNode("/someNode/Cars");
-        assertThat(cars.getIdentifier(), is("e41075cb-a09a-4910-87b1-90ce8b4ca9dd"));
+
+        NodeKey expectedNodeKey = new NodeKey(cars.getParent().getIdentifier(), "e41075cb-a09a-4910-87b1-90ce8b4ca9dd");
+        assertThat(cars.getIdentifier(), is(expectedNodeKey.toString()));
         assertNoNode("/someNode/Cars[2]");
         assertNoNode("/someNode[2]");
         cars.remove();
@@ -268,7 +274,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
 
         // Verify the same Cars node exists ...
         cars = assertNode("/otherNode/Cars");
-        assertThat(cars.getIdentifier(), is("e41075cb-a09a-4910-87b1-90ce8b4ca9dd"));
+        assertThat(cars.getIdentifier(), is(expectedNodeKey.toString()));
 
         // Make sure some duplicate nodes didn't show up ...
         assertNoNode("/sameNode/Cars[2]");

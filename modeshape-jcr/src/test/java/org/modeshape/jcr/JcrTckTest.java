@@ -320,7 +320,7 @@ public class JcrTckTest {
         suite.addTestSuite(SetPropertyAssumeTypeTest.class);
 
         suite.addTestSuite(SetValueVersionExceptionTest.class);
-       //suite.addTestSuite(SetPropertyNodeTest.class);
+        suite.addTestSuite(SetPropertyNodeTest.class);
 
         /**
         * The failures are caused by:  https://issues.jboss.org/browse/MODE-1453

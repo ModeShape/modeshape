@@ -476,8 +476,8 @@ public class JcrSession implements Session {
         if (absolutePath.isRoot()) return getRootNode();
         if (absolutePath.isIdentifier()) {
             // Look up the node by identifier ...
-            NodeKey key = rootNode.key().withId(stringFactory().create(absolutePath));
-            return node(key, null);
+            String identifierString = stringFactory().create(absolutePath);
+            return getNodeByIdentifier(identifierString);
         }
         CachedNode node = getRootNode().node();
         return node(node, absolutePath);

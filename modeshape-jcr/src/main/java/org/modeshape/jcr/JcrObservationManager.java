@@ -776,6 +776,9 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
             this.absPath = absPath;
             this.isDeep = isDeep;
             this.uuids = uuids;
+            if (this.uuids != null) {
+                Arrays.sort(this.uuids);
+            }
             this.nodeTypeNames = nodeTypeNames;
             this.noLocal = noLocal;
         }
@@ -821,7 +824,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
             // process event making sure we have the right event type
             Path newPath = nodeChange.getPath();
-            String nodeId = nodeChange.getKey().getIdentifier();
+            String nodeId = nodeChange.getKey().toString();
 
             //node moved
             if (nodeChange instanceof NodeMoved) {
@@ -883,7 +886,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
                 Map<String, String> infoMap = new HashMap<String, String>();
                 infoMap.put(SEQUENCED_NODE_PATH, stringFor(sequencedChange.getSequencedNodePath()));
-                infoMap.put(SEQUENCED_NODE_ID, sequencedChange.getSequencedNodeKey().getIdentifier());
+                infoMap.put(SEQUENCED_NODE_ID, sequencedChange.getSequencedNodeKey().toString());
                 
                 events.add(new JcrEvent(bundle, NODE_SEQUENCED, stringFor(sequencedChange.getPath()), nodeId, infoMap));
             }
@@ -1008,8 +1011,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
             }
 
             if ((this.uuids != null) && (this.uuids.length > 0)) {
-                String matchUuidString = change.getKey().getIdentifier();
-                Arrays.sort(this.uuids);
+                String matchUuidString = change.getKey().toString();
                 return Arrays.binarySearch(this.uuids, matchUuidString) >= 0;
             }
 

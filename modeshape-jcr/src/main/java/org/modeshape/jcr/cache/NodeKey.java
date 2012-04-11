@@ -29,6 +29,7 @@ import java.util.UUID;
 import org.infinispan.schematic.SchematicDb;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.Immutable;
+import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.SecureHash;
 import org.modeshape.jcr.JcrRepository;
 
@@ -104,6 +105,28 @@ public final class NodeKey implements Serializable, Comparable<NodeKey> {
         assert workspaceKey.length() == WORKSPACE_LENGTH;
         assert workspaceKey.length() > 0;
         this.key = sourceKey + workspaceKey + identifier;
+    }
+
+    /**
+     * Creates a new node key instance, using the same source and workspace as the parent key, with the given node identifier.
+     *
+     * @param parentKeyString a non-null <code>String</code>, which should be a valid key format.
+     * @param identifier a non-null <code>String</code> which is the node identifier
+     * @throws IllegalArgumentException if the parent key string is not a valid key format
+     */
+    public NodeKey(String parentKeyString, String identifier) throws IllegalArgumentException {
+        CheckArg.isNotNull(parentKeyString, "parentKeyString");
+        CheckArg.isNotNull(identifier, "identifier");
+
+        if (!isValidFormat(parentKeyString)) {
+            throw new IllegalArgumentException("Invalid parent key format:" + parentKeyString);
+        }
+        NodeKey parentKey = new NodeKey(parentKeyString);
+        this.key = parentKey.getSourceKey() + parentKey.getWorkspaceKey() + identifier;
+    }
+
+    public NodeKey(NodeKey parentKey, String identifier) {
+        this(parentKey.getSourceKey(), parentKey.getWorkspaceKey(), identifier);
     }
 
     /**

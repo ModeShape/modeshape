@@ -1036,7 +1036,7 @@ public class SystemContent {
         // Now create the version history node itself ...
         List<Property> historyProps = new ArrayList<Property>();
         historyProps.add(propertyFactory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION_HISTORY));
-        historyProps.add(propertyFactory.create(JcrLexicon.VERSIONABLE_UUID, versionableNodeKey.getIdentifier()));
+        historyProps.add(propertyFactory.create(JcrLexicon.VERSIONABLE_UUID, versionableNodeKey.toString()));
         historyProps.add(propertyFactory.create(JcrLexicon.UUID, versionHistoryKey.toString()));
         if (originalVersionKey != null) {
             historyProps.add(propertyFactory.create(JcrLexicon.COPIED_FROM, originalVersionKey.toString()));
@@ -1060,7 +1060,7 @@ public class SystemContent {
         // And create the 'nt:rootVersion/nt:frozenNode' child node ...
         List<Property> frozenProps = new ArrayList<Property>();
         frozenProps.add(propertyFactory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FROZEN_NODE));
-        frozenProps.add(propertyFactory.create(JcrLexicon.FROZEN_UUID, versionableNodeKey.getIdentifier()));
+        frozenProps.add(propertyFactory.create(JcrLexicon.FROZEN_UUID, versionableNodeKey.toString()));
         frozenProps.add(propertyFactory.create(JcrLexicon.FROZEN_PRIMARY_TYPE, primaryTypeName));
         if (mixinTypeNames != null && !mixinTypeNames.isEmpty()) {
             frozenProps.add(propertyFactory.create(JcrLexicon.FROZEN_MIXIN_TYPES, mixinTypeNames));
@@ -1138,13 +1138,13 @@ public class SystemContent {
         List<Property> props = new ArrayList<Property>();
         props.add(propertyFactory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION));
         props.add(propertyFactory.create(JcrLexicon.CREATED, now));
-        props.add(propertyFactory.create(JcrLexicon.UUID, versionKey.getIdentifier()));
+        props.add(propertyFactory.create(JcrLexicon.UUID, versionKey.toString()));
         MutableCachedNode versionNode = historyNode.createChild(system, versionKey, versionName, props);
 
         // Create a 'nt:frozenNode' node under the 'nt:version' node ...
         props = new ArrayList<Property>();
         props.add(propertyFactory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FROZEN_NODE));
-        props.add(propertyFactory.create(JcrLexicon.FROZEN_UUID, versionableNodeKey.getIdentifier()));
+        props.add(propertyFactory.create(JcrLexicon.FROZEN_UUID, versionableNodeKey.toString()));
         props.add(propertyFactory.create(JcrLexicon.FROZEN_PRIMARY_TYPE, primaryTypeName));
         props.add(propertyFactory.create(JcrLexicon.FROZEN_MIXIN_TYPES, mixinTypeNames));
         if (versionableProperties != null) props.addAll(versionableProperties);
