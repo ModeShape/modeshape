@@ -724,9 +724,13 @@ public class JcrSession implements Session {
         RepositoryException {
         checkLive();
 
-        // Find the source path and destination path ...
+        // Find the source path and destination path and check for permissions
         Path srcPath = absolutePathFor(srcAbsPath);
+        checkPermission(srcPath, ModeShapePermissions.REMOVE);
+
         Path destPath = absolutePathFor(destAbsPath);
+        checkPermission(destPath.getParent(), ModeShapePermissions.ADD_NODE);
+
         if (srcPath.isRoot()) {
             throw new RepositoryException(JcrI18n.unableToMoveRootNode.text(workspaceName()));
         }
@@ -751,6 +755,19 @@ public class JcrSession implements Session {
         AbstractJcrNode destParentNode = node(destPath.getParent());
 
         SessionCache sessionCache = cache();
+
+        //check whether the parent definition allows children which match the source
+        JcrNodeDefinition childDefinition = nodeTypes().findChildNodeDefinition(destParentNode.getPrimaryTypeName(),
+                                                                                destParentNode.getMixinTypeNames(),
+                                                                                srcNode.name(),
+                                                                                srcNode.getPrimaryTypeName(),
+                                                                                0,
+                                                                                true);
+        if (childDefinition == null) {
+            throw new ConstraintViolationException(JcrI18n.noChildNodeDefinition.text(srcNode.name(), destParentNode.location(),
+                                                                                      destParentNode.getPrimaryTypeName(),
+                                                                                      destParentNode.getMixinTypeNames()));
+        }
 
         //Check whether the destination parent already has a child with the same name and allows SNS (TCK)
         checkSnsAreAllowed(srcNode, destParentNode);
