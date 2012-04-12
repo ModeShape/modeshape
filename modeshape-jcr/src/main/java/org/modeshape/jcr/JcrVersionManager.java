@@ -1190,7 +1190,7 @@ final class JcrVersionManager implements VersionManager {
                     if (JcrNtLexicon.FROZEN_NODE.equals(resolvedPrimaryTypeName)) {
                         primaryTypeName = name(resolvedChild.getProperty(JcrLexicon.FROZEN_PRIMARY_TYPE, cache).getFirstValue());
                         Property idProp = resolvedChild.getProperty(JcrLexicon.FROZEN_UUID, cache);
-                        desiredKey = new NodeKey(target.getKey(), string(idProp.getFirstValue()));
+                        desiredKey = target.getKey().withId(string(idProp.getFirstValue()));
                     } else {
                         primaryTypeName = resolvedChild.getPrimaryType(cache);
                         Property idProp = resolvedChild.getProperty(JcrLexicon.UUID, cache);

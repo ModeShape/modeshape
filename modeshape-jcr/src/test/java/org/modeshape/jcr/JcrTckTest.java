@@ -221,7 +221,7 @@ public class JcrTckTest {
         // Or uncomment the following lines to execute the different sets/suites of tests ...
         TestSuite suite = new TestSuite("JCR 2.0 API tests");
 
-//        suite.addTest(levelOneSuite());
+        suite.addTest(levelOneSuite());
         suite.addTest(levelTwoSuite());
 //        suite.addTest(new OptionalFeatureTests());
 
@@ -274,7 +274,6 @@ public class JcrTckTest {
 
         suite.addTestSuite(ExportSysViewTest.class);
         suite.addTestSuite(ExportDocViewTest.class);
-
         // The tests in this suite are level one
         suite.addTest(org.apache.jackrabbit.test.api.nodetype.TestAll.suite());
 
@@ -289,7 +288,7 @@ public class JcrTckTest {
     private static TestSuite levelTwoSuite() {
         TestSuite suite = new TestSuite("JCR Level 2 API Tests");
 
-        /*
+
         suite.addTestSuite(AddNodeTest.class);
         suite.addTestSuite(NamespaceRegistryTest.class);
         suite.addTestSuite(SessionTest.class);
@@ -339,14 +338,19 @@ public class JcrTckTest {
         suite.addTestSuite(PathTest.class);
 
         suite.addTestSuite(WorkspaceMoveReferenceableTest.class);
+        suite.addTestSuite(WorkspaceMoveTest.class);
 
+        suite.addTestSuite(ImpersonateTest.class);
+        suite.addTestSuite(CheckPermissionTest.class);
+
+        suite.addTestSuite(DocumentViewImportTest.class);
 
         //TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1453
 //        suite.addTestSuite(ReferencesTest.class);
 
         //TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1453
 
-        //        suite.addTestSuite(SessionUUIDTest.class); */
+        //        suite.addTestSuite(SessionUUIDTest.class);
         /**
          * //TODO author=Horia Chiorean date=4/11/12 description=The following fail:
          *
@@ -376,13 +380,9 @@ public class JcrTckTest {
 //        suite.addTestSuite(WorkspaceCopyTest.class);
 //        suite.addTestSuite(WorkspaceCopyVersionableTest.class);
 //        suite.addTestSuite(WorkspaceMoveSameNameSibsTest.class);
-        suite.addTestSuite(WorkspaceMoveTest.class);
 //        suite.addTestSuite(WorkspaceMoveVersionableTest.class);
 //
-//        suite.addTestSuite(ImpersonateTest.class);
-//        suite.addTestSuite(CheckPermissionTest.class);
 //
-//        suite.addTestSuite(DocumentViewImportTest.class);
 //        suite.addTestSuite(SerializationTest.class);
 //
 //        suite.addTestSuite(ValueFactoryTest.class);

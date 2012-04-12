@@ -991,94 +991,15 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         // Determine the node type based upon this node's type information ...
         SessionCache cache = sessionCache();
         CachedNode node = node();
-        Name primaryTypeName = node.getPrimaryType(cache);
-        Set<Name> mixins = node.getMixinTypes(cache);
         int numExistingSns = node.getChildReferences(cache).getChildCount(childName);
 
         // Determine the name for the primary node type
         NodeTypes nodeTypes = session.nodeTypes();
-        JcrNodeDefinition childDefn = null;
-        if (childPrimaryNodeTypeName != null) {
-            if (INTERNAL_NODE_TYPE_NAMES.contains(childPrimaryNodeTypeName)) {
-                String workspaceName = workspaceName();
-                String childPath = readable(session.pathFactory().create(path(), childName, numExistingSns + 1));
-                String msg = JcrI18n.unableToCreateNodeWithInternalPrimaryType.text(childPrimaryNodeTypeName,
-                                                                                    childPath,
-                                                                                    workspaceName);
-                throw new ConstraintViolationException(msg);
-            }
-            JcrNodeType primaryType = nodeTypes.getNodeType(childPrimaryNodeTypeName);
-            if (primaryType == null) {
-                Path pathForChild = session.pathFactory().create(path(), childName, numExistingSns + 1);
-                I18n msg = JcrI18n.unableToCreateNodeWithPrimaryTypeThatDoesNotExist;
-                throw new NoSuchNodeTypeException(msg.text(childPrimaryNodeTypeName, pathForChild, workspaceName()));
-            }
 
-            if (primaryType.isMixin()) {
-                I18n msg = JcrI18n.cannotUseMixinTypeAsPrimaryType;
-                throw new ConstraintViolationException(msg.text(primaryType.getName()));
-            }
-
-            if (primaryType.isAbstract()) {
-                I18n msg = JcrI18n.primaryTypeCannotBeAbstract;
-                throw new ConstraintViolationException(msg.text(primaryType.getName()));
-            }
-        }
-
-        // Determine the node type based upon this node's type information ...
-        boolean skipProtected = true;
-        childDefn = nodeTypes.findChildNodeDefinition(primaryTypeName,
-                                                      mixins,
-                                                      childName,
-                                                      childPrimaryNodeTypeName,
-                                                      numExistingSns,
-                                                      skipProtected);
-        if (childDefn == null) {
-            // Failed to find an appropriate child node definition. But we need more information to throw the correct error.
-            int sns = numExistingSns + 1;
-            String childPath = readable(session.pathFactory().create(path(), childName, sns));
-            if (numExistingSns > 0) {
-                // There was already at least one existing node with the same name, so see if there is a child node definition
-                // that does not allow same-name-siblings ...
-                childDefn = nodeTypes.findChildNodeDefinition(primaryTypeName,
-                                                              mixins,
-                                                              childName,
-                                                              childPrimaryNodeTypeName,
-                                                              0,
-                                                              skipProtected);
-
-                // This failed, so start getting the info required to throw an exception ...
-                String workspaceName = workspaceName();
-
-                if (childDefn != null) {
-                    // So this failed only because the child definition did not allow same-name-siblings,
-                    // so throw ItemExistsException per the JavaDoc of Node.addNode(String) and
-                    // per the JCR 1.0.1 specification, section 7.1.4. (The JCR 2.0 specification is less
-                    // clear about the exact signatures and exception, relying upon the JavaDoc for these.)
-                    // Only failed because there was no SNS definition - throw ItemExistsException per 7.1.4 of 1.0.1 spec
-                    String msg = JcrI18n.noSnsDefinitionForNode.text(childPath, workspaceName);
-                    throw new ItemExistsException(msg);
-                }
-            }
-            // Didn't work for other reasons - throw ConstraintViolationException
-            String repoName = session.repository().repositoryName();
-            String msg = JcrI18n.nodeDefinitionCouldNotBeDeterminedForNode.text(childPath, workspaceName(), repoName);
-            throw new ConstraintViolationException(msg);
-        }
-        assert childDefn != null;
-
+        // validate there is an appropriate child node definition
+        JcrNodeDefinition childDefn = validateChildNodeDefinition(childName, childPrimaryNodeTypeName, true);
         if (childPrimaryNodeTypeName == null) {
-            JcrNodeType defaultPrimaryType = childDefn.getDefaultPrimaryType();
-            if (defaultPrimaryType == null) {
-                // There is no default primary type ...
-                int sns = numExistingSns + 1;
-                String childPath = readable(session.pathFactory().create(path(), childName, sns));
-                I18n msg = JcrI18n.unableToCreateNodeWithNoDefaultPrimaryTypeOnChildNodeDefinition;
-                String nodeTypeName = childDefn.getDeclaringNodeType().getName();
-                throw new NoSuchNodeTypeException(msg.text(childDefn.getName(), nodeTypeName, childPath, workspaceName()));
-
-            }
-            childPrimaryNodeTypeName = defaultPrimaryType.getInternalName();
+            childPrimaryNodeTypeName = childDefn.getDefaultPrimaryType().getInternalName();
         }
 
         // See if this node is checked in. If so, then we can only create children if the child
@@ -1134,6 +1055,103 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         jcrNode.autoCreateChildren(childPrimaryNodeTypeName, capabilities);
 
         return jcrNode;
+    }
+
+    /**
+     * Validates that there is a child node definition on the current node (as parent) which allows a child with the given name
+     * and type.
+     *
+     * @return a non-null {@link JcrNodeDefinition}
+     */
+    JcrNodeDefinition validateChildNodeDefinition( Name childName,
+                                                   Name childPrimaryNodeTypeName,
+                                                   boolean skipProtected ) throws ItemNotFoundException,
+                                                                             InvalidItemStateException,
+                                                                             ItemExistsException,
+                                                                             ConstraintViolationException,
+                                                                             NoSuchNodeTypeException {
+
+        SessionCache cache = sessionCache();
+        CachedNode node = node();
+        Name primaryTypeName = node.getPrimaryType(cache);
+        Set<Name> mixins = node.getMixinTypes(cache);
+        NodeTypes nodeTypes = session().nodeTypes();
+        int numExistingSns = node.getChildReferences(cache).getChildCount(childName);
+
+        if (childPrimaryNodeTypeName != null) {
+            if (INTERNAL_NODE_TYPE_NAMES.contains(childPrimaryNodeTypeName)) {
+                String workspaceName = workspaceName();
+                String childPath = readable(session.pathFactory().create(path(), childName, numExistingSns + 1));
+                String msg = JcrI18n.unableToCreateNodeWithInternalPrimaryType.text(childPrimaryNodeTypeName,
+                                                                                    childPath,
+                                                                                    workspaceName);
+                throw new ConstraintViolationException(msg);
+            }
+            JcrNodeType primaryType = nodeTypes.getNodeType(childPrimaryNodeTypeName);
+            if (primaryType == null) {
+                Path pathForChild = session.pathFactory().create(path(), childName, numExistingSns + 1);
+                I18n msg = JcrI18n.unableToCreateNodeWithPrimaryTypeThatDoesNotExist;
+                throw new NoSuchNodeTypeException(msg.text(childPrimaryNodeTypeName, pathForChild, workspaceName()));
+            }
+
+            if (primaryType.isMixin()) {
+                I18n msg = JcrI18n.cannotUseMixinTypeAsPrimaryType;
+                throw new ConstraintViolationException(msg.text(primaryType.getName()));
+            }
+
+            if (primaryType.isAbstract()) {
+                I18n msg = JcrI18n.primaryTypeCannotBeAbstract;
+                throw new ConstraintViolationException(msg.text(primaryType.getName()));
+            }
+        }
+
+        int sns = numExistingSns + 1;
+        JcrNodeDefinition childDefn = nodeTypes.findChildNodeDefinition(primaryTypeName,
+                                                                        mixins,
+                                                                        childName,
+                                                                        childPrimaryNodeTypeName,
+                                                                        sns,
+                                                                        skipProtected);
+        if (childDefn == null) {
+            // Failed to find an appropriate child node definition. But we need more information to throw the correct error.
+            String childPath = readable(session.pathFactory().create(path(), childName, sns));
+            if (numExistingSns > 0) {
+                // There was already at least one existing node with the same name, so see if there is a child node definition
+                // that does not allow same-name-siblings ...
+                childDefn = nodeTypes.findChildNodeDefinition(primaryTypeName,
+                                                              mixins,
+                                                              childName,
+                                                              childPrimaryNodeTypeName,
+                                                              0,
+                                                              skipProtected);
+
+                // This failed, so start getting the info required to throw an exception ...
+                String workspaceName = workspaceName();
+
+                if (childDefn != null) {
+                    // So this failed only because the child definition did not allow same-name-siblings,
+                    // so throw ItemExistsException per the JavaDoc of Node.addNode(String) and
+                    // per the JCR 1.0.1 specification, section 7.1.4. (The JCR 2.0 specification is less
+                    // clear about the exact signatures and exception, relying upon the JavaDoc for these.)
+                    // Only failed because there was no SNS definition - throw ItemExistsException per 7.1.4 of 1.0.1 spec
+                    String msg = JcrI18n.noSnsDefinitionForNode.text(childPath, workspaceName);
+                    throw new ItemExistsException(msg);
+                }
+            }
+            // Didn't work for other reasons - throw ConstraintViolationException
+            String repoName = session.repository().repositoryName();
+            String msg = JcrI18n.nodeDefinitionCouldNotBeDeterminedForNode.text(childPath, workspaceName(), repoName);
+            throw new ConstraintViolationException(msg);
+        }
+
+        if (childPrimaryNodeTypeName == null && childDefn.getDefaultPrimaryType() == null) {
+            // There is no default primary type ...
+            String childPath = readable(session.pathFactory().create(path(), childName, sns));
+            I18n msg = JcrI18n.unableToCreateNodeWithNoDefaultPrimaryTypeOnChildNodeDefinition;
+            String nodeTypeName = childDefn.getDeclaringNodeType().getName();
+            throw new NoSuchNodeTypeException(msg.text(childDefn.getName(), nodeTypeName, childPath, workspaceName()));
+        }
+        return childDefn;
     }
 
     /**

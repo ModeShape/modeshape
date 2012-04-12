@@ -108,28 +108,6 @@ public final class NodeKey implements Serializable, Comparable<NodeKey> {
     }
 
     /**
-     * Creates a new node key instance, using the same source and workspace as the parent key, with the given node identifier.
-     *
-     * @param parentKeyString a non-null <code>String</code>, which should be a valid key format.
-     * @param identifier a non-null <code>String</code> which is the node identifier
-     * @throws IllegalArgumentException if the parent key string is not a valid key format
-     */
-    public NodeKey(String parentKeyString, String identifier) throws IllegalArgumentException {
-        CheckArg.isNotNull(parentKeyString, "parentKeyString");
-        CheckArg.isNotNull(identifier, "identifier");
-
-        if (!isValidFormat(parentKeyString)) {
-            throw new IllegalArgumentException("Invalid parent key format:" + parentKeyString);
-        }
-        NodeKey parentKey = new NodeKey(parentKeyString);
-        this.key = parentKey.getSourceKey() + parentKey.getWorkspaceKey() + identifier;
-    }
-
-    public NodeKey(NodeKey parentKey, String identifier) {
-        this(parentKey.getSourceKey(), parentKey.getWorkspaceKey(), identifier);
-    }
-
-    /**
      * Get the multi-character key uniquely identifying the repository's storage source in which this node appears.
      * 
      * @return the source key; never null and always contains at least one character

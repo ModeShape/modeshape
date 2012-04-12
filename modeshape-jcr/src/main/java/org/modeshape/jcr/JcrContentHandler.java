@@ -608,6 +608,14 @@ class JcrContentHandler extends DefaultHandler {
                         if (value != null && propertyType == PropertyType.STRING) {
                             // Strings and binaries can be empty -- other data types cannot
                             values.add(valueFor(value, propertyType));
+                        } else if (value != null && (propertyType == PropertyType.REFERENCE || propertyType == PropertyType.WEAKREFERENCE)) {
+                            try {
+                                AbstractJcrNode parentNode = parentHandler.node();
+                                value = NodeKey.isValidFormat(value) && !parentNode.isRoot() ? value : parentNode.key().withId(value).toString();
+                                values.add(valueFor(value, propertyType));
+                            } catch (SAXException e) {
+                                throw new EnclosingSAXException(e);
+                            }
                         } else if (value != null && value.length() > 0) {
                             values.add(valueFor(value, propertyType));
                         }
@@ -633,7 +641,8 @@ class JcrContentHandler extends DefaultHandler {
                 List<Value> rawUuid = properties.get(JcrLexicon.UUID);
                 if (rawUuid != null) {
                     assert rawUuid.size() == 1;
-                    key = parent.key().withId(rawUuid.get(0).getString());
+                    String uuid = rawUuid.get(0).getString();
+                    key = NodeKey.isValidFormat(uuid) && !parent.isRoot() ? new NodeKey(uuid) : parent.key().withId(uuid);
 
                     try {
                         // Deal with any existing node ...

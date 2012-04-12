@@ -756,22 +756,6 @@ public class JcrSession implements Session {
 
         SessionCache sessionCache = cache();
 
-        //check whether the parent definition allows children which match the source
-        JcrNodeDefinition childDefinition = nodeTypes().findChildNodeDefinition(destParentNode.getPrimaryTypeName(),
-                                                                                destParentNode.getMixinTypeNames(),
-                                                                                srcNode.name(),
-                                                                                srcNode.getPrimaryTypeName(),
-                                                                                0,
-                                                                                true);
-        if (childDefinition == null) {
-            throw new ConstraintViolationException(JcrI18n.noChildNodeDefinition.text(srcNode.name(), destParentNode.location(),
-                                                                                      destParentNode.getPrimaryTypeName(),
-                                                                                      destParentNode.getMixinTypeNames()));
-        }
-
-        //Check whether the destination parent already has a child with the same name and allows SNS (TCK)
-        checkSnsAreAllowed(srcNode, destParentNode);
-
         // Check whether these nodes are locked ...
         if (srcNode.isLocked() && !srcNode.getLock().isLockOwningSession()) {
             javax.jcr.lock.Lock sourceLock = srcNode.getLock();
@@ -795,6 +779,10 @@ public class JcrSession implements Session {
             throw new VersionException(JcrI18n.nodeIsCheckedIn.text(destParentNode.getPath()));
         }
 
+        //check whether the parent definition allows children which match the source
+        destParentNode.validateChildNodeDefinition(srcNode.name(),
+                                                   srcNode.getPrimaryTypeName(), true);
+
         try {
             MutableCachedNode mutableSrcParent = srcParent.mutable();
             MutableCachedNode mutableDestParent = destParentNode.mutable();
@@ -809,29 +797,6 @@ public class JcrSession implements Session {
             // Not expected ...
             String msg = JcrI18n.nodeNotFound.text(stringFactory().create(srcPath.getParent()), workspaceName());
             throw new PathNotFoundException(msg);
-        }
-    }
-
-    private void checkSnsAreAllowed( AbstractJcrNode srcNode,
-                                     AbstractJcrNode parentNode ) throws RepositoryException {
-        SessionCache sessionCache = cache();
-        ChildReferences childReferences = parentNode.node().getChildReferences(sessionCache);
-
-        boolean hasChildWithSameName = false;
-        for (ChildReference childReference : childReferences) {
-            if (childReference.getName().equals(srcNode.name()) && !childReference.getKey().equals(srcNode.key())) {
-                hasChildWithSameName = true;
-                break;
-            }
-        }
-
-        if (hasChildWithSameName) {
-            boolean allowsSns = nodeTypes().findChildNodeDefinition(parentNode.getPrimaryTypeName(), null, srcNode.name(),
-                                                                    srcNode.getPrimaryTypeName(), 2, true) != null;
-            if (!allowsSns) {
-                String msg = JcrI18n.noSnsDefinitionForNode.text(parentNode.path().getParent(), workspaceName());
-                throw new ItemExistsException(msg);
-            }
         }
     }
 
@@ -895,19 +860,6 @@ public class JcrSession implements Session {
         }
 
         SessionCache sessionCache = cache();
-
-        //validate possible SNS
-        for (NodeKey changedNodeKey : sessionCache.getChangedNodeKeys()) {
-            CachedNode changedNode = sessionCache.getNode(changedNodeKey);
-            if (changedNode == null) {
-                //must've been removed
-                continue;
-            }
-            AbstractJcrNode changedJcrNode = node(changedNode, (Type)null);
-            if (changedJcrNode.isNew()) {
-                checkSnsAreAllowed(changedJcrNode, changedJcrNode.getParent());
-            }
-        }
 
         // Perform the save, using 'JcrPreSave' operations ...
         SessionCache systemCache = createSystemCache(false);
