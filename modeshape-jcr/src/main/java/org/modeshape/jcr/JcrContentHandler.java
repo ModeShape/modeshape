@@ -125,6 +125,7 @@ class JcrContentHandler extends DefaultHandler {
                || uuidBehavior == ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW;
 
         this.session = session;
+        this.session.initBaseVersionKeys();
         this.context = this.session.context();
         this.namespaces = context.getNamespaceRegistry();
         this.nameFactory = context.getValueFactories().getNameFactory();

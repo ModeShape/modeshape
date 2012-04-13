@@ -623,6 +623,16 @@ public class SessionNode implements MutableCachedNode {
     }
 
     @Override
+    public void setPropertyIfUnchanged( SessionCache cache,
+                                        Property property ) {
+        Name propertyName = property.getName();
+        boolean isModified = changedProperties.containsKey(propertyName) && (isNew || isPropertyInWorkspaceCache(cache, propertyName));
+        if (!isModified) {
+            setProperty(cache, property);
+        }
+    }
+
+    @Override
     public void setProperties( SessionCache cache,
                                Iterable<Property> properties ) {
         writableSession(cache).assertInSession(this);

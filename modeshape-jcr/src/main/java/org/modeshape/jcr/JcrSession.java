@@ -1093,9 +1093,12 @@ public class JcrSession implements Session {
         boolean retainLifecycleInfo = getRepository().getDescriptorValue(Repository.OPTION_LIFECYCLE_SUPPORTED).getBoolean();
         boolean retainRetentionInfo = getRepository().getDescriptorValue(Repository.OPTION_RETENTION_SUPPORTED).getBoolean();
 
+        return new JcrContentHandler(this, parent, uuidBehavior, false, retainRetentionInfo, retainLifecycleInfo);
+    }
+
+    protected void initBaseVersionKeys() {
         // Since we're importing into this session, we need to capture any base version information in the imported file ...
         baseVersionKeys.compareAndSet(null, new ConcurrentHashMap<NodeKey, NodeKey>());
-        return new JcrContentHandler(this, parent, uuidBehavior, false, retainRetentionInfo, retainLifecycleInfo);
     }
 
     @Override
@@ -1382,9 +1385,9 @@ public class JcrSession implements Session {
             boolean initializeVersionHistory = false;
             if (node.isNew()) {
                 if (nodeTypeCapabilities.isCreated(primaryType, mixinTypes)) {
-                    // Set the created by and time information ...
-                    node.setProperty(cache, propertyFactory.create(JcrLexicon.CREATED, context.getTime()));
-                    node.setProperty(cache, propertyFactory.create(JcrLexicon.CREATED_BY, context.getUserId()));
+                    // Set the created by and time information if not changed explicitly
+                    node.setPropertyIfUnchanged(cache, propertyFactory.create(JcrLexicon.CREATED, context.getTime()));
+                    node.setPropertyIfUnchanged(cache, propertyFactory.create(JcrLexicon.CREATED_BY, context.getUserId()));
                 }
                 initializeVersionHistory = nodeTypeCapabilities.isVersionable(primaryType, mixinTypes);
             } else {
@@ -1398,9 +1401,9 @@ public class JcrSession implements Session {
             // mix:lastModified
             // ----------------
             if (nodeTypeCapabilities.isLastModified(primaryType, mixinTypes)) {
-                // Set the last modified by and time information ...
-                node.setProperty(cache, propertyFactory.create(JcrLexicon.LAST_MODIFIED, context.getTime()));
-                node.setProperty(cache, propertyFactory.create(JcrLexicon.LAST_MODIFIED_BY, context.getUserId()));
+                // Set the last modified by and time information if it has not been changed explicitly
+                node.setPropertyIfUnchanged(cache, propertyFactory.create(JcrLexicon.LAST_MODIFIED, context.getTime()));
+                node.setPropertyIfUnchanged(cache, propertyFactory.create(JcrLexicon.LAST_MODIFIED_BY, context.getUserId()));
             }
 
             // ---------------
@@ -1413,16 +1416,30 @@ public class JcrSession implements Session {
                     // Initialize the version history ...
                     NodeKey historyKey = systemContent.versionHistoryNodeKeyFor(versionableKey);
                     NodeKey baseVersionKey = baseVersionKeys == null ? null : baseVersionKeys.get(versionableKey);
-                    if (baseVersionKey == null) baseVersionKey = historyKey.withRandomId();
-                    Path versionHistoryPath = versionManager.versionHistoryPathFor(versionableKey);
-                    systemContent.initializeVersionStorage(versionableKey,
-                                                           historyKey,
-                                                           baseVersionKey,
-                                                           primaryType,
-                                                           mixinTypes,
-                                                           versionHistoryPath,
-                                                           null,
-                                                           context.getTime());
+                    //it may happen during an import, that a node with version history & base version is assigned a new key and therefore
+                    //the base version points to an existing version while no version history is found initially
+                    boolean shouldCreateNewVersionHistory = true;
+                    if (baseVersionKey != null){
+                        SessionCache systemCache = systemContent.cache();
+                        CachedNode baseVersionNode = systemCache.getNode(baseVersionKey);
+                        if (baseVersionNode != null) {
+                            historyKey = baseVersionNode.getParentKey(systemCache);
+                            shouldCreateNewVersionHistory = (historyKey == null);
+                        }
+                    }
+                    if (shouldCreateNewVersionHistory) {
+                        //a new version history should be initialized
+                        if (baseVersionKey == null) baseVersionKey = historyKey.withRandomId();
+                        Path versionHistoryPath = versionManager.versionHistoryPathFor(versionableKey);
+                        systemContent.initializeVersionStorage(versionableKey,
+                                                               historyKey,
+                                                               baseVersionKey,
+                                                               primaryType,
+                                                               mixinTypes,
+                                                               versionHistoryPath,
+                                                               null,
+                                                               context.getTime());
+                    }
 
                     // Now update the node as if it's checked in ...
                     Reference historyRef = referenceFactory.create(historyKey);

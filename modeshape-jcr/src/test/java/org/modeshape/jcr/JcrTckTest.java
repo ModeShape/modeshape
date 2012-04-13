@@ -220,9 +220,9 @@ public class JcrTckTest {
 
         // Or uncomment the following lines to execute the different sets/suites of tests ...
         TestSuite suite = new TestSuite("JCR 2.0 API tests");
-
         suite.addTest(levelOneSuite());
         suite.addTest(levelTwoSuite());
+        suite.addTest(levelTwoSuiteWIP());
 //        suite.addTest(new OptionalFeatureTests());
 
         return suite;
@@ -280,6 +280,37 @@ public class JcrTckTest {
         return suite;
     }
 
+    private static TestSuite levelTwoSuiteWIP() {
+        TestSuite suite = new TestSuite("JCR Level 2 API WIP Tests");
+                suite.addTestSuite(SerializationTest.class);
+        //
+        //        suite.addTestSuite(ValueFactoryTest.class);
+        //
+        // JCR 2.0
+        //        suite.addTestSuite(NodeTypeCreationTest.class);
+
+        // // new node types
+        //        suite.addTestSuite(GetWeakReferencesTest.class);
+
+        // // new Session features
+        //        suite.addTestSuite(SessionRemoveItemTest.class);
+        //        suite.addTestSuite(HasPermissionTest.class);
+
+        // // new Workspace features
+        //        suite.addTestSuite(WorkspaceTest.class);
+
+        // // shareable nodes
+        //        suite.addTestSuite(ShareableNodeTest.class);
+
+        // repository factory
+        //        suite.addTestSuite(RepositoryFactoryTest.class);
+
+        // lifecycle management
+        //        suite.addTestSuite(LifecycleTest.class);
+        return suite;
+    }
+
+
     /**
      * Test suite that includes the Level 2 JCR TCK API tests from the Jackrabbit project.
      *
@@ -287,7 +318,6 @@ public class JcrTckTest {
      */
     private static TestSuite levelTwoSuite() {
         TestSuite suite = new TestSuite("JCR Level 2 API Tests");
-
 
         suite.addTestSuite(AddNodeTest.class);
         suite.addTestSuite(NamespaceRegistryTest.class);
@@ -382,32 +412,6 @@ public class JcrTckTest {
 //        suite.addTestSuite(WorkspaceMoveSameNameSibsTest.class);
 //        suite.addTestSuite(WorkspaceMoveVersionableTest.class);
 //
-//
-//        suite.addTestSuite(SerializationTest.class);
-//
-//        suite.addTestSuite(ValueFactoryTest.class);
-//
-        // JCR 2.0
-//        suite.addTestSuite(NodeTypeCreationTest.class);
-
-        // // new node types
-//        suite.addTestSuite(GetWeakReferencesTest.class);
-
-        // // new Session features
-//        suite.addTestSuite(SessionRemoveItemTest.class);
-//        suite.addTestSuite(HasPermissionTest.class);
-
-        // // new Workspace features
-//        suite.addTestSuite(WorkspaceTest.class);
-
-        // // shareable nodes
-//        suite.addTestSuite(ShareableNodeTest.class);
-
-        // repository factory
-//        suite.addTestSuite(RepositoryFactoryTest.class);
-
-        // lifecycle management
-//        suite.addTestSuite(LifecycleTest.class);
         return suite;
     }
 
