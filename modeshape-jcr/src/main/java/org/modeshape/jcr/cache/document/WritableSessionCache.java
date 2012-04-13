@@ -54,6 +54,7 @@ import org.modeshape.common.util.Logger;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrLexicon;
+import org.modeshape.jcr.ModeShapeLexicon;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.CachedNode.ReferenceType;
@@ -679,7 +680,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     removedNodes.add(key);
                     // Note 1: Do not actually remove the document from the database yet; see below (note 2)
                 }
-                // Otherwise, the removed node was created in the session (but not ever persisteD),
+                // Otherwise, the removed node was created in the session (but not ever persisted),
                 // so we don't have to do anything ...
             } else {
                 CachedNode persisted = null;
@@ -750,14 +751,21 @@ public class WritableSessionCache extends AbstractSessionCache {
                 LockChange lockChange = node.getLockChange();
                 if (lockChange != null) {
                     boolean success = true;
+                    //changes for the lock should be recorded not from the system ws, but from the node on which the locking occurred
                     switch (lockChange) {
                         case LOCK_FOR_SESSION:
                             success = translator.lock(doc, userId, true);
+                            changes.propertyAdded(key, newPath, translator.getProperty(doc, JcrLexicon.LOCK_IS_DEEP));
+                            changes.propertyAdded(key, newPath, translator.getProperty(doc, JcrLexicon.LOCK_OWNER));
                             break;
                         case LOCK_FOR_NON_SESSION:
                             success = translator.lock(doc, userId, false);
+                            changes.propertyAdded(key, newPath, translator.getProperty(doc, JcrLexicon.LOCK_IS_DEEP));
+                            changes.propertyAdded(key, newPath, translator.getProperty(doc, JcrLexicon.LOCK_OWNER));
                             break;
                         case UNLOCK:
+                            changes.propertyRemoved(key, newPath, translator.getProperty(doc, JcrLexicon.LOCK_IS_DEEP));
+                            changes.propertyRemoved(key, newPath, translator.getProperty(doc, JcrLexicon.LOCK_OWNER));
                             translator.unlock(doc);
                             break;
                     }
@@ -782,8 +790,8 @@ public class WritableSessionCache extends AbstractSessionCache {
                     }
                 }
 
-                // Save the changes to the properties ...
-                if (!node.changedProperties().isEmpty()) {
+                // Save the changes to the properties with the exception of locks. Locks are treated different because of the TCK (see above)
+                if (!node.changedProperties().isEmpty() && !ModeShapeLexicon.LOCK.equals(node.getPrimaryType(this))) {
                     if (!node.isNew() && persisted == null) {
                         persisted = workspaceCache.getNode(key);
                     }

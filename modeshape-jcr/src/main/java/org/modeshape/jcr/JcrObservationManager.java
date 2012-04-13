@@ -817,6 +817,9 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                 return;
             }
             AbstractNodeChange nodeChange = (AbstractNodeChange)change;
+            if (logger.isDebugEnabled()) {
+                logger.debug("Received change: " + nodeChange);
+            }
 
             if (shouldReject(nodeChange)) {
                 return;

@@ -691,7 +691,11 @@ public class JcrSession implements Session {
         checkLive();
         CheckArg.isNotEmpty(absPath, "absPath");
         Path absolutePath = absolutePathFor(absPath);
-        return node(absolutePath) != null;
+        try {
+            return node(absolutePath) != null;
+        } catch (PathNotFoundException e) {
+            return false;
+        }
     }
 
     @Override

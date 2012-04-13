@@ -346,7 +346,8 @@ public class SessionNode implements MutableCachedNode {
     public Name getPrimaryType( NodeCache cache ) {
         AbstractSessionCache session = session(cache);
         Property prop = getProperty(JcrLexicon.PRIMARY_TYPE, session);
-        return session.nameFactory().create(prop.getFirstValue());
+        NameFactory nameFactory = session.nameFactory();
+        return prop != null ? nameFactory.create(prop.getFirstValue()) : nameFactory.create((Object) null);
     }
 
     @Override

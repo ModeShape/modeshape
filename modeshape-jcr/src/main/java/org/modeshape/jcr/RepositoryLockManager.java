@@ -200,7 +200,7 @@ class RepositoryLockManager implements ChangeSetListener {
             DateTime expirationDate = dateFactory.create().plus(expirationTimeInMillis, TimeUnit.MILLISECONDS);
             system.storeLock(session, lock, expirationDate);
 
-            // Udpdate the persistent node ...
+            // Update the persistent node ...
             SessionCache lockingSession = session.spawnSessionCache(false);
             MutableCachedNode lockedNode = lockingSession.mutable(nodeKey);
             lockedNode.lock(isSessionScoped);
