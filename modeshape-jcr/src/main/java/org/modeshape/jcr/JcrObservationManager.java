@@ -27,6 +27,7 @@ import org.modeshape.jcr.cache.change.ChangeSetListener;
 import org.modeshape.jcr.cache.change.NodeAdded;
 import org.modeshape.jcr.cache.change.NodeMoved;
 import org.modeshape.jcr.cache.change.NodeRemoved;
+import org.modeshape.jcr.cache.change.NodeRenamed;
 import org.modeshape.jcr.cache.change.NodeReordered;
 import org.modeshape.jcr.cache.change.NodeSequenced;
 import org.modeshape.jcr.cache.change.Observable;
@@ -652,7 +653,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
          * @see javax.jcr.observation.Event#getInfo()
          */
         public Map<String, String> getInfo() {
-            return Collections.unmodifiableMap(info);
+            return info != null ? Collections.unmodifiableMap(info) : Collections.<String, String>emptyMap();
         }
 
         /**
@@ -833,15 +834,12 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
             if (nodeChange instanceof NodeMoved) {
                 NodeMoved nodeMovedChange = (NodeMoved)nodeChange;
                 Path oldPath = nodeMovedChange.getOldPath();
-                if (eventListenedFor(Event.NODE_MOVED)) {
-                    Map<String, String> info = new HashMap<String, String>();
-                    info.put(MOVE_FROM_KEY, stringFor(oldPath));
-                    info.put(MOVE_TO_KEY, stringFor(newPath));
+                fireNodeMoved(events, bundle, newPath, nodeId, oldPath);
 
-                    events.add(new JcrEvent(bundle, Event.NODE_MOVED, stringFor(newPath), nodeId, Collections.unmodifiableMap(
-                            info)));
-                }
-                fireExtraEventsForMove(events, bundle, newPath, nodeId, oldPath);
+            } else if (nodeChange instanceof NodeRenamed) {
+                NodeRenamed nodeRenamedChange = (NodeRenamed) nodeChange;
+                Path oldPath = pathFactory().create(newPath.subpath(0, newPath.size() - 1), nodeRenamedChange.getOldSegment());
+                fireNodeMoved(events, bundle, newPath, nodeId, oldPath);
 
             } else if (nodeChange instanceof NodeReordered) {
                 NodeReordered nodeReordered = (NodeReordered)nodeChange;
@@ -893,6 +891,22 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                 
                 events.add(new JcrEvent(bundle, NODE_SEQUENCED, stringFor(sequencedChange.getPath()), nodeId, infoMap));
             }
+        }
+
+        private void fireNodeMoved( Collection<Event> events,
+                                    JcrEventBundle bundle,
+                                    Path newPath,
+                                    String nodeId,
+                                    Path oldPath ) {
+            if (eventListenedFor(Event.NODE_MOVED)) {
+                Map<String, String> info = new HashMap<String, String>();
+                info.put(MOVE_FROM_KEY, stringFor(oldPath));
+                info.put(MOVE_TO_KEY, stringFor(newPath));
+
+                events.add(new JcrEvent(bundle, Event.NODE_MOVED, stringFor(newPath), nodeId, Collections.unmodifiableMap(
+                        info)));
+            }
+            fireExtraEventsForMove(events, bundle, newPath, nodeId, oldPath);
         }
 
         private void fireExtraEventsForMove( Collection<Event> events,

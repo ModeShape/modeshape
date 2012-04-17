@@ -6,6 +6,8 @@
 <mix = "http://www.jcp.org/jcr/mix/1.0">
 <modetest = "http://www.modeshape.org/test/1.0">
 
+[modetest:noChildren]
+
 [modetest:noSameNameSibs]
 + * (nt:base) = nt:unstructured
 

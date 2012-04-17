@@ -226,7 +226,6 @@ public class JcrTckTest {
         TestSuite suite = new TestSuite("JCR 2.0 API tests");
         suite.addTest(levelOneSuite());
         suite.addTest(levelTwoSuite());
-        suite.addTest(levelTwoSuiteWIP());
         suite.addTest(new OptionalFeatureTests());
 
         return suite;
@@ -429,14 +428,15 @@ public class JcrTckTest {
         protected OptionalFeatureTests() {
             super("JCR Optional API Tests");
             // We currently don't pass the tests in those suites that are commented out
-//            addTest(new QueryTests());
             addTest(new ObservationTests());
-
 //            addTest(org.apache.jackrabbit.test.api.observation.TestAll.suite());
+
 //            addTest(org.apache.jackrabbit.test.api.version.TestAll.suite());
 //            addTest(new FullVersioningTests());
+
 //            addTest(org.apache.jackrabbit.test.api.lock.TestAll.suite());
 //            addTest(org.apache.jackrabbit.test.api.util.TestAll.suite());
+            //            addTest(new QueryTests());
             // addTest(org.apache.jackrabbit.test.api.query.TestAll.suite());
         }
     }
@@ -500,23 +500,24 @@ public class JcrTckTest {
             addTestSuite(EventTest.class);
             addTestSuite(GetRegisteredEventListenersTest.class);
             addTestSuite(LockingTest.class);
-//            addTestSuite(NodeAddedTest.class);
-//            addTestSuite(NodeRemovedTest.class); // see https://issues.apache.org/jira/browse/JCR-2661
-//            addTestSuite(NodeMovedTest.class);
-//            addTestSuite(NodeReorderTest.class);
-//            addTestSuite(PropertyAddedTest.class);
-//            addTestSuite(PropertyChangedTest.class);
-//            addTestSuite(PropertyRemovedTest.class);
-//            addTestSuite(AddEventListenerTest.class);
-//            addTestSuite(WorkspaceOperationTest.class); // see https://issues.apache.org/jira/browse/JCR-2661
+            addTestSuite(NodeAddedTest.class);
+            addTestSuite(NodeRemovedTest.class);
+            addTestSuite(NodeMovedTest.class);
+            addTestSuite(NodeReorderTest.class);
+            addTestSuite(PropertyAddedTest.class);
+            addTestSuite(PropertyChangedTest.class);
+            addTestSuite(PropertyRemovedTest.class);
+            addTestSuite(AddEventListenerTest.class);
+
+            //TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1312
+            //addTestSuite(WorkspaceOperationTest.class);
 
             // JCR 2.0
-
-//            addTestSuite(EventJournalTest.class); // see https://issues.apache.org/jira/browse/JCR-2662
-//            addTestSuite(GetDateTest.class);
-//            addTestSuite(GetIdentifierTest.class);
-//            addTestSuite(GetInfoTest.class);
-//            addTestSuite(GetUserDataTest.class);
+            //addTestSuite(EventJournalTest.class); // see https://issues.apache.org/jira/browse/JCR-2662
+            addTestSuite(GetDateTest.class);
+            addTestSuite(GetIdentifierTest.class);
+            addTestSuite(GetInfoTest.class);
+            addTestSuite(GetUserDataTest.class);
         }
     }
 

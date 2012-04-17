@@ -216,22 +216,24 @@ public class WritableSessionCache extends AbstractSessionCache {
         try {
             readLock.lock();
             for (Map.Entry<NodeKey, SessionNode> entry : changedNodes.entrySet()) {
-                SessionNode changedNode = entry.getValue();
-                boolean shouldAddNode = false;
-                if (changedNode == REMOVED) {
-                    if (!changedNodes.containsKey(srcNode.getKey())) {
-                        //the source node isn't in this session, so we can't really check whether this is its child
+                SessionNode changedNodeThisSession = entry.getValue();
+                NodeKey changedNodeKey = entry.getKey();
+                Path changedNodePath = null;
+
+                if (changedNodeThisSession == REMOVED) {
+                    CachedNode persistentRemovedNode = workspaceCache.getNode(changedNodeKey);
+                    if (persistentRemovedNode == null) {
+                        //the node has been removed without having been persisted previously, so we'll take it into account
+                        result.add(changedNodeKey);
                         continue;
                     }
-                    SessionNode sessionNode = changedNodes.get(srcNode.getKey());
-                    //Not nice at all - there should be a better way - hasChild explicitly excludes removed children
-                    shouldAddNode = sessionNode.changedChildren().isRemoved(new ChildReference(entry.getKey(), null));
+                    changedNodePath = persistentRemovedNode.getPath(this);
                 } else {
-                    Path changedPath = changedNode.getPath(this);
-                    shouldAddNode = changedPath.isAtOrBelow(sourcePath);
+                    changedNodePath = changedNodeThisSession.getPath(this);
                 }
-                if (shouldAddNode) {
-                    result.add(entry.getKey());
+
+                if (changedNodePath != null && changedNodePath.isAtOrBelow(sourcePath)) {
+                    result.add(changedNodeKey);
                 }
             }
             return result;

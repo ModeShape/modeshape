@@ -612,6 +612,7 @@ class JcrContentHandler extends DefaultHandler {
                         } else if (value != null && (propertyType == PropertyType.REFERENCE || propertyType == PropertyType.WEAKREFERENCE)) {
                             try {
                                 AbstractJcrNode parentNode = parentHandler.node();
+                                //TODO author=Horia Chiorean date=4/16/12 description=Not sure why, but if the parent is the root node, we need its information in the key of this node
                                 value = NodeKey.isValidFormat(value) && !parentNode.isRoot() ? value : parentNode.key().withId(value).toString();
                                 values.add(valueFor(value, propertyType));
                             } catch (SAXException e) {
@@ -643,6 +644,7 @@ class JcrContentHandler extends DefaultHandler {
                 if (rawUuid != null) {
                     assert rawUuid.size() == 1;
                     String uuid = rawUuid.get(0).getString();
+                    //TODO author=Horia Chiorean date=4/16/12 description=Not sure why, but if the parent is the root node, we need its information in the key of this node
                     key = NodeKey.isValidFormat(uuid) && !parent.isRoot() ? new NodeKey(uuid) : parent.key().withId(uuid);
 
                     try {
