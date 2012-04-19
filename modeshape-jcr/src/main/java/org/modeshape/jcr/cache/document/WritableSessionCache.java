@@ -23,9 +23,9 @@
  */
 package org.modeshape.jcr.cache.document;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -182,17 +182,38 @@ public class WritableSessionCache extends AbstractSessionCache {
         Lock lock = this.lock.writeLock();
         try {
             lock.lock();
-            Iterator<Map.Entry<NodeKey, SessionNode>> iter = changedNodes.entrySet().iterator();
-            while (iter.hasNext()) {
-                Map.Entry<NodeKey, SessionNode> entry = iter.next();
-                SessionNode changedNode = entry.getValue();
-                if (changedNode == node) iter.remove();
-                Path changedPath = changedNode.getPath(this);
-                if (changedPath.isAtOrBelow(nodePath)) iter.remove();
+            //we must first remove the children and only then the parents, otherwise child paths won't be found
+            List<SessionNode> nodesToRemoveInOrder = getChangedNodesAtOrBelowChildrenFirst(nodePath);
+            for (SessionNode nodeToRemove : nodesToRemoveInOrder) {
+                changedNodes.remove(nodeToRemove.getKey());
             }
         } finally {
             lock.unlock();
         }
+    }
+
+    /**
+     * Returns the list of changed nodes at or below the given path, starting with the children.
+     */
+    private List<SessionNode> getChangedNodesAtOrBelowChildrenFirst( Path nodePath ) {
+        List<SessionNode> changedNodesChildrenFirst = new ArrayList<SessionNode>();
+        for (NodeKey key : changedNodes.keySet()) {
+            SessionNode changedNode = changedNodes.get(key);
+            Path changedNodePath = changedNode.getPath(this);
+            if (!changedNodePath.isAtOrBelow(nodePath)) {
+                continue;
+            }
+
+            int insertIndex = changedNodesChildrenFirst.size();
+            for (int i = 0; i < changedNodesChildrenFirst.size(); i++) {
+                if (changedNodesChildrenFirst.get(i).getPath(this).isAncestorOf(changedNodePath)) {
+                    insertIndex = i;
+                    break;
+                }
+            }
+            changedNodesChildrenFirst.add(insertIndex, changedNode);
+        }
+        return changedNodesChildrenFirst;
     }
 
     @Override
