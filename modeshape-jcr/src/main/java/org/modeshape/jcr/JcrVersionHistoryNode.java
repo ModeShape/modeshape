@@ -48,10 +48,12 @@ import javax.jcr.version.VersionHistory;
 import javax.jcr.version.VersionIterator;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
+import org.modeshape.jcr.value.Reference;
 
 /**
  * Convenience wrapper around a version history {@link JcrNode node}.
@@ -103,7 +105,7 @@ final class JcrVersionHistoryNode extends JcrSystemNode implements VersionHistor
     @Override
     public JcrVersionNode getVersionByLabel( String label ) throws VersionException, RepositoryException {
         try {
-            javax.jcr.Property prop = versionLabels().getProperty(label);
+            javax.jcr.Property prop = versionLabels().getProperty(nameFrom(label));
             return (JcrVersionNode)prop.getNode();
         } catch (PathNotFoundException e) {
             throw new VersionException(JcrI18n.invalidVersionLabel.text(label, getPath()));
@@ -178,10 +180,70 @@ final class JcrVersionHistoryNode extends JcrSystemNode implements VersionHistor
         JcrVersionNode version = getVersion(versionName);
         assert version.getParent() == this;
 
-        /*
-         * Verify that the only references to this version are from its predecessors and successors in the version history.
-         */
-        for (PropertyIterator iter = version.getReferences(); iter.hasNext();) {
+        validateIncomingReferences(version);
+
+        String versionId = version.getIdentifier();
+
+        // Get the predecessors and successors for the version being removed ...
+        AbstractJcrProperty predecessors = version.getProperty(JcrLexicon.PREDECESSORS);
+        AbstractJcrProperty successors = version.getProperty(JcrLexicon.SUCCESSORS);
+
+        SessionCache system = session.createSystemCache(false);
+
+        // Remove the reference to the dead version from the successors property of all the predecessors
+        Set<JcrValue> addedValues = new HashSet<JcrValue>();
+        for (Value predecessorValue : predecessors.getValues()) {
+            addedValues.clear();
+            List<JcrValue> newNodeSuccessors = new ArrayList<JcrValue>();
+
+            // Add each of the successors from the version's predecessor ...
+            AbstractJcrNode predecessor = session().getNodeByIdentifier(predecessorValue.getString());
+            MutableCachedNode predecessorSystem = system.mutable(predecessor.key());
+
+            JcrValue[] nodeSuccessors = predecessor.getProperty(JcrLexicon.SUCCESSORS).getValues();
+            addValuesNotInSet(nodeSuccessors, newNodeSuccessors, versionId, addedValues);
+
+            // Add each of the successors from the version being removed ...
+            addValuesNotInSet(successors.getValues(), newNodeSuccessors, versionId, addedValues);
+
+            // Set the property ...
+            Object[] newSuccessorReferences = extractValues(newNodeSuccessors);
+            predecessorSystem.setProperty(system, session.propertyFactory().create(JcrLexicon.SUCCESSORS,
+                                                                                   newSuccessorReferences));
+            addedValues.clear();
+        }
+
+        // Remove the reference to the dead version from the predecessors property of all the successors
+        for (Value successorUuid : successors.getValues()) {
+            addedValues.clear();
+            List<JcrValue> newNodePredecessors = new ArrayList<JcrValue>();
+
+            // Add each of the predecessors from the version's successor ...
+            AbstractJcrNode successor = session().getNodeByIdentifier(successorUuid.getString());
+            MutableCachedNode successorSystem = system.mutable(successor.key());
+
+            JcrValue[] nodePredecessors = successor.getProperty(JcrLexicon.PREDECESSORS).getValues();
+            addValuesNotInSet(nodePredecessors, newNodePredecessors, versionId, addedValues);
+
+            // Add each of the predecessors from the version being removed ...
+            addValuesNotInSet(predecessors.getValues(), newNodePredecessors, versionId, addedValues);
+
+            // Set the property ...
+            Object[] newPredecessorReferences = extractValues(newNodePredecessors);
+            successorSystem.setProperty(system, session.propertyFactory().create(JcrLexicon.PREDECESSORS,
+                                                                                 newPredecessorReferences));
+        }
+
+        system.mutable(key).removeChild(system, version.key);
+        system.destroy(version.key);
+        system.save();
+    }
+
+    /*
+    * Verify that the only references to this version are from its predecessors and successors in the version history.
+    */
+    private void validateIncomingReferences( JcrVersionNode version ) throws RepositoryException {
+        for (PropertyIterator iter = version.getReferences(); iter.hasNext(); ) {
             AbstractJcrProperty prop = (AbstractJcrProperty)iter.next();
             AbstractJcrNode referrer = prop.getParent();
 
@@ -193,56 +255,14 @@ final class JcrVersionHistoryNode extends JcrSystemNode implements VersionHistor
                 throw new ReferentialIntegrityException(JcrI18n.cannotRemoveVersion.text(prop.getPath()));
             }
         }
+    }
 
-        String versionId = version.getIdentifier();
-
-        // Get the predecessors and successors for the version being removed ...
-        AbstractJcrProperty predecessors = version.getProperty(JcrLexicon.PREDECESSORS);
-        AbstractJcrProperty successors = version.getProperty(JcrLexicon.SUCCESSORS);
-
-        // Remove the reference to the dead version from the successors property of all the predecessors
-        Set<JcrValue> addedValues = new HashSet<JcrValue>();
-        for (Value predecessorValue : predecessors.getValues()) {
-            addedValues.clear();
-            List<JcrValue> newNodeSuccessors = new ArrayList<JcrValue>();
-
-            // Add each of the successors from the version's predecessor ...
-            AbstractJcrNode predecessor = session().getNodeByIdentifier(predecessorValue.getString());
-            JcrValue[] nodeSuccessors = predecessor.getProperty(JcrLexicon.SUCCESSORS).getValues();
-            addValuesNotInSet(nodeSuccessors, newNodeSuccessors, versionId, addedValues);
-
-            // Add each of the successors from the version being removed ...
-            addValuesNotInSet(successors.getValues(), newNodeSuccessors, versionId, addedValues);
-
-            // Set the property ...
-            JcrValue[] newSuccessors = newNodeSuccessors.toArray(new JcrValue[newNodeSuccessors.size()]);
-            predecessor.setProperty(JcrLexicon.SUCCESSORS, newSuccessors, PropertyType.REFERENCE, false);
-            addedValues.clear();
+    private Object[] extractValues( List<JcrValue> values ) {
+        Object[] newSuccessorReferences = new Object[values.size()];
+        for (int i = 0; i < values.size(); i++) {
+            newSuccessorReferences[i] = values.get(i).value();
         }
-
-        // Remove the reference to the dead version from the predecessors property of all the successors
-        for (Value successorUuid : successors.getValues()) {
-            addedValues.clear();
-            List<JcrValue> newNodePredecessors = new ArrayList<JcrValue>();
-
-            // Add each of the predecessors from the version's successor ...
-            AbstractJcrNode successor = session().getNodeByIdentifier(successorUuid.getString());
-            JcrValue[] nodePredecessors = successor.getProperty(JcrLexicon.PREDECESSORS).getValues();
-            addValuesNotInSet(nodePredecessors, newNodePredecessors, versionId, addedValues);
-
-            // Add each of the predecessors from the version being removed ...
-            addValuesNotInSet(predecessors.getValues(), newNodePredecessors, versionId, addedValues);
-
-            // Set the property ...
-            JcrValue[] newPredecessors = newNodePredecessors.toArray(new JcrValue[newNodePredecessors.size()]);
-            successor.setProperty(JcrLexicon.PREDECESSORS, newPredecessors, PropertyType.REFERENCE, false);
-        }
-
-        // Use a separate system session to destroy the version ...
-        SessionCache system = session.createSystemCache(false);
-        mutable().removeChild(system, key);
-        system.destroy(key);
-        system.save();
+        return newSuccessorReferences;
     }
 
     private void addValuesNotInSet( JcrValue[] values,
@@ -275,8 +295,9 @@ final class JcrVersionHistoryNode extends JcrSystemNode implements VersionHistor
 
         // Use a separate system session to set the REFERENCE property on the 'nt:versionLabels' child node ...
         SessionCache system = session.createSystemCache(false);
-        Property ref = session.propertyFactory().create(nameFrom(label), version.key());
-        versionLabels.mutable().setProperty(system, ref);
+        Reference labelReference = session.referenceFactory().create(version.key());
+        Property ref = session.propertyFactory().create(nameFrom(label), labelReference);
+        system.mutable(versionLabels.key()).setProperty(system, ref);
         system.save();
     }
 
@@ -295,7 +316,7 @@ final class JcrVersionHistoryNode extends JcrSystemNode implements VersionHistor
 
         // Use a separate system session to remove the REFERENCE property on the 'nt:versionLabels' child node ...
         SessionCache system = session.createSystemCache(false);
-        versionLabels.mutable().removeProperty(system, propName);
+        system.mutable(versionLabels.key()).removeProperty(system, propName);
         system.save();
     }
 

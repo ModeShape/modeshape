@@ -1580,7 +1580,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         int requiredType = defn.getRequiredType();
         if (requiredType == PropertyType.REFERENCE || requiredType == PropertyType.WEAKREFERENCE) {
             // Check that the REFERENCE value satisfies the constraints ...
-            if (!defn.canCastToTypeAndSatisfyConstraints(value, session)) {
+            if (!skipReferenceValidation && !defn.canCastToTypeAndSatisfyConstraints(value, session)) {
                 // The REFERENCE value did not satisfy the constraints ...
                 String propName = readable(name);
                 String defnName = defn.getName();
@@ -1617,6 +1617,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     }
 
     /**
+     * Sets a multi valued property, skipping over protected ones.
+     *
      * @param name the name of the property; may not be null
      * @param values the values of the property; may not be null
      * @param jcrPropertyType the expected property type; may be {@link PropertyType#UNDEFINED} if the values should not be
@@ -1631,6 +1633,30 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     final AbstractJcrProperty setProperty( Name name,
                                            Value[] values,
                                            int jcrPropertyType,
+                                           boolean skipReferenceValidation )
+        throws VersionException, LockException, ConstraintViolationException, RepositoryException {
+        return setProperty(name, values, jcrPropertyType, false, skipReferenceValidation);
+    }
+
+
+    /**
+     * @param name the name of the property; may not be null
+     * @param values the values of the property; may not be null
+     * @param jcrPropertyType the expected property type; may be {@link PropertyType#UNDEFINED} if the values should not be
+     *        converted
+     * @param skipProtectedValidation true if protected properties can be set by the caller of this method, or false if the method
+     *        should validate that protected methods are not being called
+     * @param skipReferenceValidation indicates whether constraints on REFERENCE properties should be enforced
+     * @return the new JCR property object
+     * @throws VersionException if the node is checked out
+     * @throws LockException if the node is locked
+     * @throws ConstraintViolationException if the new value would violate the constraints on the property definition
+     * @throws RepositoryException if the named property does not exist, or if some other error occurred
+     */
+    final AbstractJcrProperty setProperty( Name name,
+                                           Value[] values,
+                                           int jcrPropertyType,
+                                           boolean skipProtectedValidation,
                                            boolean skipReferenceValidation )
         throws VersionException, LockException, ConstraintViolationException, RepositoryException {
         assert values != null;
@@ -1686,12 +1712,12 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         Set<Name> mixinTypes = node.getMixinTypes(cache);
         NodeTypes nodeTypes = session.nodeTypes();
         JcrPropertyDefinition defn = null;
-        defn = nodeTypes.findPropertyDefinition(session, primaryType, mixinTypes, name, values, true, skipReferenceValidation);
+        defn = nodeTypes.findPropertyDefinition(session, primaryType, mixinTypes, name, values, !skipProtectedValidation, skipReferenceValidation);
 
         if (defn == null) {
             // Failed to find a valid property definition,
             // so figure out if there's a definition that would work if it had no constraints ...
-            defn = nodeTypes.findPropertyDefinition(session, primaryType, mixinTypes, name, values, true, false);
+            defn = nodeTypes.findPropertyDefinition(session, primaryType, mixinTypes, name, values, !skipProtectedValidation, false);
 
             String propName = readable(name);
             if (defn != null) {
@@ -2685,7 +2711,12 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         // Find the relative path from the nearest referenceable node to this node (or null if this node is referenceable) ...
         Path relativePath = path().equals(referenceableRoot.path()) ? null : path().relativeTo(referenceableRoot.path());
         NodeKey key = referenceableRoot.key();
-        NodeKey nodeKey = new NodeKey(key.getSourceKey(), NodeKey.keyForWorkspaceName(workspaceName), key.getIdentifier());
+
+        //if the we're looking for a system node, we need to use the system ws name, which is repository-wide
+        String systemWsKey = session.getRepository().systemWorkspaceKey();
+        String workspaceKey = systemWsKey.equals(key.getWorkspaceKey()) ? systemWsKey : NodeKey.keyForWorkspaceName(workspaceName);
+
+        NodeKey nodeKey = new NodeKey(key.getSourceKey(), workspaceKey, key.getIdentifier());
         return session.getPathForCorrespondingNode(workspaceName, nodeKey, relativePath);
     }
 

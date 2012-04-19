@@ -747,7 +747,7 @@ class JcrContentHandler extends DefaultHandler {
                         prop = child.setProperty(propertyName,
                                                  values.toArray(new JcrValue[values.size()]),
                                                  PropertyType.UNDEFINED,
-                                                 true);
+                                                 true, true);
                     }
 
                     if (prop.getType() == PropertyType.REFERENCE && prop.getDefinition().getValueConstraints().length != 0) {

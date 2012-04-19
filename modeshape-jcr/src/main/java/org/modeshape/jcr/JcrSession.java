@@ -1445,13 +1445,14 @@ public class JcrSession implements Session {
                                                                context.getTime());
                     }
 
-                    // Now update the node as if it's checked in ...
+                    // Now update the node as if it's checked in (with the exception of the predecessors...
                     Reference historyRef = referenceFactory.create(historyKey);
                     Reference baseVersionRef = referenceFactory.create(baseVersionKey);
                     node.setProperty(cache, propertyFactory.create(JcrLexicon.IS_CHECKED_OUT, Boolean.TRUE));
                     node.setProperty(cache, propertyFactory.create(JcrLexicon.VERSION_HISTORY, historyRef));
                     node.setProperty(cache, propertyFactory.create(JcrLexicon.BASE_VERSION, baseVersionRef));
-                    node.setProperty(cache, propertyFactory.create(JcrLexicon.PREDECESSORS, new Object[] {}));
+                    //JSR 283 - 15.1
+                    node.setProperty(cache, propertyFactory.create(JcrLexicon.PREDECESSORS, new Object[] {baseVersionRef}));
                 }
             }
 

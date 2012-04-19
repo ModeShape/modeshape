@@ -866,18 +866,25 @@ public class WritableSessionCache extends AbstractSessionCache {
                     for (SessionNode.Insertions insertion : insertionsByBeforeKey.values()) {
                         for (ChildReference insertedRef : insertion.inserted()) {
                             CachedNode insertedNodePersistent = workspaceCache.getNode(insertedRef);
-                            Path oldPath = workspacePaths.getPath(insertedNodePersistent);
+                            Path nodeOldPath = insertedNodePersistent != null ? workspacePaths.getPath(insertedNodePersistent) : null;
 
                             CachedNode insertedBeforeNode = workspaceCache.getNode(insertion.insertedBefore());
                             Path insertedBeforePath = workspacePaths.getPath(insertedBeforeNode);
 
-                            boolean isSnsReordering = oldPath.getLastSegment().getName().equals(insertedBeforePath.getLastSegment().getName());
-                            newPath = isSnsReordering ? insertedBeforePath : oldPath;
+                            Path nodeNewPath = null;
+                            if (nodeOldPath != null) {
+                                boolean isSnsReordering = nodeOldPath != null && nodeOldPath.getLastSegment().getName().equals(insertedBeforePath.getLastSegment().getName());
+                                nodeNewPath = isSnsReordering ? insertedBeforePath : nodeOldPath;
+                            }
+                            else {
+                                //there is no old path, which means the node is new and reordered at the same time (most likely due to a version restore)
+                                nodeNewPath = sessionPaths.getPath(changedNodes.get(insertedRef.getKey()));
+                            }
 
                             changes.nodeReordered(insertedRef.getKey(),
                                                   node.getKey(),
-                                                  newPath,
-                                                  oldPath,
+                                                  nodeNewPath,
+                                                  nodeOldPath,
                                                   insertedBeforePath);
                         }
                     }
