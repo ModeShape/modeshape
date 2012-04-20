@@ -157,11 +157,15 @@ import org.apache.jackrabbit.test.api.query.OrderByUpperCaseTest;
 import org.apache.jackrabbit.test.api.query.PredicatesTest;
 import org.apache.jackrabbit.test.api.query.QueryResultNodeIteratorTest;
 import org.apache.jackrabbit.test.api.query.SQLJcrPathTest;
+import org.apache.jackrabbit.test.api.query.SQLJoinTest;
+import org.apache.jackrabbit.test.api.query.SQLOrderByTest;
+import org.apache.jackrabbit.test.api.query.SQLPathTest;
 import org.apache.jackrabbit.test.api.query.SQLQueryLevel2Test;
 import org.apache.jackrabbit.test.api.query.SaveTest;
 import org.apache.jackrabbit.test.api.query.SetLimitTest;
 import org.apache.jackrabbit.test.api.query.SetOffsetTest;
 import org.apache.jackrabbit.test.api.query.SimpleSelectionTest;
+import org.apache.jackrabbit.test.api.query.TextNodeTest;
 import org.apache.jackrabbit.test.api.query.XPathDocOrderTest;
 import org.apache.jackrabbit.test.api.query.XPathJcrPathTest;
 import org.apache.jackrabbit.test.api.query.XPathOrderByTest;
@@ -428,6 +432,7 @@ public class JcrTckTest {
         protected OptionalFeatureTests() {
             super("JCR Optional API Tests");
             // We currently don't pass the tests in those suites that are commented out
+
             addTest(new ObservationTests());
 //            addTest(org.apache.jackrabbit.test.api.observation.TestAll.suite());
 
@@ -441,8 +446,10 @@ public class JcrTckTest {
             addTest(new SecurityTests());
 //            addTest(org.apache.jackrabbit.test.api.security.TestAll.suite());
 
-            // addTest(new QueryTests());
+            addTest(new QueryTests());
             // addTest(org.apache.jackrabbit.test.api.query.TestAll.suite());
+            //TODO author=Horia Chiorean date=4/20/12 description=https://issues.jboss.org/browse/MODE-1468
+            //addTest(org.apache.jackrabbit.test.api.query.qom.TestAll.suite());
         }
     }
 
@@ -466,20 +473,19 @@ public class JcrTckTest {
 
             // these are the tests included in observation.TestAll.suite()
             addTestSuite(SaveTest.class);
-            // addTestSuite(SQLOrderByTest.class); // see MODE-760
-            addTestSuite(SQLQueryLevel2Test.class);
-            // addTestSuite(SQLJoinTest.class); // see https://issues.apache.org/jira/browse/JCR-2663
+            addTestSuite(SQLOrderByTest.class);
+
+            addTestSuite(SQLJoinTest.class);
             addTestSuite(SQLJcrPathTest.class);
-            // addTestSuite(SQLPathTest.class); // see MODE-760
-            addTestSuite(XPathPosIndexTest.class);
+            //TODO author=Horia Chiorean date=4/20/12 description=https://issues.jboss.org/browse/MODE-1469
+            addTestSuite(excludeTests(SQLPathTest.class, "testChildAxisRoot"));
             addTestSuite(XPathDocOrderTest.class);
             addTestSuite(XPathOrderByTest.class);
-            addTestSuite(XPathQueryLevel2Test.class);
             addTestSuite(XPathJcrPathTest.class);
 
             addTestSuite(DerefQueryLevel1Test.class);
             addTestSuite(ElementTest.class);
-            // addTestSuite(TextNodeTest.class); // see MODE-759
+
             addTestSuite(GetLanguageTest.class);
             addTestSuite(GetPersistentQueryPathLevel1Test.class);
             addTestSuite(GetPersistentQueryPathTest.class);
@@ -506,6 +512,12 @@ public class JcrTckTest {
             addTestSuite(OrderByURITest.class);
             addTestSuite(SetLimitTest.class);
             addTestSuite(SetOffsetTest.class);
+
+            //TODO author=Horia Chiorean date=4/20/12 description=https://issues.jboss.org/browse/MODE-1419
+            addTestSuite(excludeTests(SQLQueryLevel2Test.class, "testScoreColumn", "testFullTextSearch", "testPathColumn"));
+//            addTestSuite(XPathPosIndexTest.class);
+            addTestSuite(excludeTests(XPathQueryLevel2Test.class, "testScoreColumn", "testFullTextSearch", "testPathColumn"));
+//            addTestSuite(TextNodeTest.class);
         }
     }
 
