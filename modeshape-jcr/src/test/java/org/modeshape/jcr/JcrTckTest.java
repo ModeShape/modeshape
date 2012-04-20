@@ -24,14 +24,9 @@
 
 package org.modeshape.jcr;
 
-import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtMethod;
-import javassist.NotFoundException;
-import javassist.bytecode.AnnotationsAttribute;
-import javassist.bytecode.ClassFile;
-import javassist.bytecode.ConstPool;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -108,7 +103,6 @@ import org.apache.jackrabbit.test.api.SetValueReferenceTest;
 import org.apache.jackrabbit.test.api.SetValueStringTest;
 import org.apache.jackrabbit.test.api.SetValueValueFormatExceptionTest;
 import org.apache.jackrabbit.test.api.SetValueVersionExceptionTest;
-import org.apache.jackrabbit.test.api.ShareableNodeTest;
 import org.apache.jackrabbit.test.api.StringPropertyTest;
 import org.apache.jackrabbit.test.api.UndefinedPropertyTest;
 import org.apache.jackrabbit.test.api.ValueFactoryTest;
@@ -116,18 +110,8 @@ import org.apache.jackrabbit.test.api.WorkspaceCloneReferenceableTest;
 import org.apache.jackrabbit.test.api.WorkspaceCloneSameNameSibsTest;
 import org.apache.jackrabbit.test.api.WorkspaceCloneTest;
 import org.apache.jackrabbit.test.api.WorkspaceCloneVersionableTest;
-import org.apache.jackrabbit.test.api.WorkspaceCopyBetweenWorkspacesReferenceableTest;
-import org.apache.jackrabbit.test.api.WorkspaceCopyBetweenWorkspacesSameNameSibsTest;
-import org.apache.jackrabbit.test.api.WorkspaceCopyBetweenWorkspacesTest;
-import org.apache.jackrabbit.test.api.WorkspaceCopyBetweenWorkspacesVersionableTest;
-import org.apache.jackrabbit.test.api.WorkspaceCopyReferenceableTest;
-import org.apache.jackrabbit.test.api.WorkspaceCopySameNameSibsTest;
-import org.apache.jackrabbit.test.api.WorkspaceCopyTest;
-import org.apache.jackrabbit.test.api.WorkspaceCopyVersionableTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveReferenceableTest;
-import org.apache.jackrabbit.test.api.WorkspaceMoveSameNameSibsTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveTest;
-import org.apache.jackrabbit.test.api.WorkspaceMoveVersionableTest;
 import org.apache.jackrabbit.test.api.WorkspaceReadMethodsTest;
 import org.apache.jackrabbit.test.api.WorkspaceTest;
 import org.apache.jackrabbit.test.api.nodetype.NodeTypeCreationTest;
@@ -193,6 +177,7 @@ import org.apache.jackrabbit.test.api.version.GetCreatedTest;
 import org.apache.jackrabbit.test.api.version.GetPredecessorsTest;
 import org.apache.jackrabbit.test.api.version.GetReferencesNodeTest;
 import org.apache.jackrabbit.test.api.version.GetVersionableUUIDTest;
+import org.apache.jackrabbit.test.api.version.MergeActivityTest;
 import org.apache.jackrabbit.test.api.version.MergeCancelMergeTest;
 import org.apache.jackrabbit.test.api.version.MergeCheckedoutSubNodeTest;
 import org.apache.jackrabbit.test.api.version.MergeDoneMergeTest;
@@ -216,16 +201,9 @@ import org.apache.jackrabbit.test.api.version.VersionStorageTest;
 import org.apache.jackrabbit.test.api.version.VersionTest;
 import org.apache.jackrabbit.test.api.version.WorkspaceMoveVersionExceptionTest;
 import org.apache.jackrabbit.test.api.version.WorkspaceRestoreTest;
-import org.junit.Ignore;
-import org.junit.runner.RunWith;
-import org.junit.runners.BlockJUnit4ClassRunner;
-import org.junit.runners.JUnit4;
-import org.junit.runners.Suite;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Test suite to wrap Apache Jackrabbit JCR technology compatibility kit (TCK) unit tests. Note that technically these are not the
@@ -388,11 +366,10 @@ public class JcrTckTest {
 
 
         //TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1453
-        //suite.addTestSuite(ReferencesTest.class);
+        suite.addTestSuite(excludeTests(ReferencesTest.class, "testReferences", "testGetReferencesWithName", "testAlterReference"));
 
         //TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1453
-
-        //suite.addTestSuite(SessionUUIDTest.class);
+        suite.addTestSuite(excludeTests(SessionUUIDTest.class,  "testSaveReferentialIntegrityException"));
         /**
          * //TODO author=Horia Chiorean date=4/11/12 description=The following fail:
          *
@@ -402,17 +379,18 @@ public class JcrTckTest {
          * testSaveInvalidStateException -  https://issues.jboss.org/browse/MODE-1456
          *      (might not seem related at first, but it's because a path of a node is determined incorrectly)
          */
-        //suite.addTestSuite(NodeTest.class);
+        suite.addTestSuite(excludeTests(NodeTest.class, "testUpdate", "testRemoveInvalidItemStateException",
+                                        "testRemoveMandatoryNode", "testSaveInvalidStateException"));
 
         //TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1453
-        //suite.addTestSuite(NodeUUIDTest.class);
+        suite.addTestSuite(excludeTests(NodeUUIDTest.class,  "testSaveReferentialIntegrityException"));
 
         //TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1312
-        //suite.addTestSuite(WorkspaceCloneReferenceableTest.class);
-        //suite.addTestSuite(WorkspaceCloneSameNameSibsTest.class);
-        //suite.addTestSuite(WorkspaceCloneTest.class);
-        //suite.addTestSuite(WorkspaceCloneVersionableTest.class);
-        //
+//        suite.addTestSuite(WorkspaceCloneReferenceableTest.class);
+//        suite.addTestSuite(WorkspaceCloneSameNameSibsTest.class);
+//        suite.addTestSuite(WorkspaceCloneTest.class);
+//        suite.addTestSuite(WorkspaceCloneVersionableTest.class);
+
         //suite.addTestSuite(WorkspaceCopyBetweenWorkspacesReferenceableTest.class);
         //suite.addTestSuite(WorkspaceCopyBetweenWorkspacesSameNameSibsTest.class);
         //suite.addTestSuite(WorkspaceCopyBetweenWorkspacesTest.class);
@@ -426,11 +404,12 @@ public class JcrTckTest {
         //
 
         //TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1453
-        //        suite.addTestSuite(GetWeakReferencesTest.class);
+        suite.addTestSuite(excludeTests(GetWeakReferencesTest.class, "testSingleValue", "testSingleValueWithName",
+                                        "testMultiValues", "testMultiValuesWithName"));
 
         // shareable nodes
         //TODO author=Horia Chiorean date=4/13/12 description=https://issues.jboss.org/browse/MODE-1458
-        //      suite.addTestSuite(ShareableNodeTest.class);
+        //suite.addTestSuite(ShareableNodeTest.class);
 
         return suite;
     }
@@ -442,15 +421,15 @@ public class JcrTckTest {
         protected OptionalFeatureTests() {
             super("JCR Optional API Tests");
             // We currently don't pass the tests in those suites that are commented out
-//            addTest(new ObservationTests());
+            addTest(new ObservationTests());
 //            addTest(org.apache.jackrabbit.test.api.observation.TestAll.suite());
 
-//            addTest(org.apache.jackrabbit.test.api.version.TestAll.suite());
             addTest(new FullVersioningTests());
+            //addTest(org.apache.jackrabbit.test.api.version.TestAll.suite());
 
-//            addTest(org.apache.jackrabbit.test.api.lock.TestAll.suite());
+            addTest(org.apache.jackrabbit.test.api.lock.TestAll.suite());
 //            addTest(org.apache.jackrabbit.test.api.util.TestAll.suite());
-            //            addTest(new QueryTests());
+            // addTest(new QueryTests());
             // addTest(org.apache.jackrabbit.test.api.query.TestAll.suite());
         }
     }
@@ -524,10 +503,11 @@ public class JcrTckTest {
             addTestSuite(AddEventListenerTest.class);
 
             //TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1312
-            //addTestSuite(WorkspaceOperationTest.class);
-
+            addTestSuite(excludeTests(WorkspaceOperationTest.class, "testCopy"));
+//
             // JCR 2.0
-            //addTestSuite(EventJournalTest.class); // see https://issues.apache.org/jira/browse/JCR-2662
+            //TODO author=Horia Chiorean date=4/19/12 description=https://issues.apache.org/jira/browse/JCR-2662
+//            addTestSuite(EventJournalTest.class);
             addTestSuite(GetDateTest.class);
             addTestSuite(GetIdentifierTest.class);
             addTestSuite(GetInfoTest.class);
@@ -547,43 +527,45 @@ public class JcrTckTest {
             addTestSuite(VersionGraphTest.class);
 
             //TODO author=Horia Chiorean date=4/17/12 description=https://issues.jboss.org/browse/MODE-1453
-            addTestSuite(filterTests(VersionHistoryTest.class, "testGetReferences"));
-            addTestSuite(filterTests(RemoveVersionTest.class, "testReferentialIntegrityException"));
+            addTestSuite(excludeTests(VersionHistoryTest.class, "testGetReferences"));
+            addTestSuite(excludeTests(RemoveVersionTest.class, "testReferentialIntegrityException"));
 
             //TODO author=Horia Chiorean date=4/17/12 description=https://issues.jboss.org/browse/MODE-1312
-            addTestSuite(filterTests(CopyTest.class, "testCopy"));
+            addTestSuite(excludeTests(CopyTest.class, "testCopy"));
 
-            /**
-             * testRestoreNameJcr2 fails because of https://issues.apache.org/jira/browse/JCR-2666
-             */
-            addTestSuite(filterTests(RestoreTest.class, "testRestoreNameJcr2"));
-//            addTestSuite(WorkspaceRestoreTest.class);
-//            addTestSuite(OnParentVersionAbortTest.class);
-//            addTestSuite(OnParentVersionComputeTest.class);
-//            addTestSuite(OnParentVersionCopyTest.class);
-//            addTestSuite(OnParentVersionIgnoreTest.class);
-//            addTestSuite(OnParentVersionInitializeTest.class);
-//            addTestSuite(GetReferencesNodeTest.class);
-//            addTestSuite(GetPredecessorsTest.class);
-//            addTestSuite(GetCreatedTest.class);
-//            addTestSuite(GetContainingHistoryTest.class);
-//            addTestSuite(GetVersionableUUIDTest.class);
-//            addTestSuite(SessionMoveVersionExceptionTest.class);
-//            addTestSuite(WorkspaceMoveVersionExceptionTest.class);
+            //TODO author=Horia Chiorean date=4/19/12 description=https://issues.apache.org/jira/browse/JCR-2662
+            addTestSuite(excludeTests(RestoreTest.class, "testRestoreNameJcr2"));
+
+            //TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1312
+            //addTestSuite(WorkspaceRestoreTest.class);
+
+            addTestSuite(OnParentVersionAbortTest.class);
+            addTestSuite(OnParentVersionComputeTest.class);
+            addTestSuite(OnParentVersionCopyTest.class);
+            addTestSuite(OnParentVersionIgnoreTest.class);
+            addTestSuite(OnParentVersionInitializeTest.class);
+            addTestSuite(GetReferencesNodeTest.class);
+            addTestSuite(GetPredecessorsTest.class);
+            addTestSuite(GetCreatedTest.class);
+            addTestSuite(GetContainingHistoryTest.class);
+            addTestSuite(GetVersionableUUIDTest.class);
+            addTestSuite(SessionMoveVersionExceptionTest.class);
+            addTestSuite(WorkspaceMoveVersionExceptionTest.class);
+
+            //TODO author=Horia Chiorean date=4/17/12 description=https://issues.jboss.org/browse/MODE-1312
 //            addTestSuite(MergeCancelMergeTest.class);
 //            addTestSuite(MergeCheckedoutSubNodeTest.class);
 //            addTestSuite(MergeDoneMergeTest.class);
 //            addTestSuite(MergeNodeIteratorTest.class);
 //            addTestSuite(MergeNodeTest.class);
 //            addTestSuite(MergeShallowTest.class);
-            // addTestSuite(MergeActivityTest.class);
+//            addTestSuite(MergeActivityTest.class);
 //            addTestSuite(MergeNonVersionableSubNodeTest.class);
 //            addTestSuite(MergeSubNodeTest.class);
 
             // JCR 2.0
-
-//            addTestSuite(ActivitiesTest.class);
-//            addTestSuite(ConfigurationsTest.class);
+            addTestSuite(ActivitiesTest.class);
+            addTestSuite(ConfigurationsTest.class);
         }
     }
 
@@ -591,22 +573,23 @@ public class JcrTckTest {
      * Uses javaassist to create a subclass for a TestCase from the original TCK suite and change it's body so that a simple
      * message is printed out. Since we're not using JUnit 4, we can't use @Ignore
      */
-    private static Class<? extends TestCase> filterTests( Class<? extends TestCase> originalClass,
-                                                          String... testsToIgnore ) {
-        List<String> excludedTests = Arrays.asList(testsToIgnore);
+    private static Class<? extends TestCase> excludeTests( Class<? extends TestCase> testCase,
+                                                           String... testNames ) {
+        List<String> excludedTests = Arrays.asList(testNames);
 
         try {
             ClassPool pool = ClassPool.getDefault();
-            CtClass cc = pool.getCtClass(originalClass.getName());
-            String subclassName = "org.modeshape.jcr.tck." + originalClass.getSimpleName();
+            CtClass cc = pool.getCtClass(testCase.getName());
+            String subclassName = "org.modeshape.jcr.tck." + testCase.getSimpleName();
 
             CtClass subclass = pool.makeClass(subclassName, cc);
 
-            for (Method m : originalClass.getDeclaredMethods()) {
+            for (Method m : testCase.getDeclaredMethods()) {
                 CtMethod ctMethod = cc.getDeclaredMethod(m.getName());
-                if (excludedTests.contains(ctMethod.getName())) {
+                String methodName = ctMethod.getName();
+                if (excludedTests.contains(methodName)) {
                     CtMethod subclassMethod = new CtMethod(ctMethod, subclass, null);
-                    subclassMethod.setBody("{System.out.println(\"" + ctMethod.getName() + " ignored !\");}");
+                    subclassMethod.setBody("{System.out.println(\"" + methodName + " ignored !\");}");
                     subclass.addMethod(subclassMethod);
                 }
             }

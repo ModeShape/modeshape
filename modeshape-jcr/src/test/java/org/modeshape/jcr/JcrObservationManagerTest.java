@@ -1936,12 +1936,12 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         targetNode.setProperty("foo", "bar");
         session.save();
 
-        //1 event - node added should be fired from the system path for the lock
+        //no event should be fired from the system path for the lock (excluded explicitly because the TCK does not expect events from this)
         TestListener systemListener = addListener(session, 1, 2, ALL_EVENTS, "/jcr:system", true, null, null, false);
         //2 events (property added for isDeep and lock owner) should be fired for the lock in the regular path (as per TCK)
         TestListener nodeListener = addListener(session, 2, 2, ALL_EVENTS, parentNode.getPath(), true, null, null, false);
 
-        lock(parentNode, true, true); // SHOULD GENERATE AN EVENT TO CREATE A LOCK
+        lock(parentNode, true, true);
 
         // Wait for the events on the session's listeners (that should get the events) ...
         systemListener.waitForEvents();

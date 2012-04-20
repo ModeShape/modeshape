@@ -37,6 +37,7 @@ import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PathFactory;
 import org.modeshape.jcr.value.Property;
+import org.modeshape.jcr.value.PropertyFactory;
 
 @ThreadSafe
 class RepositoryLockManager implements ChangeSetListener {
@@ -203,6 +204,10 @@ class RepositoryLockManager implements ChangeSetListener {
             // Update the persistent node ...
             SessionCache lockingSession = session.spawnSessionCache(false);
             MutableCachedNode lockedNode = lockingSession.mutable(nodeKey);
+
+            PropertyFactory propertyFactory = session.propertyFactory();
+            lockedNode.setProperty(lockingSession, propertyFactory.create(JcrLexicon.LOCK_OWNER, owner));
+            lockedNode.setProperty(lockingSession, propertyFactory.create(JcrLexicon.LOCK_IS_DEEP, isDeep));
             lockedNode.lock(isSessionScoped);
 
             // Now save both sessions. This will fail with a LockFailureException if the locking failed ...
@@ -282,7 +287,14 @@ class RepositoryLockManager implements ChangeSetListener {
         // Remove the locks ...
         for (ModeShapeLock lock : locks) {
             system.removeLock(lock);
-            MutableCachedNode lockedNode = lockingSession.mutable(lock.getLockedNodeKey());
+            NodeKey lockedNodeKey = lock.getLockedNodeKey();
+            if (session.cache().getNode(lockedNodeKey) == null) {
+                //the node on which the lock was placed, has been removed
+                continue;
+            }
+            MutableCachedNode lockedNode = lockingSession.mutable(lockedNodeKey);
+            lockedNode.removeProperty(lockingSession, JcrLexicon.LOCK_IS_DEEP);
+            lockedNode.removeProperty(lockingSession, JcrLexicon.LOCK_OWNER);
             lockedNode.unlock();
         }
 
@@ -305,7 +317,13 @@ class RepositoryLockManager implements ChangeSetListener {
                 locks.add(lock);
             }
         }
-        if (locks != null) unlock(session, locks);
+        if (locks != null) {
+            //clear the locks which have been unlocked
+            unlock(session, locks);
+            for (ModeShapeLock lock : locks) {
+                locksByNodeKey.remove(lock.getLockedNodeKey());
+            }
+        }
     }
 
     @Override
@@ -360,6 +378,16 @@ class RepositoryLockManager implements ChangeSetListener {
     protected final boolean firstBoolean( Property property ) {
         if (property == null) return false;
         return repository.context().getValueFactories().getBooleanFactory().create(property.getFirstValue());
+    }
+
+    final ModeShapeLock findLockByToken(String token) {
+        assert token != null;
+        for (ModeShapeLock lock : locksByNodeKey.values()) {
+            if (token.equals(lock.getLockToken())) {
+                return lock;
+            }
+        }
+        return null;
     }
 
     /**

@@ -1395,58 +1395,12 @@ public class DocumentTranslator {
     }
 
     /**
-     * Lock the node.
+     * Checks if the given document is already locked
      * 
      * @param doc the document
-     * @param owner the name of the lock owner
-     * @param isDeep true if the lock is deep, or false otherwise
      * @return true if the change was made successfully, or false otherwise
      */
-    public boolean lock( EditableDocument doc,
-                         String owner,
-                         boolean isDeep ) {
-        if (hasProperty(doc, JcrLexicon.LOCK_OWNER) || hasProperty(doc, JcrLexicon.LOCK_IS_DEEP)) {
-            // Somebody must have snuck in and locked the node ...
-            return false;
-        }
-        Property mixins = getProperty(doc, JcrLexicon.MIXIN_TYPES);
-        if (mixins == null || mixins.isEmpty()) {
-            // No mixins, so just add the property ...
-            setProperty(doc, propertyFactory.create(JcrLexicon.MIXIN_TYPES, JcrMixLexicon.LOCKABLE), null);
-        } else {
-            List<Name> values = new ArrayList<Name>(mixins.size() + 1);
-            for (Object value : mixins) {
-                Name name = names.create(value);
-                values.add(name);
-            }
-            values.add(JcrMixLexicon.LOCKABLE);
-            setProperty(doc, propertyFactory.create(JcrLexicon.MIXIN_TYPES, values), null);
-        }
-        setProperty(doc, propertyFactory.create(JcrLexicon.LOCK_OWNER, owner), null);
-        setProperty(doc, propertyFactory.create(JcrLexicon.LOCK_IS_DEEP, isDeep), null);
-        return true;
-    }
-
-    /**
-     * Unlock the node.
-     * 
-     * @param doc the document
-     */
-    public void unlock( EditableDocument doc ) {
-        removeProperty(doc, JcrLexicon.LOCK_OWNER, null);
-        removeProperty(doc, JcrLexicon.LOCK_IS_DEEP, null);
-        Property mixins = getProperty(doc, JcrLexicon.MIXIN_TYPES);
-        if (mixins.isEmpty() || (mixins.isSingle() && JcrMixLexicon.LOCKABLE.equals(names.create(mixins.getFirstValue())))) {
-            // The only mixin, so just remove it ...
-            removeProperty(doc, JcrLexicon.MIXIN_TYPES, null);
-        } else {
-            List<Name> values = new ArrayList<Name>(mixins.size() - 1);
-            for (Object value : mixins) {
-                Name name = names.create(value);
-                if (JcrMixLexicon.LOCKABLE.equals(name)) continue;
-                values.add(name);
-            }
-            setProperty(doc, propertyFactory.create(JcrLexicon.MIXIN_TYPES, values), null);
-        }
+    public boolean isLocked( EditableDocument doc) {
+        return hasProperty(doc, JcrLexicon.LOCK_OWNER) || hasProperty(doc, JcrLexicon.LOCK_IS_DEEP);
     }
 }

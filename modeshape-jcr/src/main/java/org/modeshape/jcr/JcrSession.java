@@ -196,14 +196,18 @@ public class JcrSession implements Session {
 
         observationManager().removeAllEventListeners();
 
+        cleanLocks();
+        if (removeFromActiveSession) this.repository.runningState().removeSession(this);
+        this.context.getSecurityContext().logout();
+    }
+
+    private void cleanLocks() {
         try {
             lockManager().cleanLocks();
         } catch (RepositoryException e) {
             // This can only happen if the session is not live, which is checked above ...
             Logger.getLogger(getClass()).error(e, JcrI18n.unexpectedException, e.getMessage());
         }
-        if (removeFromActiveSession) this.repository.runningState().removeSession(this);
-        this.context.getSecurityContext().logout();
     }
 
     protected SchematicEntry entryForNode( NodeKey nodeKey ) throws RepositoryException {
@@ -1220,6 +1224,7 @@ public class JcrSession implements Session {
     @Override
     public void logout() {
         this.isLive = false;
+        cleanLocks();
         try {
             RunningState running = repository.runningState();
             long lifetime = System.nanoTime() - this.nanosCreated;

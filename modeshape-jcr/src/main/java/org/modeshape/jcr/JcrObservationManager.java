@@ -927,7 +927,30 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
             return !acceptBasedOnNodeTypeName(nodeChange)
                     || !acceptBasedOnPath(nodeChange)
                     || !acceptBasedOnUuid(nodeChange)
-                    || !acceptBasedOnPermission(nodeChange);
+                    || !acceptBasedOnPermission(nodeChange)
+                    || !acceptIfLockChange(nodeChange);
+        }
+
+
+        /**
+         * In case of changes involving locks from the system workspace, the TCK expects that the only property changes be for lock owner
+         * and lock isDeep, which will be fired from the locked node. Therefore, we should exclude property notifications from the
+         * lock node from the system workspace.
+         * @param nodeChange
+         * @return
+         */
+        private boolean acceptIfLockChange( AbstractNodeChange nodeChange ) {
+            if (!(nodeChange instanceof PropertyAdded || nodeChange instanceof PropertyRemoved || nodeChange instanceof PropertyChanged)) {
+                return true;
+            }
+            Path path = nodeChange.getPath();
+            if (path.size() < 2) {
+                return true;
+            }
+            Name firstSegmentName = path.subpath(0, 1).getLastSegment().getName();
+            boolean isSystemLockChange = JcrLexicon.SYSTEM.equals(firstSegmentName)
+                    && ModeShapeLexicon.LOCKS.equals(path.getParent().getLastSegment().getName());
+            return !isSystemLockChange;
         }
 
         private boolean eventListenedFor( int eventType ) {

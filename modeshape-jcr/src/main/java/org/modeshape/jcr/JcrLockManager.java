@@ -72,14 +72,14 @@ class JcrLockManager implements LockManager {
      */
     final void cleanLocks() throws RepositoryException {
         lockManager.cleanLocks(session);
+        lockTokens.clear();
     }
 
     @Override
     public void addLockToken( String lockToken ) throws LockException {
         CheckArg.isNotNull(lockToken, "lockToken");
 
-        // Trivial case of giving a token back to ourself
-        if (lockTokens.putIfAbsent(lockToken, null) != null) {
+        if (lockTokens.containsKey(lockToken)) {
             // We already hold the token ...
             return;
         }
@@ -89,6 +89,7 @@ class JcrLockManager implements LockManager {
             if (!lockManager.setHeldBySession(session, lockToken, true)) {
                 throw new LockException(JcrI18n.lockTokenAlreadyHeld.text(lockToken));
             }
+            lockTokens.putIfAbsent(lockToken, lockToken);
         } catch (LockException e) {
             lockTokens.remove(lockToken);
             throw e;
@@ -100,7 +101,7 @@ class JcrLockManager implements LockManager {
         CheckArg.isNotNull(lockToken, "lockToken");
 
         // Trivial case of giving a token back to ourself
-        if (lockTokens.containsKey(lockToken)) {
+        if (!lockTokens.containsKey(lockToken)) {
             // We don't already hold the token ...
             throw new LockException(JcrI18n.invalidLockToken.text(lockToken));
         }
@@ -127,9 +128,13 @@ class JcrLockManager implements LockManager {
 
     @Override
     public String[] getLockTokens() {
-        // Make a copy (which can be done atomically) since getting the size and iterating over the (possibly-changing) values
-        // cannot be done atomically...
-        Set<String> tokens = new HashSet<String>(lockTokens.keySet());
+        Set<String> tokens =  new HashSet<String>();
+        for (String token : lockTokens.keySet()) {
+            ModeShapeLock lock = lockManager.findLockByToken(token);
+            if (lock != null && !lock.isSessionScoped()) {
+                tokens.add(token);
+            }
+        }
         return tokens.toArray(new String[tokens.size()]);
     }
 
@@ -271,7 +276,12 @@ class JcrLockManager implements LockManager {
         ModeShapeLock lock = lockManager.findLockFor(node.key());
         if (lock != null && !lockTokens.containsKey(lock.getLockToken())) {
             // Someone else holds the lock, so see if the user has the permission to break someone else's lock ...
-            session.checkPermission(session.workspaceName(), node.path(), ModeShapePermissions.UNLOCK_ANY);
+            try {
+                session.checkPermission(session.workspaceName(), node.path(), ModeShapePermissions.UNLOCK_ANY);
+            } catch (AccessDeniedException e) {
+                //expected by the TCK
+                throw new LockException(e);
+            }
         }
 
         // Remove the lock ...
