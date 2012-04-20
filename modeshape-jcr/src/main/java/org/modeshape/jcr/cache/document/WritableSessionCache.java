@@ -165,6 +165,11 @@ public class WritableSessionCache extends AbstractSessionCache {
     }
 
     @Override
+    public boolean isReadOnly() {
+        return false;
+    }
+
+    @Override
     public void clear() {
         Lock lock = this.lock.writeLock();
         try {

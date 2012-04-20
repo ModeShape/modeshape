@@ -93,6 +93,11 @@ public class ReadOnlySessionCache extends AbstractSessionCache {
     }
 
     @Override
+    public boolean isReadOnly() {
+        return true;
+    }
+
+    @Override
     public void destroy( NodeKey key ) {
         throw new UnsupportedOperationException();
     }

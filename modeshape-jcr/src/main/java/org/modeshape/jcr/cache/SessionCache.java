@@ -210,6 +210,11 @@ public interface SessionCache extends NodeCache {
     public NodeKey createNodeKeyWithIdentifier( String identifier );
 
     /**
+     * Returns true if this cache is readonly, false otherwise.
+     */
+    public boolean isReadOnly();
+
+    /**
      * Create a new node key for the current source and workspace.
      * 
      * @param sourceName the name (not key) for the source; if null, the key for the current source is used

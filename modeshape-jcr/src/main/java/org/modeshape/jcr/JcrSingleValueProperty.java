@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.Calendar;
 import java.util.UUID;
+import javax.jcr.AccessDeniedException;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
@@ -304,6 +305,11 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
 
         if (jcrValue.value() == null) {
             throw new ValueFormatException(JcrI18n.valueMayNotContainNull.text(getName()));
+        }
+
+        if (session.cache().isReadOnly()) {
+            //expected by the tck
+            throw new AccessDeniedException();
         }
 
         // Force a conversion as per SetValueValueFormatExceptionTest in JR TCK

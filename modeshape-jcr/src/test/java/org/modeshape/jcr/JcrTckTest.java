@@ -167,6 +167,13 @@ import org.apache.jackrabbit.test.api.query.XPathJcrPathTest;
 import org.apache.jackrabbit.test.api.query.XPathOrderByTest;
 import org.apache.jackrabbit.test.api.query.XPathPosIndexTest;
 import org.apache.jackrabbit.test.api.query.XPathQueryLevel2Test;
+import org.apache.jackrabbit.test.api.security.AccessControlDiscoveryTest;
+import org.apache.jackrabbit.test.api.security.AccessControlListTest;
+import org.apache.jackrabbit.test.api.security.AccessControlPolicyIteratorTest;
+import org.apache.jackrabbit.test.api.security.AccessControlPolicyTest;
+import org.apache.jackrabbit.test.api.security.RSessionAccessControlDiscoveryTest;
+import org.apache.jackrabbit.test.api.security.RSessionAccessControlPolicyTest;
+import org.apache.jackrabbit.test.api.security.RSessionAccessControlTest;
 import org.apache.jackrabbit.test.api.version.ActivitiesTest;
 import org.apache.jackrabbit.test.api.version.CheckinTest;
 import org.apache.jackrabbit.test.api.version.CheckoutTest;
@@ -428,12 +435,30 @@ public class JcrTckTest {
             //addTest(org.apache.jackrabbit.test.api.version.TestAll.suite());
 
             addTest(org.apache.jackrabbit.test.api.lock.TestAll.suite());
-//            addTest(org.apache.jackrabbit.test.api.util.TestAll.suite());
+            addTest(org.apache.jackrabbit.test.api.util.TestAll.suite());
+            addTest(org.apache.jackrabbit.test.api.retention.TestAll.suite());
+
+            addTest(new SecurityTests());
+//            addTest(org.apache.jackrabbit.test.api.security.TestAll.suite());
+
             // addTest(new QueryTests());
             // addTest(org.apache.jackrabbit.test.api.query.TestAll.suite());
         }
     }
 
+    private static class SecurityTests extends TestSuite {
+        protected SecurityTests( ) {
+            super("JCR Security Tests");
+            addTestSuite(AccessControlDiscoveryTest.class);
+            addTestSuite(AccessControlPolicyTest.class);
+            addTestSuite(AccessControlPolicyIteratorTest.class);
+            addTestSuite(AccessControlListTest.class);
+            addTestSuite(RSessionAccessControlDiscoveryTest.class);
+            addTestSuite(RSessionAccessControlPolicyTest.class);
+            //TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1312
+            addTestSuite(excludeTests(RSessionAccessControlTest.class, "testCopyNode"));
+        }
+    }
 
     private static class QueryTests extends TestSuite {
         protected QueryTests() {
