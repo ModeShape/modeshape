@@ -33,23 +33,20 @@ import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.transaction.TransactionManager;
-import org.infinispan.config.Configuration;
-import org.infinispan.config.GlobalConfiguration;
 import org.infinispan.loaders.CacheLoaderConfig;
 import org.infinispan.manager.CacheContainer;
-import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.Json;
 import org.infinispan.test.TestingUtil;
-import org.infinispan.test.fwk.TestCacheManagerFactory;
-import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.statistic.Stopwatch;
+import org.modeshape.jcr.Environment;
 import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.RepositoryConfiguration;
+import org.modeshape.jcr.TestingEnvironment;
 
 public class InMemoryPerformanceTest {
 
@@ -60,7 +57,7 @@ public class InMemoryPerformanceTest {
     private static final Stopwatch INFINISPAN_STARTUP = new Stopwatch();
     private static final Stopwatch MODESHAPE_STARTUP = new Stopwatch();
 
-    private CacheContainer cm;
+    private Environment environment;
     private TransactionManager txnMgr;
     private RepositoryConfiguration config;
     protected JcrEngine engine;
@@ -79,21 +76,13 @@ public class InMemoryPerformanceTest {
 
         Document configDoc = Json.read(configStream);
 
-        GlobalConfiguration global = new GlobalConfiguration();
-        global = global.fluent().serialization().addAdvancedExternalizer(Schematic.externalizers()).build();
-
-        CacheLoaderConfig loaderConfig = getCacheLoaderConfiguration();
-        Configuration c = new Configuration();
-        if (loaderConfig != null) {
-            c = c.fluent().loaders().addCacheLoader(loaderConfig).build();
-        }
-        c = c.fluent().transaction().transactionManagerLookup(new DummyTransactionManagerLookup()).build();
+        environment = new TestingEnvironment(getCacheLoaderConfiguration());
 
         STARTUP.start();
         INFINISPAN_STARTUP.start();
-        cm = TestCacheManagerFactory.createCacheManager(global, c);
-        config = new RepositoryConfiguration(configDoc, configFileName, cm);
+        CacheContainer cm = environment.getCacheContainer(null);
         txnMgr = TestingUtil.getTransactionManager(cm.getCache(config.getCacheName()));
+        config = new RepositoryConfiguration(configDoc, configFileName, environment);
         INFINISPAN_STARTUP.stop();
 
         MODESHAPE_STARTUP.start();
@@ -118,9 +107,8 @@ public class InMemoryPerformanceTest {
                 TestingUtil.killTransaction(txnMgr);
             } finally {
                 try {
-                    TestingUtil.killCacheManagers(cm);
+                    environment.shutdown();
                 } finally {
-                    cm = null;
                     cleanUpFileSystem();
                 }
             }

@@ -38,10 +38,6 @@ import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.Repository;
 import javax.jcr.Session;
 import javax.jcr.ValueFormatException;
-import org.infinispan.config.Configuration;
-import org.infinispan.manager.CacheContainer;
-import org.infinispan.test.fwk.TestCacheManagerFactory;
-import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -56,18 +52,15 @@ import org.modeshape.jcr.api.monitor.Window;
 
 public class JcrRepositoryTest {
 
-    private CacheContainer cm;
+    private Environment environment;
     private RepositoryConfiguration config;
     private JcrRepository repository;
     private JcrSession session;
 
     @Before
     public void beforeEach() throws Exception {
-        Configuration c = new Configuration();
-        c = c.fluent().transaction().transactionManagerLookup(new DummyTransactionManagerLookup()).build();
-        cm = TestCacheManagerFactory.createCacheManager(c);
-
-        config = new RepositoryConfiguration("repoName", cm);
+        environment = new TestingEnvironment();
+        config = new RepositoryConfiguration("repoName", environment);
         repository = new JcrRepository(config);
         repository.start();
     }
@@ -84,11 +77,7 @@ public class JcrRepositoryTest {
                 } finally {
                     repository = null;
                     config = null;
-                    try {
-                        org.infinispan.test.TestingUtil.killCacheManagers(cm);
-                    } finally {
-                        cm = null;
-                    }
+                    environment.shutdown();
                 }
             }
         }
@@ -97,7 +86,7 @@ public class JcrRepositoryTest {
     @Test
     public void shouldCreateRepositoryInstanceWithoutPassingInCacheManager() throws Exception {
         JTATestUtil.setJBossJTADefaultStoreLocations();
-        
+
         RepositoryConfiguration config = new RepositoryConfiguration("repoName");
         JcrRepository repository = new JcrRepository(config);
         repository.start();
@@ -473,7 +462,7 @@ public class JcrRepositoryTest {
     public void shouldAllowCreatingWorkspaces() throws Exception {
         RepositoryConfiguration config = null;
         config = RepositoryConfiguration.read("{ \"name\" : \"repoName\", \"workspaces\" : { \"allowCreation\" : true } }");
-        config = new RepositoryConfiguration(config.getDocument(), "repoName", cm);
+        config = new RepositoryConfiguration(config.getDocument(), "repoName", environment);
         repository = new JcrRepository(config);
         repository.start();
 

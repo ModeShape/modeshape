@@ -33,10 +33,6 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Workspace;
 import javax.jcr.nodetype.NodeTypeDefinition;
-import org.infinispan.config.Configuration;
-import org.infinispan.manager.CacheContainer;
-import org.infinispan.test.fwk.TestCacheManagerFactory;
-import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -49,7 +45,7 @@ public abstract class MultiUseAbstractTest extends AbstractJcrRepositoryTest {
 
     private static final String REPO_NAME = "testRepo";
 
-    private static CacheContainer cm;
+    private static Environment environment;
     private static RepositoryConfiguration config;
     protected static JcrRepository repository;
     protected static JcrSession session;
@@ -59,16 +55,11 @@ public abstract class MultiUseAbstractTest extends AbstractJcrRepositoryTest {
     }
 
     protected static void startRepository( RepositoryConfiguration configuration ) throws Exception {
-        Configuration c = new Configuration();
-        c = c.fluent().transaction().transactionManagerLookup(new DummyTransactionManagerLookup()).build();
-        cm = TestCacheManagerFactory.createCacheManager(c);
-
-        // Configuration c = new Configuration();
-        // cm = TestCacheManagerFactory.createCacheManager(c, true);
+        environment = new TestingEnvironment();
         if (configuration != null) {
-            config = new RepositoryConfiguration(configuration.getDocument(), configuration.getName(), cm);
+            config = new RepositoryConfiguration(configuration.getDocument(), configuration.getName(), environment);
         } else {
-            config = new RepositoryConfiguration(REPO_NAME, cm);
+            config = new RepositoryConfiguration(REPO_NAME, environment);
         }
         repository = new JcrRepository(config);
         repository.start();
@@ -81,11 +72,7 @@ public abstract class MultiUseAbstractTest extends AbstractJcrRepositoryTest {
         } finally {
             repository = null;
             config = null;
-            try {
-                org.infinispan.test.TestingUtil.killCacheManagers(cm);
-            } finally {
-                cm = null;
-            }
+            environment.shutdown();
         }
     }
 

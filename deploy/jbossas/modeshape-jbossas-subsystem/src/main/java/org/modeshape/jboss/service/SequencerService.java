@@ -21,10 +21,9 @@
  */
 package org.modeshape.jboss.service;
 
+import java.util.List;
 import java.util.Properties;
-
 import javax.jcr.RepositoryException;
-
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.Changes;
 import org.infinispan.schematic.document.EditableArray;
@@ -45,96 +44,100 @@ import org.modeshape.jcr.RepositoryConfiguration;
 
 public class SequencerService implements Service<JcrRepository> {
 
-	private final InjectedValue<JcrEngine> jcrEngineInjector = new InjectedValue<JcrEngine>();
-	private final InjectedValue<JcrRepository> jcrRepositoryInjector = new InjectedValue<JcrRepository>();
+    private final InjectedValue<JcrEngine> jcrEngineInjector = new InjectedValue<JcrEngine>();
+    private final InjectedValue<JcrRepository> jcrRepositoryInjector = new InjectedValue<JcrRepository>();
 
-	private final Properties sequencerProperties;
-	private final String repositoryName;
+    private final Properties sequencerProperties;
+    private final String repositoryName;
 
-	public SequencerService(String repositoryName,
-			Properties sequencerProperties) {
-		this.repositoryName = repositoryName;
-		this.sequencerProperties = sequencerProperties;
-	}
+    public SequencerService( String repositoryName,
+                             Properties sequencerProperties ) {
+        this.repositoryName = repositoryName;
+        this.sequencerProperties = sequencerProperties;
+    }
 
-	@Override
-	public JcrRepository getValue() throws IllegalStateException,
-			IllegalArgumentException {
-		return null;
-	}
+    @Override
+    public JcrRepository getValue() throws IllegalStateException, IllegalArgumentException {
+        return null;
+    }
 
-	private JcrEngine getJcrEngine() {
-		return jcrEngineInjector.getValue();
-	}
+    private JcrEngine getJcrEngine() {
+        return jcrEngineInjector.getValue();
+    }
 
-	@Override
-	public void start(StartContext arg0) throws StartException {
-		JcrEngine engine = getJcrEngine();
+    @Override
+    public void start( StartContext arg0 ) throws StartException {
+        JcrEngine engine = getJcrEngine();
 
-		JcrRepository repository = null;
-		try {
-			repository = engine.getRepository(repositoryName);
-		} catch (NoSuchRepositoryException e) {
-			throw new StartException(e);
-		}
- 
-		RepositoryConfiguration repositoryConfig = repository
-				.getConfiguration();
+        JcrRepository repository = null;
+        try {
+            repository = engine.getRepository(repositoryName);
+        } catch (NoSuchRepositoryException e) {
+            throw new StartException(e);
+        }
 
-		Editor editor = repositoryConfig.edit();
-		EditableDocument sequencing = editor.getOrCreateDocument("sequencing");
-		EditableArray sequencers = sequencing.setArray("sequencers");
+        RepositoryConfiguration repositoryConfig = repository.getConfiguration();
 
-		EditableDocument seq = Schematic.newDocument();
+        Editor editor = repositoryConfig.edit();
+        EditableDocument sequencing = editor.getOrCreateDocument("sequencing");
+        EditableArray sequencers = sequencing.setArray("sequencers");
 
-		for (String key : sequencerProperties.stringPropertyNames()) {
-			seq.set(key, sequencerProperties.getProperty(key));
-		}
+        EditableDocument seq = Schematic.newDocument();
 
-		sequencers.addValue(seq);
+        for (String key : sequencerProperties.stringPropertyNames()) {
+            Object value = sequencerProperties.getProperty(key);
+            if (value instanceof List<?>) {
+                for (Object val : (List<?>)value) {
+                    seq.getOrCreateArray(key).addValue(val);
+                }
+            } else {
+                // Just set the value as a field
+                seq.set(key, value);
+            }
+        }
 
-		// Get the changes and validate them ...
-		Changes changes = editor.getChanges();
-		Problems validationResults = repositoryConfig.validate(changes);
-		
-		if (validationResults.hasErrors()) {
-			String msg = JcrI18n.errorsInRepositoryConfiguration.text(this.repositoryName,
-					validationResults.errorCount(),
-					validationResults.toString());
-			throw new StartException(msg);   
-		} else {
-			// Update the deployed repository's configuration with these changes
-			try {
-				engine.update(this.repositoryName, changes);
-			} catch (ConfigurationException e) {
-				throw new StartException(e);
-			} catch (NoSuchRepositoryException e) {
-				throw new StartException(e);
-			} catch (RepositoryException e) {
-				throw new StartException(e);
-			}
-		}
+        sequencers.addValue(seq);
 
-	}
+        // Get the changes and validate them ...
+        Changes changes = editor.getChanges();
+        Problems validationResults = repositoryConfig.validate(changes);
 
-	@Override
-	public void stop(StopContext arg0) {
-		// TODO Auto-generated method stub
+        if (validationResults.hasErrors()) {
+            String msg = JcrI18n.errorsInRepositoryConfiguration.text(this.repositoryName,
+                                                                      validationResults.errorCount(),
+                                                                      validationResults.toString());
+            throw new StartException(msg);
+        }
+        // Update the deployed repository's configuration with these changes
+        try {
+            engine.update(this.repositoryName, changes);
+        } catch (ConfigurationException e) {
+            throw new StartException(e);
+        } catch (NoSuchRepositoryException e) {
+            throw new StartException(e);
+        } catch (RepositoryException e) {
+            throw new StartException(e);
+        }
+    }
 
-	}
-	
-	/**
-	 * @return the jcrEngineInjector
-	 */
-	public InjectedValue<JcrEngine> getJcrEngineInjector() {
-		return jcrEngineInjector;
-	}
+    @Override
+    public void stop( StopContext arg0 ) {
+        // TODO Auto-generated method stub
 
-	/**
-	 * @return the jcrRepositoryInjector
-	 */
-	public InjectedValue<JcrRepository> getJcrRepositoryInjector() {
-		return jcrRepositoryInjector;
-	}
+    }
+
+    /**
+     * @return the jcrEngineInjector
+     */
+    public InjectedValue<JcrEngine> getJcrEngineInjector() {
+        return jcrEngineInjector;
+    }
+
+    /**
+     * @return the jcrRepositoryInjector
+     */
+    public InjectedValue<JcrRepository> getJcrRepositoryInjector() {
+        return jcrRepositoryInjector;
+    }
 
 }

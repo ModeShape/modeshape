@@ -12,7 +12,7 @@
         },
         "jndiName" : {
             "type" : "string",
-            "description" : "The name in JNDI where this repository is to be registered. If not specified, the location is assumed to be 'jcr:local:<name>', where '<name>' is the repository name. Setting this field to an empty string signals that the repository should not be registered in JNDI."
+            "description" : "The name in JNDI where this repository is to be registered. If not specified, the location is assumed to be 'java:jcr/local/<name>', where '<name>' is the repository name. Setting this field to an empty string signals that the repository should not be registered in JNDI."
         },
         "monitoring" : {
             "type" : "object",
@@ -92,6 +92,11 @@
                                     "description" : "The specification of the database binary store, which stores BINARY values in a JDBC-compatible database.",
                                     "enum" : [ "database" ]
                                 },
+                                "dataSourceJndiName" : {
+                                    "type" : "string",
+                                    "description" : "The name in JNDI where the JDBC DataSource is registered that should be used for binary storage.",
+                                    "required" : true,
+                                },
                                 "minimumBinarySizeInBytes" : {
                                     "type" : "integer",
                                     "default" : 4096,
@@ -108,7 +113,12 @@
                                     "description" : "The specification of the database binary store, which stores BINARY values in a JDBC-compatible database.",
                                     "enum" : [ "cache" ]
                                 },
-                                "cacheName" : {
+                                "dataCacheName" : {
+                                    "type" : "string",
+                                    "required" : true,
+                                    "description" : "The name of the Infinispan cache where BINARY values should be stored."
+                                },
+                                "metadataCacheName" : {
                                     "type" : "string",
                                     "required" : true,
                                     "description" : "The name of the Infinispan cache where BINARY values should be stored."
@@ -184,7 +194,7 @@
                         "useOnFailedLogin" : {
                             "type" : "boolean",
                             "default" : false,
-                            "description" : "Indicates whether a failed attempt to {@link #login} should automatically attempt to use anonymous access instead. If anonymous access is not enabled, then failed login attempts will still cause a LoginException to be thrown. The default value is 'false'."
+                            "description" : "Indicates whether a failed attempt to authenticate should automatically fall back to attempt to anonymous access instead. If anonymous access is not enabled, then failed login attempts will still cause a LoginException to be thrown. The default value is 'false'."
                         },
                     }
                 },
@@ -245,7 +255,7 @@
                             },
                             "classloader" : {
                                 "type" : "string",
-                                "description" : "The optional name of the classloader that should be used to load the sequencer class. If empty or not provided, the classpath accessible to ModeShape will be used."
+                                "description" : "The optional name of the classloader that should be used to load the extract class. If empty or not provided, the classpath accessible to ModeShape will be used."
                             },
                             "name" : {
                                 "type" : "string",
@@ -320,7 +330,7 @@
                                     "type" : "string",
                                     "enum" : [ "simple", "native", "single", "none" ],
                                     "default" : "native",
-                                    "description" : "Species the type of locking used to prevent concurrent writes to the indexes. The default locking strategy works well for most cases. If set to 'simple', a marker file will be created using the Java File API (this file may need to be manually removed if the process is terminated abormally). If set to 'native' (the default), a marker file will be created using native OS file locks (which will never need to be cleaned up). If set to 'single', an in-memory Java object is used for the lock, and therefore not useful in a clustered repository. If 'none' is used, no locking is used to prevent concurrent writes (use with caution)."
+                                    "description" : "Specifies the type of locking used to prevent concurrent writes to the indexes. The default locking strategy works well for most cases. If set to 'simple', a marker file will be created using the Java File API (this file may need to be manually removed if the process is terminated abormally). If set to 'native' (the default), a marker file will be created using native OS file locks (which will never need to be cleaned up). If set to 'single', an in-memory Java object is used for the lock, and therefore not useful in a clustered repository. If 'none' is used, no locking is used to prevent concurrent writes (use with caution)."
                                 },
                                 "fileSystemAccessType" : {
                                     "type" : "string",
@@ -411,6 +421,18 @@
                                     "required" : true,
                                     "enum" : ["infinispan"]
                                 },
+                                "lockCacheName" : {
+                                    "type" : "string",
+                                    "description" : "The name of the Infinispan cache where the index locks will be stored. If not provided, the default will be '<repositoryName>-index-locks'."
+                                },
+                                "dataCacheName" : {
+                                    "type" : "string",
+                                    "description" : "The name of the Infinispan cache where the index data will be stored. If not provided, the default will be '<repositoryName>-index-data'."
+                                },
+                                "metadataCacheName" : {
+                                    "type" : "string",
+                                    "description" : "The name of the Infinispan cache where the index metadata will be stored. If not provided, the default will be '<repositoryName>-index-metadata'."
+                                },
                                 "cacheConfiguration" : {
                                     "type" : "string",
                                     "description" : "The name of the Infinispan configuration file for creating a new cache manager. If a file could not be found (on the thread context classloader, on the application's classpath, or on the system classpath), then the name is assumed to reference an existing Infinispan CacheContainer instance via a valid JNDI name or as the name of a service as defined by the local environment. If no such container is found, then the cache container used by the 'storage' configuration is used."
@@ -461,6 +483,10 @@
                             "type" : "string",
                             "default" : "org.apache.lucene.analysis.standard.StandardAnalyzer",
                             "description" : "Advanced setting that specifies the fully-qualified name of the 'org.apache.lucene.analysis.Analyzer' implementation class that should be used to extract search terms from text."
+                        },
+                        "analyzerClassloader" : {
+                            "type" : "string",
+                            "description" : "The optional name of the classloader or module that should be used to load the analyzer implementation class. If empty or not provided, the classpath accessible to ModeShape will be used."
                         },
                         "similarity" : {
                             "type" : "string",
@@ -594,7 +620,7 @@
                                     "properties" : {
                                         "type" : {
                                             "type" : "string",
-                                            "enum" : ["jgroups-master"],
+                                            "enum" : ["jgroups-slave"],
                                             "required" : true,
                                             "description" : "The specification of the Lucene backend for writing all updates directly to Lucene."
                                         },

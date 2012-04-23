@@ -35,16 +35,12 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Workspace;
 import javax.naming.NamingException;
 import junit.framework.AssertionFailedError;
-import org.infinispan.config.Configuration;
-import org.infinispan.manager.CacheContainer;
 import org.infinispan.schematic.document.Changes;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Editor;
 import org.infinispan.schematic.document.Json;
-import org.infinispan.test.fwk.TestCacheManagerFactory;
-import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.junit.After;
 import org.junit.Before;
 import org.modeshape.jcr.api.JcrTools;
@@ -58,13 +54,13 @@ public abstract class SingleUseAbstractTest extends AbstractJcrRepositoryTest {
 
     /**
      * Flag that will signal to {@link #beforeEach()} whether to automatically start the repository using the
-     * {@link #createRepositoryConfiguration(String, CacheContainer) default configuration}.
+     * {@link #createRepositoryConfiguration(String, Environment) default configuration}.
      * <p>
      * There are two ways to run tests with this class:
      * <ol>
      * <li>All tests runs against a fresh repository created from the same configuration. In this case, the
      * {@link #startRepositoryAutomatically} variable should be set to true, and the
-     * {@link #createRepositoryConfiguration(String, CacheContainer)} should be overridden if a non-default configuration is to be
+     * {@link #createRepositoryConfiguration(String, Environment)} should be overridden if a non-default configuration is to be
      * used for all the tests.</li>
      * <li>Each test requires a fresh repository with a different configuration. In this case, the
      * {@link #startRepositoryAutomatically} variable should be set to <code>false</code>, and each test should then call one of
@@ -73,20 +69,15 @@ public abstract class SingleUseAbstractTest extends AbstractJcrRepositoryTest {
      */
     protected static boolean startRepositoryAutomatically = true;
 
-    protected CacheContainer cm;
+    protected Environment environment;
     protected RepositoryConfiguration config;
     protected JcrRepository repository;
     protected JcrSession session;
     protected JcrTools tools;
 
     protected void startRepository() throws Exception {
-        Configuration c = new Configuration();
-        c = c.fluent().transaction().transactionManagerLookup(new DummyTransactionManagerLookup()).build();
-        cm = TestCacheManagerFactory.createCacheManager(c);
-
-        // Configuration c = new Configuration();
-        // cm = TestCacheManagerFactory.createCacheManager(c, true);
-        config = createRepositoryConfiguration(REPO_NAME, cm);
+        environment = new TestingEnvironment();
+        config = createRepositoryConfiguration(REPO_NAME, environment);
         repository = new JcrRepository(config);
         repository.start();
         session = repository.login();
@@ -98,11 +89,7 @@ public abstract class SingleUseAbstractTest extends AbstractJcrRepositoryTest {
         } finally {
             repository = null;
             config = null;
-            try {
-                org.infinispan.test.TestingUtil.killCacheManagers(cm);
-            } finally {
-                cm = null;
-            }
+            environment.shutdown();
         }
     }
 
@@ -138,14 +125,13 @@ public abstract class SingleUseAbstractTest extends AbstractJcrRepositoryTest {
      * </pre>
      * 
      * @param repositoryName the name of the repository to create; never null
-     * @param cacheContainer the cache container that should be passed to the {@link RepositoryConfiguration} constructor; never
-     *        null
+     * @param environment the environment that the resulting configuration should use; may be null
      * @return the repository configuration
      * @throws Exception if there is a problem creating the configuration
      */
     protected RepositoryConfiguration createRepositoryConfiguration( String repositoryName,
-                                                                     CacheContainer cacheContainer ) throws Exception {
-        return new RepositoryConfiguration(repositoryName, cacheContainer);
+                                                                     Environment environment ) throws Exception {
+        return new RepositoryConfiguration(repositoryName, environment);
     }
 
     /**
@@ -177,7 +163,7 @@ public abstract class SingleUseAbstractTest extends AbstractJcrRepositoryTest {
      * @see #startRepositoryAutomatically
      */
     protected void startRepositoryWithConfiguration( Document doc ) throws Exception {
-        RepositoryConfiguration config = new RepositoryConfiguration(doc, REPO_NAME, cm);
+        RepositoryConfiguration config = new RepositoryConfiguration(doc, REPO_NAME, environment);
         startRepositoryWithConfiguration(config);
     }
 
@@ -193,7 +179,7 @@ public abstract class SingleUseAbstractTest extends AbstractJcrRepositoryTest {
      * @see #startRepositoryAutomatically
      */
     protected void startRepositoryWithConfiguration( InputStream configInputStream ) throws Exception {
-        RepositoryConfiguration config = RepositoryConfiguration.read(configInputStream, REPO_NAME).with(cm);
+        RepositoryConfiguration config = RepositoryConfiguration.read(configInputStream, REPO_NAME).with(environment);
         startRepositoryWithConfiguration(config);
     }
 

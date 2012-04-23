@@ -38,16 +38,20 @@
         <module name="javax.jcr" export="true"/>
         <!-- For naming ... -->
         <module name="javax.api" export="true"/>
+        <module name="org.jboss.as.naming"/>
         <!-- For security provider ... -->
         <module name="javax.servlet.api"/>
         <module name="javax.resource.api"/>
+        <!-- ModeShape JCR dependencies ... -->
         <module name="org.joda.time" />
         <module name="org.infinispan" />
         <module name="org.jgroups" />
+        <!-- For logging ... -->
+        <module name="org.slf4j"/>
         <module name="org.jboss.logging" />
+        <!-- For the subsystem ... -->
         <module name="org.jboss.as.controller"/>
         <module name="org.jboss.staxmapper"/>
-        <module name="org.jboss.as.naming"/>
         <module name="org.jboss.modules"/>
         <module name="org.jboss.msc" />
         <module name="org.jboss.as.server"/>

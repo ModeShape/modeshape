@@ -52,7 +52,7 @@ public class SequencingTest extends SingleUseAbstractTest {
 
     @Override
     protected void startRepositoryWithConfiguration( Document doc ) throws Exception {
-        config = new RepositoryConfiguration(doc, REPO_NAME, cm);
+        config = new RepositoryConfiguration(doc, REPO_NAME, environment);
         repository = new JcrRepository(config);
         repository.start();
         session = repository.login();
@@ -60,7 +60,7 @@ public class SequencingTest extends SingleUseAbstractTest {
 
     @Override
     protected void startRepositoryWithConfiguration( InputStream configInputStream ) throws Exception {
-        config = RepositoryConfiguration.read(configInputStream, REPO_NAME).with(cm);
+        config = RepositoryConfiguration.read(configInputStream, REPO_NAME).with(environment);
         assertThat(config.validate().hasProblems(), is(false));
         repository = new JcrRepository(config);
         repository.start();

@@ -36,7 +36,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Workspace;
 import javax.jcr.observation.EventIterator;
 import javax.jcr.observation.EventListener;
-import org.infinispan.manager.CacheContainer;
+import org.modeshape.jcr.Environment;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.SingleUseAbstractTest;
 import org.modeshape.jcr.api.JcrConstants;
@@ -92,8 +92,8 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
 
     @Override
     protected RepositoryConfiguration createRepositoryConfiguration( String repositoryName,
-                                                                     CacheContainer cacheContainer ) throws Exception {
-        return RepositoryConfiguration.read(getRepositoryConfigStream(), repositoryName).with(cacheContainer);
+                                                                     Environment environment ) throws Exception {
+        return RepositoryConfiguration.read(getRepositoryConfigStream(), repositoryName).with(environment);
     }
 
     /**

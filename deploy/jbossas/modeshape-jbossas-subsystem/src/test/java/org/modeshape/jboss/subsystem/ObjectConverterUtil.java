@@ -37,7 +37,6 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.sql.SQLException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -45,25 +44,11 @@ public class ObjectConverterUtil {
 
     private static final int DEFAULT_READING_SIZE = 8192;
 
-    protected static byte[] convertBlobToByteArray( final java.sql.Blob data ) throws Exception {
-        try {
-            // Open a stream to read the BLOB data
-            InputStream l_blobStream = data.getBinaryStream();
-            return convertToByteArray(l_blobStream);
-        } catch (IOException ioe) {
-            throw new Exception(ioe);
-        } catch (SQLException sqe) {
-            throw new Exception(sqe);
-        }
-    }
-
     public static byte[] convertToByteArray( final Object data ) throws Exception, IOException {
         if (data instanceof InputStream) {
             return convertToByteArray((InputStream)data);
         } else if (data instanceof byte[]) {
             return (byte[])data;
-        } else if (data instanceof java.sql.Blob) {
-            return convertBlobToByteArray((java.sql.Blob)data);
         } else if (data instanceof File) {
             return convertFileToByteArray((File)data);
         }

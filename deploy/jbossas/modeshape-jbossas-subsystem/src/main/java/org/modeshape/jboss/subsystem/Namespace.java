@@ -23,31 +23,55 @@
 package org.modeshape.jboss.subsystem;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import org.jboss.dmr.ModelNode;
+import org.jboss.staxmapper.XMLElementReader;
 
 enum Namespace {
     // must be first
-    UNKNOWN(null),
-    MODESHAPE_3_0("urn:jboss:domain:modeshape:3.0"); //$NON-NLS-1$
+    UNKNOWN(0, 0, null),
+
+    MODESHAPE_1_0(1, 0, new ModeShapeSubsystemXMLReader_1_0());
 
     /**
      * The current namespace version.
      */
-    public static final Namespace CURRENT = MODESHAPE_3_0;
+    public static final Namespace CURRENT = MODESHAPE_1_0;
 
-    private final String uri;
+    private static final String BASE_URN = "urn:jboss:domain:modeshape:";
 
-    Namespace(String uri) {
-        this.uri = uri;
+    private final int major;
+    private final int minor;
+    private final XMLElementReader<List<ModelNode>> reader;
+
+    Namespace( int major,
+               int minor,
+               XMLElementReader<List<ModelNode>> reader ) {
+        this.major = major;
+        this.minor = minor;
+        this.reader = reader;
+    }
+
+    public int getMajorVersion() {
+        return this.major;
+    }
+
+    public int getMinorVersion() {
+        return this.minor;
     }
 
     /**
      * Get the URI of this namespace.
-     *
+     * 
      * @return the URI
      */
     public String getUri() {
-        return uri;
+        return BASE_URN + major + "." + minor;
+    }
+
+    public XMLElementReader<List<ModelNode>> getXMLReader() {
+        return this.reader;
     }
 
     private static final Map<String, Namespace> namespaces;
@@ -63,10 +87,11 @@ enum Namespace {
 
     /**
      * Converts the specified uri to a {@link Namespace}.
+     * 
      * @param uri a namespace uri
      * @return the matching namespace enum.
      */
-    public static Namespace forUri(String uri) {
+    public static Namespace forUri( String uri ) {
         final Namespace element = namespaces.get(uri);
         return element == null ? UNKNOWN : element;
     }

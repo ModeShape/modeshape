@@ -435,11 +435,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
     protected final String systemWorkspaceKey() {
         return runningState().systemWorkspaceKey();
     }
-    
+
     protected final ChangeBus changeBus() {
         return runningState().changeBus();
     }
-    
+
     protected final String repositoryKey() {
         return runningState().repositoryKey();
     }
@@ -971,7 +971,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.changeBus = other.changeBus;
             } else {
                 // find the Schematic database and Infinispan Cache ...
-                CacheContainer container = config.getCacheContainer();
+                CacheContainer container = config.getContentCacheContainer();
                 String cacheName = config.getCacheName();
                 this.database = Schematic.get(container, cacheName);
                 assert this.database != null;
@@ -1234,7 +1234,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         protected final ChangeBus changeBus() {
             return changeBus;
         }
-        
+
         protected final String repositoryKey() {
             return cache.getKey();
         }

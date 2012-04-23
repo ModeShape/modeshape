@@ -24,7 +24,6 @@
 package org.modeshape.jboss.service;
 
 import java.io.Serializable;
-
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StopContext;
@@ -55,17 +54,13 @@ public final class EngineService implements Service<JcrEngine>, Serializable {
         return this.engine;
     }
 
-  	@Override
+    @Override
     public void start( final StartContext context ) {
-
         this.engine.start();
-
     }
 
     @Override
     public void stop( StopContext arg0 ) {
-
         engine.shutdown();
-
     }
 }
