@@ -570,7 +570,7 @@ public class JcrTckTest {
             //TODO author=Horia Chiorean date=4/17/12 description=https://issues.jboss.org/browse/MODE-1312
             addTestSuite(excludeTests(CopyTest.class, "testCopy"));
 
-            //TODO author=Horia Chiorean date=4/19/12 description=https://issues.apache.org/jira/browse/JCR-2662
+            //TODO author=Horia Chiorean date=4/19/12 description=https://issues.apache.org/jira/browse/JCR-2666
             addTestSuite(excludeTests(RestoreTest.class, "testRestoreNameJcr2"));
 
             //TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1312
