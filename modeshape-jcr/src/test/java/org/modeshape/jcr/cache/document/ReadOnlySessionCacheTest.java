@@ -32,8 +32,8 @@ import org.modeshape.jcr.cache.SessionCache;
 public class ReadOnlySessionCacheTest extends AbstractSessionCacheTest {
 
     @Override
-    protected SessionCache createSession( ExecutionContext context,
-                                          WorkspaceCache cache ) {
+    protected SessionCache createSessionCache( ExecutionContext context,
+                                               WorkspaceCache cache ) {
         return new ReadOnlySessionCache(context, workspaceCache, null);
     }
 }

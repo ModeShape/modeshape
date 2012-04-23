@@ -29,6 +29,8 @@ import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.SessionEnvironment;
+import java.util.Collections;
+import java.util.Set;
 
 /**
  * A read-only {@link SessionCache} implementation.
@@ -50,6 +52,16 @@ public class ReadOnlySessionCache extends AbstractSessionCache {
     @Override
     public boolean hasChanges() {
         return false;
+    }
+
+    @Override
+    public Set<NodeKey> getChangedNodeKeys() {
+        return Collections.emptySet();
+    }
+
+    @Override
+    public Set<NodeKey> getChangedNodeKeysAtOrBelow( CachedNode node ) {
+        return Collections.emptySet();
     }
 
     @Override
@@ -78,6 +90,11 @@ public class ReadOnlySessionCache extends AbstractSessionCache {
     @Override
     public SessionNode mutable( NodeKey key ) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isReadOnly() {
+        return true;
     }
 
     @Override

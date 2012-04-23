@@ -539,7 +539,7 @@ final class JcrVersionManager implements VersionManager {
         MutableCachedNode versionable = versionSession.mutable(node.key());
         NodeKey baseVersionKey = node.getBaseVersion().key();
         PropertyFactory props = propertyFactory();
-        versionable.setProperty(versionSession, props.create(JcrLexicon.PREDECESSORS, baseVersionKey.toString()));
+        versionable.setProperty(versionSession, props.create(JcrLexicon.PREDECESSORS, new String[]{baseVersionKey.toString()}));
         versionable.setProperty(versionSession, props.create(JcrLexicon.IS_CHECKED_OUT, Boolean.TRUE));
         versionSession.save();
     }
@@ -603,11 +603,7 @@ final class JcrVersionManager implements VersionManager {
                          boolean removeExisting )
         throws ItemExistsException, UnsupportedRepositoryOperationException, VersionException, LockException,
         InvalidItemStateException, RepositoryException {
-        session.checkLive();
-
-        if (session.hasPendingChanges()) {
-            throw new InvalidItemStateException(JcrI18n.noPendingChangesAllowed.text());
-        }
+        validateSessionLiveWithoutPendingChanges();
 
         // Create a new session in which we'll perform the restore, so this session remains thread-safe ...
         JcrSession restoreSession = session.spawnSession(false);
@@ -649,6 +645,7 @@ final class JcrVersionManager implements VersionManager {
                          boolean removeExisting )
         throws VersionException, ItemExistsException, UnsupportedRepositoryOperationException, LockException,
         InvalidItemStateException, RepositoryException {
+        validateSessionLiveWithoutPendingChanges();
 
         // Create a new session in which we'll finish the restore, so this session remains thread-safe ...
         JcrSession restoreSession = session.spawnSession(false);
@@ -665,16 +662,19 @@ final class JcrVersionManager implements VersionManager {
         restore(restoreSession, path, version, null, removeExisting);
     }
 
+    private void validateSessionLiveWithoutPendingChanges() throws RepositoryException {
+        session.checkLive();
+        if (session.hasPendingChanges()) {
+            throw new InvalidItemStateException(JcrI18n.noPendingChangesAllowed.text());
+        }
+    }
+
     @Override
     public void restore( Version version,
                          boolean removeExisting )
         throws VersionException, ItemExistsException, InvalidItemStateException, UnsupportedRepositoryOperationException,
         LockException, RepositoryException {
-        session.checkLive();
-
-        if (session.hasPendingChanges()) {
-            throw new InvalidItemStateException(JcrI18n.noPendingChangesAllowed.text());
-        }
+        validateSessionLiveWithoutPendingChanges();
         // Create a new session in which we'll finish the restore, so this session remains thread-safe ...
         JcrSession restoreSession = session.spawnSession(false);
         AbstractJcrNode node = restoreSession.getNodeByIdentifier(version.getContainingHistory().getVersionableIdentifier());
@@ -688,11 +688,7 @@ final class JcrVersionManager implements VersionManager {
                          boolean removeExisting )
         throws PathNotFoundException, ItemExistsException, VersionException, ConstraintViolationException,
         UnsupportedRepositoryOperationException, LockException, InvalidItemStateException, RepositoryException {
-        session.checkLive();
-
-        if (session.hasPendingChanges()) {
-            throw new InvalidItemStateException(JcrI18n.noPendingChangesAllowed.text());
-        }
+        validateSessionLiveWithoutPendingChanges();
         // Create a new session in which we'll finish the restore, so this session remains thread-safe ...
         JcrSession restoreSession = session.spawnSession(false);
         Path path = restoreSession.absolutePathFor(absPath);
@@ -705,11 +701,7 @@ final class JcrVersionManager implements VersionManager {
                                 boolean removeExisting )
         throws VersionException, ItemExistsException, UnsupportedRepositoryOperationException, LockException,
         InvalidItemStateException, RepositoryException {
-        session.checkLive();
-
-        if (session.hasPendingChanges()) {
-            throw new InvalidItemStateException(JcrI18n.noPendingChangesAllowed.text());
-        }
+        validateSessionLiveWithoutPendingChanges();
         // Create a new session in which we'll finish the restore, so this session remains thread-safe ...
         JcrSession restoreSession = session.spawnSession(false);
         restoreSession.getNode(absPath).restoreByLabel(versionLabel, removeExisting);
@@ -769,11 +761,11 @@ final class JcrVersionManager implements VersionManager {
      * @see javax.jcr.Node#restore(Version, String, boolean)
      * @see javax.jcr.Node#restoreByLabel(String, boolean)
      */
-    static void restore( JcrSession session,
-                         Path path,
-                         Version version,
-                         String labelToRestore,
-                         boolean removeExisting ) throws RepositoryException {
+    void restore( JcrSession session,
+                  Path path,
+                  Version version,
+                  String labelToRestore,
+                  boolean removeExisting ) throws RepositoryException {
 
         // Ensure that the parent node exists - this will throw a PNFE if no node exists at that path
         AbstractJcrNode parentNode = session.node(path.getParent());
@@ -803,7 +795,7 @@ final class JcrVersionManager implements VersionManager {
                 throw new VersionException(JcrI18n.cannotRestoreRootVersion.text(existingNode.getPath()));
             }
 
-        } catch (ItemNotFoundException pnfe) {
+        } catch (PathNotFoundException pnfe) {
             // This is allowable, but the node needs to be checked out
             if (!parentNode.isCheckedOut()) {
                 String parentPath = path.getString(session.context().getNamespaceRegistry());
@@ -815,7 +807,7 @@ final class JcrVersionManager implements VersionManager {
                                                                           .property()
                                                                           .getFirstValue());
             AbstractJcrProperty uuidProp = sourceNode.getProperty(JcrLexicon.FROZEN_UUID);
-            NodeKey desiredKey = parentNode.key().withId(session.stringFactory().create(uuidProp.property().getFirstValue()));
+            NodeKey desiredKey = new NodeKey(session.stringFactory().create(uuidProp.property().getFirstValue()));
 
             Property primaryType = propFactory.create(JcrLexicon.PRIMARY_TYPE, primaryTypeName);
             MutableCachedNode newChild = parentNode.mutable().createChild(cache,
@@ -836,6 +828,7 @@ final class JcrVersionManager implements VersionManager {
                                                labelToRestore, removeExisting);
         op.execute();
 
+        clearCheckoutStatus(existingNode.mutable(), jcrVersion.key(), cache, propertyFactory());
         ReferenceFactory refFactory = session.referenceFactory();
         Reference baseVersionRef = refFactory.create(jcrVersion.key());
 
@@ -844,6 +837,15 @@ final class JcrVersionManager implements VersionManager {
         mutable.setProperty(cache, propFactory.create(JcrLexicon.BASE_VERSION, baseVersionRef));
 
         session.save();
+    }
+
+    private void clearCheckoutStatus( MutableCachedNode node,
+                                      NodeKey baseVersion,
+                                      SessionCache cache,
+                                      PropertyFactory propFactory ) {
+        Reference baseVersionRef = session.referenceFactory().create(baseVersion);
+        node.setProperty(cache, propFactory.create(JcrLexicon.IS_CHECKED_OUT, Boolean.FALSE));
+        node.setProperty(cache, propFactory.create(JcrLexicon.BASE_VERSION, baseVersionRef));
     }
 
     /**
@@ -1000,7 +1002,7 @@ final class JcrVersionManager implements VersionManager {
     }
 
     @NotThreadSafe
-    private static class RestoreCommand {
+    private class RestoreCommand {
 
         private final JcrSession session;
         private final SessionCache cache;
@@ -1142,7 +1144,8 @@ final class JcrVersionManager implements VersionManager {
                     case OnParentVersionAction.VERSION:
                     case OnParentVersionAction.COPY:
                         target.removeChild(cache, childKey);
-                        // Otherwise we're going to reuse the exisitng node
+                        cache.destroy(childKey);
+                        // Otherwise we're going to reuse the exisiting node
                         break;
                     case OnParentVersionAction.COMPUTE:
                         // Technically, this should reinitialize the node per its defaults.
@@ -1164,6 +1167,7 @@ final class JcrVersionManager implements VersionManager {
                 CachedNode sourceChild = cache.getNode(sourceChildRef);
                 CachedNode targetChild = presentInBoth.get(sourceChildRef.getKey());
                 CachedNode resolvedChild = null;
+                Name resolvedPrimaryTypeName = null;
 
                 AbstractJcrNode sourceChildNode;
                 AbstractJcrNode targetChildNode;
@@ -1174,39 +1178,55 @@ final class JcrVersionManager implements VersionManager {
                 if (targetChild != null) {
                     // Reorder if necessary
                     resolvedChild = resolveSourceNode(sourceChild, checkinTime, cache);
-
+                    resolvedPrimaryTypeName = name(resolvedChild.getPrimaryType(cache));
                     sourceChildNode = session.node(resolvedChild, (Type)null);
                     targetChildNode = session.node(targetChild, (Type)null);
 
                 } else {
                     // Pull the resolved node
                     resolvedChild = inSourceOnly.get(sourceChild);
+                    resolvedPrimaryTypeName = name(resolvedChild.getPrimaryType(cache));
+
                     sourceChildNode = session.node(resolvedChild, (Type)null);
                     shouldRestoreMixinsAndUuid = true;
 
-                    Name resolvedPrimaryTypeName = name(resolvedChild.getPrimaryType(cache));
                     Name primaryTypeName = null;
                     NodeKey desiredKey = null;
+                    Name desiredName = null;
                     if (JcrNtLexicon.FROZEN_NODE.equals(resolvedPrimaryTypeName)) {
                         primaryTypeName = name(resolvedChild.getProperty(JcrLexicon.FROZEN_PRIMARY_TYPE, cache).getFirstValue());
                         Property idProp = resolvedChild.getProperty(JcrLexicon.FROZEN_UUID, cache);
-                        desiredKey = target.getKey().withId(string(idProp.getFirstValue()));
+                        String frozenUuid = string(idProp.getFirstValue());
+                        desiredKey = NodeKey.isValidFormat(frozenUuid) ? new NodeKey(frozenUuid) : target.getKey().withId(frozenUuid);
+                        //the name should be that of the versioned child
+                        desiredName = session.node(sourceChild, (Type) null).name();
                     } else {
                         primaryTypeName = resolvedChild.getPrimaryType(cache);
                         Property idProp = resolvedChild.getProperty(JcrLexicon.UUID, cache);
-                        desiredKey = idProp != null && !idProp.isEmpty() ? target.getKey().withId(string(idProp.getFirstValue())) : target.getKey()
-                                                                                                                                          .withRandomId();
+                        if (idProp == null || idProp.isEmpty()) {
+                            desiredKey = target.getKey().withRandomId();
+                        } else {
+                            String uuid = string(idProp.getFirstValue());
+                            desiredKey = NodeKey.isValidFormat(uuid) ? new NodeKey(uuid) : target.getKey().withId(uuid);
+                        }
+                        desiredName = sourceChildNode.name();
                     }
                     Property primaryType = propFactory.create(JcrLexicon.PRIMARY_TYPE, primaryTypeName);
-                    targetChild = target.createChild(cache, desiredKey, sourceChildNode.name(), primaryType);
+                    targetChild = target.createChild(cache, desiredKey, desiredName, primaryType);
                     targetChildNode = session.node(targetChild, (Type)null);
-                    assert shouldRestore == true;
+                    assert shouldRestore;
                 }
+
                 if (shouldRestore) {
                     MutableCachedNode mutableTarget = targetChild instanceof MutableCachedNode ? (MutableCachedNode)targetChild : cache.mutable(targetChild.getKey());
                     // Have to do this first, as the properties below only exist for mix:versionable nodes
                     if (shouldRestoreMixinsAndUuid) {
-                        restoreNodeMixins(sourceChild, mutableTarget, cache);
+                        if (JcrNtLexicon.FROZEN_NODE.equals(resolvedPrimaryTypeName)) {
+                            //if we're dealing with a nt:versionedChild (and therefore the resolved node is a frozen node), we need the mixins from the frozen node
+                            restoreNodeMixinsFromProperty(resolvedChild, mutableTarget, cache,JcrLexicon.FROZEN_MIXIN_TYPES);
+                        } else {
+                            restoreNodeMixins(sourceChild, mutableTarget, cache);
+                        }
                     }
 
                     AbstractJcrNode parent = sourceChildNode.getParent();
@@ -1217,18 +1237,9 @@ final class JcrVersionManager implements VersionManager {
                     restoreNode(sourceChildNode, targetChildNode, checkinTime);
                 }
 
-                if (prevChildKey != null) target.reorderChild(cache, sourceChild.getKey(), prevChildKey);
-                prevChildKey = sourceChild.getKey();
+                if (prevChildKey != null) target.reorderChild(cache, targetChildNode.key(), prevChildKey);
+                prevChildKey = targetChildNode.key();
             }
-        }
-
-        private void clearCheckoutStatus( MutableCachedNode node,
-                                          NodeKey baseVersion,
-                                          SessionCache cache,
-                                          PropertyFactory propFactory ) {
-            Reference baseVersionRef = session.referenceFactory().create(baseVersion);
-            node.setProperty(cache, propFactory.create(JcrLexicon.IS_CHECKED_OUT, Boolean.FALSE));
-            node.setProperty(cache, propFactory.create(JcrLexicon.BASE_VERSION, baseVersionRef));
         }
 
         /**
@@ -1242,12 +1253,19 @@ final class JcrVersionManager implements VersionManager {
         private void restoreNodeMixins( CachedNode sourceNode,
                                         MutableCachedNode targetNode,
                                         SessionCache cache ) throws RepositoryException {
-            Property mixinTypesProp = sourceNode.getProperty(JcrLexicon.FROZEN_MIXIN_TYPES, cache);
-            if (mixinTypesProp == null) return;
+            restoreNodeMixinsFromProperty(sourceNode, targetNode, cache, JcrLexicon.FROZEN_MIXIN_TYPES);
+        }
+
+        private void restoreNodeMixinsFromProperty( CachedNode sourceNode,
+                                                    MutableCachedNode targetNode,
+                                                    SessionCache cache,
+                                                    Name sourceNodeMixinTypesPropertyName ) {
+            Property mixinTypesProp = sourceNode.getProperty(sourceNodeMixinTypesPropertyName, cache);
+            if (mixinTypesProp == null || mixinTypesProp.isEmpty()) return;
             Object[] mixinTypeNames = mixinTypesProp.getValuesAsArray();
             Collection<Name> currentMixinTypes = new HashSet<Name>(targetNode.getMixinTypes(cache));
-            for (int i = 0; i < mixinTypeNames.length; i++) {
-                Name mixinTypeName = name(mixinTypeNames[i]);
+            for (Object mixinTypeName1 : mixinTypeNames) {
+                Name mixinTypeName = name(mixinTypeName1);
                 if (!currentMixinTypes.remove(mixinTypeName)) {
                     targetNode.addMixin(cache, mixinTypeName);
                 }

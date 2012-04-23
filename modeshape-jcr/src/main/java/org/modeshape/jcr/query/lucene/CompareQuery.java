@@ -266,7 +266,10 @@ public abstract class CompareQuery<ValueType> extends Query {
         public int nextDoc() throws IOException {
             do {
                 ++docId;
-                if (docId == pastMaxDocId) return Scorer.NO_MORE_DOCS;
+                if (docId == pastMaxDocId) {
+                    docId = Scorer.NO_MORE_DOCS;
+                    return Scorer.NO_MORE_DOCS;
+                }
                 if (reader.isDeleted(docId)) {
                     // We should skip this document ...
                     continue;
@@ -286,7 +289,9 @@ public abstract class CompareQuery<ValueType> extends Query {
          */
         @Override
         public int advance( int target ) throws IOException {
-            if (target == Scorer.NO_MORE_DOCS) return target;
+            if (target == Scorer.NO_MORE_DOCS) {
+                return target;
+            }
             while (true) {
                 int doc = nextDoc();
                 if (doc >= target) return doc;

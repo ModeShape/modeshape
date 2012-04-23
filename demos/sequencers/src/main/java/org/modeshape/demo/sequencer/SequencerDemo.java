@@ -135,7 +135,7 @@ public class SequencerDemo {
             } catch (PathNotFoundException e) {
                 // The node wasn't there yet, so try again ...
             }
-            Thread.sleep(10L);
+            Thread.sleep(100L);
         } while ((System.currentTimeMillis() - start) <= maxWaitInMillis);
         throw new PathNotFoundException("Failed to find node '" + path + "' even after waiting " + maxWaitTime + " " + unit);
     }

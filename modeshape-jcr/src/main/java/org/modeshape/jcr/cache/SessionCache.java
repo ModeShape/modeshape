@@ -25,6 +25,7 @@ package org.modeshape.jcr.cache;
 
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.api.value.DateTime;
+import java.util.Set;
 
 /**
  * 
@@ -134,6 +135,23 @@ public interface SessionCache extends NodeCache {
     public boolean hasChanges();
 
     /**
+     * Returns a set with the {@link NodeKey}s of the transient nodes from this cache.
+     *
+     * @return a <code>Set</code> with the changed keys, or an empty set if {@link org.modeshape.jcr.cache.SessionCache#hasChanges()} is false.
+     * The returned set is a mutable copy of the underlying set.
+     */
+    public Set<NodeKey> getChangedNodeKeys();
+
+    /**
+     * Returns a set with the {@link NodeKey}s of the transient nodes from this cache which are at or below the path of the given
+     * node
+     *
+     * @param node a non-null {@link CachedNode} instance
+     * @return a <set>Set</set> of nodekeys, or an empty set if no nodes are found
+     */
+    public Set<NodeKey> getChangedNodeKeysAtOrBelow(CachedNode node);
+
+    /**
      * Clears all changes in the cache that are at or below the supplied node.
      * 
      * @param node the node at or below which all changes should be cleared; may not be null
@@ -190,6 +208,11 @@ public interface SessionCache extends NodeCache {
      * @return a new node key; never null
      */
     public NodeKey createNodeKeyWithIdentifier( String identifier );
+
+    /**
+     * Returns true if this cache is readonly, false otherwise.
+     */
+    public boolean isReadOnly();
 
     /**
      * Create a new node key for the current source and workspace.

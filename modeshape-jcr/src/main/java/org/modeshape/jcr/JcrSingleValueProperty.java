@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.Calendar;
 import java.util.UUID;
+import javax.jcr.AccessDeniedException;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
@@ -149,13 +150,16 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
                 }
                 return session().node(key, null);
             }
-            // STRING, PATH and NAME values will be convertable to a graph Path object ...
+            // STRING, PATH and NAME values will be convertable to a Path object ...
             Path path = factories.getPathFactory().create(value);
-            // We're throwing a PathNotFoundException here because that's what the TCK unit tests expect.
-            // See https://issues.apache.org/jira/browse/JCR-2648 for details
+
             return path.isAbsolute() ? session().node(path) : session().node(getParent().node(), path);
         } catch (org.modeshape.jcr.value.ValueFormatException e) {
             throw new ValueFormatException(e.getMessage(), e);
+        }
+        catch (PathNotFoundException pathNotFound) {
+            //expected by the TCK
+            throw new ItemNotFoundException(pathNotFound.getMessage(), pathNotFound);
         }
     }
 
@@ -171,11 +175,13 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         }
         // Find the parent node of the referenced property ...
         AbstractJcrNode referencedNode = null;
-        if (path.isAbsolute()) {
-            referencedNode = session().node(path);
-        } else {
-            referencedNode = session().node(cachedNode(), path);
+        try {
+            referencedNode = path.isAbsolute() ? session().node(path) :session().node(cachedNode(), path);
+        } catch (PathNotFoundException e) {
+            //expected by the TCK
+            throw new ItemNotFoundException(e.getMessage(), e);
         }
+
         // Now get the property from the referenced node ...
         Name propertyName = path.getLastSegment().getName();
         if (!referencedNode.hasProperty(propertyName)) {
@@ -207,8 +213,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
     public javax.jcr.Binary getBinary() throws ValueFormatException, RepositoryException {
         checkSession();
         try {
-            BinaryValue binary = context().getValueFactories().getBinaryFactory().create(property().getFirstValue());
-            return binary;
+            return context().getValueFactories().getBinaryFactory().create(property().getFirstValue());
         } catch (org.modeshape.jcr.value.ValueFormatException e) {
             throw new ValueFormatException(e.getMessage(), e);
         }
@@ -302,6 +307,11 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
             throw new ValueFormatException(JcrI18n.valueMayNotContainNull.text(getName()));
         }
 
+        if (session.cache().isReadOnly()) {
+            //expected by the tck
+            throw new AccessDeniedException();
+        }
+
         // Force a conversion as per SetValueValueFormatExceptionTest in JR TCK
         Object literal = jcrValue.asType(this.getType()).value();
         Property newProp = session().propertyFactory().create(name(), literal);
@@ -340,7 +350,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         checkSession();
         checkForLock();
         checkForCheckedOut();
-        setValue(createValue(new Long(value), PropertyType.LONG).asType(this.getType()));
+        setValue(createValue(value, PropertyType.LONG).asType(this.getType()));
     }
 
     @Override
@@ -349,7 +359,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         checkSession();
         checkForLock();
         checkForCheckedOut();
-        setValue(createValue(new Double(value), PropertyType.DOUBLE).asType(this.getType()));
+        setValue(createValue(value, PropertyType.DOUBLE).asType(this.getType()));
     }
 
     @Override
@@ -371,7 +381,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         checkSession();
         checkForLock();
         checkForCheckedOut();
-        setValue(createValue(new Boolean(value), PropertyType.BOOLEAN).asType(this.getType()));
+        setValue(createValue(value, PropertyType.BOOLEAN).asType(this.getType()));
     }
 
     @Override
@@ -389,8 +399,8 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
             throw new ValueFormatException(JcrI18n.nodeNotReferenceable.text());
         }
 
-        String id = value.getIdentifier();
-        setValue(createValue(id, PropertyType.REFERENCE).asType(this.getType()));
+        AbstractJcrNode jcrNode = session.getNodeByIdentifier(value.getIdentifier());
+        setValue(createValue(jcrNode.key(), PropertyType.REFERENCE).asType(this.getType()));
     }
 
     @Override

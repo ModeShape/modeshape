@@ -1125,7 +1125,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         assertTrue("Added reordered node has wrong path: actual=" + addNodeListener.getEvents().get(0).getPath() + ", expected="
                    + n3.getPath(), containsPath(addNodeListener, n3.getPath()));
         assertTrue("Removed reordered node has wrong path: actual=" + removeNodeListener.getEvents().get(0).getPath()
-                   + ", expected=" + n3.getPath(), containsPath(addNodeListener, n3.getPath()));
+                   + ", expected=" + n3.getPath(), containsPath(removeNodeListener, n3.getPath()));
     }
 
     /**
@@ -1135,7 +1135,6 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     @SuppressWarnings( "unchecked" )
     @Test
     @FixFor( "MODE-1409" )
-    @Ignore
     public void shouldTestNodeReorderTest_testNodeReorderSameName() throws Exception {
         // setup
         String node1 = "node1";
@@ -1186,7 +1185,6 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     @SuppressWarnings( "unchecked" )
     @Test
     @FixFor( "MODE-1409" )
-    @Ignore
     public void shouldTestNodeReorderTest_testNodeReorderSameNameWithRemove() throws Exception {
         // setup
         String node1 = "node1";
@@ -1716,6 +1714,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
      */
     // TODO author=Horia Chiorean date=3/2/12 description=Enable when workspace.copy is implemented
     @Ignore
+    @FixFor("MODE-1312")
     @Test
     public void shouldTestWorkspaceOperationTest_testCopy() throws Exception {
         // setup
@@ -1927,7 +1926,6 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         checkResults(listener2);
     }
 
-    @FixFor( "MODE-786" )
     @Test
     public void shouldReceiveEventsForChangesToLocksInSystemContent() throws Exception {
         Node root = session.getRootNode();
@@ -1938,16 +1936,22 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         targetNode.setProperty("foo", "bar");
         session.save();
 
-        TestListener listener = addListener(session, 10, 2, ALL_EVENTS, "/jcr:system", true, null, null, false);
+        //no event should be fired from the system path for the lock (excluded explicitly because the TCK does not expect events from this)
+        TestListener systemListener = addListener(session, 1, 2, ALL_EVENTS, "/jcr:system", true, null, null, false);
+        //2 events (property added for isDeep and lock owner) should be fired for the lock in the regular path (as per TCK)
+        TestListener nodeListener = addListener(session, 2, 2, ALL_EVENTS, parentNode.getPath(), true, null, null, false);
 
-        lock(parentNode, true, true); // SHOULD GENERATE AN EVENT TO CREATE A LOCK
+        lock(parentNode, true, true);
 
         // Wait for the events on the session's listeners (that should get the events) ...
-        listener.waitForEvents();
-        removeListener(listener);
-
+        systemListener.waitForEvents();
+        removeListener(systemListener);
         // Verify the expected events were received ...
-        checkResults(listener);
+        checkResults(systemListener);
+
+        nodeListener.waitForEvents();
+        removeListener(nodeListener);
+        checkResults(nodeListener);
     }
 
     @FixFor( "MODE-786" )
@@ -2262,7 +2266,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         }
 
         public void waitForEvents() throws Exception {
-            long millis = this.expectedEventsCount == 0 ? 50 : 250;
+            long millis = this.expectedEventsCount == 0 ? 50 : 500;
             this.latch.await(millis, TimeUnit.MILLISECONDS);
         }
     }

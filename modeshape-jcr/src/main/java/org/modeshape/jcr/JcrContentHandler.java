@@ -125,6 +125,7 @@ class JcrContentHandler extends DefaultHandler {
                || uuidBehavior == ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW;
 
         this.session = session;
+        this.session.initBaseVersionKeys();
         this.context = this.session.context();
         this.namespaces = context.getNamespaceRegistry();
         this.nameFactory = context.getValueFactories().getNameFactory();
@@ -608,6 +609,15 @@ class JcrContentHandler extends DefaultHandler {
                         if (value != null && propertyType == PropertyType.STRING) {
                             // Strings and binaries can be empty -- other data types cannot
                             values.add(valueFor(value, propertyType));
+                        } else if (value != null && (propertyType == PropertyType.REFERENCE || propertyType == PropertyType.WEAKREFERENCE)) {
+                            try {
+                                AbstractJcrNode parentNode = parentHandler.node();
+                                //TODO author=Horia Chiorean date=4/16/12 description=Not sure why, but if the parent is the root node, we need its information in the key of this node
+                                value = NodeKey.isValidFormat(value) && !parentNode.isRoot() ? value : parentNode.key().withId(value).toString();
+                                values.add(valueFor(value, propertyType));
+                            } catch (SAXException e) {
+                                throw new EnclosingSAXException(e);
+                            }
                         } else if (value != null && value.length() > 0) {
                             values.add(valueFor(value, propertyType));
                         }
@@ -633,7 +643,9 @@ class JcrContentHandler extends DefaultHandler {
                 List<Value> rawUuid = properties.get(JcrLexicon.UUID);
                 if (rawUuid != null) {
                     assert rawUuid.size() == 1;
-                    key = parent.key().withId(rawUuid.get(0).getString());
+                    String uuid = rawUuid.get(0).getString();
+                    //TODO author=Horia Chiorean date=4/16/12 description=Not sure why, but if the parent is the root node, we need its information in the key of this node
+                    key = NodeKey.isValidFormat(uuid) && !parent.isRoot() ? new NodeKey(uuid) : parent.key().withId(uuid);
 
                     try {
                         // Deal with any existing node ...
@@ -735,7 +747,7 @@ class JcrContentHandler extends DefaultHandler {
                         prop = child.setProperty(propertyName,
                                                  values.toArray(new JcrValue[values.size()]),
                                                  PropertyType.UNDEFINED,
-                                                 true);
+                                                 true, true);
                     }
 
                     if (prop.getType() == PropertyType.REFERENCE && prop.getDefinition().getValueConstraints().length != 0) {

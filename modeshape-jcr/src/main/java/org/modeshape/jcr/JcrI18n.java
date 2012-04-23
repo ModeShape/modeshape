@@ -129,6 +129,7 @@ public final class JcrI18n {
     public static I18n unableToCreateNodeWithNoDefaultPrimaryTypeOnChildNodeDefinition;
     public static I18n unableToSaveNodeThatWasCreatedSincePreviousSave;
     public static I18n unableToSetMultiValuedPropertyUsingSingleValue;
+    public static I18n cannotSetProtectedPropertyValue;
     public static I18n unableToSetSingleValuedPropertyUsingMultipleValues;
     public static I18n invalidMethodForSingleValuedProperty;
     public static I18n invalidMethodForMultiValuedProperty;

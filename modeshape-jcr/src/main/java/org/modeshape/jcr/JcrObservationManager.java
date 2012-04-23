@@ -27,6 +27,7 @@ import org.modeshape.jcr.cache.change.ChangeSetListener;
 import org.modeshape.jcr.cache.change.NodeAdded;
 import org.modeshape.jcr.cache.change.NodeMoved;
 import org.modeshape.jcr.cache.change.NodeRemoved;
+import org.modeshape.jcr.cache.change.NodeRenamed;
 import org.modeshape.jcr.cache.change.NodeReordered;
 import org.modeshape.jcr.cache.change.NodeSequenced;
 import org.modeshape.jcr.cache.change.Observable;
@@ -74,8 +75,8 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
     /**
      * The keys which provide extra information in case of a reorder
      */
-    static final String ORDER_DEST_KEY = "srcChildRelPath";
-    static final String ORDER_SRC_KEY = "destChildRelPath";
+    static final String ORDER_DEST_KEY = "destChildRelPath";
+    static final String ORDER_SRC_KEY = "srcChildRelPath";
 
     /**
      * The repository observable the JCR listeners will be registered with.
@@ -652,7 +653,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
          * @see javax.jcr.observation.Event#getInfo()
          */
         public Map<String, String> getInfo() {
-            return Collections.unmodifiableMap(info);
+            return info != null ? Collections.unmodifiableMap(info) : Collections.<String, String>emptyMap();
         }
 
         /**
@@ -680,10 +681,18 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                     sb.append("Property removed");
                     break;
                 case Event.NODE_MOVED:
-                    sb.append("Node moved");
-                    String from = info.containsKey(MOVE_FROM_KEY) ? info.get(MOVE_FROM_KEY) : info.get(ORDER_DEST_KEY);
-                    String to = info.containsKey(MOVE_TO_KEY) ? info.get(MOVE_TO_KEY) : info.get(ORDER_SRC_KEY);
-                    sb.append(" from ").append(from).append(" to ").append(to).append(" by ").append(getUserID());
+                    if (info.containsKey(MOVE_FROM_KEY) || info.containsKey(MOVE_TO_KEY)) {
+                        sb.append("Node moved");
+                        sb.append(" from ").append(info.get(MOVE_FROM_KEY)).append(" to ").append(info.get(MOVE_TO_KEY));
+                    } else {
+                        sb.append("Node reordered");
+                        String destination = info.get(ORDER_DEST_KEY);
+                        if (destination == null) {
+                            destination = " at the end of the children list";
+                        }
+                        sb.append(" from ").append(info.get(ORDER_SRC_KEY)).append(" to ").append(destination);
+                    }
+                    sb.append(" by ").append(getUserID());
                     return sb.toString();
                 case org.modeshape.jcr.api.observation.Event.NODE_SEQUENCED:
                     sb.append("Node sequenced");
@@ -768,6 +777,9 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
             this.absPath = absPath;
             this.isDeep = isDeep;
             this.uuids = uuids;
+            if (this.uuids != null) {
+                Arrays.sort(this.uuids);
+            }
             this.nodeTypeNames = nodeTypeNames;
             this.noLocal = noLocal;
         }
@@ -806,6 +818,9 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                 return;
             }
             AbstractNodeChange nodeChange = (AbstractNodeChange)change;
+            if (logger.isDebugEnabled()) {
+                logger.debug("Received change: " + nodeChange);
+            }
 
             if (shouldReject(nodeChange)) {
                 return;
@@ -813,21 +828,18 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
             // process event making sure we have the right event type
             Path newPath = nodeChange.getPath();
-            String nodeId = nodeChange.getKey().getIdentifier();
+            String nodeId = nodeChange.getKey().toString();
 
             //node moved
             if (nodeChange instanceof NodeMoved) {
                 NodeMoved nodeMovedChange = (NodeMoved)nodeChange;
                 Path oldPath = nodeMovedChange.getOldPath();
-                if (eventListenedFor(Event.NODE_MOVED)) {
-                    Map<String, String> info = new HashMap<String, String>();
-                    info.put(MOVE_FROM_KEY, stringFor(oldPath));
-                    info.put(MOVE_TO_KEY, stringFor(newPath));
+                fireNodeMoved(events, bundle, newPath, nodeId, oldPath);
 
-                    events.add(new JcrEvent(bundle, Event.NODE_MOVED, stringFor(newPath), nodeId, Collections.unmodifiableMap(
-                            info)));
-                }
-                fireExtraEventsForMove(events, bundle, newPath, nodeId, oldPath);
+            } else if (nodeChange instanceof NodeRenamed) {
+                NodeRenamed nodeRenamedChange = (NodeRenamed) nodeChange;
+                Path oldPath = pathFactory().create(newPath.subpath(0, newPath.size() - 1), nodeRenamedChange.getOldSegment());
+                fireNodeMoved(events, bundle, newPath, nodeId, oldPath);
 
             } else if (nodeChange instanceof NodeReordered) {
                 NodeReordered nodeReordered = (NodeReordered)nodeChange;
@@ -835,12 +847,18 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
                 if (eventListenedFor(Event.NODE_MOVED)) {
                     Map<String, String> info = new HashMap<String, String>();
-                    info.put(ORDER_DEST_KEY, stringFor(oldPath.getLastSegment()));
-                    info.put(ORDER_SRC_KEY, stringFor(newPath.getLastSegment()));
-
+                    //check if the reordering wasn't at the end by any chance
+                    if (nodeReordered.getReorderedBeforePath() != null) {
+                        info.put(ORDER_DEST_KEY, stringFor(nodeReordered.getReorderedBeforePath().getLastSegment()));
+                    }
+                    else {
+                        info.put(ORDER_DEST_KEY, null);
+                    }
+                    info.put(ORDER_SRC_KEY, stringFor(oldPath.getLastSegment()));
                     events.add(new JcrEvent(bundle, Event.NODE_MOVED, stringFor(newPath), nodeId,
                                             Collections.unmodifiableMap(info)));
                 }
+
                 fireExtraEventsForMove(events, bundle, newPath, nodeId, oldPath);
             } else if (nodeChange instanceof NodeAdded && eventListenedFor(Event.NODE_ADDED)) {
                 // create event for added node
@@ -869,10 +887,26 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
                 Map<String, String> infoMap = new HashMap<String, String>();
                 infoMap.put(SEQUENCED_NODE_PATH, stringFor(sequencedChange.getSequencedNodePath()));
-                infoMap.put(SEQUENCED_NODE_ID, sequencedChange.getSequencedNodeKey().getIdentifier());
+                infoMap.put(SEQUENCED_NODE_ID, sequencedChange.getSequencedNodeKey().toString());
                 
                 events.add(new JcrEvent(bundle, NODE_SEQUENCED, stringFor(sequencedChange.getPath()), nodeId, infoMap));
             }
+        }
+
+        private void fireNodeMoved( Collection<Event> events,
+                                    JcrEventBundle bundle,
+                                    Path newPath,
+                                    String nodeId,
+                                    Path oldPath ) {
+            if (eventListenedFor(Event.NODE_MOVED)) {
+                Map<String, String> info = new HashMap<String, String>();
+                info.put(MOVE_FROM_KEY, stringFor(oldPath));
+                info.put(MOVE_TO_KEY, stringFor(newPath));
+
+                events.add(new JcrEvent(bundle, Event.NODE_MOVED, stringFor(newPath), nodeId, Collections.unmodifiableMap(
+                        info)));
+            }
+            fireExtraEventsForMove(events, bundle, newPath, nodeId, oldPath);
         }
 
         private void fireExtraEventsForMove( Collection<Event> events,
@@ -880,7 +914,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                                              Path newPath,
                                              String nodeId,
                                              Path oldPath ) {
-            // For some bizarre reason, JCR 2.0 expects these methods <i>in addition to</i> the NODE_MOVED event
+            // JCR 1.0 expects these methods <i>in addition to</i> the NODE_MOVED event
             if (eventListenedFor(Event.NODE_ADDED)) {
                 events.add(new JcrEvent(bundle, Event.NODE_ADDED, stringFor(newPath), nodeId));
             }
@@ -893,7 +927,30 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
             return !acceptBasedOnNodeTypeName(nodeChange)
                     || !acceptBasedOnPath(nodeChange)
                     || !acceptBasedOnUuid(nodeChange)
-                    || !acceptBasedOnPermission(nodeChange);
+                    || !acceptBasedOnPermission(nodeChange)
+                    || !acceptIfLockChange(nodeChange);
+        }
+
+
+        /**
+         * In case of changes involving locks from the system workspace, the TCK expects that the only property changes be for lock owner
+         * and lock isDeep, which will be fired from the locked node. Therefore, we should exclude property notifications from the
+         * lock node from the system workspace.
+         * @param nodeChange
+         * @return
+         */
+        private boolean acceptIfLockChange( AbstractNodeChange nodeChange ) {
+            if (!(nodeChange instanceof PropertyAdded || nodeChange instanceof PropertyRemoved || nodeChange instanceof PropertyChanged)) {
+                return true;
+            }
+            Path path = nodeChange.getPath();
+            if (path.size() < 2) {
+                return true;
+            }
+            Name firstSegmentName = path.subpath(0, 1).getLastSegment().getName();
+            boolean isSystemLockChange = JcrLexicon.SYSTEM.equals(firstSegmentName)
+                    && ModeShapeLexicon.LOCKS.equals(path.getParent().getLastSegment().getName());
+            return !isSystemLockChange;
         }
 
         private boolean eventListenedFor( int eventType ) {
@@ -994,8 +1051,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
             }
 
             if ((this.uuids != null) && (this.uuids.length > 0)) {
-                String matchUuidString = change.getKey().getIdentifier();
-                Arrays.sort(this.uuids);
+                String matchUuidString = change.getKey().toString();
                 return Arrays.binarySearch(this.uuids, matchUuidString) >= 0;
             }
 

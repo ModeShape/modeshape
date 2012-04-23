@@ -83,7 +83,7 @@ public interface CachedNode {
      * Get the node key for this node's primary parent.
      * 
      * @param cache the cache to which this node belongs, required in case this node needs to use the cache; may not be null
-     * @return the parent's key; null if this is the root node
+     * @return the parent's key; null if this is the root node or it has been removed from the document by someone else
      */
     NodeKey getParentKey( NodeCache cache );
 

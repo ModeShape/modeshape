@@ -23,19 +23,6 @@
  */
 package org.modeshape.jcr;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.ItemExistsException;
 import javax.jcr.Node;
@@ -44,10 +31,23 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.jcr.nodetype.ConstraintViolationException;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.value.Path;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * Tests of round-trip importing/exporting of repository content.
@@ -60,6 +60,8 @@ public class ImportExportTest extends SingleUseAbstractTest {
     }
 
     private static final String BAD_CHARACTER_STRING = "Test & <Test>*";
+
+    private String expectedIdentifier ="e41075cb-a09a-4910-87b1-90ce8b4ca9dd";
 
     private void testImportExport( String sourcePath,
                                    String targetPath,
@@ -184,7 +186,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
 
         // Now delete the '/someNode/Cars' node (which is everything that was imported) ...
         Node cars = assertNode("/someNode/Cars");
-        assertThat(cars.getIdentifier(), is("e41075cb-a09a-4910-87b1-90ce8b4ca9dd"));
+        assertThat(cars.getIdentifier(), is(expectedIdentifier));
         assertNoNode("/someNode/Cars[2]");
         assertNoNode("/someNode[2]");
         cars.remove();
@@ -196,7 +198,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
 
         // Verify the same Cars node exists ...
         cars = assertNode("/someNode/Cars");
-        assertThat(cars.getIdentifier(), is("e41075cb-a09a-4910-87b1-90ce8b4ca9dd"));
+        assertThat(cars.getIdentifier(), is(expectedIdentifier));
         assertNoNode("/someNode/Cars[2]");
         assertNoNode("/someNode[2]");
     }
@@ -216,7 +218,8 @@ public class ImportExportTest extends SingleUseAbstractTest {
 
         // Now delete the '/someNode/Cars' node (which is everything that was imported) ...
         Node cars = assertNode("/someNode/Cars");
-        assertThat(cars.getIdentifier(), is("e41075cb-a09a-4910-87b1-90ce8b4ca9dd"));
+
+        assertThat(cars.getIdentifier(), is(expectedIdentifier));
         assertNoNode("/someNode/Cars[2]");
         assertNoNode("/someNode[2]");
         cars.remove();
@@ -229,7 +232,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
 
         // Verify the same Cars node exists ...
         cars = assertNode("/someNode/Cars");
-        assertThat(cars.getIdentifier(), is("e41075cb-a09a-4910-87b1-90ce8b4ca9dd"));
+        assertThat(cars.getIdentifier(), is(expectedIdentifier));
         assertNoNode("/someNode/Cars[2]");
         assertNoNode("/someNode[2]");
     }
@@ -251,14 +254,15 @@ public class ImportExportTest extends SingleUseAbstractTest {
 
         // Now delete the '/someNode/Cars' node (which is everything that was imported) ...
         Node cars = assertNode("/someNode/Cars");
-        assertThat(cars.getIdentifier(), is("e41075cb-a09a-4910-87b1-90ce8b4ca9dd"));
+
+        assertThat(cars.getIdentifier(), is(expectedIdentifier));
         assertNoNode("/someNode/Cars[2]");
         assertNoNode("/someNode[2]");
         cars.remove();
 
         // Now create a node at the same spot as cars, but with a different UUID ...
         Node newCars = someNode.addNode("Cars");
-        assertThat(newCars.getIdentifier(), is(not("e41075cb-a09a-4910-87b1-90ce8b4ca9dd")));
+        assertThat(newCars.getIdentifier(), is(not(expectedIdentifier)));
 
         // session.save(); // DO NOT SAVE
 
@@ -268,7 +272,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
 
         // Verify the same Cars node exists ...
         cars = assertNode("/otherNode/Cars");
-        assertThat(cars.getIdentifier(), is("e41075cb-a09a-4910-87b1-90ce8b4ca9dd"));
+        assertThat(cars.getIdentifier(), is(expectedIdentifier));
 
         // Make sure some duplicate nodes didn't show up ...
         assertNoNode("/sameNode/Cars[2]");

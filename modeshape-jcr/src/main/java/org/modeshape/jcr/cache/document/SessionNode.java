@@ -264,7 +264,12 @@ public class SessionNode implements MutableCachedNode {
 
     @Override
     public NodeKey getParentKey( NodeCache cache ) {
-        return newParent != null ? newParent : nodeInWorkspace(session(cache)).getParentKey(cache);
+        if (newParent != null) {
+            return newParent;
+        }
+        CachedNode cachedNode = nodeInWorkspace(session(cache));
+        //if it is null, it means it has been removed in the meantime from the ws
+        return cachedNode != null ? cachedNode.getParentKey(cache) : null;
     }
 
     protected CachedNode parent( AbstractSessionCache session ) {
@@ -341,7 +346,8 @@ public class SessionNode implements MutableCachedNode {
     public Name getPrimaryType( NodeCache cache ) {
         AbstractSessionCache session = session(cache);
         Property prop = getProperty(JcrLexicon.PRIMARY_TYPE, session);
-        return session.nameFactory().create(prop.getFirstValue());
+        NameFactory nameFactory = session.nameFactory();
+        return prop != null ? nameFactory.create(prop.getFirstValue()) : nameFactory.create((Object) null);
     }
 
     @Override
@@ -615,6 +621,16 @@ public class SessionNode implements MutableCachedNode {
         Name name = property.getName();
         changedProperties.put(name, property);
         if (!isNew) removedProperties.remove(name);
+    }
+
+    @Override
+    public void setPropertyIfUnchanged( SessionCache cache,
+                                        Property property ) {
+        Name propertyName = property.getName();
+        boolean isModified = changedProperties.containsKey(propertyName) && (isNew || isPropertyInWorkspaceCache(cache, propertyName));
+        if (!isModified) {
+            setProperty(cache, property);
+        }
     }
 
     @Override

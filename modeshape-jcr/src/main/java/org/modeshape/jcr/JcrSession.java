@@ -71,6 +71,7 @@ import org.modeshape.jcr.api.monitor.DurationMetric;
 import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
+import org.modeshape.jcr.cache.ChildReferences;
 import org.modeshape.jcr.cache.DocumentAlreadyExistsException;
 import org.modeshape.jcr.cache.DocumentNotFoundException;
 import org.modeshape.jcr.cache.MutableCachedNode;
@@ -195,14 +196,18 @@ public class JcrSession implements Session {
 
         observationManager().removeAllEventListeners();
 
+        cleanLocks();
+        if (removeFromActiveSession) this.repository.runningState().removeSession(this);
+        this.context.getSecurityContext().logout();
+    }
+
+    private void cleanLocks() {
         try {
             lockManager().cleanLocks();
         } catch (RepositoryException e) {
             // This can only happen if the session is not live, which is checked above ...
             Logger.getLogger(getClass()).error(e, JcrI18n.unexpectedException, e.getMessage());
         }
-        if (removeFromActiveSession) this.repository.runningState().removeSession(this);
-        this.context.getSecurityContext().logout();
     }
 
     protected SchematicEntry entryForNode( NodeKey nodeKey ) throws RepositoryException {
@@ -475,8 +480,8 @@ public class JcrSession implements Session {
         if (absolutePath.isRoot()) return getRootNode();
         if (absolutePath.isIdentifier()) {
             // Look up the node by identifier ...
-            NodeKey key = rootNode.key().withId(stringFactory().create(absolutePath));
-            return node(key, null);
+            String identifierString = stringFactory().create(absolutePath).replaceAll("\\[","").replaceAll("\\]","");
+            return getNodeByIdentifier(identifierString);
         }
         CachedNode node = getRootNode().node();
         return node(node, absolutePath);
@@ -690,15 +695,11 @@ public class JcrSession implements Session {
         checkLive();
         CheckArg.isNotEmpty(absPath, "absPath");
         Path absolutePath = absolutePathFor(absPath);
-
-        if (absolutePath.isRoot()) return true;
-        if (absolutePath.isIdentifier()) {
-            // Look up the node by identifier ...
-            NodeKey key = new NodeKey(stringFactory().create(absolutePath));
-            return cache().getNode(key) != null;
+        try {
+            return node(absolutePath) != null;
+        } catch (PathNotFoundException e) {
+            return false;
         }
-
-        return cachedNode(absolutePath) != null;
     }
 
     @Override
@@ -731,9 +732,13 @@ public class JcrSession implements Session {
         RepositoryException {
         checkLive();
 
-        // Find the source path and destination path ...
+        // Find the source path and destination path and check for permissions
         Path srcPath = absolutePathFor(srcAbsPath);
+        checkPermission(srcPath, ModeShapePermissions.REMOVE);
+
         Path destPath = absolutePathFor(destAbsPath);
+        checkPermission(destPath.getParent(), ModeShapePermissions.ADD_NODE);
+
         if (srcPath.isRoot()) {
             throw new RepositoryException(JcrI18n.unableToMoveRootNode.text(workspaceName()));
         }
@@ -756,6 +761,8 @@ public class JcrSession implements Session {
         // Get the node at the source path and the parent node of the destination path ...
         AbstractJcrNode srcNode = node(srcPath);
         AbstractJcrNode destParentNode = node(destPath.getParent());
+
+        SessionCache sessionCache = cache();
 
         // Check whether these nodes are locked ...
         if (srcNode.isLocked() && !srcNode.getLock().isLockOwningSession()) {
@@ -780,15 +787,19 @@ public class JcrSession implements Session {
             throw new VersionException(JcrI18n.nodeIsCheckedIn.text(destParentNode.getPath()));
         }
 
+        //check whether the parent definition allows children which match the source
+        destParentNode.validateChildNodeDefinition(srcNode.name(),
+                                                   srcNode.getPrimaryTypeName(), true);
+
         try {
             MutableCachedNode mutableSrcParent = srcParent.mutable();
             MutableCachedNode mutableDestParent = destParentNode.mutable();
             if (mutableSrcParent.equals(mutableDestParent)) {
                 // It's just a rename ...
-                mutableSrcParent.renameChild(cache, srcNode.key(), destPath.getLastSegment().getName());
+                mutableSrcParent.renameChild(sessionCache, srcNode.key(), destPath.getLastSegment().getName());
             } else {
                 // It is a move from one parent to another ...
-                mutableSrcParent.moveChild(cache, srcNode.key(), mutableDestParent, destPath.getLastSegment().getName());
+                mutableSrcParent.moveChild(sessionCache, srcNode.key(), mutableDestParent, destPath.getLastSegment().getName());
             }
         } catch (NodeNotFoundException e) {
             // Not expected ...
@@ -845,13 +856,25 @@ public class JcrSession implements Session {
      * @see AbstractJcrNode#save()
      */
     void save( AbstractJcrNode node ) throws RepositoryException {
+        if (node.isNew()) {
+            //expected by TCK
+            throw new RepositoryException(JcrI18n.unableToSaveNodeThatWasCreatedSincePreviousSave.text(node.getPath(), workspaceName()));
+        }
+
+        if (node.containsChangesWithExternalDependencies()) {
+            //expected by TCK
+            I18n msg = JcrI18n.unableToSaveBranchBecauseChangesDependOnChangesToNodesOutsideOfBranch;
+            throw new ConstraintViolationException(msg.text(node.path(), workspaceName()));
+        }
+
+        SessionCache sessionCache = cache();
 
         // Perform the save, using 'JcrPreSave' operations ...
         SessionCache systemCache = createSystemCache(false);
         SystemContent systemContent = new SystemContent(systemCache);
         Map<NodeKey, NodeKey> baseVersionKeys = this.baseVersionKeys.get();
         try {
-            cache().save(node.node(), systemContent.cache(), new JcrPreSave(systemContent, baseVersionKeys));
+            sessionCache.save(node.node(), systemContent.cache(), new JcrPreSave(systemContent, baseVersionKeys));
         } catch (WrappedException e) {
             Throwable cause = e.getCause();
             throw (cause instanceof RepositoryException) ? (RepositoryException)cause : new RepositoryException(e.getCause());
@@ -1078,9 +1101,12 @@ public class JcrSession implements Session {
         boolean retainLifecycleInfo = getRepository().getDescriptorValue(Repository.OPTION_LIFECYCLE_SUPPORTED).getBoolean();
         boolean retainRetentionInfo = getRepository().getDescriptorValue(Repository.OPTION_RETENTION_SUPPORTED).getBoolean();
 
+        return new JcrContentHandler(this, parent, uuidBehavior, false, retainRetentionInfo, retainLifecycleInfo);
+    }
+
+    protected void initBaseVersionKeys() {
         // Since we're importing into this session, we need to capture any base version information in the imported file ...
         baseVersionKeys.compareAndSet(null, new ConcurrentHashMap<NodeKey, NodeKey>());
-        return new JcrContentHandler(this, parent, uuidBehavior, false, retainRetentionInfo, retainLifecycleInfo);
     }
 
     @Override
@@ -1198,6 +1224,7 @@ public class JcrSession implements Session {
     @Override
     public void logout() {
         this.isLive = false;
+        cleanLocks();
         try {
             RunningState running = repository.runningState();
             long lifetime = System.nanoTime() - this.nanosCreated;
@@ -1281,15 +1308,19 @@ public class JcrSession implements Session {
             NodeCache cache = repository.repositoryCache().getWorkspaceCache(workspaceName);
             CachedNode node = cache.getNode(key);
             if (node == null) {
-                throw new ItemNotFoundException(JcrI18n.itemNotFoundWithUuid.text(key.toString()));
+                throw new ItemNotFoundException(JcrI18n.itemNotFoundWithUuid.text(key.toString(), workspaceName));
             }
             if (relativePath != null) {
                 for (Segment segment : relativePath) {
                     ChildReference child = node.getChildReferences(cache).getChild(segment);
+                    if (child == null) {
+                        Path path = pathFactory().create(node.getPath(cache), segment);
+                        throw new ItemNotFoundException(JcrI18n.itemNotFoundAtPath.text(path.getString(namespaces()), workspaceName()));
+                    }
                     CachedNode childNode = cache.getNode(child);
                     if (childNode == null) {
                         Path path = pathFactory().create(node.getPath(cache), segment);
-                        throw new ItemNotFoundException(JcrI18n.itemNotFoundAtPath.text(path.getString(namespaces())));
+                        throw new ItemNotFoundException(JcrI18n.itemNotFoundAtPath.text(path.getString(namespaces()), workspaceName()));
                     }
                     node = childNode;
                 }
@@ -1363,9 +1394,9 @@ public class JcrSession implements Session {
             boolean initializeVersionHistory = false;
             if (node.isNew()) {
                 if (nodeTypeCapabilities.isCreated(primaryType, mixinTypes)) {
-                    // Set the created by and time information ...
-                    node.setProperty(cache, propertyFactory.create(JcrLexicon.CREATED, context.getTime()));
-                    node.setProperty(cache, propertyFactory.create(JcrLexicon.CREATED_BY, context.getUserId()));
+                    // Set the created by and time information if not changed explicitly
+                    node.setPropertyIfUnchanged(cache, propertyFactory.create(JcrLexicon.CREATED, context.getTime()));
+                    node.setPropertyIfUnchanged(cache, propertyFactory.create(JcrLexicon.CREATED_BY, context.getUserId()));
                 }
                 initializeVersionHistory = nodeTypeCapabilities.isVersionable(primaryType, mixinTypes);
             } else {
@@ -1379,9 +1410,9 @@ public class JcrSession implements Session {
             // mix:lastModified
             // ----------------
             if (nodeTypeCapabilities.isLastModified(primaryType, mixinTypes)) {
-                // Set the last modified by and time information ...
-                node.setProperty(cache, propertyFactory.create(JcrLexicon.LAST_MODIFIED, context.getTime()));
-                node.setProperty(cache, propertyFactory.create(JcrLexicon.LAST_MODIFIED_BY, context.getUserId()));
+                // Set the last modified by and time information if it has not been changed explicitly
+                node.setPropertyIfUnchanged(cache, propertyFactory.create(JcrLexicon.LAST_MODIFIED, context.getTime()));
+                node.setPropertyIfUnchanged(cache, propertyFactory.create(JcrLexicon.LAST_MODIFIED_BY, context.getUserId()));
             }
 
             // ---------------
@@ -1394,24 +1425,39 @@ public class JcrSession implements Session {
                     // Initialize the version history ...
                     NodeKey historyKey = systemContent.versionHistoryNodeKeyFor(versionableKey);
                     NodeKey baseVersionKey = baseVersionKeys == null ? null : baseVersionKeys.get(versionableKey);
-                    if (baseVersionKey == null) baseVersionKey = historyKey.withRandomId();
-                    Path versionHistoryPath = versionManager.versionHistoryPathFor(versionableKey);
-                    systemContent.initializeVersionStorage(versionableKey,
-                                                           historyKey,
-                                                           baseVersionKey,
-                                                           primaryType,
-                                                           mixinTypes,
-                                                           versionHistoryPath,
-                                                           null,
-                                                           context.getTime());
+                    //it may happen during an import, that a node with version history & base version is assigned a new key and therefore
+                    //the base version points to an existing version while no version history is found initially
+                    boolean shouldCreateNewVersionHistory = true;
+                    if (baseVersionKey != null){
+                        SessionCache systemCache = systemContent.cache();
+                        CachedNode baseVersionNode = systemCache.getNode(baseVersionKey);
+                        if (baseVersionNode != null) {
+                            historyKey = baseVersionNode.getParentKey(systemCache);
+                            shouldCreateNewVersionHistory = (historyKey == null);
+                        }
+                    }
+                    if (shouldCreateNewVersionHistory) {
+                        //a new version history should be initialized
+                        if (baseVersionKey == null) baseVersionKey = historyKey.withRandomId();
+                        Path versionHistoryPath = versionManager.versionHistoryPathFor(versionableKey);
+                        systemContent.initializeVersionStorage(versionableKey,
+                                                               historyKey,
+                                                               baseVersionKey,
+                                                               primaryType,
+                                                               mixinTypes,
+                                                               versionHistoryPath,
+                                                               null,
+                                                               context.getTime());
+                    }
 
-                    // Now update the node as if it's checked in ...
+                    // Now update the node as if it's checked in (with the exception of the predecessors...
                     Reference historyRef = referenceFactory.create(historyKey);
                     Reference baseVersionRef = referenceFactory.create(baseVersionKey);
                     node.setProperty(cache, propertyFactory.create(JcrLexicon.IS_CHECKED_OUT, Boolean.TRUE));
                     node.setProperty(cache, propertyFactory.create(JcrLexicon.VERSION_HISTORY, historyRef));
                     node.setProperty(cache, propertyFactory.create(JcrLexicon.BASE_VERSION, baseVersionRef));
-                    node.setProperty(cache, propertyFactory.create(JcrLexicon.PREDECESSORS, new Object[] {}));
+                    //JSR 283 - 15.1
+                    node.setProperty(cache, propertyFactory.create(JcrLexicon.PREDECESSORS, new Object[] {baseVersionRef}));
                 }
             }
 

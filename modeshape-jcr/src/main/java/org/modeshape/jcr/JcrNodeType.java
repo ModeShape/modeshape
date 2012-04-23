@@ -110,11 +110,17 @@ class JcrNodeType implements NodeType {
      */
     private ExecutionContext context;
 
+    /**
+     * A reference to a user session, in the context of which the node type is created. May be null during system initialization.
+     */
+    private JcrSession session;
+
     /** Link to the repository node type manager for the repository to which this node type belongs. */
     private RepositoryNodeTypeManager nodeTypeManager;
 
     JcrNodeType( NodeKey prototypeKey,
                  ExecutionContext context,
+                 JcrSession session,
                  RepositoryNodeTypeManager nodeTypeManager,
                  Name name,
                  List<JcrNodeType> declaredSupertypes,
@@ -128,6 +134,7 @@ class JcrNodeType implements NodeType {
         assert context != null;
 
         this.context = context;
+        this.session = session;
         this.nodeTypeManager = nodeTypeManager;
         this.name = name;
         this.primaryItemName = primaryItemName;
@@ -274,12 +281,19 @@ class JcrNodeType implements NodeType {
         Name childPrimaryTypeName = context.getValueFactories().getNameFactory().create(primaryNodeTypeName);
 
         NodeTypes nodeTypes = nodeTypes();
+        JcrNodeDefinition childNodeDefinition = nodeTypes.findChildNodeDefinition(this.name, null, childName,
+                                                                                  childPrimaryTypeName, 0, true);
+
+        if (childNodeDefinition != null && RESIDUAL_ITEM_NAME.equals(childNodeDefinition.getName())) {
+            //the TCK expects that for residual children definitions, this returns true
+            return true;
+        }
+
         if (primaryNodeTypeName != null) {
             JcrNodeType childType = nodeTypes.getNodeType(childPrimaryTypeName);
             if (childType.isAbstract() || childType.isMixin()) return false;
         }
-
-        return nodeTypes.findChildNodeDefinition(this.name, null, childName, childPrimaryTypeName, 0, true) != null;
+        return childNodeDefinition != null;
     }
 
     @Override
@@ -360,13 +374,13 @@ class JcrNodeType implements NodeType {
     @Override
     public boolean canSetProperty( String propertyName,
                                    Value value ) {
-        throw new UnsupportedOperationException();
+        return canSetProperty(session, propertyName, value);
     }
 
     @Override
     public boolean canSetProperty( String propertyName,
                                    Value[] values ) {
-        throw new UnsupportedOperationException();
+        return canSetProperty(session, propertyName, values);
     }
 
     public boolean canSetProperty( JcrSession session,
@@ -572,8 +586,8 @@ class JcrNodeType implements NodeType {
      * @param nodeTypeManager the new repository node type manager
      * @return a new {@link JcrNodeType} that has the same state as this node type, but with the given node type manager.
      */
-    final JcrNodeType with( RepositoryNodeTypeManager nodeTypeManager ) {
-        return new JcrNodeType(this.key, this.context, nodeTypeManager, this.name, this.declaredSupertypes, this.primaryItemName,
+    final JcrNodeType with( RepositoryNodeTypeManager nodeTypeManager) {
+        return new JcrNodeType(this.key, this.context, this.session, nodeTypeManager, this.name, this.declaredSupertypes, this.primaryItemName,
                                this.childNodeDefinitions, this.propertyDefinitions, this.mixin, this.isAbstract, this.queryable,
                                this.orderableChildNodes);
     }
@@ -582,10 +596,11 @@ class JcrNodeType implements NodeType {
      * Returns a {@link JcrNodeType} that is equivalent to this {@link JcrNodeType}, except with a different execution context.
      * 
      * @param context the new execution context
+     * @param session an active user session, in the context of which the node type is created. May be null, during system initialization.
      * @return a new {@link JcrNodeType} that has the same state as this node type, but with the given node type manager.
      */
-    final JcrNodeType with( ExecutionContext context ) {
-        return new JcrNodeType(this.key, context, this.nodeTypeManager, this.name, this.declaredSupertypes, this.primaryItemName,
+    final JcrNodeType with( ExecutionContext context, JcrSession session) {
+        return new JcrNodeType(this.key, context, session, this.nodeTypeManager, this.name, this.declaredSupertypes, this.primaryItemName,
                                this.childNodeDefinitions, this.propertyDefinitions, this.mixin, this.isAbstract, this.queryable,
                                this.orderableChildNodes);
     }

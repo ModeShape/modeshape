@@ -25,6 +25,7 @@ package org.modeshape.jcr.cache.change;
 
 import java.util.Collections;
 import java.util.ConcurrentModificationException;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Queue;
@@ -115,8 +116,9 @@ public class RecordingChanges implements Changes, ChangeSet {
     public void nodeReordered( NodeKey key,
                                NodeKey parent,
                                Path newPath,
-                               Path oldPath ) {
-        events.add(new NodeReordered(key, parent, newPath, oldPath));
+                               Path oldPath,
+                               Path reorderedBeforePath) {
+        events.add(new NodeReordered(key, parent, newPath, oldPath, reorderedBeforePath));
     }
 
     @Override
@@ -185,7 +187,7 @@ public class RecordingChanges implements Changes, ChangeSet {
 
     public void setChangedNodes( Set<NodeKey> keys ) {
         if (keys != null) {
-            this.nodeKeys = Collections.unmodifiableSet(keys);
+            this.nodeKeys = Collections.unmodifiableSet(new HashSet<NodeKey>(keys));
         }
     }
 

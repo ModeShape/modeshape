@@ -92,6 +92,15 @@ public interface MutableCachedNode extends CachedNode {
     void setProperty( SessionCache cache,
                       Property property );
 
+  /**
+     * Set the given property only if it has not been set previously and therefore appear as changed.
+     *
+     * @param cache the cache to which this node belongs; may not be null
+     * @param property the property; may not be null
+     * @throws NodeNotFoundException if this node no longer exists
+     */
+    void setPropertyIfUnchanged( SessionCache cache, Property property );
+
     /**
      * Set the properties on this node.
      * 

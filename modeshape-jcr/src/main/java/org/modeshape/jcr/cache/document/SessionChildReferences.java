@@ -112,7 +112,10 @@ public class SessionChildReferences extends AbstractChildReferences {
                     if (numSnsInPersisted != 0) {
                         // There were some persisted with the same name, and we didn't find these
                         // when looking in the persisted node above. So adjust the SNS index ...
-                        ref = ref.with(numSnsInPersisted + ref.getSnsIndex());
+
+                        //we need to take into account that the same node might be removed (in case of an reorder to the end)
+                        int numSnsInRemoved = (changedChildren != null && changedChildren.getRemovals().contains(key)) ? 1 : 0;
+                        ref = ref.with(numSnsInPersisted + ref.getSnsIndex() - numSnsInRemoved);
                     }
                 }
             }

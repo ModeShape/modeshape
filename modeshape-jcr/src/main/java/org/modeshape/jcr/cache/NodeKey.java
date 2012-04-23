@@ -29,6 +29,7 @@ import java.util.UUID;
 import org.infinispan.schematic.SchematicDb;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.Immutable;
+import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.SecureHash;
 import org.modeshape.jcr.JcrRepository;
 

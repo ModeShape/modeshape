@@ -163,8 +163,12 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
     }
 
     final JcrValue createValue( Object value,
-                                int propertyType ) {
-        return new JcrValue(session().context().getValueFactories(), this.propertyType, value);
+                                int propertyType ) throws ValueFormatException {
+        try {
+            return new JcrValue(session().context().getValueFactories(), propertyType, value);
+        } catch (org.modeshape.jcr.value.ValueFormatException e) {
+            throw new ValueFormatException(e);
+        }
     }
 
     @Override
