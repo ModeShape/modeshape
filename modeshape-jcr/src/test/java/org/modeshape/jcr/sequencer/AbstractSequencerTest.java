@@ -23,8 +23,10 @@
  */
 package org.modeshape.jcr.sequencer;
 
+import javax.jcr.Session;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
+import org.modeshape.jcr.JcrLexicon;
 import static org.modeshape.jcr.api.observation.Event.NODE_SEQUENCED;
 import java.io.InputStream;
 import java.util.Map;
@@ -184,6 +186,10 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
 
         assertNotNull(event.getIdentifier());
         assertNotNull(event.getPath());
+    }
+
+    protected void assertCreatedBySessionUser(Node node, Session session) throws RepositoryException {
+        assertEquals(session.getUserID(), node.getProperty(JcrLexicon.CREATED_BY.getString()).getString());
     }
 
     private class SequencingListener implements EventListener {

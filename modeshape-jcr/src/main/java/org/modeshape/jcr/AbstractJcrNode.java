@@ -2311,7 +2311,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     private void updateMixinsProperty() throws RepositoryException {
         MutableCachedNode mutable = mutable();
-        SessionCache sessionCache = sessionCache();
 
         //as per JCR, we need to make sure the change is reflected immediately in the jcr property
         List<Name> currentMixins = new ArrayList<Name>(mutable.getMixinTypes(sessionCache()));

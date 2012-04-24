@@ -51,6 +51,7 @@ public class XsdSequencerTest extends AbstractSequencerTest {
 
         Node sequencedNode = getSequencedNode(rootNode, nodeName + "/" + XsdLexicon.SCHEMA_DOCUMENT);
         assertNotNull(sequencedNode);
+        assertCreatedBySessionUser(sequencedNode, session);
         assertEquals(XsdLexicon.SCHEMA_DOCUMENT, sequencedNode.getPrimaryNodeType().getName());
         assertTrue(sequencedNode.getNodes().getSize() > 0);
     }

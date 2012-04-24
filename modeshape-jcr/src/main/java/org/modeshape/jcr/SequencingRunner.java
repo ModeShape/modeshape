@@ -3,14 +3,14 @@
  * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
+ * See the AUTHORS.txt file in the distribution for a full listing of
  * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- * 
+ *
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -139,7 +139,10 @@ final class SequencingRunner implements Runnable {
                     // find the new nodes created by the sequencing before saving, so we can properly fire the events
                     List<AbstractJcrNode> outputNodes = findOutputNodes(outputNode);
 
-                    // Save the session
+                    //set the createdBy property (if it applies) to the user which triggered the sequencing, not the context of the saving session
+                    setCreatedByIfNecessary(outputSession, outputNodes);
+
+                    //outputSession
                     outputSession.save();
 
                     // fire the sequencing event after save (hopefully by this time the transaction has been committed)
@@ -179,6 +182,18 @@ final class SequencingRunner implements Runnable {
             stats.decrement(ValueMetric.SEQUENCER_QUEUE_SIZE);
             if (inputSession != null && inputSession.isLive()) inputSession.logout();
             if (outputSession != null && outputSession != inputSession && outputSession.isLive()) outputSession.logout();
+        }
+    }
+
+    private void setCreatedByIfNecessary( JcrSession outputSession,
+                                          List<AbstractJcrNode> outputNodes ) throws RepositoryException {
+        //if the mix:created mixin is on any of the new nodes, we need to set the createdBy here, otherwise it will be
+        //set by the system session when it saves and it will default to "modeshape-worker"
+        for (AbstractJcrNode node : outputNodes) {
+            if (node.isNodeType(JcrMixLexicon.CREATED)) {
+                node.setProperty(JcrLexicon.CREATED_BY, outputSession.getValueFactory().createValue(work.getUserId()),
+                                 true, true);
+            }
         }
     }
 
