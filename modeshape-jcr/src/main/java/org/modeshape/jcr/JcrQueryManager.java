@@ -27,7 +27,9 @@ import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import javax.jcr.AccessDeniedException;
+import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
@@ -1444,6 +1446,17 @@ class JcrQueryManager implements QueryManager {
                     // Must have been deleted from storage but not yet from the indexes ...
                 } catch (AccessDeniedException e) {
                     // No access to this node ...
+                }
+            }
+            return null;
+        }
+
+        public Node getNode( UUID uuid ) throws RepositoryException {
+            if (!session.wasRemovedInSession(uuid)) {
+                try {
+                    return session.getNodeByUUID(uuid.toString());
+                } catch (ItemNotFoundException e) {
+                    //the node was not found
                 }
             }
             return null;

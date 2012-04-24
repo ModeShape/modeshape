@@ -23,17 +23,17 @@
  */
 package org.modeshape.connector.infinispan;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.util.Properties;
+import org.infinispan.configuration.cache.ConfigurationBuilder;
+import org.infinispan.loaders.dummy.DummyInMemoryCacheStore;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.server.core.Main;
 import org.infinispan.server.hotrod.HotRodServer;
 import org.infinispan.test.TestingUtil;
 import org.infinispan.test.fwk.TestCacheManagerFactory;
-import org.modeshape.common.util.FileUtil;
+import java.io.IOException;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.util.Properties;
 
 /**
  * @author johnament
@@ -41,7 +41,6 @@ import org.modeshape.common.util.FileUtil;
 public class RemoteInfinispanTestHelper {
     protected static final int PORT = 11311;
     protected static final int TIMEOUT = 0;
-    protected static final String CONFIG_FILE = "src/test/resources/infinispan_remote_config.xml";
     private static EmbeddedCacheManager cacheManager = null;
     private static HotRodServer server = null;
     private static int count = 0;
@@ -49,13 +48,15 @@ public class RemoteInfinispanTestHelper {
     public static synchronized HotRodServer createServer() throws IOException {
         count++;
         if (server == null) {
-            // Delete the data files used by the 'infinispan_remote_config.xml' file ...
-            FileUtil.delete(new File("target/infinispan-remote/jcr"));
-            FileUtil.delete(new File("target/infinispan-remote-cars/jcr"));
-            FileUtil.delete(new File("target/infinispan-remote-aircraft/jcr"));
+            ConfigurationBuilder builder = new ConfigurationBuilder();
+            builder.loaders().addCacheLoader().cacheLoader(new DummyInMemoryCacheStore());
 
-            // Use the test utility to create a testable cache manager without resource contention ...
-            cacheManager = TestCacheManagerFactory.fromXml(CONFIG_FILE);
+            cacheManager = TestCacheManagerFactory.createCacheManager(builder);
+            cacheManager.defineConfiguration("cars", builder.build());
+            cacheManager.defineConfiguration("aircraft", builder.build());
+            cacheManager.defineConfiguration("remowritable", builder.build());
+            cacheManager.defineConfiguration("default", builder.build());
+            cacheManager.defineConfiguration("copyChildrenSource", builder.build());
 
             // This doesn't work on IPv6, because the util assumes "127.0.0.1" ...
             // server = HotRodTestingUtil.startHotRodServer(cacheManager, HOST, PORT);
@@ -105,10 +106,6 @@ public class RemoteInfinispanTestHelper {
             } finally {
                 server = null;
                 TestingUtil.killCacheManagers(cacheManager);
-                // Delete the data files used by the 'infinispan_remote_config.xml' file ...
-                FileUtil.delete(new File("target/infinispan-remote/jcr"));
-                FileUtil.delete(new File("target/infinispan-remote-cars/jcr"));
-                FileUtil.delete(new File("target/infinispan-remote-aircraft/jcr"));
             }
         }
     }

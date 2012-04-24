@@ -24,6 +24,7 @@
 package org.modeshape.jcr.query;
 
 import java.util.Map;
+import java.util.UUID;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
@@ -53,6 +54,8 @@ public interface JcrQueryContext {
                 String statement ) throws RepositoryException;
 
     Node getNode( Location location ) throws RepositoryException;
+
+    Node getNode( UUID uuid ) throws RepositoryException;
 
     Value createValue( int propertyType,
                        Object value );

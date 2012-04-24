@@ -1197,8 +1197,7 @@ class JcrSession implements Session {
     }
 
     boolean wasRemovedInSession( UUID uuid ) {
-        if (removedReferenceableNodeUuids == null) return false;
-        return removedReferenceableNodeUuids.contains(uuid);
+        return removedReferenceableNodeUuids != null && removedReferenceableNodeUuids.contains(uuid.toString());
 
     }
 

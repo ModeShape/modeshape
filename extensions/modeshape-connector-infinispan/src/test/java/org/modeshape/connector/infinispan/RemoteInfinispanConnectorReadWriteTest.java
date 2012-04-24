@@ -25,16 +25,14 @@ package org.modeshape.connector.infinispan;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import java.io.File;
 import org.junit.After;
 import org.junit.AfterClass;
+import static org.junit.Assert.assertThat;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.modeshape.common.util.FileUtil;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.Subgraph;
@@ -80,13 +78,7 @@ public class RemoteInfinispanConnectorReadWriteTest {
     @After
     public void afterEach() throws Exception {
         graph = null;
-        try {
-            source.close(); // stops the cache manager
-        } finally {
-            // Delete all of the content stored on the file system ...
-            File store = new File("target/infinispan-remote/jcr");
-            FileUtil.delete(store);
-        }
+        source.close(); // stops the cache manager
     }
 
     protected Graph graph() {
