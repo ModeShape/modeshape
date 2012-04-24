@@ -159,7 +159,16 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
         final int locationIndex = results.getColumns().getLocationIndex(selectorName);
         for (Object[] tuple : results.getTuples()) {
             Location location = (Location)tuple[locationIndex];
-            Node node = context.getNode(location);
+            Node node = null;
+            //search first by UUID, because the node's path may've been changed in the session (e.g. same name siblings - MODE-1422)
+            if (location.getUuid() != null) {
+                node = context.getNode(location.getUuid());
+            }
+            //if we didn't find anything by UUID, try by location
+            if (node == null) {
+                node = context.getNode(location);
+            }
+
             if (node != null) {
                 nodes.add(node);
             }
