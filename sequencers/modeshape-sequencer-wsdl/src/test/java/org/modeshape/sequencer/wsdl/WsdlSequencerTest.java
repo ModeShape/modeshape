@@ -113,6 +113,7 @@ public class WsdlSequencerTest extends AbstractSequencerTest {
         Node wsdlDocument = getSequencedNode(rootNode, "wsdl/" + filePath);
         assertNotNull(wsdlDocument);
         assertEquals(WsdlLexicon.WSDL_DOCUMENT, wsdlDocument.getPrimaryNodeType().getName());
+        assertCreatedBySessionUser(wsdlDocument, session);
         assertTrue(wsdlDocument.getNodes().getSize() > 0);    
     }
 }

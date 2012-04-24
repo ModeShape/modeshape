@@ -3,14 +3,14 @@
  * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
+ * See the AUTHORS.txt file in the distribution for a full listing of
  * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- * 
+ *
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -291,10 +291,12 @@ public class Sequencers implements ChangeSetListener {
     protected void submitWork( SequencingConfiguration sequencingConfig,
                                Matcher matcher,
                                String inputWorkspaceName,
-                               String propertyName ) {
+                               String propertyName,
+                               String userId) {
         if (shutdown) return;
-        // Conver the input path (which has a '@' to denote a property) to a standard JCR path ...
-        SequencingWorkItem workItem = new SequencingWorkItem(sequencingConfig.getSequencer().getUniqueId(), inputWorkspaceName,
+        // Convert the input path (which has a '@' to denote a property) to a standard JCR path ...
+        SequencingWorkItem workItem = new SequencingWorkItem(sequencingConfig.getSequencer().getUniqueId(), userId,
+                                                             inputWorkspaceName,
                                                              matcher.getSelectedPath(), matcher.getJcrInputPath(),
                                                              matcher.getOutputPath(), matcher.getOutputWorkspaceName(),
                                                              propertyName);
@@ -394,7 +396,7 @@ public class Sequencers implements ChangeSetListener {
                         Matcher matcher = config.matches(strPath, propName);
                         if (!matcher.matches()) continue;
                         // The property should be sequenced ...
-                        submitWork(config, matcher, workspaceName, stringFactory.create(propName));
+                        submitWork(config, matcher, workspaceName, stringFactory.create(propName), changeSet.getUserId());
                     }
                 } else if (change instanceof PropertyChanged) {
                     PropertyChanged changed = (PropertyChanged)change;
@@ -406,7 +408,7 @@ public class Sequencers implements ChangeSetListener {
                         Matcher matcher = config.matches(strPath, propName);
                         if (!matcher.matches()) continue;
                         // The property should be sequenced ...
-                        submitWork(config, matcher, workspaceName, stringFactory.create(propName));
+                        submitWork(config, matcher, workspaceName, stringFactory.create(propName), changeSet.getUserId());
                     }
                 }
                 // It's possible we should also be looking at other types of events (like property removed or
@@ -486,14 +488,17 @@ public class Sequencers implements ChangeSetListener {
         private final String outputPath;
         private final String outputWorkspaceName;
         private final int hc;
+        private final String userId;
 
         protected SequencingWorkItem( UUID sequencerId,
+                                      String userId,
                                       String inputWorkspaceName,
                                       String selectedPath,
                                       String inputPath,
                                       String outputPath,
                                       String outputWorkspaceName,
                                       String changedPropertyName ) {
+            this.userId = userId;
             this.sequencerId = sequencerId;
             this.inputWorkspaceName = inputWorkspaceName;
             this.selectedPath = selectedPath;
@@ -520,6 +525,15 @@ public class Sequencers implements ChangeSetListener {
          */
         public UUID getSequencerId() {
             return sequencerId;
+        }
+
+        /**
+         * Get the id (username) of the user which triggered the sequencing
+         *
+         * @return the user id, never null
+         */
+        public String getUserId() {
+            return userId;
         }
 
         /**
