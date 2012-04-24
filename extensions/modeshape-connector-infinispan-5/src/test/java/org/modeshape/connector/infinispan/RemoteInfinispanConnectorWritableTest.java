@@ -23,14 +23,12 @@
  */
 package org.modeshape.connector.infinispan;
 
-import java.io.File;
-import java.io.IOException;
 import org.junit.Test;
-import org.modeshape.common.util.FileUtil;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.test.WritableConnectorTest;
 import org.xml.sax.SAXException;
+import java.io.IOException;
 
 /**
  * @author johnament
@@ -70,8 +68,6 @@ public class RemoteInfinispanConnectorWritableTest extends WritableConnectorTest
     @Override
     protected void cleanUpSourceResources() {
         RemoteInfinispanTestHelper.releaseServer();
-        FileUtil.delete(new File("target/infinispan-remote-def"));
-        FileUtil.delete(new File("target/infinispan-remote-remowritable"));
     }
 
     /**

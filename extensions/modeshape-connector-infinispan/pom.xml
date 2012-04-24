@@ -95,9 +95,16 @@
       <version>${version.infinispan}</version>
       <scope>test</scope>
     </dependency>
-    <!-- 
-    Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing) 
-    -->
+      <dependency>
+          <groupId>org.infinispan</groupId>
+          <artifactId>infinispan-core</artifactId>
+          <version>${version.infinispan}</version>
+          <type>test-jar</type>
+          <scope>test</scope>
+      </dependency>
+      <!--
+      Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing)
+      -->
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
