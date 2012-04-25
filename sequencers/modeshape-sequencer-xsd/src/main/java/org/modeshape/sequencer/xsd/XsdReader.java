@@ -731,6 +731,31 @@ public class XsdReader extends AbstractResolvingReader {
         }
     }
 
+    /**
+     * Given an {@link XSDFacet}, determines the JCR property type based on the value of the facet.
+     *
+     * @param facetValue a String representing the lexical value of the facet, which can be null.
+     * @param defaultPropertyType a given property type, of which we expected the string value to be convertible to.
+     *
+     * @return a property type to which the string value can be converted
+     */
+    private int determineJCRPropertyTypeForFacet( String facetValue,
+                                                  int defaultPropertyType ) {
+        switch (defaultPropertyType) {
+            case PropertyType.LONG: {
+                try {
+                    Long.valueOf(facetValue);
+                    return PropertyType.LONG;
+                } catch (NumberFormatException e) {
+                    return PropertyType.DECIMAL;
+                }
+            }
+            default: {
+                return defaultPropertyType;
+            }
+        }
+    }
+
     protected void processFacet( XSDFacet facet,
                                  Node node,
                                  String propertyName,
@@ -740,7 +765,8 @@ public class XsdReader extends AbstractResolvingReader {
         }
         String lexicalValue = facet.getLexicalValue();
         if (lexicalValue != null) {
-            Value value = context.valueFactory().createValue(facet.getLexicalValue(), propertyType);
+            int actualPropertyType = determineJCRPropertyTypeForFacet(lexicalValue, propertyType);
+            Value value = context.valueFactory().createValue(facet.getLexicalValue(), actualPropertyType);
             node.setProperty(propertyName, value);
         } else if (facet instanceof XSDRepeatableFacet) {
             Set<String> values = getRepeatableFacetValues((XSDRepeatableFacet)facet);
