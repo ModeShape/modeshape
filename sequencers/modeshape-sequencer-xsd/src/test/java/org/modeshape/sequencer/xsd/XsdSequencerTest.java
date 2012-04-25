@@ -29,6 +29,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
 
 /**
@@ -143,5 +144,11 @@ public class XsdSequencerTest extends AbstractSequencerTest {
     @Test
     public void shouldBeAbleToParseXsdFromDefinitiveXmlSchemaExampleChapter15() throws Exception {
         assertSequencedSuccessfully("definitiveXmlSchema/chapter15.xsd");
+    }
+
+    @Test
+    @FixFor("MODE-1464")
+    public void shouldBeAbleToParseUnsignedLong() throws Exception {
+        assertSequencedSuccessfully("unsigned_long.xsd");
     }
 }
