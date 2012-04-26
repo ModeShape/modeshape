@@ -1,9 +1,6 @@
 # Release Notes for ModeShape &version;
 
-ModeShape &version; is primarily a bug-fix release, and the following changes have been made since 2.7.0.Final:
-
-- added limited support for using Infinispan 5.1 as a store
-- plus 19 other bug fixes
+ModeShape &version; fixes 10 issues in 2.8.0.Final.
 
 ## JCR Supported Features
 
