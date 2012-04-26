@@ -23,13 +23,16 @@
  */
 package org.modeshape.connector.infinispan;
 
+import org.infinispan.config.Configuration;
+import org.infinispan.config.GlobalConfiguration;
+import org.infinispan.loaders.dummy.DummyInMemoryCacheStore;
+import org.infinispan.manager.DefaultCacheManager;
+import org.infinispan.server.core.Main;
+import org.infinispan.server.hotrod.HotRodServer;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.util.Properties;
-import org.infinispan.manager.DefaultCacheManager;
-import org.infinispan.server.core.Main;
-import org.infinispan.server.hotrod.HotRodServer;
 
 /**
  * @author johnament
@@ -37,16 +40,19 @@ import org.infinispan.server.hotrod.HotRodServer;
 public class RemoteInfinispanTestHelper {
     protected static final int PORT = 11311;
     protected static final int TIMEOUT = 0;
-    protected static final String CONFIG_FILE = "src/test/resources/infinispan_remote_config.xml";
     private static HotRodServer server = null;
     private static int count = 0;
 
     public static synchronized HotRodServer createServer() throws IOException {
         count++;
         if (server == null) {
-            DefaultCacheManager cacheManager = new DefaultCacheManager(CONFIG_FILE);
-            // This doesn't work on IPv6, because the util assumes "127.0.0.1" ...
-            // server = HotRodTestingUtil.startHotRodServer(cacheManager, HOST, PORT);
+            DefaultCacheManager cacheManager = new DefaultCacheManager(new GlobalConfiguration());
+            cacheManager.defineConfiguration("cars", createDummyCacheConfiguration("cars"));
+            cacheManager.defineConfiguration("remowritable", createDummyCacheConfiguration("remowritable"));
+            cacheManager.defineConfiguration("aircraft", createDummyCacheConfiguration("aircraft"));
+            cacheManager.defineConfiguration("default", createDummyCacheConfiguration("default"));
+            cacheManager.defineConfiguration("copyChildrenSource", createDummyCacheConfiguration("copyChildrenSource"));
+
             server = new HotRodServer();
             String hostAddress = hostAddress();
             String hostPort = Integer.toString(hostPort());
@@ -57,10 +63,18 @@ public class RemoteInfinispanTestHelper {
             props.setProperty(Main.PROP_KEY_IDLE_TIMEOUT(), timeoutStr);
             props.setProperty(Main.PROP_KEY_PROXY_HOST(), hostAddress);
             props.setProperty(Main.PROP_KEY_PROXY_PORT(), hostPort);
-            // System.out.println("Starting HotRot Server at " + hostAddress + ":" + hostPort);
+
             server.start(props, cacheManager);
         }
         return server;
+    }
+
+    private static Configuration createDummyCacheConfiguration(String name) {
+        Configuration dummyCacheConfiguration = new Configuration();
+        DummyInMemoryCacheStore.Cfg dummyCacheCfg = new DummyInMemoryCacheStore.Cfg(name);
+        dummyCacheCfg.setPurgeOnStartup(true);
+        dummyCacheConfiguration.getCacheLoaderManagerConfig().addCacheLoaderConfig(dummyCacheCfg);
+        return dummyCacheConfiguration;
     }
 
     public static int hostPort() {
