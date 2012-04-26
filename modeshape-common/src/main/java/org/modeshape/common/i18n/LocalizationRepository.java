@@ -24,6 +24,7 @@
 package org.modeshape.common.i18n;
 
 import java.net.URL;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -43,5 +44,17 @@ public interface LocalizationRepository {
      */
     URL getLocalizationBundle( String bundleName,
                                Locale locale );
+
+
+    /**
+     * Returns a list of paths (as string) of the different bundles searched in the
+     * {@link LocalizationRepository#getLocalizationBundle(String, java.util.Locale)} method.
+
+     * @param bundleName the name of the bundle of properties; never null
+     * @param locale the locale for which the properties file URL is desired
+     * @return a list of paths which the repository would look at.
+     */
+    List<String> getPathsToSearchForBundle( String bundleName,
+                                            Locale locale );
 
 }

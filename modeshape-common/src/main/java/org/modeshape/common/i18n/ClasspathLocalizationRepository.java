@@ -24,6 +24,8 @@
 package org.modeshape.common.i18n;
 
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -68,19 +70,31 @@ public class ClasspathLocalizationRepository implements LocalizationRepository {
     public URL getLocalizationBundle( String bundleName,
                                       Locale locale ) {
         URL url = null;
-        String pathPfx = bundleName.replaceAll("\\.", "/");
-        String variant = '_' + locale.toString();
-        do {
-            url = this.classLoader.getResource(pathPfx + variant + ".properties");
-            if (url == null) {
-                int ndx = variant.lastIndexOf('_');
-                if (ndx < 0) {
-                    break;
-                }
-                variant = variant.substring(0, ndx);
+        List<String> paths = getPathsToSearchForBundle(bundleName, locale);
+        for (String path : paths) {
+            url = this.classLoader.getResource(path);
+            if (url != null) {
+                return url;
             }
-        } while (url == null);
+        }
         return url;
     }
 
+    @Override
+    public List<String> getPathsToSearchForBundle( String bundleName,
+                                                   Locale locale ) {
+        List<String> result = new ArrayList<String>();
+        String pathPrefix = bundleName.replaceAll("\\.", "/");
+        String localeVariant = '_' + locale.toString();
+        int ndx = localeVariant.lastIndexOf('_');
+
+        while (ndx >= 0) {
+            String path = pathPrefix + localeVariant + ".properties";
+            result.add(path);
+            localeVariant = localeVariant.substring(0, ndx);
+            ndx = localeVariant.lastIndexOf('_');
+        }
+        result.add(pathPrefix + localeVariant + ".properties");
+        return result;
+    }
 }

@@ -43,7 +43,9 @@ import org.modeshape.common.CommonI18n;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.ClassUtil;
+import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.common.util.log.LogFactory;
 
 /**
  * An internalized string object, which manages the initialization of internationalization (i18n) files, substitution of values
@@ -51,6 +53,8 @@ import org.modeshape.common.util.StringUtil;
  */
 @ThreadSafe
 public final class I18n {
+
+    private static final Logger LOGGER = LogFactory.getLogFactory().getLogger(I18n.class);
 
     private static final LocalizationRepository DEFAULT_LOCALIZATION_REPOSITORY = new ClasspathLocalizationRepository();
 
@@ -238,6 +242,7 @@ public final class I18n {
             final String localizationBaseName = i18nClass.getName();
             URL bundleUrl = repos.getLocalizationBundle(localizationBaseName, locale);
             if (bundleUrl == null) {
+                LOGGER.warn(CommonI18n.i18nBundleNotFoundInClasspath, repos.getPathsToSearchForBundle(localizationBaseName, locale));
                 // Nothing was found, so try the default locale
                 Locale defaultLocale = Locale.getDefault();
                 if (!defaultLocale.equals(locale)) {
@@ -245,6 +250,8 @@ public final class I18n {
                 }
                 // Return if no applicable localization file could be found
                 if (bundleUrl == null) {
+                    LOGGER.error(CommonI18n.i18nBundleNotFoundInClasspath, repos.getPathsToSearchForBundle(localizationBaseName, defaultLocale));
+                    LOGGER.error(CommonI18n.i18nLocalizationFileNotFound, localizationBaseName);
                     problems.add(CommonI18n.i18nLocalizationFileNotFound.text(localizationBaseName));
                     return;
                 }
