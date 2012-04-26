@@ -37,7 +37,8 @@ public abstract class LogFactory {
 
     static {
         try {
-            ClassUtil.loadClassStrict("org.apache.log4j.Logger");
+            ClassUtil.loadClassStrict("org.slf4j.LoggerFactory");
+            ClassUtil.loadClassStrict("org.slf4j.Logger");
             LOGFACTORY = new SLF4JLoggerFactory();
 
         } catch (ClassNotFoundException cnfe) {

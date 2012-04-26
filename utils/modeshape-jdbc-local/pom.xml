@@ -81,23 +81,15 @@
       <groupId>org.mockito</groupId>
       <artifactId>mockito-all</artifactId>
     </dependency>
-    <!-- 
-    Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing and assume it's supplied at runtime) 
-    -->
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-    </dependency>
+
 	  <dependency>
 		  <groupId>org.slf4j</groupId>
 		  <artifactId>slf4j-log4j12</artifactId>
-		  <scope>runtime</scope>
 	  </dependency>
 	  <dependency>
 		  <groupId>log4j</groupId>
 		  <artifactId>log4j</artifactId>
-		  <scope>runtime</scope>
-	  </dependency>	
+	  </dependency>
 		<!--
 		PicketBox (JAAS implementation used in test cases)
 		-->
