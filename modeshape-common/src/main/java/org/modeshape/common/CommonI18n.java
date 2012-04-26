@@ -45,6 +45,8 @@ public final class CommonI18n {
     public static I18n i18nPropertyMissing;
     public static I18n i18nPropertyUnused;
     public static I18n i18nRequiredToSuppliedParameterMismatch;
+    public static I18n i18nBundleNotFoundInClasspath;
+
 
     // Core-related fields
     public static I18n argumentDidNotContainKey;
