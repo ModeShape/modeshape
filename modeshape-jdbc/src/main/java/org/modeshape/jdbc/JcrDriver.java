@@ -98,7 +98,7 @@ public class JcrDriver extends LocalJcrDriver {
         try {
             DriverManager.registerDriver(INSTANCE);
         } catch (SQLException e) {
-            logger.log(Level.SEVERE, JdbcI18n.driverErrorRegistering.text(e.getMessage()));
+            logger.error(JdbcI18n.driverErrorRegistering, e.getMessage());
         }
     }
 

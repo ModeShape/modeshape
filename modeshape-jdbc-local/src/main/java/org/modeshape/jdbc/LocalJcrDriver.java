@@ -29,12 +29,11 @@ import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.util.Properties;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.jcr.Repository;
 import javax.naming.Context;
 import javax.naming.NamingException;
 import org.modeshape.common.collection.Collections;
+import org.modeshape.common.util.Logger;
 import org.modeshape.jdbc.delegate.ConnectionInfo;
 import org.modeshape.jdbc.delegate.LocalRepositoryDelegate;
 import org.modeshape.jdbc.delegate.RepositoryDelegate;
@@ -104,8 +103,7 @@ public class LocalJcrDriver implements java.sql.Driver {
             DriverManager.registerDriver(INSTANCE);
         } catch (SQLException e) {
             // Logging
-            String logMsg = JdbcLocalI18n.driverErrorRegistering.text(e.getMessage());
-            logger.log(Level.SEVERE, logMsg);
+            logger.error(JdbcLocalI18n.driverErrorRegistering, e.getMessage());
         }
     }
 

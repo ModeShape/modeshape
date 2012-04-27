@@ -85,17 +85,11 @@
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
-            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
-            <scope>runtime</scope>
         </dependency>
         <!--
           PicketBox (JAAS implementation used in test cases)
@@ -225,8 +219,6 @@
 
                                         <unzip src="target/tempjars/jaxrs-api-1.2.1.GA.jar" dest="target/temploc"/>
                                         <unzip src="target/tempjars/jcr-2.0.jar" dest="target/temploc"/>
-                                        <unzip src="target/tempjars/slf4j-api-1.6.1.jar" dest="target/temploc"/>
-                                        <!--unzip src="target/tempjars/slf4j-log4j12-1.6.1.jar" dest="target/temploc" /-->
 
                                         <unzip src="target/tempjars/commons-codec-1.4.jar" dest="target/temploc"/>
                                         <move file="target/temploc/META-INF/LICENSE.txt"
