@@ -38,7 +38,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
 import javax.jcr.PropertyType;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
@@ -424,7 +423,7 @@ public class JcrMetaData implements DatabaseMetaData {
                                  String schemaPattern,
                                  String tableNamePattern,
                                  String columnNamePattern ) throws SQLException {
-        LocalJcrDriver.logger.log(Level.FINE, "getcolumns: " + catalog + ":" + schemaPattern + ":" + tableNamePattern + ":"
+        LocalJcrDriver.logger.debug("getcolumns: " + catalog + ":" + schemaPattern + ":" + tableNamePattern + ":"
                                               + columnNamePattern);
 
         // Get all tables if tableNamePattern is null
@@ -1496,7 +1495,7 @@ public class JcrMetaData implements DatabaseMetaData {
                                 String tableNamePattern,
                                 String[] types ) throws SQLException {
 
-        LocalJcrDriver.logger.log(Level.FINE, "getTables: " + catalog + ":" + schemaPattern + ":" + tableNamePattern + ":"
+        LocalJcrDriver.logger.debug("getTables: " + catalog + ":" + schemaPattern + ":" + tableNamePattern + ":"
                                               + types);
 
         // Get all tables if tableNamePattern is null

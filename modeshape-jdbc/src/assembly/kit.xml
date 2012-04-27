@@ -36,7 +36,7 @@
             <includes>
                 <include>org.modeshape:modeshape-jcr-api</include>
                 <include>javax.jcr:jcr</include>
-                <include>org.slf4j:slf4j-api</include>
+
                 <!-- Needed for the driver's HTTP communication -->
                 <include>org.modeshape:modeshape-web-jcr-rest-client</include>
                 <include>org.jboss.resteasy:*</include>
