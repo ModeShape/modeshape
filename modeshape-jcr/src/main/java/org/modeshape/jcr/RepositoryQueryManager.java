@@ -40,6 +40,7 @@ import org.hibernate.search.engine.spi.SearchFactoryImplementor;
 import org.hibernate.search.spi.SearchFactoryBuilder;
 import org.modeshape.common.annotation.GuardedBy;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.Logger;
 import org.modeshape.jcr.JcrRepository.RunningState;
 import org.modeshape.jcr.RepositoryConfiguration.QuerySystem;
 import org.modeshape.jcr.api.query.qom.QueryCommand;
@@ -116,6 +117,9 @@ class RepositoryQueryManager {
             try {
                 engineInitLock.lock();
                 if (queryEngine == null) {
+                    Logger.getLogger(getClass()).debug("Hibernate Search configuration for repository '{0}': {1}",
+                                                       runningState.name(),
+                                                       config);
                     Planner planner = new CanonicalPlanner();
                     Optimizer optimizer = new RuleBasedOptimizer();
                     SearchFactoryImplementor searchFactory = new SearchFactoryBuilder().configuration(config)

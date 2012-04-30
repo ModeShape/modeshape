@@ -113,32 +113,47 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
         boolean started = false;
         for (String key : repository.keys()) {
             if (ModelKeys.REBUILD_INDEXES_UPON_STARTUP.equals(key)) {
-                started = startIfNeeded(writer, Element.INDEXING, started);
-                writeAttribute(writer, repository, ModelAttributes.REBUILD_INDEXES_UPON_STARTUP);
+                started = startAndWriteAttribute(writer,
+                                                 repository,
+                                                 ModelAttributes.REBUILD_INDEXES_UPON_STARTUP,
+                                                 Element.INDEXING,
+                                                 started);
             } else if (ModelKeys.ANALYZER_CLASSNAME.equals(key)) {
                 started = startIfNeeded(writer, Element.INDEXING, started);
-                writeAttribute(writer, repository, ModelAttributes.ANALYZER_CLASSNAME);
+                started = startAndWriteAttribute(writer,
+                                                 repository,
+                                                 ModelAttributes.ANALYZER_CLASSNAME,
+                                                 Element.INDEXING,
+                                                 started);
             } else if (ModelKeys.ANALYZER_MODULE.equals(key)) {
                 started = startIfNeeded(writer, Element.INDEXING, started);
-                writeAttribute(writer, repository, ModelAttributes.ANALYZER_MODULE);
+                started = startAndWriteAttribute(writer, repository, ModelAttributes.ANALYZER_MODULE, Element.INDEXING, started);
             } else if (ModelKeys.ASYNC_THREAD_POOL_SIZE.equals(key)) {
                 started = startIfNeeded(writer, Element.INDEXING, started);
-                writeAttribute(writer, repository, ModelAttributes.ASYNC_THREAD_POOL_SIZE);
+                started = startAndWriteAttribute(writer,
+                                                 repository,
+                                                 ModelAttributes.ASYNC_THREAD_POOL_SIZE,
+                                                 Element.INDEXING,
+                                                 started);
             } else if (ModelKeys.ASYNC_MAX_QUEUE_SIZE.equals(key)) {
                 started = startIfNeeded(writer, Element.INDEXING, started);
-                writeAttribute(writer, repository, ModelAttributes.ASYNC_MAX_QUEUE_SIZE);
+                started = startAndWriteAttribute(writer,
+                                                 repository,
+                                                 ModelAttributes.ASYNC_MAX_QUEUE_SIZE,
+                                                 Element.INDEXING,
+                                                 started);
             } else if (ModelKeys.BATCH_SIZE.equals(key)) {
                 started = startIfNeeded(writer, Element.INDEXING, started);
-                writeAttribute(writer, repository, ModelAttributes.BATCH_SIZE);
+                started = startAndWriteAttribute(writer, repository, ModelAttributes.BATCH_SIZE, Element.INDEXING, started);
             } else if (ModelKeys.MODE.equals(key)) {
                 started = startIfNeeded(writer, Element.INDEXING, started);
-                writeAttribute(writer, repository, ModelAttributes.MODE);
+                started = startAndWriteAttribute(writer, repository, ModelAttributes.MODE, Element.INDEXING, started);
             } else if (ModelKeys.READER_STRATEGY.equals(key)) {
                 started = startIfNeeded(writer, Element.INDEXING, started);
-                writeAttribute(writer, repository, ModelAttributes.READER_STRATEGY);
+                started = startAndWriteAttribute(writer, repository, ModelAttributes.READER_STRATEGY, Element.INDEXING, started);
             } else if (ModelKeys.THREAD_POOL.equals(key)) {
                 started = startIfNeeded(writer, Element.INDEXING, started);
-                writeAttribute(writer, repository, ModelAttributes.THREAD_POOL);
+                started = startAndWriteAttribute(writer, repository, ModelAttributes.THREAD_POOL, Element.INDEXING, started);
             } else if (key.startsWith("hibernate")) {
                 started = startIfNeeded(writer, Element.INDEXING, started);
                 writer.writeAttribute(key, repository.get(key).asString());
@@ -349,6 +364,20 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
     private boolean has( ModelNode node,
                          String name ) {
         return node.isDefined() && node.has(name) && node.get(name).isDefined();
+    }
+
+    private boolean startAndWriteAttribute( final XMLExtendedStreamWriter writer,
+                                            final ModelNode node,
+                                            final SimpleAttributeDefinition modelAttribute,
+                                            Element name,
+                                            boolean started ) throws XMLStreamException {
+        assert modelAttribute.getXmlName() != null;
+        boolean result = started;
+        if (modelAttribute.isMarshallable(node, false)) {
+            result = startIfNeeded(writer, name, started);
+            modelAttribute.marshallAsAttribute(node, false, writer);
+        }
+        return result;
     }
 
     private void writeAttribute( final XMLExtendedStreamWriter writer,

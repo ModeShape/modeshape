@@ -236,8 +236,8 @@
                 },
                 "rebuildUponStartup" : {
                     "type" : "string",
-                    "enum" : ["ifMissing","always"],
-                    "default" : "ifMissing",
+                    "enum" : ["if_missing","always"],
+                    "default" : "if_missing",
                     "description" : "Specifies whether the indexes need to be rebuilt immediately when each ModeShape process starts up."
                 },
                 "extractors" : {

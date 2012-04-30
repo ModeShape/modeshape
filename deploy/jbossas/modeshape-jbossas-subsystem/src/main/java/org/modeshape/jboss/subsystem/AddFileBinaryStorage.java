@@ -80,7 +80,7 @@ public class AddFileBinaryStorage extends AbstractAddBinaryStorage {
                                                   ServiceTarget target ) {
         if (binaryStoragePathInDataDirectory != null) {
             // Add a controller that creates the required directory ...
-            ServiceName serviceName = ModeShapeServiceNames.binaryStorageServiceName(repositoryName);
+            ServiceName serviceName = ModeShapeServiceNames.binaryStorageDirectoryServiceName(repositoryName);
             newControllers.add(RelativePathService.addService(serviceName,
                                                               binaryStoragePathInDataDirectory,
                                                               ModeShapeExtension.DATA_DIR_VARIABLE,
