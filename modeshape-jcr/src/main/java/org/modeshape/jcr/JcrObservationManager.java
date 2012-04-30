@@ -1,5 +1,22 @@
 package org.modeshape.jcr;
 
+import static org.modeshape.jcr.api.observation.Event.NODE_SEQUENCED;
+import static org.modeshape.jcr.api.observation.Event.Info.SEQUENCED_NODE_ID;
+import static org.modeshape.jcr.api.observation.Event.Info.SEQUENCED_NODE_PATH;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.RangeIterator;
 import javax.jcr.RepositoryException;
@@ -16,9 +33,6 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.monitor.ValueMetric;
-import static org.modeshape.jcr.api.observation.Event.NODE_SEQUENCED;
-import static org.modeshape.jcr.api.observation.Event.Info.SEQUENCED_NODE_ID;
-import static org.modeshape.jcr.api.observation.Event.Info.SEQUENCED_NODE_PATH;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.change.AbstractNodeChange;
 import org.modeshape.jcr.cache.change.Change;
@@ -37,24 +51,10 @@ import org.modeshape.jcr.cache.change.PropertyRemoved;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PathFactory;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * The implementation of JCR {@link ObservationManager}.
- *
+ * 
  * @author Horia Chiorean
  */
 @ThreadSafe
@@ -118,12 +118,13 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
     /**
      * @param session the owning session (never <code>null</code>)
      * @param repositoryObservable the repository observable used to register JCR listeners (never <code>null</code>)
-     * @param statistics a {@link RepositoryStatistics} instance with which the {@link ValueMetric#EVENT_QUEUE_SIZE} metric is updated
+     * @param statistics a {@link RepositoryStatistics} instance with which the {@link ValueMetric#EVENT_QUEUE_SIZE} metric is
+     *        updated
      * @throws IllegalArgumentException if either parameter is <code>null</code>
      */
     JcrObservationManager( JcrSession session,
                            Observable repositoryObservable,
-                           RepositoryStatistics statistics) {
+                           RepositoryStatistics statistics ) {
         CheckArg.isNotNull(session, "session");
         CheckArg.isNotNull(repositoryObservable, "repositoryObservable");
         CheckArg.isNotNull(statistics, "statistics");
@@ -133,7 +134,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
         this.systemWorkspaceName = this.session.repository().systemWorkspaceName();
 
         this.repositoryObservable = repositoryObservable;
-        //this is registered as an observer just so it can count the number of events dispatched
+        // this is registered as an observer just so it can count the number of events dispatched
         this.repositoryObservable.register(this);
 
         this.listenersLock = new ReentrantReadWriteLock(true);
@@ -145,7 +146,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @throws javax.jcr.RepositoryException if the session is no longer live
      * @throws IllegalArgumentException if <code>listener</code> is <code>null</code>
      * @see javax.jcr.observation.ObservationManager#addEventListener(javax.jcr.observation.EventListener, int, java.lang.String,
@@ -171,7 +172,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
             this.repositoryObservable.register(adapter);
             this.listeners.put(listener, adapter);
         } finally {
-            listenersLock.writeLock().unlock(); 
+            listenersLock.writeLock().unlock();
         }
     }
 
@@ -196,11 +197,11 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
     }
 
     private void incrementEventQueueStatistic( ChangeSet changeSet ) {
-        //whenever a change set is received from the bus, increment the que size
+        // whenever a change set is received from the bus, increment the que size
         repositoryStatistics.increment(ValueMetric.EVENT_QUEUE_SIZE);
 
         if (!this.changesReceivedAndDispatched.containsKey(changeSet.hashCode())) {
-            //none of the adapters have processed this change set yet, register it
+            // none of the adapters have processed this change set yet, register it
             try {
                 listenersLock.readLock().lock();
                 changesReceivedAndDispatched.putIfAbsent(changeSet.hashCode(), new AtomicInteger(listeners.size()));
@@ -210,21 +211,19 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
         }
     }
 
-
     private void decrementEventQueueStatistic( ChangeSet changeSet ) {
         if (changesReceivedAndDispatched.containsKey(changeSet.hashCode())) {
-            //the change set has already been registered (and the que size incremented)
+            // the change set has already been registered (and the que size incremented)
             int timesProcessed = changesReceivedAndDispatched.get(changeSet.hashCode()).decrementAndGet();
             if (timesProcessed == 0) {
                 repositoryStatistics.decrement(ValueMetric.EVENT_QUEUE_SIZE);
                 changesReceivedAndDispatched.remove(changeSet.hashCode());
             }
-        }
-        else {
-            //the change got to this adapter (from the bus) before it got to the observation manager, so it'll be registered
+        } else {
+            // the change got to this adapter (from the bus) before it got to the observation manager, so it'll be registered
             try {
                 listenersLock.readLock().lock();
-                //this listener already received the event, so total count of expected listeners is decremented by 1
+                // this listener already received the event, so total count of expected listeners is decremented by 1
                 changesReceivedAndDispatched.putIfAbsent(changeSet.hashCode(), new AtomicInteger(listeners.size() - 1));
             } finally {
                 listenersLock.readLock().unlock();
@@ -234,7 +233,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see javax.jcr.observation.ObservationManager#getRegisteredEventListeners()
      */
     public EventListenerIterator getRegisteredEventListeners() throws RepositoryException {
@@ -293,7 +292,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @throws IllegalArgumentException if <code>listener</code> is <code>null</code>
      * @see javax.jcr.observation.ObservationManager#removeEventListener(javax.jcr.observation.EventListener)
      */
@@ -316,7 +315,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
      * <p>
      * This method set's the user data information for this observation manager
      * </p>
-     *
+     * 
      * @see javax.jcr.observation.ObservationManager#setUserData(java.lang.String)
      */
     public void setUserData( String userData ) {
@@ -329,7 +328,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
      * <p>
      * Since ModeShape does not support journaled observation, this method returns null.
      * </p>
-     *
+     * 
      * @see javax.jcr.observation.ObservationManager#getEventJournal()
      */
     public EventJournal getEventJournal() {
@@ -341,7 +340,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
      * <p>
      * Since ModeShape does not support journaled observation, this method returns null.
      * </p>
-     *
+     * 
      * @see javax.jcr.observation.ObservationManager#getEventJournal(int, java.lang.String, boolean, java.lang.String[],
      *      java.lang.String[])
      */
@@ -355,7 +354,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
     /**
      * An implementation of JCR {@link javax.jcr.RangeIterator} extended by the event and event listener iterators.
-     *
+     * 
      * @param <E> the type being iterated over
      */
     class JcrRangeIterator<E> implements RangeIterator {
@@ -381,7 +380,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see javax.jcr.RangeIterator#getPosition()
          */
         public long getPosition() {
@@ -390,7 +389,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see javax.jcr.RangeIterator#getSize()
          */
         public long getSize() {
@@ -399,7 +398,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see java.util.Iterator#hasNext()
          */
         public boolean hasNext() {
@@ -408,7 +407,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see java.util.Iterator#next()
          */
         public Object next() {
@@ -424,7 +423,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @throws UnsupportedOperationException if called
          * @see java.util.Iterator#remove()
          */
@@ -434,7 +433,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see javax.jcr.RangeIterator#skip(long)
          */
         public void skip( long skipNum ) {
@@ -461,7 +460,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see javax.jcr.observation.EventListenerIterator#nextEventListener()
          */
         public EventListener nextEventListener() {
@@ -484,7 +483,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see javax.jcr.observation.EventIterator#nextEvent()
          */
         public Event nextEvent() {
@@ -595,7 +594,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see javax.jcr.observation.Event#getPath()
          */
         public String getPath() {
@@ -604,7 +603,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see javax.jcr.observation.Event#getType()
          */
         public int getType() {
@@ -613,7 +612,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see javax.jcr.observation.Event#getUserID()
          */
         public String getUserID() {
@@ -622,7 +621,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see javax.jcr.observation.Event#getDate()
          */
         public long getDate() {
@@ -631,7 +630,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see javax.jcr.observation.Event#getIdentifier()
          */
         public String getIdentifier() {
@@ -640,7 +639,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see javax.jcr.observation.Event#getUserData()
          */
         public String getUserData() {
@@ -649,7 +648,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see javax.jcr.observation.Event#getInfo()
          */
         public Map<String, String> getInfo() {
@@ -658,7 +657,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see java.lang.Object#toString()
          */
         @Override
@@ -696,8 +695,10 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                     return sb.toString();
                 case org.modeshape.jcr.api.observation.Event.NODE_SEQUENCED:
                     sb.append("Node sequenced");
-                    sb.append(" sequenced node:").append(info.get(SEQUENCED_NODE_ID)).append(" at path:").append(info.get(
-                            SEQUENCED_NODE_PATH));
+                    sb.append(" sequenced node:")
+                      .append(info.get(SEQUENCED_NODE_ID))
+                      .append(" at path:")
+                      .append(info.get(SEQUENCED_NODE_PATH));
                     sb.append(" ,output node:").append(getIdentifier()).append(" at path:").append(getPath());
                     return sb.toString();
             }
@@ -764,12 +765,12 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
          * @param noLocal indicates if events from this listener's session should be ignored
          */
         JcrListenerAdapter( EventListener delegate,
-                                   int eventTypes,
-                                   String absPath,
-                                   boolean isDeep,
-                                   String[] uuids,
-                                   String[] nodeTypeNames,
-                                   boolean noLocal ) {
+                            int eventTypes,
+                            String absPath,
+                            boolean isDeep,
+                            String[] uuids,
+                            String[] nodeTypeNames,
+                            boolean noLocal ) {
             assert (delegate != null);
 
             this.delegate = delegate;
@@ -830,14 +831,14 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
             Path newPath = nodeChange.getPath();
             String nodeId = nodeChange.getKey().toString();
 
-            //node moved
+            // node moved
             if (nodeChange instanceof NodeMoved) {
                 NodeMoved nodeMovedChange = (NodeMoved)nodeChange;
                 Path oldPath = nodeMovedChange.getOldPath();
                 fireNodeMoved(events, bundle, newPath, nodeId, oldPath);
 
             } else if (nodeChange instanceof NodeRenamed) {
-                NodeRenamed nodeRenamedChange = (NodeRenamed) nodeChange;
+                NodeRenamed nodeRenamedChange = (NodeRenamed)nodeChange;
                 Path oldPath = pathFactory().create(newPath.subpath(0, newPath.size() - 1), nodeRenamedChange.getOldSegment());
                 fireNodeMoved(events, bundle, newPath, nodeId, oldPath);
 
@@ -847,11 +848,10 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
                 if (eventListenedFor(Event.NODE_MOVED)) {
                     Map<String, String> info = new HashMap<String, String>();
-                    //check if the reordering wasn't at the end by any chance
+                    // check if the reordering wasn't at the end by any chance
                     if (nodeReordered.getReorderedBeforePath() != null) {
                         info.put(ORDER_DEST_KEY, stringFor(nodeReordered.getReorderedBeforePath().getLastSegment()));
-                    }
-                    else {
+                    } else {
                         info.put(ORDER_DEST_KEY, null);
                     }
                     info.put(ORDER_SRC_KEY, stringFor(oldPath.getLastSegment()));
@@ -882,13 +882,13 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                 Path propertyPath = pathFactory().create(newPath, propertyName);
                 events.add(new JcrEvent(bundle, Event.PROPERTY_REMOVED, stringFor(propertyPath), nodeId));
             } else if (nodeChange instanceof NodeSequenced && eventListenedFor(NODE_SEQUENCED)) {
-                //create event for the sequenced node
+                // create event for the sequenced node
                 NodeSequenced sequencedChange = (NodeSequenced)nodeChange;
 
                 Map<String, String> infoMap = new HashMap<String, String>();
                 infoMap.put(SEQUENCED_NODE_PATH, stringFor(sequencedChange.getSequencedNodePath()));
                 infoMap.put(SEQUENCED_NODE_ID, sequencedChange.getSequencedNodeKey().toString());
-                
+
                 events.add(new JcrEvent(bundle, NODE_SEQUENCED, stringFor(sequencedChange.getPath()), nodeId, infoMap));
             }
         }
@@ -903,8 +903,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                 info.put(MOVE_FROM_KEY, stringFor(oldPath));
                 info.put(MOVE_TO_KEY, stringFor(newPath));
 
-                events.add(new JcrEvent(bundle, Event.NODE_MOVED, stringFor(newPath), nodeId, Collections.unmodifiableMap(
-                        info)));
+                events.add(new JcrEvent(bundle, Event.NODE_MOVED, stringFor(newPath), nodeId, Collections.unmodifiableMap(info)));
             }
             fireExtraEventsForMove(events, bundle, newPath, nodeId, oldPath);
         }
@@ -924,20 +923,17 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
         }
 
         private boolean shouldReject( AbstractNodeChange nodeChange ) {
-            return !acceptBasedOnNodeTypeName(nodeChange)
-                    || !acceptBasedOnPath(nodeChange)
-                    || !acceptBasedOnUuid(nodeChange)
-                    || !acceptBasedOnPermission(nodeChange)
-                    || !acceptIfLockChange(nodeChange);
+            return !acceptBasedOnNodeTypeName(nodeChange) || !acceptBasedOnPath(nodeChange) || !acceptBasedOnUuid(nodeChange)
+                   || !acceptBasedOnPermission(nodeChange) || !acceptIfLockChange(nodeChange);
         }
 
-
         /**
-         * In case of changes involving locks from the system workspace, the TCK expects that the only property changes be for lock owner
-         * and lock isDeep, which will be fired from the locked node. Therefore, we should exclude property notifications from the
-         * lock node from the system workspace.
+         * In case of changes involving locks from the system workspace, the TCK expects that the only property changes be for
+         * lock owner and lock isDeep, which will be fired from the locked node. Therefore, we should exclude property
+         * notifications from the lock node from the system workspace.
+         * 
          * @param nodeChange
-         * @return
+         * @return true if the change should be accepted/propagated
          */
         private boolean acceptIfLockChange( AbstractNodeChange nodeChange ) {
             if (!(nodeChange instanceof PropertyAdded || nodeChange instanceof PropertyRemoved || nodeChange instanceof PropertyChanged)) {
@@ -949,7 +945,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
             }
             Name firstSegmentName = path.subpath(0, 1).getLastSegment().getName();
             boolean isSystemLockChange = JcrLexicon.SYSTEM.equals(firstSegmentName)
-                    && ModeShapeLexicon.LOCKS.equals(path.getParent().getLastSegment().getName());
+                                         && ModeShapeLexicon.LOCKS.equals(path.getParent().getLastSegment().getName());
             return !isSystemLockChange;
         }
 
@@ -959,8 +955,8 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
         /**
          * @param nodeChange the change being processed
-         * @return <code>true</code> if the {@link JcrSession#checkPermission(String, String)} returns true for a {@link ModeShapePermissions#READ}
-         *         permission on the node from the change
+         * @return <code>true</code> if the {@link JcrSession#checkPermission(String, String)} returns true for a
+         *         {@link ModeShapePermissions#READ} permission on the node from the change
          */
         private boolean acceptBasedOnPermission( AbstractNodeChange nodeChange ) {
             try {
@@ -993,7 +989,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
          * @return <code>true</code> if all node types should be processed or if changed node type name matches a specified type
          */
         private boolean acceptBasedOnNodeTypeName( AbstractNodeChange change ) {
-            //JSR 283#12.5.3.4.3
+            // JSR 283#12.5.3.4.3
             if (nodeTypeNames != null && nodeTypeNames.length == 0) {
                 return false;
             }
@@ -1010,14 +1006,11 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                         mixinTypeNames.add(stringFor(mixinName));
                     }
                     primaryTypeName = stringFor(parentNode.getPrimaryTypeName());
-                    return getNodeTypeManager().isDerivedFrom(this.nodeTypeNames, primaryTypeName, mixinTypeNames.toArray(
-                            new String[mixinTypeNames.size()]));
+                    return getNodeTypeManager().isDerivedFrom(this.nodeTypeNames,
+                                                              primaryTypeName,
+                                                              mixinTypeNames.toArray(new String[mixinTypeNames.size()]));
                 } catch (RepositoryException e) {
-                    logger.error(e,
-                                 JcrI18n.cannotPerformNodeTypeCheck,
-                                 primaryTypeName,
-                                 mixinTypeNames,
-                                 this.nodeTypeNames);
+                    logger.error(e, JcrI18n.cannotPerformNodeTypeCheck, primaryTypeName, mixinTypeNames, this.nodeTypeNames);
                     return false;
                 }
             }
@@ -1045,7 +1038,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
          * @return <code>true</code> if there are no UUIDs to match or change UUID matches
          */
         private boolean acceptBasedOnUuid( AbstractNodeChange change ) {
-            //JSR_283#12.5.3.4.2
+            // JSR_283#12.5.3.4.2
             if (this.uuids != null && this.uuids.length == 0) {
                 return false;
             }
@@ -1060,17 +1053,16 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
         private Path parentNodePathOfChange( AbstractNodeChange change ) {
             Path changePath = change.getPath();
-            if (change instanceof PropertyAdded || change instanceof PropertyRemoved || change instanceof  PropertyChanged) {
+            if (change instanceof PropertyAdded || change instanceof PropertyRemoved || change instanceof PropertyChanged) {
                 return changePath;
-            }
-            else {
+            } else {
                 return changePath.isRoot() ? changePath : changePath.getParent();
             }
         }
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see java.lang.Object#equals(java.lang.Object)
          */
         @Override
@@ -1081,7 +1073,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see java.lang.Object#hashCode()
          */
         @Override
