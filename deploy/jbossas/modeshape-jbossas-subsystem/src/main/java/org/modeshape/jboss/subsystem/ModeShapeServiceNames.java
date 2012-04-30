@@ -50,15 +50,19 @@ public class ModeShapeServiceNames {
     }
 
     public static ServiceName indexStorageDirectoryServiceName( String name ) {
-        return ServiceName.of(ServiceName.JBOSS, "modeshape", name, "indexDir");
+        return ServiceName.of(ServiceName.JBOSS, "modeshape", name, "indexes.dir");
     }
 
     public static ServiceName indexSourceStorageDirectoryServiceName( String name ) {
-        return ServiceName.of(ServiceName.JBOSS, "modeshape", name, "indexSourceDir");
+        return ServiceName.of(ServiceName.JBOSS, "modeshape", name, "indexes.source-dir");
     }
 
     public static ServiceName binaryStorageServiceName( String name ) {
         return ServiceName.of(ServiceName.JBOSS, "modeshape", name, "binaries");
+    }
+
+    public static ServiceName binaryStorageDirectoryServiceName( String name ) {
+        return ServiceName.of(ServiceName.JBOSS, "modeshape", name, "binaries.dir");
     }
 
 }

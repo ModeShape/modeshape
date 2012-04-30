@@ -180,7 +180,7 @@ public class TestModeShapeConfiguration extends AbstractSubsystemTest {
     }
 
     private void validate( String marshalled ) throws SAXException, IOException {
-        URL xsdURL = Thread.currentThread().getContextClassLoader().getResource("schema/ModeShape.xsd");
+        URL xsdURL = Thread.currentThread().getContextClassLoader().getResource("schema/modeshape_1_0.xsd");
         // System.out.println(marshalled);
 
         SchemaFactory factory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");

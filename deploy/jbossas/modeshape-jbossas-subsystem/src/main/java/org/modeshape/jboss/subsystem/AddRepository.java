@@ -38,6 +38,7 @@ import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.services.path.RelativePathService;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
+import org.jboss.msc.service.ServiceBuilder.DependencyType;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
@@ -163,7 +164,8 @@ public class AddRepository extends AbstractAddStepHandler {
 
         // JAAS ...
         EditableDocument jaas = security.getOrCreateDocument(FieldName.JAAS);
-        jaas.set(FieldName.JAAS_POLICY_NAME, attribute(context, model, ModelAttributes.SECURITY_DOMAIN));
+        String securityDomain = attribute(context, model, ModelAttributes.SECURITY_DOMAIN).asString();
+        jaas.set(FieldName.JAAS_POLICY_NAME, securityDomain);
 
         // Anonymous ...
         EditableDocument anon = security.getOrCreateDocument(FieldName.ANONYMOUS);
@@ -230,13 +232,17 @@ public class AddRepository extends AbstractAddStepHandler {
                               CacheContainer.class,
                               repositoryService.getCacheManagerInjector());
 
-        // Add dependency to the index storage service, which captures the properties for the index storage ...
-        builder.addDependency(ModeShapeServiceNames.indexStorageServiceName(repositoryName),
+        // Add (optional) dependency to the index storage service, which captures the properties for the index storage
+        // (if they were specified in the model nodes) ...
+        builder.addDependency(DependencyType.OPTIONAL,
+                              ModeShapeServiceNames.indexStorageServiceName(repositoryName),
                               IndexStorage.class,
                               repositoryService.getIndexStorageConfigInjector());
 
-        // Add dependency to the binaries storage service, which captures the properties for the binaries storage ...
-        builder.addDependency(ModeShapeServiceNames.binaryStorageServiceName(repositoryName),
+        // Add (optional) dependency to the binaries storage service, which captures the properties for the binaries storage
+        // (if they were specified in the model nodes) ...
+        builder.addDependency(DependencyType.OPTIONAL,
+                              ModeShapeServiceNames.binaryStorageServiceName(repositoryName),
                               BinaryStorage.class,
                               repositoryService.getBinaryStorageInjector());
 
@@ -248,30 +254,32 @@ public class AddRepository extends AbstractAddStepHandler {
                                                           target));
         builder.addDependency(dataDirServiceName, String.class, repositoryService.getDataDirectoryPathInjector());
 
-        // Add dependency to the default location in the data directory for binaries ...
-        ServiceName indexStorageDirServiceName = ModeShapeServiceNames.indexStorageDirectoryServiceName(repositoryName);
-        newControllers.add(RelativePathService.addService(indexStorageDirServiceName,
-                                                          "modeshape/" + repositoryName + "/indexes",
-                                                          ModeShapeExtension.DATA_DIR_VARIABLE,
-                                                          target));
-        builder.addDependency(indexStorageDirServiceName, IndexStorage.class, repositoryService.getIndexStorageConfigInjector());
-
-        // Add dependency to the default location in the data directory for binaries ...
-        ServiceName binaryStorageDirServiceName = ModeShapeServiceNames.binaryStorageServiceName(repositoryName);
-        newControllers.add(RelativePathService.addService(binaryStorageDirServiceName,
-                                                          "modeshape/" + repositoryName + "/binaries",
-                                                          ModeShapeExtension.DATA_DIR_VARIABLE,
-                                                          target));
-        builder.addDependency(binaryStorageDirServiceName, BinaryStorage.class, repositoryService.getBinaryStorageInjector());
+        // // Add dependency to the default location in the data directory for binaries ...
+        // ServiceName indexStorageDirServiceName = ModeShapeServiceNames.indexStorageDirectoryServiceName(repositoryName);
+        // newControllers.add(RelativePathService.addService(indexStorageDirServiceName,
+        // "modeshape/" + repositoryName + "/indexes",
+        // ModeShapeExtension.DATA_DIR_VARIABLE,
+        // target));
+        // builder.addDependency(indexStorageDirServiceName, IndexStorage.class,
+        // repositoryService.getIndexStorageConfigInjector());
+        //
+        // // Add dependency to the default location in the data directory for binaries ...
+        // ServiceName binaryStorageDirServiceName = ModeShapeServiceNames.binaryStorageDirectoryServiceName(repositoryName);
+        // newControllers.add(RelativePathService.addService(binaryStorageDirServiceName,
+        // "modeshape/" + repositoryName + "/binaries",
+        // ModeShapeExtension.DATA_DIR_VARIABLE,
+        // target));
+        // builder.addDependency(binaryStorageDirServiceName, BinaryStorage.class, repositoryService.getBinaryStorageInjector());
 
         // Now add the controller for the RepositoryService ...
-        newControllers.add(builder.setInitialMode(ServiceController.Mode.ACTIVE).install());
+        builder.setInitialMode(ServiceController.Mode.ACTIVE);
+        newControllers.add(builder.install());
     }
 
     protected String jndiNameForRepository( final ModelNode model,
                                             String repositoryName ) {
         String jndiName = null;
-        if (model.has(ModelKeys.JNDI_NAME)) {
+        if (model.has(ModelKeys.JNDI_NAME) && model.get(ModelKeys.JNDI_NAME).isDefined()) {
             // A JNDI name is set on the model node ...
             jndiName = model.get(ModelKeys.JNDI_NAME).asString();
             if (jndiName.length() != 0) {

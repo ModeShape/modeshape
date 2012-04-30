@@ -4,6 +4,7 @@
         <groupId>org.jboss</groupId>
         <artifactId>jboss-parent</artifactId>
         <version>8</version>
+        <relativePath></relativePath>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -227,7 +228,15 @@
         <lucene.version>3.5.0</lucene.version>
         <lucene.regex.version>3.0.3</lucene.regex.version>
         <lucene.regex.jakarta.version>1.4</lucene.regex.jakarta.version>
-        <hibernate.search.version>4.0.0.Final</hibernate.search.version>
+        <!-- These versions of Hibernate Search transitive dependencies are used in creating the Hibernate Search AS7 module.
+             When changing the version of Hiberate Search version, update these and the 
+             'deploy/jbossas/kit/jboss-as7/modules/org/hibernate/search/engine/main/module.xml' file. -->
+        <hibernate.search.version>4.1.0.Final</hibernate.search.version>
+        <hibernate.search.avro.version>1.5.1</hibernate.search.avro.version>
+        <hibernate.search.jackson-mapper-asl.version>1.7.3</hibernate.search.jackson-mapper-asl.version>
+        <hibernate.search.jackson-core-asl.version>1.7.3</hibernate.search.jackson-core-asl.version>
+        <hibernate.search.paranamer.version>2.3</hibernate.search.paranamer.version>
+        <hibernate.search.snappy.version>1.0.1-rc3</hibernate.search.snappy.version>
         <infinispan.version>5.1.2.FINAL</infinispan.version>
         <!--Make sure the jgroups version is the same as the one used by ISPN -->
         <jgroups.version>3.0.6.Final</jgroups.version>
@@ -259,7 +268,7 @@
         <wsdl4j.version>1.6.2</wsdl4j.version>
         <jackrabbit.core.version>2.2.0</jackrabbit.core.version>
         <bson4jackson.version>1.1.2</bson4jackson.version>
-        <mongo.driver.version>2.6.1</mongo.driver.version>
+        <mongo.driver.version>2.7.3</mongo.driver.version>
         <json.simple.version>1.1</json.simple.version>
         <jbossjta.version>4.16.2.Final</jbossjta.version>
         <antrun.ant.version>1.7</antrun.ant.version>
@@ -844,19 +853,6 @@
                 <scope>test</scope>
             </dependency>
             
-            <!--
-                Used for Base64 testing.
-            -->
-            <dependency>
-                <groupId>org.jboss</groupId>
-                <artifactId>jboss-common-core</artifactId>
-                <version>${jboss.common.core.version}</version>
-                <scope>test</scope>
-            </dependency>
-
-            <!--
-                Hibernate search
-            -->
             <!-- Hibernate Search engine (does not use Hibernate Core or JPA!) -->
             <dependency>
                 <groupId>org.hibernate</groupId>
@@ -869,7 +865,6 @@
                     </exclusion>
                 </exclusions>
             </dependency>
-            <!-- Hibernate Search engine (does not use Hibernate Core or JPA!) -->
             <dependency>
                 <groupId>org.apache.lucene</groupId>
                 <artifactId>lucene-core</artifactId>

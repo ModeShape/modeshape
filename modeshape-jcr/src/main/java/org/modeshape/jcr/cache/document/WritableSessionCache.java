@@ -186,7 +186,7 @@ public class WritableSessionCache extends AbstractSessionCache {
         Lock lock = this.lock.writeLock();
         try {
             lock.lock();
-            //we must first remove the children and only then the parents, otherwise child paths won't be found
+            // we must first remove the children and only then the parents, otherwise child paths won't be found
             List<SessionNode> nodesToRemoveInOrder = getChangedNodesAtOrBelowChildrenFirst(nodePath);
             for (SessionNode nodeToRemove : nodesToRemoveInOrder) {
                 changedNodes.remove(nodeToRemove.getKey());
@@ -198,6 +198,9 @@ public class WritableSessionCache extends AbstractSessionCache {
 
     /**
      * Returns the list of changed nodes at or below the given path, starting with the children.
+     * 
+     * @param nodePath the path of the parent node
+     * @return the list of changed nodes
      */
     private List<SessionNode> getChangedNodesAtOrBelowChildrenFirst( Path nodePath ) {
         List<SessionNode> changedNodesChildrenFirst = new ArrayList<SessionNode>();
@@ -236,7 +239,7 @@ public class WritableSessionCache extends AbstractSessionCache {
         CheckArg.isNotNull(srcNode, "srcNode");
         Path sourcePath = srcNode.getPath(this);
 
-        Lock readLock  = this.lock.readLock();
+        Lock readLock = this.lock.readLock();
         Set<NodeKey> result = new HashSet<NodeKey>();
         try {
             readLock.lock();
@@ -248,7 +251,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                 if (changedNodeThisSession == REMOVED) {
                     CachedNode persistentRemovedNode = workspaceCache.getNode(changedNodeKey);
                     if (persistentRemovedNode == null) {
-                        //the node has been removed without having been persisted previously, so we'll take it into account
+                        // the node has been removed without having been persisted previously, so we'll take it into account
                         result.add(changedNodeKey);
                         continue;
                     }
@@ -631,10 +634,10 @@ public class WritableSessionCache extends AbstractSessionCache {
                     savedNodesInOrder.add(key);
                 }
             } else {
-                //we can't ignore removed nodes below the top path
+                // we can't ignore removed nodes below the top path
                 CachedNode removedNode = workspaceCache().getNode(key);
                 if (removedNode == null) {
-                    //probably removed by someone else
+                    // probably removed by someone else
                     continue;
                 }
                 if (topPath.isAtOrAbove(removedNode.getPath(this))) {
@@ -780,7 +783,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     switch (lockChange) {
                         case LOCK_FOR_SESSION:
                         case LOCK_FOR_NON_SESSION:
-                            //check is another session has already locked the document
+                            // check is another session has already locked the document
                             if (translator.isLocked(doc)) {
                                 throw new LockFailureException(key);
                             }
@@ -842,7 +845,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                             if (persistent != null) {
                                 Path oldPath = workspacePaths.getPath(persistent);
                                 if (appended != null && appended.hasChild(persistent.getKey())) {
-                                    //the same node has been both removed and appended => reordered at the end
+                                    // the same node has been both removed and appended => reordered at the end
                                     ChildReference appendedChildRef = node.getChildReferences(this).getChild(persistent.getKey());
                                     newPath = pathFactory().create(sessionPaths.getPath(node), appendedChildRef.getSegment());
                                     changes.nodeReordered(persistent.getKey(), node.getKey(), newPath, oldPath, null);
@@ -884,11 +887,14 @@ public class WritableSessionCache extends AbstractSessionCache {
 
                             Path nodeNewPath = null;
                             if (nodeOldPath != null) {
-                                boolean isSnsReordering = nodeOldPath != null && nodeOldPath.getLastSegment().getName().equals(insertedBeforePath.getLastSegment().getName());
+                                boolean isSnsReordering = nodeOldPath != null
+                                                          && nodeOldPath.getLastSegment()
+                                                                        .getName()
+                                                                        .equals(insertedBeforePath.getLastSegment().getName());
                                 nodeNewPath = isSnsReordering ? insertedBeforePath : nodeOldPath;
-                            }
-                            else {
-                                //there is no old path, which means the node is new and reordered at the same time (most likely due to a version restore)
+                            } else {
+                                // there is no old path, which means the node is new and reordered at the same time (most likely
+                                // due to a version restore)
                                 nodeNewPath = sessionPaths.getPath(changedNodes.get(insertedRef.getKey()));
                             }
 

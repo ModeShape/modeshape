@@ -49,7 +49,7 @@ public class DynamicFieldBridge implements FieldBridge {
      * values to be evaluated in comparison criteria.
      */
     private static final LuceneOptions STORED_NOT_ANALYZED = new LuceneOptionsImpl(Store.YES, Index.NOT_ANALYZED, TermVector.NO,
-                                                                                   null);
+                                                                                   1.0f);
 
     /**
      * This class always always adds fields that are {@link Index#NOT_ANALYZED}, since we want to search based up the fields
@@ -57,13 +57,12 @@ public class DynamicFieldBridge implements FieldBridge {
      * in other ways. All fields using this option are {@link org.apache.lucene.document.Field.Store#NO not stored}.
      */
     private static final LuceneOptions NOT_STORED_NOT_ANALYZED = new LuceneOptionsImpl(Store.NO, Index.NOT_ANALYZED,
-                                                                                       TermVector.NO, null);
+                                                                                       TermVector.NO, 1.0f);
 
     /**
      * 
      */
     public DynamicFieldBridge() {
-        int x = 0;
     }
 
     @Override

@@ -173,6 +173,15 @@
 			<outputDirectory>standalone/deployments/modeshape-webdav.war</outputDirectory> 
 			</fileSet -->
 
+		<!-- ModeShape subsystem XSD(s) -->
+		<fileSet>
+			<directory>modeshape-jbossas-subsystem/src/main/resources/schema/</directory>
+			<includes>
+				<include>modeshape_*.xsd</include>
+			</includes>
+			<outputDirectory>docs/schema</outputDirectory>
+		</fileSet>
+
 	</fileSets>
 
 	<files>
@@ -180,14 +189,6 @@
 			<source>modeshape-jbossas-web-rest-war/target/classes/modeshape-rest.war.dodeploy
 			</source>
 			<outputDirectory>standalone/deployments</outputDirectory>
-		</file>
-
-		<!-- Copy ModeShape.xsd to docs/schema folder and rename to modeshape_3_0.xsd -->
-		<file>
-			<source>modeshape-jbossas-subsystem/src/main/resources/schema/ModeShape.xsd
-			</source>
-			<outputDirectory>docs/schema</outputDirectory>
-			<destName>modeshape_3_0.xsd</destName>
 		</file>
 	</files>
 
@@ -218,7 +219,33 @@
 				<include>org.modeshape:modeshape-jcr</include>
 				<include>org.modeshape:modeshape-common</include>
 				<include>org.modeshape:modeshape-schematic</include>
-				<!-- include Lucene for now (rather than putting into separate module) -->
+			</includes>
+			<unpack>false</unpack>
+		</dependencySet>
+
+		<!-- Module for Hibernate Search (Engine) -->
+		<dependencySet>
+			<outputDirectory>modules/org/hibernate/search/engine/main</outputDirectory>
+			<unpack>false</unpack>
+      <useTransitiveFiltering>true</useTransitiveFiltering>
+			<includes>
+				<include>org.hibernate:hibernate-search-engine</include>
+				<!--
+				<include>org.hibernate.common:hibernate-commons-annotations</include>
+				<include>org.apache.avro:avro</include>
+				<include>org.codehaus.jackson:jackson-mapper-asl</include>
+				<include>org.apache.avro:avro</include>
+				-->
+			</includes>
+			<excludes>
+			  <exclude>org.hibernate.common:hibernate-commons</exclude>
+			</excludes>
+		</dependencySet>
+
+		<!-- Module for Lucene (Core + Regex) -->
+		<dependencySet>
+			<outputDirectory>modules/org/apache/lucene/main</outputDirectory>
+			<includes>
 				<include>org.apache.lucene:lucene-core</include>
 				<include>org.apache.lucene:lucene-regex</include>
 				<include>jakarta-regexp:jakarta-regexp</include>

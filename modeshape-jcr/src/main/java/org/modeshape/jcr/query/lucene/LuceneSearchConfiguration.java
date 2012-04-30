@@ -47,7 +47,7 @@ public abstract class LuceneSearchConfiguration implements SearchConfiguration {
     private final Map<String, Class<?>> classes = new HashMap<String, Class<?>>();
     private final Map<String, Class<?>> unmodifiableClasses;
     private final Properties properties = new Properties();
-    private final InstanceInitializer initializer = new SimpleInitializer();
+    private final InstanceInitializer initializer = SimpleInitializer.INSTANCE;
 
     /**
      * @param annotatedAndBridgeClasses the annotated classes that will be submitted to the indexer
@@ -131,6 +131,5 @@ public abstract class LuceneSearchConfiguration implements SearchConfiguration {
             }
         }
         return sb.toString();
-        // return properties.toString();
     }
 }

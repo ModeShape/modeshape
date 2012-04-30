@@ -147,6 +147,8 @@ public class JaasProvider implements AuthenticationProvider {
                         Logger.getLogger(JaasProvider.class).error(JcrI18n.credentialsMustReturnLoginContext,
                                                                    credentials.getClass().getName());
                     }
+                } catch (NoClassDefFoundError error) {
+                    // Not an implementation of Credentials that we know what to do with ...
                 } catch (NoSuchMethodException error) {
                     // Not an implementation of Credentials that we know what to do with ...
                 } catch (PrivilegedActionException e) {

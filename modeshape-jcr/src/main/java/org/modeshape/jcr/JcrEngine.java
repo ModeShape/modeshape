@@ -500,7 +500,8 @@ public class JcrEngine implements Repositories {
         final String repoName = repositoryKey != null ? repositoryKey : repositoryConfiguration.getName();
         Problems problems = repositoryConfiguration.validate();
         if (problems.hasErrors()) {
-            throw new ConfigurationException(problems, JcrI18n.repositoryConfigurationIsNotValid.text(repoName));
+            throw new ConfigurationException(problems, JcrI18n.repositoryConfigurationIsNotValid.text(repoName,
+                                                                                                      problems.toString()));
         }
 
         // Now try to deploy the repository ...
@@ -598,7 +599,8 @@ public class JcrEngine implements Repositories {
             RepositoryConfiguration config = repository.getConfiguration();
             Problems problems = config.validate(changes);
             if (problems.hasErrors()) {
-                throw new ConfigurationException(problems, JcrI18n.repositoryConfigurationIsNotValid.text(repositoryName));
+                throw new ConfigurationException(problems, JcrI18n.repositoryConfigurationIsNotValid.text(repositoryName,
+                                                                                                          problems.toString()));
             }
 
             // Create an initializer that will start the repository ...

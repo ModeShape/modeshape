@@ -759,7 +759,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         try {
             return session().node(ref.getKey(), null);
         } catch (ItemNotFoundException e) {
-            //expected by TCK
+            // expected by TCK
             String msg = JcrI18n.pathNotFoundRelativeTo.text(relativePath, location(), workspaceName());
             throw new PathNotFoundException(msg);
         }
@@ -1060,16 +1060,22 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     /**
      * Validates that there is a child node definition on the current node (as parent) which allows a child with the given name
      * and type.
-     *
+     * 
+     * @param childName the name of the child
+     * @param childPrimaryNodeTypeName the name of the child's primary type
+     * @param skipProtected true if validation should skip protected definitions
      * @return a non-null {@link JcrNodeDefinition}
+     * @throws ItemNotFoundException
+     * @throws InvalidItemStateException
+     * @throws ItemExistsException if the parent does not allow same-name-siblings and a child with the given name already exists
+     * @throws ConstraintViolationException if adding the child would violate constraints on the parent
+     * @throws NoSuchNodeTypeException if the named primary type does not exist
      */
     JcrNodeDefinition validateChildNodeDefinition( Name childName,
                                                    Name childPrimaryNodeTypeName,
-                                                   boolean skipProtected ) throws ItemNotFoundException,
-                                                                             InvalidItemStateException,
-                                                                             ItemExistsException,
-                                                                             ConstraintViolationException,
-                                                                             NoSuchNodeTypeException {
+                                                   boolean skipProtected )
+        throws ItemNotFoundException, InvalidItemStateException, ItemExistsException, ConstraintViolationException,
+        NoSuchNodeTypeException {
 
         SessionCache cache = sessionCache();
         CachedNode node = node();
@@ -1618,7 +1624,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     /**
      * Sets a multi valued property, skipping over protected ones.
-     *
+     * 
      * @param name the name of the property; may not be null
      * @param values the values of the property; may not be null
      * @param jcrPropertyType the expected property type; may be {@link PropertyType#UNDEFINED} if the values should not be
@@ -1637,7 +1643,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         throws VersionException, LockException, ConstraintViolationException, RepositoryException {
         return setProperty(name, values, jcrPropertyType, false, skipReferenceValidation);
     }
-
 
     /**
      * @param name the name of the property; may not be null
@@ -1712,12 +1717,24 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         Set<Name> mixinTypes = node.getMixinTypes(cache);
         NodeTypes nodeTypes = session.nodeTypes();
         JcrPropertyDefinition defn = null;
-        defn = nodeTypes.findPropertyDefinition(session, primaryType, mixinTypes, name, values, !skipProtectedValidation, skipReferenceValidation);
+        defn = nodeTypes.findPropertyDefinition(session,
+                                                primaryType,
+                                                mixinTypes,
+                                                name,
+                                                values,
+                                                !skipProtectedValidation,
+                                                skipReferenceValidation);
 
         if (defn == null) {
             // Failed to find a valid property definition,
             // so figure out if there's a definition that would work if it had no constraints ...
-            defn = nodeTypes.findPropertyDefinition(session, primaryType, mixinTypes, name, values, !skipProtectedValidation, false);
+            defn = nodeTypes.findPropertyDefinition(session,
+                                                    primaryType,
+                                                    mixinTypes,
+                                                    name,
+                                                    values,
+                                                    !skipProtectedValidation,
+                                                    false);
 
             String propName = readable(name);
             if (defn != null) {
@@ -1802,9 +1819,11 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     /**
      * Compacts the given array of input values, by removing all those which are <code>null</code>
+     * 
+     * @param inputValues the input values
      * @return an array without null elements.
      */
-    private Value[] compactValues(Value[] inputValues) {
+    private Value[] compactValues( Value[] inputValues ) {
         if (inputValues == null) {
             return null;
         }
@@ -1828,9 +1847,11 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 valueType = value.getType();
             } else if (value.getType() != valueType) {
                 // Make sure the type of each value is the same, as per Javadoc in section 10.4.2.6 of the JCR 2.0 spec
-                String msg = JcrI18n.allPropertyValuesMustHaveSameType.text(readable(name), values,
+                String msg = JcrI18n.allPropertyValuesMustHaveSameType.text(readable(name),
+                                                                            values,
                                                                             PropertyType.nameFromValue(valueType),
-                                                                            location(), workspaceName());
+                                                                            location(),
+                                                                            workspaceName());
                 throw new javax.jcr.ValueFormatException(msg);
             }
         }
@@ -2197,7 +2218,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         if (newPrimaryTypeName.equals(getPrimaryTypeName())) return;
 
         final JcrNodeType newPrimaryType = nodeTypes.getNodeType(newPrimaryTypeName);
-        //validate the new primary type
+        // validate the new primary type
         if (newPrimaryType == null) {
             throw new NoSuchNodeTypeException(JcrI18n.typeNotFound.text(newPrimaryType));
         }
@@ -2305,20 +2326,20 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             prop.releasePropertyDefinitionId();
         }
 
-        //per JCR 2.0 10.10.3.1, the change should be reflected immediately in the property
+        // per JCR 2.0 10.10.3.1, the change should be reflected immediately in the property
         updateMixinsProperty();
     }
 
     private void updateMixinsProperty() throws RepositoryException {
         MutableCachedNode mutable = mutable();
 
-        //as per JCR, we need to make sure the change is reflected immediately in the jcr property
+        // as per JCR, we need to make sure the change is reflected immediately in the jcr property
         List<Name> currentMixins = new ArrayList<Name>(mutable.getMixinTypes(sessionCache()));
         Value[] mixinValues = session.valueFactory().createValues(currentMixins, PropertyType.NAME);
         AbstractJcrProperty mixinProperty = this.jcrProperties.get(JcrLexicon.MIXIN_TYPES);
         if (mixinProperty == null) {
             mixinProperty = new JcrMultiValueProperty(this, JcrLexicon.MIXIN_TYPES, PropertyType.NAME);
-            //this will overwrite another property which may've appeared in the meantime
+            // this will overwrite another property which may've appeared in the meantime
             this.jcrProperties.put(JcrLexicon.MIXIN_TYPES, mixinProperty);
         }
         mixinProperty.setValue(mixinValues);
@@ -2442,7 +2463,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             child.releaseNodeDefinitionId();
         }
 
-        //per JCR 2.0 10.10.3.1, the change should be reflected immediately in the property
+        // per JCR 2.0 10.10.3.1, the change should be reflected immediately in the property
         updateMixinsProperty();
     }
 
@@ -2711,7 +2732,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         Path relativePath = path().equals(referenceableRoot.path()) ? null : path().relativeTo(referenceableRoot.path());
         NodeKey key = referenceableRoot.key();
 
-        //if the we're looking for a system node, we need to use the system ws name, which is repository-wide
+        // if the we're looking for a system node, we need to use the system ws name, which is repository-wide
         String systemWsKey = session.getRepository().systemWorkspaceKey();
         String workspaceKey = systemWsKey.equals(key.getWorkspaceKey()) ? systemWsKey : NodeKey.keyForWorkspaceName(workspaceName);
 
@@ -3049,7 +3070,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     @Override
     public void refresh( boolean keepChanges ) throws RepositoryException {
-        CachedNode node = node(); //TCK: this should throw an exception if the node has been removed
+        CachedNode node = node(); // TCK: this should throw an exception if the node has been removed
         if (!keepChanges) {
             session.cache().clear(node);
         }
@@ -3076,8 +3097,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
         boolean nodeAlreadyRemoved = cache().getNode(this.key) == null;
         if (nodeAlreadyRemoved) {
-            //this node has been removed by someone else
-            //TODO author=Horia Chiorean date=4/6/12 description=This case needs special handling and will cause a NPE
+            // this node has been removed by someone else
+            // TODO author=Horia Chiorean date=4/6/12 description=This case needs special handling and will cause a NPE
         }
         // Since this node might be shareable, we want to implement 'remove()' by calling 'removeShare()',
         // which will behave correctly even if it is not shareable ...
@@ -3168,10 +3189,12 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     }
 
     /**
-     * Determines whether this node, or any nodes below it, contain changes that depend on nodes that are outside
-     * of this node's hierarchy.
-     *
+     * Determines whether this node, or any nodes below it, contain changes that depend on nodes that are outside of this node's
+     * hierarchy.
+     * 
      * @return true if this node's hierarchy has nodes with changes dependent on nodes from outside the hierarchy
+     * @throws InvalidItemStateException
+     * @throws ItemNotFoundException
      */
     protected boolean containsChangesWithExternalDependencies() throws InvalidItemStateException, ItemNotFoundException {
         Set<NodeKey> allChanges = sessionCache().getChangedNodeKeys();

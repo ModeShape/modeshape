@@ -165,6 +165,8 @@
                  with a "sample" cache (each repository assumes the cache name matches the repository name). -->
             <cache-container name="modeshape" default-cache="sample">
                 <local-cache name="sample">
+                    <!-- ModeShape requires transactions -->
+                    <transaction mode="NON_XA"/>
                     <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
                     <file-store passivation="false" path="modeshape/store/sample" relative-to="jboss.server.data.dir" />
                 </local-cache>

@@ -41,7 +41,6 @@ import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.PathCache;
-import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.cache.RepositoryPathCache;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.document.WorkspaceCache;
@@ -73,7 +72,6 @@ import org.modeshape.jcr.value.Property;
 public class BasicTupleCollector extends TupleCollector {
 
     private final QueryContext queryContext;
-    private final RepositoryCache repositoryCache;
     private final Columns columns;
     private final LinkedList<Object[]> tuples = new LinkedList<Object[]>();
     private final RepositoryPathCache repositoryPathCache;
@@ -84,7 +82,6 @@ public class BasicTupleCollector extends TupleCollector {
     private final PseudoColumnAssignment[] assignments;
     private Scorer scorer;
     private IndexReader currentReader;
-    private int docOffset;
     private String lastWorkspaceName;
     private NodeCache lastWorkspaceCache;
     private PathCache lastWorkspacePathCache;
@@ -92,7 +89,6 @@ public class BasicTupleCollector extends TupleCollector {
     public BasicTupleCollector( QueryContext queryContext,
                                 Columns columns ) {
         this.queryContext = queryContext;
-        this.repositoryCache = queryContext.getRepositoryCache();
         this.repositoryPathCache = new RepositoryPathCache();
         this.columns = columns;
         this.numValues = this.columns.getTupleSize();
@@ -158,7 +154,6 @@ public class BasicTupleCollector extends TupleCollector {
     public void setNextReader( IndexReader reader,
                                int docBase ) {
         this.currentReader = reader;
-        this.docOffset = docBase;
     }
 
     @Override
