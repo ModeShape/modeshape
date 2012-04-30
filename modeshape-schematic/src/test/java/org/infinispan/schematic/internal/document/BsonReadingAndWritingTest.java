@@ -31,10 +31,10 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
-import org.bson.BSONDecoder;
-import org.bson.BSONEncoder;
 import org.bson.BSONObject;
 import org.bson.BasicBSONCallback;
+import org.bson.BasicBSONDecoder;
+import org.bson.BasicBSONEncoder;
 import org.bson.BasicBSONObject;
 import org.bson.types.BSONTimestamp;
 import org.bson.types.BasicBSONList;
@@ -293,7 +293,7 @@ public class BsonReadingAndWritingTest {
                 // Convert to MongoDB, write to bytes, and compare ...
                 BSONObject mongoData = createMongoData(object);
                 start = System.nanoTime();
-                byte[] mongoBytes = new BSONEncoder().encode(mongoData);
+                byte[] mongoBytes = new BasicBSONEncoder().encode(mongoData);
                 long mongoWriteTime = System.nanoTime() - start;
                 assertSame(bytes, mongoBytes, "BSON   ", "Mongo  ");
 
@@ -309,7 +309,7 @@ public class BsonReadingAndWritingTest {
                 // assertSame(bytes, jacksonBytes, "BSON   ", "Jackson");
 
                 start = System.nanoTime();
-                new BSONDecoder().decode(bytes, new BasicBSONCallback());
+                new BasicBSONDecoder().decode(bytes, new BasicBSONCallback());
                 long mongoReadTime = System.nanoTime() - start;
 
                 Document fromMongo = reader.read(new ByteArrayInputStream(mongoBytes));
