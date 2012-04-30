@@ -27,7 +27,6 @@ import org.infinispan.manager.CacheContainer;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
-import org.infinispan.schematic.document.Editor;
 import org.jboss.as.clustering.jgroups.ChannelFactory;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
@@ -35,6 +34,8 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.jgroups.Channel;
+import org.modeshape.common.collection.Problems;
+import org.modeshape.common.util.Logger;
 import org.modeshape.jcr.ConfigurationException;
 import org.modeshape.jcr.Environment;
 import org.modeshape.jcr.JcrEngine;
@@ -42,6 +43,7 @@ import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.RepositoryConfiguration.FieldValue;
+import org.modeshape.jcr.RepositoryConfiguration.QueryRebuild;
 
 /**
  * A <code>RepositoryService</code> instance is the service responsible for initializing a {@link JcrRepository} in the ModeShape
@@ -60,7 +62,7 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
     private final InjectedValue<BinaryStorage> binaryStorageInjector = new InjectedValue<BinaryStorage>();
     private final InjectedValue<String> dataDirectoryPathInjector = new InjectedValue<String>();
 
-    private final RepositoryConfiguration repositoryConfiguration;
+    private RepositoryConfiguration repositoryConfiguration;
 
     public RepositoryService( RepositoryConfiguration repositoryConfiguration ) {
         this.repositoryConfiguration = repositoryConfiguration;
@@ -101,6 +103,7 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
     @Override
     public void start( StartContext arg0 ) throws StartException {
         JcrEngine jcr = getEngine();
+        Logger logger = Logger.getLogger(getClass());
         try {
             final String repositoryName = repositoryConfiguration.getName();
 
@@ -121,7 +124,7 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
                 EditableDocument indexing = query.getOrCreateDocument(FieldName.INDEXING);
                 EditableDocument indexStorage = query.getOrCreateDocument(FieldName.INDEX_STORAGE);
                 EditableDocument backend = indexing.getOrCreateDocument(FieldName.INDEXING_BACKEND);
-                query.set(FieldName.REBUILD_UPON_STARTUP, "if_needed");
+                query.set(FieldName.REBUILD_UPON_STARTUP, QueryRebuild.IF_MISSING.toString().toLowerCase());
                 backend.set(FieldName.TYPE, FieldValue.INDEXING_BACKEND_TYPE_LUCENE);
                 indexStorage.set(FieldName.TYPE, FieldValue.INDEX_STORAGE_FILESYSTEM);
                 String dataDirPath = dataDirectoryPathInjector.getValue();
@@ -144,13 +147,21 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
                 binaryConfig = binaries;
             }
 
-            // Now update the configuration ...
-            Editor editor = repositoryConfiguration.edit();
-            editor.setDocument(FieldName.QUERY, queryConfig);
-            editor.getOrCreateDocument(FieldName.STORAGE).setDocument(FieldName.BINARY_STORAGE, binaryConfig);
+            // Create a new configuration document ...
+            EditableDocument config = Schematic.newDocument(repositoryConfiguration.getDocument());
+            config.setDocument(FieldName.QUERY, queryConfig);
+            config.getOrCreateDocument(FieldName.STORAGE).setDocument(FieldName.BINARY_STORAGE, binaryConfig);
 
-            // Apply the changes to the configuration ...
-            editor.apply(editor.getChanges());
+            if (logger.isDebugEnabled()) {
+                logger.debug("ModeShape configuration for '{0}' repository: {1}", repositoryName, config);
+                Problems problems = repositoryConfiguration.validate();
+                if (problems.isEmpty()) {
+                    logger.debug("Problems with configuration for '{0}' repository: {1}", repositoryName, problems);
+                }
+            }
+
+            // Create a new (updated) configuration ...
+            repositoryConfiguration = new RepositoryConfiguration(config, repositoryName);
 
             // Deploy the repository and use this as the environment ...
             jcr.deploy(repositoryConfiguration.with(this));

@@ -437,7 +437,7 @@ public class ModelAttributes {
     public static final SimpleAttributeDefinition SECURITY_DOMAIN =
         new SimpleAttributeDefinitionBuilder(ModelKeys.SECURITY_DOMAIN, ModelType.STRING)
                 .setXmlName(Attribute.SECURITY_DOMAIN.getLocalName())
-                .setAllowExpression(false)
+                .setAllowExpression(true)
                 .setAllowNull(true)
                 .setDefaultValue(new ModelNode().set("modeshape-security"))
                 .setFlags(AttributeAccess.Flag.RESTART_NONE)

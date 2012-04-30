@@ -28,24 +28,23 @@
         <resource-root path="conf" />
         <resource-root path="modeshape-schematic-${project.version}.jar" />  
         <resource-root path="modeshape-subsystem-${project.version}.jar" />
-        <resource-root path="lucene-core-${lucene.version}.jar" />
-        <resource-root path="lucene-regex-${lucene.regex.version}.jar" />
-        <resource-root path="jakarta-regexp-${lucene.regex.jakarta.version}.jar" />
     </resources>
 
    <dependencies>
         <module name="org.modeshape.jcr.api" export="true"/>
         <module name="javax.jcr" export="true"/>
+        <!-- ModeShape JCR dependencies (must export Infinispan so that our stored classes can be loaded )-->
+        <module name="org.infinispan" export="true"/>
+        <module name="org.joda.time" />
+        <module name="org.jgroups" />
+        <module name="org.apache.lucene" />
+        <module name="org.hibernate.search.engine" />
         <!-- For naming ... -->
         <module name="javax.api" export="true"/>
         <module name="org.jboss.as.naming"/>
         <!-- For security provider ... -->
         <module name="javax.servlet.api"/>
         <module name="javax.resource.api"/>
-        <!-- ModeShape JCR dependencies ... -->
-        <module name="org.joda.time" />
-        <module name="org.infinispan" />
-        <module name="org.jgroups" />
         <!-- For logging ... -->
         <module name="org.slf4j"/>
         <module name="org.jboss.logging" />

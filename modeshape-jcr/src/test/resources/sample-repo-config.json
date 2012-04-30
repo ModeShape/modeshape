@@ -35,7 +35,7 @@
     },
     "query" : {
         "enabled" : true,
-        "rebuildUponStartup" : "ifMissing",
+        "rebuildUponStartup" : "if_missing",
         "indexStorage" : {
             "type" : "ram"
         },

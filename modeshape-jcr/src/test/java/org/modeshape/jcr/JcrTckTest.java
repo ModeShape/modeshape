@@ -24,6 +24,9 @@
 
 package org.modeshape.jcr;
 
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.List;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtMethod;
@@ -106,10 +109,6 @@ import org.apache.jackrabbit.test.api.SetValueVersionExceptionTest;
 import org.apache.jackrabbit.test.api.StringPropertyTest;
 import org.apache.jackrabbit.test.api.UndefinedPropertyTest;
 import org.apache.jackrabbit.test.api.ValueFactoryTest;
-import org.apache.jackrabbit.test.api.WorkspaceCloneReferenceableTest;
-import org.apache.jackrabbit.test.api.WorkspaceCloneSameNameSibsTest;
-import org.apache.jackrabbit.test.api.WorkspaceCloneTest;
-import org.apache.jackrabbit.test.api.WorkspaceCloneVersionableTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveReferenceableTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveTest;
 import org.apache.jackrabbit.test.api.WorkspaceReadMethodsTest;
@@ -117,7 +116,6 @@ import org.apache.jackrabbit.test.api.WorkspaceTest;
 import org.apache.jackrabbit.test.api.nodetype.NodeTypeCreationTest;
 import org.apache.jackrabbit.test.api.observation.AddEventListenerTest;
 import org.apache.jackrabbit.test.api.observation.EventIteratorTest;
-import org.apache.jackrabbit.test.api.observation.EventJournalTest;
 import org.apache.jackrabbit.test.api.observation.EventTest;
 import org.apache.jackrabbit.test.api.observation.GetDateTest;
 import org.apache.jackrabbit.test.api.observation.GetIdentifierTest;
@@ -165,11 +163,9 @@ import org.apache.jackrabbit.test.api.query.SaveTest;
 import org.apache.jackrabbit.test.api.query.SetLimitTest;
 import org.apache.jackrabbit.test.api.query.SetOffsetTest;
 import org.apache.jackrabbit.test.api.query.SimpleSelectionTest;
-import org.apache.jackrabbit.test.api.query.TextNodeTest;
 import org.apache.jackrabbit.test.api.query.XPathDocOrderTest;
 import org.apache.jackrabbit.test.api.query.XPathJcrPathTest;
 import org.apache.jackrabbit.test.api.query.XPathOrderByTest;
-import org.apache.jackrabbit.test.api.query.XPathPosIndexTest;
 import org.apache.jackrabbit.test.api.query.XPathQueryLevel2Test;
 import org.apache.jackrabbit.test.api.security.AccessControlDiscoveryTest;
 import org.apache.jackrabbit.test.api.security.AccessControlListTest;
@@ -188,15 +184,6 @@ import org.apache.jackrabbit.test.api.version.GetCreatedTest;
 import org.apache.jackrabbit.test.api.version.GetPredecessorsTest;
 import org.apache.jackrabbit.test.api.version.GetReferencesNodeTest;
 import org.apache.jackrabbit.test.api.version.GetVersionableUUIDTest;
-import org.apache.jackrabbit.test.api.version.MergeActivityTest;
-import org.apache.jackrabbit.test.api.version.MergeCancelMergeTest;
-import org.apache.jackrabbit.test.api.version.MergeCheckedoutSubNodeTest;
-import org.apache.jackrabbit.test.api.version.MergeDoneMergeTest;
-import org.apache.jackrabbit.test.api.version.MergeNodeIteratorTest;
-import org.apache.jackrabbit.test.api.version.MergeNodeTest;
-import org.apache.jackrabbit.test.api.version.MergeNonVersionableSubNodeTest;
-import org.apache.jackrabbit.test.api.version.MergeShallowTest;
-import org.apache.jackrabbit.test.api.version.MergeSubNodeTest;
 import org.apache.jackrabbit.test.api.version.OnParentVersionAbortTest;
 import org.apache.jackrabbit.test.api.version.OnParentVersionComputeTest;
 import org.apache.jackrabbit.test.api.version.OnParentVersionCopyTest;
@@ -211,10 +198,6 @@ import org.apache.jackrabbit.test.api.version.VersionLabelTest;
 import org.apache.jackrabbit.test.api.version.VersionStorageTest;
 import org.apache.jackrabbit.test.api.version.VersionTest;
 import org.apache.jackrabbit.test.api.version.WorkspaceMoveVersionExceptionTest;
-import org.apache.jackrabbit.test.api.version.WorkspaceRestoreTest;
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Test suite to wrap Apache Jackrabbit JCR technology compatibility kit (TCK) unit tests. Note that technically these are not the
@@ -224,7 +207,7 @@ public class JcrTckTest {
 
     /**
      * Wrapper so that the Jackrabbit TCK test suite gets picked up by the ModeShape Maven test target.
-     *
+     * 
      * @return a new instance of {@link org.apache.jackrabbit.test.JCRTestSuite}.
      */
     public static Test suite() {
@@ -242,7 +225,7 @@ public class JcrTckTest {
 
     /**
      * Wrapper for read-only tests
-     *
+     * 
      * @return a new instance of {@link org.apache.jackrabbit.test.JCRTestSuite}.
      */
     public static Test readOnlySuite() {
@@ -251,7 +234,7 @@ public class JcrTckTest {
 
     /**
      * Test suite that includes the Level 1 JCR TCK API tests from the Jackrabbit project.
-     *
+     * 
      * @return a new test suite
      */
     private static TestSuite levelOneSuite() {
@@ -295,7 +278,7 @@ public class JcrTckTest {
 
     /**
      * Test suite that includes the Level 2 JCR TCK API tests from the Jackrabbit project.
-     *
+     * 
      * @return a new test suite
      */
     private static TestSuite levelTwoSuite() {
@@ -366,7 +349,7 @@ public class JcrTckTest {
         suite.addTestSuite(SessionRemoveItemTest.class);
         suite.addTestSuite(HasPermissionTest.class);
 
-        //new Workspace features
+        // new Workspace features
         suite.addTestSuite(WorkspaceTest.class);
 
         // repository factory
@@ -375,52 +358,55 @@ public class JcrTckTest {
         // lifecycle management
         suite.addTestSuite(LifecycleTest.class);
 
-
-        //TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1453
+        // TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1453
         suite.addTestSuite(excludeTests(ReferencesTest.class, "testReferences", "testGetReferencesWithName", "testAlterReference"));
 
-        //TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1453
-        suite.addTestSuite(excludeTests(SessionUUIDTest.class,  "testSaveReferentialIntegrityException"));
+        // TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1453
+        suite.addTestSuite(excludeTests(SessionUUIDTest.class, "testSaveReferentialIntegrityException"));
         /**
-         * //TODO author=Horia Chiorean date=4/11/12 description=The following fail:
-         *
-         * testUpdate - https://issues.jboss.org/browse/MODE-1455
-         * testRemoveInvalidItemStateException - https://issues.jboss.org/browse/MODE-1456
-         * testRemoveMandatoryNode - https://issues.jboss.org/browse/MODE-1456
-         * testSaveInvalidStateException -  https://issues.jboss.org/browse/MODE-1456
-         *      (might not seem related at first, but it's because a path of a node is determined incorrectly)
+         * //TODO author=Horia Chiorean date=4/11/12 description=The following fail: testUpdate -
+         * https://issues.jboss.org/browse/MODE-1455 testRemoveInvalidItemStateException -
+         * https://issues.jboss.org/browse/MODE-1456 testRemoveMandatoryNode - https://issues.jboss.org/browse/MODE-1456
+         * testSaveInvalidStateException - https://issues.jboss.org/browse/MODE-1456 (might not seem related at first, but it's
+         * because a path of a node is determined incorrectly)
          */
-        suite.addTestSuite(excludeTests(NodeTest.class, "testUpdate", "testRemoveInvalidItemStateException",
-                                        "testRemoveMandatoryNode", "testSaveInvalidStateException"));
+        suite.addTestSuite(excludeTests(NodeTest.class,
+                                        "testUpdate",
+                                        "testRemoveInvalidItemStateException",
+                                        "testRemoveMandatoryNode",
+                                        "testSaveInvalidStateException"));
 
-        //TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1453
-        suite.addTestSuite(excludeTests(NodeUUIDTest.class,  "testSaveReferentialIntegrityException"));
+        // TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1453
+        suite.addTestSuite(excludeTests(NodeUUIDTest.class, "testSaveReferentialIntegrityException"));
 
-        //TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1312
-//        suite.addTestSuite(WorkspaceCloneReferenceableTest.class);
-//        suite.addTestSuite(WorkspaceCloneSameNameSibsTest.class);
-//        suite.addTestSuite(WorkspaceCloneTest.class);
-//        suite.addTestSuite(WorkspaceCloneVersionableTest.class);
+        // TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1312
+        // suite.addTestSuite(WorkspaceCloneReferenceableTest.class);
+        // suite.addTestSuite(WorkspaceCloneSameNameSibsTest.class);
+        // suite.addTestSuite(WorkspaceCloneTest.class);
+        // suite.addTestSuite(WorkspaceCloneVersionableTest.class);
 
-        //suite.addTestSuite(WorkspaceCopyBetweenWorkspacesReferenceableTest.class);
-        //suite.addTestSuite(WorkspaceCopyBetweenWorkspacesSameNameSibsTest.class);
-        //suite.addTestSuite(WorkspaceCopyBetweenWorkspacesTest.class);
-        //suite.addTestSuite(WorkspaceCopyBetweenWorkspacesVersionableTest.class);
-        //suite.addTestSuite(WorkspaceCopyReferenceableTest.class);
-        //suite.addTestSuite(WorkspaceCopySameNameSibsTest.class);
-        //suite.addTestSuite(WorkspaceCopyTest.class);
-        //suite.addTestSuite(WorkspaceCopyVersionableTest.class);
-        //suite.addTestSuite(WorkspaceMoveSameNameSibsTest.class);
-        //suite.addTestSuite(WorkspaceMoveVersionableTest.class);
+        // suite.addTestSuite(WorkspaceCopyBetweenWorkspacesReferenceableTest.class);
+        // suite.addTestSuite(WorkspaceCopyBetweenWorkspacesSameNameSibsTest.class);
+        // suite.addTestSuite(WorkspaceCopyBetweenWorkspacesTest.class);
+        // suite.addTestSuite(WorkspaceCopyBetweenWorkspacesVersionableTest.class);
+        // suite.addTestSuite(WorkspaceCopyReferenceableTest.class);
+        // suite.addTestSuite(WorkspaceCopySameNameSibsTest.class);
+        // suite.addTestSuite(WorkspaceCopyTest.class);
+        // suite.addTestSuite(WorkspaceCopyVersionableTest.class);
+        // suite.addTestSuite(WorkspaceMoveSameNameSibsTest.class);
+        // suite.addTestSuite(WorkspaceMoveVersionableTest.class);
         //
 
-        //TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1453
-        suite.addTestSuite(excludeTests(GetWeakReferencesTest.class, "testSingleValue", "testSingleValueWithName",
-                                        "testMultiValues", "testMultiValuesWithName"));
+        // TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1453
+        suite.addTestSuite(excludeTests(GetWeakReferencesTest.class,
+                                        "testSingleValue",
+                                        "testSingleValueWithName",
+                                        "testMultiValues",
+                                        "testMultiValuesWithName"));
 
         // shareable nodes
-        //TODO author=Horia Chiorean date=4/13/12 description=https://issues.jboss.org/browse/MODE-1458
-        //suite.addTestSuite(ShareableNodeTest.class);
+        // TODO author=Horia Chiorean date=4/13/12 description=https://issues.jboss.org/browse/MODE-1458
+        // suite.addTestSuite(ShareableNodeTest.class);
 
         return suite;
     }
@@ -434,27 +420,28 @@ public class JcrTckTest {
             // We currently don't pass the tests in those suites that are commented out
 
             addTest(new ObservationTests());
-//            addTest(org.apache.jackrabbit.test.api.observation.TestAll.suite());
+            // addTest(org.apache.jackrabbit.test.api.observation.TestAll.suite());
 
             addTest(new FullVersioningTests());
-            //addTest(org.apache.jackrabbit.test.api.version.TestAll.suite());
+            // addTest(org.apache.jackrabbit.test.api.version.TestAll.suite());
 
             addTest(org.apache.jackrabbit.test.api.lock.TestAll.suite());
             addTest(org.apache.jackrabbit.test.api.util.TestAll.suite());
             addTest(org.apache.jackrabbit.test.api.retention.TestAll.suite());
 
             addTest(new SecurityTests());
-//            addTest(org.apache.jackrabbit.test.api.security.TestAll.suite());
+            // addTest(org.apache.jackrabbit.test.api.security.TestAll.suite());
 
             addTest(new QueryTests());
             // addTest(org.apache.jackrabbit.test.api.query.TestAll.suite());
-            //TODO author=Horia Chiorean date=4/20/12 description=https://issues.jboss.org/browse/MODE-1468
-            //addTest(org.apache.jackrabbit.test.api.query.qom.TestAll.suite());
+            // TODO author=Horia Chiorean date=4/20/12 description=https://issues.jboss.org/browse/MODE-1468
+            // addTest(org.apache.jackrabbit.test.api.query.qom.TestAll.suite());
         }
     }
 
     private static class SecurityTests extends TestSuite {
-        protected SecurityTests( ) {
+        @SuppressWarnings( "synthetic-access" )
+        protected SecurityTests() {
             super("JCR Security Tests");
             addTestSuite(AccessControlDiscoveryTest.class);
             addTestSuite(AccessControlPolicyTest.class);
@@ -462,12 +449,13 @@ public class JcrTckTest {
             addTestSuite(AccessControlListTest.class);
             addTestSuite(RSessionAccessControlDiscoveryTest.class);
             addTestSuite(RSessionAccessControlPolicyTest.class);
-            //TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1312
+            // TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1312
             addTestSuite(excludeTests(RSessionAccessControlTest.class, "testCopyNode"));
         }
     }
 
     private static class QueryTests extends TestSuite {
+        @SuppressWarnings( "synthetic-access" )
         protected QueryTests() {
             super("JCR Query Tests");
 
@@ -477,7 +465,7 @@ public class JcrTckTest {
 
             addTestSuite(SQLJoinTest.class);
             addTestSuite(SQLJcrPathTest.class);
-            //TODO author=Horia Chiorean date=4/20/12 description=https://issues.jboss.org/browse/MODE-1469
+            // TODO author=Horia Chiorean date=4/20/12 description=https://issues.jboss.org/browse/MODE-1469
             addTestSuite(excludeTests(SQLPathTest.class, "testChildAxisRoot"));
             addTestSuite(XPathDocOrderTest.class);
             addTestSuite(XPathOrderByTest.class);
@@ -513,15 +501,16 @@ public class JcrTckTest {
             addTestSuite(SetLimitTest.class);
             addTestSuite(SetOffsetTest.class);
 
-            //TODO author=Horia Chiorean date=4/20/12 description=https://issues.jboss.org/browse/MODE-1419
+            // TODO author=Horia Chiorean date=4/20/12 description=https://issues.jboss.org/browse/MODE-1419
             addTestSuite(excludeTests(SQLQueryLevel2Test.class, "testScoreColumn", "testFullTextSearch", "testPathColumn"));
-//            addTestSuite(XPathPosIndexTest.class);
+            // addTestSuite(XPathPosIndexTest.class);
             addTestSuite(excludeTests(XPathQueryLevel2Test.class, "testScoreColumn", "testFullTextSearch", "testPathColumn"));
-//            addTestSuite(TextNodeTest.class);
+            // addTestSuite(TextNodeTest.class);
         }
     }
 
     private static class ObservationTests extends TestSuite {
+        @SuppressWarnings( "synthetic-access" )
         protected ObservationTests() {
             super("JCR Observation Tests");
 
@@ -539,12 +528,12 @@ public class JcrTckTest {
             addTestSuite(PropertyRemovedTest.class);
             addTestSuite(AddEventListenerTest.class);
 
-            //TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1312
+            // TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1312
             addTestSuite(excludeTests(WorkspaceOperationTest.class, "testCopy"));
-//
+            //
             // JCR 2.0
-            //TODO author=Horia Chiorean date=4/19/12 description=https://issues.apache.org/jira/browse/JCR-2662
-//            addTestSuite(EventJournalTest.class);
+            // TODO author=Horia Chiorean date=4/19/12 description=https://issues.apache.org/jira/browse/JCR-2662
+            // addTestSuite(EventJournalTest.class);
             addTestSuite(GetDateTest.class);
             addTestSuite(GetIdentifierTest.class);
             addTestSuite(GetInfoTest.class);
@@ -553,6 +542,7 @@ public class JcrTckTest {
     }
 
     private static class FullVersioningTests extends TestSuite {
+        @SuppressWarnings( "synthetic-access" )
         protected FullVersioningTests() {
             super("JCR Full Versioning Tests");
 
@@ -563,18 +553,18 @@ public class JcrTckTest {
             addTestSuite(CheckinTest.class);
             addTestSuite(VersionGraphTest.class);
 
-            //TODO author=Horia Chiorean date=4/17/12 description=https://issues.jboss.org/browse/MODE-1453
+            // TODO author=Horia Chiorean date=4/17/12 description=https://issues.jboss.org/browse/MODE-1453
             addTestSuite(excludeTests(VersionHistoryTest.class, "testGetReferences"));
             addTestSuite(excludeTests(RemoveVersionTest.class, "testReferentialIntegrityException"));
 
-            //TODO author=Horia Chiorean date=4/17/12 description=https://issues.jboss.org/browse/MODE-1312
+            // TODO author=Horia Chiorean date=4/17/12 description=https://issues.jboss.org/browse/MODE-1312
             addTestSuite(excludeTests(CopyTest.class, "testCopy"));
 
-            //TODO author=Horia Chiorean date=4/19/12 description=https://issues.apache.org/jira/browse/JCR-2666
+            // TODO author=Horia Chiorean date=4/19/12 description=https://issues.apache.org/jira/browse/JCR-2666
             addTestSuite(excludeTests(RestoreTest.class, "testRestoreNameJcr2"));
 
-            //TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1312
-            //addTestSuite(WorkspaceRestoreTest.class);
+            // TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1312
+            // addTestSuite(WorkspaceRestoreTest.class);
 
             addTestSuite(OnParentVersionAbortTest.class);
             addTestSuite(OnParentVersionComputeTest.class);
@@ -589,16 +579,16 @@ public class JcrTckTest {
             addTestSuite(SessionMoveVersionExceptionTest.class);
             addTestSuite(WorkspaceMoveVersionExceptionTest.class);
 
-            //TODO author=Horia Chiorean date=4/17/12 description=https://issues.jboss.org/browse/MODE-1312
-//            addTestSuite(MergeCancelMergeTest.class);
-//            addTestSuite(MergeCheckedoutSubNodeTest.class);
-//            addTestSuite(MergeDoneMergeTest.class);
-//            addTestSuite(MergeNodeIteratorTest.class);
-//            addTestSuite(MergeNodeTest.class);
-//            addTestSuite(MergeShallowTest.class);
-//            addTestSuite(MergeActivityTest.class);
-//            addTestSuite(MergeNonVersionableSubNodeTest.class);
-//            addTestSuite(MergeSubNodeTest.class);
+            // TODO author=Horia Chiorean date=4/17/12 description=https://issues.jboss.org/browse/MODE-1312
+            // addTestSuite(MergeCancelMergeTest.class);
+            // addTestSuite(MergeCheckedoutSubNodeTest.class);
+            // addTestSuite(MergeDoneMergeTest.class);
+            // addTestSuite(MergeNodeIteratorTest.class);
+            // addTestSuite(MergeNodeTest.class);
+            // addTestSuite(MergeShallowTest.class);
+            // addTestSuite(MergeActivityTest.class);
+            // addTestSuite(MergeNonVersionableSubNodeTest.class);
+            // addTestSuite(MergeSubNodeTest.class);
 
             // JCR 2.0
             addTestSuite(ActivitiesTest.class);
@@ -609,7 +599,12 @@ public class JcrTckTest {
     /**
      * Uses javaassist to create a subclass for a TestCase from the original TCK suite and change it's body so that a simple
      * message is printed out. Since we're not using JUnit 4, we can't use @Ignore
+     * 
+     * @param testCase
+     * @param testNames
+     * @return the classes to exclude
      */
+    @SuppressWarnings( "unchecked" )
     private static Class<? extends TestCase> excludeTests( Class<? extends TestCase> testCase,
                                                            String... testNames ) {
         List<String> excludedTests = Arrays.asList(testNames);

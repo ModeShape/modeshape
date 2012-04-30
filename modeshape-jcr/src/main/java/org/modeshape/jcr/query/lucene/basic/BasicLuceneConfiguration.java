@@ -26,6 +26,7 @@ package org.modeshape.jcr.query.lucene.basic;
 import java.io.File;
 import java.net.URL;
 import java.util.Properties;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.hibernate.search.cfg.spi.SearchConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
@@ -138,7 +139,12 @@ public class BasicLuceneConfiguration extends LuceneSearchConfiguration {
         String asyncThreadPoolSize = indexing.getProperty(FieldName.INDEXING_ASYNC_THREAD_POOL_SIZE);
         String asyncMaxQueueSize = indexing.getProperty(FieldName.INDEXING_ASYNC_MAX_QUEUE_SIZE);
 
-        setProperty("hibernate.search.analyzer", analyzer);
+        if (!StandardAnalyzer.class.getName().equals(analyzer)) {
+            // Hibernate Search defaults to StandardAnalyzer, which is also our default. But there's an issue loading
+            // the class when running in AS7, because ConfigContext uses org.hibernate.annotations.common.util.ReflectHelper,
+            // which apparently uses the Hibernate module's classpath (which does not contain the Lucene library).
+            setProperty("hibernate.search.analyzer", analyzer);
+        }
         setProperty("hibernate.search.similarity", similarity);
         setProperty("hibernate.search.worker.batch_size", batchSize);
         setProperty("hibernate.search.lucene_version", indexFormat);
@@ -166,9 +172,9 @@ public class BasicLuceneConfiguration extends LuceneSearchConfiguration {
         } else if (backendType.equals(FieldValue.INDEXING_BACKEND_TYPE_JMS_MASTER)) {
             String queueJndiName = backend.getProperty(FieldName.INDEXING_BACKEND_JMS_QUEUE_JNDI_NAME);
             String factoryJndiName = backend.getProperty(FieldName.INDEXING_BACKEND_JMS_CONNECTION_FACTORY_JNDI_NAME);
-            setProperty("hibernate.search.default.worker.backend", "lucene");
-            // Now create a component that pulls from the JMS object and writes to the local Lucene backend ...
-            // TODO: Query (JMS)
+            setProperty("hibernate.search.default.worker.backend", "jms");
+            setProperty("hibernate.search.default.worker.jms.connection_factory", factoryJndiName);
+            setProperty("hibernate.search.default.worker.jms.queue", queueJndiName);
         } else if (backendType.equals(FieldValue.INDEXING_BACKEND_TYPE_JMS_SLAVE)) {
             String queueJndiName = backend.getProperty(FieldName.INDEXING_BACKEND_JMS_QUEUE_JNDI_NAME);
             String factoryJndiName = backend.getProperty(FieldName.INDEXING_BACKEND_JMS_CONNECTION_FACTORY_JNDI_NAME);
@@ -228,5 +234,10 @@ public class BasicLuceneConfiguration extends LuceneSearchConfiguration {
         value = value.trim();
         if (value.contains("<config") && value.contains("xmlns=\"urn:org:jgroups\"")) return true;
         return false;
+    }
+
+    @Override
+    public boolean isIndexMetadataComplete() {
+        return true;
     }
 }

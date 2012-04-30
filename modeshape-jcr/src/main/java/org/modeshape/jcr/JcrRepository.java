@@ -1141,7 +1141,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         }
 
         private final ClassLoader classLoader() {
-            return database.getCache().getConfiguration().getClassLoader();
+            return this.getClass().getClassLoader();
         }
 
         private final ClassLoader classLoader( String classLoaderName,
@@ -1192,7 +1192,9 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         }
 
         protected final TransactionManager txnManager() {
-            return infinispanCache().getAdvancedCache().getTransactionManager();
+            TransactionManager mgr = infinispanCache().getAdvancedCache().getTransactionManager();
+            assert mgr != null;
+            return mgr;
         }
 
         protected final RepositoryNodeTypeManager nodeTypeManager() {

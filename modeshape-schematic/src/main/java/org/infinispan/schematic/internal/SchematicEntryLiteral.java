@@ -30,6 +30,7 @@ import org.infinispan.atomic.Delta;
 import org.infinispan.atomic.DeltaAware;
 import org.infinispan.context.FlagContainer;
 import org.infinispan.marshall.AbstractExternalizer;
+import org.infinispan.marshall.SerializeWith;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Binary;
 import org.infinispan.schematic.document.Document;
@@ -53,8 +54,8 @@ import org.infinispan.util.Util;
  * @author Randall Hauch <rhauch@redhat.com> (C) 2011 Red Hat Inc.
  * @since 5.1
  * @see org.infinispan.atomic.AtomicHashMap
- * @SerializeWith(SchematicEntryLiteral.Externalizer.class)
  */
+@SerializeWith( SchematicEntryLiteral.Externalizer.class )
 public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
 
     protected static class FieldPath {

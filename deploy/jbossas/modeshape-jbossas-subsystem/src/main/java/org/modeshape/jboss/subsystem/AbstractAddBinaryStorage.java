@@ -93,8 +93,7 @@ public abstract class AbstractAddBinaryStorage extends AbstractAddStepHandler {
         // Add dependencies to the various data directories ...
         addControllersAndDependencies(repositoryName, service, builder, newControllers, target);
         builder.setInitialMode(ServiceController.Mode.ACTIVE);
-        ServiceController<BinaryStorage> controller = builder.install();
-        newControllers.add(controller);
+        newControllers.add(builder.install());
 
     }
 
