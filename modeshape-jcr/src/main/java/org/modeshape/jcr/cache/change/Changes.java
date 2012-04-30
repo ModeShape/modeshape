@@ -78,6 +78,10 @@ public interface Changes {
                         NodeKey outputNodeKey,
                         Path outputNodePath );
 
+    void nodeSequencingFailure( NodeKey sequencedNodeKey,
+                                Path sequencedNodePath,
+                                Throwable cause );
+
     void propertyAdded( NodeKey key,
                         Path nodePath,
                         Property property );

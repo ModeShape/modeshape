@@ -25,6 +25,7 @@
 package org.modeshape.sequencer.wsdl;
 
 import javax.jcr.Node;
+import javax.wsdl.WSDLException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -106,6 +107,13 @@ public class WsdlSequencerTest extends AbstractSequencerTest {
     @Test
     public void shouldBeAbleToSequence_uddi_vscache_v3_portType() throws Exception {
         assertSequencedSuccessfully("uddi_vscache_v3_portType.wsdl");
+    }
+
+    @Test(expected = WSDLException.class)
+    public void shouldFailIfWsdlInvalid() throws Throwable {
+        String filename = "invalid.wsdl";
+        createNodeWithContentFromFile(filename, filename);
+        expectSequencingFailure(rootNode.getNode("invalid.wsdl/jcr:content"));
     }
 
     private void assertSequencedSuccessfully( String filePath ) throws Exception {

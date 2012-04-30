@@ -83,7 +83,6 @@ public class Mp3MetadataSequencer extends Sequencer {
             return true;
 
         } catch (Exception e) {
-            System.out.println(Thread.currentThread().getId() +  " exception");
             LOGGER.error("Cannot sequence mp3 content ", e);
             return false;
         }

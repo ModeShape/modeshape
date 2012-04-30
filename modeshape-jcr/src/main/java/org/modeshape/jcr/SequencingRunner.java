@@ -129,31 +129,38 @@ final class SequencingRunner implements Runnable {
                                                               outputSession.context().getMimeTypeDetector());
             if (inputSession.isLive() && (inputSession == outputSession || outputSession.isLive())) {
                 final long start = System.nanoTime();
-                if (sequencer.execute(changedProperty, outputNode, context)) {
-                    // Make sure that the sequencer did not change the primary type of the selected node ..
-                    if (selectedNode == outputNode && !selectedNode.getPrimaryNodeType().getName().equals(primaryType)) {
-                        String msg = RepositoryI18n.sequencersMayNotChangeThePrimaryTypeOfTheSelectedNode.text();
-                        throw new RepositoryException(msg);
+
+                try {
+                    if (sequencer.execute(changedProperty, outputNode, context)) {
+                        // Make sure that the sequencer did not change the primary type of the selected node ..
+                        if (selectedNode == outputNode && !selectedNode.getPrimaryNodeType().getName().equals(primaryType)) {
+                            String msg = RepositoryI18n.sequencersMayNotChangeThePrimaryTypeOfTheSelectedNode.text();
+                            throw new RepositoryException(msg);
+                        }
+
+                        // find the new nodes created by the sequencing before saving, so we can properly fire the events
+                        List<AbstractJcrNode> outputNodes = findOutputNodes(outputNode);
+
+                        //set the createdBy property (if it applies) to the user which triggered the sequencing, not the context of the saving session
+                        setCreatedByIfNecessary(outputSession, outputNodes);
+
+                        //outputSession
+                        outputSession.save();
+
+                        // fire the sequencing event after save (hopefully by this time the transaction has been committed)
+                        fireSequencingEvent(selectedNode, outputNodes, outputSession);
+
+                        long durationInNanos = System.nanoTime() - start;
+                        Map<String, String> payload = new HashMap<String, String>();
+                        payload.put("sequencerName", sequencer.getClass().getName());
+                        payload.put("sequencedPath", changedProperty.getPath());
+                        payload.put("outputPath", outputNode.getPath());
+                        stats.recordDuration(DurationMetric.SEQUENCER_EXECUTION_TIME, durationInNanos, TimeUnit.NANOSECONDS, payload);
                     }
-
-                    // find the new nodes created by the sequencing before saving, so we can properly fire the events
-                    List<AbstractJcrNode> outputNodes = findOutputNodes(outputNode);
-
-                    //set the createdBy property (if it applies) to the user which triggered the sequencing, not the context of the saving session
-                    setCreatedByIfNecessary(outputSession, outputNodes);
-
-                    //outputSession
-                    outputSession.save();
-
-                    // fire the sequencing event after save (hopefully by this time the transaction has been committed)
-                    fireSequencingEvent(selectedNode, outputNodes, outputSession);
-
-                    long durationInNanos = System.nanoTime() - start;
-                    Map<String, String> payload = new HashMap<String, String>();
-                    payload.put("sequencerName", sequencer.getClass().getName());
-                    payload.put("sequencedPath", changedProperty.getPath());
-                    payload.put("outputPath", outputNode.getPath());
-                    stats.recordDuration(DurationMetric.SEQUENCER_EXECUTION_TIME, durationInNanos, TimeUnit.NANOSECONDS, payload);
+                } catch (Throwable t) {
+                    fireSequencingFailureEvent(selectedNode, inputSession, t);
+                    //let it bubble down, because we still want to log it and update the stats
+                    throw t;
                 }
             }
         } catch (Throwable t) {
@@ -208,6 +215,18 @@ final class SequencingRunner implements Runnable {
             sequencingChanges.nodeSequenced(sequencedNode.key(), sequencedNode.path(), outputNode.key(), outputNode.path());
         }
 
+        repository.changeBus().notify(sequencingChanges);
+    }
+
+    private void fireSequencingFailureEvent( AbstractJcrNode sequencedNode,
+                                             JcrSession inputSession,
+                                             Throwable cause ) throws RepositoryException {
+        assert sequencedNode != null;
+        assert inputSession != null;
+        RecordingChanges sequencingChanges = new RecordingChanges(inputSession.context().getProcessId(),
+                                                                  inputSession.getRepository().repositoryKey(),
+                                                                  inputSession.workspaceName());
+        sequencingChanges.nodeSequencingFailure(sequencedNode.key(), sequencedNode.path(), cause);
         repository.changeBus().notify(sequencingChanges);
     }
 

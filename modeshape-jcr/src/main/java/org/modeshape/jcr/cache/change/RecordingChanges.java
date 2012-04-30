@@ -136,6 +136,13 @@ public class RecordingChanges implements Changes, ChangeSet {
     }
 
     @Override
+    public void nodeSequencingFailure( NodeKey sequencedNodeKey,
+                                       Path sequencedNodePath,
+                                       Throwable cause) {
+        events.add(new NodeSequencingFailure(sequencedNodeKey, sequencedNodePath, cause));
+    }
+
+    @Override
     public void propertyAdded( NodeKey key,
                                Path nodePath,
                                Property property ) {
