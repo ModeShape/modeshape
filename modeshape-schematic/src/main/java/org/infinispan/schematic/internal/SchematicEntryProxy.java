@@ -26,6 +26,7 @@ import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
 import org.infinispan.AdvancedCache;
 import org.infinispan.Cache;
+import org.infinispan.DecoratedCache;
 import org.infinispan.batch.AutoBatchSupport;
 import org.infinispan.container.entries.CacheEntry;
 import org.infinispan.context.Flag;
@@ -61,6 +62,7 @@ public class SchematicEntryProxy extends AutoBatchSupport implements SchematicEn
     private static final boolean trace = log.isTraceEnabled();
 
     final AdvancedCache<String, SchematicEntry> cache;
+    final AdvancedCache<String, SchematicEntry> cacheForWriting;
     final String key;
     final FlagContainer flagContainer;
     protected TransactionTable transactionTable;
@@ -72,6 +74,8 @@ public class SchematicEntryProxy extends AutoBatchSupport implements SchematicEn
                          FlagContainer flagContainer ) {
         this.key = key;
         this.cache = cache;
+        this.cacheForWriting = new DecoratedCache<String, SchematicEntry>(this.cache, Flag.SKIP_REMOTE_LOOKUP,
+                                                                          Flag.SKIP_CACHE_LOAD);
         this.batchContainer = cache.getBatchContainer();
         this.flagContainer = flagContainer;
         transactionTable = cache.getComponentRegistry().getComponent(TransactionTable.class);
@@ -169,7 +173,7 @@ public class SchematicEntryProxy extends AutoBatchSupport implements SchematicEn
         if (suppressLocks) {
             flagContainer.setFlags(Flag.SKIP_LOCKING);
         }
-        cache.put(key, copy);
+        cacheForWriting.put(key, copy); // can't rely upon the return value
         return copy;
     }
 
