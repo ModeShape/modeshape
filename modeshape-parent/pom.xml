@@ -4,6 +4,7 @@
         <groupId>org.jboss</groupId>
         <artifactId>jboss-parent</artifactId>
         <version>8</version>
+        <relativePath></relativePath>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -852,19 +853,6 @@
                 <scope>test</scope>
             </dependency>
             
-            <!--
-                Used for Base64 testing.
-            -->
-            <dependency>
-                <groupId>org.jboss</groupId>
-                <artifactId>jboss-common-core</artifactId>
-                <version>${jboss.common.core.version}</version>
-                <scope>test</scope>
-            </dependency>
-
-            <!--
-                Hibernate search
-            -->
             <!-- Hibernate Search engine (does not use Hibernate Core or JPA!) -->
             <dependency>
                 <groupId>org.hibernate</groupId>
@@ -877,7 +865,6 @@
                     </exclusion>
                 </exclusions>
             </dependency>
-            <!-- Hibernate Search engine (does not use Hibernate Core or JPA!) -->
             <dependency>
                 <groupId>org.apache.lucene</groupId>
                 <artifactId>lucene-core</artifactId>
