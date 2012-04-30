@@ -120,4 +120,10 @@ public final class NoOpChanges implements Changes {
                                NodeKey outputNodeKey,
                                Path outputNodePath ) {
     }
+
+    @Override
+    public void nodeSequencingFailure( NodeKey sequencedNodeKey,
+                                       Path sequencedNodePath,
+                                       Throwable cause ) {
+    }
 }

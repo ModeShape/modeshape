@@ -34,6 +34,7 @@ import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.api.mimetype.MimeTypeConstants;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
+import java.io.EOFException;
 import java.io.IOException;
 
 /**
@@ -101,5 +102,12 @@ public class ZipSequencerTest extends AbstractSequencerTest {
         assertNode(path + "/testFolder/testInnerFolder/MODE-960-fix.patch/jcr:content", JcrConstants.NT_RESOURCE);
         assertNode(path + "/testFolder/testInnerFolder/MODE-960-fix2.patch", JcrConstants.NT_FILE);
         assertNode(path + "/testFolder/testInnerFolder/MODE-960-fix2.patch/jcr:content", JcrConstants.NT_RESOURCE);      
+    }
+
+    @Test(expected = EOFException.class)
+    public void shouldFailIfZipCorrupted() throws Throwable {
+        String filename = "corrupt.zip";
+        Node parent = createNodeWithContentFromFile(filename, filename);
+        expectSequencingFailure(parent.getNode("jcr:content"));
     }
 }
