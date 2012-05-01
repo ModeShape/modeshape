@@ -76,10 +76,18 @@ public interface Changes {
     void nodeSequenced( NodeKey sequencedNodeKey,
                         Path sequencedNodePath,
                         NodeKey outputNodeKey,
-                        Path outputNodePath );
+                        Path outputNodePath,
+                        String outputPath,
+                        String userId,
+                        String selectedPath,
+                        String sequencerName);
 
     void nodeSequencingFailure( NodeKey sequencedNodeKey,
                                 Path sequencedNodePath,
+                                String outputPath,
+                                String userId,
+                                String selectedPath,
+                                String sequencerName,
                                 Throwable cause );
 
     void propertyAdded( NodeKey key,

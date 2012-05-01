@@ -29,30 +29,49 @@ import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.value.Path;
 
 /**
- * Change which is triggered if the sequencing of a node fails
+ * Base class for the changes involving sequencing
  *
  * @author Horia Chiorean
  */
-public class NodeSequencingFailure extends AbstractSequencingChange {
+public abstract class AbstractSequencingChange extends AbstractNodeChange {
 
-    /**
-     * The cause of the sequencing failure
-     */
-    private Throwable cause;
+    private final String userId;
+    private final String selectedPath;
+    private final String outputPath;
+    private final String sequencerName;
 
-    public NodeSequencingFailure( NodeKey sequencedNodeKey,
-                                  Path sequencedNodePath,
-                                  String outputPath,
-                                  String userId,
-                                  String selectedPath,
-                                  String sequencerName,
-                                  Throwable cause ) {
-        super(sequencedNodeKey, sequencedNodePath, outputPath, userId, selectedPath, sequencerName);
-        CheckArg.isNotNull(cause, "cause");
-        this.cause = cause;
+    protected AbstractSequencingChange( NodeKey sequencedNodeKey,
+                                        Path sequencedNodePath,
+                                        String outputPath,
+                                        String userId,
+                                        String selectedPath,
+                                        String sequencerName ) {
+        super(sequencedNodeKey, sequencedNodePath);
+
+        CheckArg.isNotNull(outputPath, "outputPath");
+        CheckArg.isNotNull(userId, "userId");
+        CheckArg.isNotNull(selectedPath, "selectedPath");
+        CheckArg.isNotNull(sequencerName, "sequencerName");
+
+        this.outputPath = outputPath;
+        this.userId = userId;
+        this.selectedPath = selectedPath;
+        this.sequencerName = sequencerName;
     }
 
-    public Throwable getCause() {
-        return cause;
+    public String getOutputPath() {
+        return outputPath;
+    }
+
+    public String getSelectedPath() {
+        return selectedPath;
+    }
+
+    public String getSequencerName() {
+        return sequencerName;
+    }
+
+    public String getUserId() {
+        return userId;
     }
 }

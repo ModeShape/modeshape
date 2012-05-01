@@ -21,6 +21,28 @@ public interface Event extends javax.jcr.observation.Event {
          * event, will be found in the event info map
          */
         String SEQUENCED_NODE_ID = "sequencedNodeId";
+
+        /**
+         * Constant under which the sequencer id (as configured) is set in the event info map.
+         */
+        String SEQUENCER_NAME = "sequencerName";
+
+        /**
+         * Constant under which the user id (username) of the user which triggered the sequencing is set in the event info map.
+         */
+        String USER_ID = "userId";
+
+        /**
+         * Constant under which the path resolved by the sequencer at the beginning of the sequencing process is set in the
+         * event info map.
+         */
+        String SELECTED_PATH = "selectedPath";
+
+        /**
+         * Constant under which the configured output path of the sequencer is set in the event info map.
+         */
+        String OUTPUT_PATH = "outputPath";
+
         /**
          * Constant under which the {@link Throwable} object, in case of an {@link Event.Sequencing#NODE_SEQUENCING_FAILURE} event, will be
          * found in the event info map.

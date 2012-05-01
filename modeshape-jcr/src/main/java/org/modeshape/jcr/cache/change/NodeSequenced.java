@@ -9,36 +9,41 @@ import org.modeshape.jcr.value.Path;
  *
  * @author Horia Chiorean
  */
-public class NodeSequenced extends AbstractNodeChange {
+public class NodeSequenced extends AbstractSequencingChange {
 
-    private final NodeKey sequencedNodeKey;
-    private final Path sequencedNodePath;
+    private final NodeKey outputNodeKey;
+    private final Path outputNodePath;
 
     public NodeSequenced( NodeKey sequencedNodeKey,
                           Path sequencedNodePath,
                           NodeKey outputNodeKey,
-                          Path outputNodePath ) {
-        super(outputNodeKey, outputNodePath);
+                          Path outputNodePath,
+                          String outputPath,
+                          String userId,
+                          String selectedPath,
+                          String sequencerName) {
+        super(sequencedNodeKey, sequencedNodePath, outputPath, userId, selectedPath, sequencerName);
 
-        CheckArg.isNotNull(outputNodeKey, " original node key");
-        CheckArg.isNotNull(outputNodePath, " original node path");
-        this.sequencedNodeKey = sequencedNodeKey;
-        this.sequencedNodePath = sequencedNodePath;
+        CheckArg.isNotNull(outputNodeKey, "outputNodeKey");
+        CheckArg.isNotNull(outputNodePath, "outputNodePath");
+
+        this.outputNodeKey = outputNodeKey;
+        this.outputNodePath = outputNodePath;
     }
 
-    public NodeKey getSequencedNodeKey() {
-        return sequencedNodeKey;
+    public NodeKey getOutputNodeKey() {
+        return outputNodeKey;
     }
 
-    public Path getSequencedNodePath() {
-        return sequencedNodePath;
+    public Path getOutputNodePath() {
+        return outputNodePath;
     }
 
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        sb.append("Sequenced new node: ").append(getSequencedNodeKey()).append(" at path: ").append(getSequencedNodePath());
-        sb.append(" from the node: ").append(getSequencedNodeKey()).append(" at path: ").append(sequencedNodePath);
+        sb.append("Sequenced new node: ").append(getKey()).append(" at path: ").append(getPath());
+        sb.append(" from the node: ").append(outputNodeKey).append(" at path: ").append(outputNodePath);
         return sb.toString();
     }
 }

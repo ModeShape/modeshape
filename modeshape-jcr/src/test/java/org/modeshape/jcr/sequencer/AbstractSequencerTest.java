@@ -29,10 +29,12 @@ import javax.jcr.Session;
 import javax.jcr.Workspace;
 import javax.jcr.observation.EventIterator;
 import javax.jcr.observation.EventListener;
+import javax.jcr.observation.EventListenerIterator;
 import javax.jcr.observation.ObservationManager;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertTrue;
+import org.junit.Assert;
 import org.modeshape.jcr.Environment;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.RepositoryConfiguration;
@@ -41,7 +43,12 @@ import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.api.observation.Event;
 import static org.modeshape.jcr.api.observation.Event.Sequencing.NODE_SEQUENCED;
 import static org.modeshape.jcr.api.observation.Event.Sequencing.NODE_SEQUENCING_FAILURE;
-import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCING_FAILURE_CAUSE;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.OUTPUT_PATH;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.SELECTED_PATH;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCED_NODE_ID;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCED_NODE_PATH;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCER_NAME;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.USER_ID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.InputStream;
@@ -61,27 +68,30 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
 
     protected Node rootNode;
 
+    private ObservationManager observationManager;
+
     /**
      * A [node path, node instance] map which is populated by the listener, once each sequencing event is received
      */
-    private Map<String, Node> sequencedNodes = new HashMap<String, Node>();
+    private final Map<String, Node> sequencedNodes = new HashMap<String, Node>();
 
     /**
      * A [node path, latch] map which is used to block tests waiting for sequenced output, until either the node has been
      * sequenced or a timeout occurs
      */
-    private ConcurrentHashMap<String, CountDownLatch> nodeSequencedLatches = new ConcurrentHashMap<String, CountDownLatch>();
-
-    /**
-     * A [node path, throwable] map which contains the causes of the sequencing failures.
-     */
-    private Map<String, Throwable> sequencingFailureCauses = new HashMap<String, Throwable>();
+    private final ConcurrentHashMap<String, CountDownLatch> nodeSequencedLatches = new ConcurrentHashMap<String, CountDownLatch>();
 
     /**
      * A [node path, latch] map which is used to block tests waiting for a sequencing failure, until either the failure has occurred
      * or a timeout occurs
      */
-    private ConcurrentHashMap<String, CountDownLatch> sequencingFailureLatches = new ConcurrentHashMap<String, CountDownLatch>();
+    private final ConcurrentHashMap<String, CountDownLatch> sequencingFailureLatches = new ConcurrentHashMap<String, CountDownLatch>();
+
+    /**
+     * A [sequenced node path, event] map which will hold all the received sequencing events, both in failure and non-failure cases,
+     * using the path of the sequenced node as key.
+     */
+    private final ConcurrentHashMap<String, Event> sequencingEvents = new ConcurrentHashMap<String, Event>();
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -89,7 +99,7 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
     public void beforeEach() throws Exception {
         super.beforeEach();
         rootNode = session.getRootNode();
-        ObservationManager observationManager = ((Workspace)session.getWorkspace()).getObservationManager();
+        observationManager = ((Workspace)session.getWorkspace()).getObservationManager();
         observationManager.addEventListener(new SequencingListener(), NODE_SEQUENCED, null, true, null, null, false);
         observationManager.addEventListener(new SequencingFailureListener(), NODE_SEQUENCING_FAILURE, null, true, null, null,
                                             false);
@@ -97,22 +107,18 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
 
     @Override
     public void afterEach() throws Exception {
+        for (EventListenerIterator it = observationManager.getRegisteredEventListeners(); it.hasNext(); ) {
+            observationManager.removeEventListener(it.nextEventListener());
+        }
         super.afterEach();
         cleanupData();
     }
 
     private void cleanupData() {
         sequencedNodes.clear();
-        sequencedNodes = null;
-
-        sequencingFailureCauses.clear();
-        sequencingFailureCauses = null;
-
+        sequencingEvents.clear();
         nodeSequencedLatches.clear();
-        nodeSequencedLatches = null;
-
         sequencingFailureLatches.clear();
-        sequencingFailureLatches = null;
     }
 
     @Override
@@ -197,18 +203,17 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
         return sequencedNodes.remove(expectedPath);
     }
 
-    protected void expectSequencingFailure( Node sequencedNode ) throws Throwable {
+    protected void expectSequencingFailure( Node sequencedNode ) throws Exception {
         expectSequencingFailure(sequencedNode, 5);
     }
 
     protected void expectSequencingFailure( Node sequencedNode,
-                                                 int waitTimeSeconds ) throws Throwable {
+                                            int waitTimeSeconds ) throws Exception {
         String nodePath = sequencedNode.getPath();
         createWaitingLatchIfNecessary(nodePath, sequencingFailureLatches);
         CountDownLatch countDownLatch = sequencingFailureLatches.get(nodePath);
         assertTrue("Sequencing failure event not received", countDownLatch.await(waitTimeSeconds, TimeUnit.SECONDS));
         sequencingFailureLatches.remove(nodePath);
-        throw  sequencingFailureCauses.remove(nodePath);
     }
 
     private void createWaitingLatchIfNecessary( String expectedPath,
@@ -217,21 +222,41 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
         latchesMap.putIfAbsent(expectedPath, new CountDownLatch(1));
     }
 
-    private void assertSequencingEvent( Event event ) throws RepositoryException {
-        assertEquals(NODE_SEQUENCED, event.getType());
-
+    private void smokeCheckSequencingEvent(Event event, int expectedEventType, String... expectedEventInfoKeys) throws RepositoryException {
+        assertEquals(event.getType(), expectedEventType);
         Map info = event.getInfo();
         assertNotNull(info);
-        assertNotNull(info.get(Event.Sequencing.SEQUENCED_NODE_ID));
-        assertNotNull(info.get(Event.Sequencing.SEQUENCED_NODE_PATH));
-
-        assertNotNull(event.getIdentifier());
-        assertNotNull(event.getPath());
+        for (String extraInfoKey : expectedEventInfoKeys) {
+            assertNotNull(info.get(extraInfoKey));
+        }
     }
 
     protected void assertCreatedBySessionUser( Node node,
                                                Session session ) throws RepositoryException {
         assertEquals(session.getUserID(), node.getProperty(JcrLexicon.CREATED_BY.getString()).getString());
+    }
+
+    private Map getSequencingEventInfo( Node sequencedNode ) throws RepositoryException {
+        Event receivedEvent = sequencingEvents.get(sequencedNode.getPath());
+        assertNotNull(receivedEvent);
+        return receivedEvent.getInfo();
+    }
+
+
+    protected Map assertSequencingEventInfo( Node sequencedNode,
+                                           String expectedUserId,
+                                           String expectedSequencerName,
+                                           String expectedSelectedPath,
+                                           String expectedOutputPath) throws RepositoryException {
+        Map sequencingEventInfo = getSequencingEventInfo(sequencedNode);
+        Assert.assertEquals(expectedUserId, sequencingEventInfo.get(Event.Sequencing.USER_ID));
+        Assert.assertEquals(expectedSequencerName, sequencingEventInfo.get(Event.Sequencing.SEQUENCER_NAME));
+        Assert.assertEquals(sequencedNode.getIdentifier(), sequencingEventInfo.get(Event.Sequencing.SEQUENCED_NODE_ID));
+
+        Assert.assertEquals(sequencedNode.getPath(), sequencingEventInfo.get(Event.Sequencing.SEQUENCED_NODE_PATH));
+        Assert.assertEquals(expectedSelectedPath, sequencingEventInfo.get(Event.Sequencing.SELECTED_PATH));
+        Assert.assertEquals(expectedOutputPath, sequencingEventInfo.get(Event.Sequencing.OUTPUT_PATH));
+        return sequencingEventInfo;
     }
 
     private class SequencingListener implements EventListener {
@@ -241,7 +266,15 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
             while (events.hasNext()) {
                 try {
                     Event event = (Event)events.nextEvent();
-                    assertSequencingEvent(event);
+                    smokeCheckSequencingEvent(event,
+                                              NODE_SEQUENCED,
+                                              SEQUENCED_NODE_ID,
+                                              SEQUENCED_NODE_PATH,
+                                              OUTPUT_PATH,
+                                              SELECTED_PATH,
+                                              SEQUENCER_NAME,
+                                              USER_ID);
+                    sequencingEvents.putIfAbsent((String)event.getInfo().get(SEQUENCED_NODE_PATH), event);
 
                     String nodePath = event.getPath();
                     logger.debug("New sequenced node at: " + nodePath);
@@ -263,10 +296,18 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
             while (events.hasNext()) {
                 try {
                     Event event = (Event)events.nextEvent();
-                    assertSequencingFailureEvent(event);
+                    smokeCheckSequencingEvent(event,
+                                              NODE_SEQUENCING_FAILURE,
+                                              SEQUENCED_NODE_ID,
+                                              SEQUENCED_NODE_PATH,
+                                              Event.Sequencing.SEQUENCING_FAILURE_CAUSE,
+                                              OUTPUT_PATH,
+                                              SELECTED_PATH,
+                                              SEQUENCER_NAME,
+                                              USER_ID);
                     String nodePath = event.getPath();
 
-                    sequencingFailureCauses.put(nodePath, (Throwable)event.getInfo().get(SEQUENCING_FAILURE_CAUSE));
+                    sequencingEvents.putIfAbsent(nodePath, event);
                     createWaitingLatchIfNecessary(nodePath, sequencingFailureLatches);
                     sequencingFailureLatches.get(nodePath).countDown();
                 } catch (Exception e) {
@@ -274,12 +315,5 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
                 }
             }
         }
-    }
-
-    private void assertSequencingFailureEvent( Event event ) throws RepositoryException {
-        assertEquals(NODE_SEQUENCING_FAILURE, event.getType());
-        Map info = event.getInfo();
-        assertNotNull(info);
-        assertNotNull(info.get(Event.Sequencing.SEQUENCING_FAILURE_CAUSE));
     }
 }
