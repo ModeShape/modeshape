@@ -25,11 +25,14 @@
 package org.modeshape.sequencer.wsdl;
 
 import javax.jcr.Node;
+import javax.wsdl.WSDLException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
+import org.modeshape.jcr.api.observation.Event;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
+import java.util.Map;
 
 /**
  * Unit test for {@link WsdlSequencer}
@@ -108,12 +111,26 @@ public class WsdlSequencerTest extends AbstractSequencerTest {
         assertSequencedSuccessfully("uddi_vscache_v3_portType.wsdl");
     }
 
+    @Test
+    public void shouldFailIfWsdlInvalid() throws Throwable {
+        String filename = "invalid.wsdl";
+        createNodeWithContentFromFile(filename, filename);
+        Node sequencedNode = rootNode.getNode("invalid.wsdl/jcr:content");
+
+        expectSequencingFailure(sequencedNode);
+        Map eventInfo = assertSequencingEventInfo(sequencedNode, session.getUserID(), "WSDL sequencer", sequencedNode.getPath(), "/wsdl");
+        assertEquals(WSDLException.class.getName(), eventInfo.get(Event.Sequencing.SEQUENCING_FAILURE_CAUSE).getClass().getName());
+    }
+
     private void assertSequencedSuccessfully( String filePath ) throws Exception {
-        createNodeWithContentFromFile(filePath, filePath);
+        Node parentNode = createNodeWithContentFromFile(filePath, filePath);
         Node wsdlDocument = getSequencedNode(rootNode, "wsdl/" + filePath);
         assertNotNull(wsdlDocument);
         assertEquals(WsdlLexicon.WSDL_DOCUMENT, wsdlDocument.getPrimaryNodeType().getName());
         assertCreatedBySessionUser(wsdlDocument, session);
-        assertTrue(wsdlDocument.getNodes().getSize() > 0);    
+        assertTrue(wsdlDocument.getNodes().getSize() > 0);
+
+        Node sequencedNode = parentNode.getNode("jcr:content");
+        assertSequencingEventInfo(sequencedNode, session.getUserID(), "WSDL sequencer", sequencedNode.getPath(), "/wsdl");
     }
 }

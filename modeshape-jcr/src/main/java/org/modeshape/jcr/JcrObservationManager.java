@@ -1,8 +1,14 @@
 package org.modeshape.jcr;
 
-import static org.modeshape.jcr.api.observation.Event.NODE_SEQUENCED;
-import static org.modeshape.jcr.api.observation.Event.Info.SEQUENCED_NODE_ID;
-import static org.modeshape.jcr.api.observation.Event.Info.SEQUENCED_NODE_PATH;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.NODE_SEQUENCED;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.NODE_SEQUENCING_FAILURE;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.OUTPUT_PATH;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.SELECTED_PATH;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCED_NODE_ID;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCED_NODE_PATH;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCER_NAME;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCING_FAILURE_CAUSE;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.USER_ID;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -35,6 +41,7 @@ import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.change.AbstractNodeChange;
+import org.modeshape.jcr.cache.change.AbstractSequencingChange;
 import org.modeshape.jcr.cache.change.Change;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
@@ -44,6 +51,7 @@ import org.modeshape.jcr.cache.change.NodeRemoved;
 import org.modeshape.jcr.cache.change.NodeRenamed;
 import org.modeshape.jcr.cache.change.NodeReordered;
 import org.modeshape.jcr.cache.change.NodeSequenced;
+import org.modeshape.jcr.cache.change.NodeSequencingFailure;
 import org.modeshape.jcr.cache.change.Observable;
 import org.modeshape.jcr.cache.change.PropertyAdded;
 import org.modeshape.jcr.cache.change.PropertyChanged;
@@ -563,9 +571,9 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
         private final JcrEventBundle bundle;
 
         /**
-         * A map of extra information for regardind the event
+         * A map of extra information for regarding the event
          */
-        private Map<String, String> info;
+        private Map<String, ?> info;
 
         /**
          * @param bundle the event bundle information
@@ -587,7 +595,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                   int type,
                   String path,
                   String id,
-                  Map<String, String> info ) {
+                  Map<String, ?> info ) {
             this(bundle, type, path, id);
             this.info = info;
         }
@@ -651,7 +659,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
          * 
          * @see javax.jcr.observation.Event#getInfo()
          */
-        public Map<String, String> getInfo() {
+        public Map<String, ?> getInfo() {
             return info != null ? Collections.unmodifiableMap(info) : Collections.<String, String>emptyMap();
         }
 
@@ -685,7 +693,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                         sb.append(" from ").append(info.get(MOVE_FROM_KEY)).append(" to ").append(info.get(MOVE_TO_KEY));
                     } else {
                         sb.append("Node reordered");
-                        String destination = info.get(ORDER_DEST_KEY);
+                        String destination = info.get(ORDER_DEST_KEY).toString();
                         if (destination == null) {
                             destination = " at the end of the children list";
                         }
@@ -693,7 +701,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                     }
                     sb.append(" by ").append(getUserID());
                     return sb.toString();
-                case org.modeshape.jcr.api.observation.Event.NODE_SEQUENCED:
+                case NODE_SEQUENCED:
                     sb.append("Node sequenced");
                     sb.append(" sequenced node:")
                       .append(info.get(SEQUENCED_NODE_ID))
@@ -701,6 +709,13 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                       .append(info.get(SEQUENCED_NODE_PATH));
                     sb.append(" ,output node:").append(getIdentifier()).append(" at path:").append(getPath());
                     return sb.toString();
+                case NODE_SEQUENCING_FAILURE: {
+                    sb.append("Node sequencing failure");
+                    sb.append(" sequenced node:").append(info.get(SEQUENCED_NODE_ID)).append(" at path:").append(info.get(
+                            SEQUENCED_NODE_PATH));
+                    sb.append(" ,cause: ").append(getInfo().get(SEQUENCING_FAILURE_CAUSE));
+                    return sb.toString();
+                }
             }
             sb.append(" at ").append(path).append(" by ").append(getUserID());
             return sb.toString();
@@ -885,12 +900,29 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                 // create event for the sequenced node
                 NodeSequenced sequencedChange = (NodeSequenced)nodeChange;
 
-                Map<String, String> infoMap = new HashMap<String, String>();
-                infoMap.put(SEQUENCED_NODE_PATH, stringFor(sequencedChange.getSequencedNodePath()));
-                infoMap.put(SEQUENCED_NODE_ID, sequencedChange.getSequencedNodeKey().toString());
+                Map<String, Object> infoMap = createEventInfoMapForSequencerChange(sequencedChange);
+                events.add(new JcrEvent(bundle, NODE_SEQUENCED, stringFor(sequencedChange.getOutputNodePath()), sequencedChange.getOutputNodeKey().toString(), infoMap));
+            } else if (nodeChange instanceof NodeSequencingFailure && eventListenedFor(NODE_SEQUENCING_FAILURE)) {
+                //create event for the sequencing failure
+                NodeSequencingFailure sequencingFailure = (NodeSequencingFailure) nodeChange;
 
-                events.add(new JcrEvent(bundle, NODE_SEQUENCED, stringFor(sequencedChange.getPath()), nodeId, infoMap));
+                Map<String, Object> infoMap = createEventInfoMapForSequencerChange(sequencingFailure);
+                infoMap.put(SEQUENCING_FAILURE_CAUSE, sequencingFailure.getCause());
+                events.add(new JcrEvent(bundle, NODE_SEQUENCING_FAILURE, stringFor(sequencingFailure.getPath()), nodeId, infoMap));
             }
+        }
+
+        private Map<String, Object> createEventInfoMapForSequencerChange(AbstractSequencingChange sequencingChange) {
+            Map<String, Object> infoMap = new HashMap<String, Object>();
+
+            infoMap.put(SEQUENCED_NODE_PATH, stringFor(sequencingChange.getPath()));
+            infoMap.put(SEQUENCED_NODE_ID, sequencingChange.getKey().toString());
+            infoMap.put(OUTPUT_PATH, sequencingChange.getOutputPath());
+            infoMap.put(SELECTED_PATH, sequencingChange.getSelectedPath());
+            infoMap.put(SEQUENCER_NAME, sequencingChange.getSequencerName());
+            infoMap.put(USER_ID, sequencingChange.getUserId());
+
+            return infoMap;
         }
 
         private void fireNodeMoved( Collection<Event> events,

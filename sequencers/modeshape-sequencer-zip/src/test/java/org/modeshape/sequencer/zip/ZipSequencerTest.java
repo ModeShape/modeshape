@@ -33,8 +33,11 @@ import org.junit.Test;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.api.mimetype.MimeTypeConstants;
+import org.modeshape.jcr.api.observation.Event;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
+import java.io.EOFException;
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * Unit test for {@link ZipSequencer}
@@ -83,11 +86,13 @@ public class ZipSequencerTest extends AbstractSequencerTest {
     @Test
     public void shouldSequenceZip2() throws Exception {
         String filename = "test-files.zip";
-        createNodeWithContentFromFile(filename, filename);
+        Node parent = createNodeWithContentFromFile(filename, filename);
+        Node sequencedNode = parent.getNode("jcr:content");
 
         Node sequencedZip = getSequencedNode(rootNode, "zip/" + filename);
         assertNotNull(sequencedZip);
         assertEquals(ZipLexicon.FILE, sequencedZip.getPrimaryNodeType().getName());
+        assertSequencingEventInfo(sequencedNode, session.getUserID(), "ZIP sequencer", sequencedNode.getPath(), "/zip");
 
         // Find the sequenced node ...
         String path = "/zip/test-files.zip";       
@@ -102,4 +107,16 @@ public class ZipSequencerTest extends AbstractSequencerTest {
         assertNode(path + "/testFolder/testInnerFolder/MODE-960-fix2.patch", JcrConstants.NT_FILE);
         assertNode(path + "/testFolder/testInnerFolder/MODE-960-fix2.patch/jcr:content", JcrConstants.NT_RESOURCE);      
     }
+
+    @Test
+    public void shouldFailIfZipCorrupted() throws Throwable {
+        String filename = "corrupt.zip";
+        Node parent = createNodeWithContentFromFile(filename, filename);
+        Node sequencedNode = parent.getNode("jcr:content");
+        expectSequencingFailure(sequencedNode);
+
+        Map sequencingEventInfo = assertSequencingEventInfo(sequencedNode, session.getUserID(), "ZIP sequencer", sequencedNode.getPath(), "/zip");
+        assertEquals(EOFException.class.getName(), sequencingEventInfo.get(Event.Sequencing.SEQUENCING_FAILURE_CAUSE).getClass().getName());
+    }
+
 }

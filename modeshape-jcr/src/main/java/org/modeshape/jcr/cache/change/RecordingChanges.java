@@ -131,8 +131,36 @@ public class RecordingChanges implements Changes, ChangeSet {
     public void nodeSequenced( NodeKey sequencedNodeKey,
                                Path sequencedNodePath,
                                NodeKey outputNodeKey,
-                               Path outputNodePath) {
-        events.add(new NodeSequenced(sequencedNodeKey, sequencedNodePath, outputNodeKey, outputNodePath));
+                               Path outputNodePath,
+                               String outputPath,
+                               String userId,
+                               String selectedPath,
+                               String sequencerName) {
+        events.add(new NodeSequenced(sequencedNodeKey,
+                                     sequencedNodePath,
+                                     outputNodeKey,
+                                     outputNodePath,
+                                     outputPath,
+                                     userId,
+                                     selectedPath,
+                                     sequencerName));
+    }
+
+    @Override
+    public void nodeSequencingFailure( NodeKey sequencedNodeKey,
+                                       Path sequencedNodePath,
+                                       String outputPath,
+                                       String userId,
+                                       String selectedPath,
+                                       String sequencerName,
+                                       Throwable cause) {
+        events.add(new NodeSequencingFailure(sequencedNodeKey,
+                                             sequencedNodePath,
+                                             outputPath,
+                                             userId,
+                                             selectedPath,
+                                             sequencerName,
+                                             cause));
     }
 
     @Override
