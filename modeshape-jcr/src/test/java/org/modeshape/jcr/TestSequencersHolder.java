@@ -43,14 +43,13 @@ import org.modeshape.jcr.api.sequencer.Sequencer;
  */
 public class TestSequencersHolder {
 
-    public static class FaultyDuringExecute extends Sequencer {
-        public static final AtomicInteger EXECUTE_CALL_COUNTER = new AtomicInteger();
+    public static final String DERIVED_NODE_NAME = "derivedNode";
 
+    public static class FaultyDuringExecute extends Sequencer {
         @Override
         public boolean execute( Property inputProperty,
                                 Node outputNode,
                                 Sequencer.Context context ) throws Exception {
-            EXECUTE_CALL_COUNTER.incrementAndGet();
             throw new IllegalArgumentException("We're expecting to get this exception");
         }
     }
@@ -78,9 +77,6 @@ public class TestSequencersHolder {
      */
     public static class DefaultSequencer extends Sequencer {
 
-        public static final String DERIVED_NODE_NAME = "derivedNode";
-        public static final AtomicInteger COUNTER = new AtomicInteger();
-
         @Override
         public boolean execute( Property inputProperty,
                                 Node outputNode,
@@ -89,7 +85,6 @@ public class TestSequencersHolder {
             CheckArg.isNotNull(outputNode, "outputNode");
             CheckArg.isNotNull(context, "context");
             CheckArg.isNotNull(context.getTimestamp(), "context.getTimestamp()");
-            COUNTER.incrementAndGet();
             outputNode.addNode(DERIVED_NODE_NAME);
             return true;
         }
@@ -100,7 +95,6 @@ public class TestSequencersHolder {
      */
     @SuppressWarnings( "unused" )
     public static class SequencerWithProperties extends Sequencer {
-        public static boolean executed;
 
         private List<Integer> intList;
         private Set<Integer> intSet;
@@ -154,7 +148,7 @@ public class TestSequencersHolder {
             assertNotNull("subSequencerList not set", subSequencerList);
             assertFalse(subSequencerList.isEmpty());
 
-            executed = true;
+            outputNode.addNode(DERIVED_NODE_NAME);
 
             return true;
         }

@@ -118,8 +118,14 @@ final class SequencingRunner implements Runnable {
                 // Remove any existing output (from a prior sequencing run on this same input) ...
                 removeExistingOutputNodes(parentOfOutput, outputNodeName, work.getSelectedPath());
 
-                // Create the output node ...
-                outputNode = (AbstractJcrNode)parentOfOutput.addNode(outputNodeName, JcrConstants.NT_UNSTRUCTURED);
+                // Create the output node
+                if (parentOfOutput.isNew() && parentOfOutput.getName().equals(outputNodeName)) {
+                    //avoid creating a duplicate path with the same name
+                    outputNode = (AbstractJcrNode)parentOfOutput;
+                }
+                else {
+                    outputNode = (AbstractJcrNode)parentOfOutput.addNode(outputNodeName, JcrConstants.NT_UNSTRUCTURED);
+                }
 
                 // and make sure the output node has the 'mode:derived' mixin ...
                 outputNode.addMixin(DERIVED_NODE_TYPE_NAME);
@@ -249,10 +255,10 @@ final class SequencingRunner implements Runnable {
 
     /**
      * Finds the top nodes which have been created during the sequencing process, based on the original output node. It is
-     * important that this is called before the session is save, because it uses the new flag.
+     * important that this is called before the session is saved, because it uses the new flag.
      * 
-     * @param rootOutputNode the node under which the output node should be created (or might exist)
-     * @return the output nodes that were created during the sequencing process; never null
+     * @param rootOutputNode the node under which the output of the sequencing process was written to.
+     * @return the first level of output nodes that were created during the sequencing process; never null
      * @throws RepositoryException if there is a problem finding the output nodes
      */
     private List<AbstractJcrNode> findOutputNodes( AbstractJcrNode rootOutputNode ) throws RepositoryException {

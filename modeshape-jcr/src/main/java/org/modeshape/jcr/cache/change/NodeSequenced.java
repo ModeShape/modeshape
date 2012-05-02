@@ -42,8 +42,8 @@ public class NodeSequenced extends AbstractSequencingChange {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        sb.append("Sequenced new node: ").append(getKey()).append(" at path: ").append(getPath());
-        sb.append(" from the node: ").append(outputNodeKey).append(" at path: ").append(outputNodePath);
+        sb.append("Sequenced new node: ").append(outputNodeKey).append(" at path: ").append(outputNodePath);
+        sb.append(" from the node: ").append(getKey()).append(" at path: ").append(getPath());
         return sb.toString();
     }
 }

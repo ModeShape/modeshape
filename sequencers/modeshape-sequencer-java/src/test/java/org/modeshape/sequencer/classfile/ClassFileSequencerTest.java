@@ -45,16 +45,16 @@ public class ClassFileSequencerTest extends AbstractSequencerTest {
 
         // expected by sequencer in the same location
         String expectedSequencedPathSameLocation = "enum.class/org";
-        Node sequencedNode = getSequencedNode(rootNode, expectedSequencedPathSameLocation);
-        assertNotNull(sequencedNode);
-        Node enumNode = sequencedNode.getNode(packagePath.substring(packagePath.indexOf("/") + 1));
+        Node outputNode = getOutputNode(rootNode, expectedSequencedPathSameLocation);
+        assertNotNull(outputNode);
+        Node enumNode = outputNode.getNode(packagePath.substring(packagePath.indexOf("/") + 1));
         CLASS_FILE_HELPER.assertSequencedMockEnum(enumNode);
 
         // expected by sequencer in a different location
         String expectedSequencedPathNewLocation = "classes/enum.class";
-        sequencedNode = getSequencedNode(rootNode, expectedSequencedPathNewLocation);
-        assertNotNull(sequencedNode);
-        enumNode = sequencedNode.getNode(packagePath);
+        outputNode = getOutputNode(rootNode, expectedSequencedPathNewLocation);
+        assertNotNull(outputNode);
+        enumNode = outputNode.getNode(packagePath);
         CLASS_FILE_HELPER.assertSequencedMockEnum(enumNode);
     }
 
@@ -65,16 +65,16 @@ public class ClassFileSequencerTest extends AbstractSequencerTest {
 
         // expected by sequencer in the same location
         String expectedSequencedPathSameLocation = "mockclass.class/org";
-        Node sequencedNode = getSequencedNode(rootNode, expectedSequencedPathSameLocation);
-        assertNotNull(sequencedNode);
-        Node classNode = sequencedNode.getNode(packagePath.substring(packagePath.indexOf("/") + 1));
+        Node outputNode = getOutputNode(rootNode, expectedSequencedPathSameLocation);
+        assertNotNull(outputNode);
+        Node classNode = outputNode.getNode(packagePath.substring(packagePath.indexOf("/") + 1));
         CLASS_FILE_HELPER.assertSequencedMockClass(classNode);
 
         // expected by sequencer in a different location
         String expectedSequencedPathNewLocation = "classes/mockclass.class";
-        sequencedNode = getSequencedNode(rootNode, expectedSequencedPathNewLocation);
-        assertNotNull(sequencedNode);
-        classNode = sequencedNode.getNode(packagePath);
+        outputNode = getOutputNode(rootNode, expectedSequencedPathNewLocation);
+        assertNotNull(outputNode);
+        classNode = outputNode.getNode(packagePath);
         CLASS_FILE_HELPER.assertSequencedMockClass(classNode);
     }
 }

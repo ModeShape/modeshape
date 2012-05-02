@@ -124,7 +124,7 @@ public class WsdlSequencerTest extends AbstractSequencerTest {
 
     private void assertSequencedSuccessfully( String filePath ) throws Exception {
         Node parentNode = createNodeWithContentFromFile(filePath, filePath);
-        Node wsdlDocument = getSequencedNode(rootNode, "wsdl/" + filePath);
+        Node wsdlDocument = getOutputNode(rootNode, "wsdl/" + filePath);
         assertNotNull(wsdlDocument);
         assertEquals(WsdlLexicon.WSDL_DOCUMENT, wsdlDocument.getPrimaryNodeType().getName());
         assertCreatedBySessionUser(wsdlDocument, session);

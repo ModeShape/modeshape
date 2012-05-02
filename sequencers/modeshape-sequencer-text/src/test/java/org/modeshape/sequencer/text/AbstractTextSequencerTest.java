@@ -48,12 +48,12 @@ public abstract class AbstractTextSequencerTest extends AbstractSequencerTest {
 
     protected void assertRowsWithCustomRowFactory( String sequencedRootPath ) throws Exception {
         final int ROW_COUNT = 6;
-        Node sequencedNode = getSequencedNode(rootNode, sequencedRootPath);
-        assertNotNull(sequencedNode);
-        assertEquals(ROW_COUNT, sequencedNode.getNodes().getSize());
+        Node outputNode = getOutputNode(rootNode, sequencedRootPath);
+        assertNotNull(outputNode);
+        assertEquals(ROW_COUNT, outputNode.getNodes().getSize());
 
         for (int rowIndex = 1; rowIndex <= ROW_COUNT; rowIndex++) {
-            Node row = assertRow(sequencedNode, rowIndex, new String[]{});
+            Node row = assertRow(outputNode, rowIndex, new String[]{});
             String[] expectedColumns = TEST_COLUMNS;
             for (int colIndex = 0; colIndex < expectedColumns.length; colIndex++) {
                 assertEquals(expectedColumns[colIndex], row.getProperty(DATA + colIndex).getString());
@@ -63,31 +63,31 @@ public abstract class AbstractTextSequencerTest extends AbstractSequencerTest {
 
     protected void assertFileWithMissingRecords( String filePath ) throws Exception {
         final int ROW_COUNT = 6;
-        Node sequencedNode = getSequencedNode(rootNode, filePath);
-        assertNotNull(sequencedNode);
-        assertEquals(ROW_COUNT, sequencedNode.getNodes().getSize());
+        Node outputNode = getOutputNode(rootNode, filePath);
+        assertNotNull(outputNode);
+        assertEquals(ROW_COUNT, outputNode.getNodes().getSize());
 
         for (int rowIndex = 1; rowIndex <= ROW_COUNT; rowIndex++) {
             if (rowIndex == 3) {
-                assertRow(sequencedNode, rowIndex, new String[] {"foo"});
+                assertRow(outputNode, rowIndex, new String[] {"foo"});
             } else {
-                assertRow(sequencedNode, rowIndex, TEST_COLUMNS);
+                assertRow(outputNode, rowIndex, TEST_COLUMNS);
             }
         }
     }
 
-    protected void assertRows( String rootSequencedNodePath, int rowsCount, String[] expectedColumnData ) throws Exception {
-        Node sequencedNode = getSequencedNode(rootNode, rootSequencedNodePath);
-        assertNotNull(sequencedNode);
-        assertEquals(rowsCount, sequencedNode.getNodes().getSize());
+    protected void assertRows( String rootoutputNodePath, int rowsCount, String[] expectedColumnData ) throws Exception {
+        Node outputNode = getOutputNode(rootNode, rootoutputNodePath);
+        assertNotNull(outputNode);
+        assertEquals(rowsCount, outputNode.getNodes().getSize());
 
         for (int rowIndex = 1; rowIndex <= rowsCount; rowIndex++) {
-            assertRow(sequencedNode, rowIndex, expectedColumnData);
+            assertRow(outputNode, rowIndex, expectedColumnData);
         }
     }
 
-    protected Node assertRow( Node rootSequencedNode, int index,  String[] expectedColumnData) throws Exception {
-        Node row = (index == 1) ? rootSequencedNode.getNode(ROW) : rootSequencedNode.getNode(ROW + "[" + index + "]");
+    protected Node assertRow( Node rootoutputNode, int index,  String[] expectedColumnData) throws Exception {
+        Node row = (index == 1) ? rootoutputNode.getNode(ROW) : rootoutputNode.getNode(ROW + "[" + index + "]");
         assertEquals(NT_UNSTRUCTURED, row.getPrimaryNodeType().getName());
         assertEquals(expectedColumnData.length, row.getNodes().getSize());
         for (int colIndex = 0; colIndex < expectedColumnData.length; colIndex++) {
