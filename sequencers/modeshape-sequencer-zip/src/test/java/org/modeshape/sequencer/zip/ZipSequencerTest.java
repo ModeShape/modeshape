@@ -51,14 +51,14 @@ public class ZipSequencerTest extends AbstractSequencerTest {
         String filename = "testzip.zip";
         createNodeWithContentFromFile(filename, filename);
 
-        Node sequencedZip = getSequencedNode(rootNode, "zip/" + filename);
-        assertNotNull(sequencedZip);
-        assertEquals(ZipLexicon.FILE, sequencedZip.getPrimaryNodeType().getName());
+        Node outputZip = getOutputNode(rootNode, "zip/" + filename);
+        assertNotNull(outputZip);
+        assertEquals(ZipLexicon.FILE, outputZip.getPrimaryNodeType().getName());
 
-        assertEquals(2, sequencedZip.getNodes().getSize());
-        assertFile(sequencedZip, "test1.txt", "This is a test content of file 1\n");
+        assertEquals(2, outputZip.getNodes().getSize());
+        assertFile(outputZip, "test1.txt", "This is a test content of file 1\n");
 
-        Node folder = sequencedZip.getNode("test subfolder");
+        Node folder = outputZip.getNode("test subfolder");
         assertEquals(1, folder.getNodes().getSize());
         assertEquals(JcrConstants.NT_FOLDER, folder.getPrimaryNodeType().getName());
 
@@ -87,12 +87,12 @@ public class ZipSequencerTest extends AbstractSequencerTest {
     public void shouldSequenceZip2() throws Exception {
         String filename = "test-files.zip";
         Node parent = createNodeWithContentFromFile(filename, filename);
-        Node sequencedNode = parent.getNode("jcr:content");
+        Node outputNode = parent.getNode("jcr:content");
 
-        Node sequencedZip = getSequencedNode(rootNode, "zip/" + filename);
-        assertNotNull(sequencedZip);
-        assertEquals(ZipLexicon.FILE, sequencedZip.getPrimaryNodeType().getName());
-        assertSequencingEventInfo(sequencedNode, session.getUserID(), "ZIP sequencer", sequencedNode.getPath(), "/zip");
+        Node outputZip = getOutputNode(rootNode, "zip/" + filename);
+        assertNotNull(outputZip);
+        assertEquals(ZipLexicon.FILE, outputZip.getPrimaryNodeType().getName());
+        assertSequencingEventInfo(outputNode, session.getUserID(), "ZIP sequencer", outputNode.getPath(), "/zip");
 
         // Find the sequenced node ...
         String path = "/zip/test-files.zip";       
@@ -112,10 +112,10 @@ public class ZipSequencerTest extends AbstractSequencerTest {
     public void shouldFailIfZipCorrupted() throws Throwable {
         String filename = "corrupt.zip";
         Node parent = createNodeWithContentFromFile(filename, filename);
-        Node sequencedNode = parent.getNode("jcr:content");
-        expectSequencingFailure(sequencedNode);
+        Node outputNode = parent.getNode("jcr:content");
+        expectSequencingFailure(outputNode);
 
-        Map sequencingEventInfo = assertSequencingEventInfo(sequencedNode, session.getUserID(), "ZIP sequencer", sequencedNode.getPath(), "/zip");
+        Map sequencingEventInfo = assertSequencingEventInfo(outputNode, session.getUserID(), "ZIP sequencer", outputNode.getPath(), "/zip");
         assertEquals(EOFException.class.getName(), sequencingEventInfo.get(Event.Sequencing.SEQUENCING_FAILURE_CAUSE).getClass().getName());
     }
 

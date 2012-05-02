@@ -46,10 +46,10 @@ public class ImageMetadataSequencerTest extends AbstractSequencerTest {
         String filename = "caution.jpg";
         Node imageNode = createNodeWithContentFromFile(filename, filename);
 
-        Node sequencedNodeDifferentLocation = getSequencedNode(rootNode, "sequenced/images/" + filename);
+        Node sequencedNodeDifferentLocation = getOutputNode(rootNode, "sequenced/images/" + filename);
         assertMetaDataProperties(sequencedNodeDifferentLocation, "image/jpeg", "jpeg", 48, 48, 24, false, 1, 72, 72, 0.666667, 0.666667);
 
-        Node sequencedNodeSameLocation = getSequencedNode(imageNode, ImageMetadataLexicon.METADATA_NODE);
+        Node sequencedNodeSameLocation = getOutputNode(imageNode, ImageMetadataLexicon.METADATA_NODE);
         assertMetaDataProperties(sequencedNodeSameLocation, "image/jpeg", "jpeg", 48, 48, 24, false, 1, 72, 72, 0.666667, 0.666667);
     }
 
@@ -58,10 +58,10 @@ public class ImageMetadataSequencerTest extends AbstractSequencerTest {
         String filename = "caution.png";
         Node imageNode = createNodeWithContentFromFile(filename, filename);
 
-        Node sequencedNodeDifferentLocation = getSequencedNode(rootNode, "sequenced/images/" + filename);
+        Node sequencedNodeDifferentLocation = getOutputNode(rootNode, "sequenced/images/" + filename);
         assertMetaDataProperties(sequencedNodeDifferentLocation, "image/png", "png", 48, 48, 24, false, 1, -1, -1, -1, -1);
 
-        Node sequencedNodeSameLocation = getSequencedNode(imageNode, ImageMetadataLexicon.METADATA_NODE);
+        Node sequencedNodeSameLocation = getOutputNode(imageNode, ImageMetadataLexicon.METADATA_NODE);
         assertMetaDataProperties(sequencedNodeSameLocation, "image/png", "png", 48, 48, 24, false, 1, -1, -1, -1, -1);
     }
 
@@ -70,10 +70,10 @@ public class ImageMetadataSequencerTest extends AbstractSequencerTest {
         String filename = "caution.gif";
         Node imageNode = createNodeWithContentFromFile(filename, filename);
 
-        Node sequencedNodeDifferentLocation = getSequencedNode(rootNode, "sequenced/images/" + filename);
+        Node sequencedNodeDifferentLocation = getOutputNode(rootNode, "sequenced/images/" + filename);
         assertMetaDataProperties(sequencedNodeDifferentLocation, "image/gif", "gif", 48, 48, 8, false, 1, -1, -1, -1, -1);
 
-        Node sequencedNodeSameLocation = getSequencedNode(imageNode, ImageMetadataLexicon.METADATA_NODE);
+        Node sequencedNodeSameLocation = getOutputNode(imageNode, ImageMetadataLexicon.METADATA_NODE);
         assertMetaDataProperties(sequencedNodeSameLocation, "image/gif", "gif", 48, 48, 8, false, 1, -1, -1, -1, -1);
     }
 
@@ -81,8 +81,8 @@ public class ImageMetadataSequencerTest extends AbstractSequencerTest {
     public void shouldGenerateNoMetadataforPictImageFiles() throws Exception {
         String filename = "caution.pict";
         Node imageNode = createNodeWithContentFromFile(filename, filename);
-        assertNull(getSequencedNode(rootNode, "sequenced/images/" + filename, 1));
-        assertNull(getSequencedNode(imageNode, ImageMetadataLexicon.METADATA_NODE, 1));
+        assertNull(getOutputNode(rootNode, "sequenced/images/" + filename, 1));
+        assertNull(getOutputNode(imageNode, ImageMetadataLexicon.METADATA_NODE, 1));
     }   
 
     private void assertMetaDataProperties( Node metadataNode, String mimeType, String format, int width, int height, int bitsPerPixel,

@@ -46,9 +46,9 @@ public class JavaFileSequencerTest extends AbstractSequencerTest {
 
         //expected by sequencer in a different location
         String expectedOutputPath = "java/enum.java";
-        Node sequencedNode = getSequencedNode(rootNode, expectedOutputPath);
-        assertNotNull(sequencedNode);
-        Node enumNode = sequencedNode.getNode(packagePath);
+        Node outputNode = getOutputNode(rootNode, expectedOutputPath);
+        assertNotNull(outputNode);
+        Node enumNode = outputNode.getNode(packagePath);
         JAVA_FILE_HELPER.assertSequencedMockEnum(enumNode);
     }
 
@@ -59,9 +59,9 @@ public class JavaFileSequencerTest extends AbstractSequencerTest {
 
         //expected by sequencer in a different location
         String expectedOutputPath = "java/mockclass.java";
-        Node sequencedNode = getSequencedNode(rootNode, expectedOutputPath);
-        assertNotNull(sequencedNode);
-        Node javaNode = sequencedNode.getNode(packagePath);
+        Node outputNode = getOutputNode(rootNode, expectedOutputPath);
+        assertNotNull(outputNode);
+        Node javaNode = outputNode.getNode(packagePath);
         JAVA_FILE_HELPER.assertSequencedMockClass(javaNode);
     }
 }

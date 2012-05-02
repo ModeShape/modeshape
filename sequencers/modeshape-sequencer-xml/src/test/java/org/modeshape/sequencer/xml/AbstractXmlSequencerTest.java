@@ -39,7 +39,7 @@ public abstract class AbstractXmlSequencerTest extends AbstractSequencerTest {
 
     protected Node sequenceAndAssertDocument( String documentFilename ) throws Exception {
         createNodeWithContentFromFile(documentFilename, documentFilename);
-        Node document = getSequencedNode(rootNode, "xml/" + documentFilename);
+        Node document = getOutputNode(rootNode, "xml/" + documentFilename);
         assertNotNull(document);
         assertEquals(XmlLexicon.DOCUMENT, document.getPrimaryNodeType().getName());
         return document;

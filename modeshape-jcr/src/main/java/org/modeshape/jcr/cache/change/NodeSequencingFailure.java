@@ -55,4 +55,12 @@ public class NodeSequencingFailure extends AbstractSequencingChange {
     public Throwable getCause() {
         return cause;
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("Failure while sequencing the node at:").append(getPath()).append(" with key:").append(getKey());
+        sb.append(". Cause: ").append(cause.getMessage());
+        return sb.toString();
+    }
 }

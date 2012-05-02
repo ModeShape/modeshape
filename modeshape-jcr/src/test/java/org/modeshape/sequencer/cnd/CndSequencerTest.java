@@ -83,7 +83,7 @@ public class CndSequencerTest extends AbstractSequencerTest {
     }
 
     private void verifyEmbeddedImageNode( Node imagesNode ) throws Exception {
-        Node embeddedImageNode = getSequencedNode(imagesNode, "image:embeddedImage");
+        Node embeddedImageNode = getOutputNode(imagesNode, "image:embeddedImage");
         assertNotNull(embeddedImageNode);
         new NodeDefinitionVerifier().name("image:embeddedImage")
                                     .nodeTypeName("image:embeddedImage")
@@ -96,7 +96,7 @@ public class CndSequencerTest extends AbstractSequencerTest {
     }
 
     private void verifyImageMetadataNode( Node imagesNode ) throws Exception {
-        Node imageMetadataNode = getSequencedNode(imagesNode, "image:metadata");
+        Node imageMetadataNode = getOutputNode(imagesNode, "image:metadata");
         assertNotNull(imageMetadataNode);
         new NodeDefinitionVerifier().name("image:metadata")
                                     .superTypes("nt:unstructured", "mix:mimeType")

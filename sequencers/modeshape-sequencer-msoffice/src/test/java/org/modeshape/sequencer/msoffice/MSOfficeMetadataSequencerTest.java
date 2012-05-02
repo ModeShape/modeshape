@@ -84,14 +84,14 @@ public class MSOfficeMetadataSequencerTest extends AbstractSequencerTest {
     @Test
     public void shouldSequenceWordFiles() throws Exception {
         createNodeWithContentFromFile("word.doc", "word.doc");
-        Node sequencedNode = getSequencedNode(rootNode, "word.doc/" + METADATA_NODE);
-        assertNotNull(sequencedNode);
+        Node outputNode = getOutputNode(rootNode, "word.doc/" + METADATA_NODE);
+        assertNotNull(outputNode);
 
-        assertEquals(METADATA_NODE, sequencedNode.getPrimaryNodeType().getName());
-        assertEquals(MICROSOFT_WORD, sequencedNode.getProperty(JCR_MIME_TYPE).getString());
-        assertMetadata(sequencedNode);
+        assertEquals(METADATA_NODE, outputNode.getPrimaryNodeType().getName());
+        assertEquals(MICROSOFT_WORD, outputNode.getProperty(JCR_MIME_TYPE).getString());
+        assertMetadata(outputNode);
 
-        NodeIterator headingsIterator = sequencedNode.getNodes();
+        NodeIterator headingsIterator = outputNode.getNodes();
         assertEquals(WORD_HEADINGS.size(), headingsIterator.getSize());
         while (headingsIterator.hasNext()) {
             Node heading = headingsIterator.nextNode();
@@ -101,25 +101,25 @@ public class MSOfficeMetadataSequencerTest extends AbstractSequencerTest {
         }
     }
 
-    private void assertMetadata( Node sequencedNode ) throws RepositoryException {
-        assertEquals("Test Comment", sequencedNode.getProperty(COMMENT).getString());
-        assertEquals("Michael Trezzi", sequencedNode.getProperty(AUTHOR).getString());
-        assertEquals("jboss, test, dna", sequencedNode.getProperty(KEYWORDS).getString());
-        assertEquals("Test Document", sequencedNode.getProperty(TITLE).getString());
-        assertEquals("Test Subject", sequencedNode.getProperty(SUBJECT).getString());
+    private void assertMetadata( Node outputNode ) throws RepositoryException {
+        assertEquals("Test Comment", outputNode.getProperty(COMMENT).getString());
+        assertEquals("Michael Trezzi", outputNode.getProperty(AUTHOR).getString());
+        assertEquals("jboss, test, dna", outputNode.getProperty(KEYWORDS).getString());
+        assertEquals("Test Document", outputNode.getProperty(TITLE).getString());
+        assertEquals("Test Subject", outputNode.getProperty(SUBJECT).getString());
     }
 
     @Test
     public void shouldSequenceExcelFiles() throws Exception {
         createNodeWithContentFromFile("excel.xls", "excel.xls");
-        Node sequencedNode = getSequencedNode(rootNode, "excel.xls/" + METADATA_NODE);
-        assertNotNull(sequencedNode);
+        Node outputNode = getOutputNode(rootNode, "excel.xls/" + METADATA_NODE);
+        assertNotNull(outputNode);
 
-        assertEquals(METADATA_NODE, sequencedNode.getPrimaryNodeType().getName());
-        assertEquals(MICROSOFT_EXCEL, sequencedNode.getProperty(JCR_MIME_TYPE).getString());
-        assertMetadata(sequencedNode);
+        assertEquals(METADATA_NODE, outputNode.getPrimaryNodeType().getName());
+        assertEquals(MICROSOFT_EXCEL, outputNode.getProperty(JCR_MIME_TYPE).getString());
+        assertMetadata(outputNode);
 
-        NodeIterator sheetsIterator = sequencedNode.getNodes();
+        NodeIterator sheetsIterator = outputNode.getNodes();
         assertEquals(EXCEL_SHEETS.size(), sheetsIterator.getSize());
         while (sheetsIterator.hasNext()) {
             Node sheet = sheetsIterator.nextNode();
@@ -137,12 +137,12 @@ public class MSOfficeMetadataSequencerTest extends AbstractSequencerTest {
     @Test
     public void shouldSequencePowerpointFiles() throws Exception {
         createNodeWithContentFromFile("powerpoint.ppt", "powerpoint.ppt");
-        Node sequencedNode = getSequencedNode(rootNode, "powerpoint.ppt/" + METADATA_NODE);
-        assertNotNull(sequencedNode);
+        Node outputNode = getOutputNode(rootNode, "powerpoint.ppt/" + METADATA_NODE);
+        assertNotNull(outputNode);
 
-        assertEquals(METADATA_NODE, sequencedNode.getPrimaryNodeType().getName());
-        assertEquals(MICROSOFT_POWERPOINT, sequencedNode.getProperty(JCR_MIME_TYPE).getString());
-        NodeIterator slidesIterator = sequencedNode.getNodes();
+        assertEquals(METADATA_NODE, outputNode.getPrimaryNodeType().getName());
+        assertEquals(MICROSOFT_POWERPOINT, outputNode.getProperty(JCR_MIME_TYPE).getString());
+        NodeIterator slidesIterator = outputNode.getNodes();
         assertEquals(1, slidesIterator.getSize());
 
         Node slide = slidesIterator.nextNode();

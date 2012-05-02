@@ -37,6 +37,7 @@ import static junit.framework.Assert.assertTrue;
 import org.junit.Assert;
 import org.modeshape.jcr.Environment;
 import org.modeshape.jcr.JcrLexicon;
+import org.modeshape.jcr.JcrSession;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.SingleUseAbstractTest;
 import org.modeshape.jcr.api.JcrConstants;
@@ -65,6 +66,8 @@ import java.util.concurrent.TimeUnit;
  * @author Horia Chiorean
  */
 public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
+
+    private static final int DEFAULT_WAIT_TIME_SECONDS = 5;
 
     protected Node rootNode;
 
@@ -99,6 +102,10 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
     public void beforeEach() throws Exception {
         super.beforeEach();
         rootNode = session.getRootNode();
+        addSequencingListeners(session);
+    }
+
+    protected void addSequencingListeners(JcrSession session) throws RepositoryException {
         observationManager = ((Workspace)session.getWorkspace()).getObservationManager();
         observationManager.addEventListener(new SequencingListener(), NODE_SEQUENCED, null, true, null, null, false);
         observationManager.addEventListener(new SequencingFailureListener(), NODE_SEQUENCING_FAILURE, null, true, null, null,
@@ -140,15 +147,15 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
     /**
      * Creates a nt:file node, under the root node, at the given path and with the jcr:data property pointing at the filepath.
      *
-     * @param nodePath the path under the root node, where the nt:file will be created.
+     * @param nodeRelativePath the path under the root node, where the nt:file will be created.
      * @param filePath a path relative to {@link Class#getResourceAsStream(String)} where a file is expected at runtime
      * @return the new node
      * @throws RepositoryException if anything fails
      */
-    protected Node createNodeWithContentFromFile( String nodePath,
+    protected Node createNodeWithContentFromFile( String nodeRelativePath,
                                                   String filePath ) throws RepositoryException {
         Node parent = rootNode;
-        for (String pathSegment : nodePath.split("/")) {
+        for (String pathSegment : nodeRelativePath.split("/")) {
             parent = parent.addNode(pathSegment);
         }
         Node content = parent.addNode(JcrConstants.JCR_CONTENT);
@@ -161,16 +168,11 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
     /**
      * Retrieves a sequenced node using 5 seconds as maximum wait time.
      *
-     * @param parentNode an existing {@link Node}
-     * @param relativePath the path under the parent node at which the sequenced node is expected to appear (note that this must
-     * be the path to the "new" node, always.
-     * @return either the sequenced node or null, if something has failed.
-     * @throws Exception if anything unexpected happens
-     * @see AbstractSequencerTest#getSequencedNode(javax.jcr.Node, String, int)
+     * @see AbstractSequencerTest#getOutputNode(javax.jcr.Node, String, int)
      */
-    protected Node getSequencedNode( Node parentNode,
-                                     String relativePath ) throws Exception {
-        return getSequencedNode(parentNode, relativePath, 5);
+    protected Node getOutputNode( Node parentNode,
+                                  String relativePath ) throws Exception {
+        return this.getOutputNode(parentNode, relativePath, DEFAULT_WAIT_TIME_SECONDS);
     }
 
     /**
@@ -186,13 +188,29 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
      * @return either the sequenced node or null, if something has failed.
      * @throws Exception if anything unexpected happens
      */
-    protected Node getSequencedNode( Node parentNode,
-                                     String relativePath,
-                                     int waitTimeSeconds ) throws Exception {
+    protected Node getOutputNode( Node parentNode,
+                                  String relativePath,
+                                  int waitTimeSeconds ) throws Exception {
         String parentNodePath = parentNode.getPath();
         String expectedPath = parentNodePath.endsWith(
                 "/") ? parentNodePath + relativePath : parentNodePath + "/" + relativePath;
 
+        return getOutputNode(expectedPath, waitTimeSeconds);
+    }
+
+    protected Node getOutputNode( String expectedPath ) throws InterruptedException {
+        return getOutputNode(expectedPath, DEFAULT_WAIT_TIME_SECONDS);
+    }
+
+    /**
+     * Retrieves a new node under the given path, as a result of sequecing, or returns null if the given timeout occurs.
+     * @param expectedPath
+     * @param waitTimeSeconds
+     * @return
+     * @throws InterruptedException
+     */
+    protected Node getOutputNode( String expectedPath,
+                                  int waitTimeSeconds ) throws InterruptedException {
         if (!sequencedNodes.containsKey(expectedPath)) {
             createWaitingLatchIfNecessary(expectedPath, nodeSequencedLatches);
             logger.debug("Waiting for sequenced node at: " + expectedPath);

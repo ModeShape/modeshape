@@ -41,10 +41,10 @@ public class Mp3SequencerTest extends AbstractSequencerTest {
     public void shouldSequenceMp3() throws Exception {
         createNodeWithContentFromFile("sample.mp3", "sample1.mp3");
         
-        Node sequencedNodeSameLocation = getSequencedNode(rootNode, "sample.mp3/" + Mp3MetadataLexicon.METADATA_NODE);
+        Node sequencedNodeSameLocation = getOutputNode(rootNode, "sample.mp3/" + Mp3MetadataLexicon.METADATA_NODE);
         assertSequencedMp3(sequencedNodeSameLocation);
 
-        Node sequencedNodeDifferentLocation = getSequencedNode(rootNode, "mp3s/sample.mp3");
+        Node sequencedNodeDifferentLocation = getOutputNode(rootNode, "mp3s/sample.mp3");
         assertSequencedMp3(sequencedNodeDifferentLocation);
     }
 

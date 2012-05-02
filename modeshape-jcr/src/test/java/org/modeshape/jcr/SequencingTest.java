@@ -23,26 +23,28 @@
  */
 package org.modeshape.jcr;
 
+import javax.jcr.Node;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import java.io.InputStream;
-import javax.jcr.Node;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Json;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
+import org.modeshape.jcr.sequencer.AbstractSequencerTest;
+import java.io.InputStream;
 
 /**
  * Tests of various sequencing configurations.
  */
-public class SequencingTest extends SingleUseAbstractTest {
+public class SequencingTest extends AbstractSequencerTest {
 
     @Override
     protected void startRepositoryWithConfiguration( String configContent ) throws Exception {
@@ -56,6 +58,8 @@ public class SequencingTest extends SingleUseAbstractTest {
         repository = new JcrRepository(config);
         repository.start();
         session = repository.login();
+        rootNode = session.getRootNode();
+        addSequencingListeners(session);
     }
 
     @Override
@@ -65,6 +69,8 @@ public class SequencingTest extends SingleUseAbstractTest {
         repository = new JcrRepository(config);
         repository.start();
         session = repository.login();
+        rootNode = session.getRootNode();
+        addSequencingListeners(session);
     }
 
     protected void addSequencer( EditableDocument doc,
@@ -98,23 +104,10 @@ public class SequencingTest extends SingleUseAbstractTest {
         foo.setProperty("baz", "value of baz");
         session.save();
 
-        boolean found = false;
-        for (int i = 0; i != 10; ++i) {
-            if (TestSequencersHolder.DefaultSequencer.COUNTER.get() == 1) {
-                found = true;
-                break;
-            }
-            waitForSequencer();
-        }
-        assertThat("Failed to sequence '/foo' even after waiting 1 sec", found, is(true));
-
-        // The session for the sequencer may not have been saved, so wait a bit ...
-        waitForSequencer();
-
         // Now verify that the test sequencer created a node ...
-        Node fooOutput = session.getNode("/output/foo");
+        Node fooOutput = getOutputNode("/output/foo");
         assertThat(fooOutput, is(notNullValue()));
-        Node derivedNode = session.getNode("/output/foo/" + TestSequencersHolder.DefaultSequencer.DERIVED_NODE_NAME);
+        Node derivedNode = session.getNode("/output/foo/" + TestSequencersHolder.DERIVED_NODE_NAME);
         assertThat(derivedNode, is(notNullValue()));
     }
 
@@ -130,29 +123,10 @@ public class SequencingTest extends SingleUseAbstractTest {
         foo.setProperty("baz", "value of baz");
         session.save();
 
-        boolean found = false;
-        for (int i = 0; i != 10; ++i) {
-            if (TestSequencersHolder.DefaultSequencer.COUNTER.get() == 1) {
-                found = true;
-                break;
-            }
-            waitForSequencer();
-        }
-        assertThat("Failed to sequence '/foo' even after waiting 1 sec", found, is(true));
-
-        // The session for the sequencer may not have been saved, so wait a bit ...
-        waitForSequencer();
-
         // Now verify that the test sequencer created a node ...
-        Node foo2 = session.getNode("/foo");
-        assertThat(foo2, is(sameInstance(foo)));
-        Node derivedNode = session.getNode("/foo/" + TestSequencersHolder.DefaultSequencer.DERIVED_NODE_NAME);
-        assertThat(derivedNode, is(notNullValue()));
-    }
-
-    // TODO author=Horia Chiorean date=1/20/12 description=This is really a temporary hack, until events will be available
-    private void waitForSequencer() throws InterruptedException {
-        Thread.sleep(100L);
+        Node derivedNode = getOutputNode("/foo/" + TestSequencersHolder.DERIVED_NODE_NAME);
+        assertNotNull(derivedNode);
+        assertThat(derivedNode.getParent(), is(sameInstance(foo)));
     }
 
     @Test
@@ -167,20 +141,7 @@ public class SequencingTest extends SingleUseAbstractTest {
         foo.setProperty("baz", "value of baz");
         session.save();
 
-        // Verify that the sequencer at least ran ...
-        boolean found = false;
-        for (int i = 0; i != 10; ++i) {
-            if (TestSequencersHolder.FaultyDuringExecute.EXECUTE_CALL_COUNTER.get() == 1) {
-                found = true;
-                break;
-            }
-            waitForSequencer();
-        }
-        assertThat("Failed to sequence '/foo' even after waiting 1 sec", found, is(true));
-
-        // The session for the sequencer may not have been saved, so wait a bit ...
-        waitForSequencer();
-
+        expectSequencingFailure(foo);
         // Now verify that there is NO output node, since the sequencer should have failed ...
         assertThat(session.getRootNode().hasNode("output/foo"), is(false));
     }
@@ -208,8 +169,7 @@ public class SequencingTest extends SingleUseAbstractTest {
         foo.setProperty("bar", "value of bar");
         session.save();
 
-        // The session for the sequencer may not have been saved, so wait a bit ...
-        waitForSequencer();
+        Thread.sleep(100L);
 
         assertEquals(0, TestSequencersHolder.FaultyDuringInitialize.EXECUTE_CALL_COUNTER.get());
     }
@@ -220,9 +180,38 @@ public class SequencingTest extends SingleUseAbstractTest {
                                                    .getResourceAsStream("config/repo-config-property-types.json"));
         session.getRootNode().addNode("shouldTriggerSequencer");
         session.save();
+        assertNotNull(getOutputNode("/shouldTriggerSequencer/" + TestSequencersHolder.DERIVED_NODE_NAME));
+    }
 
-        waitForSequencer();
 
-        assertTrue(TestSequencersHolder.SequencerWithProperties.executed);
+    @Test
+    @FixFor("MODE-1361")
+    public void shouldSequenceWithCriteriaAndRegexInputPath() throws Exception {
+        EditableDocument doc = Schematic.newDocument();
+        addSequencer(doc, "seq1", TestSequencersHolder.DefaultSequencer.class.getName(), "default://(*.foo)[bar/@baz] => /output");
+        startRepositoryWithConfiguration(doc);
+
+        Node foo = session.getRootNode().addNode("foo.foo");
+        Node bar = foo.addNode("bar");
+        bar.setProperty("baz", "value of baz");
+        session.save();
+
+        Node outputNode = getOutputNode("/output/foo.foo");
+        assertNotNull(outputNode);
+        assertNotNull(outputNode.getNode(TestSequencersHolder.DERIVED_NODE_NAME));
+    }
+
+    @Test
+    @FixFor("MODE-1361")
+    public void shouldGenerateCorrectOutputNodePathForCapturingGroup() throws Exception{
+        EditableDocument doc = Schematic.newDocument();
+        addSequencer(doc, "seq1", TestSequencersHolder.DefaultSequencer.class.getName(), "default://(*.xml)/jcr:content[@jcr:data] => /output/$1");
+        startRepositoryWithConfiguration(doc);
+
+        createNodeWithContentFromFile("cars.xml", "cars.xml");
+
+        Node outputNode = getOutputNode("/output/cars.xml");
+        assertNotNull(outputNode);
+        assertNotNull(outputNode.getNode(TestSequencersHolder.DERIVED_NODE_NAME));
     }
 }
