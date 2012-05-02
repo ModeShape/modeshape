@@ -371,8 +371,8 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
         CheckArg.isNotNull(selector1Name, "selector1Name");
         CheckArg.isNotNull(property1Name, "property1Name");
         CheckArg.isNotNull(selector2Name, "selector2Name");
-        CheckArg.isNotNull(selector2Name, "selector2Name");
-        return new JcrEquiJoinCondition(selectorName(selector1Name), property1Name, selectorName(selector2Name), selector2Name);
+        CheckArg.isNotNull(property2Name, "property2Name");
+        return new JcrEquiJoinCondition(selectorName(selector1Name), property1Name, selectorName(selector2Name), property2Name);
     }
 
     /**
