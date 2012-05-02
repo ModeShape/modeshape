@@ -260,8 +260,8 @@ public class QueryObjectModelFactory implements org.modeshape.jcr.api.query.qom.
         CheckArg.isNotNull(selector1Name, "selector1Name");
         CheckArg.isNotNull(property1Name, "property1Name");
         CheckArg.isNotNull(selector2Name, "selector2Name");
-        CheckArg.isNotNull(selector2Name, "selector2Name");
-        return new EquiJoinCondition(selectorName(selector1Name), property1Name, selectorName(selector2Name), selector2Name);
+        CheckArg.isNotNull(property2Name, "property2Name");
+        return new EquiJoinCondition(selectorName(selector1Name), property1Name, selectorName(selector2Name), property2Name);
     }
 
     @Override
