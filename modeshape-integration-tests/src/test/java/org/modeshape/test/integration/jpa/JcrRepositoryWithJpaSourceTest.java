@@ -3,14 +3,14 @@
  * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
+ * See the AUTHORS.txt file in the distribution for a full listing of
  * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- * 
+ *
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -27,6 +27,7 @@ import javax.jcr.Credentials;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
+import javax.jcr.PathNotFoundException;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -41,6 +42,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.CndNodeTypeReader;
@@ -54,6 +56,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.GregorianCalendar;
+import java.util.Random;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class JcrRepositoryWithJpaSourceTest extends ModeShapeUnitTest {
 
@@ -289,9 +296,74 @@ public class JcrRepositoryWithJpaSourceTest extends ModeShapeUnitTest {
         Node rootNode = session.getRootNode();
         rootNode.addNode("folder", "nt:folder");
         session.save();
-        
+
         session.removeItem("/folder");
         session.save();
+    }
+
+    @Test
+    @FixFor("MODE-1470")
+    @Ignore("Ignored atm because it doesn't reproduce the issue and takes quite a bit of time to run")
+    public void jpaEntityShouldNotHaveNullId() throws Exception {
+        //create /foo nodes
+        final int nodesCount = 100;
+        Session session = repository.login(credentials);
+        for (int i = 0; i < nodesCount; i++) {
+            session.getRootNode().addNode("foo" + i);
+        }
+        session.save();
+
+        final int repeatCount = 100;
+        ExecutorService executorService = Executors.newFixedThreadPool(2);
+
+        //add a child node to /foo
+        Callable<Void> modifierTask = new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                Random rand = new Random();
+                Session session = repository.login(credentials);
+                for (int i = 0; i < repeatCount; i++) {
+                    int nodeSuffix = rand.nextInt(nodesCount);
+                    try {
+                        Node foo = session.getNode("/foo" + nodeSuffix);
+                        Thread.sleep(rand.nextInt(500));
+                        foo.addNode("bar");
+                        session.save();
+                    } catch (RepositoryException pnf) {
+                        //can happen, we could be working with stale data
+                    }
+                }
+                session.logout();
+                return null;
+            }
+        };
+
+        //remove a /foo node
+        Callable<Void> removerTask = new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                Random rand = new Random();
+                Session session = repository.login(credentials);
+                for (int i = 0; i < repeatCount; i++) {
+                    int nodeSuffix = rand.nextInt(nodesCount);
+                    try {
+                        session.getNode("/foo" + nodeSuffix).remove();
+                        //Thread.sleep(rand.nextInt(500));
+                        session.save();
+                    } catch (PathNotFoundException pnf) {
+                        //can happen if the node has already been removed
+                    }
+                }
+                session.logout();
+                return null;
+            }
+        };
+
+        Future<Void> modifierResult = executorService.submit(modifierTask);
+        Future<Void> removerResult = executorService.submit(removerTask);
+
+        modifierResult.get();
+        removerResult.get();
     }
 
     protected void registerNodeTypes( String pathToCndResourceFile,
