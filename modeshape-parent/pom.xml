@@ -211,7 +211,7 @@
 		<jdbc.hsqldb.version>1.8.0.2</jdbc.hsqldb.version>
 		<jdbc.h2.version>1.2.124</jdbc.h2.version>
 		<jdbc.postgresql.version>8.4-701.jdbc3</jdbc.postgresql.version>
-		<jdbc.mysql5.version>5.1.7</jdbc.mysql5.version>
+		<jdbc.mysql5.version>5.1.18</jdbc.mysql5.version>
 		<jdbc.db2v9.version>3.58.82</jdbc.db2v9.version>
 		<jdbc.db2v9.license.version>3.57.86</jdbc.db2v9.license.version>
 		<jdbc.oracle10g.version>10.0.2.0</jdbc.oracle10g.version>
@@ -244,7 +244,7 @@
 	</properties>
 
 	<profiles>
-		
+
 		<!--
 			###################################################################
 			Clustering-related profiles
