@@ -979,7 +979,6 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     @SuppressWarnings( "unchecked" )
     @Test
     @FixFor( "MODE-1410" )
-    @Ignore
     public void shouldTestNodeMovedTest_testMoveTree() throws Exception {
         // setup
         Node n1 = getRoot().addNode("node1", UNSTRUCTURED);
@@ -1798,7 +1797,6 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     @SuppressWarnings( "unchecked" )
     @Test
     @FixFor( "MODE-1410" )
-    @Ignore
     public void shouldTestWorkspaceOperationTest_testRename() throws Exception {
         // setup
         Node n1 = getRoot().addNode("node1", UNSTRUCTURED);
