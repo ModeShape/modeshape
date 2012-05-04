@@ -1893,20 +1893,17 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         checkResults(listener);
     }
 
-    // TODO author=Horia Chiorean date=3/2/12 description=Decide if this still applies to 3.x. If yes, fix and re-enable
-    @FixFor( "MODE-786" )
+    @FixFor( "MODE-1408" )
     @Test
-    @Ignore
     public void shouldReceiveEventsForChangesToRepositoryNamespacesInSystemContent() throws Exception {
-        // JIRA issue opened for this is: MODE-1408
         String uri = "http://acme.com/example/foobar/";
         String prefix = "foobar";
         assertNoRepositoryNamespace(uri, prefix);
 
         Session session2 = login(WORKSPACE2);
 
-        TestListener listener = addListener(session, 3, ALL_EVENTS, "/jcr:system", true, null, null, false);
-        TestListener listener2 = addListener(session2, 3, ALL_EVENTS, "/jcr:system", true, null, null, false);
+        TestListener listener = addListener(session, 4, ALL_EVENTS, "/jcr:system", true, null, null, false);
+        TestListener listener2 = addListener(session2, 4, ALL_EVENTS, "/jcr:system", true, null, null, false);
 
         session.getWorkspace().getNamespaceRegistry().registerNamespace(prefix, uri);
 

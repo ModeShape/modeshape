@@ -3,14 +3,14 @@
  * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
+ * See the AUTHORS.txt file in the distribution for a full listing of
  * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- * 
+ *
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -24,7 +24,6 @@
 package org.modeshape.jcr;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -723,68 +722,18 @@ public class SystemContent {
                     removedPrefixes.add(existingPrefix);
                 }
             }
+            else if (newUri.length() > 0) {
+                //register the new prefix
+                Name name = names.create(newPrefix);
+                List<Property> props = new ArrayList<Property>(3);
+                props.add(propertyFactory.create(ModeShapeLexicon.URI, newUri));
+                props.add(propertyFactory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.NAMESPACE));
+                props.add(propertyFactory.create(ModeShapeLexicon.GENERATED, booleans.create(false)));
+                namespaces.createChild(system, key, name, props);
+            }
         }
 
         return removedPrefixes;
-        //
-        //
-        // Map<String, String> existingUrisByPrefix = new HashMap<String, String>();
-        // Map<String, String> existingPrefixesByUri = new HashMap<String, String>();
-        //
-        // // Iterate over the existing mappings ...
-        // MutableCachedNode namespaces = mutableNamespacesNode();
-        // Map<String, ChildReference> existingChildRefsByPrefix = new HashMap<String, ChildReference>();
-        // for (ChildReference ref : namespaces.getChildReferences(system)) {
-        // CachedNode namespace = system.getNode(ref);
-        // String actualPrefix = prefixFor(ref.getSegment());
-        // String actualUri = strings.create(first(namespace, ModeShapeLexicon.NAMESPACE));
-        // if (actualPrefix != null && actualUri != null) {
-        // existingUrisByPrefix.put(actualPrefix, actualUri);
-        // existingPrefixesByUri.put(actualUri, actualPrefix);
-        // existingChildRefsByPrefix.put(actualPrefix, ref);
-        // }
-        // }
-        //
-        // // Go through the new namespaces ...
-        // for (Map.Entry<String, String> newNamespaceEntry : newUrisByPrefix.entrySet()) {
-        // String newPrefix = newNamespaceEntry.getKey().trim();
-        // String newUri = newNamespaceEntry.getValue().trim();
-        // // Empty prefix to namespace mapping is built in
-        // if (newPrefix.length() == 0) continue;
-        // // If the new namespace prefix and/or URI are already used ...
-        // String existingUriForNewPrefix = existingUrisByPrefix.get(newPrefix);
-        // String existingPrefixForNewUri = existingPrefixesByUri.get(newUri);
-        // if (existingUriForNewPrefix == null) {
-        // // The new prefix was not used, so add the new namespace node ...
-        // NodeKey newKey = namespaces.getKey().withId(newUri);
-        // Name name = names.create(newPrefix);
-        // List<Property> props = new ArrayList<Property>(2);
-        // props.add(propertyFactory.create(ModeShapeLexicon.NAMESPACE, newUri));
-        // props.add(propertyFactory.create(ModeShapeLexicon.GENERATED, booleans.create(false)));
-        // namespaces.createChild(system, newKey, name, props);
-        // if (existingPrefixForNewUri == null) {
-        // // The new URI was not used, so we don't need to do anything more ...
-        // } else if (existingPrefixForNewUri.equals(newPrefix)) {
-        // // The new prefix matched the old prefix, so do nothing ...
-        // } else {
-        // // We need to remove the old namespace node ...
-        // ChildReference oldNamespaceNode = existingChildRefsByPrefix.get(existingPrefixForNewUri);
-        // namespaces.removeChild(system, oldNamespaceNode.getKey());
-        // }
-        // } else {
-        // // The new prefix was used ...
-        // if (newUri.equals(existingUriForNewPrefix)) {
-        // // The new prefix matched the old prefix, so do nothing ...
-        // } else {
-        // // The old URI for the new prefix was something different ...
-        // ChildReference oldNamespaceNode = existingChildRefsByPrefix.get(newPrefix);
-        // MutableCachedNode nsNode = system.mutable(oldNamespaceNode.getKey());
-        // nsNode.setProperty(system, propertyFactory.create(ModeShapeLexicon.NAMESPACE, newUri));
-        // previousUrisByNewPrefixes.put(newPrefix, existingUriForNewPrefix);
-        // }
-        // }
-        // }
-        // return previousUrisByNewPrefixes;
     }
 
     public String readNamespacePrefix( String namespaceUri,
@@ -800,33 +749,12 @@ public class SystemContent {
 
         // Create a new namespace node that uses this URI ...
         MutableCachedNode mutableNamespaces = mutableNamespacesNode();
-        List<Property> props = new ArrayList<Property>(2);
+        List<Property> props = new ArrayList<Property>(3);
         props.add(propertyFactory.create(ModeShapeLexicon.URI, namespaceUri));
         props.add(propertyFactory.create(ModeShapeLexicon.GENERATED, booleans.create(true)));
+        props.add(propertyFactory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.NAMESPACE));
         MutableCachedNode newNsNode = mutableNamespaces.createChild(system, key, GENERATED_NAMESPACE_NODE_NAME, props);
         return prefixFor(newNsNode.getSegment(system));
-        //
-        //
-        // CachedNode namespaces = namespacesNode();
-        // ChildReferences references = namespaces.getChildReferences(system);
-        // for (ChildReference ref : references) {
-        // CachedNode namespace = system.getNode(ref);
-        // String uri = strings.create(first(namespace, ModeShapeLexicon.NAMESPACE));
-        // if (namespaceUri.equals(uri)) {
-        // return prefixFor(ref.getSegment());
-        // }
-        // }
-        //
-        // if (!generateIfMissing) return null;
-        //
-        // // Nothing was found, so generate a new namespace ...
-        // MutableCachedNode mutableNamespaces = mutableNamespacesNode();
-        // NodeKey newKey = mutableNamespaces.getKey().withRandomId();
-        // List<Property> props = new ArrayList<Property>(2);
-        // props.add(propertyFactory.create(ModeShapeLexicon.NAMESPACE, namespaceUri));
-        // props.add(propertyFactory.create(ModeShapeLexicon.GENERATED, booleans.create(true)));
-        // MutableCachedNode newNsNode = mutableNamespaces.createChild(system, newKey, GENERATED_NAMESPACE_NODE_NAME, props);
-        // return prefixFor(newNsNode.getSegment(system));
     }
 
     public boolean unregisterNamespace( String namespaceUri ) {
@@ -839,16 +767,6 @@ public class SystemContent {
             return true;
         }
         return false;
-        // ChildReferences references = namespaces.getChildReferences(system);
-        // for (ChildReference ref : references) {
-        // CachedNode namespace = system.getNode(ref);
-        // String uri = strings.create(first(namespace, ModeShapeLexicon.NAMESPACE));
-        // if (namespaceUri.equals(uri)) {
-        // namespaces.removeChild(system, ref.getKey());
-        // return true;
-        // }
-        // }
-        // return false;
     }
 
     protected final NodeKey keyForNamespaceUri( String namespaceUri ) {

@@ -3,14 +3,14 @@
  * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
+ * See the AUTHORS.txt file in the distribution for a full listing of
  * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- * 
+ *
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -25,15 +25,21 @@ package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.nodetype.NodeTypeDefinition;
 import org.junit.After;
+import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.jcr.RepositoryNodeTypeManager.NodeTypes;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.value.Name;
@@ -87,5 +93,28 @@ public class SystemContentTest {
             system.store(nodeTypes, true);
             assertThat(repository.nodeTypeManager().refreshFromSystem(), is(true));
         }
+    }
+
+    @Test
+    @FixFor("MODE-1408")
+    public void shouldRegisterNewNamespace() {
+        Map<String, String> urisByPrefix = new HashMap<String, String>();
+        String uri = "http://foo.bar";
+        String prefix = "foobar";
+        urisByPrefix.put(prefix, uri);
+        system.registerNamespaces(urisByPrefix);
+        assertEquals(prefix, system.readNamespacePrefix(uri, false));
+    }
+
+    @Test
+    public void shouldUnregisterNamespace() {
+        Map<String, String> urisByPrefix = new HashMap<String, String>();
+        String uri = "http://foo.bar";
+        String prefix = "foobar";
+        urisByPrefix.put(prefix, uri);
+
+        system.registerNamespaces(urisByPrefix);
+        assertTrue(system.unregisterNamespace(uri));
+        assertNull(system.readNamespacePrefix(uri, false));
     }
 }
