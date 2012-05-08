@@ -23,6 +23,7 @@
  */
 package org.modeshape.jcr.cache;
 
+import java.util.Map;
 import java.util.Set;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
@@ -277,4 +278,16 @@ public interface MutableCachedNode extends CachedNode {
      * @return an ETag value; never null but possibly empty
      */
     String getEtag( SessionCache cache );
+
+
+    /**
+     * Copies into this node all the properties and children (deep copy) from the given source node.
+     * @param cache the cache to which this node belongs; may not be null
+     * @param sourceNode the node from which to copy the properties and children; may not be null
+     * @param sourceCache the cache in which the source node belongs; may not be null
+     * @return a [source key -> target key] which represents the node correspondence after the copy operation.
+     */
+    public Map<NodeKey, NodeKey> deepCopy( SessionCache cache,
+                                           CachedNode sourceNode,
+                                           SessionCache sourceCache );
 }

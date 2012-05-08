@@ -958,7 +958,10 @@ public class SystemContent {
         historyProps.add(propertyFactory.create(JcrLexicon.VERSIONABLE_UUID, versionableNodeKey.toString()));
         historyProps.add(propertyFactory.create(JcrLexicon.UUID, versionHistoryKey.toString()));
         if (originalVersionKey != null) {
-            historyProps.add(propertyFactory.create(JcrLexicon.COPIED_FROM, originalVersionKey.toString()));
+            //the tck expects this to be a reference, so that getNode works on it
+            historyProps.add(propertyFactory.create(JcrLexicon.COPIED_FROM,
+                                                    org.modeshape.jcr.value.PropertyType.WEAKREFERENCE,
+                                                    originalVersionKey.toString()));
         }
         Name historyName = versionHistoryPath.getLastSegment().getName();
         MutableCachedNode history = historyParent.createChild(system, versionHistoryKey, historyName, historyProps);

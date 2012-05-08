@@ -426,17 +426,17 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         // Figure out the JCR property type ...
         boolean single = property.isSingle();
         boolean skipProtected = false;
-        JcrPropertyDefinition defn = findBestPropertyDefintion(primaryType,
-                                                               mixinTypes,
-                                                               property,
-                                                               single,
-                                                               skipProtected,
-                                                               false,
-                                                               nodeTypes);
+        JcrPropertyDefinition defn = findBestPropertyDefinition(primaryType,
+                                                                mixinTypes,
+                                                                property,
+                                                                single,
+                                                                skipProtected,
+                                                                false,
+                                                                nodeTypes);
         if (defn != null) return defn;
 
         // See if there is a definition that has constraints that were violated ...
-        defn = findBestPropertyDefintion(primaryType, mixinTypes, property, single, skipProtected, true, nodeTypes);
+        defn = findBestPropertyDefinition(primaryType, mixinTypes, property, single, skipProtected, true, nodeTypes);
         String pName = readable(property.getName());
         String loc = location();
         if (defn != null) {
@@ -466,13 +466,13 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @param nodeTypes the node types cache to use; may not be null
      * @return the property definition that allows setting this property, or null if there is no such definition
      */
-    final JcrPropertyDefinition findBestPropertyDefintion( Name primaryTypeNameOfParent,
-                                                           Collection<Name> mixinTypeNamesOfParent,
-                                                           org.modeshape.jcr.value.Property property,
-                                                           boolean isSingle,
-                                                           boolean skipProtected,
-                                                           boolean skipConstraints,
-                                                           NodeTypes nodeTypes ) {
+    final JcrPropertyDefinition findBestPropertyDefinition( Name primaryTypeNameOfParent,
+                                                            Collection<Name> mixinTypeNamesOfParent,
+                                                            org.modeshape.jcr.value.Property property,
+                                                            boolean isSingle,
+                                                            boolean skipProtected,
+                                                            boolean skipConstraints,
+                                                            NodeTypes nodeTypes ) {
         JcrPropertyDefinition definition = null;
         int propertyType = PropertyTypeUtil.jcrPropertyTypeFor(property);
 
@@ -1972,6 +1972,20 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     public PropertyIterator getWeakReferences( String propertyName ) throws RepositoryException {
         checkSession();
         return propertiesOnOtherNodesReferencingThis(propertyName, PropertyType.WEAKREFERENCE);
+    }
+
+    protected PropertyIterator getAllReferences() throws RepositoryException {
+        List<javax.jcr.Property> allReferences = new ArrayList<javax.jcr.Property>();
+
+        for (PropertyIterator strongRefIterator = getReferences(); strongRefIterator.hasNext(); ) {
+            allReferences.add(strongRefIterator.nextProperty());
+        }
+
+        for (PropertyIterator weakRefIterator = getReferences(); weakRefIterator.hasNext(); ) {
+            allReferences.add(weakRefIterator.nextProperty());
+        }
+
+        return new JcrPropertyIterator(allReferences);
     }
 
     /**
