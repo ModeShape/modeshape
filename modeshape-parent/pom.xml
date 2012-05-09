@@ -232,7 +232,7 @@
              When changing the version of Hiberate Search version, update these and the 
              'deploy/jbossas/kit/jboss-as7/modules/org/hibernate/search/engine/main/module.xml' file. Note that Hibernate Search
              forcibly overrides the Jackson libraries -->
-        <hibernate.search.version>4.1.0.Final</hibernate.search.version>
+        <hibernate.search.version>4.1.1.Final</hibernate.search.version>
         <hibernate.search.avro.version>1.5.1</hibernate.search.avro.version>
         <hibernate.search.jackson-mapper-asl.version>1.9.2</hibernate.search.jackson-mapper-asl.version>
         <hibernate.search.jackson-core-asl.version>1.9.2</hibernate.search.jackson-core-asl.version>
