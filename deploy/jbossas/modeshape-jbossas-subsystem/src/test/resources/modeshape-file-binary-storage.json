@@ -11,6 +11,8 @@
         "anonymous-username" : "<anonymous>",
         "cache-container" : "modeshape",
         "cache-name" : "sample",
+        "cluster-name" : null,
+        "cluster-stack" : null,
         "default-workspace" : "default",
         "enable-monitoring" : true,
         "index-storage" : null,

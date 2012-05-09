@@ -227,7 +227,7 @@
 		<dependencySet>
 			<outputDirectory>modules/org/hibernate/search-engine/4.1</outputDirectory>
 			<unpack>false</unpack>
-      <useTransitiveFiltering>true</useTransitiveFiltering>
+			<useTransitiveFiltering>true</useTransitiveFiltering>
 			<includes>
 				<include>org.hibernate:hibernate-search-engine</include>
 				<!--
@@ -246,7 +246,7 @@
 		<!-- Module for Lucene (Core + Regex) -->
 		<dependencySet>
 			<outputDirectory>modules/org/apache/lucene/3.5</outputDirectory>
-      <useTransitiveFiltering>true</useTransitiveFiltering>
+			<useTransitiveFiltering>true</useTransitiveFiltering>
 			<includes>
 				<include>org.apache.lucene:lucene-core</include>
 				<include>org.apache.lucene:lucene-regex</include>

@@ -129,6 +129,12 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                     case USE_ANONYMOUS_IF_AUTH_FAILED:
                         ModelAttributes.USE_ANONYMOUS_IF_AUTH_FAILED.parseAndSetParameter(attrValue, repository, reader);
                         break;
+                    case CLUSTER_STACK:
+                        ModelAttributes.CLUSTER_STACK.parseAndSetParameter(attrValue, repository, reader);
+                        break;
+                    case CLUSTER_NAME:
+                        ModelAttributes.CLUSTER_NAME.parseAndSetParameter(attrValue, repository, reader);
+                        break;
                     default:
                         throw ParseUtils.unexpectedAttribute(reader, i);
                 }

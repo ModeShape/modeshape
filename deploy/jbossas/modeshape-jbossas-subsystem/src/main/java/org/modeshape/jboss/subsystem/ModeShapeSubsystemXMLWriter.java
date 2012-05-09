@@ -69,6 +69,8 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
         writeAttributeAsList(writer, repository, ModelAttributes.ANONYMOUS_ROLES);
         writeAttribute(writer, repository, ModelAttributes.ANONYMOUS_USERNAME);
         writeAttribute(writer, repository, ModelAttributes.USE_ANONYMOUS_IF_AUTH_FAILED);
+        writeAttribute(writer, repository, ModelAttributes.CLUSTER_NAME);
+        writeAttribute(writer, repository, ModelAttributes.CLUSTER_STACK);
 
         // Nested elements ...
         writeWorkspaces(writer, repository);

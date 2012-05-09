@@ -29,6 +29,7 @@ import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.transaction.lookup.JBossTransactionManagerLookup;
+import org.jboss.as.clustering.jgroups.ChannelFactory;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -103,6 +104,8 @@ public class AddRepository extends AbstractAddStepHandler {
         final PathAddress pathAddress = PathAddress.pathAddress(address);
         final String repositoryName = pathAddress.getLastElement().getValue();
         final String cacheName = attribute(context, model, ModelAttributes.CACHE_NAME, repositoryName);
+        final String clusterChannelName = attribute(context, model, ModelAttributes.CLUSTER_NAME, null);
+        final String clusterStackName = attribute(context, model, ModelAttributes.CLUSTER_STACK, null);
         final boolean enableMonitoring = attribute(context, model, ModelAttributes.ENABLE_MONITORING).asBoolean();
 
         // Figure out which cache container to use (by default we'll use Infinispan subsystem's default cache container) ...
@@ -212,11 +215,11 @@ public class AddRepository extends AbstractAddStepHandler {
             }
         }
 
-        // if (indexStorageInDataDir || indexSourceStorageInDataDir || binaryStoreInDataDir) {
-        // // Data directory for all internal ModeShape data ...
-        // newControllers.add(RelativePathService.addService(ModeShapeServiceNames.DATA_DIR,
-        //                                                              "modeshape", DATA_DIR_VARIABLE, target)); //$NON-NLS-1$ 
-        // }
+        // Clustering and the JGroups channel ...
+        if (clusterChannelName != null) {
+            EditableDocument clustering = configDoc.getOrCreateDocument(FieldName.CLUSTERING);
+            clustering.setString(FieldName.CLUSTER_NAME, clusterChannelName);
+        }
 
         // Now create the repository service that manages the lifecycle of the JcrRepository instance ...
         RepositoryConfiguration repositoryConfig = new RepositoryConfiguration(configDoc, repositoryName);
@@ -228,6 +231,13 @@ public class AddRepository extends AbstractAddStepHandler {
 
         // Add dependency to the ModeShape engine service ...
         builder.addDependency(ModeShapeServiceNames.ENGINE, JcrEngine.class, repositoryService.getEngineInjector());
+
+        // Add dependency to the JGroups channel (used for events) ...
+        if (clusterStackName != null) {
+            builder.addDependency(ServiceName.JBOSS.append("jgroups", "stack", clusterStackName),
+                                  ChannelFactory.class,
+                                  repositoryService.getChannelFactoryInjector());
+        }
 
         // Add dependency to the transaction manager ...
         builder.addDependency(ServiceName.JBOSS.append("txn", "TransactionManager"),

@@ -179,6 +179,16 @@
         </xs:documentation>
       </xs:annotation>
     </xs:attribute>
+    <xs:attribute name="cluster-stack" type="xs:string">
+      <xs:annotation>
+        <xs:documentation>Defines the JGroups stack used by the repository when clustered.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="cluster-name" type="xs:string" >
+      <xs:annotation>
+        <xs:documentation>Defines the name of the communication channel used by this and other clustered repositories</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
   </xs:complexType>
 
   <xs:complexType name="workspaces">

@@ -44,6 +44,8 @@ public class ModelKeys {
     static final String CACHE_CONTAINER = "cache-container";
     static final String CACHE_CONTAINER_JNDI_NAME = "cache-container-jndi-name";
     static final String CACHE_NAME = "cache-name";
+    static final String CLUSTER_NAME = "cluster-name";
+    static final String CLUSTER_STACK = "cluster-stack";
     static final String CHUNK_SIZE = "chunk-size";
     static final String CLASSNAME = "classname";
     static final String CONNECTION_FACTORY_JNDI_NAME = "connection-factory-jndi-name";

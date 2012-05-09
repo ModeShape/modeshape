@@ -66,6 +66,7 @@ import org.infinispan.util.FileLookup;
 import org.infinispan.util.FileLookupFactory;
 import org.infinispan.util.ReflectionUtil;
 import org.infinispan.util.Util;
+import org.jgroups.Channel;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
@@ -371,18 +372,18 @@ public class RepositoryConfiguration {
         /**
          * The name of the cluster as used by JChannel.connect
          */
-        private static final String CLUSTER_NAME = "clusterName";
+        public static final String CLUSTER_NAME = "clusterName";
 
         /**
          * The fully qualified name of the {@link org.modeshape.jcr.clustering.ChannelProvider} implementation which will provide
          * the JChannel instance
          */
-        private static final String CHANNEL_PROVIDER = "channelProvider";
+        public static final String CHANNEL_PROVIDER = "channelProvider";
 
         /**
          * The optional string representing a valid JGroups channel configuration object
          */
-        private static final String CHANNEL_CONFIGURATION = "channelConfiguration";
+        public static final String CHANNEL_CONFIGURATION = "channelConfiguration";
     }
 
     public static class Default {
@@ -787,6 +788,10 @@ public class RepositoryConfiguration {
         this.doc = ensureNamed(replaced, documentName);
         this.docName = documentName;
         this.environment = environment;
+    }
+
+    protected Environment environment() {
+        return this.environment;
     }
 
     public String getName() {
@@ -1439,6 +1444,20 @@ public class RepositoryConfiguration {
 
         public Document getDocument() {
             return clusteringDoc;
+        }
+
+        /**
+         * Attempt to get the correct channel from the environment, if the environment has specified one.
+         * 
+         * @return the environment's channel, if defined; may be null if the environment doesn't provide a channel and the
+         *         {@link #getChannelProviderClassName() channel provider} should be used
+         * @throws Exception if there is a problem getting the channel from the environment
+         */
+        public Channel getChannel() throws Exception {
+            Environment env = environment();
+            if (env == null) return null;
+            Channel channel = env.getChannel(getClusterName());
+            return channel;
         }
     }
 
