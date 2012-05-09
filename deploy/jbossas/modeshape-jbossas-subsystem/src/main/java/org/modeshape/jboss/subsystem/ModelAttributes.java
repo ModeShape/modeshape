@@ -225,6 +225,22 @@ public class ModelAttributes {
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
+    public static final SimpleAttributeDefinition CLUSTER_NAME =
+        new MappedAttributeDefinitionBuilder(ModelKeys.CLUSTER_NAME, ModelType.STRING)
+                .setXmlName(Attribute.CLUSTER_NAME.getLocalName())
+                .setAllowExpression(true)
+                .setAllowNull(true)
+                .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                .build();
+
+    public static final SimpleAttributeDefinition CLUSTER_STACK =
+        new MappedAttributeDefinitionBuilder(ModelKeys.CLUSTER_STACK, ModelType.STRING)
+                .setXmlName(Attribute.CLUSTER_STACK.getLocalName())
+                .setAllowExpression(true)
+                .setAllowNull(true)
+                .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                .build();
+
     public static final SimpleAttributeDefinition CHUNK_SIZE =
         new MappedAttributeDefinitionBuilder(ModelKeys.CHUNK_SIZE, ModelType.INT)
                 .setXmlName(Attribute.CHUNK_SIZE.getLocalName())
@@ -559,6 +575,7 @@ public class ModelAttributes {
         MODE, ASYNC_THREAD_POOL_SIZE, ASYNC_MAX_QUEUE_SIZE,
         ANALYZER_CLASSNAME, ANALYZER_MODULE,
         REBUILD_INDEXES_UPON_STARTUP,
+        CLUSTER_NAME, CLUSTER_STACK,
     };
 
     public static final AttributeDefinition[] RAM_INDEX_STORAGE_ATTRIBUTES = {

@@ -24,10 +24,10 @@
 
 package org.modeshape.jcr.bus;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jgroups.Address;
 import org.jgroups.Channel;
 import org.jgroups.ChannelListener;
-import org.jgroups.JChannel;
 import org.jgroups.Message;
 import org.jgroups.ReceiverAdapter;
 import org.jgroups.View;
@@ -40,12 +40,11 @@ import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
 import org.modeshape.jcr.clustering.ChannelProvider;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Implementation of a {@link ChangeBus} which can run in a cluster, via JGroups. This bus wraps around another bus, to which
- * it delegates all "local" processing of events.
- *
+ * Implementation of a {@link ChangeBus} which can run in a cluster, via JGroups. This bus wraps around another bus, to which it
+ * delegates all "local" processing of events.
+ * 
  * @author Horia Chiorean
  */
 @ThreadSafe
@@ -85,14 +84,14 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
     private final RepositoryConfiguration.Clustering clusteringConfiguration;
 
     /**
-     * The JGroups channel to which all {@link #notify(ChangeSet) change notifications} will be sent and from which all changes will
-     * be received and sent to the observers.
+     * The JGroups channel to which all {@link #notify(ChangeSet) change notifications} will be sent and from which all changes
+     * will be received and sent to the observers.
      * <p>
-     * It is important that the order of the {@link ChangeSet} instances are maintained across the cluster, and JGroups will do this
-     * for us as long as we push all local changes into the channel and receive all local/remote changes from the channel.
+     * It is important that the order of the {@link ChangeSet} instances are maintained across the cluster, and JGroups will do
+     * this for us as long as we push all local changes into the channel and receive all local/remote changes from the channel.
      * </p>
      */
-    private JChannel channel;
+    private Channel channel;
 
     public ClusteredRepositoryChangeBus( RepositoryConfiguration.Clustering clusteringConfiguration,
                                          ChangeBus delegate ) {
@@ -103,10 +102,10 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
         assert clusteringConfiguration.isEnabled();
         this.delegate = delegate;
     }
-      
+
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.modeshape.jcr.bus.ChangeBus#start()
      */
     @Override
@@ -132,24 +131,37 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
             // Now connect to the cluster ...
             channel.connect(clusterName);
 
-            //start the delegate
+            // start the delegate
             delegate.start();
         } catch (Exception e) {
-            throw new IllegalStateException(BusI18n.errorWhileStartingJGroups.text(clusteringConfiguration.getChannelConfiguration()), e);
+            throw new IllegalStateException(
+                                            BusI18n.errorWhileStartingJGroups.text(clusteringConfiguration.getChannelConfiguration()),
+                                            e);
         }
     }
 
-    private JChannel newChannel() {
+    private Channel newChannel() {
         String lookupClassName = clusteringConfiguration.getChannelProviderClassName();
-        assert lookupClassName != null;
 
+        // Try to get the channel directly from the configuration (and its environment) ...
+        try {
+            Channel channel = clusteringConfiguration.getChannel();
+            if (channel != null) return channel;
+        } catch (Exception e) {
+            if (lookupClassName == null) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        assert lookupClassName != null;
         try {
             Class<?> lookupClass = Class.forName(lookupClassName);
             if (!ChannelProvider.class.isAssignableFrom(lookupClass)) {
                 throw new IllegalArgumentException(
-                        "Invalid channel lookup class configured. Expected a subclass of org.modeshape.jcr.clustering.ChannelProvider. Actual class:" + lookupClass);
+                                                   "Invalid channel lookup class configured. Expected a subclass of org.modeshape.jcr.clustering.ChannelProvider. Actual class:"
+                                                   + lookupClass);
             }
-            return  ((ChannelProvider)lookupClass.newInstance()).getChannel(clusteringConfiguration);
+            return ((ChannelProvider)lookupClass.newInstance()).getChannel(clusteringConfiguration);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -157,7 +169,7 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.modeshape.jcr.bus.ChangeBus#hasObservers()
      */
     @Override
@@ -167,7 +179,7 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
 
     /**
      * Return whether this bus has been {@link #start() started} and not yet {@link #shutdown() shut down}.
-     *
+     * 
      * @return true if {@link #start()} has been called but {@link #shutdown()} has not, or false otherwise
      */
     public boolean isStarted() {
@@ -176,7 +188,7 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.modeshape.jcr.bus.ChangeBus#shutdown()
      */
     @Override
@@ -292,7 +304,7 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see org.jgroups.MembershipListener#block()
          */
         @Override
@@ -302,7 +314,7 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see org.jgroups.MessageListener#receive(org.jgroups.Message)
          */
         @Override
@@ -326,7 +338,7 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see org.jgroups.MembershipListener#suspect(org.jgroups.Address)
          */
         @Override
@@ -336,7 +348,7 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see org.jgroups.MembershipListener#viewAccepted(org.jgroups.View)
          */
         @Override
@@ -344,9 +356,8 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
             LOGGER.trace("Members of '{0}' cluster have changed: {1}", clusteringConfiguration.getClusterName(), newView);
             if (newView.getMembers().size() > 1) {
                 if (multipleAddressesInCluster.compareAndSet(false, true)) {
-                    LOGGER.debug(
-                            "There are now multiple members of cluster '{0}'; changes will be propagated throughout the cluster",
-                            clusteringConfiguration.getClusterName());
+                    LOGGER.debug("There are now multiple members of cluster '{0}'; changes will be propagated throughout the cluster",
+                                 clusteringConfiguration.getClusterName());
                 }
             } else {
                 if (multipleAddressesInCluster.compareAndSet(true, false)) {
@@ -360,7 +371,7 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
     private class Listener implements ChannelListener {
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see org.jgroups.ChannelListener#channelClosed(org.jgroups.Channel)
          */
         @Override
@@ -370,7 +381,7 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see org.jgroups.ChannelListener#channelConnected(org.jgroups.Channel)
          */
         @Override
@@ -380,7 +391,7 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see org.jgroups.ChannelListener#channelDisconnected(org.jgroups.Channel)
          */
         @Override

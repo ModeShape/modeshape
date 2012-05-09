@@ -143,6 +143,16 @@ public class TestModeShapeConfiguration extends AbstractSubsystemTest {
         roundTrip("modeshape-cache-binary-storage.xml", "modeshape-cache-binary-storage.json");
     }
 
+    @Test
+    public void testOutputPersistanceOfConfigurationWithClustering() throws Exception {
+        roundTrip("modeshape-clustered-config.xml", "modeshape-clustered-config.json");
+    }
+
+    @Test
+    public void testOutputPersistanceOfConfigurationWithMinimalRepository() throws Exception {
+        roundTrip("modeshape-minimal-config.xml", "modeshape-minimal-config.json");
+    }
+
     protected void roundTrip( String filenameOfInputXmlConfig,
                               String filenameOfExpectedJson ) throws Exception {
         String subsystemXml = ObjectConverterUtil.convertToString(new FileReader("src/test/resources/" + filenameOfInputXmlConfig));

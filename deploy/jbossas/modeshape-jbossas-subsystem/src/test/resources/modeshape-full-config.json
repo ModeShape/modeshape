@@ -12,6 +12,8 @@
         "binary-storage" : null,
         "cache-container" : "modeshape",
         "cache-name" : "sample",
+        "cluster-name" : null,
+        "cluster-stack" : null,
         "default-workspace" : "default",
         "enable-monitoring" : true,
         "indexing-analyzer-classname" : "org.apache.lucene.analysis.standard.StandardAnalyzer",
