@@ -713,7 +713,13 @@ public class ArrayEditor implements EditableArray {
 
     @Override
     public Object get( int index ) {
-        return array.get(index);
+        Object value = array.get(index);
+        if (value instanceof Document) {
+            value = editable((Document)value, index);
+        } else if (value instanceof List) {
+            value = editable((List<?>)value, index);
+        }
+        return value;
     }
 
     @Override

@@ -88,13 +88,13 @@ public class BasicArray implements MutableArray {
     @Override
     public Object get( String name ) {
         int index = indexFrom(name);
-        return index > 0 && index < size() ? values.get(index) : null;
+        return isValidIndex(index) ? values.get(index) : null;
     }
 
     @Override
     public boolean containsField( String name ) {
         int index = indexFrom(name);
-        return index > 0 && index < size();
+        return isValidIndex(index);
     }
 
     @Override
@@ -633,6 +633,10 @@ public class BasicArray implements MutableArray {
         return Integer.parseInt(name);
     }
 
+    protected final boolean isValidIndex( int index ) {
+        return index >= 0 && index < size();
+    }
+
     // ---------------------------------------------------------------------------------------------------------
     // Mutation methods, for use only by the editor framework
     // ---------------------------------------------------------------------------------------------------------
@@ -766,7 +770,7 @@ public class BasicArray implements MutableArray {
     @Override
     public Object remove( String name ) {
         int index = indexFrom(name);
-        return index > 0 && index < size() ? values.remove(index) : null;
+        return isValidIndex(index) ? values.remove(index) : null;
     }
 
     @Override
