@@ -25,18 +25,17 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.naming.deployment.ContextNames;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.jboss.msc.service.ServiceName;
 
-class RemoveRepository extends AbstractRemoveStepHandler {
+class RemoveBinaryStorage extends AbstractRemoveStepHandler {
 
-    private static final Logger log = Logger.getLogger(RemoveRepository.class.getPackage().getName());
+    protected static final Logger log = Logger.getLogger(RemoveBinaryStorage.class.getPackage().getName());
 
-    public static final RemoveRepository INSTANCE = new RemoveRepository();
+    public static final RemoveBinaryStorage INSTANCE = new RemoveBinaryStorage();
 
-    private RemoveRepository() {
+    private RemoveBinaryStorage() {
     }
 
     @Override
@@ -46,22 +45,22 @@ class RemoveRepository extends AbstractRemoveStepHandler {
         // Get the service addresses ...
         final PathAddress serviceAddress = PathAddress.pathAddress(operation.get(OP_ADDR));
         // Get the repository name ...
-        final String repositoryName = serviceAddress.getLastElement().getValue();
+        final String repositoryName = serviceAddress.getElement(1).getValue();
+        final ServiceName serviceName = ModeShapeServiceNames.binaryStorageServiceName(repositoryName);
 
-        // Remove the JNDI binder service
-        final String jndiName = ModeShapeJndiNames.jndiNameFrom(model, repositoryName);
-        ContextNames.BindInfo bindInfo = ContextNames.bindInfoFor(jndiName);
-        context.removeService(bindInfo.getBinderServiceName());
-
-        // Remove the repository service ...
-        final ServiceName serviceName = ModeShapeServiceNames.repositoryServiceName(repositoryName);
+        // Simply remove all services started by any/all of the Add*BinaryStorage operations ...
         context.removeService(serviceName);
 
-        // Remove the data path service added by the AddRepository ...
-        final ServiceName dataDirServiceName = ModeShapeServiceNames.dataDirectoryServiceName(repositoryName);
-        context.removeService(dataDirServiceName);
+        // Now see if we need to remove the path service ...
+        if (model.has(ModelKeys.RELATIVE_TO)
+            && model.get(ModelKeys.RELATIVE_TO).asString().contains(AddFileBinaryStorage.DATA_DIR_VARIABLE)) {
+            // The binaries were stored in the data directory, so we need to remove the path service ...
+            ServiceName dirServiceName = ModeShapeServiceNames.binaryStorageDirectoryServiceName(repositoryName);
+            context.removeService(dirServiceName);
+        }
 
-        log.debugf("repository '%s' removed", repositoryName);
+        String service = serviceAddress.getLastElement().getValue();
+        log.debugf("binary storage '%s' removed for repository '%s'", service, repositoryName);
     }
 
     @Override

@@ -21,6 +21,9 @@
  */
 package org.modeshape.jboss.subsystem;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import java.util.ArrayList;
 import java.util.List;
@@ -79,10 +82,16 @@ public class AddSequencer extends AbstractAddStepHandler {
         // Record the properties ...
         props.put(FieldName.NAME, sequencerName);
         for (String key : operation.keys()) {
-            if (key.equals(ModelKeys.CLASSNAME) && ModelAttributes.CLASSNAME.isMarshallable(operation)) {
-                props.put(FieldName.TYPE, operation.get(ModelKeys.CLASSNAME));
+            if (key.equals(ADDRESS) || key.equals(OP) || key.equals(OPERATION_HEADERS)) {
+                // Ignore these ...
+                continue;
+            }
+            ModelNode node = operation.get(key);
+            if (!node.isDefined()) continue;
+            if (key.equals(ModelKeys.SEQUENCER_CLASSNAME) && ModelAttributes.SEQUENCER_CLASSNAME.isMarshallable(operation)) {
+                props.put(FieldName.TYPE, node.asString());
             } else if (key.equals(ModelKeys.MODULE) && ModelAttributes.MODULE.isMarshallable(operation)) {
-                props.put(FieldName.CLASSLOADER, operation.get(ModelKeys.MODULE));
+                props.put(FieldName.CLASSLOADER, node.asString());
             } else if (key.equals(ModelKeys.PATH_EXPRESSIONS)) {
                 List<String> pathExpressions = new ArrayList<String>();
                 for (ModelNode pathExpression : operation.get(ModelKeys.PATH_EXPRESSIONS).asList()) {
@@ -90,14 +99,14 @@ public class AddSequencer extends AbstractAddStepHandler {
                 }
                 props.put(FieldName.PATH_EXPRESSIONS, pathExpressions);
             } else {
-                props.put(key, operation.get(key));
+                props.put(key, node.asString());
             }
         }
 
         SequencerService sequencerService = new SequencerService(repositoryName, props);
 
-        ServiceBuilder<JcrRepository> sequencerBuilder = target.addService(ModeShapeServiceNames.sequencerServiceName(repositoryName
-                                                                                                                      + sequencerName),
+        ServiceBuilder<JcrRepository> sequencerBuilder = target.addService(ModeShapeServiceNames.sequencerServiceName(repositoryName,
+                                                                                                                      sequencerName),
                                                                            sequencerService);
         sequencerBuilder.addDependency(ModeShapeServiceNames.ENGINE, JcrEngine.class, sequencerService.getJcrEngineInjector());
         sequencerBuilder.addDependency(ModeShapeServiceNames.repositoryServiceName(repositoryName),

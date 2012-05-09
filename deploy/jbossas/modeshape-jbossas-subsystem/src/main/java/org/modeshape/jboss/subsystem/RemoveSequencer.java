@@ -21,13 +21,43 @@
  */
 package org.modeshape.jboss.subsystem;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.PathAddress;
+import org.jboss.dmr.ModelNode;
+import org.jboss.logging.Logger;
+import org.jboss.msc.service.ServiceName;
 
 class RemoveSequencer extends AbstractRemoveStepHandler {
+
+    private static final Logger log = Logger.getLogger(RemoveSequencer.class.getPackage().getName());
 
     public static final RemoveSequencer INSTANCE = new RemoveSequencer();
 
     private RemoveSequencer() {
     }
 
+    @Override
+    protected void performRuntime( OperationContext context,
+                                   ModelNode operation,
+                                   ModelNode model ) {
+        // Get the service addresses ...
+        final PathAddress serviceAddress = PathAddress.pathAddress(operation.get(OP_ADDR));
+        // Get the repository name ...
+        final String sequencerName = serviceAddress.getLastElement().getValue();
+        final String repositoryName = serviceAddress.getElement(1).getValue();
+        // Remove the service ...
+        final ServiceName serviceName = ModeShapeServiceNames.sequencerServiceName(repositoryName, sequencerName);
+        context.removeService(serviceName);
+
+        log.debugf("sequencer '%s' removed for repository '%s'", sequencerName, repositoryName);
+    }
+
+    @Override
+    protected void recoverServices( OperationContext context,
+                                    ModelNode operation,
+                                    ModelNode model ) {
+        // TODO: RE-ADD SERVICES
+    }
 }

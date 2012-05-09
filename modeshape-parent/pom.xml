@@ -230,11 +230,12 @@
         <lucene.regex.jakarta.version>1.4</lucene.regex.jakarta.version>
         <!-- These versions of Hibernate Search transitive dependencies are used in creating the Hibernate Search AS7 module.
              When changing the version of Hiberate Search version, update these and the 
-             'deploy/jbossas/kit/jboss-as7/modules/org/hibernate/search/engine/main/module.xml' file. -->
+             'deploy/jbossas/kit/jboss-as7/modules/org/hibernate/search/engine/main/module.xml' file. Note that Hibernate Search
+             forcibly overrides the Jackson libraries -->
         <hibernate.search.version>4.1.0.Final</hibernate.search.version>
         <hibernate.search.avro.version>1.5.1</hibernate.search.avro.version>
-        <hibernate.search.jackson-mapper-asl.version>1.7.3</hibernate.search.jackson-mapper-asl.version>
-        <hibernate.search.jackson-core-asl.version>1.7.3</hibernate.search.jackson-core-asl.version>
+        <hibernate.search.jackson-mapper-asl.version>1.9.2</hibernate.search.jackson-mapper-asl.version>
+        <hibernate.search.jackson-core-asl.version>1.9.2</hibernate.search.jackson-core-asl.version>
         <hibernate.search.paranamer.version>2.3</hibernate.search.paranamer.version>
         <hibernate.search.snappy.version>1.0.1-rc3</hibernate.search.snappy.version>
         <infinispan.version>5.1.2.FINAL</infinispan.version>
@@ -864,6 +865,22 @@
                         <artifactId>hibernate-search-analyzers</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+              <!--
+              To force testing of Apache Avro integration with the version of Jackson used in AS 7.1
+              -->
+              <groupId>org.codehaus.jackson</groupId>
+              <artifactId>jackson-core-asl</artifactId>
+              <version>${hibernate.search.jackson-core-asl.version}</version>
+            </dependency>
+            <dependency>
+              <!--
+              To force testing of Apache Avro integration with the version of Jackson used in AS 7.1
+              -->
+              <groupId>org.codehaus.jackson</groupId>
+              <artifactId>jackson-mapper-asl</artifactId>
+              <version>${hibernate.search.jackson-mapper-asl.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.lucene</groupId>

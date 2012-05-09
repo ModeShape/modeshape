@@ -21,10 +21,20 @@
   ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
-<module xmlns="urn:jboss:module:1.1" name="org.apache.lucene">
+<module xmlns="urn:jboss:module:1.1" name="org.hibernate.search-engine" slot="4.1">
     <resources>
-        <resource-root path="lucene-core-${lucene.version}.jar" />
-        <resource-root path="lucene-regex-${lucene.regex.version}.jar" />
-        <resource-root path="jakarta-regexp-${lucene.regex.jakarta.version}.jar" />
+        <resource-root path="hibernate-search-engine-${hibernate.search.version}.jar" />
+        <resource-root path="avro-${hibernate.search.avro.version}.jar" />
+        <resource-root path="jackson-mapper-asl-${hibernate.search.jackson-mapper-asl.version}.jar" />
+        <resource-root path="jackson-core-asl-${hibernate.search.jackson-core-asl.version}.jar" />
+        <resource-root path="paranamer-${hibernate.search.paranamer.version}.jar" />
+        <resource-root path="snappy-java-${hibernate.search.snappy.version}.jar" />
     </resources>
+    <dependencies>
+        <module name="javax.transaction.api"/>
+        <module name="org.hibernate"/>
+        <module name="org.apache.lucene" export="true" slot="3.5"/>
+        <module name="org.jboss.logging" />
+        <module name="org.jgroups" />
+    </dependencies>
 </module>

@@ -40,6 +40,7 @@ public class ModelKeys {
     static final String ASYNC_MAX_QUEUE_SIZE = "indexing-async-max-queue-size";
     static final String ASYNC_THREAD_POOL_SIZE = "indexing-async-thread-pool-size";
     static final String BATCH_SIZE = "indexing-batch-size";
+    static final String BINARY_STORAGE_TYPE = "binary-storage-type";
     static final String CACHE_CONTAINER = "cache-container";
     static final String CACHE_CONTAINER_JNDI_NAME = "cache-container-jndi-name";
     static final String CACHE_NAME = "cache-name";
@@ -52,6 +53,7 @@ public class ModelKeys {
     static final String DEFAULT_WORKSPACE = "default-workspace";
     static final String ENABLE_MONITORING = "enable-monitoring";
     static final String INDEX_FORMAT = "index-format";
+    static final String INDEX_STORAGE_TYPE = "index-storage-type";
     static final String JNDI_NAME = "jndi-name";
     static final String LOCK_CACHE_NAME = "lock-cache-name";
     static final String LOCKING_STRATEGY = "locking-strategy";
@@ -73,6 +75,7 @@ public class ModelKeys {
     static final String RETRY_INITIALIZE_PERIOD = "retry-initialize-period";
     static final String RETRY_MARKER_LOOKUP = "retry-marker-lookup";
     static final String SECURITY_DOMAIN = "security-domain";
+    static final String SEQUENCER_CLASSNAME = "classname";
     static final String SOURCE_PATH = "source-path";
     static final String SOURCE_RELATIVE_TO = "source-relative-to";
     static final String THREAD_POOL = "indexing-thread-pool";
@@ -90,10 +93,7 @@ public class ModelKeys {
     static final String ADD_DB_BINARY_STORAGE = "add-db-binary-storage";
     static final String ADD_CACHE_BINARY_STORAGE = "add-cache-binary-storage";
     static final String ADD_CUSTOM_BINARY_STORAGE = "add-custom-binary-storage";
-    static final String REMOVE_FILE_BINARY_STORAGE = "remove-file-binary-storage";
-    static final String REMOVE_DB_BINARY_STORAGE = "remove-db-binary-storage";
-    static final String REMOVE_CACHE_BINARY_STORAGE = "remove-cache-binary-storage";
-    static final String REMOVE_CUSTOM_BINARY_STORAGE = "remove-custom-binary-storage";
+    static final String REMOVE_BINARY_STORAGE = "remove-binary-storage";
 
     static final String SEQUENCER = "sequencer";
 
@@ -111,11 +111,6 @@ public class ModelKeys {
     static final String ADD_SLAVE_FILE_INDEX_STORAGE = "add-slave-file-index-storage";
     static final String ADD_CACHE_INDEX_STORAGE = "add-cache-index-storage";
     static final String ADD_CUSTOM_INDEX_STORAGE = "add-custom-index-storage";
-    static final String REMOVE_RAM_INDEX_STORAGE = "remove-ram-index-storage";
-    static final String REMOVE_LOCAL_FILE_INDEX_STORAGE = "remove-local-file-index-storage";
-    static final String REMOVE_MASTER_FILE_INDEX_STORAGE = "remove-master-file-index-storage";
-    static final String REMOVE_SLAVE_FILE_INDEX_STORAGE = "remove-slave-file-index-storage";
-    static final String REMOVE_CACHE_INDEX_STORAGE = "remove-cache-index-storage";
-    static final String REMOVE_CUSTOM_INDEX_STORAGE = "remove-custom-index-storage";
+    static final String REMOVE_INDEX_STORAGE = "remove-index-storage";
 
 }

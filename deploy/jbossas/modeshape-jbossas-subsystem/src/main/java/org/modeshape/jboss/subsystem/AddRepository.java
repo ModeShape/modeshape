@@ -36,6 +36,11 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.services.path.RelativePathService;
+import org.jboss.as.naming.ManagedReferenceFactory;
+import org.jboss.as.naming.ManagedReferenceInjector;
+import org.jboss.as.naming.ServiceBasedNamingStore;
+import org.jboss.as.naming.deployment.ContextNames;
+import org.jboss.as.naming.service.BinderService;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceBuilder.DependencyType;
@@ -53,7 +58,6 @@ import org.modeshape.jcr.RepositoryConfiguration.FieldValue;
 
 public class AddRepository extends AbstractAddStepHandler {
 
-    public static final String JNDI_BASE_NAME = "java:/jcr/local/";
     public static final AddRepository INSTANCE = new AddRepository();
 
     private AddRepository() {
@@ -107,7 +111,10 @@ public class AddRepository extends AbstractAddStepHandler {
         // Create a document for the repository configuration ...
         EditableDocument configDoc = Schematic.newDocument();
         configDoc.set(FieldName.NAME, repositoryName);
-        configDoc.set(FieldName.JNDI_NAME, jndiNameForRepository(model, repositoryName));
+
+        // Determine the JNDI name ...
+        final String jndiName = ModeShapeJndiNames.jndiNameFrom(model, repositoryName);
+        configDoc.set(FieldName.JNDI_NAME, "");// always set to empty string, since we'll register in JNDI here ...
 
         // Always enable monitoring ...
         EditableDocument monitoring = configDoc.getOrCreateDocument(FieldName.MONITORING);
@@ -214,10 +221,10 @@ public class AddRepository extends AbstractAddStepHandler {
         // Now create the repository service that manages the lifecycle of the JcrRepository instance ...
         RepositoryConfiguration repositoryConfig = new RepositoryConfiguration(configDoc, repositoryName);
         RepositoryService repositoryService = new RepositoryService(repositoryConfig);
-        ServiceName serviceName = ModeShapeServiceNames.repositoryServiceName(repositoryName);
+        ServiceName repositoryServiceName = ModeShapeServiceNames.repositoryServiceName(repositoryName);
 
         // Add the EngineService's dependencies ...
-        ServiceBuilder<JcrRepository> builder = target.addService(serviceName, repositoryService);
+        ServiceBuilder<JcrRepository> builder = target.addService(repositoryServiceName, repositoryService);
 
         // Add dependency to the ModeShape engine service ...
         builder.addDependency(ModeShapeServiceNames.ENGINE, JcrEngine.class, repositoryService.getEngineInjector());
@@ -245,6 +252,21 @@ public class AddRepository extends AbstractAddStepHandler {
                               ModeShapeServiceNames.binaryStorageServiceName(repositoryName),
                               BinaryStorage.class,
                               repositoryService.getBinaryStorageInjector());
+
+        // Set up the JNDI binder service ...
+        ContextNames.BindInfo bindInfo = ContextNames.bindInfoFor(jndiName);
+        BinderService binder = new BinderService(bindInfo.getBindName());
+        ServiceBuilder<ManagedReferenceFactory> binderBuilder = target.addService(bindInfo.getBinderServiceName(), binder)
+                                                                      .addAliases(ContextNames.JAVA_CONTEXT_SERVICE_NAME.append(jndiName))
+                                                                      .addDependency(repositoryServiceName,
+                                                                                     JcrRepository.class,
+                                                                                     new ManagedReferenceInjector<JcrRepository>(
+                                                                                                                                 binder.getManagedObjectInjector()))
+                                                                      .addDependency(bindInfo.getParentContextServiceName(),
+                                                                                     ServiceBasedNamingStore.class,
+                                                                                     binder.getNamingStoreInjector())
+                                                                      .setInitialMode(ServiceController.Mode.PASSIVE);
+        newControllers.add(binderBuilder.install());
 
         // Add dependency to the data directory ...
         ServiceName dataDirServiceName = ModeShapeServiceNames.dataDirectoryServiceName(repositoryName);
@@ -274,30 +296,6 @@ public class AddRepository extends AbstractAddStepHandler {
         // Now add the controller for the RepositoryService ...
         builder.setInitialMode(ServiceController.Mode.ACTIVE);
         newControllers.add(builder.install());
-    }
-
-    protected String jndiNameForRepository( final ModelNode model,
-                                            String repositoryName ) {
-        String jndiName = null;
-        if (model.has(ModelKeys.JNDI_NAME) && model.get(ModelKeys.JNDI_NAME).isDefined()) {
-            // A JNDI name is set on the model node ...
-            jndiName = model.get(ModelKeys.JNDI_NAME).asString();
-            if (jndiName.length() != 0) {
-                // And the value is not zero-length, so remove leading prefixes ...
-                if (jndiName.startsWith("java:")) {
-                    jndiName = jndiName.substring(5);
-                } else if (!jndiName.startsWith("jboss") && !jndiName.startsWith("global") && !jndiName.startsWith("/")) {
-                    jndiName = "/" + jndiName;
-                }
-            } else {
-                // Otherwise, the name is set but it is 0-length, so we shouldn't set it ...
-                jndiName = "";
-            }
-        } else {
-            // Otherwise it's not set in the model node, so we use the default ...
-            jndiName = JNDI_BASE_NAME + repositoryName;
-        }
-        return jndiName;
     }
 
     protected void writeIndexingBackendConfiguration( final OperationContext context,

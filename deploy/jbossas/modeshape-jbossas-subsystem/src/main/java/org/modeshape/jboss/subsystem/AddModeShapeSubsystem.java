@@ -107,15 +107,12 @@ class AddModeShapeSubsystem extends AbstractAddStepHandler {
         referenceBuilder.addDependency(ModeShapeServiceNames.ENGINE, JcrEngine.class, referenceFactoryService.getInjector());
         referenceBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
 
-        final ContextNames.BindInfo bindInfo = ContextNames.bindInfoFor(AddRepository.JNDI_BASE_NAME);
+        final ContextNames.BindInfo bindInfo = ContextNames.bindInfoFor(ModeShapeJndiNames.JNDI_BASE_NAME);
         final BinderService binderService = new BinderService(bindInfo.getBindName());
         final ServiceBuilder<?> binderBuilder = target.addService(bindInfo.getBinderServiceName(), binderService);
         binderBuilder.addDependency(ModeShapeServiceNames.ENGINE,
                                     JcrEngine.class,
                                     new ManagedReferenceInjector<JcrEngine>(binderService.getManagedObjectInjector()));
-        // binderBuilder.addDependency(referenceFactoryServiceName,
-        // ManagedReferenceFactory.class,
-        // binderService.getManagedObjectInjector());
         binderBuilder.addDependency(bindInfo.getParentContextServiceName(),
                                     ServiceBasedNamingStore.class,
                                     binderService.getNamingStoreInjector());

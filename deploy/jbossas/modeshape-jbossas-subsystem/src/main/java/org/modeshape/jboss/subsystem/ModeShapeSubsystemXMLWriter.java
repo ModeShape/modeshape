@@ -25,8 +25,8 @@ import java.util.Iterator;
 import java.util.List;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
+import org.jboss.as.controller.ListAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
-import org.jboss.as.controller.SimpleListAttributeDefinition;
 import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
@@ -42,22 +42,25 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
     public void writeContent( XMLExtendedStreamWriter writer,
                               SubsystemMarshallingContext context ) throws XMLStreamException {
         context.startSubsystemElement(Namespace.CURRENT.getUri(), false);
-        ModelNode node = context.getModelNode();
-        if (has(node, ModelKeys.REPOSITORY)) {
-            for (Property repository : node.get(ModelKeys.REPOSITORY).asPropertyList()) {
-                writeRepositoryConfiguration(writer, repository.getValue());
+        ModelNode model = context.getModelNode();
+        if (model.isDefined()) {
+            for (Property entry : model.get(ModelKeys.REPOSITORY).asPropertyList()) {
+                String repositoryName = entry.getName();
+                ModelNode repository = entry.getValue();
+                writeRepositoryConfiguration(writer, repository, repositoryName);
             }
         }
         writer.writeEndElement(); // End of subsystem element
     }
 
     private void writeRepositoryConfiguration( XMLExtendedStreamWriter writer,
-                                               ModelNode repository ) throws XMLStreamException {
+                                               ModelNode repository,
+                                               String repositoryName ) throws XMLStreamException {
 
         writer.writeStartElement(Element.REPOSITORY.getLocalName());
+        writer.writeAttribute(Attribute.NAME.getLocalName(), repositoryName);
 
         // Repository attributes ...
-        writeAttribute(writer, repository, ModelAttributes.NAME);
         writeAttribute(writer, repository, ModelAttributes.CACHE_NAME);
         writeAttribute(writer, repository, ModelAttributes.CACHE_CONTAINER);
         writeAttribute(writer, repository, ModelAttributes.JNDI_NAME);
@@ -119,43 +122,34 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
                                                  Element.INDEXING,
                                                  started);
             } else if (ModelKeys.ANALYZER_CLASSNAME.equals(key)) {
-                started = startIfNeeded(writer, Element.INDEXING, started);
                 started = startAndWriteAttribute(writer,
                                                  repository,
                                                  ModelAttributes.ANALYZER_CLASSNAME,
                                                  Element.INDEXING,
                                                  started);
             } else if (ModelKeys.ANALYZER_MODULE.equals(key)) {
-                started = startIfNeeded(writer, Element.INDEXING, started);
                 started = startAndWriteAttribute(writer, repository, ModelAttributes.ANALYZER_MODULE, Element.INDEXING, started);
             } else if (ModelKeys.ASYNC_THREAD_POOL_SIZE.equals(key)) {
-                started = startIfNeeded(writer, Element.INDEXING, started);
                 started = startAndWriteAttribute(writer,
                                                  repository,
                                                  ModelAttributes.ASYNC_THREAD_POOL_SIZE,
                                                  Element.INDEXING,
                                                  started);
             } else if (ModelKeys.ASYNC_MAX_QUEUE_SIZE.equals(key)) {
-                started = startIfNeeded(writer, Element.INDEXING, started);
                 started = startAndWriteAttribute(writer,
                                                  repository,
                                                  ModelAttributes.ASYNC_MAX_QUEUE_SIZE,
                                                  Element.INDEXING,
                                                  started);
             } else if (ModelKeys.BATCH_SIZE.equals(key)) {
-                started = startIfNeeded(writer, Element.INDEXING, started);
                 started = startAndWriteAttribute(writer, repository, ModelAttributes.BATCH_SIZE, Element.INDEXING, started);
             } else if (ModelKeys.MODE.equals(key)) {
-                started = startIfNeeded(writer, Element.INDEXING, started);
                 started = startAndWriteAttribute(writer, repository, ModelAttributes.MODE, Element.INDEXING, started);
             } else if (ModelKeys.READER_STRATEGY.equals(key)) {
-                started = startIfNeeded(writer, Element.INDEXING, started);
                 started = startAndWriteAttribute(writer, repository, ModelAttributes.READER_STRATEGY, Element.INDEXING, started);
             } else if (ModelKeys.THREAD_POOL.equals(key)) {
-                started = startIfNeeded(writer, Element.INDEXING, started);
                 started = startAndWriteAttribute(writer, repository, ModelAttributes.THREAD_POOL, Element.INDEXING, started);
             } else if (key.startsWith("hibernate")) {
-                started = startIfNeeded(writer, Element.INDEXING, started);
                 writer.writeAttribute(key, repository.get(key).asString());
             } // otherwise ignore ...
         }
@@ -175,108 +169,109 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
     }
 
     private void writeIndexStorageAttributes( XMLExtendedStreamWriter writer,
-                                              ModelNode storage ) throws XMLStreamException {
+                                              ModelNode storage,
+                                              Element element,
+                                              boolean started ) throws XMLStreamException {
         for (String key : storage.keys()) {
-            if (ModelKeys.NAME.equals(key)) {
+            if (ModelKeys.INDEX_STORAGE_TYPE.equals(key)) {
                 // skip this ...
             }
             // General indexing parameters ...
             else if (ModelKeys.INDEX_FORMAT.equals(key)) {
-                writeAttribute(writer, storage, ModelAttributes.INDEX_FORMAT);
+                started = startAndWriteAttribute(writer, storage, ModelAttributes.INDEX_FORMAT, element, started);
             }
             // File-related ...
             else if (ModelKeys.PATH.equals(key)) {
-                writeAttribute(writer, storage, ModelAttributes.PATH);
+                started = startAndWriteAttribute(writer, storage, ModelAttributes.PATH, element, started);
             } else if (ModelKeys.RELATIVE_TO.equals(key)) {
-                writeAttribute(writer, storage, ModelAttributes.RELATIVE_TO);
+                started = startAndWriteAttribute(writer, storage, ModelAttributes.RELATIVE_TO, element, started);
             } else if (ModelKeys.SOURCE_PATH.equals(key)) {
-                writeAttribute(writer, storage, ModelAttributes.SOURCE_PATH);
+                started = startAndWriteAttribute(writer, storage, ModelAttributes.SOURCE_PATH, element, started);
             } else if (ModelKeys.SOURCE_RELATIVE_TO.equals(key)) {
-                writeAttribute(writer, storage, ModelAttributes.SOURCE_RELATIVE_TO);
+                started = startAndWriteAttribute(writer, storage, ModelAttributes.SOURCE_RELATIVE_TO, element, started);
             } else if (ModelKeys.ACCESS_TYPE.equals(key)) {
-                writeAttribute(writer, storage, ModelAttributes.ACCESS_TYPE);
+                started = startAndWriteAttribute(writer, storage, ModelAttributes.ACCESS_TYPE, element, started);
             } else if (ModelKeys.LOCKING_STRATEGY.equals(key)) {
-                writeAttribute(writer, storage, ModelAttributes.LOCKING_STRATEGY);
+                started = startAndWriteAttribute(writer, storage, ModelAttributes.LOCKING_STRATEGY, element, started);
             } else if (ModelKeys.REFRESH_PERIOD.equals(key)) {
-                writeAttribute(writer, storage, ModelAttributes.REFRESH_PERIOD);
+                started = startAndWriteAttribute(writer, storage, ModelAttributes.REFRESH_PERIOD, element, started);
             } else if (ModelKeys.COPY_BUFFER_SIZE.equals(key)) {
-                writeAttribute(writer, storage, ModelAttributes.COPY_BUFFER_SIZE);
+                started = startAndWriteAttribute(writer, storage, ModelAttributes.COPY_BUFFER_SIZE, element, started);
             }
             // JMS-backend (for master & slave file storage only) ...
             else if (ModelKeys.CONNECTION_FACTORY_JNDI_NAME.equals(key)) {
-                writeAttribute(writer, storage, ModelAttributes.CONNECTION_FACTORY_JNDI_NAME);
+                started = startAndWriteAttribute(writer, storage, ModelAttributes.CONNECTION_FACTORY_JNDI_NAME, element, started);
             } else if (ModelKeys.QUEUE_JNDI_NAME.equals(key)) {
-                writeAttribute(writer, storage, ModelAttributes.QUEUE_JNDI_NAME);
+                started = startAndWriteAttribute(writer, storage, ModelAttributes.QUEUE_JNDI_NAME, element, started);
             }
             // Cache-related ...
             else if (ModelKeys.LOCK_CACHE_NAME.equals(key)) {
-                writeAttribute(writer, storage, ModelAttributes.LOCK_CACHE_NAME);
+                started = startAndWriteAttribute(writer, storage, ModelAttributes.LOCK_CACHE_NAME, element, started);
             } else if (ModelKeys.DATA_CACHE_NAME.equals(key)) {
-                writeAttribute(writer, storage, ModelAttributes.DATA_CACHE_NAME);
+                started = startAndWriteAttribute(writer, storage, ModelAttributes.DATA_CACHE_NAME, element, started);
             } else if (ModelKeys.METADATA_CACHE_NAME.equals(key)) {
-                writeAttribute(writer, storage, ModelAttributes.METADATA_CACHE_NAME);
+                started = startAndWriteAttribute(writer, storage, ModelAttributes.METADATA_CACHE_NAME, element, started);
             } else if (ModelKeys.CACHE_CONTAINER_JNDI_NAME.equals(key)) {
-                writeAttribute(writer, storage, ModelAttributes.CACHE_CONTAINER_JNDI_NAME);
+                started = startAndWriteAttribute(writer, storage, ModelAttributes.CACHE_CONTAINER_JNDI_NAME, element, started);
             } else if (ModelKeys.DATA_CACHE_NAME.equals(key)) {
-                writeAttribute(writer, storage, ModelAttributes.DATA_CACHE_NAME);
+                started = startAndWriteAttribute(writer, storage, ModelAttributes.DATA_CACHE_NAME, element, started);
             }
             // Custom ...
             else if (ModelKeys.CLASSNAME.equals(key)) {
-                writeAttribute(writer, storage, ModelAttributes.CLASSNAME);
+                started = startAndWriteAttribute(writer, storage, ModelAttributes.CLASSNAME, element, started);
             } else if (ModelKeys.MODULE.equals(key)) {
-                writeAttribute(writer, storage, ModelAttributes.CLASSNAME);
+                started = startAndWriteAttribute(writer, storage, ModelAttributes.CLASSNAME, element, started);
             }
             // Extra parameters ...
             else {
                 writer.writeAttribute(key, storage.get(key).asString());
             }
         }
+        if (started) {
+            writer.writeEndElement();
+        }
     }
 
     private void writeIndexStorage( XMLExtendedStreamWriter writer,
                                     ModelNode repository ) throws XMLStreamException {
-        if (has(repository, ModelKeys.INDEX_STORAGE)) {
-            ModelNode indexStorage = repository.get(ModelKeys.INDEX_STORAGE);
-            if (has(indexStorage, ModelKeys.RAM_INDEX_STORAGE)) {
+        if (has(repository, ModelKeys.INDEX_STORAGE, ModelKeys.INDEX_STORAGE_NAME)) {
+            ModelNode indexStorage = repository.get(ModelKeys.INDEX_STORAGE, ModelKeys.INDEX_STORAGE_NAME);
+            String storageType = indexStorage.get(ModelKeys.INDEX_STORAGE_TYPE).asString();
+            if (ModelKeys.RAM_INDEX_STORAGE.equals(storageType)) {
+                // Have to write out this element, because there are no attributes (other than the ignored NAME)
+                // and it's not the default storage. So we have to start the element and then write any attributes ...
                 writer.writeStartElement(Element.RAM_INDEX_STORAGE.getLocalName());
-                writeIndexStorageAttributes(writer, indexStorage.get(ModelKeys.RAM_INDEX_STORAGE));
-                writer.writeEndElement();
-            } else if (has(indexStorage, ModelKeys.LOCAL_FILE_INDEX_STORAGE)) {
-                writer.writeStartElement(Element.LOCAL_FILE_INDEX_STORAGE.getLocalName());
-                writeIndexStorageAttributes(writer, indexStorage.get(ModelKeys.LOCAL_FILE_INDEX_STORAGE));
-                writer.writeEndElement();
-            } else if (has(indexStorage, ModelKeys.MASTER_FILE_INDEX_STORAGE)) {
-                writer.writeStartElement(Element.MASTER_FILE_INDEX_STORAGE.getLocalName());
-                writeIndexStorageAttributes(writer, indexStorage.get(ModelKeys.MASTER_FILE_INDEX_STORAGE));
-                writer.writeEndElement();
-            } else if (has(indexStorage, ModelKeys.SLAVE_FILE_INDEX_STORAGE)) {
-                writer.writeStartElement(Element.SLAVE_FILE_INDEX_STORAGE.getLocalName());
-                writeIndexStorageAttributes(writer, indexStorage.get(ModelKeys.SLAVE_FILE_INDEX_STORAGE));
-                writer.writeEndElement();
-            } else if (has(indexStorage, ModelKeys.CACHE_INDEX_STORAGE)) {
-                writer.writeStartElement(Element.CACHE_INDEX_STORAGE.getLocalName());
-                writeIndexStorageAttributes(writer, indexStorage.get(ModelKeys.CACHE_INDEX_STORAGE));
-                writer.writeEndElement();
-            } else if (has(indexStorage, ModelKeys.CUSTOM_INDEX_STORAGE)) {
-                writer.writeStartElement(Element.CUSTOM_INDEX_STORAGE.getLocalName());
-                writeIndexStorageAttributes(writer, indexStorage.get(ModelKeys.CUSTOM_INDEX_STORAGE));
-                writer.writeEndElement();
+                writeIndexStorageAttributes(writer, indexStorage, Element.RAM_INDEX_STORAGE, true);
+            } else if (ModelKeys.LOCAL_FILE_INDEX_STORAGE.equals(storageType)) {
+                writeIndexStorageAttributes(writer, indexStorage, Element.LOCAL_FILE_INDEX_STORAGE, false);
+            } else if (ModelKeys.MASTER_FILE_INDEX_STORAGE.equals(storageType)) {
+                writeIndexStorageAttributes(writer, indexStorage, Element.MASTER_FILE_INDEX_STORAGE, false);
+            } else if (ModelKeys.SLAVE_FILE_INDEX_STORAGE.equals(storageType)) {
+                writeIndexStorageAttributes(writer, indexStorage, Element.SLAVE_FILE_INDEX_STORAGE, false);
+            } else if (ModelKeys.CACHE_INDEX_STORAGE.equals(storageType)) {
+                writeIndexStorageAttributes(writer, indexStorage, Element.CACHE_INDEX_STORAGE, false);
+            } else if (ModelKeys.CUSTOM_INDEX_STORAGE.equals(storageType)) {
+                writeIndexStorageAttributes(writer, indexStorage, Element.CUSTOM_INDEX_STORAGE, false);
             }
         }
     }
 
     private void writeBinaryStorage( XMLExtendedStreamWriter writer,
                                      ModelNode repository ) throws XMLStreamException {
-        if (has(repository, ModelKeys.BINARY_STORAGE)) {
+        if (has(repository, ModelKeys.BINARY_STORAGE, ModelKeys.BINARY_STORAGE_NAME)) {
             ModelNode binaryStorage = repository.get(ModelKeys.BINARY_STORAGE);
-            if (has(binaryStorage, ModelKeys.FILE_BINARY_STORAGE)) {
+            String storageType = binaryStorage.get(ModelKeys.BINARY_STORAGE_TYPE).asString();
+            if (ModelKeys.FILE_BINARY_STORAGE.equals(storageType)) {
+                // This is the default, but there is no default value for the ModelAttributes.PATH (which is required),
+                // which means we always have to write this out. If it is the default binary storage, then there
+                // won't even be a 'binary-storage=BINARIES' model node.
                 ModelNode storage = binaryStorage.get(ModelKeys.FILE_BINARY_STORAGE);
                 writer.writeStartElement(Element.FILE_BINARY_STORAGE.getLocalName());
                 writeAttribute(writer, storage, ModelAttributes.MINIMUM_BINARY_SIZE);
                 writeAttribute(writer, storage, ModelAttributes.PATH);
                 writeAttribute(writer, storage, ModelAttributes.RELATIVE_TO);
                 writer.writeEndElement();
-            } else if (has(binaryStorage, ModelKeys.CACHE_BINARY_STORAGE)) {
+            } else if (ModelKeys.CACHE_BINARY_STORAGE.equals(storageType)) {
                 ModelNode storage = binaryStorage.get(ModelKeys.CACHE_BINARY_STORAGE);
                 writer.writeStartElement(Element.CACHE_BINARY_STORAGE.getLocalName());
                 writeAttribute(writer, storage, ModelAttributes.MINIMUM_BINARY_SIZE);
@@ -284,13 +279,13 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
                 writeAttribute(writer, storage, ModelAttributes.METADATA_CACHE_NAME);
                 writeAttribute(writer, storage, ModelAttributes.CACHE_CONTAINER);
                 writer.writeEndElement();
-            } else if (has(binaryStorage, ModelKeys.DB_BINARY_STORAGE)) {
+            } else if (ModelKeys.DB_BINARY_STORAGE.equals(storageType)) {
                 ModelNode storage = binaryStorage.get(ModelKeys.DB_BINARY_STORAGE);
                 writer.writeStartElement(Element.DB_BINARY_STORAGE.getLocalName());
                 writeAttribute(writer, storage, ModelAttributes.MINIMUM_BINARY_SIZE);
                 writeAttribute(writer, storage, ModelAttributes.DATA_SOURCE_JNDI_NAME);
                 writer.writeEndElement();
-            } else if (has(binaryStorage, ModelKeys.CUSTOM_BINARY_STORAGE)) {
+            } else if (ModelKeys.CUSTOM_BINARY_STORAGE.equals(storageType)) {
                 ModelNode storage = binaryStorage.get(ModelKeys.CUSTOM_BINARY_STORAGE);
                 writer.writeStartElement(Element.CUSTOM_BINARY_STORAGE.getLocalName());
                 writeAttribute(writer, storage, ModelAttributes.MINIMUM_BINARY_SIZE);
@@ -337,7 +332,7 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
                 writer.writeStartElement(Element.SEQUENCER.getLocalName());
                 writer.writeAttribute(Attribute.NAME.getLocalName(), sequencer.getName());
                 ModelNode prop = sequencer.getValue();
-                ModelAttributes.CLASSNAME.marshallAsAttribute(prop, writer);
+                ModelAttributes.SEQUENCER_CLASSNAME.marshallAsAttribute(prop, writer);
                 ModelAttributes.MODULE.marshallAsAttribute(prop, writer);
                 List<ModelNode> pathExpressions = prop.get(ModelKeys.PATH_EXPRESSIONS).asList();
                 switch (pathExpressions.size()) {
@@ -366,6 +361,15 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
         return node.isDefined() && node.has(name) && node.get(name).isDefined();
     }
 
+    private boolean has( ModelNode node,
+                         String... names ) {
+        for (String name : names) {
+            if (!node.isDefined() || !node.has(name)) return false;
+            node = node.get(name);
+        }
+        return true;
+    }
+
     private boolean startAndWriteAttribute( final XMLExtendedStreamWriter writer,
                                             final ModelNode node,
                                             final SimpleAttributeDefinition modelAttribute,
@@ -391,7 +395,7 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
 
     private void writeAttributeAsList( XMLExtendedStreamWriter writer,
                                        final ModelNode node,
-                                       final SimpleListAttributeDefinition modelAttribute ) throws XMLStreamException {
+                                       final ListAttributeDefinition modelAttribute ) throws XMLStreamException {
         if (modelAttribute.isMarshallable(node, false)) {
             StringBuilder sb = new StringBuilder();
             Iterator<ModelNode> iter = node.get(modelAttribute.getName()).asList().iterator();

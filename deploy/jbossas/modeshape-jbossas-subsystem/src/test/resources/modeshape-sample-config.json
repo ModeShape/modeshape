@@ -21,7 +21,6 @@
             "indexing-thread-pool" : "modeshape-workers",
             "jndi-name" : "java:jcr/local/modeshape_repo1",
             "minimum-binary-size" : 4096,
-            "name" : "sample1",
             "predefined-workspace-names" : null,
             "rebuild-indexes-upon-startup" : "IF_MISSING",
             "security-domain" : "modeshape-security",
@@ -30,13 +29,11 @@
                 "modeshape-sequencer-ddl" : {
                     "classname" : "ddl",
                     "module" : null,
-                    "name" : "modeshape-sequencer-ddl",
                     "path-expressions" : ["//a/b"]
                 },
                 "modeshape-sequencer-java" : {
                     "classname" : "java",
                     "module" : null,
-                    "name" : "modeshape-sequencer-java",
                     "path-expressions" : ["//a/b"]
                 }
             }
@@ -61,7 +58,6 @@
             "indexing-thread-pool" : "modeshape-workers",
             "jndi-name" : null,
             "minimum-binary-size" : 4096,
-            "name" : "sample2",
             "predefined-workspace-names" : null,
             "rebuild-indexes-upon-startup" : "IF_MISSING",
             "security-domain" : "modeshape-security",
@@ -70,7 +66,6 @@
                 "modeshape-sequencer-ddl" : {
                     "classname" : "ddl",
                     "module" : null,
-                    "name" : "modeshape-sequencer-ddl",
                     "path-expressions" : [
                         "//a/b/",
                         "//a/b2/"
@@ -79,7 +74,6 @@
                 "modeshape-sequencer-java" : {
                     "classname" : "java",
                     "module" : null,
-                    "name" : "modeshape-sequencer-java",
                     "path-expressions" : ["//a/b"]
                 }
             }

@@ -45,7 +45,7 @@ public class AddFileBinaryStorage extends AbstractAddBinaryStorage {
 
     public static final AddFileBinaryStorage INSTANCE = new AddFileBinaryStorage();
 
-    protected final String DATA_DIR_VARIABLE = "jboss.server.data.dir";
+    protected static final String DATA_DIR_VARIABLE = "jboss.server.data.dir";
 
     private String binaryStoragePathInDataDirectory;
 
