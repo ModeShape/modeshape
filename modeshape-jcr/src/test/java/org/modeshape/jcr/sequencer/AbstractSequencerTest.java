@@ -23,25 +23,9 @@
  */
 package org.modeshape.jcr.sequencer;
 
-import javax.jcr.Node;
-import javax.jcr.RepositoryException;
-import javax.jcr.Session;
-import javax.jcr.Workspace;
-import javax.jcr.observation.EventIterator;
-import javax.jcr.observation.EventListener;
-import javax.jcr.observation.EventListenerIterator;
-import javax.jcr.observation.ObservationManager;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertTrue;
-import org.junit.Assert;
-import org.modeshape.jcr.Environment;
-import org.modeshape.jcr.JcrLexicon;
-import org.modeshape.jcr.JcrSession;
-import org.modeshape.jcr.RepositoryConfiguration;
-import org.modeshape.jcr.SingleUseAbstractTest;
-import org.modeshape.jcr.api.JcrConstants;
-import org.modeshape.jcr.api.observation.Event;
 import static org.modeshape.jcr.api.observation.Event.Sequencing.NODE_SEQUENCED;
 import static org.modeshape.jcr.api.observation.Event.Sequencing.NODE_SEQUENCING_FAILURE;
 import static org.modeshape.jcr.api.observation.Event.Sequencing.OUTPUT_PATH;
@@ -50,19 +34,36 @@ import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCED_NODE_
 import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCED_NODE_PATH;
 import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCER_NAME;
 import static org.modeshape.jcr.api.observation.Event.Sequencing.USER_ID;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import javax.jcr.Node;
+import javax.jcr.RepositoryException;
+import javax.jcr.Session;
+import javax.jcr.Workspace;
+import javax.jcr.observation.EventIterator;
+import javax.jcr.observation.EventListener;
+import javax.jcr.observation.EventListenerIterator;
+import javax.jcr.observation.ObservationManager;
+import org.junit.Assert;
+import org.modeshape.jcr.Environment;
+import org.modeshape.jcr.JcrLexicon;
+import org.modeshape.jcr.JcrSession;
+import org.modeshape.jcr.RepositoryConfiguration;
+import org.modeshape.jcr.SingleUseAbstractTest;
+import org.modeshape.jcr.api.JcrConstants;
+import org.modeshape.jcr.api.observation.Event;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Class which serves as base for various sequencer unit tests. In addition to this, it uses the sequencing events fired by the
- * {@link org.modeshape.jcr.JcrObservationManager} to perform various assertions and therefore, acts as a test for those as well.
- *
+ * Class which serves as base for various sequencer unit tests. In addition to this, it uses the sequencing events fired by
+ * ModeShape's {@link javax.jcr.observation.ObservationManager} to perform various assertions and therefore, acts as a test for
+ * those as well.
+ * 
  * @author Horia Chiorean
  */
 public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
@@ -85,14 +86,14 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
     private final ConcurrentHashMap<String, CountDownLatch> nodeSequencedLatches = new ConcurrentHashMap<String, CountDownLatch>();
 
     /**
-     * A [node path, latch] map which is used to block tests waiting for a sequencing failure, until either the failure has occurred
-     * or a timeout occurs
+     * A [node path, latch] map which is used to block tests waiting for a sequencing failure, until either the failure has
+     * occurred or a timeout occurs
      */
     private final ConcurrentHashMap<String, CountDownLatch> sequencingFailureLatches = new ConcurrentHashMap<String, CountDownLatch>();
 
     /**
-     * A [sequenced node path, event] map which will hold all the received sequencing events, both in failure and non-failure cases,
-     * using the path of the sequenced node as key.
+     * A [sequenced node path, event] map which will hold all the received sequencing events, both in failure and non-failure
+     * cases, using the path of the sequenced node as key.
      */
     private final ConcurrentHashMap<String, Event> sequencingEvents = new ConcurrentHashMap<String, Event>();
 
@@ -105,16 +106,21 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
         addSequencingListeners(session);
     }
 
-    protected void addSequencingListeners(JcrSession session) throws RepositoryException {
+    protected void addSequencingListeners( JcrSession session ) throws RepositoryException {
         observationManager = ((Workspace)session.getWorkspace()).getObservationManager();
         observationManager.addEventListener(new SequencingListener(), NODE_SEQUENCED, null, true, null, null, false);
-        observationManager.addEventListener(new SequencingFailureListener(), NODE_SEQUENCING_FAILURE, null, true, null, null,
+        observationManager.addEventListener(new SequencingFailureListener(),
+                                            NODE_SEQUENCING_FAILURE,
+                                            null,
+                                            true,
+                                            null,
+                                            null,
                                             false);
     }
 
     @Override
     public void afterEach() throws Exception {
-        for (EventListenerIterator it = observationManager.getRegisteredEventListeners(); it.hasNext(); ) {
+        for (EventListenerIterator it = observationManager.getRegisteredEventListeners(); it.hasNext();) {
             observationManager.removeEventListener(it.nextEventListener());
         }
         super.afterEach();
@@ -137,7 +143,7 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
     /**
      * Returns an input stream to a JSON file which will be used to configure the repository. By default, this is
      * config/repot-config.json
-     *
+     * 
      * @return a {@code InputStream} instance
      */
     protected InputStream getRepositoryConfigStream() {
@@ -146,7 +152,7 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
 
     /**
      * Creates a nt:file node, under the root node, at the given path and with the jcr:data property pointing at the filepath.
-     *
+     * 
      * @param nodeRelativePath the path under the root node, where the nt:file will be created.
      * @param filePath a path relative to {@link Class#getResourceAsStream(String)} where a file is expected at runtime
      * @return the new node
@@ -167,7 +173,12 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
 
     /**
      * Retrieves a sequenced node using 5 seconds as maximum wait time.
-     *
+     * 
+     * @param parentNode an existing {@link Node}
+     * @param relativePath the path under the parent node at which the sequenced node is expected to appear (note that this must
+     *        be the path to the "new" node, always.
+     * @return either the sequenced node or null, if something has failed.
+     * @throws Exception if anything unexpected happens
      * @see AbstractSequencerTest#getOutputNode(javax.jcr.Node, String, int)
      */
     protected Node getOutputNode( Node parentNode,
@@ -180,10 +191,10 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
      * The sequenced node "appears" when the {@link SequencingListener} is notified of the sequencing process. The thread which
      * calls this method either returns immediately if the node has already been sequenced, or waits a number of seconds for it to
      * become available.
-     *
+     * 
      * @param parentNode an existing {@link Node}
      * @param relativePath the path under the parent node at which the sequenced node is expected to appear (note that this must
-     * be the path to the "new" node, always.
+     *        be the path to the "new" node, always.
      * @param waitTimeSeconds the max number of seconds to wait.
      * @return either the sequenced node or null, if something has failed.
      * @throws Exception if anything unexpected happens
@@ -192,8 +203,7 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
                                   String relativePath,
                                   int waitTimeSeconds ) throws Exception {
         String parentNodePath = parentNode.getPath();
-        String expectedPath = parentNodePath.endsWith(
-                "/") ? parentNodePath + relativePath : parentNodePath + "/" + relativePath;
+        String expectedPath = parentNodePath.endsWith("/") ? parentNodePath + relativePath : parentNodePath + "/" + relativePath;
 
         return getOutputNode(expectedPath, waitTimeSeconds);
     }
@@ -204,9 +214,10 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
 
     /**
      * Retrieves a new node under the given path, as a result of sequecing, or returns null if the given timeout occurs.
+     * 
      * @param expectedPath
      * @param waitTimeSeconds
-     * @return
+     * @return the output node
      * @throws InterruptedException
      */
     protected Node getOutputNode( String expectedPath,
@@ -236,11 +247,13 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
 
     private void createWaitingLatchIfNecessary( String expectedPath,
                                                 ConcurrentHashMap<String, CountDownLatch> latchesMap )
-            throws InterruptedException {
+        throws InterruptedException {
         latchesMap.putIfAbsent(expectedPath, new CountDownLatch(1));
     }
 
-    private void smokeCheckSequencingEvent(Event event, int expectedEventType, String... expectedEventInfoKeys) throws RepositoryException {
+    private void smokeCheckSequencingEvent( Event event,
+                                            int expectedEventType,
+                                            String... expectedEventInfoKeys ) throws RepositoryException {
         assertEquals(event.getType(), expectedEventType);
         Map info = event.getInfo();
         assertNotNull(info);
@@ -260,12 +273,11 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
         return receivedEvent.getInfo();
     }
 
-
     protected Map assertSequencingEventInfo( Node sequencedNode,
-                                           String expectedUserId,
-                                           String expectedSequencerName,
-                                           String expectedSelectedPath,
-                                           String expectedOutputPath) throws RepositoryException {
+                                             String expectedUserId,
+                                             String expectedSequencerName,
+                                             String expectedSelectedPath,
+                                             String expectedOutputPath ) throws RepositoryException {
         Map sequencingEventInfo = getSequencingEventInfo(sequencedNode);
         Assert.assertEquals(expectedUserId, sequencingEventInfo.get(Event.Sequencing.USER_ID));
         Assert.assertEquals(expectedSequencerName, sequencingEventInfo.get(Event.Sequencing.SEQUENCER_NAME));

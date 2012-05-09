@@ -44,8 +44,10 @@ public class ModeShapeExtension implements Extension {
 
     private static final PathElement repositoryPath = PathElement.pathElement(ModelKeys.REPOSITORY);
     private static final PathElement sequencerPath = PathElement.pathElement(ModelKeys.SEQUENCER);
-    private static final PathElement indexStoragePath = PathElement.pathElement(ModelKeys.INDEX_STORAGE);
-    private static final PathElement binaryStoragePath = PathElement.pathElement(ModelKeys.BINARY_STORAGE);
+    private static final PathElement indexStoragePath = PathElement.pathElement(ModelKeys.INDEX_STORAGE,
+                                                                                ModelKeys.INDEX_STORAGE_NAME);
+    private static final PathElement binaryStoragePath = PathElement.pathElement(ModelKeys.BINARY_STORAGE,
+                                                                                 ModelKeys.BINARY_STORAGE_NAME);
 
     @Override
     public void initialize( ExtensionContext context ) {
@@ -69,113 +71,85 @@ public class ModeShapeExtension implements Extension {
                                                     false);
 
         // Repository submodel
-        final ManagementResourceRegistration repositorySubsystem = modeShapeSubsystem.registerSubModel(repositoryPath,
-                                                                                                       ModeShapeSubsystemProviders.REPOSITORY);
-        repositorySubsystem.registerOperationHandler(ADD,
-                                                     AddRepository.INSTANCE,
-                                                     ModeShapeSubsystemProviders.REPOSITORY_ADD,
-                                                     false);
-        repositorySubsystem.registerOperationHandler(REMOVE,
-                                                     RemoveRepository.INSTANCE,
-                                                     ModeShapeSubsystemProviders.REPOSITORY_REMOVE,
-                                                     false);
+        final ManagementResourceRegistration repositorySubmodel = modeShapeSubsystem.registerSubModel(repositoryPath,
+                                                                                                      ModeShapeSubsystemProviders.REPOSITORY);
+        repositorySubmodel.registerOperationHandler(ADD,
+                                                    AddRepository.INSTANCE,
+                                                    ModeShapeSubsystemProviders.REPOSITORY_ADD,
+                                                    false);
+        repositorySubmodel.registerOperationHandler(REMOVE,
+                                                    RemoveRepository.INSTANCE,
+                                                    ModeShapeSubsystemProviders.REPOSITORY_REMOVE,
+                                                    false);
+        RepositoryWriteAttributeHandler.INSTANCE.registerAttributes(repositorySubmodel);
 
         // Sequencer submodel
-        final ManagementResourceRegistration sequencerConfig = repositorySubsystem.registerSubModel(sequencerPath,
-                                                                                                    ModeShapeSubsystemProviders.SEQUENCER);
-        sequencerConfig.registerOperationHandler(ADD, AddSequencer.INSTANCE, ModeShapeSubsystemProviders.SEQUENCER_ADD, false);
-        sequencerConfig.registerOperationHandler(REMOVE,
-                                                 RemoveSequencer.INSTANCE,
-                                                 ModeShapeSubsystemProviders.SEQUENCER_REMOVE,
-                                                 false);
+        final ManagementResourceRegistration sequencerSubmodel = repositorySubmodel.registerSubModel(sequencerPath,
+                                                                                                     ModeShapeSubsystemProviders.SEQUENCER);
+        sequencerSubmodel.registerOperationHandler(ADD, AddSequencer.INSTANCE, ModeShapeSubsystemProviders.SEQUENCER_ADD, false);
+        sequencerSubmodel.registerOperationHandler(REMOVE,
+                                                   RemoveSequencer.INSTANCE,
+                                                   ModeShapeSubsystemProviders.SEQUENCER_REMOVE,
+                                                   false);
+        SequencerWriteAttributeHandler.INSTANCE.registerAttributes(sequencerSubmodel);
 
         // Index storage submodel
-        final ManagementResourceRegistration indexStorageConfig = repositorySubsystem.registerSubModel(indexStoragePath,
-                                                                                                       ModeShapeSubsystemProviders.INDEX_STORAGE);
-        indexStorageConfig.registerOperationHandler(ModelKeys.ADD_RAM_INDEX_STORAGE,
-                                                    AddRamIndexStorage.INSTANCE,
-                                                    ModeShapeSubsystemProviders.RAM_INDEX_STORAGE_ADD,
-                                                    false);
-        indexStorageConfig.registerOperationHandler(ModelKeys.REMOVE_RAM_INDEX_STORAGE,
-                                                    RemoveRamIndexStorage.INSTANCE,
-                                                    ModeShapeSubsystemProviders.RAM_INDEX_STORAGE_REMOVE,
-                                                    false);
-        indexStorageConfig.registerOperationHandler(ModelKeys.ADD_LOCAL_FILE_INDEX_STORAGE,
-                                                    AddLocalFileSystemIndexStorage.INSTANCE,
-                                                    ModeShapeSubsystemProviders.LOCAL_FILE_INDEX_STORAGE_ADD,
-                                                    false);
-        indexStorageConfig.registerOperationHandler(ModelKeys.REMOVE_LOCAL_FILE_INDEX_STORAGE,
-                                                    RemoveLocalFileIndexStorage.INSTANCE,
-                                                    ModeShapeSubsystemProviders.LOCAL_FILE_INDEX_STORAGE_REMOVE,
-                                                    false);
-        indexStorageConfig.registerOperationHandler(ModelKeys.ADD_MASTER_FILE_INDEX_STORAGE,
-                                                    AddMasterFileSystemIndexStorage.INSTANCE,
-                                                    ModeShapeSubsystemProviders.MASTER_FILE_INDEX_STORAGE_ADD,
-                                                    false);
-        indexStorageConfig.registerOperationHandler(ModelKeys.REMOVE_MASTER_FILE_INDEX_STORAGE,
-                                                    RemoveMasterFileIndexStorage.INSTANCE,
-                                                    ModeShapeSubsystemProviders.MASTER_FILE_INDEX_STORAGE_REMOVE,
-                                                    false);
-        indexStorageConfig.registerOperationHandler(ModelKeys.ADD_SLAVE_FILE_INDEX_STORAGE,
-                                                    AddSlaveFileSystemIndexStorage.INSTANCE,
-                                                    ModeShapeSubsystemProviders.SLAVE_FILE_INDEX_STORAGE_ADD,
-                                                    false);
-        indexStorageConfig.registerOperationHandler(ModelKeys.REMOVE_SLAVE_FILE_INDEX_STORAGE,
-                                                    RemoveSlaveFileIndexStorage.INSTANCE,
-                                                    ModeShapeSubsystemProviders.SLAVE_FILE_INDEX_STORAGE_REMOVE,
-                                                    false);
-        indexStorageConfig.registerOperationHandler(ModelKeys.ADD_CACHE_INDEX_STORAGE,
-                                                    AddCacheIndexStorage.INSTANCE,
-                                                    ModeShapeSubsystemProviders.CACHE_INDEX_STORAGE_ADD,
-                                                    false);
-        indexStorageConfig.registerOperationHandler(ModelKeys.REMOVE_CACHE_INDEX_STORAGE,
-                                                    RemoveCacheIndexStorage.INSTANCE,
-                                                    ModeShapeSubsystemProviders.CACHE_INDEX_STORAGE_REMOVE,
-                                                    false);
-        indexStorageConfig.registerOperationHandler(ModelKeys.ADD_CUSTOM_INDEX_STORAGE,
-                                                    AddCustomIndexStorage.INSTANCE,
-                                                    ModeShapeSubsystemProviders.CUSTOM_INDEX_STORAGE_ADD,
-                                                    false);
-        indexStorageConfig.registerOperationHandler(ModelKeys.REMOVE_CUSTOM_INDEX_STORAGE,
-                                                    RemoveCustomIndexStorage.INSTANCE,
-                                                    ModeShapeSubsystemProviders.CUSTOM_INDEX_STORAGE_REMOVE,
-                                                    false);
+        final ManagementResourceRegistration indexStorageSubmodel = repositorySubmodel.registerSubModel(indexStoragePath,
+                                                                                                        ModeShapeSubsystemProviders.INDEX_STORAGE);
+        indexStorageSubmodel.registerOperationHandler(ModelKeys.ADD_RAM_INDEX_STORAGE,
+                                                      AddRamIndexStorage.INSTANCE,
+                                                      ModeShapeSubsystemProviders.RAM_INDEX_STORAGE_ADD,
+                                                      false);
+        indexStorageSubmodel.registerOperationHandler(ModelKeys.ADD_LOCAL_FILE_INDEX_STORAGE,
+                                                      AddLocalFileSystemIndexStorage.INSTANCE,
+                                                      ModeShapeSubsystemProviders.LOCAL_FILE_INDEX_STORAGE_ADD,
+                                                      false);
+        indexStorageSubmodel.registerOperationHandler(ModelKeys.ADD_MASTER_FILE_INDEX_STORAGE,
+                                                      AddMasterFileSystemIndexStorage.INSTANCE,
+                                                      ModeShapeSubsystemProviders.MASTER_FILE_INDEX_STORAGE_ADD,
+                                                      false);
+        indexStorageSubmodel.registerOperationHandler(ModelKeys.ADD_SLAVE_FILE_INDEX_STORAGE,
+                                                      AddSlaveFileSystemIndexStorage.INSTANCE,
+                                                      ModeShapeSubsystemProviders.SLAVE_FILE_INDEX_STORAGE_ADD,
+                                                      false);
+        indexStorageSubmodel.registerOperationHandler(ModelKeys.ADD_CACHE_INDEX_STORAGE,
+                                                      AddCacheIndexStorage.INSTANCE,
+                                                      ModeShapeSubsystemProviders.CACHE_INDEX_STORAGE_ADD,
+                                                      false);
+        indexStorageSubmodel.registerOperationHandler(ModelKeys.ADD_CUSTOM_INDEX_STORAGE,
+                                                      AddCustomIndexStorage.INSTANCE,
+                                                      ModeShapeSubsystemProviders.CUSTOM_INDEX_STORAGE_ADD,
+                                                      false);
+        indexStorageSubmodel.registerOperationHandler(ModelKeys.REMOVE_INDEX_STORAGE,
+                                                      RemoveIndexStorage.INSTANCE,
+                                                      ModeShapeSubsystemProviders.INDEX_STORAGE_REMOVE,
+                                                      false);
+        IndexStorageWriteAttributeHandler.INSTANCE.registerAttributes(indexStorageSubmodel);
 
         // Binary storage submodel
-        final ManagementResourceRegistration binaryStorageConfig = repositorySubsystem.registerSubModel(binaryStoragePath,
-                                                                                                        ModeShapeSubsystemProviders.BINARY_STORAGE);
-        binaryStorageConfig.registerOperationHandler(ModelKeys.ADD_FILE_BINARY_STORAGE,
-                                                     AddFileBinaryStorage.INSTANCE,
-                                                     ModeShapeSubsystemProviders.FILE_BINARY_STORAGE_ADD,
-                                                     false);
-        binaryStorageConfig.registerOperationHandler(ModelKeys.REMOVE_FILE_BINARY_STORAGE,
-                                                     RemoveFileBinaryStorage.INSTANCE,
-                                                     ModeShapeSubsystemProviders.FILE_BINARY_STORAGE_REMOVE,
-                                                     false);
-        binaryStorageConfig.registerOperationHandler(ModelKeys.ADD_DB_BINARY_STORAGE,
-                                                     AddDatabaseBinaryStorage.INSTANCE,
-                                                     ModeShapeSubsystemProviders.DB_BINARY_STORAGE_ADD,
-                                                     false);
-        binaryStorageConfig.registerOperationHandler(ModelKeys.REMOVE_DB_BINARY_STORAGE,
-                                                     RemoveDatabaseBinaryStorage.INSTANCE,
-                                                     ModeShapeSubsystemProviders.DB_BINARY_STORAGE_REMOVE,
-                                                     false);
-        binaryStorageConfig.registerOperationHandler(ModelKeys.ADD_CACHE_BINARY_STORAGE,
-                                                     AddCacheBinaryStorage.INSTANCE,
-                                                     ModeShapeSubsystemProviders.CACHE_BINARY_STORAGE_ADD,
-                                                     false);
-        binaryStorageConfig.registerOperationHandler(ModelKeys.REMOVE_CACHE_BINARY_STORAGE,
-                                                     RemoveCacheBinaryStorage.INSTANCE,
-                                                     ModeShapeSubsystemProviders.CACHE_BINARY_STORAGE_REMOVE,
-                                                     false);
-        binaryStorageConfig.registerOperationHandler(ModelKeys.ADD_CUSTOM_BINARY_STORAGE,
-                                                     AddCustomBinaryStorage.INSTANCE,
-                                                     ModeShapeSubsystemProviders.CUSTOM_BINARY_STORAGE_ADD,
-                                                     false);
-        binaryStorageConfig.registerOperationHandler(ModelKeys.REMOVE_CUSTOM_BINARY_STORAGE,
-                                                     RemoveCustomBinaryStorage.INSTANCE,
-                                                     ModeShapeSubsystemProviders.CUSTOM_BINARY_STORAGE_REMOVE,
-                                                     false);
+        final ManagementResourceRegistration binaryStorageSubmodel = repositorySubmodel.registerSubModel(binaryStoragePath,
+                                                                                                         ModeShapeSubsystemProviders.BINARY_STORAGE);
+        binaryStorageSubmodel.registerOperationHandler(ModelKeys.ADD_FILE_BINARY_STORAGE,
+                                                       AddFileBinaryStorage.INSTANCE,
+                                                       ModeShapeSubsystemProviders.FILE_BINARY_STORAGE_ADD,
+                                                       false);
+        binaryStorageSubmodel.registerOperationHandler(ModelKeys.ADD_DB_BINARY_STORAGE,
+                                                       AddDatabaseBinaryStorage.INSTANCE,
+                                                       ModeShapeSubsystemProviders.DB_BINARY_STORAGE_ADD,
+                                                       false);
+        binaryStorageSubmodel.registerOperationHandler(ModelKeys.ADD_CACHE_BINARY_STORAGE,
+                                                       AddCacheBinaryStorage.INSTANCE,
+                                                       ModeShapeSubsystemProviders.CACHE_BINARY_STORAGE_ADD,
+                                                       false);
+        binaryStorageSubmodel.registerOperationHandler(ModelKeys.ADD_CUSTOM_BINARY_STORAGE,
+                                                       AddCustomBinaryStorage.INSTANCE,
+                                                       ModeShapeSubsystemProviders.CUSTOM_BINARY_STORAGE_ADD,
+                                                       false);
+        binaryStorageSubmodel.registerOperationHandler(ModelKeys.REMOVE_BINARY_STORAGE,
+                                                       RemoveBinaryStorage.INSTANCE,
+                                                       ModeShapeSubsystemProviders.BINARY_STORAGE_REMOVE,
+                                                       false);
+        BinaryStorageWriteAttributeHandler.INSTANCE.registerAttributes(binaryStorageSubmodel);
 
     }
 

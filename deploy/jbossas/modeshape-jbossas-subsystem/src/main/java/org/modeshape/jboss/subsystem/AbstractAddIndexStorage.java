@@ -51,26 +51,29 @@ public abstract class AbstractAddIndexStorage extends AbstractAddStepHandler {
                                   ModelNode model ) throws OperationFailedException {
         String opName = operation.get(OP).asString();
         if (ModelKeys.ADD_RAM_INDEX_STORAGE.equals(opName)) {
-            populate(operation, model, ModelAttributes.RAM_INDEX_STORAGE_ATTRIBUTES);
+            populate(operation, model, ModelKeys.RAM_INDEX_STORAGE, ModelAttributes.RAM_INDEX_STORAGE_ATTRIBUTES);
         } else if (ModelKeys.ADD_LOCAL_FILE_INDEX_STORAGE.equals(opName)) {
-            populate(operation, model, ModelAttributes.LOCAL_FILE_INDEX_STORAGE_ATTRIBUTES);
+            populate(operation, model, ModelKeys.LOCAL_FILE_INDEX_STORAGE, ModelAttributes.LOCAL_FILE_INDEX_STORAGE_ATTRIBUTES);
         } else if (ModelKeys.ADD_MASTER_FILE_INDEX_STORAGE.equals(opName)) {
-            populate(operation, model, ModelAttributes.MASTER_FILE_INDEX_STORAGE_ATTRIBUTES);
+            populate(operation, model, ModelKeys.MASTER_FILE_INDEX_STORAGE, ModelAttributes.MASTER_FILE_INDEX_STORAGE_ATTRIBUTES);
         } else if (ModelKeys.ADD_SLAVE_FILE_INDEX_STORAGE.equals(opName)) {
-            populate(operation, model, ModelAttributes.SLAVE_FILE_INDEX_STORAGE_ATTRIBUTES);
+            populate(operation, model, ModelKeys.SLAVE_FILE_INDEX_STORAGE, ModelAttributes.SLAVE_FILE_INDEX_STORAGE_ATTRIBUTES);
         } else if (ModelKeys.ADD_CACHE_INDEX_STORAGE.equals(opName)) {
-            populate(operation, model, ModelAttributes.CACHE_INDEX_STORAGE_ATTRIBUTES);
+            populate(operation, model, ModelKeys.CACHE_INDEX_STORAGE, ModelAttributes.CACHE_INDEX_STORAGE_ATTRIBUTES);
         } else if (ModelKeys.ADD_CUSTOM_INDEX_STORAGE.equals(opName)) {
-            populate(operation, model, ModelAttributes.CUSTOM_INDEX_STORAGE_ATTRIBUTES);
+            populate(operation, model, ModelKeys.CUSTOM_INDEX_STORAGE, ModelAttributes.CUSTOM_INDEX_STORAGE_ATTRIBUTES);
         }
     }
 
     static void populate( ModelNode operation,
                           ModelNode model,
+                          String modelName,
                           AttributeDefinition[] attributes ) throws OperationFailedException {
         for (AttributeDefinition attribute : attributes) {
             attribute.validateAndSet(operation, model);
         }
+        // Set the binary storage type last (overwriting any value that they've manually added) ...
+        model.get(ModelKeys.INDEX_STORAGE_TYPE).set(modelName);
     }
 
     @Override

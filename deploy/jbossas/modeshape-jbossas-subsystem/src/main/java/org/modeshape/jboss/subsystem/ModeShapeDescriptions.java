@@ -102,7 +102,8 @@ public class ModeShapeDescriptions {
         repository.get(CHILDREN, ModelKeys.INDEX_STORAGE, DESCRIPTION).set(indexDesc);
         repository.get(CHILDREN, ModelKeys.INDEX_STORAGE, MIN_OCCURS).set(0);
         repository.get(CHILDREN, ModelKeys.INDEX_STORAGE, MAX_OCCURS).set(1);
-        repository.get(CHILDREN, ModelKeys.INDEX_STORAGE, ALLOWED).setEmptyList().add(ModelKeys.INDEX_STORAGE);
+        repository.get(CHILDREN, ModelKeys.INDEX_STORAGE, ALLOWED).setEmptyList();
+        repository.get(CHILDREN, ModelKeys.INDEX_STORAGE, ALLOWED).add(ModelKeys.INDEX_STORAGE_NAME);
         repository.get(CHILDREN, ModelKeys.INDEX_STORAGE, MODEL_DESCRIPTION);
 
         // information about the binary storage child ...
@@ -110,7 +111,8 @@ public class ModeShapeDescriptions {
         repository.get(CHILDREN, ModelKeys.BINARY_STORAGE, DESCRIPTION).set(binaryDesc);
         repository.get(CHILDREN, ModelKeys.BINARY_STORAGE, MIN_OCCURS).set(0);
         repository.get(CHILDREN, ModelKeys.BINARY_STORAGE, MAX_OCCURS).set(1);
-        repository.get(CHILDREN, ModelKeys.BINARY_STORAGE, ALLOWED).setEmptyList().add(ModelKeys.BINARY_STORAGE);
+        repository.get(CHILDREN, ModelKeys.BINARY_STORAGE, ALLOWED).setEmptyList();
+        repository.get(CHILDREN, ModelKeys.BINARY_STORAGE, ALLOWED).add(ModelKeys.BINARY_STORAGE_NAME);
         repository.get(CHILDREN, ModelKeys.BINARY_STORAGE, MODEL_DESCRIPTION);
 
         // information about its child "sequencer"
@@ -183,14 +185,6 @@ public class ModeShapeDescriptions {
         return op;
     }
 
-    static ModelNode getRamIndexStorageRemoveDescription( Locale locale ) {
-        ResourceBundle resources = getResources(locale);
-        final ModelNode op = createOperationDescription(ModelKeys.REMOVE_RAM_INDEX_STORAGE,
-                                                        resources,
-                                                        "repository.ram-index-storage.remove");
-        return op;
-    }
-
     static ModelNode getCacheIndexStorageAddDescription( Locale locale ) {
         ResourceBundle resources = getResources(locale);
         final ModelNode op = createOperationDescription(ModelKeys.ADD_CACHE_INDEX_STORAGE,
@@ -200,14 +194,6 @@ public class ModeShapeDescriptions {
         for (AttributeDefinition attr : ModelAttributes.CACHE_INDEX_STORAGE_ATTRIBUTES) {
             attr.addOperationParameterDescription(resources, "repository.cache-index-storage", op);
         }
-        return op;
-    }
-
-    static ModelNode getCacheIndexStorageRemoveDescription( Locale locale ) {
-        ResourceBundle resources = getResources(locale);
-        final ModelNode op = createOperationDescription(ModelKeys.REMOVE_CACHE_INDEX_STORAGE,
-                                                        resources,
-                                                        "repository.cache-index-storage.remove");
         return op;
     }
 
@@ -223,14 +209,6 @@ public class ModeShapeDescriptions {
         return op;
     }
 
-    static ModelNode getCustomIndexStorageRemoveDescription( Locale locale ) {
-        ResourceBundle resources = getResources(locale);
-        final ModelNode op = createOperationDescription(ModelKeys.REMOVE_CUSTOM_INDEX_STORAGE,
-                                                        resources,
-                                                        "repository.custom-index-storage.remove");
-        return op;
-    }
-
     static ModelNode getLocalFileIndexStorageAddDescription( Locale locale ) {
         ResourceBundle resources = getResources(locale);
         final ModelNode op = createOperationDescription(ModelKeys.ADD_LOCAL_FILE_INDEX_STORAGE,
@@ -240,14 +218,6 @@ public class ModeShapeDescriptions {
         for (AttributeDefinition attr : ModelAttributes.LOCAL_FILE_INDEX_STORAGE_ATTRIBUTES) {
             attr.addOperationParameterDescription(resources, "repository.local-file-index-storage", op);
         }
-        return op;
-    }
-
-    static ModelNode getLocalFileIndexStorageRemoveDescription( Locale locale ) {
-        ResourceBundle resources = getResources(locale);
-        final ModelNode op = createOperationDescription(ModelKeys.REMOVE_LOCAL_FILE_INDEX_STORAGE,
-                                                        resources,
-                                                        "repository.local-file-index-storage.remove");
         return op;
     }
 
@@ -263,14 +233,6 @@ public class ModeShapeDescriptions {
         return op;
     }
 
-    static ModelNode getMasterFileIndexStorageRemoveDescription( Locale locale ) {
-        ResourceBundle resources = getResources(locale);
-        final ModelNode op = createOperationDescription(ModelKeys.REMOVE_MASTER_FILE_INDEX_STORAGE,
-                                                        resources,
-                                                        "repository.master-file-index-storage.remove");
-        return op;
-    }
-
     static ModelNode getSlaveFileIndexStorageAddDescription( Locale locale ) {
         ResourceBundle resources = getResources(locale);
         final ModelNode op = createOperationDescription(ModelKeys.ADD_SLAVE_FILE_INDEX_STORAGE,
@@ -283,11 +245,11 @@ public class ModeShapeDescriptions {
         return op;
     }
 
-    static ModelNode getSlaveFileIndexStorageRemoveDescription( Locale locale ) {
+    static ModelNode getIndexStorageRemoveDescription( Locale locale ) {
         ResourceBundle resources = getResources(locale);
-        final ModelNode op = createOperationDescription(ModelKeys.REMOVE_SLAVE_FILE_INDEX_STORAGE,
+        final ModelNode op = createOperationDescription(ModelKeys.REMOVE_INDEX_STORAGE,
                                                         resources,
-                                                        "repository.local-file-index-storage.remove");
+                                                        "repository.index-storage.remove");
         return op;
     }
 
@@ -309,10 +271,10 @@ public class ModeShapeDescriptions {
         return op;
     }
 
-    static ModelNode getFileBinaryStorageRemoveDescription( Locale locale ) {
+    static ModelNode getBinaryStorageRemoveDescription( Locale locale ) {
         ResourceBundle resources = getResources(locale);
-        final String key = "repository.file-binary-storage";
-        final ModelNode op = createOperationDescription(ModelKeys.REMOVE_FILE_BINARY_STORAGE, resources, key + ".remove");
+        final String key = "repository.binary-storage";
+        final ModelNode op = createOperationDescription(ModelKeys.REMOVE_BINARY_STORAGE, resources, key + ".remove");
         return op;
     }
 
@@ -327,13 +289,6 @@ public class ModeShapeDescriptions {
         return op;
     }
 
-    static ModelNode getCacheBinaryStorageRemoveDescription( Locale locale ) {
-        ResourceBundle resources = getResources(locale);
-        final String key = "repository.cache-binary-storage";
-        final ModelNode op = createOperationDescription(ModelKeys.REMOVE_CACHE_BINARY_STORAGE, resources, key + ".remove");
-        return op;
-    }
-
     static ModelNode getDatabaseBinaryStorageAddDescription( Locale locale ) {
         ResourceBundle resources = getResources(locale);
         final String key = "repository.db-binary-storage";
@@ -345,13 +300,6 @@ public class ModeShapeDescriptions {
         return op;
     }
 
-    static ModelNode getDatabaseBinaryStorageRemoveDescription( Locale locale ) {
-        ResourceBundle resources = getResources(locale);
-        final String key = "repository.db-binary-storage";
-        final ModelNode op = createOperationDescription(ModelKeys.REMOVE_DB_BINARY_STORAGE, resources, key + ".remove");
-        return op;
-    }
-
     static ModelNode getCustomBinaryStorageAddDescription( Locale locale ) {
         ResourceBundle resources = getResources(locale);
         final String key = "repository.custom-binary-storage";
@@ -360,13 +308,6 @@ public class ModeShapeDescriptions {
         for (AttributeDefinition attr : ModelAttributes.CUSTOM_BINARY_STORAGE_ATTRIBUTES) {
             attr.addOperationParameterDescription(resources, key, op);
         }
-        return op;
-    }
-
-    static ModelNode getCustomBinaryStorageRemoveDescription( Locale locale ) {
-        ResourceBundle resources = getResources(locale);
-        final String key = "repository.custom-binary-storage";
-        final ModelNode op = createOperationDescription(ModelKeys.REMOVE_CUSTOM_BINARY_STORAGE, resources, key + ".remove");
         return op;
     }
 

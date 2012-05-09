@@ -84,15 +84,16 @@ public class SequencerService implements Service<JcrRepository> {
 
         EditableDocument seq = Schematic.newDocument();
 
-        for (String key : sequencerProperties.stringPropertyNames()) {
-            Object value = sequencerProperties.getProperty(key);
+        for (Object key : sequencerProperties.keySet()) {
+            String keyStr = (String)key;
+            Object value = sequencerProperties.get(keyStr);
             if (value instanceof List<?>) {
                 for (Object val : (List<?>)value) {
-                    seq.getOrCreateArray(key).addValue(val);
+                    seq.getOrCreateArray(keyStr).addValue(val);
                 }
             } else {
                 // Just set the value as a field
-                seq.set(key, value);
+                seq.set(keyStr, value);
             }
         }
 

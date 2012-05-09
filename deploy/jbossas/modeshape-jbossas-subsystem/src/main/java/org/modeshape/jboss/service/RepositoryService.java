@@ -21,13 +21,19 @@
  */
 package org.modeshape.jboss.service;
 
+import java.util.List;
 import javax.jcr.RepositoryException;
 import javax.transaction.TransactionManager;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.schematic.Schematic;
+import org.infinispan.schematic.document.Changes;
 import org.infinispan.schematic.document.Document;
+import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
+import org.infinispan.schematic.document.Editor;
 import org.jboss.as.clustering.jgroups.ChannelFactory;
+import org.jboss.as.controller.OperationFailedException;
+import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
@@ -36,10 +42,12 @@ import org.jboss.msc.value.InjectedValue;
 import org.jgroups.Channel;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.util.Logger;
+import org.modeshape.jboss.subsystem.MappedAttributeDefinition;
 import org.modeshape.jcr.ConfigurationException;
 import org.modeshape.jcr.Environment;
 import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.JcrRepository;
+import org.modeshape.jcr.NoSuchRepositoryException;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.RepositoryConfiguration.FieldValue;
@@ -97,15 +105,19 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
 
     @Override
     public void shutdown() {
-        // do nothing
+        // Do nothing; this is the Environment's shutdown method
+    }
+
+    public final String repositoryName() {
+        return repositoryConfiguration.getName();
     }
 
     @Override
     public void start( StartContext arg0 ) throws StartException {
-        JcrEngine jcr = getEngine();
+        JcrEngine engine = getEngine();
         Logger logger = Logger.getLogger(getClass());
         try {
-            final String repositoryName = repositoryConfiguration.getName();
+            final String repositoryName = repositoryName();
 
             // Get the index storage configuration ...
             IndexStorage indexStorageConfig = indexStorageConfigInjector.getValue();
@@ -164,7 +176,7 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
             repositoryConfiguration = new RepositoryConfiguration(config, repositoryName);
 
             // Deploy the repository and use this as the environment ...
-            jcr.deploy(repositoryConfiguration.with(this));
+            engine.deploy(repositoryConfiguration.with(this));
         } catch (ConfigurationException e) {
             throw new StartException(e);
         } catch (RepositoryException e) {
@@ -174,8 +186,102 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
     }
 
     @Override
-    public void stop( StopContext arg0 ) {
+    public void stop( StopContext context ) {
+        JcrEngine engine = getEngine();
+        if (engine != null) {
+            try {
+                // Undeploy the repository ...
+                engine.undeploy(repositoryName());
+            } catch (NoSuchRepositoryException e) {
+                // The repository doesn't exist, so no worries ...
+            }
+        }
+    }
 
+    /**
+     * Immediately change and apply the specified field in the current repository configuration to the new value.
+     * 
+     * @param defn the attribute definition for the value; may not be null
+     * @param newValue the new string value
+     * @throws RepositoryException if there is a problem obtaining the repository configuration or applying the change
+     * @throws OperationFailedException if there is a problem obtaining the raw value from the supplied model node
+     */
+    public void changeField( MappedAttributeDefinition defn,
+                             ModelNode newValue ) throws RepositoryException, OperationFailedException {
+        JcrEngine engine = getEngine();
+        String repositoryName = repositoryName();
+
+        // Get a snapshot of the current configuration ...
+        RepositoryConfiguration config = engine.getRepositoryConfiguration(repositoryName);
+
+        // Now start to make changes ...
+        Editor editor = config.edit();
+
+        // Find the Document containing the field ...
+        EditableDocument fieldContainer = editor;
+        for (String fieldName : defn.getPathToContainerOfField()) {
+            fieldContainer = editor.getOrCreateDocument(fieldName);
+        }
+
+        // Get the raw value from the model node ...
+        Object rawValue = defn.getTypedValue(newValue);
+
+        // Change the field ...
+        String fieldName = defn.getFieldName();
+        fieldContainer.set(fieldName, rawValue);
+
+        // Apply the changes to the current configuration ...
+        Changes changes = editor.getChanges();
+        engine.update(repositoryName, changes);
+    }
+
+    /**
+     * Immediately change and apply the specified sequencer field in the current repository configuration to the new value.
+     * 
+     * @param defn the attribute definition for the value; may not be null
+     * @param newValue the new string value
+     * @param sequencerName the name of the sequencer
+     * @throws RepositoryException if there is a problem obtaining the repository configuration or applying the change
+     * @throws OperationFailedException if there is a problem obtaining the raw value from the supplied model node
+     */
+    public void changeSequencerField( MappedAttributeDefinition defn,
+                                      ModelNode newValue,
+                                      String sequencerName ) throws RepositoryException, OperationFailedException {
+        JcrEngine engine = getEngine();
+        String repositoryName = repositoryName();
+
+        // Get a snapshot of the current configuration ...
+        RepositoryConfiguration config = engine.getRepositoryConfiguration(repositoryName);
+
+        // Now start to make changes ...
+        Editor editor = config.edit();
+
+        // Find the array of sequencer documents ...
+        List<String> pathToContainer = defn.getPathToContainerOfField();
+        EditableDocument sequencing = editor.getOrCreateDocument(pathToContainer.get(0));
+        EditableArray sequencers = sequencing.getOrCreateArray(pathToContainer.get(1));
+
+        // The container should be an array ...
+        for (int i = 0; i != sequencers.size(); ++i) {
+            // All these entries should be nested documents ...
+            EditableDocument sequencer = (EditableDocument)sequencers.get(i);
+            // Look for the entry with a name that matches our sequencer name ...
+            if (sequencerName.equals(sequencer.getString(FieldName.NAME))) {
+                // Change the field ...
+                String fieldName = defn.getFieldName();
+                // Get the raw value from the model node ...
+                Object rawValue = defn.getTypedValue(newValue);
+                // And update the field ...
+                sequencer.set(fieldName, rawValue);
+                break;
+            }
+        }
+
+        // Get and apply the changes to the current configuration. Note that the 'update' call asynchronously
+        // updates the configuration, and returns a Future<JcrRepository> that we could use if we wanted to
+        // wait for the changes to take place. But we don't want/need to wait, so we'll not use the Future ...
+        Changes changes = editor.getChanges();
+        engine.update(repositoryName, changes);
     }
 
     /**

@@ -33,39 +33,6 @@
 	</dependencies>
 
 	<build>
-		<outputDirectory>target/kits</outputDirectory>
-
-		<resources>
-			<resource>
-				<directory>kits</directory>
-				<filtering>true</filtering>
-				<includes>
-					<include>**/*.xml</include>
-					<include>**/*.properties</include>
-					<include>**/*.sh</include>
-					<include>**/*.bat</include>
-					<include>**/*.html</include>
-				</includes>
-			</resource>
-			<resource>
-				<directory>kits</directory>
-				<filtering>false</filtering>
-				<excludes>
-					<exclude>**/*.xml</exclude>
-					<exclude>**/*.properties</exclude>
-					<exclude>**/*.sh</exclude>
-					<exclude>**/*.bat</exclude>
-					<exclude>**/*.html</exclude>
-				</excludes>
-			</resource>
-		</resources>
-		<pluginManagement>
-			<plugins>
-				<plugin>
-					<artifactId>maven-assembly-plugin</artifactId>
-				</plugin>
-			</plugins>
-		</pluginManagement>
 		<plugins>
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>

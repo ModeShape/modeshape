@@ -37,8 +37,8 @@
         <module name="org.infinispan" export="true"/>
         <module name="org.joda.time" />
         <module name="org.jgroups" />
-        <module name="org.apache.lucene" />
-        <module name="org.hibernate.search.engine" />
+        <module name="org.apache.lucene" slot="3.5"/>
+        <module name="org.hibernate.search-engine" slot="4.1"/>
         <!-- For naming ... -->
         <module name="javax.api" export="true"/>
         <module name="org.jboss.as.naming"/>

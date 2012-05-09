@@ -24,7 +24,6 @@
         "indexing-thread-pool" : "modeshape-workers",
         "jndi-name" : "jcr/local/sample",
         "minimum-binary-size" : 4096,
-        "name" : "sample",
         "predefined-workspace-names" : [
             "predefinedWorkspace1",
             "predefinedWorkspace2",
@@ -33,11 +32,11 @@
         "rebuild-indexes-upon-startup" : "IF_MISSING",
         "security-domain" : "modeshape-security",
         "use-anonymous-upon-failed-authentication" : false,
-        "index-storage" : {"index-storage" : {
+        "index-storage" : {"INDEXES" : {
             "access-type" : "AUTO",
             "index-format" : "LUCENE_CURRENT",
+            "index-storage-type" : "local-file-index-storage",
             "locking-strategy" : "NATIVE",
-            "name" : "local-file-index-storage",
             "path" : "modeshape/sample/indexes",
             "relative-to" : "jboss.server.data.dir"
         }},
@@ -45,13 +44,11 @@
             "modeshape-sequencer-ddl" : {
                 "classname" : "ddl",
                 "module" : null,
-                "name" : "modeshape-sequencer-ddl",
                 "path-expressions" : ["//a/b"]
             },
             "modeshape-sequencer-java" : {
                 "classname" : "java",
                 "module" : null,
-                "name" : "modeshape-sequencer-java",
                 "path-expressions" : ["//a/b"]
             }
         }

@@ -97,42 +97,29 @@ public class ModeShapeSubsystemProviders {
             return ModeShapeDescriptions.getIndexStorageDescription(locale);
         }
     };
+    static final DescriptionProvider INDEX_STORAGE_REMOVE = new DescriptionProvider() {
+        @Override
+        public ModelNode getModelDescription( Locale locale ) {
+            return ModeShapeDescriptions.getIndexStorageRemoveDescription(locale);
+        }
+    };
+
     static final DescriptionProvider RAM_INDEX_STORAGE_ADD = new DescriptionProvider() {
         @Override
         public ModelNode getModelDescription( Locale locale ) {
             return ModeShapeDescriptions.getRamIndexStorageAddDescription(locale);
         }
     };
-    static final DescriptionProvider RAM_INDEX_STORAGE_REMOVE = new DescriptionProvider() {
-        @Override
-        public ModelNode getModelDescription( Locale locale ) {
-            return ModeShapeDescriptions.getRamIndexStorageRemoveDescription(locale);
-        }
-    };
-
     static final DescriptionProvider CACHE_INDEX_STORAGE_ADD = new DescriptionProvider() {
         @Override
         public ModelNode getModelDescription( Locale locale ) {
             return ModeShapeDescriptions.getCacheIndexStorageAddDescription(locale);
         }
     };
-    static final DescriptionProvider CACHE_INDEX_STORAGE_REMOVE = new DescriptionProvider() {
-        @Override
-        public ModelNode getModelDescription( Locale locale ) {
-            return ModeShapeDescriptions.getCacheIndexStorageRemoveDescription(locale);
-        }
-    };
-
     static final DescriptionProvider CUSTOM_INDEX_STORAGE_ADD = new DescriptionProvider() {
         @Override
         public ModelNode getModelDescription( Locale locale ) {
             return ModeShapeDescriptions.getCustomIndexStorageAddDescription(locale);
-        }
-    };
-    static final DescriptionProvider CUSTOM_INDEX_STORAGE_REMOVE = new DescriptionProvider() {
-        @Override
-        public ModelNode getModelDescription( Locale locale ) {
-            return ModeShapeDescriptions.getCustomIndexStorageRemoveDescription(locale);
         }
     };
 
@@ -142,34 +129,16 @@ public class ModeShapeSubsystemProviders {
             return ModeShapeDescriptions.getLocalFileIndexStorageAddDescription(locale);
         }
     };
-    static final DescriptionProvider LOCAL_FILE_INDEX_STORAGE_REMOVE = new DescriptionProvider() {
-        @Override
-        public ModelNode getModelDescription( Locale locale ) {
-            return ModeShapeDescriptions.getLocalFileIndexStorageRemoveDescription(locale);
-        }
-    };
     static final DescriptionProvider MASTER_FILE_INDEX_STORAGE_ADD = new DescriptionProvider() {
         @Override
         public ModelNode getModelDescription( Locale locale ) {
             return ModeShapeDescriptions.getMasterFileIndexStorageAddDescription(locale);
         }
     };
-    static final DescriptionProvider MASTER_FILE_INDEX_STORAGE_REMOVE = new DescriptionProvider() {
-        @Override
-        public ModelNode getModelDescription( Locale locale ) {
-            return ModeShapeDescriptions.getMasterFileIndexStorageRemoveDescription(locale);
-        }
-    };
     static final DescriptionProvider SLAVE_FILE_INDEX_STORAGE_ADD = new DescriptionProvider() {
         @Override
         public ModelNode getModelDescription( Locale locale ) {
             return ModeShapeDescriptions.getSlaveFileIndexStorageAddDescription(locale);
-        }
-    };
-    static final DescriptionProvider SLAVE_FILE_INDEX_STORAGE_REMOVE = new DescriptionProvider() {
-        @Override
-        public ModelNode getModelDescription( Locale locale ) {
-            return ModeShapeDescriptions.getSlaveFileIndexStorageRemoveDescription(locale);
         }
     };
 
@@ -179,16 +148,16 @@ public class ModeShapeSubsystemProviders {
             return ModeShapeDescriptions.getBinaryStorageDescription(locale);
         }
     };
+    static final DescriptionProvider BINARY_STORAGE_REMOVE = new DescriptionProvider() {
+        @Override
+        public ModelNode getModelDescription( Locale locale ) {
+            return ModeShapeDescriptions.getBinaryStorageRemoveDescription(locale);
+        }
+    };
     static final DescriptionProvider FILE_BINARY_STORAGE_ADD = new DescriptionProvider() {
         @Override
         public ModelNode getModelDescription( Locale locale ) {
             return ModeShapeDescriptions.getFileBinaryStorageAddDescription(locale);
-        }
-    };
-    static final DescriptionProvider FILE_BINARY_STORAGE_REMOVE = new DescriptionProvider() {
-        @Override
-        public ModelNode getModelDescription( Locale locale ) {
-            return ModeShapeDescriptions.getFileBinaryStorageRemoveDescription(locale);
         }
     };
     static final DescriptionProvider DB_BINARY_STORAGE_ADD = new DescriptionProvider() {
@@ -197,34 +166,16 @@ public class ModeShapeSubsystemProviders {
             return ModeShapeDescriptions.getDatabaseBinaryStorageAddDescription(locale);
         }
     };
-    static final DescriptionProvider DB_BINARY_STORAGE_REMOVE = new DescriptionProvider() {
-        @Override
-        public ModelNode getModelDescription( Locale locale ) {
-            return ModeShapeDescriptions.getDatabaseBinaryStorageRemoveDescription(locale);
-        }
-    };
     static final DescriptionProvider CACHE_BINARY_STORAGE_ADD = new DescriptionProvider() {
         @Override
         public ModelNode getModelDescription( Locale locale ) {
             return ModeShapeDescriptions.getCacheBinaryStorageAddDescription(locale);
         }
     };
-    static final DescriptionProvider CACHE_BINARY_STORAGE_REMOVE = new DescriptionProvider() {
-        @Override
-        public ModelNode getModelDescription( Locale locale ) {
-            return ModeShapeDescriptions.getCacheBinaryStorageRemoveDescription(locale);
-        }
-    };
     static final DescriptionProvider CUSTOM_BINARY_STORAGE_ADD = new DescriptionProvider() {
         @Override
         public ModelNode getModelDescription( Locale locale ) {
             return ModeShapeDescriptions.getCustomBinaryStorageAddDescription(locale);
-        }
-    };
-    static final DescriptionProvider CUSTOM_BINARY_STORAGE_REMOVE = new DescriptionProvider() {
-        @Override
-        public ModelNode getModelDescription( Locale locale ) {
-            return ModeShapeDescriptions.getCustomBinaryStorageRemoveDescription(locale);
         }
     };
 }

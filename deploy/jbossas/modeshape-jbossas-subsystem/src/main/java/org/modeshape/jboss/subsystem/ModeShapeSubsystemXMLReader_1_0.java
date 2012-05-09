@@ -23,7 +23,6 @@ package org.modeshape.jboss.subsystem;
 
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
@@ -102,7 +101,6 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                         repositoryAddress.protect();
                         repository.get(OP).set(ADD);
                         repository.get(OP_ADDR).set(repositoryAddress);
-                        repository.get(ModelKeys.NAME).set(attrValue);
                         repositories.add(repository);
                         break;
                     case CACHE_NAME:
@@ -323,7 +321,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                                             final String repositoryName ) throws XMLStreamException {
         final ModelNode storage = new ModelNode();
         storage.get(OP).set(ModelKeys.ADD_RAM_INDEX_STORAGE);
-        storage.get(NAME).set(ModelKeys.RAM_INDEX_STORAGE);
+        storage.get(ModelKeys.INDEX_STORAGE_TYPE).set(ModelKeys.RAM_INDEX_STORAGE);
 
         if (reader.getAttributeCount() > 0) {
             for (int i = 0; i < reader.getAttributeCount(); i++) {
@@ -367,7 +365,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
         storage.get(OP_ADDR)
                .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
                .add(ModelKeys.REPOSITORY, repositoryName)
-               .add(ModelKeys.INDEX_STORAGE, ModelKeys.INDEX_STORAGE);
+               .add(ModelKeys.INDEX_STORAGE, ModelKeys.INDEX_STORAGE_NAME);
 
         return storage;
     }
@@ -378,7 +376,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                                              String name ) throws XMLStreamException {
         final ModelNode storage = new ModelNode();
         storage.get(OP).set(operationName);
-        storage.get(NAME).set(name);
+        storage.get(ModelKeys.INDEX_STORAGE_TYPE).set(name);
 
         if (reader.getAttributeCount() > 0) {
             for (int i = 0; i < reader.getAttributeCount(); i++) {
@@ -460,7 +458,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
         storage.get(OP_ADDR)
                .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
                .add(ModelKeys.REPOSITORY, repositoryName)
-               .add(ModelKeys.INDEX_STORAGE, ModelKeys.INDEX_STORAGE);
+               .add(ModelKeys.INDEX_STORAGE, ModelKeys.INDEX_STORAGE_NAME);
 
         return storage;
     }
@@ -469,7 +467,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                                               final String repositoryName ) throws XMLStreamException {
         final ModelNode storage = new ModelNode();
         storage.get(OP).set(ModelKeys.ADD_CACHE_INDEX_STORAGE);
-        storage.get(NAME).set(ModelKeys.CACHE_INDEX_STORAGE);
+        storage.get(ModelKeys.INDEX_STORAGE_TYPE).set(ModelKeys.CACHE_INDEX_STORAGE);
 
         if (reader.getAttributeCount() > 0) {
             for (int i = 0; i < reader.getAttributeCount(); i++) {
@@ -503,7 +501,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
         storage.get(OP_ADDR)
                .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
                .add(ModelKeys.REPOSITORY, repositoryName)
-               .add(ModelKeys.INDEX_STORAGE, ModelKeys.INDEX_STORAGE);
+               .add(ModelKeys.INDEX_STORAGE, ModelKeys.INDEX_STORAGE_NAME);
 
         return storage;
     }
@@ -512,7 +510,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                                                final String repositoryName ) throws XMLStreamException {
         final ModelNode storage = new ModelNode();
         storage.get(OP).set(ModelKeys.ADD_CUSTOM_INDEX_STORAGE);
-        storage.get(NAME).set(ModelKeys.CUSTOM_INDEX_STORAGE);
+        storage.get(ModelKeys.INDEX_STORAGE_TYPE).set(ModelKeys.CUSTOM_INDEX_STORAGE);
 
         if (reader.getAttributeCount() > 0) {
             for (int i = 0; i < reader.getAttributeCount(); i++) {
@@ -569,7 +567,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
         storage.get(OP_ADDR)
                .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
                .add(ModelKeys.REPOSITORY, repositoryName)
-               .add(ModelKeys.INDEX_STORAGE, ModelKeys.INDEX_STORAGE);
+               .add(ModelKeys.INDEX_STORAGE, ModelKeys.INDEX_STORAGE_NAME);
 
         return storage;
     }
@@ -578,7 +576,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                                               final String repositoryName ) throws XMLStreamException {
         final ModelNode storage = new ModelNode();
         storage.get(OP).set(ModelKeys.ADD_FILE_BINARY_STORAGE);
-        storage.get(NAME).set(ModelKeys.FILE_BINARY_STORAGE);
+        storage.get(ModelKeys.BINARY_STORAGE_TYPE).set(ModelKeys.FILE_BINARY_STORAGE);
 
         if (reader.getAttributeCount() > 0) {
             for (int i = 0; i < reader.getAttributeCount(); i++) {
@@ -606,7 +604,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
         storage.get(OP_ADDR)
                .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
                .add(ModelKeys.REPOSITORY, repositoryName)
-               .add(ModelKeys.BINARY_STORAGE, ModelKeys.BINARY_STORAGE);
+               .add(ModelKeys.BINARY_STORAGE, ModelKeys.BINARY_STORAGE_NAME);
 
         return storage;
     }
@@ -615,7 +613,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                                                final String repositoryName ) throws XMLStreamException {
         final ModelNode storage = new ModelNode();
         storage.get(OP).set(ModelKeys.ADD_CACHE_BINARY_STORAGE);
-        storage.get(NAME).set(ModelKeys.CACHE_BINARY_STORAGE);
+        storage.get(ModelKeys.BINARY_STORAGE_TYPE).set(ModelKeys.CACHE_BINARY_STORAGE);
 
         if (reader.getAttributeCount() > 0) {
             for (int i = 0; i < reader.getAttributeCount(); i++) {
@@ -646,7 +644,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
         storage.get(OP_ADDR)
                .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
                .add(ModelKeys.REPOSITORY, repositoryName)
-               .add(ModelKeys.BINARY_STORAGE, ModelKeys.BINARY_STORAGE);
+               .add(ModelKeys.BINARY_STORAGE, ModelKeys.BINARY_STORAGE_NAME);
 
         return storage;
     }
@@ -655,7 +653,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                                                   final String repositoryName ) throws XMLStreamException {
         final ModelNode storage = new ModelNode();
         storage.get(OP).set(ModelKeys.ADD_DB_BINARY_STORAGE);
-        storage.get(NAME).set(ModelKeys.DB_BINARY_STORAGE);
+        storage.get(ModelKeys.BINARY_STORAGE_TYPE).set(ModelKeys.DB_BINARY_STORAGE);
 
         if (reader.getAttributeCount() > 0) {
             for (int i = 0; i < reader.getAttributeCount(); i++) {
@@ -680,7 +678,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
         storage.get(OP_ADDR)
                .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
                .add(ModelKeys.REPOSITORY, repositoryName)
-               .add(ModelKeys.BINARY_STORAGE, ModelKeys.BINARY_STORAGE);
+               .add(ModelKeys.BINARY_STORAGE, ModelKeys.BINARY_STORAGE_NAME);
 
         return storage;
     }
@@ -689,7 +687,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                                                 final String repositoryName ) throws XMLStreamException {
         final ModelNode storage = new ModelNode();
         storage.get(OP).set(ModelKeys.ADD_CUSTOM_BINARY_STORAGE);
-        storage.get(NAME).set(ModelKeys.CUSTOM_INDEX_STORAGE);
+        storage.get(ModelKeys.BINARY_STORAGE_TYPE).set(ModelKeys.CUSTOM_INDEX_STORAGE);
 
         if (reader.getAttributeCount() > 0) {
             for (int i = 0; i < reader.getAttributeCount(); i++) {
@@ -717,7 +715,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
         storage.get(OP_ADDR)
                .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
                .add(ModelKeys.REPOSITORY, repositoryName)
-               .add(ModelKeys.BINARY_STORAGE, ModelKeys.BINARY_STORAGE);
+               .add(ModelKeys.BINARY_STORAGE, ModelKeys.BINARY_STORAGE_NAME);
 
         return storage;
     }
@@ -810,14 +808,13 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                 Attribute attribute = Attribute.forName(attrName);
                 switch (attribute) {
                     case NAME:
-                        ModelAttributes.NAME.parseAndSetParameter(attrValue, sequencer, reader);
                         name = attrValue;
                         break;
                     case PATH_EXPRESSION:
                         ModelAttributes.PATH_EXPRESSIONS.parseAndAddParameterElement(attrValue, sequencer, reader);
                         break;
                     case CLASSNAME:
-                        ModelAttributes.CLASSNAME.parseAndSetParameter(attrValue, sequencer, reader);
+                        ModelAttributes.SEQUENCER_CLASSNAME.parseAndSetParameter(attrValue, sequencer, reader);
                         if (name == null) name = attrValue;
                         break;
                     case MODULE:

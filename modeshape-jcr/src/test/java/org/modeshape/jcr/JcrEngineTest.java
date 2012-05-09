@@ -2,16 +2,19 @@ package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
-import org.junit.AfterClass;
 import static org.junit.Assert.assertThat;
+import java.net.URL;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Session;
 import org.infinispan.schematic.document.Changes;
+import org.infinispan.schematic.document.Document;
+import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Editor;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -25,17 +28,17 @@ public class JcrEngineTest {
 
     private RepositoryConfiguration config;
     private JcrEngine engine;
-    
+
     @BeforeClass
     public static void beforeSuite() {
-        JTATestUtil.setJBossJTADefaultStoreLocations();        
+        JTATestUtil.setJBossJTADefaultStoreLocations();
     }
-    
+
     @AfterClass
     public static void afterSuite() {
         JTATestUtil.clearJBossJTADefaultStoreLocation();
     }
-    
+
     @Before
     public void beforeEach() throws Exception {
         config = RepositoryConfiguration.read("{ \"name\":\"my-repo\" }");
@@ -294,5 +297,42 @@ public class JcrEngineTest {
         RepositoryConfiguration newConfig = engine.getRepository(name).getConfiguration();
         assertThat(newConfig.getBinaryStorage().getMinimumBinarySizeInBytes(), is(newLargeValueSizeInBytes));
         assertThat(repository.repositoryCache().largeValueSizeInBytes(), is(newLargeValueSizeInBytes));
+    }
+
+    @Test
+    public void shouldAllowUpdatingSequencerInformationWhenRunning() throws Exception {
+        URL configUrl = getClass().getClassLoader().getResource("config/repo-config.json");
+        engine.start();
+        config = RepositoryConfiguration.read(configUrl);
+        JcrRepository repository = engine.deploy(config);
+
+        // Obtain an editor ...
+        Editor editor = repository.getConfiguration().edit();
+        EditableDocument sequencing = editor.getDocument(FieldName.SEQUENCING);
+        EditableArray sequencers = sequencing.getArray(FieldName.SEQUENCERS);
+        EditableDocument sequencerA = (EditableDocument)sequencers.get(0);
+
+        // Verify the existing value ...
+        List<?> exprs = sequencerA.getArray(FieldName.PATH_EXPRESSIONS);
+        assertThat(exprs.size(), is(1));
+        assertThat((String)exprs.get(0), is("default://(*.cnd)/jcr:content[@jcr:data]"));
+
+        // Set the new value ...
+        sequencerA.setArray(FieldName.PATH_EXPRESSIONS, "//*.ddl", "//*.xml");
+
+        // And apply the changes to the repository's configuration ...
+        Changes changes = editor.getChanges();
+        engine.update(config.getName(), changes).get(); // don't forget to wait!
+
+        // Verify the configuration was changed successfully ...
+        RepositoryConfiguration config2 = engine.getRepositoryConfiguration(config.getName());
+        Document sequencerA2 = (Document)config2.getDocument()
+                                                .getDocument(FieldName.SEQUENCING)
+                                                .getArray(FieldName.SEQUENCERS)
+                                                .get(0);
+        List<?> exprs2 = sequencerA2.getArray(FieldName.PATH_EXPRESSIONS);
+        assertThat(exprs2.size(), is(2));
+        assertThat((String)exprs2.get(0), is("//*.ddl"));
+        assertThat((String)exprs2.get(1), is("//*.xml"));
     }
 }

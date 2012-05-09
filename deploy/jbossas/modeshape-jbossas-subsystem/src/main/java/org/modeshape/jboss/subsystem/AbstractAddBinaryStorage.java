@@ -49,22 +49,25 @@ public abstract class AbstractAddBinaryStorage extends AbstractAddStepHandler {
                                   ModelNode model ) throws OperationFailedException {
         String opName = operation.get(OP).asString();
         if (ModelKeys.ADD_FILE_BINARY_STORAGE.equals(opName)) {
-            populate(operation, model, ModelAttributes.FILE_BINARY_STORAGE_ATTRIBUTES);
+            populate(operation, model, ModelKeys.FILE_BINARY_STORAGE, ModelAttributes.FILE_BINARY_STORAGE_ATTRIBUTES);
         } else if (ModelKeys.ADD_CACHE_BINARY_STORAGE.equals(opName)) {
-            populate(operation, model, ModelAttributes.CACHE_BINARY_STORAGE_ATTRIBUTES);
+            populate(operation, model, ModelKeys.CACHE_BINARY_STORAGE, ModelAttributes.CACHE_BINARY_STORAGE_ATTRIBUTES);
         } else if (ModelKeys.ADD_DB_BINARY_STORAGE.equals(opName)) {
-            populate(operation, model, ModelAttributes.DATABASE_BINARY_STORAGE_ATTRIBUTES);
+            populate(operation, model, ModelKeys.DB_BINARY_STORAGE, ModelAttributes.DATABASE_BINARY_STORAGE_ATTRIBUTES);
         } else if (ModelKeys.ADD_CUSTOM_BINARY_STORAGE.equals(opName)) {
-            populate(operation, model, ModelAttributes.CUSTOM_BINARY_STORAGE_ATTRIBUTES);
+            populate(operation, model, ModelKeys.CUSTOM_BINARY_STORAGE, ModelAttributes.CUSTOM_BINARY_STORAGE_ATTRIBUTES);
         }
     }
 
     static void populate( ModelNode operation,
                           ModelNode model,
+                          String modelName,
                           AttributeDefinition[] attributes ) throws OperationFailedException {
         for (AttributeDefinition attribute : attributes) {
             attribute.validateAndSet(operation, model);
         }
+        // Set the binary storage type last (overwriting any value that they've manually added) ...
+        model.get(ModelKeys.BINARY_STORAGE_TYPE).set(modelName);
     }
 
     @Override

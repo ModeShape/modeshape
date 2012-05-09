@@ -225,7 +225,7 @@
 
 		<!-- Module for Hibernate Search (Engine) -->
 		<dependencySet>
-			<outputDirectory>modules/org/hibernate/search/engine/main</outputDirectory>
+			<outputDirectory>modules/org/hibernate/search-engine/4.1</outputDirectory>
 			<unpack>false</unpack>
       <useTransitiveFiltering>true</useTransitiveFiltering>
 			<includes>
@@ -239,12 +239,14 @@
 			</includes>
 			<excludes>
 			  <exclude>org.hibernate.common:hibernate-commons</exclude>
+			  <exclude>org.jboss.logging:jboss-logging</exclude>
 			</excludes>
 		</dependencySet>
 
 		<!-- Module for Lucene (Core + Regex) -->
 		<dependencySet>
-			<outputDirectory>modules/org/apache/lucene/main</outputDirectory>
+			<outputDirectory>modules/org/apache/lucene/3.5</outputDirectory>
+      <useTransitiveFiltering>true</useTransitiveFiltering>
 			<includes>
 				<include>org.apache.lucene:lucene-core</include>
 				<include>org.apache.lucene:lucene-regex</include>

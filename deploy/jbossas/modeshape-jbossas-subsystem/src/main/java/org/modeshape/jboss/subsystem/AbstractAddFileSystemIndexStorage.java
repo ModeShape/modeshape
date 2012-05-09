@@ -24,19 +24,13 @@
 package org.modeshape.jboss.subsystem;
 
 import java.util.List;
-import org.infinispan.schematic.document.EditableDocument;
-import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.services.path.RelativePathService;
-import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.modeshape.jboss.service.IndexStorage;
 import org.modeshape.jboss.service.IndexStorageService;
-import org.modeshape.jcr.RepositoryConfiguration.FieldName;
-import org.modeshape.jcr.RepositoryConfiguration.FieldValue;
 
 /**
  * 
@@ -47,18 +41,6 @@ public abstract class AbstractAddFileSystemIndexStorage extends AbstractAddIndex
     protected String indexSourcePathInDataDirectory;
 
     protected AbstractAddFileSystemIndexStorage() {
-    }
-
-    @Override
-    protected void writeIndexingBackendConfiguration( OperationContext context,
-                                                      ModelNode storage,
-                                                      EditableDocument backend ) throws OperationFailedException {
-        // Set the type of indexing backend ...
-        backend.set(FieldName.TYPE, FieldValue.INDEXING_BACKEND_TYPE_JMS_MASTER);
-        String connJndi = ModelAttributes.CONNECTION_FACTORY_JNDI_NAME.resolveModelAttribute(context, storage).asString();
-        String queueJndi = ModelAttributes.QUEUE_JNDI_NAME.resolveModelAttribute(context, storage).asString();
-        backend.set(FieldName.INDEXING_BACKEND_JMS_CONNECTION_FACTORY_JNDI_NAME, connJndi);
-        backend.set(FieldName.INDEXING_BACKEND_JMS_QUEUE_JNDI_NAME, queueJndi);
     }
 
     protected void setIndexStoragePathInDataDirectory( String relativePath ) {
