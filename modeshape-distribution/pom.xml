@@ -259,15 +259,13 @@
                                         -link http://www.slf4j.org/apidocs/
                                         -link http://www.day.com/maven/javax.jcr/javadocs/jcr-2.0/
 
-                                        -group "Schematic" org.infinispan.schematic*
-                                        -group "JCR engine" ${project.groupId}.jcr.*:${project.groupId}.jcr.bus*:${project.groupId}.jcr.cache*:${project.groupId}.jcr.clustering*:${project.groupId}.jcr.security*:${project.groupId}.jcr.value*
-                                        -group "JCR API" ${project.groupId}.jcr.api*
-                                        -group "Query and Search" ${project.groupId}.jcr.query*
-                                        -group "Sequencer SPI" ${project.groupId}.jcr.api.sequencer*
-                                        -group "MIME type detector SPI" ${project.groupId}.jcr.api.mimetype*
-                                        -group "Text extractor SPI" ${project.groupId}.jcr.api.text*
-                                        -group "Web services" ${project.groupId}.web*
-                                        -group "Sequencers" ${project.groupId}.sequencer*
+                                        -group "ModeShape API (extends JCR API)" ${project.groupId}.jcr.api*
+                                        -group "ModeShape engine" ${project.groupId}.jcr*:${project.groupId}.jcr.*:${project.groupId}.jcr.bus*:${project.groupId}.jcr.cache*:${project.groupId}.jcr.clustering*:${project.groupId}.jcr.query*:${project.groupId}.jcr.security*:${project.groupId}.jcr.value*
+                                        -group "ModeShape SPI for Extensions" ${project.groupId}.jcr.api.sequencer*:${project.groupId}.jcr.api.mimetype*:${project.groupId}.jcr.api.text*
+                                        -group "ModeShape JDBC Driver" ${project.groupId}.jdbc*
+                                        -group "ModeShape Web services" ${project.groupId}.web*
+                                        -group "ModeShape Sequencers" ${project.groupId}.sequencer*
+                                        -group "Schematic Documents" org.infinispan.schematic*
 
                                         -nopackagediagram
                                     </additionalparam>
