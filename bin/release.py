@@ -85,11 +85,11 @@ def help_and_exit():
             
 %s  Examples:%s
     
-    $ bin/release.py 2.4.0.Final
-         This will release '2.4.0.Final based off of 'master'
+    $ bin/release.py 3.0.0.Final
+         This will release '3.0.0.Final' based off of 'master'
     
-    $ bin/release.py 2.2.1.Final 2.2.x
-         This will release '2.2.1.Final based off of the existing '2.2.x' branch
+    $ bin/release.py 2.8.1.Final 2.x
+         This will release '2.8.1.Final' based off of the existing '2.x' branch
     
 ''' % (Colors.yellow(), Colors.end_color(), Colors.yellow(), Colors.end_color(), Colors.yellow(), Colors.end_color()), Levels.INFO)
     sys.exit(0)
@@ -179,11 +179,8 @@ def copy_artifacts_to_archive_location(archive_path,version):
     shutil.copy("modeshape-distribution/target/modeshape-%s-%s" % (version,fsuffix), "%s/modeshape-%s-%s" % (archive_path,version,tsuffix))
 
   # Copy the 'deploy/jbossas' artifact(s) ...
-  from_path = os.path.join('deploy','jbossas','target','distribution','modeshape-jbossas-%s-dist.zip' % (version))
-  to_path = os.path.join(archive_path,'modeshape-%s-jbossas-5-dist.zip' % (version))
-  shutil.copy(from_path,to_path)
-  from_path = os.path.join('deploy','jbossas','target','distribution','modeshape-jbossas-%s-dist-as6.zip' % (version))
-  to_path = os.path.join(archive_path,'modeshape-%s-jbossas-6-dist.zip' % (version))
+  from_path = os.path.join('deploy','jbossas','target','distribution','modeshape-%s-jbossas-7-dist.zip' % (version))
+  to_path = os.path.join(archive_path,'modeshape-%s-jbossas-7-dist.zip' % (version))
   shutil.copy(from_path,to_path)
   
   # Make an area for the documentation ...
@@ -209,19 +206,6 @@ def copy_artifacts_to_archive_location(archive_path,version):
     from_path = os.path.join('target',readme)
     shutil.copy(from_path,os.path.join(docs_path,readme))
     shutil.copy(from_path,os.path.join(archive_path,readme))
-  
-  # Copy the Reference Guide and Getting Started Guide ...
-  formats = ['html','html_single','pdf']
-  guides = ['reference','gettingstarted']
-  for guide in guides:
-    guide_path = os.path.join('docs','reference','target','docbook','publish','en-US')
-    for format in formats:
-      from_path = os.path.join(guide_path,format)
-      if os.path.exists(from_path):
-        to_path = os.path.join(docs_path,'manuals',guide)
-        if not os.path.exists(to_path):
-          os.makedirs(to_path)
-        copy_folder(from_path,os.path.join(to_path,format))
 
 
 def copy_release_notes_to_archive_location(archive_path,version):
@@ -276,10 +260,8 @@ def upload_artifacts(base_dir, version):
     shutil.copy("%s/modeshape-distribution/target/modeshape-%s-%s" % (base_dir,version,fsuffix), "downloads/%s/modeshape-%s-%s" % (version,version,tsuffix))
 
   # Copy the 'deploy/jbossas' artifact(s) ...
-  from_path = "%s/deploy/jbossas/target/distribution/modeshape-jbossas-%s-dist.zip" % (base_dir,version)
-  shutil.copy(from_path, "downloads/%s/modeshape-%s-jbossas-5-dist.zip" % (version,version))
-  from_path = "%s/deploy/jbossas/target/distribution/modeshape-jbossas-%s-dist-as6.zip" % (base_dir,version)
-  shutil.copy(from_path, "downloads/%s/modeshape-%s-jbossas-6-dist.zip" % (version,version))
+  from_path = "%s/deploy/jbossas/target/distribution/modeshape-%s-jbossas-7-dist.zip" % (base_dir,version)
+  shutil.copy(from_path, "downloads/%s/modeshape-%s-jbossas-7-dist.zip" % (version,version))
   
   # Copy the readme files ...
   for readme in ['release.html','release.txt']:
@@ -302,10 +284,8 @@ def upload_documentation(base_dir, version):
   os.makedirs("docs/%s/manuals" % version)
 
   # Move the 'api' and 'api-full' folders into the 'docs/<version>/' folder so we can rsync that '<version>' folder
-  os.rename("%s/modeshape-distribution/target/api" % base_dir, "docs/%s/api" % version)
+  #os.rename("%s/modeshape-distribution/target/api" % base_dir, "docs/%s/api" % version)
   os.rename("%s/modeshape-distribution/target/api-full" % base_dir, "docs/%s/api-full" % version)
-  os.rename("%s/docs/reference/target/docbook/publish/en-US" % base_dir, "docs/%s/manuals/reference" % version)
-  os.rename("%s/docs/gettingstarted/target/docbook/publish/en-US" % base_dir, "docs/%s/manuals/gettingstarted" % version)
 
   # Copy the readme files ...
   for readme in ['release.html','release.txt']:
