@@ -394,8 +394,7 @@ class DryRunUploader(DryRun):
 
 def maven_build_distribution(version):
   """Builds the distribution in the current working dir"""
-#ALPHA1  mvn_commands = [["clean", "install", "-Passembly"],["deploy","-Passembly","-DskipTests"]]
-  mvn_commands = [["clean", "install"],["deploy","-DskipTests"]]
+  mvn_commands = [["clean", "install", "-Passembly"],["deploy","-Passembly","-DskipTests"]]
     
   for c in mvn_commands:
     if settings['dry_run']:
@@ -410,10 +409,10 @@ def maven_build_distribution(version):
   print "Verifying build"
   # Check an assembly files ...
   fn = "modeshape-distribution/target/modeshape-%s-javadoc.zip" % (version)
-#ALPHA1  if os.path.isfile(fn):
-#ALPHA1	f = open(fn)
-#ALPHA1	xsd = f.read()
-#ALPHA1	f.close()
+  if os.path.isfile(fn):
+	f = open(fn)
+	xsd = f.read()
+	f.close()
 
 
 def get_version_pattern(): 
