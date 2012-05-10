@@ -121,10 +121,12 @@ def patch_poms(working_dir, version):
   walker = GlobDirectoryWalker(working_dir, "pom.xml")
   for pom_file in walker:
     tree = ElementTree()
-    tree.parse(pom_file)    
-    current_version_elem = get_parent_version_tag(tree)
+    tree.parse(pom_file)
+    # The current version of the POM is what we're looking for ...
+    current_version_elem = get_project_version_tag(tree)
     if current_version_elem == None:
-      current_version_elem = get_project_version_tag(tree)
+      # There is no version for the POM, so get it from the parent ...
+      current_version_elem = get_parent_version_tag(tree)
     current_version = current_version_elem.text
     if walker.replace_all_in(pom_file,"<version>%s</version>" % current_version,"<version>%s</version>" % version):
       patched_poms.append(pom_file)
@@ -148,6 +150,7 @@ def generate_release_notes(markdown_file,version,output_dir):
   readme_text = unmarkdown(readme_md)
 
   # Write out the two files in the desired location ...
+  os.makedirs(output_dir)
   path = os.path.join(output_dir,"release.html")
   mdf = open(path,'w')
   mdf.write(readme_html)
@@ -192,14 +195,14 @@ def copy_artifacts_to_archive_location(archive_path,version):
   from_path = os.path.join('modeshape-distribution','target','api-full')
   copy_folder(from_path,os.path.join(docs_path,'api-full'))
 
-  # Copy the API JavaDoc ...
-  from_path = os.path.join('modeshape-distribution','target','api')
-  copy_folder(from_path,os.path.join(docs_path,'api'))
-
-  # Copy the XRef ...
-  from_path = os.path.join('modeshape-distribution','target','xref')
-  if os.path.exists(from_path):
-    copy_folder(from_path,os.path.join(docs_path,'xref'))
+  ## Copy the API JavaDoc ...
+  #from_path = os.path.join('modeshape-distribution','target','api')
+  #copy_folder(from_path,os.path.join(docs_path,'api'))
+  #
+  ## Copy the XRef ...
+  #from_path = os.path.join('modeshape-distribution','target','xref')
+  #if os.path.exists(from_path):
+  #  copy_folder(from_path,os.path.join(docs_path,'xref'))
 
   # Copy the release notes into the archive area...
   for readme in ['release.html','release.txt']:
@@ -231,11 +234,6 @@ def update_versions(version):
   ## Update versions in the POM files ...
   for pom in patch_poms('.',version):
     modified_files.append(pom)
-
-#ALPHA1  ## Update versions in the DocBook modules ...
-#ALPHA1  docbook = DocBook(version)
-#ALPHA1  for modified_file in docbook.patch_docbooks_under('docs'):
-#ALPHA1      modified_files.append(modified_file)
 
   # Now make sure this goes back into the repository.
   git.commit(modified_files)
@@ -281,7 +279,7 @@ def upload_documentation(base_dir, version):
 
   # Create an area under 'target' where we can move all the files/folders that we need to upload ...
   os.chdir("%s/target/" % (base_dir))
-  os.makedirs("docs/%s/manuals" % version)
+  os.makedirs("docs/%s" % version)
 
   # Move the 'api' and 'api-full' folders into the 'docs/<version>/' folder so we can rsync that '<version>' folder
   #os.rename("%s/modeshape-distribution/target/api" % base_dir, "docs/%s/api" % version)
@@ -406,7 +404,7 @@ def release():
     os.makedirs(archive_path)
   print "archive_path = '%s'" % archive_path
   prettyprint("Step 5: Copying build artifacts and documentation to archive '%s'" % (archive_path), Levels.INFO)
-#ALPHA1  copy_artifacts_to_archive_location(archive_path,version)
+  copy_artifacts_to_archive_location(archive_path,version)
   copy_release_notes_to_archive_location(archive_path,version);
   prettyprint("Step 5: Complete", Levels.INFO)
 
@@ -431,20 +429,20 @@ def release():
 
   # Step 8: Upload javadocs to JBoss.org
   prettyprint("Step 8: Uploading documentation to JBoss.org", Levels.INFO)
-#ALPHA1  do_task(upload_documentation, [base_dir, version], async_processes)
+  do_task(upload_documentation, [base_dir, version], async_processes)
   prettyprint("Step 8: Complete", Levels.INFO)
   
   # Step 9: Upload downloads to JBoss.org
   prettyprint("Step 9: Uploading downloads to JBoss.org", Levels.INFO)
-#ALPHA1  do_task(upload_artifacts, [base_dir, version], async_processes)    
+  do_task(upload_artifacts, [base_dir, version], async_processes)    
   prettyprint("Step 9: Complete", Levels.INFO)
   
   ## Wait for processes to finish
-#ALPHA1  for p in async_processes:
-#ALPHA1    p.start()
+  for p in async_processes:
+    p.start()
   
-#ALPHA1  for p in async_processes:
-#ALPHA1    p.join()
+  for p in async_processes:
+    p.join()
   
   prettyprint("\n\n\nDone!  Now all you need to do is the remaining post-release tasks as outlined in https://docspace.corp.redhat.com/docs/DOC-28594", Levels.INFO)
 

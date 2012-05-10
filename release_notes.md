@@ -5,7 +5,7 @@ only for testing and previewing features. APIs and storage formats are still sub
 
 ## What's new
 
-There is a lot that's changed since ModeShape 2.7, including:
+There is a lot that's changed since ModeShape 2.8.x, including:
 
 - ModeShape now uses Infinispan for all caching and storage, giving a powerful and flexible
 foundation for creating JCR repositories that are fast, scalable, and highly available.
@@ -38,13 +38,13 @@ detectors that use the filename extensions and the binary content.
 system. Storage of binary values in Infinispan and DBMSes will be added in upcoming releases.
 - API interfaces and methods that were deprecated in 2.7.0.Final (or later) have been removed.
 There weren't many of these; most of the ModeShape API remains the same.
+- Integration with JBoss AS 7.1. ModeShape runs as an integrated subsystem within AS7, and
+the AS7 tooling can be used to define and manage repositories independently of each other
+while the server is running.
 - Many bug fixes and minor improvements
 
 There are also several major new features that are planned (but not yet available in this release):
 
-- Deployment to JBoss AS7. This is not yet available in this release, but by the next alpha
-release we'll have kits that install ModeShape as an AS7 service, allowing you to configure
-and manage repositories using the AS7 tooling.
 - JTA support is not yet working in this release but will be soon. It will allow
 JCR Sessions to participate in XA and container-managed transactions.
 - Map-reduce based operations for performing reporting and custom read-only operations in parallel
@@ -82,6 +82,12 @@ and ready for testing. If any issues are found, please log a bug report in our J
 - Adding/Removing Mixins
 - Referential integrity enforcement
 
+### Query / Search
+- XPath
+- JCR-SQL
+- JCR-SQL2
+- JCR-QOM
+
 ### Importing/Exporting Repository Content
 - System View Import/Export
 - Document View Import/Export
@@ -102,6 +108,7 @@ and ready for testing. If any issues are found, please log a bug report in our J
 - Active Locks
 
 ### Other JCR Optional Features
+- Observation
 - Locking
 - Versioning
 
@@ -124,27 +131,32 @@ and ready for testing. If any issues are found, please log a bug report in our J
 - MP3 Sequencer
 - MS Office Sequencer
 - Text Sequencers (Delimited and Fixed Width)
+- XML Sequencer
 - XML Schema Document (XSD) Sequencer
+- Web Service Definition Lanaguage (WSDL) 1.1 Sequencer
+- Zip File Sequencer (also WARs, JARs, and EARs)
 
 ### ModeShape Deployment/Access Models
 - JNDI-Based Deployment
+- Deploy as a subsystem in JBoss AS7, with RHQ/JON monitoring
+- Access through RESTful Service
+- JDBC driver for accessing ModeShape content through JDBC API and JCR-SQL2 queries
 - Embedded (in Server or JEE Archive) Deployment
-- Sequencers: CND, DDL, images, Java (source and class files), MP3, MS Office, Text, XSD
-- MIME type detection
+- OSGi-Compatible Archives
+
+### Other ModeShape features
+- Automatic MIME type detection of binary content
+- Asynchronous sequencing operations, within completion notified via events
+
 
 However, a number of features are **not** yet implemented. Please do not use these
 features or report problems; many will be implemented and ready for testing
 in the next release.
 
 ### Query / Search
-- XPath
-- JCR-SQL
-- JCR-SQL2
-- JCR-QOM
 - Full-Text Search
 
 ### Other JCR Optional Features
-- Observation
 - Shareable Nodes
 
 ### ModeShape Storage Options
@@ -152,20 +164,13 @@ in the next release.
 - Separate large binary storage in Infinispan and DBMS
 
 ### ModeShape Sequencers
-- XML Sequencer
-- Web Service Definition Lanaguage (WSDL) 1.1 Sequencer
-- Zip File Sequencer (also WARs, JARs, and EARs)
 - Teiid Relational Model Sequencer
 - Teiid VDB Sequencer
 
 ### ModeShape Deployment/Access Models
 - Clustering and grids
-- OSGi-Compatible Archives
-- Access through RESTful Service
 - Access through WebDAV Service
 - JTA support, allowing Sessions to participate in XA and container-managed transactions 
-- Deploy as a service in JBoss Application Server, with RHQ/JON monitoring
-- JDBC driver for accessing ModeShape content through JDBC API and JCR-SQL2 queries
 
 
 ## Bug Fixes, Features, and other Issues
