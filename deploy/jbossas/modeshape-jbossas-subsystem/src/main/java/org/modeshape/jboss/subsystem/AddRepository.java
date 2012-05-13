@@ -67,11 +67,6 @@ public class AddRepository extends AbstractAddStepHandler {
     @Override
     protected void populateModel( ModelNode operation,
                                   ModelNode model ) throws OperationFailedException {
-        populate(operation, model);
-    }
-
-    public static void populate( ModelNode operation,
-                                 ModelNode model ) throws OperationFailedException {
         for (AttributeDefinition attribute : ModelAttributes.REPOSITORY_ATTRIBUTES) {
             attribute.validateAndSet(operation, model);
         }
