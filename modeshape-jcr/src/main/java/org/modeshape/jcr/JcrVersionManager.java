@@ -357,8 +357,8 @@ final class JcrVersionManager implements VersionManager {
             MutableCachedNode versionableNode = versionSession.mutable(versionedKey);
             PropertyFactory props = propertyFactory();
             ReferenceFactory refFactory = session.referenceFactory();
-            Reference historyRef = refFactory.create(historyKey);
-            Reference baseVersionRef = refFactory.create(version.getKey());
+            Reference historyRef = refFactory.create(historyKey, true);
+            Reference baseVersionRef = refFactory.create(version.getKey(), true);
             versionableNode.setProperty(versionSession, props.create(JcrLexicon.VERSION_HISTORY, historyRef));
             versionableNode.setProperty(versionSession, props.create(JcrLexicon.BASE_VERSION, baseVersionRef));
             versionableNode.setProperty(versionSession, props.create(JcrLexicon.IS_CHECKED_OUT, Boolean.FALSE));
@@ -539,7 +539,8 @@ final class JcrVersionManager implements VersionManager {
         MutableCachedNode versionable = versionSession.mutable(node.key());
         NodeKey baseVersionKey = node.getBaseVersion().key();
         PropertyFactory props = propertyFactory();
-        versionable.setProperty(versionSession, props.create(JcrLexicon.PREDECESSORS, new Object[]{session.referenceFactory().create(baseVersionKey)}));
+        Reference baseVersionRef = session.referenceFactory().create(baseVersionKey, true);
+        versionable.setProperty(versionSession, props.create(JcrLexicon.PREDECESSORS, new Object[]{baseVersionRef}));
         versionable.setProperty(versionSession, props.create(JcrLexicon.IS_CHECKED_OUT, Boolean.TRUE));
         versionSession.save();
     }
@@ -831,7 +832,7 @@ final class JcrVersionManager implements VersionManager {
 
         clearCheckoutStatus(existingNode.mutable(), jcrVersion.key(), cache, propertyFactory());
         ReferenceFactory refFactory = session.referenceFactory();
-        Reference baseVersionRef = refFactory.create(jcrVersion.key());
+        Reference baseVersionRef = refFactory.create(jcrVersion.key(), true);
 
         MutableCachedNode mutable = existingNode.mutable();
         mutable.setProperty(cache, propFactory.create(JcrLexicon.IS_CHECKED_OUT, Boolean.FALSE));

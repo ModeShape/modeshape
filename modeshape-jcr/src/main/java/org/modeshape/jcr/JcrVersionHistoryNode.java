@@ -298,7 +298,7 @@ final class JcrVersionHistoryNode extends JcrSystemNode implements VersionHistor
 
         // Use a separate system session to set the REFERENCE property on the 'nt:versionLabels' child node ...
         SessionCache system = session.createSystemCache(false);
-        Reference labelReference = session.referenceFactory().create(version.key());
+        Reference labelReference = session.referenceFactory().create(version.key(), true);
         Property ref = session.propertyFactory().create(nameFrom(label), labelReference);
         system.mutable(versionLabels.key()).setProperty(system, ref);
         system.save();

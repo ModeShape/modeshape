@@ -252,6 +252,12 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         return node().getSegment(sessionCache());
     }
 
+    /**
+     * Checks if this node is foreign by comparing the node's source key & workspace key against the same keys from the
+     * session root. This method is used for reference resolving.
+     *
+     * @return true if the node is considered foreign, false otherwise.
+     */
     protected final boolean isForeign() {
         NodeKey nodeKey = key();
         if (nodeKey == null) {
@@ -260,10 +266,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         String nodeWorkspaceKey = nodeKey.getWorkspaceKey();
 
         NodeKey rootKey = cache().getRootKey();
-        String systemWorkspaceKey = session().repository().systemWorkspaceKey();
-        boolean sameWorkspace = rootKey.getWorkspaceKey().equals(nodeWorkspaceKey) || systemWorkspaceKey.equals(nodeWorkspaceKey);
-        boolean sameSource = rootKey.getSourceKey().equalsIgnoreCase(
-                nodeKey.getSourceKey());
+        boolean sameWorkspace = rootKey.getWorkspaceKey().equals(nodeWorkspaceKey);
+        boolean sameSource = rootKey.getSourceKey().equalsIgnoreCase(nodeKey.getSourceKey());
         return !sameWorkspace || !sameSource;
     }
 

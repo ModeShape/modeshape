@@ -1471,8 +1471,8 @@ public class JcrSession implements Session {
                     }
 
                     // Now update the node as if it's checked in (with the exception of the predecessors...
-                    Reference historyRef = referenceFactory.create(historyKey);
-                    Reference baseVersionRef = referenceFactory.create(baseVersionKey);
+                    Reference historyRef = referenceFactory.create(historyKey, true);
+                    Reference baseVersionRef = referenceFactory.create(baseVersionKey, true);
                     node.setProperty(cache, propertyFactory.create(JcrLexicon.IS_CHECKED_OUT, Boolean.TRUE));
                     node.setProperty(cache, propertyFactory.create(JcrLexicon.VERSION_HISTORY, historyRef));
                     node.setProperty(cache, propertyFactory.create(JcrLexicon.BASE_VERSION, baseVersionRef));

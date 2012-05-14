@@ -66,6 +66,7 @@ import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.PropertyFactory;
+import org.modeshape.jcr.value.Reference;
 import org.modeshape.jcr.value.ReferenceFactory;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFactory;
@@ -965,7 +966,7 @@ public class SystemContent {
             //the tck expects this to be a reference, so that getNode works on it
             historyProps.add(propertyFactory.create(JcrLexicon.COPIED_FROM,
                                                     org.modeshape.jcr.value.PropertyType.WEAKREFERENCE,
-                                                    originalVersionKey));
+                                                    referenceFactory.create(originalVersionKey, true)));
         }
         Name historyName = versionHistoryPath.getLastSegment().getName();
         MutableCachedNode history = historyParent.createChild(system, versionHistoryKey, historyName, historyProps);
@@ -1053,7 +1054,8 @@ public class SystemContent {
                                                    now);
             // Overwrite the predecessor's property ...
             NodeKey rootVersionKey = historyNode.getChildReferences(system).getChild(JcrLexicon.ROOT_VERSION).getKey();
-            predecessors = propertyFactory.create(JcrLexicon.PREDECESSORS, new Object[]{referenceFactory.create(rootVersionKey)});
+            Reference rootVersionRef = referenceFactory.create(rootVersionKey, true);
+            predecessors = propertyFactory.create(JcrLexicon.PREDECESSORS, new Object[]{rootVersionRef});
             versionName = names.create("1.0");
         } else {
             ChildReferences historyChildren = historyNode.getChildReferences(system);
@@ -1083,7 +1085,7 @@ public class SystemContent {
 
         // Now update the predecessor nodes to have the new version node be included as one of their successors ...
         Property successors = null;
-        final Set<NodeKey> successorKeys = new HashSet<NodeKey>();
+        final Set<Reference> successorReferences = new HashSet<Reference>();
         for (Object value : predecessors) {
             NodeKey predecessorKey = ((NodeKeyReference) value).getNodeKey();
             CachedNode predecessor = system.getNode(predecessorKey);
@@ -1092,17 +1094,17 @@ public class SystemContent {
             successors = predecessor.getProperty(JcrLexicon.SUCCESSORS, system);
             if (successors != null) {
                 // There were already successors, so we need to add our new version node the list ...
-                successorKeys.clear();
+                successorReferences.clear();
                 for (Object successorValue : successors) {
                     NodeKey successorKey = ((NodeKeyReference)successorValue).getNodeKey();
-                    successorKeys.add(successorKey);
+                    successorReferences.add(referenceFactory.create(successorKey, true));
                 }
             }
 
             // Now add the uuid of the versionable node ...
-            successorKeys.add(versionKey);
+            successorReferences.add(referenceFactory.create(versionKey, true));
 
-            successors = propertyFactory.create(JcrLexicon.SUCCESSORS, org.modeshape.jcr.value.PropertyType.REFERENCE, successorKeys);
+            successors = propertyFactory.create(JcrLexicon.SUCCESSORS, org.modeshape.jcr.value.PropertyType.REFERENCE, successorReferences);
             system.mutable(predecessorKey).setProperty(system, successors);
         }
 

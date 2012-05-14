@@ -240,24 +240,9 @@ public class JcrTckTest {
 
         // Or uncomment the following lines to execute the different sets/suites of tests ...
         TestSuite suite = new TestSuite("JCR 2.0 API tests");
-//        suite.addTest(wipSuite());
         suite.addTest(levelOneSuite());
         suite.addTest(levelTwoSuite());
         suite.addTest(new OptionalFeatureTests());
-
-        return suite;
-    }
-
-    public static Test wipSuite() {
-        TestSuite suite = new TestSuite("WIP Tests");
-        suite.addTestSuite(MergeCancelMergeTest.class);
-        suite.addTestSuite(MergeCheckedoutSubNodeTest.class);
-        suite.addTestSuite(MergeDoneMergeTest.class);
-        suite.addTestSuite(MergeNodeIteratorTest.class);
-        suite.addTestSuite(MergeNodeTest.class);
-        suite.addTestSuite(MergeShallowTest.class);
-        suite.addTestSuite(MergeNonVersionableSubNodeTest.class);
-        suite.addTestSuite(MergeSubNodeTest.class);
 
         return suite;
     }
@@ -598,7 +583,7 @@ public class JcrTckTest {
             // TODO author=Horia Chiorean date=4/19/12 description=https://issues.apache.org/jira/browse/JCR-2666
             addTestSuite(excludeTests(RestoreTest.class, "testRestoreNameJcr2"));
 
-//            addTestSuite(WorkspaceRestoreTest.class);
+            addTestSuite(WorkspaceRestoreTest.class);
 
             addTestSuite(OnParentVersionAbortTest.class);
             addTestSuite(OnParentVersionComputeTest.class);
@@ -613,17 +598,17 @@ public class JcrTckTest {
             addTestSuite(SessionMoveVersionExceptionTest.class);
             addTestSuite(WorkspaceMoveVersionExceptionTest.class);
 
-//            addTestSuite(MergeCancelMergeTest.class);
-//            addTestSuite(MergeCheckedoutSubNodeTest.class);
-//            addTestSuite(MergeDoneMergeTest.class);
-//            addTestSuite(MergeNodeIteratorTest.class);
-//            addTestSuite(MergeNodeTest.class);
-//            addTestSuite(MergeShallowTest.class);
-//            addTestSuite(MergeNonVersionableSubNodeTest.class);
-//            addTestSuite(MergeSubNodeTest.class);
+            addTestSuite(MergeCancelMergeTest.class);
+            addTestSuite(MergeCheckedoutSubNodeTest.class);
+            addTestSuite(MergeDoneMergeTest.class);
+            addTestSuite(MergeNodeIteratorTest.class);
+            addTestSuite(MergeNodeTest.class);
+            addTestSuite(MergeShallowTest.class);
+            addTestSuite(MergeNonVersionableSubNodeTest.class);
+            addTestSuite(MergeSubNodeTest.class);
 
             //TODO author=Horia Chiorean date=5/14/12 description=https://issues.apache.org/jira/browse/JCR-3307
-            //            addTestSuite(MergeActivityTest.class);
+            //addTestSuite(MergeActivityTest.class);
 
             // JCR 2.0
             addTestSuite(ActivitiesTest.class);

@@ -56,7 +56,6 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.jcr.api.AnonymousCredentials;
-import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.value.Path;
 
 public class JcrSessionTest extends SingleUseAbstractTest {

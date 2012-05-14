@@ -210,11 +210,11 @@ class JcrContentHandler extends DefaultHandler {
                     // If so, then we ignore it because we'll use our own key ...
 
                     // Does the versionable node already have a base version?
-                    AbstractJcrProperty baseVersionRef = node.getProperty(JcrLexicon.BASE_VERSION);
-                    if (baseVersionRef != null) {
-                        String baseVersionIdentifier = baseVersionRef.getString();
-                        NodeKey baseVersionKey = new NodeKey(node.key().getSourceKey(), session().repository().systemWorkspaceKey(), baseVersionIdentifier);
-                        session.setDesiredBaseVersionKey(node.key(), baseVersionKey);
+                    AbstractJcrProperty baseVersionProp = node.getProperty(JcrLexicon.BASE_VERSION);
+                    if (baseVersionProp != null) {
+                        //we rely on the fact that the base version ref is exported with full key
+                        NodeKeyReference baseVersionRef = (NodeKeyReference) baseVersionProp.getValue().value();
+                        session.setDesiredBaseVersionKey(node.key(), baseVersionRef.getNodeKey());
                     }
                 }
 
@@ -613,8 +613,13 @@ class JcrContentHandler extends DefaultHandler {
                             values.add(valueFor(value, propertyType));
                         } else if (value != null && (propertyType == PropertyType.REFERENCE || propertyType == PropertyType.WEAKREFERENCE)) {
                             try {
+                                boolean isSystemReference = name.getNamespaceUri().equals(JcrLexicon.Namespace.URI) ||
+                                        name.getNamespaceUri().equals(ModeShapeLexicon.NAMESPACE.getNamespaceUri());
+                                if (!isSystemReference) {
+                                    //we only prepend the parent information for non-system references
+                                    value = parentHandler().node().key().withId(value).toString();
+                                }
                                 // we only have the identifier of the node, so try to use the parent to determine the workspace & source key
-                                value = parentHandler().node().key().withId(value).toString();
                                 values.add(valueFor(value, propertyType));
                             } catch (SAXException e) {
                                 throw new EnclosingSAXException(e);
