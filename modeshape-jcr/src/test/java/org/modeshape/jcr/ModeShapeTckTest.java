@@ -474,8 +474,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         session.logout();
     }
 
-    public void IGNOREtestShouldCopyFromAnotherWorkspace() throws Exception {
-        // TODO: Copy and clone
+    public void testShouldCopyFromAnotherWorkspace() throws Exception {
         session = getHelper().getSuperuserSession("otherWorkspace");
         String nodetype1 = this.getProperty("nodetype");
         Node node1 = session.getRootNode().addNode(nodeName1, nodetype1);
@@ -501,8 +500,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
      * 
      * @throws Exception if an error occurs
      */
-    public void IGNOREtestShouldNotCloneIfItWouldViolateTypeSemantics() throws Exception {
-        // TODO: Copy and clone
+    public void testShouldNotCloneIfItWouldViolateTypeSemantics() throws Exception {
         session = getHelper().getSuperuserSession("otherWorkspace");
         assertThat(session.getWorkspace().getName(), is("otherWorkspace"));
 
@@ -1352,7 +1350,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
     }
 
     @FixFor( "MODE-709" )
-    public void IGNORE_testShouldCreateVersionStorageForWhenVersionableNodesCopied() throws Exception {
+    public void testShouldCreateVersionStorageForWhenVersionableNodesCopied() throws Exception {
         session = getHelper().getReadWriteSession();
 
         Node root = getTestRoot(session);
@@ -1369,8 +1367,6 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
         String newParentPath = targetNode.getPath() + "/" + parentNode.getName();
         session.getWorkspace().copy(parentNode.getPath(), newParentPath);
-
-        // TODO: Copy and clone
 
         parentNode = (Node)session.getItem(newParentPath);
         childNode = parentNode.getNode("versionableChild");

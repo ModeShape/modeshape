@@ -152,6 +152,18 @@ public interface SessionCache extends NodeCache {
      */
     public Set<NodeKey> getChangedNodeKeysAtOrBelow( CachedNode node );
 
+
+    /**
+     * Returns a set with the {@link NodeKey}s of the existing nodes (persistent not transient & new) which are at
+     * and below the path of the node with the given key.
+     *
+     * Note that this method will attempt to load each node
+     *
+     * @param nodeKey the key of node which will be considered the root node
+     * @return a <set>Set</set> of nodekeys or an empty set
+     */
+    public Set<NodeKey> getNodeKeysAtAndBelow( NodeKey nodeKey );
+
     /**
      * Clears all changes in the cache that are at or below the supplied node.
      * 

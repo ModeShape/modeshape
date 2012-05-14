@@ -39,16 +39,21 @@ public class NodeKeyReference implements Reference {
 
     private final NodeKey key;
     private final boolean isWeak;
-
-    public NodeKeyReference( NodeKey key ) {
-        this.key = key;
-        this.isWeak = false;
-    }
+    private final boolean isForeign;
 
     public NodeKeyReference( NodeKey key,
-                             boolean weak ) {
+                             boolean weak,
+                             boolean isForeign) {
         this.key = key;
         this.isWeak = weak;
+        this.isForeign = isForeign;
+    }
+
+    /**
+     * {@link org.modeshape.jcr.AbstractJcrNode#isForeign()}
+     */
+    public boolean isForeign() {
+        return isForeign;
     }
 
     /**
@@ -60,7 +65,7 @@ public class NodeKeyReference implements Reference {
 
     @Override
     public String getString() {
-        return this.key.toString();
+        return isForeign ? this.key.toString() : this.key.getIdentifier();
     }
 
     @Override
@@ -88,7 +93,14 @@ public class NodeKeyReference implements Reference {
             if (that.isWeak()) return 1;
         }
         if (that instanceof NodeKeyReference) {
-            return this.key.compareTo(((NodeKeyReference)that).getNodeKey());
+            NodeKeyReference thatNodeKeyReference = (NodeKeyReference)that;
+            if (this.isForeign && !thatNodeKeyReference.isForeign) {
+                return 1;
+            }
+            if (!this.isForeign && thatNodeKeyReference.isForeign) {
+                return -1;
+            }
+            return this.key.compareTo(thatNodeKeyReference.getNodeKey());
         }
         return this.getString().compareTo(that.getString());
     }
@@ -98,7 +110,7 @@ public class NodeKeyReference implements Reference {
         if (obj == this) return true;
         if (obj instanceof NodeKeyReference) {
             NodeKeyReference that = (NodeKeyReference)obj;
-            return this.isWeak() == that.isWeak() && this.key.equals(that.getNodeKey());
+            return this.isWeak() == that.isWeak() && this.key.equals(that.getNodeKey()) && isForeign == that.isForeign;
         }
         if (obj instanceof Reference) {
             Reference that = (Reference)obj;

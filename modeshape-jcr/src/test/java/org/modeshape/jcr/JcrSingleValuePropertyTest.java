@@ -210,8 +210,8 @@ public class JcrSingleValuePropertyTest extends MultiUseAbstractTest {
         prop = cars.getProperty("referenceProperty");
         assertThat(prop.getNode(), is((Node)altima));
         assertThat(prop.getType(), is(PropertyType.REFERENCE));
-        assertThat(prop.getString(), is(altima.key().toString()));
-        assertThat(prop.getLength(), is((long)altima.key().toString().length()));
+        assertThat(prop.getString(), is(altima.getIdentifier()));
+        assertThat(prop.getLength(), is((long) altima.getIdentifier().length()));
         checkValue(prop);
     }
 

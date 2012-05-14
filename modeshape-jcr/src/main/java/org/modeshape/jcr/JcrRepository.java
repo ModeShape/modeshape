@@ -101,6 +101,7 @@ import org.modeshape.jcr.api.query.Query;
 import org.modeshape.jcr.bus.ChangeBus;
 import org.modeshape.jcr.bus.ClusteredRepositoryChangeBus;
 import org.modeshape.jcr.bus.RepositoryChangeBus;
+import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.cache.SessionCache;
@@ -450,6 +451,14 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             throw new IllegalStateException(JcrI18n.repositoryIsNotRunningOrHasBeenShutDown.text(repositoryName()));
         }
         return running;
+    }
+
+    protected final boolean hasWorkspace(String workspaceName) {
+        return repositoryCache().getWorkspaceNames().contains(workspaceName);
+    }
+
+    protected final NodeCache workspaceCache(String workspaceName) {
+        return repositoryCache().getWorkspaceCache(workspaceName);
     }
 
     final SessionCache createSystemSession( ExecutionContext context,

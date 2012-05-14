@@ -23,6 +23,7 @@
  */
 package org.modeshape.jcr.cache;
 
+import java.util.Map;
 import java.util.Set;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
@@ -277,4 +278,36 @@ public interface MutableCachedNode extends CachedNode {
      * @return an ETag value; never null but possibly empty
      */
     String getEtag( SessionCache cache );
+
+
+    /**
+     * Copies into this node all the properties and children (deep copy) from the given source node.
+     *
+     * @param cache the cache to which this node belongs; may not be null
+     * @param sourceNode the node from which to copy the properties and children; may not be null
+     * @param sourceCache the cache in which the source node belongs; may not be null
+     * @return a [source key -> target key] which represents the node correspondence after the copy operation.
+     */
+    public Map<NodeKey, NodeKey> deepCopy( SessionCache cache,
+                                           CachedNode sourceNode,
+                                           SessionCache sourceCache );
+
+    /**
+     * Clones into this node all the properties and children (deep clone) from the given source node. Each cloned node
+     * will have the same identifier as the source node.
+     *
+     * @param cache the cache to which this node belongs; may not be null
+     * @param sourceNode the node from which to copy the properties and children; may not be null
+     * @param sourceCache the cache in which the source node belongs; may not be null
+     *
+     */
+    public void deepClone( SessionCache cache,
+                           CachedNode sourceNode,
+                           SessionCache sourceCache);
+
+    /**
+     * Returns a set with the keys of the children which have been removed for this node.
+     * @return a {@code Set{@link NodeKey}, never null
+     */
+    public Set<NodeKey> removedChildren();
 }

@@ -96,6 +96,7 @@ import org.modeshape.jcr.value.PropertyFactory;
 import org.modeshape.jcr.value.Reference;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFactory;
+import org.modeshape.jcr.value.basic.NodeKeyReference;
 
 /**
  * The abstract base class for all {@link Node} implementations.
@@ -251,9 +252,32 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         return node().getSegment(sessionCache());
     }
 
+    /**
+     * Checks if this node is foreign by comparing the node's source key & workspace key against the same keys from the
+     * session root. This method is used for reference resolving.
+     *
+     * @return true if the node is considered foreign, false otherwise.
+     */
+    protected final boolean isForeign() {
+        NodeKey nodeKey = key();
+        if (nodeKey == null) {
+            return false;
+        }
+        String nodeWorkspaceKey = nodeKey.getWorkspaceKey();
+
+        NodeKey rootKey = cache().getRootKey();
+        boolean sameWorkspace = rootKey.getWorkspaceKey().equals(nodeWorkspaceKey);
+        boolean sameSource = rootKey.getSourceKey().equalsIgnoreCase(nodeKey.getSourceKey());
+        return !sameWorkspace || !sameSource;
+    }
+
+    protected final boolean isInTheSameProcessAs( String otherProcessId ) {
+        return session().context().getProcessId().equalsIgnoreCase(otherProcessId);
+    }
+
     @Override
-    public String getIdentifier() {
-        return key.toString();
+    public final String getIdentifier() {
+        return isForeign() ? key().toString() : key().getIdentifier();
     }
 
     /**
@@ -426,17 +450,17 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         // Figure out the JCR property type ...
         boolean single = property.isSingle();
         boolean skipProtected = false;
-        JcrPropertyDefinition defn = findBestPropertyDefintion(primaryType,
-                                                               mixinTypes,
-                                                               property,
-                                                               single,
-                                                               skipProtected,
-                                                               false,
-                                                               nodeTypes);
+        JcrPropertyDefinition defn = findBestPropertyDefinition(primaryType,
+                                                                mixinTypes,
+                                                                property,
+                                                                single,
+                                                                skipProtected,
+                                                                false,
+                                                                nodeTypes);
         if (defn != null) return defn;
 
         // See if there is a definition that has constraints that were violated ...
-        defn = findBestPropertyDefintion(primaryType, mixinTypes, property, single, skipProtected, true, nodeTypes);
+        defn = findBestPropertyDefinition(primaryType, mixinTypes, property, single, skipProtected, true, nodeTypes);
         String pName = readable(property.getName());
         String loc = location();
         if (defn != null) {
@@ -466,13 +490,13 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @param nodeTypes the node types cache to use; may not be null
      * @return the property definition that allows setting this property, or null if there is no such definition
      */
-    final JcrPropertyDefinition findBestPropertyDefintion( Name primaryTypeNameOfParent,
-                                                           Collection<Name> mixinTypeNamesOfParent,
-                                                           org.modeshape.jcr.value.Property property,
-                                                           boolean isSingle,
-                                                           boolean skipProtected,
-                                                           boolean skipConstraints,
-                                                           NodeTypes nodeTypes ) {
+    final JcrPropertyDefinition findBestPropertyDefinition( Name primaryTypeNameOfParent,
+                                                            Collection<Name> mixinTypeNamesOfParent,
+                                                            org.modeshape.jcr.value.Property property,
+                                                            boolean isSingle,
+                                                            boolean skipProtected,
+                                                            boolean skipConstraints,
+                                                            NodeTypes nodeTypes ) {
         JcrPropertyDefinition definition = null;
         int propertyType = PropertyTypeUtil.jcrPropertyTypeFor(property);
 
@@ -567,9 +591,16 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         return valueFrom(PropertyType.BINARY, value);
     }
 
-    final JcrValue valueFrom( javax.jcr.Node value ) {
+    final JcrValue valueFrom( javax.jcr.Node value ) throws RepositoryException {
+        if (! (value instanceof AbstractJcrNode)) {
+            throw new IllegalArgumentException("Invalid node type (expected a ModeShape node): " + value.getClass().toString());
+        }
+        AbstractJcrNode node = (AbstractJcrNode) value;
+        if (!this.isInTheSameProcessAs(node.session().context().getProcessId())) {
+            throw new RepositoryException(JcrI18n.nodeNotInTheSameSession.text(node.path()));
+        }
         NodeKey key = ((AbstractJcrNode)value).key();
-        Reference ref = session.context().getValueFactories().getReferenceFactory().create(key);
+        Reference ref = session.context().getValueFactories().getReferenceFactory().create(key, ((AbstractJcrNode)value).isForeign());
         return valueFrom(PropertyType.REFERENCE, ref);
     }
 
@@ -983,6 +1014,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException, LockException,
         RepositoryException {
         checkNodeTypeCanBeModified();
+
+        session.checkPermission(getPath(), ModeShapePermissions.ADD_NODE);
 
         if (isLocked() && !getLock().isLockOwningSession()) {
             throw new LockException(JcrI18n.lockTokenNotHeld.text(location()));
@@ -1974,6 +2007,20 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         return propertiesOnOtherNodesReferencingThis(propertyName, PropertyType.WEAKREFERENCE);
     }
 
+    protected PropertyIterator getAllReferences() throws RepositoryException {
+        List<javax.jcr.Property> allReferences = new ArrayList<javax.jcr.Property>();
+
+        for (PropertyIterator strongRefIterator = getReferences(); strongRefIterator.hasNext(); ) {
+            allReferences.add(strongRefIterator.nextProperty());
+        }
+
+        for (PropertyIterator weakRefIterator = getReferences(); weakRefIterator.hasNext(); ) {
+            allReferences.add(weakRefIterator.nextProperty());
+        }
+
+        return new JcrPropertyIterator(allReferences);
+    }
+
     /**
      * Find the properties on other nodes that are REFERENCE or WEAKREFERENCE properties (as dictated by the
      * <code>referenceType</code> parameter) to this node.
@@ -2957,7 +3004,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         if (!hasProperty(JcrLexicon.BASE_VERSION)) {
             throw new UnsupportedRepositoryOperationException(JcrI18n.requiresVersionable.text());
         }
-        return (JcrVersionNode)session().getNodeByIdentifier(getProperty(JcrLexicon.BASE_VERSION).getString());
+        NodeKey baseVersionKey = ((NodeKeyReference) getProperty(JcrLexicon.BASE_VERSION).getValue().value()).getNodeKey();
+        return (JcrVersionNode)session().node(baseVersionKey, null);
     }
 
     @Override

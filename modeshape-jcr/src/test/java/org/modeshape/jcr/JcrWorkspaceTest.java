@@ -71,7 +71,6 @@ public class JcrWorkspaceTest extends SingleUseAbstractTest {
         workspace.copy(null, null);
     }
 
-    @Ignore( "QueryManager is not initialized correctly, preventing the 'copy' to work properly" )
     @Test
     public void shouldCopyFromPathToAnotherPathInSameWorkspace() throws Exception {
         workspace.copy("/a/b", "/b/b-copy");
@@ -121,10 +120,8 @@ public class JcrWorkspaceTest extends SingleUseAbstractTest {
         assertThat(workspace.getNodeTypeManager(), is(notNullValue()));
     }
 
-    @Ignore
     @Test
     public void shouldGetObservationManager() throws Exception {
-        // TODO: Observation
         assertThat(workspace.getObservationManager(), is(notNullValue()));
     }
 

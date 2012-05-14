@@ -1711,8 +1711,6 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
      * @see WorkspaceOperationTest#testCopy()
      * @throws Exception
      */
-    // TODO author=Horia Chiorean date=3/2/12 description=Enable when workspace.copy is implemented
-    @Ignore
     @FixFor("MODE-1312")
     @Test
     public void shouldTestWorkspaceOperationTest_testCopy() throws Exception {

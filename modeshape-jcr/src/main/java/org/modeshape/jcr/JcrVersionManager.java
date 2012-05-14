@@ -357,8 +357,8 @@ final class JcrVersionManager implements VersionManager {
             MutableCachedNode versionableNode = versionSession.mutable(versionedKey);
             PropertyFactory props = propertyFactory();
             ReferenceFactory refFactory = session.referenceFactory();
-            Reference historyRef = refFactory.create(historyKey);
-            Reference baseVersionRef = refFactory.create(version.getKey());
+            Reference historyRef = refFactory.create(historyKey, true);
+            Reference baseVersionRef = refFactory.create(version.getKey(), true);
             versionableNode.setProperty(versionSession, props.create(JcrLexicon.VERSION_HISTORY, historyRef));
             versionableNode.setProperty(versionSession, props.create(JcrLexicon.BASE_VERSION, baseVersionRef));
             versionableNode.setProperty(versionSession, props.create(JcrLexicon.IS_CHECKED_OUT, Boolean.FALSE));
@@ -539,7 +539,8 @@ final class JcrVersionManager implements VersionManager {
         MutableCachedNode versionable = versionSession.mutable(node.key());
         NodeKey baseVersionKey = node.getBaseVersion().key();
         PropertyFactory props = propertyFactory();
-        versionable.setProperty(versionSession, props.create(JcrLexicon.PREDECESSORS, new String[]{baseVersionKey.toString()}));
+        Reference baseVersionRef = session.referenceFactory().create(baseVersionKey, true);
+        versionable.setProperty(versionSession, props.create(JcrLexicon.PREDECESSORS, new Object[]{baseVersionRef}));
         versionable.setProperty(versionSession, props.create(JcrLexicon.IS_CHECKED_OUT, Boolean.TRUE));
         versionSession.save();
     }
@@ -807,7 +808,8 @@ final class JcrVersionManager implements VersionManager {
                                                                           .property()
                                                                           .getFirstValue());
             AbstractJcrProperty uuidProp = sourceNode.getProperty(JcrLexicon.FROZEN_UUID);
-            NodeKey desiredKey = new NodeKey(session.stringFactory().create(uuidProp.property().getFirstValue()));
+            String frozenUuidString = session.stringFactory().create(uuidProp.property().getFirstValue());
+            NodeKey desiredKey = parentNode.key().withId(frozenUuidString);
 
             Property primaryType = propFactory.create(JcrLexicon.PRIMARY_TYPE, primaryTypeName);
             MutableCachedNode newChild = parentNode.mutable().createChild(cache,
@@ -830,7 +832,7 @@ final class JcrVersionManager implements VersionManager {
 
         clearCheckoutStatus(existingNode.mutable(), jcrVersion.key(), cache, propertyFactory());
         ReferenceFactory refFactory = session.referenceFactory();
-        Reference baseVersionRef = refFactory.create(jcrVersion.key());
+        Reference baseVersionRef = refFactory.create(jcrVersion.key(), true);
 
         MutableCachedNode mutable = existingNode.mutable();
         mutable.setProperty(cache, propFactory.create(JcrLexicon.IS_CHECKED_OUT, Boolean.FALSE));
@@ -878,7 +880,7 @@ final class JcrVersionManager implements VersionManager {
         MergeCommand op = new MergeCommand(targetNode, sourceSession, bestEffort, isShallow);
         op.execute();
 
-        session.save();
+        targetNode.session().save();
 
         return op.getFailures();
     }
@@ -1197,7 +1199,7 @@ final class JcrVersionManager implements VersionManager {
                         primaryTypeName = name(resolvedChild.getProperty(JcrLexicon.FROZEN_PRIMARY_TYPE, cache).getFirstValue());
                         Property idProp = resolvedChild.getProperty(JcrLexicon.FROZEN_UUID, cache);
                         String frozenUuid = string(idProp.getFirstValue());
-                        desiredKey = NodeKey.isValidFormat(frozenUuid) ? new NodeKey(frozenUuid) : target.getKey().withId(frozenUuid);
+                        desiredKey = target.getKey().withId(frozenUuid);
                         //the name should be that of the versioned child
                         desiredName = session.node(sourceChild, (Type) null).name();
                     } else {
@@ -1207,7 +1209,7 @@ final class JcrVersionManager implements VersionManager {
                             desiredKey = target.getKey().withRandomId();
                         } else {
                             String uuid = string(idProp.getFirstValue());
-                            desiredKey = NodeKey.isValidFormat(uuid) ? new NodeKey(uuid) : target.getKey().withId(uuid);
+                            desiredKey = target.getKey().withId(uuid);
                         }
                         desiredName = sourceChildNode.name();
                     }
@@ -1589,8 +1591,7 @@ final class JcrVersionManager implements VersionManager {
             for each child node c of n domerge(c).
          */
         private void doLeave( AbstractJcrNode targetNode ) throws RepositoryException {
-            if (isShallow == false) {
-
+            if (!isShallow) {
                 for (NodeIterator iter = targetNode.getNodes(); iter.hasNext();) {
                     doMerge((AbstractJcrNode)iter.nextNode());
                 }
@@ -1685,15 +1686,16 @@ final class JcrVersionManager implements VersionManager {
                     JcrValue[] newValues = new JcrValue[existingValues.length + 1];
                     System.arraycopy(existingValues, 0, newValues, 0, existingValues.length);
                     newValues[newValues.length - 1] = targetNode.valueFrom(sourceVersion);
-                    targetNode.setProperty(JcrLexicon.MERGE_FAILED, newValues, PropertyType.REFERENCE, false);
+                    targetNode.setProperty(JcrLexicon.MERGE_FAILED, newValues, PropertyType.REFERENCE, true, false);
                 }
 
             } else {
-                targetNode.setProperty(JcrLexicon.MERGE_FAILED, targetNode.valueFrom(sourceVersion), false, false);
+                JcrValue[] newValues = new JcrValue[] {targetNode.valueFrom(sourceVersion)};
+                targetNode.setProperty(JcrLexicon.MERGE_FAILED, newValues, PropertyType.REFERENCE, true, false);
             }
             failures.add(targetNode);
 
-            if (isShallow == false) {
+            if (!isShallow) {
                 for (NodeIterator iter = targetNode.getNodes(); iter.hasNext();) {
                     AbstractJcrNode childNode = (AbstractJcrNode)iter.nextNode();
 
@@ -1724,6 +1726,7 @@ final class JcrVersionManager implements VersionManager {
             }
 
             MutableCachedNode mutable = targetNode.mutable();
+            SessionCache mutableCache = targetNode.session().cache();
             PropertyIterator existingPropIter = targetNode.getProperties();
             while (existingPropIter.hasNext()) {
                 AbstractJcrProperty jcrProp = (AbstractJcrProperty)existingPropIter.nextProperty();
@@ -1732,7 +1735,7 @@ final class JcrVersionManager implements VersionManager {
                 Property prop = sourceProperties.remove(propName);
                 if (prop != null) {
                     // Overwrite the current property with the property from the version
-                    mutable.setProperty(cache, prop);
+                    mutable.setProperty(mutableCache, prop);
                 } else {
                     JcrPropertyDefinition propDefn = jcrProp.getDefinition();
                     switch (propDefn.getOnParentVersion()) {
@@ -1754,7 +1757,7 @@ final class JcrVersionManager implements VersionManager {
 
             // Write any properties that were on the source that weren't on the target ...
             for (Property sourceProperty : sourceProperties.values()) {
-                mutable.setProperty(cache, sourceProperty);
+                mutable.setProperty(mutableCache, sourceProperty);
             }
         }
     }

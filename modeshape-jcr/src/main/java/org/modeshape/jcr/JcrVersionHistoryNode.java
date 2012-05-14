@@ -54,6 +54,7 @@ import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.Reference;
+import org.modeshape.jcr.value.basic.NodeKeyReference;
 
 /**
  * Convenience wrapper around a version history {@link JcrNode node}.
@@ -197,7 +198,8 @@ final class JcrVersionHistoryNode extends JcrSystemNode implements VersionHistor
             List<JcrValue> newNodeSuccessors = new ArrayList<JcrValue>();
 
             // Add each of the successors from the version's predecessor ...
-            AbstractJcrNode predecessor = session().getNodeByIdentifier(predecessorValue.getString());
+            NodeKey predecessorKey = ((NodeKeyReference) ((JcrValue)predecessorValue).value()).getNodeKey();
+            AbstractJcrNode predecessor = session().node(predecessorKey, null);
             MutableCachedNode predecessorSystem = system.mutable(predecessor.key());
 
             JcrValue[] nodeSuccessors = predecessor.getProperty(JcrLexicon.SUCCESSORS).getValues();
@@ -214,12 +216,13 @@ final class JcrVersionHistoryNode extends JcrSystemNode implements VersionHistor
         }
 
         // Remove the reference to the dead version from the predecessors property of all the successors
-        for (Value successorUuid : successors.getValues()) {
+        for (Value successorValue : successors.getValues()) {
             addedValues.clear();
             List<JcrValue> newNodePredecessors = new ArrayList<JcrValue>();
 
             // Add each of the predecessors from the version's successor ...
-            AbstractJcrNode successor = session().getNodeByIdentifier(successorUuid.getString());
+            NodeKey successorKey = ((NodeKeyReference) ((JcrValue) successorValue).value()).getNodeKey();
+            AbstractJcrNode successor = session().node(successorKey, null);
             MutableCachedNode successorSystem = system.mutable(successor.key());
 
             JcrValue[] nodePredecessors = successor.getProperty(JcrLexicon.PREDECESSORS).getValues();
@@ -295,7 +298,7 @@ final class JcrVersionHistoryNode extends JcrSystemNode implements VersionHistor
 
         // Use a separate system session to set the REFERENCE property on the 'nt:versionLabels' child node ...
         SessionCache system = session.createSystemCache(false);
-        Reference labelReference = session.referenceFactory().create(version.key());
+        Reference labelReference = session.referenceFactory().create(version.key(), true);
         Property ref = session.propertyFactory().create(nameFrom(label), labelReference);
         system.mutable(versionLabels.key()).setProperty(system, ref);
         system.save();

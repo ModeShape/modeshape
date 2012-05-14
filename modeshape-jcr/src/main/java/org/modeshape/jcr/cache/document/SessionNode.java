@@ -64,6 +64,7 @@ import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
 import org.modeshape.jcr.value.Property;
+import org.modeshape.jcr.value.PropertyFactory;
 
 /**
  * A node used within a {@link SessionCache session} when that node has (or may have) transient (unsaved) changes. This node is an
@@ -892,6 +893,63 @@ public class SessionNode implements MutableCachedNode {
             }
         }
         return sb.toString();
+    }
+
+    @Override
+    public Map<NodeKey, NodeKey> deepCopy( SessionCache cache,
+                                           CachedNode sourceNode,
+                                           SessionCache sourceCache ) {
+        WritableSessionCache writableSessionCache = writableSession(cache);
+        writableSessionCache.assertInSession(this);
+
+        Map<NodeKey, NodeKey> nodeKeyCorrespondence = new HashMap<NodeKey, NodeKey>();
+        nodeKeyCorrespondence.put(sourceNode.getKey(), this.getKey());
+        copyProperties(cache, sourceNode, sourceCache);
+
+        for (ChildReference childReference : sourceNode.getChildReferences(sourceCache)) {
+            MutableCachedNode childCopy = this.createChild(cache, null, childReference.getName(), null);
+            Map<NodeKey, NodeKey> correspondingChildrenKeys = childCopy.deepCopy(cache, sourceCache.getNode(childReference.getKey()), sourceCache);
+            nodeKeyCorrespondence.putAll(correspondingChildrenKeys);
+        }
+
+        return nodeKeyCorrespondence;
+    }
+
+    @Override
+    public void deepClone( SessionCache cache,
+                           CachedNode sourceNode,
+                           SessionCache sourceCache) {
+        WritableSessionCache writableSessionCache = writableSession(cache);
+        writableSessionCache.assertInSession(this);
+
+        copyProperties(cache, sourceNode, sourceCache);
+
+        for (ChildReference childReference : sourceNode.getChildReferences(sourceCache)) {
+            NodeKey childKey = childReference.getKey();
+            NodeKey childCloneKey = this.key.withId(childKey.getIdentifier());
+            MutableCachedNode childClone = this.createChild(cache, childCloneKey, childReference.getName(), null);
+            childClone.deepClone(cache, sourceCache.getNode(childKey), sourceCache);
+        }
+    }
+
+    @Override
+    public Set<NodeKey> removedChildren() {
+        return changedChildren().getRemovals();
+    }
+
+    private void copyProperties( SessionCache cache,
+                                 CachedNode sourceNode,
+                                 SessionCache sourceCache ) {
+        PropertyFactory propertyFactory = cache.getContext().getPropertyFactory();
+        for (Iterator<Property> it = sourceNode.getProperties(sourceCache); it.hasNext(); ) {
+            Property property = it.next();
+            if (property.isMultiple()) {
+                this.setProperty(cache, propertyFactory.create(property.getName(), property.getValues()));
+            }
+            else {
+                this.setProperty(cache, propertyFactory.create(property.getName(), property.getFirstValue()));
+            }
+        }
     }
 
     @Override

@@ -29,6 +29,7 @@ import java.io.OutputStream;
 import java.security.AccessControlException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -118,6 +119,7 @@ public class JcrSession implements Session {
     private final JcrWorkspace workspace;
     private final JcrNamespaceRegistry sessionRegistry;
     private final AtomicReference<Map<NodeKey, NodeKey>> baseVersionKeys = new AtomicReference<Map<NodeKey, NodeKey>>();
+    private final AtomicReference<Map<NodeKey, NodeKey>> originalVersionKeys = new AtomicReference<Map<NodeKey, NodeKey>>();
     private volatile JcrValueFactory valueFactory;
     private volatile boolean isLive = true;
     private final long nanosCreated;
@@ -317,6 +319,11 @@ public class JcrSession implements Session {
     final void setDesiredBaseVersionKey( NodeKey nodeKey,
                                          NodeKey baseVersionKey ) {
         baseVersionKeys.get().put(nodeKey, baseVersionKey);
+    }
+
+    final void setOriginalVersionKey( NodeKey nodeKey,
+                                      NodeKey originalVersionKey ) {
+        originalVersionKeys.get().put(nodeKey, originalVersionKey);
     }
 
     final JcrSession spawnSession( boolean readOnly ) {
@@ -528,6 +535,7 @@ public class JcrSession implements Session {
         }
         return path;
     }
+
 
     @Override
     public JcrRepository getRepository() {
@@ -818,9 +826,11 @@ public class JcrSession implements Session {
         SessionCache systemCache = createSystemCache(false);
         SystemContent systemContent = new SystemContent(systemCache);
         Map<NodeKey, NodeKey> baseVersionKeys = this.baseVersionKeys.get();
+        Map<NodeKey, NodeKey> originalVersionKeys = this.originalVersionKeys.get();
         try {
-            cache().save(systemContent.cache(), new JcrPreSave(systemContent, baseVersionKeys));
+            cache().save(systemContent.cache(), new JcrPreSave(systemContent, baseVersionKeys, originalVersionKeys));
             this.baseVersionKeys.set(null);
+            this.originalVersionKeys.set(null);
         } catch (WrappedException e) {
             Throwable cause = e.getCause();
             throw (cause instanceof RepositoryException) ? (RepositoryException)cause : new RepositoryException(e.getCause());
@@ -873,8 +883,10 @@ public class JcrSession implements Session {
         SessionCache systemCache = createSystemCache(false);
         SystemContent systemContent = new SystemContent(systemCache);
         Map<NodeKey, NodeKey> baseVersionKeys = this.baseVersionKeys.get();
+        Map<NodeKey, NodeKey> originalVersionKeys = this.originalVersionKeys.get();
         try {
-            sessionCache.save(node.node(), systemContent.cache(), new JcrPreSave(systemContent, baseVersionKeys));
+            sessionCache.save(node.node(), systemContent.cache(), new JcrPreSave(systemContent, baseVersionKeys,
+                                                                                 originalVersionKeys));
         } catch (WrappedException e) {
             Throwable cause = e.getCause();
             throw (cause instanceof RepositoryException) ? (RepositoryException)cause : new RepositoryException(e.getCause());
@@ -1107,6 +1119,10 @@ public class JcrSession implements Session {
     protected void initBaseVersionKeys() {
         // Since we're importing into this session, we need to capture any base version information in the imported file ...
         baseVersionKeys.compareAndSet(null, new ConcurrentHashMap<NodeKey, NodeKey>());
+    }
+
+    protected void initOriginalVersionKeys() {
+        originalVersionKeys.compareAndSet(null, new ConcurrentHashMap<NodeKey, NodeKey>());
     }
 
     @Override
@@ -1348,17 +1364,20 @@ public class JcrSession implements Session {
         private final NodeTypes nodeTypeCapabilities;
         private final SystemContent systemContent;
         private final Map<NodeKey, NodeKey> baseVersionKeys;
+        private final Map<NodeKey, NodeKey> originalVersionKeys;
         private boolean initialized = false;
         private PropertyFactory propertyFactory;
         private ReferenceFactory referenceFactory;
         private JcrVersionManager versionManager;
 
         protected JcrPreSave( SystemContent content,
-                              Map<NodeKey, NodeKey> baseVersionKeys ) {
+                              Map<NodeKey, NodeKey> baseVersionKeys,
+                              Map<NodeKey, NodeKey> originalVersionKeys) {
             assert content != null;
             this.cache = cache();
             this.systemContent = content;
             this.baseVersionKeys = baseVersionKeys;
+            this.originalVersionKeys = originalVersionKeys;
             // Get the capabilities cache. This is immutable, so we'll use it for the entire pre-save operation ...
             this.nodeTypeMgr = repository().nodeTypeManager();
             this.nodeTypeCapabilities = nodeTypeMgr.getNodeTypes();
@@ -1439,6 +1458,7 @@ public class JcrSession implements Session {
                     if (shouldCreateNewVersionHistory) {
                         //a new version history should be initialized
                         if (baseVersionKey == null) baseVersionKey = historyKey.withRandomId();
+                        NodeKey originalVersionKey = originalVersionKeys != null ? originalVersionKeys.get(versionableKey) : null;
                         Path versionHistoryPath = versionManager.versionHistoryPathFor(versionableKey);
                         systemContent.initializeVersionStorage(versionableKey,
                                                                historyKey,
@@ -1446,13 +1466,13 @@ public class JcrSession implements Session {
                                                                primaryType,
                                                                mixinTypes,
                                                                versionHistoryPath,
-                                                               null,
+                                                               originalVersionKey,
                                                                context.getTime());
                     }
 
                     // Now update the node as if it's checked in (with the exception of the predecessors...
-                    Reference historyRef = referenceFactory.create(historyKey);
-                    Reference baseVersionRef = referenceFactory.create(baseVersionKey);
+                    Reference historyRef = referenceFactory.create(historyKey, true);
+                    Reference baseVersionRef = referenceFactory.create(baseVersionKey, true);
                     node.setProperty(cache, propertyFactory.create(JcrLexicon.IS_CHECKED_OUT, Boolean.TRUE));
                     node.setProperty(cache, propertyFactory.create(JcrLexicon.VERSION_HISTORY, historyRef));
                     node.setProperty(cache, propertyFactory.create(JcrLexicon.BASE_VERSION, baseVersionRef));
@@ -1530,9 +1550,25 @@ public class JcrSession implements Session {
             if (!mandatoryChildDefns.isEmpty()) {
                 // There is at least one auto-created child node definition on this node, so figure out if they are all
                 // covered by existing children ...
+                Set<NodeKey> allChildren = cache().getNodeKeysAtAndBelow(node.getKey());
+                allChildren.addAll(cache().getChangedNodeKeysAtOrBelow(node));
+                //remove the current node
+                allChildren.remove(node.getKey());
+                //remove all the keys of the nodes which are removed
+                allChildren.removeAll(node.removedChildren());
+                Set<Name> childrenNames = new HashSet<Name>();
+
+                for (NodeKey childKey : allChildren) {
+                    childrenNames.add(cache().getNode(childKey).getName(cache()));
+                }
+
                 for (JcrNodeDefinition defn : mandatoryChildDefns) {
-                    Name propName = defn.getInternalName();
-                    // TODO: Validation
+                    Name childName = defn.getInternalName();
+                    if (!childrenNames.contains(childName)) {
+                        throw new ConstraintViolationException(
+                                JcrI18n.propertyNoLongerSatisfiesConstraints.text(childName, readableLocation(node),
+                                                                                  defn.getName(), defn.getDeclaringNodeType().getName()));
+                    }
                 }
             }
 

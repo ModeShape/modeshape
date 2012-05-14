@@ -25,6 +25,7 @@ package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import org.junit.AfterClass;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
@@ -40,6 +41,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeType;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
@@ -47,6 +49,16 @@ import org.modeshape.jcr.value.Path.Segment;
 public abstract class AbstractJcrRepositoryTest {
 
     protected boolean print;
+
+    @BeforeClass
+    public static void beforeSuite() {
+        JTATestUtil.setJBossJTADefaultStoreLocations();
+    }
+
+    @AfterClass
+    public static void afterSuite() {
+        JTATestUtil.clearJBossJTADefaultStoreLocation();
+    }
 
     @Before
     public void beforeEach() throws Exception {

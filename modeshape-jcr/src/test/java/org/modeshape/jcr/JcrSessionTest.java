@@ -414,11 +414,10 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         assertThat(factory.createValue(binary), notNullValue());
         assertThat(factory.createValue(stream), notNullValue());
         assertThat(factory.createValue(0L), notNullValue());
-        Node node = Mockito.mock(Node.class);
-        String uuid = UUID.randomUUID().toString();
-        when(node.getUUID()).thenReturn(uuid);
-        when(node.getIdentifier()).thenReturn(uuid);
-        when(node.isNodeType("mix:referenceable")).thenReturn(true);
+
+        Node node = session.getRootNode().addNode("testNode");
+        node.addMixin(JcrMixLexicon.REFERENCEABLE.toString());
+
         assertThat(factory.createValue(node), notNullValue());
         assertThat(factory.createValue(""), notNullValue());
         assertThat(factory.createValue("", PropertyType.BINARY), notNullValue());
@@ -620,6 +619,7 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         assertThat(folderNode.hasProperty("jcr:created"), is(false));
 
         Node fileNode = folderNode.addNode("fileNode", "nt:file");
+        fileNode.addNode("jcr:content");
         assertThat(fileNode.hasProperty("jcr:created"), is(false));
 
         // Save the changes ...
