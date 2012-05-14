@@ -400,7 +400,12 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         }
 
         AbstractJcrNode jcrNode = session.getNodeByIdentifier(value.getIdentifier());
-        setValue(createValue(jcrNode.key(), PropertyType.REFERENCE).asType(this.getType()));
+        if (!jcrNode.isInTheSameProcessAs(session.context().getProcessId())) {
+            throw new RepositoryException(JcrI18n.nodeNotInTheSameSession.text(jcrNode.path()));
+        }
+        JcrValue referenceValue = createValue(jcrNode.key(), PropertyType.REFERENCE);
+        ((NodeKeyReference) referenceValue.value()).setNodeForeign(jcrNode.isForeign());
+        setValue(referenceValue.asType(this.getType()));
     }
 
     @Override

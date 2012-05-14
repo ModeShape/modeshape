@@ -93,11 +93,4 @@ final class JcrRootNode extends AbstractJcrNode {
         String msg = JcrI18n.unableToRemoveRootNode.text(workspaceName());
         throw new ConstraintViolationException(msg);
     }
-
-    @Override
-    public String getIdentifier() {
-        //only return the identifier path of the key for root nodes, to account for the case when it is referenceable and
-        //so all root nodes should have the same id.
-        return key.getIdentifier();
-    }
 }

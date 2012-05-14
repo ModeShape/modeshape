@@ -539,7 +539,7 @@ final class JcrVersionManager implements VersionManager {
         MutableCachedNode versionable = versionSession.mutable(node.key());
         NodeKey baseVersionKey = node.getBaseVersion().key();
         PropertyFactory props = propertyFactory();
-        versionable.setProperty(versionSession, props.create(JcrLexicon.PREDECESSORS, new String[]{baseVersionKey.toString()}));
+        versionable.setProperty(versionSession, props.create(JcrLexicon.PREDECESSORS, new Object[]{session.referenceFactory().create(baseVersionKey)}));
         versionable.setProperty(versionSession, props.create(JcrLexicon.IS_CHECKED_OUT, Boolean.TRUE));
         versionSession.save();
     }
@@ -807,7 +807,8 @@ final class JcrVersionManager implements VersionManager {
                                                                           .property()
                                                                           .getFirstValue());
             AbstractJcrProperty uuidProp = sourceNode.getProperty(JcrLexicon.FROZEN_UUID);
-            NodeKey desiredKey = new NodeKey(session.stringFactory().create(uuidProp.property().getFirstValue()));
+            String frozenUuidString = session.stringFactory().create(uuidProp.property().getFirstValue());
+            NodeKey desiredKey = parentNode.key().withId(frozenUuidString);
 
             Property primaryType = propFactory.create(JcrLexicon.PRIMARY_TYPE, primaryTypeName);
             MutableCachedNode newChild = parentNode.mutable().createChild(cache,
@@ -1197,7 +1198,7 @@ final class JcrVersionManager implements VersionManager {
                         primaryTypeName = name(resolvedChild.getProperty(JcrLexicon.FROZEN_PRIMARY_TYPE, cache).getFirstValue());
                         Property idProp = resolvedChild.getProperty(JcrLexicon.FROZEN_UUID, cache);
                         String frozenUuid = string(idProp.getFirstValue());
-                        desiredKey = NodeKey.isValidFormat(frozenUuid) ? new NodeKey(frozenUuid) : target.getKey().withId(frozenUuid);
+                        desiredKey = target.getKey().withId(frozenUuid);
                         //the name should be that of the versioned child
                         desiredName = session.node(sourceChild, (Type) null).name();
                     } else {
@@ -1207,7 +1208,7 @@ final class JcrVersionManager implements VersionManager {
                             desiredKey = target.getKey().withRandomId();
                         } else {
                             String uuid = string(idProp.getFirstValue());
-                            desiredKey = NodeKey.isValidFormat(uuid) ? new NodeKey(uuid) : target.getKey().withId(uuid);
+                            desiredKey = target.getKey().withId(uuid);
                         }
                         desiredName = sourceChildNode.name();
                     }

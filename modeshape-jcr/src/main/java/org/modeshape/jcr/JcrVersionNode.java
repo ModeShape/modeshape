@@ -33,6 +33,7 @@ import javax.jcr.Value;
 import javax.jcr.version.Version;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.basic.NodeKeyReference;
 
 /**
  * Convenience wrapper around a version {@link JcrNode node}.
@@ -107,8 +108,8 @@ class JcrVersionNode extends JcrSystemNode implements Version {
         Value[] values = references.getValues();
         List<JcrVersionNode> versions = new ArrayList<JcrVersionNode>(values.length);
         for (Value value : values) {
-            String id = value.getString();
-            AbstractJcrNode node = session().getNodeByIdentifier(id);
+            NodeKey key = ((NodeKeyReference) ((JcrValue) value).value()).getNodeKey();
+            AbstractJcrNode node = session().node(key, null);
             versions.add((JcrVersionNode)node);
         }
         return versions.toArray(EMPTY_VERSION_ARRAY);
@@ -123,8 +124,8 @@ class JcrVersionNode extends JcrSystemNode implements Version {
         Value[] values = references.getValues();
         if (values.length == 0) return null;
 
-        String id = values[0].getString();
-        AbstractJcrNode node = session().getNodeByIdentifier(id);
+        NodeKey key = ((NodeKeyReference) ((JcrValue)values[0]).value()).getNodeKey();
+        AbstractJcrNode node = session().node(key, null);
 
         return (JcrVersionNode)node;
     }

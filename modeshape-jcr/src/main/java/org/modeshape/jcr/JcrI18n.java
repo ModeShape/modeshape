@@ -253,6 +253,7 @@ public final class JcrI18n {
     public static I18n nodeNotReferenceableUuid;
     public static I18n noPendingChangesAllowed;
     public static I18n noPendingChangesAllowedForNode;
+    public static I18n nodeNotInTheSameSession;
 
     public static I18n cannotUnregisterSupertype;
     public static I18n cannotUnregisterRequiredPrimaryType;

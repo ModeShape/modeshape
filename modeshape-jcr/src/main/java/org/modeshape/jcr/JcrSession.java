@@ -535,6 +535,7 @@ public class JcrSession implements Session {
         return path;
     }
 
+
     @Override
     public JcrRepository getRepository() {
         return repository;

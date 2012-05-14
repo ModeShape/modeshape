@@ -1,5 +1,6 @@
 package org.modeshape.jcr;
 
+import javax.jcr.ItemNotFoundException;
 import static org.modeshape.jcr.api.observation.Event.Sequencing.NODE_SEQUENCED;
 import static org.modeshape.jcr.api.observation.Event.Sequencing.NODE_SEQUENCING_FAILURE;
 import static org.modeshape.jcr.api.observation.Event.Sequencing.OUTPUT_PATH;
@@ -40,6 +41,7 @@ import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.api.value.DateTime;
+import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.change.AbstractNodeChange;
 import org.modeshape.jcr.cache.change.AbstractSequencingChange;
 import org.modeshape.jcr.cache.change.Change;
@@ -280,6 +282,16 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
     final String getSystemWorkspaceName() {
         return systemWorkspaceName;
+    }
+
+    final String nodeIdentifier(NodeKey key) {
+        try {
+            AbstractJcrNode node = session.node(key, null);
+            return node.getIdentifier();
+        } catch (ItemNotFoundException e) {
+            //the node was removed, so just return the identifier part of the key
+            return key.getIdentifier();
+        }
     }
 
     /**
@@ -844,7 +856,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
             // process event making sure we have the right event type
             Path newPath = nodeChange.getPath();
-            String nodeId = nodeChange.getKey().toString();
+            String nodeId = nodeIdentifier(nodeChange.getKey());
 
             // node moved
             if (nodeChange instanceof NodeMoved) {
@@ -901,7 +913,11 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                 NodeSequenced sequencedChange = (NodeSequenced)nodeChange;
 
                 Map<String, Object> infoMap = createEventInfoMapForSequencerChange(sequencedChange);
-                events.add(new JcrEvent(bundle, NODE_SEQUENCED, stringFor(sequencedChange.getOutputNodePath()), sequencedChange.getOutputNodeKey().toString(), infoMap));
+                events.add(new JcrEvent(bundle,
+                                        NODE_SEQUENCED,
+                                        stringFor(sequencedChange.getOutputNodePath()),
+                                        nodeIdentifier(sequencedChange.getOutputNodeKey()),
+                                        infoMap));
             } else if (nodeChange instanceof NodeSequencingFailure && eventListenedFor(NODE_SEQUENCING_FAILURE)) {
                 //create event for the sequencing failure
                 NodeSequencingFailure sequencingFailure = (NodeSequencingFailure) nodeChange;
@@ -916,7 +932,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
             Map<String, Object> infoMap = new HashMap<String, Object>();
 
             infoMap.put(SEQUENCED_NODE_PATH, stringFor(sequencingChange.getPath()));
-            infoMap.put(SEQUENCED_NODE_ID, sequencingChange.getKey().toString());
+            infoMap.put(SEQUENCED_NODE_ID, nodeIdentifier(sequencingChange.getKey()));
             infoMap.put(OUTPUT_PATH, sequencingChange.getOutputPath());
             infoMap.put(SELECTED_PATH, sequencingChange.getSelectedPath());
             infoMap.put(SEQUENCER_NAME, sequencingChange.getSequencerName());
@@ -1076,7 +1092,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
             }
 
             if ((this.uuids != null) && (this.uuids.length > 0)) {
-                String matchUuidString = change.getKey().toString();
+                String matchUuidString = nodeIdentifier(change.getKey());
                 return Arrays.binarySearch(this.uuids, matchUuidString) >= 0;
             }
 

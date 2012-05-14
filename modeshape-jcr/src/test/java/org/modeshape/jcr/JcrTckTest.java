@@ -227,12 +227,23 @@ public class JcrTckTest {
 
         // Or uncomment the following lines to execute the different sets/suites of tests ...
         TestSuite suite = new TestSuite("JCR 2.0 API tests");
+//        suite.addTest(wipSuite());
         suite.addTest(levelOneSuite());
         suite.addTest(levelTwoSuite());
         suite.addTest(new OptionalFeatureTests());
 
         return suite;
     }
+
+    public static Test wipSuite() {
+        TestSuite suite = new TestSuite("WIP Tests");
+        // suite.addTestSuite(WorkspaceCloneReferenceableTest.class);
+        // suite.addTestSuite(WorkspaceCloneSameNameSibsTest.class);
+        // suite.addTestSuite(WorkspaceCloneTest.class);
+        // suite.addTestSuite(WorkspaceCloneVersionableTest.class);
+        return suite;
+    }
+
 
     /**
      * Wrapper for read-only tests

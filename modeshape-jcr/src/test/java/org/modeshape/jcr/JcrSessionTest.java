@@ -56,6 +56,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.jcr.api.AnonymousCredentials;
+import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.value.Path;
 
 public class JcrSessionTest extends SingleUseAbstractTest {
@@ -414,11 +415,10 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         assertThat(factory.createValue(binary), notNullValue());
         assertThat(factory.createValue(stream), notNullValue());
         assertThat(factory.createValue(0L), notNullValue());
-        Node node = Mockito.mock(Node.class);
-        String uuid = UUID.randomUUID().toString();
-        when(node.getUUID()).thenReturn(uuid);
-        when(node.getIdentifier()).thenReturn(uuid);
-        when(node.isNodeType("mix:referenceable")).thenReturn(true);
+
+        Node node = session.getRootNode().addNode("testNode");
+        node.addMixin(JcrMixLexicon.REFERENCEABLE.toString());
+
         assertThat(factory.createValue(node), notNullValue());
         assertThat(factory.createValue(""), notNullValue());
         assertThat(factory.createValue("", PropertyType.BINARY), notNullValue());

@@ -51,7 +51,6 @@ import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.text.TextEncoder;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrLexicon;
-import org.modeshape.jcr.JcrMixLexicon;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.CachedNode.ReferenceType;
 import org.modeshape.jcr.cache.ChildReference;
@@ -76,6 +75,7 @@ import org.modeshape.jcr.value.ReferenceFactory;
 import org.modeshape.jcr.value.UuidFactory;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFactory;
+import org.modeshape.jcr.value.basic.NodeKeyReference;
 import org.modeshape.jcr.value.binary.BinaryStoreException;
 import org.modeshape.jcr.value.binary.InMemoryBinaryValue;
 
@@ -940,8 +940,9 @@ public class DocumentTranslator {
         }
         if (value instanceof Reference) {
             Reference ref = (Reference)value;
-            String key = ref.isWeak() ? "$ref" : "$wref";
-            return Schematic.newDocument(key, this.strings.create(ref));
+            String key = ref.isWeak() ? "$wref" : "$ref" ;
+            String refString = value instanceof NodeKeyReference ? ((NodeKeyReference) value).getNodeKey().toString() : this.strings.create(ref);
+            return Schematic.newDocument(key, refString);
         }
         if (value instanceof URI) {
             return Schematic.newDocument("$uri", this.strings.create((URI)value));

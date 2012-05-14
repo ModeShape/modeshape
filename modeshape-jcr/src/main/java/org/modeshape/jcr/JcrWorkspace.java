@@ -191,10 +191,6 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
                 throw new LockException(srcAbsPath);
             }
 
-            /**
-             * Check permissions in the parent node
-             */
-//            copySession.checkPermission(parentNode.getPath(), ModeShapePermissions.ADD_NODE);
 
             /*
             * Use the JCR add child here to perform the parent validations

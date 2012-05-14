@@ -36,6 +36,7 @@ import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Reference;
 import org.modeshape.jcr.value.ReferenceFactory;
 import org.modeshape.jcr.value.ValueFactories;
+import org.modeshape.jcr.value.basic.NodeKeyReference;
 
 /**
  * The {@link ValueFactory} implementation for ModeShape.
@@ -46,10 +47,12 @@ class JcrValueFactory implements org.modeshape.jcr.api.ValueFactory {
 
     private final ValueFactories valueFactories;
     private final NamespaceRegistry namespaces;
+    private final String executionContextProcessId;
 
     protected JcrValueFactory( ExecutionContext context ) {
         this.valueFactories = context.getValueFactories();
         this.namespaces = context.getNamespaceRegistry();
+        this.executionContextProcessId = context.getProcessId();
     }
 
     public JcrValue[] createValues( List<?> values,
@@ -87,10 +90,9 @@ class JcrValueFactory implements org.modeshape.jcr.api.ValueFactory {
         if (value == null) {
             return new JcrValue(valueFactories, PropertyType.REFERENCE, null);
         }
-        if (!value.isNodeType(JcrMixLexicon.REFERENCEABLE.getString(namespaces))) {
-            throw new RepositoryException(JcrI18n.nodeNotReferenceable.text());
-        }
-        Reference ref = valueFactories.getReferenceFactory().create(value.getIdentifier());
+        AbstractJcrNode node = validateReferenceableNode(value);
+        Reference ref = valueFactories.getReferenceFactory().create(node.key());
+        ((NodeKeyReference) ref).setNodeForeign(node.isForeign());
         return new JcrValue(valueFactories, PropertyType.REFERENCE, ref);
     }
 
@@ -100,13 +102,27 @@ class JcrValueFactory implements org.modeshape.jcr.api.ValueFactory {
         if (value == null) {
             return new JcrValue(valueFactories, weak ? PropertyType.WEAKREFERENCE : PropertyType.REFERENCE, null);
         }
+        AbstractJcrNode node = validateReferenceableNode(value);
+        ReferenceFactory factory = weak ? valueFactories.getWeakReferenceFactory() : valueFactories.getReferenceFactory();
+        int refType = weak ? PropertyType.WEAKREFERENCE : PropertyType.REFERENCE;
+        Reference ref = factory.create(node.key());
+        ((NodeKeyReference) ref).setNodeForeign(node.isForeign());
+        return new JcrValue(valueFactories, refType, ref);
+    }
+
+    private AbstractJcrNode validateReferenceableNode( Node value ) throws RepositoryException {
         if (!value.isNodeType(JcrMixLexicon.REFERENCEABLE.getString(namespaces))) {
             throw new RepositoryException(JcrI18n.nodeNotReferenceable.text());
         }
-        ReferenceFactory factory = weak ? valueFactories.getWeakReferenceFactory() : valueFactories.getReferenceFactory();
-        int refType = weak ? PropertyType.WEAKREFERENCE : PropertyType.REFERENCE;
-        Reference ref = factory.create(value.getIdentifier());
-        return new JcrValue(valueFactories, refType, ref);
+        if (! (value instanceof AbstractJcrNode)) {
+            throw new IllegalArgumentException("Invalid node type (expected a ModeShape node): " + value.getClass().toString());
+        }
+
+        AbstractJcrNode node = (AbstractJcrNode) value;
+        if (!node.isInTheSameProcessAs(executionContextProcessId)) {
+            throw new RepositoryException(JcrI18n.nodeNotInTheSameSession.text(node.path()));
+        }
+        return node;
     }
 
     @Override
