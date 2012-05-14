@@ -500,8 +500,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
      * 
      * @throws Exception if an error occurs
      */
-    public void IGNOREtestShouldNotCloneIfItWouldViolateTypeSemantics() throws Exception {
-        // TODO: Copy and clone
+    public void testShouldNotCloneIfItWouldViolateTypeSemantics() throws Exception {
         session = getHelper().getSuperuserSession("otherWorkspace");
         assertThat(session.getWorkspace().getName(), is("otherWorkspace"));
 

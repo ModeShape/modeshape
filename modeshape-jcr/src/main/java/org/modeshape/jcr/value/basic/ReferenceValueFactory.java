@@ -63,7 +63,7 @@ public class ReferenceValueFactory extends AbstractValueFactory<Reference> imple
     public Reference create( String value ) {
         if (value == null) return null;
         if (NodeKey.isValidFormat(value)) {
-            return new NodeKeyReference(new NodeKey(value), weak);
+            return new NodeKeyReference(new NodeKey(value), weak, false);
         }
         try {
             UUID uuid = UUID.fromString(value);
@@ -183,7 +183,25 @@ public class ReferenceValueFactory extends AbstractValueFactory<Reference> imple
 
     @Override
     public Reference create( NodeKey value ) throws ValueFormatException {
-        return new NodeKeyReference(value, weak);
+        return new NodeKeyReference(value, weak, false);
+    }
+
+    @Override
+    public Reference create( NodeKey value,
+                             boolean foreign ) throws ValueFormatException {
+        return new NodeKeyReference(value, weak, foreign);
+    }
+
+    @Override
+    public Reference[] create( NodeKey[] values,
+                               boolean foreign ) throws ValueFormatException {
+        if (values == null) return null;
+        final int length = values.length;
+        Reference[] result = createEmptyArray(length);
+        for (int i = 0; i != length; ++i) {
+            result[i] = create(values[i], foreign);
+        }
+        return result;
     }
 
     @Override

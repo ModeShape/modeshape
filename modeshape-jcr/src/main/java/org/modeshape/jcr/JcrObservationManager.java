@@ -70,6 +70,8 @@ import org.modeshape.jcr.value.PathFactory;
 @ThreadSafe
 class JcrObservationManager implements ObservationManager, ChangeSetListener {
 
+    private static final Logger LOGGER = Logger.getLogger(JcrObservationManager.class);
+
     /**
      * The key for storing the {@link JcrObservationManager#setUserData(String) observation user data} in the
      * {@link ExecutionContext}'s {@link ExecutionContext#getData() data}.
@@ -290,6 +292,10 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
             return node.getIdentifier();
         } catch (ItemNotFoundException e) {
             //the node was removed, so just return the identifier part of the key
+            return key.getIdentifier();
+        }
+        catch (Exception e) {
+            LOGGER.debug(e, "Unexpected exception while retrieving the identifier of a node");
             return key.getIdentifier();
         }
     }

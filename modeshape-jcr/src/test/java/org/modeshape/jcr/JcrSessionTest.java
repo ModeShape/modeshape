@@ -620,6 +620,7 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         assertThat(folderNode.hasProperty("jcr:created"), is(false));
 
         Node fileNode = folderNode.addNode("fileNode", "nt:file");
+        fileNode.addNode("jcr:content");
         assertThat(fileNode.hasProperty("jcr:created"), is(false));
 
         // Save the changes ...

@@ -1094,14 +1094,15 @@ public class SystemContent {
                 // There were already successors, so we need to add our new version node the list ...
                 successorKeys.clear();
                 for (Object successorValue : successors) {
-                    successorKeys.add(((NodeKeyReference) successorValue).getNodeKey());
+                    NodeKey successorKey = ((NodeKeyReference)successorValue).getNodeKey();
+                    successorKeys.add(successorKey);
                 }
             }
 
             // Now add the uuid of the versionable node ...
             successorKeys.add(versionKey);
 
-            successors = propertyFactory.create(JcrLexicon.SUCCESSORS, successorKeys);
+            successors = propertyFactory.create(JcrLexicon.SUCCESSORS, org.modeshape.jcr.value.PropertyType.REFERENCE, successorKeys);
             system.mutable(predecessorKey).setProperty(system, successors);
         }
 

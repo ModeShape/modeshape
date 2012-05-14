@@ -39,17 +39,18 @@ public class NodeKeyReference implements Reference {
 
     private final NodeKey key;
     private final boolean isWeak;
-
-    private boolean isNodeForeign;
+    private final boolean isForeign;
 
     public NodeKeyReference( NodeKey key,
-                             boolean weak ) {
+                             boolean weak,
+                             boolean isForeign) {
         this.key = key;
         this.isWeak = weak;
+        this.isForeign = isForeign;
     }
 
-    public void setNodeForeign( boolean nodeForeign ) {
-        isNodeForeign = nodeForeign;
+    public boolean isForeign() {
+        return isForeign;
     }
 
     /**
@@ -61,7 +62,7 @@ public class NodeKeyReference implements Reference {
 
     @Override
     public String getString() {
-        return isNodeForeign ? this.key.toString() : this.key.getIdentifier();
+        return isForeign ? this.key.toString() : this.key.getIdentifier();
     }
 
     @Override

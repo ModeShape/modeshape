@@ -257,10 +257,11 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         if (nodeKey == null) {
             return false;
         }
+        String nodeWorkspaceKey = nodeKey.getWorkspaceKey();
+
         NodeKey rootKey = cache().getRootKey();
         String systemWorkspaceKey = session().repository().systemWorkspaceKey();
-        boolean sameWorkspace = rootKey.getWorkspaceKey().equals(nodeKey.getWorkspaceKey()) || systemWorkspaceKey.equals(
-                nodeKey.getWorkspaceKey());
+        boolean sameWorkspace = rootKey.getWorkspaceKey().equals(nodeWorkspaceKey) || systemWorkspaceKey.equals(nodeWorkspaceKey);
         boolean sameSource = rootKey.getSourceKey().equalsIgnoreCase(
                 nodeKey.getSourceKey());
         return !sameWorkspace || !sameSource;
@@ -595,8 +596,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             throw new RepositoryException(JcrI18n.nodeNotInTheSameSession.text(node.path()));
         }
         NodeKey key = ((AbstractJcrNode)value).key();
-        Reference ref = session.context().getValueFactories().getReferenceFactory().create(key);
-        ((NodeKeyReference) ref).setNodeForeign(((AbstractJcrNode)value).isForeign());
+        Reference ref = session.context().getValueFactories().getReferenceFactory().create(key, ((AbstractJcrNode)value).isForeign());
         return valueFrom(PropertyType.REFERENCE, ref);
     }
 
@@ -1011,7 +1011,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         RepositoryException {
         checkNodeTypeCanBeModified();
 
-        session().checkPermission(getPath(), ModeShapePermissions.ADD_NODE);
+        session.checkPermission(getPath(), ModeShapePermissions.ADD_NODE);
 
         if (isLocked() && !getLock().isLockOwningSession()) {
             throw new LockException(JcrI18n.lockTokenNotHeld.text(location()));

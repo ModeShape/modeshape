@@ -282,6 +282,7 @@ public interface MutableCachedNode extends CachedNode {
 
     /**
      * Copies into this node all the properties and children (deep copy) from the given source node.
+     *
      * @param cache the cache to which this node belongs; may not be null
      * @param sourceNode the node from which to copy the properties and children; may not be null
      * @param sourceCache the cache in which the source node belongs; may not be null
@@ -290,4 +291,23 @@ public interface MutableCachedNode extends CachedNode {
     public Map<NodeKey, NodeKey> deepCopy( SessionCache cache,
                                            CachedNode sourceNode,
                                            SessionCache sourceCache );
+
+    /**
+     * Clones into this node all the properties and children (deep clone) from the given source node. Each cloned node
+     * will have the same identifier as the source node.
+     *
+     * @param cache the cache to which this node belongs; may not be null
+     * @param sourceNode the node from which to copy the properties and children; may not be null
+     * @param sourceCache the cache in which the source node belongs; may not be null
+     *
+     */
+    public void deepClone( SessionCache cache,
+                           CachedNode sourceNode,
+                           SessionCache sourceCache);
+
+    /**
+     * Returns a set with the keys of the children which have been removed for this node.
+     * @return a {@code Set{@link NodeKey}, never null
+     */
+    public Set<NodeKey> removedChildren();
 }

@@ -29,6 +29,7 @@ import java.io.OutputStream;
 import java.security.AccessControlException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -1549,9 +1550,25 @@ public class JcrSession implements Session {
             if (!mandatoryChildDefns.isEmpty()) {
                 // There is at least one auto-created child node definition on this node, so figure out if they are all
                 // covered by existing children ...
+                Set<NodeKey> allChildren = cache().getNodeKeysAtAndBelow(node.getKey());
+                allChildren.addAll(cache().getChangedNodeKeysAtOrBelow(node));
+                //remove the current node
+                allChildren.remove(node.getKey());
+                //remove all the keys of the nodes which are removed
+                allChildren.removeAll(node.removedChildren());
+                Set<Name> childrenNames = new HashSet<Name>();
+
+                for (NodeKey childKey : allChildren) {
+                    childrenNames.add(cache().getNode(childKey).getName(cache()));
+                }
+
                 for (JcrNodeDefinition defn : mandatoryChildDefns) {
-                    Name propName = defn.getInternalName();
-                    // TODO: Validation
+                    Name childName = defn.getInternalName();
+                    if (!childrenNames.contains(childName)) {
+                        throw new ConstraintViolationException(
+                                JcrI18n.propertyNoLongerSatisfiesConstraints.text(childName, readableLocation(node),
+                                                                                  defn.getName(), defn.getDeclaringNodeType().getName()));
+                    }
                 }
             }
 

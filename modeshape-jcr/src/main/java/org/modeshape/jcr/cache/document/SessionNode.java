@@ -915,6 +915,28 @@ public class SessionNode implements MutableCachedNode {
         return nodeKeyCorrespondence;
     }
 
+    @Override
+    public void deepClone( SessionCache cache,
+                           CachedNode sourceNode,
+                           SessionCache sourceCache) {
+        WritableSessionCache writableSessionCache = writableSession(cache);
+        writableSessionCache.assertInSession(this);
+
+        copyProperties(cache, sourceNode, sourceCache);
+
+        for (ChildReference childReference : sourceNode.getChildReferences(sourceCache)) {
+            NodeKey childKey = childReference.getKey();
+            NodeKey childCloneKey = this.key.withId(childKey.getIdentifier());
+            MutableCachedNode childClone = this.createChild(cache, childCloneKey, childReference.getName(), null);
+            childClone.deepClone(cache, sourceCache.getNode(childKey), sourceCache);
+        }
+    }
+
+    @Override
+    public Set<NodeKey> removedChildren() {
+        return changedChildren().getRemovals();
+    }
+
     private void copyProperties( SessionCache cache,
                                  CachedNode sourceNode,
                                  SessionCache sourceCache ) {

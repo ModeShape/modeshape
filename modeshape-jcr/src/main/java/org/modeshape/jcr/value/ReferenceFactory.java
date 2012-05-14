@@ -24,6 +24,7 @@
 package org.modeshape.jcr.value;
 
 import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.jcr.cache.NodeKey;
 
 /**
  * A factory for creating {@link Reference references}. This interface extends the {@link ValueFactory} generic interface and adds
@@ -32,4 +33,7 @@ import org.modeshape.common.annotation.ThreadSafe;
 @ThreadSafe
 public interface ReferenceFactory extends ValueFactory<Reference> {
 
+    Reference create( NodeKey value, boolean foreign ) throws ValueFormatException;
+
+    Reference[] create( NodeKey[] value, boolean foreign ) throws ValueFormatException;
 }

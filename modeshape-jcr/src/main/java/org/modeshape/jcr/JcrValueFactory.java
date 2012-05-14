@@ -91,8 +91,7 @@ class JcrValueFactory implements org.modeshape.jcr.api.ValueFactory {
             return new JcrValue(valueFactories, PropertyType.REFERENCE, null);
         }
         AbstractJcrNode node = validateReferenceableNode(value);
-        Reference ref = valueFactories.getReferenceFactory().create(node.key());
-        ((NodeKeyReference) ref).setNodeForeign(node.isForeign());
+        Reference ref = valueFactories.getReferenceFactory().create(node.key(), node.isForeign());
         return new JcrValue(valueFactories, PropertyType.REFERENCE, ref);
     }
 
@@ -105,8 +104,7 @@ class JcrValueFactory implements org.modeshape.jcr.api.ValueFactory {
         AbstractJcrNode node = validateReferenceableNode(value);
         ReferenceFactory factory = weak ? valueFactories.getWeakReferenceFactory() : valueFactories.getReferenceFactory();
         int refType = weak ? PropertyType.WEAKREFERENCE : PropertyType.REFERENCE;
-        Reference ref = factory.create(node.key());
-        ((NodeKeyReference) ref).setNodeForeign(node.isForeign());
+        Reference ref = factory.create(node.key(), node.isForeign());
         return new JcrValue(valueFactories, refType, ref);
     }
 

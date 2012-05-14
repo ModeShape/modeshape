@@ -23,7 +23,6 @@
  */
 package org.modeshape.jcr.cache.document;
 
-import java.util.UUID;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.api.value.DateTime;
@@ -37,6 +36,10 @@ import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PathFactory;
 import org.modeshape.jcr.value.ValueFactories;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * 
@@ -170,6 +173,23 @@ public abstract class AbstractSessionCache implements SessionCache, DocumentCach
     public CachedNode getNode( ChildReference reference ) {
         return getNode(reference.getKey());
     }
+
+    @Override
+    public Set<NodeKey> getNodeKeysAtAndBelow( NodeKey nodeKey ) {
+        CachedNode node = this.getNode(nodeKey);
+        if (node == null) {
+            return Collections.emptySet();
+        }
+        Set<NodeKey> result = new HashSet<NodeKey>();
+        result.add(nodeKey);
+
+        for (ChildReference reference : node.getChildReferences(this)) {
+            NodeKey childKey = reference.getKey();
+            result.addAll(getNodeKeysAtAndBelow(childKey));
+        }
+        return result;
+    }
+
 
     @Override
     public abstract SessionNode mutable( NodeKey key );

@@ -879,7 +879,7 @@ final class JcrVersionManager implements VersionManager {
         MergeCommand op = new MergeCommand(targetNode, sourceSession, bestEffort, isShallow);
         op.execute();
 
-        session.save();
+        targetNode.session().save();
 
         return op.getFailures();
     }
@@ -1590,8 +1590,7 @@ final class JcrVersionManager implements VersionManager {
             for each child node c of n domerge(c).
          */
         private void doLeave( AbstractJcrNode targetNode ) throws RepositoryException {
-            if (isShallow == false) {
-
+            if (!isShallow) {
                 for (NodeIterator iter = targetNode.getNodes(); iter.hasNext();) {
                     doMerge((AbstractJcrNode)iter.nextNode());
                 }
@@ -1686,15 +1685,16 @@ final class JcrVersionManager implements VersionManager {
                     JcrValue[] newValues = new JcrValue[existingValues.length + 1];
                     System.arraycopy(existingValues, 0, newValues, 0, existingValues.length);
                     newValues[newValues.length - 1] = targetNode.valueFrom(sourceVersion);
-                    targetNode.setProperty(JcrLexicon.MERGE_FAILED, newValues, PropertyType.REFERENCE, false);
+                    targetNode.setProperty(JcrLexicon.MERGE_FAILED, newValues, PropertyType.REFERENCE, true, false);
                 }
 
             } else {
-                targetNode.setProperty(JcrLexicon.MERGE_FAILED, targetNode.valueFrom(sourceVersion), false, false);
+                JcrValue[] newValues = new JcrValue[] {targetNode.valueFrom(sourceVersion)};
+                targetNode.setProperty(JcrLexicon.MERGE_FAILED, newValues, PropertyType.REFERENCE, true, false);
             }
             failures.add(targetNode);
 
-            if (isShallow == false) {
+            if (!isShallow) {
                 for (NodeIterator iter = targetNode.getNodes(); iter.hasNext();) {
                     AbstractJcrNode childNode = (AbstractJcrNode)iter.nextNode();
 
@@ -1725,6 +1725,7 @@ final class JcrVersionManager implements VersionManager {
             }
 
             MutableCachedNode mutable = targetNode.mutable();
+            SessionCache mutableCache = targetNode.session().cache();
             PropertyIterator existingPropIter = targetNode.getProperties();
             while (existingPropIter.hasNext()) {
                 AbstractJcrProperty jcrProp = (AbstractJcrProperty)existingPropIter.nextProperty();
@@ -1733,7 +1734,7 @@ final class JcrVersionManager implements VersionManager {
                 Property prop = sourceProperties.remove(propName);
                 if (prop != null) {
                     // Overwrite the current property with the property from the version
-                    mutable.setProperty(cache, prop);
+                    mutable.setProperty(mutableCache, prop);
                 } else {
                     JcrPropertyDefinition propDefn = jcrProp.getDefinition();
                     switch (propDefn.getOnParentVersion()) {
@@ -1755,7 +1756,7 @@ final class JcrVersionManager implements VersionManager {
 
             // Write any properties that were on the source that weren't on the target ...
             for (Property sourceProperty : sourceProperties.values()) {
-                mutable.setProperty(cache, sourceProperty);
+                mutable.setProperty(mutableCache, sourceProperty);
             }
         }
     }

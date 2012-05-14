@@ -942,7 +942,8 @@ public class DocumentTranslator {
             Reference ref = (Reference)value;
             String key = ref.isWeak() ? "$wref" : "$ref" ;
             String refString = value instanceof NodeKeyReference ? ((NodeKeyReference) value).getNodeKey().toString() : this.strings.create(ref);
-            return Schematic.newDocument(key, refString);
+            boolean isForeign = (value instanceof NodeKeyReference) && ((NodeKeyReference)value).isForeign();
+            return Schematic.newDocument(key, refString, "$foreign", isForeign);
         }
         if (value instanceof URI) {
             return Schematic.newDocument("$uri", this.strings.create((URI)value));
@@ -1087,10 +1088,12 @@ public class DocumentTranslator {
                 return decimals.create(valueStr);
             }
             if (!Null.matches(valueStr = doc.getString("$ref"))) {
-                return refs.create(new NodeKey(valueStr));
+                boolean isForeign = doc.getBoolean("$foreign");
+                return refs.create(new NodeKey(valueStr), isForeign);
             }
             if (!Null.matches(valueStr = doc.getString("$wref"))) {
-                return weakrefs.create(new NodeKey(valueStr));
+                boolean isForeign = doc.getBoolean("$foreign");
+                return weakrefs.create(new NodeKey(valueStr), isForeign);
             }
             if (!Null.matches(valueStr = doc.getString("$uuid"))) {
                 return uuids.create(valueStr);

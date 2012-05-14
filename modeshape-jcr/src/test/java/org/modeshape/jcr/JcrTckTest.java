@@ -109,6 +109,10 @@ import org.apache.jackrabbit.test.api.SetValueVersionExceptionTest;
 import org.apache.jackrabbit.test.api.StringPropertyTest;
 import org.apache.jackrabbit.test.api.UndefinedPropertyTest;
 import org.apache.jackrabbit.test.api.ValueFactoryTest;
+import org.apache.jackrabbit.test.api.WorkspaceCloneReferenceableTest;
+import org.apache.jackrabbit.test.api.WorkspaceCloneSameNameSibsTest;
+import org.apache.jackrabbit.test.api.WorkspaceCloneTest;
+import org.apache.jackrabbit.test.api.WorkspaceCloneVersionableTest;
 import org.apache.jackrabbit.test.api.WorkspaceCopyBetweenWorkspacesReferenceableTest;
 import org.apache.jackrabbit.test.api.WorkspaceCopyBetweenWorkspacesSameNameSibsTest;
 import org.apache.jackrabbit.test.api.WorkspaceCopyBetweenWorkspacesTest;
@@ -194,6 +198,15 @@ import org.apache.jackrabbit.test.api.version.GetCreatedTest;
 import org.apache.jackrabbit.test.api.version.GetPredecessorsTest;
 import org.apache.jackrabbit.test.api.version.GetReferencesNodeTest;
 import org.apache.jackrabbit.test.api.version.GetVersionableUUIDTest;
+import org.apache.jackrabbit.test.api.version.MergeActivityTest;
+import org.apache.jackrabbit.test.api.version.MergeCancelMergeTest;
+import org.apache.jackrabbit.test.api.version.MergeCheckedoutSubNodeTest;
+import org.apache.jackrabbit.test.api.version.MergeDoneMergeTest;
+import org.apache.jackrabbit.test.api.version.MergeNodeIteratorTest;
+import org.apache.jackrabbit.test.api.version.MergeNodeTest;
+import org.apache.jackrabbit.test.api.version.MergeNonVersionableSubNodeTest;
+import org.apache.jackrabbit.test.api.version.MergeShallowTest;
+import org.apache.jackrabbit.test.api.version.MergeSubNodeTest;
 import org.apache.jackrabbit.test.api.version.OnParentVersionAbortTest;
 import org.apache.jackrabbit.test.api.version.OnParentVersionComputeTest;
 import org.apache.jackrabbit.test.api.version.OnParentVersionCopyTest;
@@ -237,10 +250,15 @@ public class JcrTckTest {
 
     public static Test wipSuite() {
         TestSuite suite = new TestSuite("WIP Tests");
-        // suite.addTestSuite(WorkspaceCloneReferenceableTest.class);
-        // suite.addTestSuite(WorkspaceCloneSameNameSibsTest.class);
-        // suite.addTestSuite(WorkspaceCloneTest.class);
-        // suite.addTestSuite(WorkspaceCloneVersionableTest.class);
+        suite.addTestSuite(MergeCancelMergeTest.class);
+        suite.addTestSuite(MergeCheckedoutSubNodeTest.class);
+        suite.addTestSuite(MergeDoneMergeTest.class);
+        suite.addTestSuite(MergeNodeIteratorTest.class);
+        suite.addTestSuite(MergeNodeTest.class);
+        suite.addTestSuite(MergeShallowTest.class);
+        suite.addTestSuite(MergeNonVersionableSubNodeTest.class);
+        suite.addTestSuite(MergeSubNodeTest.class);
+
         return suite;
     }
 
@@ -386,9 +404,10 @@ public class JcrTckTest {
         // TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1453
         suite.addTestSuite(excludeTests(SessionUUIDTest.class, "testSaveReferentialIntegrityException"));
         /**
-         * //TODO author=Horia Chiorean date=4/11/12 description=The following fail: testUpdate -
-         * https://issues.jboss.org/browse/MODE-1455 testRemoveInvalidItemStateException -
-         * https://issues.jboss.org/browse/MODE-1456 testRemoveMandatoryNode - https://issues.jboss.org/browse/MODE-1456
+         * //TODO author=Horia Chiorean date=4/11/12 description=The following fail:
+         * testUpdate - https://issues.jboss.org/browse/MODE-1455
+         * testRemoveInvalidItemStateException - https://issues.jboss.org/browse/MODE-1456
+         * testRemoveMandatoryNode - https://issues.jboss.org/browse/MODE-1456
          * testSaveInvalidStateException - https://issues.jboss.org/browse/MODE-1456 (might not seem related at first, but it's
          * because a path of a node is determined incorrectly)
          */
@@ -401,12 +420,10 @@ public class JcrTckTest {
         // TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1453
         suite.addTestSuite(excludeTests(NodeUUIDTest.class, "testSaveReferentialIntegrityException"));
 
-        // TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1312
-        // suite.addTestSuite(WorkspaceCloneReferenceableTest.class);
-        // suite.addTestSuite(WorkspaceCloneSameNameSibsTest.class);
-        // suite.addTestSuite(WorkspaceCloneTest.class);
-        // suite.addTestSuite(WorkspaceCloneVersionableTest.class);
-
+        suite.addTestSuite(WorkspaceCloneReferenceableTest.class);
+        suite.addTestSuite(WorkspaceCloneSameNameSibsTest.class);
+        suite.addTestSuite(WorkspaceCloneTest.class);
+        suite.addTestSuite(WorkspaceCloneVersionableTest.class);
         suite.addTestSuite(WorkspaceCopyBetweenWorkspacesReferenceableTest.class);
         suite.addTestSuite(WorkspaceCopyBetweenWorkspacesSameNameSibsTest.class);
         suite.addTestSuite(WorkspaceCopyBetweenWorkspacesTest.class);
@@ -581,8 +598,7 @@ public class JcrTckTest {
             // TODO author=Horia Chiorean date=4/19/12 description=https://issues.apache.org/jira/browse/JCR-2666
             addTestSuite(excludeTests(RestoreTest.class, "testRestoreNameJcr2"));
 
-            // TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1312
-            // addTestSuite(WorkspaceRestoreTest.class);
+//            addTestSuite(WorkspaceRestoreTest.class);
 
             addTestSuite(OnParentVersionAbortTest.class);
             addTestSuite(OnParentVersionComputeTest.class);
@@ -597,16 +613,17 @@ public class JcrTckTest {
             addTestSuite(SessionMoveVersionExceptionTest.class);
             addTestSuite(WorkspaceMoveVersionExceptionTest.class);
 
-            // TODO author=Horia Chiorean date=4/17/12 description=https://issues.jboss.org/browse/MODE-1312
-            // addTestSuite(MergeCancelMergeTest.class);
-            // addTestSuite(MergeCheckedoutSubNodeTest.class);
-            // addTestSuite(MergeDoneMergeTest.class);
-            // addTestSuite(MergeNodeIteratorTest.class);
-            // addTestSuite(MergeNodeTest.class);
-            // addTestSuite(MergeShallowTest.class);
-            // addTestSuite(MergeActivityTest.class);
-            // addTestSuite(MergeNonVersionableSubNodeTest.class);
-            // addTestSuite(MergeSubNodeTest.class);
+//            addTestSuite(MergeCancelMergeTest.class);
+//            addTestSuite(MergeCheckedoutSubNodeTest.class);
+//            addTestSuite(MergeDoneMergeTest.class);
+//            addTestSuite(MergeNodeIteratorTest.class);
+//            addTestSuite(MergeNodeTest.class);
+//            addTestSuite(MergeShallowTest.class);
+//            addTestSuite(MergeNonVersionableSubNodeTest.class);
+//            addTestSuite(MergeSubNodeTest.class);
+
+            //TODO author=Horia Chiorean date=5/14/12 description=https://issues.apache.org/jira/browse/JCR-3307
+            //            addTestSuite(MergeActivityTest.class);
 
             // JCR 2.0
             addTestSuite(ActivitiesTest.class);
