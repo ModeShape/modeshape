@@ -241,12 +241,23 @@ public class StoreProperties extends BasePropertiesFactory {
         return write(propertiesFileForResource(file), context, properties);
     }
 
-    protected File propertiesFileFor( File fileOrDirectory ) {
-        return new File(fileOrDirectory.getPath() + extension);
+    @Override
+    public File propertiesFileForFile( File file ) {
+        return propertiesFileFor(file);
     }
 
-    protected File propertiesFileForResource( File fileOrDirectory ) {
+    @Override
+    public File propertiesFileForFolder( File folder ) {
+        return propertiesFileFor(folder);
+    }
+
+    @Override
+    public File propertiesFileForResource( File fileOrDirectory ) {
         return new File(fileOrDirectory.getPath() + resourceExtension);
+    }
+
+    protected File propertiesFileFor( File fileOrDirectory ) {
+        return new File(fileOrDirectory.getPath() + extension);
     }
 
     protected Map<Name, Property> load( File propertiesFile,

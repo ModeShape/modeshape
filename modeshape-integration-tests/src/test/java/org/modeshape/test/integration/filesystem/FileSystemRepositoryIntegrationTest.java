@@ -39,9 +39,11 @@ import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.nodetype.PropertyDefinitionTemplate;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.util.FileUtil;
+import org.modeshape.jcr.JcrTools;
 import org.modeshape.test.ModeShapeSingleUseTest;
 
 public class FileSystemRepositoryIntegrationTest extends ModeShapeSingleUseTest {
@@ -332,6 +334,39 @@ public class FileSystemRepositoryIntegrationTest extends ModeShapeSingleUseTest 
         printQuery("SELECT * FROM [nt:base]", 12L, Collections.<String, String>emptyMap());
 
         logout();
+    }
+
+    @FixFor("MODE-1483")
+    @Test
+    public void shouldRemoveFileCreatedByFilesystemConnector() throws Exception {
+        File repositoryRoot = new File("./target/fileSystemSource");
+        try {
+            if (!repositoryRoot.exists() || !repositoryRoot.isDirectory()) {
+                assertTrue(repositoryRoot.mkdir());
+            }
+
+            startEngineUsing("config/configRepositoryForFileSystem_MODE1483.xml");
+
+            Session session = session();
+            JcrTools jcrTools = new JcrTools();
+
+            String resourcePath = "filesystem/workspace1/TestFile.txt";
+
+            Node fileUnderRoot = jcrTools.uploadFile(session, "test.file", getClass().getClassLoader().getResource(resourcePath));
+            Node folder = session().getRootNode().addNode("folder", "nt:folder");
+            jcrTools.uploadFile(session, "/folder/file1", getClass().getClassLoader().getResource(resourcePath));
+            jcrTools.uploadFile(session, "/folder/file2", getClass().getClassLoader().getResource(resourcePath));
+            session.save();
+
+            fileUnderRoot.remove();
+            folder.remove();
+            session.save();
+
+            File workspaceRoot = new File("./target/fileSystemSource/" + session.getWorkspace().getName());
+            assertTrue(workspaceRoot.list().length == 0);
+        } finally {
+            FileUtil.delete(repositoryRoot);
+        }
     }
 
     protected void registryNamespaceIfMissing( String prefix,

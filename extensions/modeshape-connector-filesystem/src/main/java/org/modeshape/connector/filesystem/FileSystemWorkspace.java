@@ -402,6 +402,10 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> implements NodeCaching
                                                              Location.create(nodePath),
                                                              nodeFile,
                                                              NO_PROPERTIES);
+            File propertiesFile = customPropertiesFactory.propertiesFileForResource(nodeFile);
+            if (propertiesFile != null) {
+                FileUtil.delete(propertiesFile);
+            }
             if (!nodeFile.exists()) return null;
 
             FileOutputStream fos = null;
@@ -413,21 +417,60 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> implements NodeCaching
                                                                                                        getName(),
                                                                                                        source.getName()));
             } finally {
+                FileUtil.delete(nodeFile);
                 if (fos != null) try {
                     fos.close();
                 } catch (IOException ioe) {
                 }
             }
         } else {
+            PathNode node = getNode(nodePath);
+            if (node == null) {
+                return null;
+            }
+
             nodeFile = fileFor(nodePath);
-            // Have the custom property factory remote all properties ...
-            customPropertiesFactory.recordResourceProperties(context,
+
+            //remove all the children first
+            for (Segment segment : node.getChildren()) {
+                Path childPath = pathFactory.create(nodePath, segment);
+                removeNode(childPath);
+            }
+
+            Name primaryType = nameFactory.create(node.getProperty(JcrLexicon.PRIMARY_TYPE).getFirstValue());
+            if (JcrNtLexicon.FILE.equals(primaryType)) {
+                // Have the custom property factory remote all properties ...
+                customPropertiesFactory.recordFileProperties(context,
                                                              source.getName(),
                                                              Location.create(nodePath),
                                                              nodeFile,
                                                              NO_PROPERTIES);
-            if (!nodeFile.exists()) return null;
-
+                File propertiesFile = customPropertiesFactory.propertiesFileForFile(nodeFile);
+                if (propertiesFile != null) {
+                    FileUtil.delete(propertiesFile);
+                }
+            } else if (JcrNtLexicon.FOLDER.equals(primaryType)) {
+                // Have the custom property factory remote all properties ...
+                customPropertiesFactory.recordDirectoryProperties(context,
+                                                                  source.getName(),
+                                                                  Location.create(nodePath),
+                                                                  nodeFile,
+                                                                  NO_PROPERTIES);
+                File propertiesFile = customPropertiesFactory.propertiesFileForFolder(nodeFile);
+                if (propertiesFile != null) {
+                    FileUtil.delete(propertiesFile);
+                }
+            } else {
+                customPropertiesFactory.recordResourceProperties(context,
+                                                                 source.getName(),
+                                                                 Location.create(nodePath),
+                                                                 nodeFile,
+                                                                 NO_PROPERTIES);
+                File propertiesFile = customPropertiesFactory.propertiesFileForResource(nodeFile);
+                if (propertiesFile != null) {
+                    FileUtil.delete(propertiesFile);
+                }
+            }
             FileUtil.delete(nodeFile);
         }
 

@@ -152,4 +152,28 @@ public interface CustomPropertiesFactory extends Serializable {
                                         File file,
                                         Map<Name, Property> properties ) throws RepositorySourceException;
 
+    /**
+     * Returns the file used for storing extra properties for files.
+
+     * @param file a non-null {@link File} representing an existing file.
+     * @return the file in which the properties are be stored or {@code null} if custom properties are not supported
+     */
+    File propertiesFileForFile( File file );
+
+    /**
+     * Returns the file used for storing extra properties for folders.
+
+     * @param folder a non-null {@link File} representing an existing folder.
+     * @return the file in which the properties are be stored or {@code null} if custom properties are not supported
+     */
+    File propertiesFileForFolder( File folder );
+
+    /**
+     * Returns the file used for storing properties for resources.
+
+     * @param resource a non-null {@link File} representing an existing file.
+     * @return the file in which the properties are be stored or {@code null} if custom properties are not supported
+     */
+    File propertiesFileForResource(File resource);
+
 }
