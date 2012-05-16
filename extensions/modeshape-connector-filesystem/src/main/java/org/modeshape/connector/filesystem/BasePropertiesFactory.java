@@ -23,6 +23,7 @@
  */
 package org.modeshape.connector.filesystem;
 
+import java.io.File;
 import java.io.FilenameFilter;
 import java.util.Arrays;
 import java.util.Collection;
@@ -85,5 +86,20 @@ public abstract class BasePropertiesFactory implements CustomPropertiesFactory {
      */
     public FilenameFilter getFilenameFilter( FilenameFilter exclusionFilter ) {
         return exclusionFilter;
+    }
+
+    @Override
+    public File propertiesFileForFile( File file ) {
+        return null;
+    }
+
+    @Override
+    public File propertiesFileForFolder( File folder ) {
+        return null;
+    }
+
+    @Override
+    public File propertiesFileForResource( File resource ) {
+        return null;
     }
 }

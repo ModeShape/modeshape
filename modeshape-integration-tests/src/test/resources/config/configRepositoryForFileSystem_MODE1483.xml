@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration xmlns:mode="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+    <!--
+    Define the sources for the content.  These sources are directly accessible using the ModeShape-specific Graph API.
+    In fact, this is how the ModeShape JCR implementation works.  You can think of these as being similar to
+    JDBC DataSource objects, except that they expose graph content via the Graph API instead of records via SQL or JDBC.
+    -->
+    <!--<mode:clustering clusterName="modeshape-cluster" configuration="jgroups-modeshape.xml"/>-->
+
+
+    <mode:sources jcr:primaryType="nt:unstructured">
+
+        <mode:source jcr:name="Files" mode:classname="org.modeshape.connector.filesystem.FileSystemSource"
+                     mode:extraPropertiesBehavior="store"
+                     mode:exclusionPattern="^.*\.modeshape$"
+                     mode:workspaceRootPath="./target/fileSystemSource"
+                     mode:defaultWorkspaceName="fileSystemWorkspace"
+                     mode:creatingWorkspacesAllowed="false"
+                     mode:updatesAllowed="true"/>
+    </mode:sources>
+
+    <!--
+    Define the mime type detectors. This is an optional section.  By default, each engine will use the
+    MIME type detector that uses filename extensions.  So we wouldn't need to define the same detector again,
+    but this is how you'd define another extension.
+    -->
+    <mode:mimeTypeDetectors>
+        <mode:mimeTypeDetector jcr:name="Detector">
+            <mode:description>Standard extension-based MIME type detector</mode:description>
+            <!--
+            Specify the implementation class (required), as a child element or attribute on parent element.
+            -->
+            <mode:classname>org.modeshape.graph.mimetype.ExtensionBasedMimeTypeDetector</mode:classname>
+        </mode:mimeTypeDetector>
+    </mode:mimeTypeDetectors>
+    <!--
+    Define the JCR repositories
+    -->
+    <mode:repositories>
+
+        <mode:repository jcr:name="Files">
+            <!-- Specify the source that should be used for the repository -->
+            <mode:source>Files</mode:source>
+
+            <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names -->
+            <mode:options jcr:primaryType="mode:options">
+                <jaasLoginConfigName jcr:primaryType="mode:option" mode:value="modeshape-jcr"/>
+                <queryIndexDirectory jcr:primaryType="mode:option"
+                                     mode:value="./target/fileSystemSource/indexes"/>
+                <!--<systemSourceName jcr:primaryType="mode:option" mode:value="system@SystemStore"/>-->
+            </mode:options>
+        </mode:repository>
+
+    </mode:repositories>
+</configuration>
