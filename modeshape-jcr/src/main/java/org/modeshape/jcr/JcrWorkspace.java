@@ -47,6 +47,8 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.JcrContentHandler.EnclosingSAXException;
 import org.modeshape.jcr.api.monitor.RepositoryMonitor;
 import org.modeshape.jcr.api.monitor.ValueMetric;
+import org.modeshape.jcr.cache.CachedNode;
+import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.value.InvalidPathException;
@@ -132,8 +134,10 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
                       String destAbsPath )
         throws NoSuchWorkspaceException, ConstraintViolationException, VersionException, AccessDeniedException,
         PathNotFoundException, ItemExistsException, LockException, RepositoryException {
+        CheckArg.isNotEmpty(srcAbsPath, "srcAbsPath");
+        CheckArg.isNotEmpty(destAbsPath, "destAbsPath");
 
-        validateCrossWorkspaceAction(srcWorkspace, srcAbsPath, destAbsPath);
+        validateCrossWorkspaceAction(srcWorkspace);
 
         // Create the paths ...
         PathFactory pathFactory = session.pathFactory();
@@ -240,7 +244,10 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
                        boolean removeExisting )
         throws NoSuchWorkspaceException, ConstraintViolationException, VersionException, AccessDeniedException,
         PathNotFoundException, ItemExistsException, LockException, RepositoryException {
-        validateCrossWorkspaceAction(srcWorkspace, srcAbsPath, destAbsPath);
+        CheckArg.isNotEmpty(srcAbsPath, "srcAbsPath");
+        CheckArg.isNotEmpty(destAbsPath, "destAbsPath");
+
+        validateCrossWorkspaceAction(srcWorkspace);
 
         final boolean sameWorkspace = getName().equals(srcWorkspace);
         if (sameWorkspace && removeExisting) {
@@ -344,22 +351,9 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
 
                 //Use the JCR add child here to perform the parent validations
                 NodeKey cloneKey = parentNode.key().withId(sourceNode.key().getIdentifier());
-                AbstractJcrNode clone = parentNode.addChildNode(newNodeName, sourceNode.getPrimaryTypeName(), cloneKey);
-                clone.mutable().deepClone(cloneSession.cache(), sourceNode.node(), sourceCache);
+                parentNode.addChildNode(newNodeName, sourceNode.getPrimaryTypeName(), cloneKey);
 
-                /**
-                 * The clone succeeded, now do some extra processing
-                 */
-                cloneSession.initBaseVersionKeys();
-                for (NodeKey sourceKey : sourceKeys) {
-                    AbstractJcrNode srcNode = sourceSession.node(sourceKey, null);
-                    if (srcNode.isNodeType(JcrMixLexicon.VERSIONABLE)) {
-                        //Preserve the base version of the versionable nodes (this will in turn preserve the version history)
-                        cloneSession.setDesiredBaseVersionKey(sourceKey, srcNode.getBaseVersion().key());
-                    }
-                }
-
-                cloneSession.save();
+                deepClone(sourceSession, sourceNode.key(), cloneSession, cloneKey);
             }
         }
         catch (ItemNotFoundException e) {
@@ -372,15 +366,12 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
         }
     }
 
-    private void validateCrossWorkspaceAction( String srcWorkspace,
-                                               String srcAbsPath,
-                                               String destAbsPath ) throws RepositoryException {
+    protected void validateCrossWorkspaceAction( String srcWorkspace) throws RepositoryException {
         CheckArg.isNotEmpty(srcWorkspace, "srcWorkspace");
-        CheckArg.isNotEmpty(srcAbsPath, "srcAbsPath");
-        CheckArg.isNotEmpty(destAbsPath, "destAbsPath");
 
         session.checkLive();
         session.checkPermission(srcWorkspace, null, ModeShapePermissions.READ);
+        session.checkPermission(getName(), null, ModeShapePermissions.READ);
 
         JcrRepository repository = repository();
         if (!repository.hasWorkspace(srcWorkspace)) {
@@ -612,6 +603,11 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
         try {
             session.checkPermission(name, null, ModeShapePermissions.CREATE_WORKSPACE);
             JcrRepository repository = session.repository();
+            if (repository.hasWorkspace(name)) {
+                // TCK: cannot create a workspace with the same name as an already existing one
+                String msg = GraphI18n.workspaceAlreadyExistsInRepository.text(name, getName());
+                throw new RepositoryException(msg);
+            }
             repository.repositoryCache().createWorkspace(name);
             repository.statistics().increment(ValueMetric.WORKSPACE_COUNT);
         } catch (UnsupportedOperationException e) {
@@ -623,10 +619,42 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
     public void createWorkspace( String name,
                                  String srcWorkspace )
         throws AccessDeniedException, UnsupportedRepositoryOperationException, NoSuchWorkspaceException, RepositoryException {
-        session.checkLive();
-        session.checkPermission(srcWorkspace, null, ModeShapePermissions.READ);
+        validateCrossWorkspaceAction(srcWorkspace);
         createWorkspace(name);
-        // TODO: Clone the workspace contents ...
+
+        JcrSession newWorkspaceSession = session.spawnSession(name, false);
+        JcrSession srcWorkspaceSession = session.spawnSession(srcWorkspace, true);
+
+        deepClone(srcWorkspaceSession, srcWorkspaceSession.getRootNode().key(), newWorkspaceSession, newWorkspaceSession.getRootNode().key());
+    }
+
+    protected void deepClone(JcrSession sourceSession, NodeKey sourceNodeKey, JcrSession cloneSession, NodeKey cloneNodeKey) throws RepositoryException {
+        assert !cloneSession.cache().isReadOnly();
+
+        SessionCache sourceCache = sourceSession.cache();
+        CachedNode sourceNode = sourceCache.getNode(sourceNodeKey);
+
+        SessionCache cloneCache = cloneSession.cache();
+        MutableCachedNode mutableCloneNode = cloneSession.node(cloneNodeKey, null).mutable();
+
+        /**
+         * Perform the clone at the cache level - clone all properties & children
+         */
+        mutableCloneNode.deepClone(cloneCache, sourceNode, sourceCache);
+
+        /**
+         * Make sure the version history is preserved
+         */
+        cloneSession.initBaseVersionKeys();
+        Set<NodeKey> sourceKeys = sourceCache.getNodeKeysAtAndBelow(sourceNodeKey);
+        for (NodeKey sourceKey : sourceKeys) {
+            AbstractJcrNode srcNode = sourceSession.node(sourceKey, null);
+            if (srcNode.isNodeType(JcrMixLexicon.VERSIONABLE)) {
+                //Preserve the base version of the versionable nodes (this will in turn preserve the version history)
+                cloneSession.setDesiredBaseVersionKey(sourceKey, srcNode.getBaseVersion().key());
+            }
+        }
+        cloneSession.save();
     }
 
     @Override

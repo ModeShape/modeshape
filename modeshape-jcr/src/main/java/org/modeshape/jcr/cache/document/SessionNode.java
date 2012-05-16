@@ -922,6 +922,10 @@ public class SessionNode implements MutableCachedNode {
         WritableSessionCache writableSessionCache = writableSession(cache);
         writableSessionCache.assertInSession(this);
 
+        for (Iterator<Property> propertyIterator = getProperties(cache); propertyIterator.hasNext();) {
+            this.removeProperty(cache, propertyIterator.next().getName());
+        }
+
         copyProperties(cache, sourceNode, sourceCache);
 
         for (ChildReference childReference : sourceNode.getChildReferences(sourceCache)) {
