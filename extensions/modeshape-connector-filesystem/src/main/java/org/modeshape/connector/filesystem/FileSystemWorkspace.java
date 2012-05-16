@@ -417,7 +417,6 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> implements NodeCaching
                                                                                                        getName(),
                                                                                                        source.getName()));
             } finally {
-                FileUtil.delete(nodeFile);
                 if (fos != null) try {
                     fos.close();
                 } catch (IOException ioe) {
@@ -446,7 +445,7 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> implements NodeCaching
                                                              nodeFile,
                                                              NO_PROPERTIES);
                 File propertiesFile = customPropertiesFactory.propertiesFileForFile(nodeFile);
-                if (propertiesFile != null) {
+                if (propertiesFile != null && propertiesFile.exists()) {
                     FileUtil.delete(propertiesFile);
                 }
             } else if (JcrNtLexicon.FOLDER.equals(primaryType)) {
@@ -457,7 +456,7 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> implements NodeCaching
                                                                   nodeFile,
                                                                   NO_PROPERTIES);
                 File propertiesFile = customPropertiesFactory.propertiesFileForFolder(nodeFile);
-                if (propertiesFile != null) {
+                if (propertiesFile != null && propertiesFile.exists()) {
                     FileUtil.delete(propertiesFile);
                 }
             } else {
@@ -467,7 +466,7 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> implements NodeCaching
                                                                  nodeFile,
                                                                  NO_PROPERTIES);
                 File propertiesFile = customPropertiesFactory.propertiesFileForResource(nodeFile);
-                if (propertiesFile != null) {
+                if (propertiesFile != null && propertiesFile.exists()) {
                     FileUtil.delete(propertiesFile);
                 }
             }

@@ -23,6 +23,7 @@
  */
 package org.modeshape.test.integration.filesystem;
 
+import javax.jcr.PropertyIterator;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import java.io.File;
@@ -338,7 +339,7 @@ public class FileSystemRepositoryIntegrationTest extends ModeShapeSingleUseTest 
 
     @FixFor("MODE-1483")
     @Test
-    public void shouldRemoveFileCreatedByFilesystemConnector() throws Exception {
+    public void shouldRemoveExtraFilesCreatedWhenStoringAdditionalProperties() throws Exception {
         File repositoryRoot = new File("./target/fileSystemSource");
         try {
             if (!repositoryRoot.exists() || !repositoryRoot.isDirectory()) {
@@ -358,7 +359,16 @@ public class FileSystemRepositoryIntegrationTest extends ModeShapeSingleUseTest 
             jcrTools.uploadFile(session, "/folder/file2", getClass().getClassLoader().getResource(resourcePath));
             session.save();
 
+            //remove everything for the file which is under root
+            fileUnderRoot = session.getNode("/test.file");
+            jcrTools.removeAllChildren(fileUnderRoot);
+            PropertyIterator pIt = fileUnderRoot.getProperties();
+            while (pIt.hasNext()) {
+                javax.jcr.Property property = pIt.nextProperty();
+                property.remove();
+            }
             fileUnderRoot.remove();
+
             folder.remove();
             session.save();
 
