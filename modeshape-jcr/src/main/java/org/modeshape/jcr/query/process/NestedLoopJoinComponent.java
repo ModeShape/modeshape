@@ -48,6 +48,7 @@ public class NestedLoopJoinComponent extends JoinComponent {
         final ValueSelector leftSelector = valueSelectorFor(left(), getJoinCondition());
         final ValueSelector rightSelector = valueSelectorFor(right(), getJoinCondition());
         final Joinable joinable = joinableFor(left(), right(), getJoinCondition());
+        final NotJoinable notJoinable = notJoinableFor(getJoinType());
         final TupleMerger merger = createMerger(getColumns(), left().getColumns(), right().getColumns());
 
         // Walk through the left and right results ...
@@ -63,6 +64,10 @@ public class NestedLoopJoinComponent extends JoinComponent {
                 if (joinable.evaluate(leftValue, rightValue)) {
                     Object[] result = merger.merge(leftTuple, rightTuple);
                     tuples.add(result);
+                } else {
+                    // The LEFT and RIGHT tuples do not satisfy the join criteria, so delegate to the 'notJoinable'
+                    // which is a function of the join type ...
+                    notJoinable.addTuples(tuples, merger, leftTuple, rightTuple);
                 }
             }
         }

@@ -58,6 +58,7 @@ import org.modeshape.jcr.query.model.PropertyValue;
 import org.modeshape.jcr.query.model.QueryCommand;
 import org.modeshape.jcr.query.model.SelectorName;
 import org.modeshape.jcr.query.model.SetCriteria;
+import org.modeshape.jcr.query.model.Subquery;
 import org.modeshape.jcr.query.parse.BasicSqlQueryParser;
 import org.modeshape.jcr.query.plan.CanonicalPlanner;
 import org.modeshape.jcr.query.plan.JoinAlgorithm;
@@ -293,7 +294,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         PlanNode expected = new PlanNode(Type.DEPENDENT_QUERY, selector("t1"), selector("t2"));
 
         PlanNode subquery = new PlanNode(Type.ACCESS, expected, selector("t2"));
-        subquery.setProperty(Property.VARIABLE_NAME, "__subquery1");
+        subquery.setProperty(Property.VARIABLE_NAME, Subquery.VARIABLE_PREFIX + "1");
         PlanNode project2 = new PlanNode(Type.PROJECT, subquery, selector("t2"));
         project2.setProperty(Property.PROJECT_COLUMNS, columns(column("t2", "c21")));
         PlanNode select2 = new PlanNode(Type.SELECT, project2, selector("t2"));
@@ -308,7 +309,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         project.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11"), column("t1", "c12")));
         PlanNode select = new PlanNode(Type.SELECT, project, selector("t1"));
         select.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("t1"), "c13"),
-                                                                     new BindVariableName("__subquery1")));
+                                                                     new BindVariableName(Subquery.VARIABLE_PREFIX + "1")));
         PlanNode source = new PlanNode(Type.SOURCE, select, selector("t1"));
         source.setProperty(Property.SOURCE_NAME, selector("t1"));
         source.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t1")).getColumns());
@@ -326,7 +327,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         PlanNode expected = new PlanNode(Type.DEPENDENT_QUERY, selector("t1"), selector("t2"));
 
         PlanNode subquery1 = new PlanNode(Type.ACCESS, expected, selector("t2"));
-        subquery1.setProperty(Property.VARIABLE_NAME, "__subquery1");
+        subquery1.setProperty(Property.VARIABLE_NAME, Subquery.VARIABLE_PREFIX + "1");
         PlanNode project1 = new PlanNode(Type.PROJECT, subquery1, selector("t2"));
         project1.setProperty(Property.PROJECT_COLUMNS, columns(column("t2", "c22")));
         PlanNode select1 = new PlanNode(Type.SELECT, project1, selector("t2"));
@@ -339,7 +340,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         PlanNode depQuery2 = new PlanNode(Type.DEPENDENT_QUERY, expected, selector("t1"), selector("t2"));
 
         PlanNode subquery2 = new PlanNode(Type.ACCESS, depQuery2, selector("t2"));
-        subquery2.setProperty(Property.VARIABLE_NAME, "__subquery2");
+        subquery2.setProperty(Property.VARIABLE_NAME, Subquery.VARIABLE_PREFIX + "2");
         PlanNode project2 = new PlanNode(Type.PROJECT, subquery2, selector("t2"));
         project2.setProperty(Property.PROJECT_COLUMNS, columns(column("t2", "c21")));
         PlanNode select2 = new PlanNode(Type.SELECT, project2, selector("t2"));
@@ -354,10 +355,11 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         project.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11"), column("t1", "c12")));
         PlanNode firstSelect = new PlanNode(Type.SELECT, project, selector("t1"));
         firstSelect.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("t1"), "c13"),
-                                                                          new BindVariableName("__subquery2")));
+                                                                          new BindVariableName(Subquery.VARIABLE_PREFIX + "2")));
         PlanNode secondSelect = new PlanNode(Type.SELECT, firstSelect, selector("t1"));
         secondSelect.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c12"),
-                                                                          Operator.EQUAL_TO, new BindVariableName("__subquery1")));
+                                                                          Operator.EQUAL_TO,
+                                                                          new BindVariableName(Subquery.VARIABLE_PREFIX + "1")));
         PlanNode source = new PlanNode(Type.SOURCE, secondSelect, selector("t1"));
         source.setProperty(Property.SOURCE_NAME, selector("t1"));
         source.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t1")).getColumns());
@@ -377,7 +379,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         PlanNode depQuery2 = new PlanNode(Type.DEPENDENT_QUERY, expected, selector("t2"));
 
         PlanNode subquery2 = new PlanNode(Type.ACCESS, depQuery2, selector("t2"));
-        subquery2.setProperty(Property.VARIABLE_NAME, "__subquery2");
+        subquery2.setProperty(Property.VARIABLE_NAME, Subquery.VARIABLE_PREFIX + "2");
         PlanNode project2 = new PlanNode(Type.PROJECT, subquery2, selector("t2"));
         project2.setProperty(Property.PROJECT_COLUMNS, columns(column("t2", "c22")));
         PlanNode select2 = new PlanNode(Type.SELECT, project2, selector("t2"));
@@ -388,12 +390,13 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         source2.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t2")).getColumns());
 
         PlanNode subquery1 = new PlanNode(Type.ACCESS, depQuery2, selector("t2"));
-        subquery1.setProperty(Property.VARIABLE_NAME, "__subquery1");
+        subquery1.setProperty(Property.VARIABLE_NAME, Subquery.VARIABLE_PREFIX + "1");
         PlanNode project1 = new PlanNode(Type.PROJECT, subquery1, selector("t2"));
         project1.setProperty(Property.PROJECT_COLUMNS, columns(column("t2", "c21")));
         PlanNode select1 = new PlanNode(Type.SELECT, project1, selector("t2"));
         select1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t2"), "c22"),
-                                                                     Operator.LESS_THAN, new BindVariableName("__subquery2")));
+                                                                     Operator.LESS_THAN,
+                                                                     new BindVariableName(Subquery.VARIABLE_PREFIX + "2")));
         PlanNode source1 = new PlanNode(Type.SOURCE, select1, selector("t2"));
         source1.setProperty(Property.SOURCE_NAME, selector("t2"));
         source1.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t2")).getColumns());
@@ -403,7 +406,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         project.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11"), column("t1", "c12")));
         PlanNode select = new PlanNode(Type.SELECT, project, selector("t1"));
         select.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("t1"), "c13"),
-                                                                     new BindVariableName("__subquery1")));
+                                                                     new BindVariableName(Subquery.VARIABLE_PREFIX + "1")));
         PlanNode source = new PlanNode(Type.SOURCE, select, selector("t1"));
         source.setProperty(Property.SOURCE_NAME, selector("t1"));
         source.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t1")).getColumns());

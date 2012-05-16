@@ -93,14 +93,15 @@ public interface MutableCachedNode extends CachedNode {
     void setProperty( SessionCache cache,
                       Property property );
 
-  /**
+    /**
      * Set the given property only if it has not been set previously and therefore appear as changed.
-     *
+     * 
      * @param cache the cache to which this node belongs; may not be null
      * @param property the property; may not be null
      * @throws NodeNotFoundException if this node no longer exists
      */
-    void setPropertyIfUnchanged( SessionCache cache, Property property );
+    void setPropertyIfUnchanged( SessionCache cache,
+                                 Property property );
 
     /**
      * Set the properties on this node.
@@ -279,10 +280,9 @@ public interface MutableCachedNode extends CachedNode {
      */
     String getEtag( SessionCache cache );
 
-
     /**
      * Copies into this node all the properties and children (deep copy) from the given source node.
-     *
+     * 
      * @param cache the cache to which this node belongs; may not be null
      * @param sourceNode the node from which to copy the properties and children; may not be null
      * @param sourceCache the cache in which the source node belongs; may not be null
@@ -293,21 +293,21 @@ public interface MutableCachedNode extends CachedNode {
                                            SessionCache sourceCache );
 
     /**
-     * Clones into this node all the properties and children (deep clone) from the given source node. Each cloned node
-     * will have the same identifier as the source node.
-     *
+     * Clones into this node all the properties and children (deep clone) from the given source node. Each cloned node will have
+     * the same identifier as the source node.
+     * 
      * @param cache the cache to which this node belongs; may not be null
      * @param sourceNode the node from which to copy the properties and children; may not be null
      * @param sourceCache the cache in which the source node belongs; may not be null
-     *
      */
     public void deepClone( SessionCache cache,
                            CachedNode sourceNode,
-                           SessionCache sourceCache);
+                           SessionCache sourceCache );
 
     /**
      * Returns a set with the keys of the children which have been removed for this node.
-     * @return a {@code Set{@link NodeKey}, never null
+     * 
+     * @return a <code>Set&lt;{@link NodeKey}></code>, never null
      */
     public Set<NodeKey> removedChildren();
 }

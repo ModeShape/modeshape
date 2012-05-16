@@ -21,16 +21,17 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.query;
-
-import org.modeshape.jcr.JcrValueFactory;
-import org.modeshape.jcr.query.model.TypeSystem;
+package org.modeshape.jcr.api;
 
 /**
- * 
+ * A specialization of the standard JCR {@link javax.jcr.Session} interface that returns the ModeShape-specific extension
+ * interfaces from {@link #getWorkspace()} and {@link #getRepository()}.
  */
-public interface JcrTypeSystem extends TypeSystem {
+public interface Session extends javax.jcr.Session {
 
-    JcrValueFactory getValueFactory();
+    @Override
+    public Workspace getWorkspace();
 
+    @Override
+    public Repository getRepository();
 }

@@ -36,6 +36,7 @@ import org.apache.lucene.search.Weight;
 import org.apache.lucene.search.WildcardQuery;
 import org.apache.lucene.search.regex.JavaUtilRegexCapabilities;
 import org.apache.lucene.search.regex.RegexQuery;
+import org.modeshape.jcr.query.lucene.CaseOperations.CaseOperation;
 import org.modeshape.jcr.value.ValueComparators;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFactory;
@@ -126,20 +127,20 @@ public class CompareStringQuery extends CompareQuery<String> {
      * @param constraintValue the constraint value; may not be null
      * @param fieldName the name of the document field containing the value; may not be null
      * @param factories the value factories that can be used during the scoring; may not be null
-     * @param caseSensitive true if the comparison should be done in a case-sensitive manner, or false if it is to be
-     *        case-insensitive
+     * @param caseOperation the operation that should be performed on the indexed values before the constraint value is being
+     *        evaluated; may not be null
      * @return the query; never null
      */
     public static Query createQueryForNodesWithFieldEqualTo( String constraintValue,
                                                              String fieldName,
                                                              ValueFactories factories,
-                                                             boolean caseSensitive ) {
-        if (caseSensitive) {
+                                                             CaseOperation caseOperation ) {
+        if (caseOperation == CaseOperations.AS_IS) {
             // We can just do a normal TermQuery ...
             return new TermQuery(new Term(fieldName, constraintValue));
         }
         return new CompareStringQuery(fieldName, constraintValue, factories.getStringFactory(), factories.getStringFactory(),
-                                      EQUAL_TO, caseSensitive);
+                                      EQUAL_TO, caseOperation);
     }
 
     /**
@@ -149,16 +150,16 @@ public class CompareStringQuery extends CompareQuery<String> {
      * @param constraintValue the constraint value; may not be null
      * @param fieldName the name of the document field containing the value; may not be null
      * @param factories the value factories that can be used during the scoring; may not be null
-     * @param caseSensitive true if the comparison should be done in a case-sensitive manner, or false if it is to be
-     *        case-insensitive
+     * @param caseOperation the operation that should be performed on the indexed values before the constraint value is being
+     *        evaluated; may not be null
      * @return the query; never null
      */
     public static CompareStringQuery createQueryForNodesWithFieldGreaterThan( String constraintValue,
                                                                               String fieldName,
                                                                               ValueFactories factories,
-                                                                              boolean caseSensitive ) {
+                                                                              CaseOperation caseOperation ) {
         return new CompareStringQuery(fieldName, constraintValue, factories.getStringFactory(), factories.getStringFactory(),
-                                      IS_GREATER_THAN, caseSensitive);
+                                      IS_GREATER_THAN, caseOperation);
     }
 
     /**
@@ -168,16 +169,16 @@ public class CompareStringQuery extends CompareQuery<String> {
      * @param constraintValue the constraint value; may not be null
      * @param fieldName the name of the document field containing the value; may not be null
      * @param factories the value factories that can be used during the scoring; may not be null
-     * @param caseSensitive true if the comparison should be done in a case-sensitive manner, or false if it is to be
-     *        case-insensitive
+     * @param caseOperation the operation that should be performed on the indexed values before the constraint value is being
+     *        evaluated; may not be null
      * @return the query; never null
      */
     public static CompareStringQuery createQueryForNodesWithFieldGreaterThanOrEqualTo( String constraintValue,
                                                                                        String fieldName,
                                                                                        ValueFactories factories,
-                                                                                       boolean caseSensitive ) {
+                                                                                       CaseOperation caseOperation ) {
         return new CompareStringQuery(fieldName, constraintValue, factories.getStringFactory(), factories.getStringFactory(),
-                                      IS_GREATER_THAN_OR_EQUAL_TO, caseSensitive);
+                                      IS_GREATER_THAN_OR_EQUAL_TO, caseOperation);
     }
 
     /**
@@ -187,16 +188,16 @@ public class CompareStringQuery extends CompareQuery<String> {
      * @param constraintValue the constraint value; may not be null
      * @param fieldName the name of the document field containing the value; may not be null
      * @param factories the value factories that can be used during the scoring; may not be null
-     * @param caseSensitive true if the comparison should be done in a case-sensitive manner, or false if it is to be
-     *        case-insensitive
+     * @param caseOperation the operation that should be performed on the indexed values before the constraint value is being
+     *        evaluated; may not be null
      * @return the query; never null
      */
     public static CompareStringQuery createQueryForNodesWithFieldLessThan( String constraintValue,
                                                                            String fieldName,
                                                                            ValueFactories factories,
-                                                                           boolean caseSensitive ) {
+                                                                           CaseOperation caseOperation ) {
         return new CompareStringQuery(fieldName, constraintValue, factories.getStringFactory(), factories.getStringFactory(),
-                                      IS_LESS_THAN, caseSensitive);
+                                      IS_LESS_THAN, caseOperation);
     }
 
     /**
@@ -206,16 +207,16 @@ public class CompareStringQuery extends CompareQuery<String> {
      * @param constraintValue the constraint value; may not be null
      * @param fieldName the name of the document field containing the value; may not be null
      * @param factories the value factories that can be used during the scoring; may not be null
-     * @param caseSensitive true if the comparison should be done in a case-sensitive manner, or false if it is to be
-     *        case-insensitive
+     * @param caseOperation the operation that should be performed on the indexed values before the constraint value is being
+     *        evaluated; may not be null
      * @return the query; never null
      */
     public static CompareStringQuery createQueryForNodesWithFieldLessThanOrEqualTo( String constraintValue,
                                                                                     String fieldName,
                                                                                     ValueFactories factories,
-                                                                                    boolean caseSensitive ) {
+                                                                                    CaseOperation caseOperation ) {
         return new CompareStringQuery(fieldName, constraintValue, factories.getStringFactory(), factories.getStringFactory(),
-                                      IS_LESS_THAN_OR_EQUAL_TO, caseSensitive);
+                                      IS_LESS_THAN_OR_EQUAL_TO, caseOperation);
     }
 
     protected static boolean hasWildcardCharacters( String expression ) {
@@ -240,22 +241,22 @@ public class CompareStringQuery extends CompareQuery<String> {
      * @param likeExpression the LIKE expression; may not be null
      * @param fieldName the name of the document field containing the value; may not be null
      * @param factories the value factories that can be used during the scoring; may not be null
-     * @param caseSensitive true if the comparison should be done in a case-sensitive manner, or false if it is to be
-     *        case-insensitive
+     * @param caseOperation the operation that should be performed on the indexed values before the constraint value is being
+     *        evaluated; may not be null
      * @return the query; never null
      */
     public static Query createQueryForNodesWithFieldLike( String likeExpression,
                                                           String fieldName,
                                                           ValueFactories factories,
-                                                          boolean caseSensitive ) {
+                                                          CaseOperation caseOperation ) {
         assert likeExpression != null;
         assert likeExpression.length() > 0;
 
         if (!hasWildcardCharacters(likeExpression)) {
             // This is not a like expression, so just do an equals ...
-            return createQueryForNodesWithFieldEqualTo(likeExpression, fieldName, factories, caseSensitive);
+            return createQueryForNodesWithFieldEqualTo(likeExpression, fieldName, factories, caseOperation);
         }
-        if (caseSensitive) {
+        if (caseOperation == CaseOperations.AS_IS) {
             // We can just do a normal Wildcard or RegEx query ...
 
             // '%' matches 0 or more characters
@@ -275,7 +276,7 @@ public class CompareStringQuery extends CompareQuery<String> {
         // Create a regex query (which will be done using the correct case) ...
         String regex = toRegularExpression(likeExpression);
         RegexQuery query = new RegexQuery(new Term(fieldName, regex));
-        int flags = caseSensitive ? 0 : Pattern.CASE_INSENSITIVE;
+        int flags = Pattern.CASE_INSENSITIVE;
         query.setRegexImplementation(new JavaUtilRegexCapabilities(flags));
         return query;
     }
@@ -314,7 +315,7 @@ public class CompareStringQuery extends CompareQuery<String> {
         return result;
     }
 
-    private final boolean caseSensitive;
+    private final CaseOperation caseOperation;
 
     /**
      * Construct a {@link Query} implementation that scores nodes according to the supplied comparator.
@@ -325,17 +326,17 @@ public class CompareStringQuery extends CompareQuery<String> {
      * @param stringFactory the string factory that can be used during the scoring; may not be null
      * @param evaluator the {@link CompareQuery.Evaluator} implementation that returns whether the node path satisfies the
      *        constraint; may not be null
-     * @param caseSensitive true if the comparison should be done in a case-sensitive manner, or false if it is to be
-     *        case-insensitive
+     * @param caseOperation the operation that should be performed on the indexed values before the constraint value is being
+     *        evaluated; may not be null
      */
     protected CompareStringQuery( String fieldName,
                                   String constraintValue,
                                   ValueFactory<String> valueFactory,
                                   ValueFactory<String> stringFactory,
                                   Evaluator<String> evaluator,
-                                  boolean caseSensitive ) {
-        super(fieldName, caseSensitive ? constraintValue : constraintValue.toLowerCase(), valueFactory, stringFactory, evaluator);
-        this.caseSensitive = caseSensitive;
+                                  CaseOperation caseOperation ) {
+        super(fieldName, constraintValue, valueFactory, stringFactory, evaluator);
+        this.caseOperation = caseOperation;
     }
 
     @Override
@@ -343,12 +344,12 @@ public class CompareStringQuery extends CompareQuery<String> {
                                        int docId ) throws IOException {
         String result = super.readFromDocument(reader, docId);
         if (result == null) return null;
-        return caseSensitive ? result : result.toLowerCase();
+        return caseOperation.execute(result);
     }
 
     @Override
     public Object clone() {
-        return new CompareStringQuery(fieldName, constraintValue, valueTypeFactory, stringFactory, evaluator, caseSensitive);
+        return new CompareStringQuery(fieldName, constraintValue, valueTypeFactory, stringFactory, evaluator, caseOperation);
     }
 
     @Override

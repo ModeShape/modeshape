@@ -26,17 +26,20 @@ package org.modeshape.jcr.api;
 import java.util.concurrent.Future;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.RepositoryException;
-import javax.jcr.Session;
 import org.modeshape.jcr.api.monitor.RepositoryMonitor;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
+import org.modeshape.jcr.api.query.QueryManager;
 
 /**
- * An extension of JCR 2.0's Workspace interface, with a few ModeShape-specific enhancements.
+ * An extension of JCR 2.0's {@link javax.jcr.Workspace} interface, with a few ModeShape-specific enhancements.
  */
 public interface Workspace extends javax.jcr.Workspace {
 
     @Override
     NodeTypeManager getNodeTypeManager() throws RepositoryException;
+
+    @Override
+    public QueryManager getQueryManager() throws RepositoryException;
 
     /**
      * Crawl and re-index the content in this workspace. This method blocks until the indexing is completed.

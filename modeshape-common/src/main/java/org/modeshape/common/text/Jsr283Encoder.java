@@ -32,8 +32,10 @@ import org.modeshape.common.annotation.Immutable;
  * review document:
  * <table cellspacing="0" cellpadding="1" border="1">
  * <tr>
- * <th>Non-JCR character<br/>(Unicode code point)</th>
- * <th>Private use<br/>Unicode code point</th>
+ * <th>Non-JCR character<br/>
+ * (Unicode code point)</th>
+ * <th>Private use<br/>
+ * Unicode code point</th>
  * </tr>
  * <tr>
  * <td>(U+002A)</td>
@@ -64,6 +66,15 @@ import org.modeshape.common.annotation.Immutable;
  */
 @Immutable
 public class Jsr283Encoder implements TextEncoder, TextDecoder {
+
+    public static boolean containsEncodeableCharacters( String str ) {
+        CharacterIterator iter = new StringCharacterIterator(str);
+        for (char c = iter.first(); c != CharacterIterator.DONE; c = iter.next()) {
+            if (c == '*' || c == '/' || c == ':' || c == '[' || c == ']' || c == '|') return true;
+        }
+        return false;
+
+    }
 
     /**
      * {@inheritDoc}

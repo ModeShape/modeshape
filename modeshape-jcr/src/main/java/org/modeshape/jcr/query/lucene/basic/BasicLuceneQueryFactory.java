@@ -31,6 +31,7 @@ import javax.jcr.query.qom.NodeName;
 import javax.jcr.query.qom.PropertyValue;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.MatchAllDocsQuery;
@@ -48,6 +49,8 @@ import org.modeshape.jcr.api.query.qom.NodePath;
 import org.modeshape.jcr.api.query.qom.Operator;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.query.QueryContext;
+import org.modeshape.jcr.query.lucene.CaseOperations;
+import org.modeshape.jcr.query.lucene.CaseOperations.CaseOperation;
 import org.modeshape.jcr.query.lucene.CompareLengthQuery;
 import org.modeshape.jcr.query.lucene.CompareNameQuery;
 import org.modeshape.jcr.query.lucene.ComparePathQuery;
@@ -55,7 +58,6 @@ import org.modeshape.jcr.query.lucene.CompareStringQuery;
 import org.modeshape.jcr.query.lucene.FieldUtil;
 import org.modeshape.jcr.query.lucene.LuceneQueryFactory;
 import org.modeshape.jcr.query.lucene.MatchNoneQuery;
-import org.modeshape.jcr.query.lucene.NotQuery;
 import org.modeshape.jcr.query.lucene.basic.NodeInfoIndex.FieldName;
 import org.modeshape.jcr.query.model.ReferenceValue;
 import org.modeshape.jcr.query.model.SelectorName;
@@ -169,14 +171,16 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
     protected Query findNodesLike( SelectorName selectorName,
                                    String fieldName,
                                    String likeExpression,
-                                   boolean caseSensitive ) {
-        return CompareStringQuery.createQueryForNodesWithFieldLike(likeExpression, fieldName, factories, caseSensitive);
+                                   CaseOperation caseOperation ) {
+        if (caseOperation == null) caseOperation = CaseOperations.AS_IS;
+        return CompareStringQuery.createQueryForNodesWithFieldLike(likeExpression, fieldName, factories, caseOperation);
     }
 
     protected Query findNodesLike( String fieldName,
                                    String likeExpression,
-                                   boolean caseSensitive ) {
-        return CompareStringQuery.createQueryForNodesWithFieldLike(likeExpression, fieldName, factories, caseSensitive);
+                                   CaseOperation caseOperation ) {
+        if (caseOperation == null) caseOperation = CaseOperations.AS_IS;
+        return CompareStringQuery.createQueryForNodesWithFieldLike(likeExpression, fieldName, factories, caseOperation);
     }
 
     @Override
@@ -188,7 +192,8 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
         assert value != null;
         PropertyValue propertyValue = propertyLength.getPropertyValue();
         String field = stringFactory.create(propertyValue.getPropertyName());
-        int length = factories.getLongFactory().create(value).intValue();
+        long length = factories.getLongFactory().create(value).longValue();
+        if (length <= 0L) return new MatchNoneQuery();
         if (JcrConstants.JCR_NAME.equals(field) || JcrConstants.JCR_PATH.equals(field)
             || JcrConstants.MODE_LOCAL_NAME.equals(field)) {
             // We can actually use the stored field ...
@@ -211,21 +216,26 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
                     break;
             }
         } else {
-            // We should use the field that begins with ':len:' ...
+            // We should use the LONG field that begins with ':len:' ...
             field = FieldName.LENGTH_PREFIX + field;
             switch (operator) {
                 case EQUAL_TO:
-                    return NumericRangeQuery.newIntRange(field, length, length, true, true);
+                    return NumericRangeQuery.newLongRange(field, length, length, true, true);
                 case NOT_EQUAL_TO:
-                    return not(NumericRangeQuery.newIntRange(field, length, length, true, true));
+                    Query upper = NumericRangeQuery.newLongRange(field, length, Long.MAX_VALUE, false, false);
+                    Query lower = NumericRangeQuery.newLongRange(field, 0L, length, true, false);
+                    BooleanQuery query = new BooleanQuery();
+                    query.add(new BooleanClause(upper, Occur.SHOULD));
+                    query.add(new BooleanClause(lower, Occur.SHOULD));
+                    return query;
                 case GREATER_THAN:
-                    return NumericRangeQuery.newIntRange(field, length, Integer.MAX_VALUE, false, false);
+                    return NumericRangeQuery.newLongRange(field, length, Long.MAX_VALUE, false, false);
                 case GREATER_THAN_OR_EQUAL_TO:
-                    return NumericRangeQuery.newIntRange(field, length, Integer.MAX_VALUE, true, false);
+                    return NumericRangeQuery.newLongRange(field, length, Long.MAX_VALUE, true, false);
                 case LESS_THAN:
-                    return NumericRangeQuery.newIntRange(field, 0, length, true, false);
+                    return NumericRangeQuery.newLongRange(field, 0L, length, true, false);
                 case LESS_THAN_OR_EQUAL_TO:
-                    return NumericRangeQuery.newIntRange(field, 0, length, true, true);
+                    return NumericRangeQuery.newLongRange(field, 0L, length, true, true);
                 case LIKE:
                     // This is not allowed ...
                     assert false;
@@ -240,18 +250,38 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
                                    PropertyValue propertyValue,
                                    Operator operator,
                                    Object value,
-                                   boolean caseSensitive ) {
+                                   CaseOperation caseOperation ) {
+        if (caseOperation == null) caseOperation = CaseOperations.AS_IS;
         String field = propertyValue.getPropertyName();
         Schemata.Column metadata = getMetadataFor(selectorName, field);
         if (metadata != null) {
-            PropertyType type = metadata.getRequiredType();
-            return findNodesWith(selectorName, propertyValue, operator, value, caseSensitive, type, metadata);
+            PropertyType requiredType = metadata.getRequiredType();
+            PropertyType valueType = PropertyType.discoverType(value);
+            // The supplied value might not match the required type. If it doesn't, then the client issuing the query
+            // has different expectations on what values are stored in the index. If the types are different, then
+            // we should compute a query based upon the required type (which converts the supplied value) *and*
+            // a query based upon the actual type; and we can OR these together.
+            Query query1 = findNodesWith(selectorName, propertyValue, operator, value, caseOperation, requiredType, metadata);
+            if (requiredType == valueType) {
+                return query1;
+            }
+            // Otherwise the types are different, so build the same query using the actual type ...
+            Query query2 = findNodesWith(selectorName, propertyValue, operator, value, caseOperation, valueType, metadata);
+            if (query1.equals(query2)) return query1;
+            BooleanQuery result = new BooleanQuery();
+            result.add(new BooleanClause(query1, Occur.SHOULD));
+            result.add(new BooleanClause(query2, Occur.SHOULD));
+            return result;
         }
         assert metadata == null;
         if (!(value instanceof String)) {
             // This is due to an explicit cast, so treat it as the actual value ...
             PropertyType type = PropertyType.discoverType(value);
-            return findNodesWith(selectorName, propertyValue, operator, value, caseSensitive, type, metadata);
+            return findNodesWith(selectorName, propertyValue, operator, value, caseOperation, type, metadata);
+        }
+        if (NodeInfoIndex.FieldName.WORKSPACE.equals(field)) {
+            String strValue = stringFactory.create(value);
+            return findNodesWith(selectorName, propertyValue, operator, strValue, caseOperation, PropertyType.STRING, null);
         }
         // Otherwise, the metadata is null and the value is a string. We can't find metadata if the property is residual,
         // and since the value is a string, we may be able to represent the value using different types. So rather than
@@ -262,7 +292,7 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
         boolean checkDate = true;
         try {
             Long lValue = factories.getLongFactory().create(value);
-            Query query = findNodesWith(selectorName, propertyValue, operator, lValue, caseSensitive, PropertyType.LONG, null);
+            Query query = findNodesWith(selectorName, propertyValue, operator, lValue, caseOperation, PropertyType.LONG, null);
             if (query != null) {
                 orOfValues.add(query, Occur.SHOULD);
             }
@@ -274,7 +304,7 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
 
         try {
             Double dValue = factories.getDoubleFactory().create(value);
-            Query query = findNodesWith(selectorName, propertyValue, operator, dValue, caseSensitive, PropertyType.DOUBLE, null);
+            Query query = findNodesWith(selectorName, propertyValue, operator, dValue, caseOperation, PropertyType.DOUBLE, null);
             if (query != null) {
                 orOfValues.add(query, Occur.SHOULD);
             }
@@ -285,7 +315,7 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
         if (checkBoolean) {
             try {
                 Boolean b = factories.getBooleanFactory().create(value);
-                Query query = findNodesWith(selectorName, propertyValue, operator, b, caseSensitive, PropertyType.BOOLEAN, null);
+                Query query = findNodesWith(selectorName, propertyValue, operator, b, caseOperation, PropertyType.BOOLEAN, null);
                 if (query != null) {
                     orOfValues.add(query, Occur.SHOULD);
                 }
@@ -297,7 +327,7 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
         if (checkDate) {
             try {
                 DateTime date = factories.getDateFactory().create(value);
-                Query query = findNodesWith(selectorName, propertyValue, operator, date, caseSensitive, PropertyType.DATE, null);
+                Query query = findNodesWith(selectorName, propertyValue, operator, date, caseOperation, PropertyType.DATE, null);
                 if (query != null) {
                     orOfValues.add(query, Occur.SHOULD);
                 }
@@ -308,7 +338,7 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
 
         // Finally treat it as a string ...
         String strValue = stringFactory.create(value);
-        Query strQuery = findNodesWith(selectorName, propertyValue, operator, strValue, caseSensitive, PropertyType.STRING, null);
+        Query strQuery = findNodesWith(selectorName, propertyValue, operator, strValue, caseOperation, PropertyType.STRING, null);
 
         if (orOfValues.clauses().isEmpty()) {
             return strQuery;
@@ -321,10 +351,11 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
                                    PropertyValue propertyValue,
                                    Operator operator,
                                    Object value,
-                                   boolean caseSensitive,
+                                   CaseOperation caseOperation,
                                    PropertyType valueType,
                                    Schemata.Column metadata ) {
 
+        if (caseOperation == null) caseOperation = CaseOperations.AS_IS;
         String field = propertyValue.getPropertyName();
         if (valueType == PropertyType.OBJECT) {
             // There is no known/prescribed property type, so match our criteria based upon the type of value we have ...
@@ -347,55 +378,98 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
             case PATH:
             case NAME:
             case URI:
-            case DECIMAL: // stored in lexicographically-ordered form
             case STRING:
                 String stringValue = stringFactory.create(value);
                 if (value instanceof Path) {
                     stringValue = pathAsString((Path)value);
                 }
-                if (!caseSensitive) stringValue = stringValue.toLowerCase();
                 switch (operator) {
                     case EQUAL_TO:
                         return CompareStringQuery.createQueryForNodesWithFieldEqualTo(stringValue,
                                                                                       field,
                                                                                       factories,
-                                                                                      caseSensitive);
+                                                                                      caseOperation);
                     case NOT_EQUAL_TO:
                         Query query = CompareStringQuery.createQueryForNodesWithFieldEqualTo(stringValue,
                                                                                              field,
                                                                                              factories,
-                                                                                             caseSensitive);
+                                                                                             caseOperation);
                         return not(query);
                     case GREATER_THAN:
                         return CompareStringQuery.createQueryForNodesWithFieldGreaterThan(stringValue,
                                                                                           field,
                                                                                           factories,
-                                                                                          caseSensitive);
+                                                                                          caseOperation);
                     case GREATER_THAN_OR_EQUAL_TO:
                         return CompareStringQuery.createQueryForNodesWithFieldGreaterThanOrEqualTo(stringValue,
                                                                                                    field,
                                                                                                    factories,
-                                                                                                   caseSensitive);
+                                                                                                   caseOperation);
                     case LESS_THAN:
                         return CompareStringQuery.createQueryForNodesWithFieldLessThan(stringValue,
                                                                                        field,
                                                                                        factories,
-                                                                                       caseSensitive);
+                                                                                       caseOperation);
                     case LESS_THAN_OR_EQUAL_TO:
                         return CompareStringQuery.createQueryForNodesWithFieldLessThanOrEqualTo(stringValue,
                                                                                                 field,
                                                                                                 factories,
-                                                                                                caseSensitive);
+                                                                                                caseOperation);
                     case LIKE:
-                        return findNodesLike(selectorName, field, stringValue, caseSensitive);
+                        return findNodesLike(selectorName, field, stringValue, caseOperation);
                 }
                 break;
+            case DECIMAL:
+                // Decimal values are stored in a special lexicographically sortable form, so we have to
+                // convert the value to this ...
+                BigDecimal decimalValue = factories.getDecimalFactory().create(value);
+                stringValue = FieldUtil.decimalToString(decimalValue);
+                // Now we can just create the query ...
+                switch (operator) {
+                    case EQUAL_TO:
+                        return CompareStringQuery.createQueryForNodesWithFieldEqualTo(stringValue,
+                                                                                      field,
+                                                                                      factories,
+                                                                                      caseOperation);
+                    case NOT_EQUAL_TO:
+                        Query query = CompareStringQuery.createQueryForNodesWithFieldEqualTo(stringValue,
+                                                                                             field,
+                                                                                             factories,
+                                                                                             caseOperation);
+                        return not(query);
+                    case GREATER_THAN:
+                        return CompareStringQuery.createQueryForNodesWithFieldGreaterThan(stringValue,
+                                                                                          field,
+                                                                                          factories,
+                                                                                          caseOperation);
+                    case GREATER_THAN_OR_EQUAL_TO:
+                        return CompareStringQuery.createQueryForNodesWithFieldGreaterThanOrEqualTo(stringValue,
+                                                                                                   field,
+                                                                                                   factories,
+                                                                                                   caseOperation);
+                    case LESS_THAN:
+                        return CompareStringQuery.createQueryForNodesWithFieldLessThan(stringValue,
+                                                                                       field,
+                                                                                       factories,
+                                                                                       caseOperation);
+                    case LESS_THAN_OR_EQUAL_TO:
+                        return CompareStringQuery.createQueryForNodesWithFieldLessThanOrEqualTo(stringValue,
+                                                                                                field,
+                                                                                                factories,
+                                                                                                caseOperation);
+                    case LIKE:
+                        return findNodesLike(selectorName, field, stringValue, caseOperation);
+                }
+                break;
+
             case DATE:
                 Long longMinimum = Long.MIN_VALUE;
                 Long longMaximum = Long.MAX_VALUE;
                 if (metadata != null) {
                     longMinimum = (Long)metadata.getMinimum();
                     longMaximum = (Long)metadata.getMaximum();
+                    if (longMinimum == null) longMinimum = Long.MIN_VALUE;
+                    if (longMaximum == null) longMaximum = Long.MAX_VALUE;
                 }
                 long date = factories.getLongFactory().create(value);
                 switch (operator) {
@@ -428,6 +502,8 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
                 if (metadata != null) {
                     longMinimum = (Long)metadata.getMinimum();
                     longMaximum = (Long)metadata.getMaximum();
+                    if (longMinimum == null) longMinimum = Long.MIN_VALUE;
+                    if (longMaximum == null) longMaximum = Long.MAX_VALUE;
                 } else {
                     longMinimum = Long.MIN_VALUE;
                     longMaximum = Long.MAX_VALUE;
@@ -498,6 +574,8 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
                 if (metadata != null) {
                     doubleMinimum = (Double)metadata.getMinimum();
                     doubleMaximum = (Double)metadata.getMaximum();
+                    if (doubleMinimum == null) doubleMinimum = Double.MIN_VALUE;
+                    if (doubleMaximum == null) doubleMaximum = Double.MAX_VALUE;
                 }
                 switch (operator) {
                     case EQUAL_TO:
@@ -506,7 +584,7 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
                     case NOT_EQUAL_TO:
                         if (doubleValue < doubleMinimum || doubleValue > doubleMaximum) return new MatchAllDocsQuery();
                         Query query = NumericRangeQuery.newDoubleRange(field, doubleValue, doubleValue, true, true);
-                        return new NotQuery(query);
+                        return not(query);
                     case GREATER_THAN:
                         if (doubleValue > doubleMaximum) return new MatchNoneQuery();
                         return NumericRangeQuery.newDoubleRange(field, doubleValue, doubleMaximum, false, true);
@@ -548,21 +626,28 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
             }
         }
         String stringValue = stringFactory.create(value);
+        CaseOperation caseOperation = CaseOperations.AS_IS;
         switch (operator) {
             case EQUAL_TO:
-                return CompareStringQuery.createQueryForNodesWithFieldEqualTo(stringValue, field, factories, true);
+                return CompareStringQuery.createQueryForNodesWithFieldEqualTo(stringValue, field, factories, caseOperation);
             case NOT_EQUAL_TO:
-                return not(CompareStringQuery.createQueryForNodesWithFieldEqualTo(stringValue, field, factories, true));
+                return not(CompareStringQuery.createQueryForNodesWithFieldEqualTo(stringValue, field, factories, caseOperation));
             case GREATER_THAN:
-                return CompareStringQuery.createQueryForNodesWithFieldGreaterThan(stringValue, field, factories, true);
+                return CompareStringQuery.createQueryForNodesWithFieldGreaterThan(stringValue, field, factories, caseOperation);
             case GREATER_THAN_OR_EQUAL_TO:
-                return CompareStringQuery.createQueryForNodesWithFieldGreaterThanOrEqualTo(stringValue, field, factories, true);
+                return CompareStringQuery.createQueryForNodesWithFieldGreaterThanOrEqualTo(stringValue,
+                                                                                           field,
+                                                                                           factories,
+                                                                                           caseOperation);
             case LESS_THAN:
-                return CompareStringQuery.createQueryForNodesWithFieldLessThan(stringValue, field, factories, true);
+                return CompareStringQuery.createQueryForNodesWithFieldLessThan(stringValue, field, factories, caseOperation);
             case LESS_THAN_OR_EQUAL_TO:
-                return CompareStringQuery.createQueryForNodesWithFieldLessThanOrEqualTo(stringValue, field, factories, true);
+                return CompareStringQuery.createQueryForNodesWithFieldLessThanOrEqualTo(stringValue,
+                                                                                        field,
+                                                                                        factories,
+                                                                                        caseOperation);
             case LIKE:
-                return findNodesLike(selectorName, field, stringValue, false);
+                return findNodesLike(selectorName, field, stringValue, caseOperation);
         }
         return null;
     }
@@ -616,19 +701,20 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
             case DECIMAL:
                 BigDecimal lowerDecimal = factories.getDecimalFactory().create(lowerValue);
                 BigDecimal upperDecimal = factories.getDecimalFactory().create(upperValue);
+                CaseOperation caseOp = CaseOperations.AS_IS; // decimals are stored the same way regardless
                 String lsv = FieldUtil.decimalToString(lowerDecimal);
                 String usv = FieldUtil.decimalToString(upperDecimal);
                 Query lower = null;
                 if (includesLower) {
-                    lower = CompareStringQuery.createQueryForNodesWithFieldGreaterThanOrEqualTo(lsv, field, factories, false);
+                    lower = CompareStringQuery.createQueryForNodesWithFieldGreaterThanOrEqualTo(lsv, field, factories, caseOp);
                 } else {
-                    lower = CompareStringQuery.createQueryForNodesWithFieldGreaterThan(lsv, field, factories, false);
+                    lower = CompareStringQuery.createQueryForNodesWithFieldGreaterThan(lsv, field, factories, caseOp);
                 }
                 Query upper = null;
                 if (includesUpper) {
-                    upper = CompareStringQuery.createQueryForNodesWithFieldLessThanOrEqualTo(usv, field, factories, false);
+                    upper = CompareStringQuery.createQueryForNodesWithFieldLessThanOrEqualTo(usv, field, factories, caseOp);
                 } else {
-                    upper = CompareStringQuery.createQueryForNodesWithFieldLessThan(usv, field, factories, false);
+                    upper = CompareStringQuery.createQueryForNodesWithFieldLessThan(usv, field, factories, caseOp);
                 }
                 BooleanQuery query = new BooleanQuery();
                 query.add(lower, Occur.MUST);
@@ -675,8 +761,8 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
                                    NodePath nodePath,
                                    Operator operator,
                                    Object value,
-                                   boolean caseSensitive ) {
-        if (!caseSensitive) value = stringFactory.create(value).toLowerCase();
+                                   CaseOperation caseOperation ) {
+        if (caseOperation == null) caseOperation = CaseOperations.AS_IS;
         Path pathValue = operator != Operator.LIKE ? pathFactory.create(value) : null;
         Query query = null;
         switch (operator) {
@@ -697,33 +783,33 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
                     regex = regex.replace("%", ".*").replace("_", ".");
                     // Now create a regex query ...
                     RegexQuery regexQuery = new RegexQuery(new Term(FieldName.PATH, regex));
-                    int flags = caseSensitive ? 0 : Pattern.CASE_INSENSITIVE;
+                    int flags = caseOperation == CaseOperations.AS_IS ? 0 : Pattern.CASE_INSENSITIVE;
                     regexQuery.setRegexImplementation(new JavaUtilRegexCapabilities(flags));
                     query = regexQuery;
                 } else {
-                    query = findNodesLike(selectorName, FieldName.PATH, likeExpression, caseSensitive);
+                    query = findNodesLike(selectorName, FieldName.PATH, likeExpression, caseOperation);
                 }
                 break;
             case GREATER_THAN:
                 query = ComparePathQuery.createQueryForNodesWithPathGreaterThan(pathValue,
                                                                                 FieldName.PATH,
                                                                                 factories,
-                                                                                caseSensitive);
+                                                                                caseOperation);
                 break;
             case GREATER_THAN_OR_EQUAL_TO:
                 query = ComparePathQuery.createQueryForNodesWithPathGreaterThanOrEqualTo(pathValue,
                                                                                          FieldName.PATH,
                                                                                          factories,
-                                                                                         caseSensitive);
+                                                                                         caseOperation);
                 break;
             case LESS_THAN:
-                query = ComparePathQuery.createQueryForNodesWithPathLessThan(pathValue, FieldName.PATH, factories, caseSensitive);
+                query = ComparePathQuery.createQueryForNodesWithPathLessThan(pathValue, FieldName.PATH, factories, caseOperation);
                 break;
             case LESS_THAN_OR_EQUAL_TO:
                 query = ComparePathQuery.createQueryForNodesWithPathLessThanOrEqualTo(pathValue,
                                                                                       FieldName.PATH,
                                                                                       factories,
-                                                                                      caseSensitive);
+                                                                                      caseOperation);
                 break;
         }
         return query;
@@ -734,37 +820,41 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
                                    NodeName nodeName,
                                    Operator operator,
                                    Object value,
-                                   boolean caseSensitive ) {
+                                   CaseOperation caseOperation ) {
         String stringValue = stringFactory.create(value);
-        if (!caseSensitive) stringValue = stringValue.toLowerCase();
+        if (stringValue.startsWith("./") && stringValue.length() > 2) {
+            // Then it is a URI, and per 3.6.4.9 the './' prefix should be removed ...
+            stringValue = stringValue.substring(2);
+        }
+        if (caseOperation == null) caseOperation = CaseOperations.AS_IS;
         Path.Segment segment = operator != Operator.LIKE ? pathFactory.createSegment(stringValue) : null;
         // Determine if the string value contained a SNS index ...
         boolean includeSns = stringValue.indexOf('[') != -1;
-        int snsIndex = operator != Operator.LIKE ? segment.getIndex() : 0;
         Query query = null;
         switch (operator) {
             case EQUAL_TO:
-                if (!includeSns) {
-                    return new TermQuery(new Term(FieldName.NODE_NAME, stringValue));
-                }
-                BooleanQuery booleanQuery = new BooleanQuery();
-                booleanQuery.add(new TermQuery(new Term(FieldName.NODE_NAME, stringValue)), Occur.MUST);
-                booleanQuery.add(NumericRangeQuery.newIntRange(FieldName.SNS_INDEX, snsIndex, snsIndex, true, true), Occur.MUST);
-                return booleanQuery;
+                query = CompareNameQuery.createQueryForNodesWithNameEqualTo(segment,
+                                                                            FieldName.NODE_NAME,
+                                                                            FieldName.SNS_INDEX,
+                                                                            factories,
+                                                                            caseOperation,
+                                                                            includeSns);
+                break;
             case NOT_EQUAL_TO:
-                if (!includeSns) {
-                    return not(new TermQuery(new Term(FieldName.NODE_NAME, stringValue)));
-                }
-                booleanQuery = new BooleanQuery();
-                booleanQuery.add(new TermQuery(new Term(FieldName.NODE_NAME, stringValue)), Occur.MUST);
-                booleanQuery.add(NumericRangeQuery.newIntRange(FieldName.SNS_INDEX, snsIndex, snsIndex, true, true), Occur.MUST);
-                return not(booleanQuery);
+                query = CompareNameQuery.createQueryForNodesWithNameEqualTo(segment,
+                                                                            FieldName.NODE_NAME,
+                                                                            FieldName.SNS_INDEX,
+                                                                            factories,
+                                                                            caseOperation,
+                                                                            includeSns);
+                query = not(query);
+                break;
             case GREATER_THAN:
                 query = CompareNameQuery.createQueryForNodesWithNameGreaterThan(segment,
                                                                                 FieldName.NODE_NAME,
                                                                                 FieldName.SNS_INDEX,
                                                                                 factories,
-                                                                                caseSensitive,
+                                                                                caseOperation,
                                                                                 includeSns);
                 break;
             case GREATER_THAN_OR_EQUAL_TO:
@@ -772,7 +862,7 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
                                                                                          FieldName.NODE_NAME,
                                                                                          FieldName.SNS_INDEX,
                                                                                          factories,
-                                                                                         caseSensitive,
+                                                                                         caseOperation,
                                                                                          includeSns);
                 break;
             case LESS_THAN:
@@ -780,7 +870,7 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
                                                                              FieldName.NODE_NAME,
                                                                              FieldName.SNS_INDEX,
                                                                              factories,
-                                                                             caseSensitive,
+                                                                             caseOperation,
                                                                              includeSns);
                 break;
             case LESS_THAN_OR_EQUAL_TO:
@@ -788,7 +878,7 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
                                                                                       FieldName.NODE_NAME,
                                                                                       FieldName.SNS_INDEX,
                                                                                       factories,
-                                                                                      caseSensitive,
+                                                                                      caseOperation,
                                                                                       includeSns);
                 break;
             case LIKE:
@@ -801,7 +891,7 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
                     Query localNameQuery = CompareStringQuery.createQueryForNodesWithFieldLike(localNameExpression,
                                                                                                FieldName.NODE_NAME,
                                                                                                factories,
-                                                                                               caseSensitive);
+                                                                                               caseOperation);
                     Query snsQuery = createSnsIndexQuery(snsIndexExpression);
                     if (localNameQuery == null) {
                         if (snsQuery == null) {
@@ -816,7 +906,7 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
                             query = localNameQuery;
                         } else {
                             // There is both a local name part and a SNS part ...
-                            booleanQuery = new BooleanQuery();
+                            BooleanQuery booleanQuery = new BooleanQuery();
                             booleanQuery.add(localNameQuery, Occur.MUST);
                             booleanQuery.add(snsQuery, Occur.MUST);
                             query = booleanQuery;
@@ -827,7 +917,7 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
                     query = CompareStringQuery.createQueryForNodesWithFieldLike(likeExpression,
                                                                                 FieldName.NODE_NAME,
                                                                                 factories,
-                                                                                caseSensitive);
+                                                                                caseOperation);
                 }
                 assert query != null;
                 break;
@@ -840,50 +930,51 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
                                    NodeLocalName nodeName,
                                    Operator operator,
                                    Object value,
-                                   boolean caseSensitive ) {
+                                   CaseOperation caseOperation ) {
         String nameValue = stringFactory.create(value);
+        if (caseOperation == null) caseOperation = CaseOperations.AS_IS;
         Query query = null;
         switch (operator) {
             case LIKE:
                 String likeExpression = nameValue;
-                query = findNodesLike(FieldName.LOCAL_NAME, likeExpression, caseSensitive);
+                query = findNodesLike(FieldName.LOCAL_NAME, likeExpression, caseOperation);
                 break;
             case EQUAL_TO:
                 query = CompareStringQuery.createQueryForNodesWithFieldEqualTo(nameValue,
                                                                                FieldName.LOCAL_NAME,
                                                                                factories,
-                                                                               caseSensitive);
+                                                                               caseOperation);
                 break;
             case NOT_EQUAL_TO:
                 query = CompareStringQuery.createQueryForNodesWithFieldEqualTo(nameValue,
                                                                                FieldName.LOCAL_NAME,
                                                                                factories,
-                                                                               caseSensitive);
+                                                                               caseOperation);
                 query = not(query);
                 break;
             case GREATER_THAN:
                 query = CompareStringQuery.createQueryForNodesWithFieldGreaterThan(nameValue,
                                                                                    FieldName.LOCAL_NAME,
                                                                                    factories,
-                                                                                   caseSensitive);
+                                                                                   caseOperation);
                 break;
             case GREATER_THAN_OR_EQUAL_TO:
                 query = CompareStringQuery.createQueryForNodesWithFieldGreaterThanOrEqualTo(nameValue,
                                                                                             FieldName.LOCAL_NAME,
                                                                                             factories,
-                                                                                            caseSensitive);
+                                                                                            caseOperation);
                 break;
             case LESS_THAN:
                 query = CompareStringQuery.createQueryForNodesWithFieldLessThan(nameValue,
                                                                                 FieldName.LOCAL_NAME,
                                                                                 factories,
-                                                                                caseSensitive);
+                                                                                caseOperation);
                 break;
             case LESS_THAN_OR_EQUAL_TO:
                 query = CompareStringQuery.createQueryForNodesWithFieldLessThanOrEqualTo(nameValue,
                                                                                          FieldName.LOCAL_NAME,
                                                                                          factories,
-                                                                                         caseSensitive);
+                                                                                         caseOperation);
                 break;
         }
         return query;
@@ -952,7 +1043,7 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
         if (likeExpression.indexOf('_') != -1) {
             if (likeExpression.indexOf('%') != -1) {
                 // Contains both ...
-                return findNodesLike(FieldName.SNS_INDEX, likeExpression, true);
+                return findNodesLike(FieldName.SNS_INDEX, likeExpression, null);
             }
             // It presumably contains some numbers and at least one '_' character ...
             int firstWildcardChar = likeExpression.indexOf('_');
@@ -961,7 +1052,7 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
                 int secondWildcardChar = likeExpression.indexOf('_', firstWildcardChar + 1);
                 if (secondWildcardChar != -1) {
                     // There are multiple '_' characters ...
-                    return findNodesLike(FieldName.SNS_INDEX, likeExpression, true);
+                    return findNodesLike(FieldName.SNS_INDEX, likeExpression, null);
                 }
             }
             // There's only one '_', so parse the lowermost value and uppermost value ...
@@ -979,7 +1070,7 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
         }
         if (likeExpression.indexOf('%') != -1) {
             // It presumably contains some numbers and at least one '%' character ...
-            return findNodesLike(FieldName.SNS_INDEX, likeExpression, true);
+            return findNodesLike(FieldName.SNS_INDEX, likeExpression, null);
         }
         // This is not a LIKE expression but an exact value specification and should be a number ...
         try {

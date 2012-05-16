@@ -27,8 +27,10 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -40,6 +42,7 @@ import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.GraphI18n;
 import org.modeshape.jcr.api.value.DateTime;
+import org.modeshape.jcr.value.basic.JodaDateTime;
 
 /**
  * The data types for property values.
@@ -52,7 +55,7 @@ public enum PropertyType {
     LONG("Long", ValueComparators.LONG_COMPARATOR, new LongCanonicalizer(), Long.class, Integer.class, Short.class),
     DOUBLE("Double", ValueComparators.DOUBLE_COMPARATOR, new DoubleCanonicalizer(), Double.class, Float.class),
     DECIMAL("Decimal", ValueComparators.DECIMAL_COMPARATOR, new ObjectCanonicalizer(), BigDecimal.class),
-    DATE("Date", ValueComparators.DATE_TIME_COMPARATOR, new ObjectCanonicalizer(), DateTime.class),
+    DATE("Date", ValueComparators.DATE_TIME_COMPARATOR, new DateCanonicalizer(), DateTime.class, Calendar.class, Date.class),
     BOOLEAN("Boolean", ValueComparators.BOOLEAN_COMPARATOR, new ObjectCanonicalizer(), Boolean.class),
     NAME("Name", ValueComparators.NAME_COMPARATOR, new ObjectCanonicalizer(), Name.class),
     PATH("Path", ValueComparators.PATH_COMPARATOR, new ObjectCanonicalizer(), Path.class),
@@ -86,6 +89,20 @@ public enum PropertyType {
         @Override
         public Object canonicalizeValue( Object value ) {
             if (value instanceof Float) return new Double((Float)value);
+            return value;
+        }
+    }
+
+    protected final static class DateCanonicalizer implements Canonicalizer {
+        @Override
+        public Object canonicalizeValue( Object value ) {
+            if (value instanceof DateTime) return value;
+            if (value instanceof Calendar) {
+                return new JodaDateTime((Calendar)value);
+            }
+            if (value instanceof Date) {
+                return new JodaDateTime((Date)value);
+            }
             return value;
         }
     }

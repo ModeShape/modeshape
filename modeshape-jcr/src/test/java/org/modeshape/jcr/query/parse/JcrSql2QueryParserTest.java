@@ -31,7 +31,6 @@ import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.Set;
 import javax.jcr.Value;
-import javax.jcr.ValueFactory;
 import javax.jcr.query.qom.EquiJoinCondition;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,6 +39,7 @@ import org.mockito.MockitoAnnotations;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.text.TokenStream;
 import org.modeshape.jcr.ExecutionContext;
+import org.modeshape.jcr.JcrValueFactory;
 import org.modeshape.jcr.query.JcrTypeSystem;
 import org.modeshape.jcr.query.model.And;
 import org.modeshape.jcr.query.model.Comparison;
@@ -82,7 +82,7 @@ public class JcrSql2QueryParserTest {
      * {@link LiteralValue#getLiteralValue()} in these tests.
      */
     @Mock
-    private ValueFactory valueFactory;
+    private JcrValueFactory valueFactory;
     private JcrTypeSystem typeSystem;
     private JcrSql2QueryParser parser;
     private Query query;
@@ -627,11 +627,11 @@ public class JcrSql2QueryParserTest {
     }
 
     protected static class MockJcrTypeSystem implements JcrTypeSystem {
-        protected final ValueFactory valueFactory;
+        protected final JcrValueFactory valueFactory;
         protected final TypeSystem delegate;
         protected final ExecutionContext executionContext;
 
-        protected MockJcrTypeSystem( ValueFactory valueFactory ) {
+        protected MockJcrTypeSystem( JcrValueFactory valueFactory ) {
             this.executionContext = new ExecutionContext();
             this.valueFactory = valueFactory;
             this.delegate = this.executionContext.getValueFactories().getTypeSystem();
@@ -719,7 +719,7 @@ public class JcrSql2QueryParserTest {
         }
 
         @Override
-        public ValueFactory getValueFactory() {
+        public JcrValueFactory getValueFactory() {
             return valueFactory;
         }
     }

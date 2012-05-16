@@ -24,7 +24,8 @@
 package org.modeshape.jcr.api.query;
 
 /**
- * 
+ * A specialization of the standard JCR {@link javax.jcr.query.Query} interface that adds the ModeShape-specific constant for the
+ * {@link #FULL_TEXT_SEARCH full-text search} query language.
  */
 public interface Query extends javax.jcr.query.Query {
 

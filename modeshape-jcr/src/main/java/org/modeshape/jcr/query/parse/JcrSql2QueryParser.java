@@ -30,13 +30,14 @@ import javax.jcr.Binary;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
-import javax.jcr.ValueFactory;
 import javax.jcr.query.Query;
+import org.modeshape.jcr.JcrValueFactory;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.query.JcrTypeSystem;
 import org.modeshape.jcr.query.model.LiteralValue;
 import org.modeshape.jcr.query.model.TypeSystem;
 import org.modeshape.jcr.value.PropertyType;
+import org.modeshape.jcr.value.Reference;
 import org.modeshape.jcr.value.ValueFormatException;
 
 /**
@@ -69,7 +70,7 @@ public class JcrSql2QueryParser extends BasicSqlQueryParser {
     @Override
     protected LiteralValue literal( TypeSystem typeSystem,
                                     Object value ) throws ValueFormatException {
-        ValueFactory factory = ((JcrTypeSystem)typeSystem).getValueFactory();
+        JcrValueFactory factory = ((JcrTypeSystem)typeSystem).getValueFactory();
         Value jcrValue = null;
         if (value instanceof String) {
             jcrValue = factory.createValue((String)value);
@@ -87,13 +88,11 @@ public class JcrSql2QueryParser extends BasicSqlQueryParser {
             jcrValue = factory.createValue((Double)value);
         } else if (value instanceof Long) {
             jcrValue = factory.createValue((Long)value);
+        } else if (value instanceof Reference) {
+            jcrValue = factory.createValue((Reference)value);
         } else if (value instanceof InputStream) {
-            try {
-                Binary binary = factory.createBinary((InputStream)value);
-                jcrValue = factory.createValue(binary);
-            } catch (RepositoryException e) {
-                throw new ValueFormatException(value, PropertyType.BINARY, e.getMessage());
-            }
+            Binary binary = factory.createBinary((InputStream)value);
+            jcrValue = factory.createValue(binary);
         } else if (value instanceof Node) {
             try {
                 jcrValue = factory.createValue((Node)value);

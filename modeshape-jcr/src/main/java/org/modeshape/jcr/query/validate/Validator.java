@@ -25,8 +25,12 @@ package org.modeshape.jcr.query.validate;
 
 import java.util.HashMap;
 import java.util.Map;
+import javax.jcr.PropertyType;
+import javax.jcr.Value;
+import javax.jcr.query.qom.Literal;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.i18n.I18n;
+import org.modeshape.common.text.Jsr283Encoder;
 import org.modeshape.jcr.GraphI18n;
 import org.modeshape.jcr.api.query.qom.Operator;
 import org.modeshape.jcr.query.QueryContext;
@@ -57,12 +61,17 @@ import org.modeshape.jcr.query.model.ReferenceValue;
 import org.modeshape.jcr.query.model.SameNode;
 import org.modeshape.jcr.query.model.SameNodeJoinCondition;
 import org.modeshape.jcr.query.model.SelectorName;
+import org.modeshape.jcr.query.model.StaticOperand;
 import org.modeshape.jcr.query.model.Subquery;
 import org.modeshape.jcr.query.model.TypeSystem;
 import org.modeshape.jcr.query.model.UpperCase;
+import org.modeshape.jcr.query.model.Visitable;
 import org.modeshape.jcr.query.model.Visitor;
+import org.modeshape.jcr.query.model.Visitors;
 import org.modeshape.jcr.query.model.Visitors.AbstractVisitor;
 import org.modeshape.jcr.query.validate.Schemata.Table;
+import org.modeshape.jcr.value.Path;
+import org.modeshape.jcr.value.ValueFormatException;
 
 /**
  * A {@link Visitor} implementation that validates a query's used of a {@link Schemata} and records any problems as errors.
@@ -144,6 +153,7 @@ public class Validator extends AbstractVisitor {
     @Override
     public void visit( ChildNode obj ) {
         verify(obj.selectorName());
+        verifyPath(obj.getParentPath());
     }
 
     @Override
@@ -161,12 +171,13 @@ public class Validator extends AbstractVisitor {
     public void visit( Comparison obj ) {
         // The dynamic operand itself will be visited by the validator as it walks the comparison object.
         // All we need to do here is check the operator ...
-        verifyOperator(obj.getOperand1(), obj.operator());
+        verifyComparison(obj.getOperand1(), obj.operator(), obj.getOperand2());
     }
 
     @Override
     public void visit( DescendantNode obj ) {
         verify(obj.selectorName());
+        verifyPath(obj.getAncestorPath());
     }
 
     @Override
@@ -301,12 +312,17 @@ public class Validator extends AbstractVisitor {
     @Override
     public void visit( SameNode obj ) {
         verify(obj.selectorName());
+        verifyPath(obj.getPath());
     }
 
     @Override
     public void visit( SameNodeJoinCondition obj ) {
         verify(obj.selector1Name());
         verify(obj.selector2Name());
+    }
+
+    protected String readable( Visitable visitable ) {
+        return Visitors.readable(visitable, context.getExecutionContext());
     }
 
     protected void verifyOrdering( DynamicOperand operand ) {
@@ -351,21 +367,84 @@ public class Validator extends AbstractVisitor {
         }
     }
 
-    protected void verifyOperator( DynamicOperand operand,
-                                   Operator op ) {
+    @SuppressWarnings( "fallthrough" )
+    protected void verifyComparison( DynamicOperand operand,
+                                     Operator op,
+                                     StaticOperand rhs ) {
         if (operand instanceof PropertyValue) {
             PropertyValue propValue = (PropertyValue)operand;
             verifyOperator(propValue.selectorName(), propValue.getPropertyName(), op);
+        } else if (operand instanceof NodeName) {
+            // Verify that the rhs is convertable to a name ...
+            if (rhs instanceof Literal) {
+                boolean fail = false;
+                // The literal value must be a NAME or URI ...
+                Literal literal = (Literal)rhs;
+                Value value = literal.getLiteralValue();
+                try {
+                    String str = value.getString();
+                    switch (value.getType()) {
+                        case PropertyType.PATH:
+                            Path path = context.getExecutionContext().getValueFactories().getPathFactory().create(str);
+                            if (path.size() > 1) {
+                                fail = true;
+                                break;
+                            } // else continue with the regular processing ...
+                        case PropertyType.STRING:
+                        case PropertyType.URI:
+                        case PropertyType.NAME:
+                        case PropertyType.BINARY:
+                            try {
+                                if (str.startsWith("./") && str.length() > 2) {
+                                    // Then it is a URI, and per 3.6.4.9 the './' prefix should be removed ...
+                                    str = str.substring(2);
+                                }
+                                // LIKE operator can have encodeable characters ...
+                                if (op != Operator.LIKE && Jsr283Encoder.containsEncodeableCharacters(str)) {
+                                    fail = true;
+                                }
+                            } catch (ValueFormatException e) {
+                                // nope ...
+                                fail = true;
+                            } catch (IllegalArgumentException e) {
+                                // nope ...
+                                fail = true;
+                            }
+                            break;
+                        default:
+                            fail = true;
+                            break;
+                    }
+                } catch (javax.jcr.RepositoryException e) {
+                    // nope ...
+                    fail = true;
+                }
+                if (fail) {
+                    problems.addError(GraphI18n.nameOperandRequiresNameLiteralType, readable(operand), op.symbol(), readable(rhs));
+                }
+            }
         } else if (operand instanceof ReferenceValue) {
             ReferenceValue value = (ReferenceValue)operand;
             verifyOperator(value.selectorName(), value.getPropertyName(), op);
         } else if (operand instanceof Length) {
             Length length = (Length)operand;
-            verifyOperator(length.getPropertyValue(), op);
+            verifyComparison(length.getPropertyValue(), op, rhs);
+            // Verify that the rhs is a long or convertable to a long ...
+            if (rhs instanceof Literal) {
+                try {
+                    ((Literal)rhs).getLiteralValue().getLong();
+                } catch (javax.jcr.RepositoryException e) {
+                    // nope ...
+                    problems.addError(GraphI18n.lengthOperandRequiresLongLiteralType,
+                                      readable(operand),
+                                      op.symbol(),
+                                      readable(rhs));
+                }
+            }
         } else if (operand instanceof LowerCase) {
-            verifyOperator(((LowerCase)operand).getOperand(), op);
+            verifyComparison(((LowerCase)operand).getOperand(), op, rhs);
         } else if (operand instanceof UpperCase) {
-            verifyOperator(((UpperCase)operand).getOperand(), op);
+            verifyComparison(((UpperCase)operand).getOperand(), op, rhs);
             // } else if (operand instanceof NodeDepth) {
             // NodeDepth depth = (NodeDepth)operand;
             // verifyOperator(depth.selectorName(), "mode:depth", op);
@@ -381,8 +460,8 @@ public class Validator extends AbstractVisitor {
         } else if (operand instanceof ArithmeticOperand) {
             // The LEFT and RIGHT dynamic operands must both work with this operator ...
             ArithmeticOperand arith = (ArithmeticOperand)operand;
-            verifyOperator(arith.getLeft(), op);
-            verifyOperator(arith.getRight(), op);
+            verifyComparison(arith.getLeft(), op, rhs);
+            verifyComparison(arith.getRight(), op, rhs);
         }
     }
 
@@ -431,6 +510,19 @@ public class Validator extends AbstractVisitor {
             problems.addError(GraphI18n.tableDoesNotExist, tableName.name());
         }
         return table; // may be null
+    }
+
+    protected void verifyPath( String pathStr ) {
+        try {
+            Path path = context.getExecutionContext().getValueFactories().getPathFactory().create(pathStr);
+            if (!path.isAbsolute()) {
+                problems.addError(GraphI18n.pathIsNotAbsolute, pathStr);
+            }
+        } catch (IllegalArgumentException e) {
+            problems.addError(GraphI18n.pathIsNotValid, pathStr);
+        } catch (ValueFormatException e) {
+            problems.addError(GraphI18n.pathIsNotValid, pathStr);
+        }
     }
 
     protected Schemata.Column verify( SelectorName selectorName,

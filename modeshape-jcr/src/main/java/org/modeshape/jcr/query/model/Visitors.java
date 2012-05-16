@@ -23,6 +23,10 @@
  */
 package org.modeshape.jcr.query.model;
 
+import java.math.BigDecimal;
+import java.net.URI;
+import java.text.CharacterIterator;
+import java.text.StringCharacterIterator;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,16 +34,29 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
+import javax.jcr.Binary;
+import javax.jcr.PropertyType;
+import javax.jcr.Value;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.ExecutionContext;
+import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Path;
+import org.modeshape.jcr.value.Reference;
+import org.modeshape.jcr.value.ValueFactories;
 
 /**
  * A set of common visitors that can be reused or extended, and methods that provide easy construction and calling of visitors.
  */
 public class Visitors {
+
+    protected static final char OPEN_SQUARE = '[';
+    protected static final char CLOSE_SQUARE = ']';
+    protected static final char DOUBLE_QUOTE = '"';
+    protected static final char SINGLE_QUOTE = '\'';
+
+    private static final ExecutionContext DEFAULT_CONTEXT = new ExecutionContext();
 
     /**
      * Visit all objects in the supplied {@link Visitable object} using a {@link NavigationVisitor} (specifically a
@@ -80,7 +97,21 @@ public class Visitors {
      * @return the string representation
      */
     public static String readable( Visitable visitable ) {
-        return visit(visitable, new ReadableVisitor()).getString();
+        // return visit(visitable, new ReadableVisitor()).getString();
+        return visit(visitable, new JcrSql2Writer(DEFAULT_CONTEXT)).getString();
+    }
+
+    /**
+     * Using a visitor, obtain the readable string representation of the supplied {@link Visitable object}
+     * 
+     * @param visitable the visitable
+     * @param context the execution context in which the visitable should be converted to a string
+     * @return the string representation
+     */
+    public static String readable( Visitable visitable,
+                                   ExecutionContext context ) {
+        // return visit(visitable, new ReadableVisitor()).getString();
+        return visit(visitable, new JcrSql2Writer(context)).getString();
     }
 
     /**
@@ -768,9 +799,9 @@ public class Visitors {
     }
 
     public static class ReadableVisitor implements Visitor {
-        private final StringBuilder sb = new StringBuilder();
-        private final ExecutionContext context;
-        private final NamespaceRegistry registry;
+        protected final StringBuilder sb = new StringBuilder();
+        protected final ExecutionContext context;
+        protected final NamespaceRegistry registry;
 
         public ReadableVisitor( ExecutionContext context ) {
             CheckArg.isNotNull(context, "context");
@@ -778,40 +809,52 @@ public class Visitors {
             this.registry = context == null ? null : context.getNamespaceRegistry();
         }
 
-        public ReadableVisitor() {
-            this.context = null;
-            this.registry = null;
+        protected ReadableVisitor appendAlias( String columnName ) {
+            append(columnName);
+            return this;
         }
 
-        protected final ReadableVisitor append( String string ) {
+        protected ReadableVisitor appendColumnName( String columnName ) {
+            append(columnName);
+            return this;
+        }
+
+        protected ReadableVisitor appendPropertyName( String columnName ) {
+            append(columnName);
+            return this;
+        }
+
+        protected ReadableVisitor append( String string ) {
             sb.append(string);
             return this;
         }
 
-        protected final ReadableVisitor append( char character ) {
+        protected ReadableVisitor append( char character ) {
             sb.append(character);
             return this;
         }
 
-        protected final ReadableVisitor append( int value ) {
+        protected ReadableVisitor append( int value ) {
             sb.append(value);
             return this;
         }
 
-        protected final ReadableVisitor append( SelectorName name ) {
+        protected ReadableVisitor append( SelectorName name ) {
             sb.append(name.getString());
             return this;
         }
 
-        protected final ReadableVisitor append( Name name ) {
-            sb.append(name.getString(registry, null, null));
+        protected ReadableVisitor append( Name name ) {
+            append(SINGLE_QUOTE);
+            append(name.getString(registry, null, null));
+            append(SINGLE_QUOTE);
             return this;
         }
 
-        protected final ReadableVisitor append( Path path ) {
-            sb.append('\'');
+        protected ReadableVisitor append( Path path ) {
+            sb.append(SINGLE_QUOTE);
             sb.append(path.getString(registry));
-            sb.append('\'');
+            sb.append(SINGLE_QUOTE);
             return this;
         }
 
@@ -885,7 +928,9 @@ public class Visitors {
             append("ISCHILDNODE(");
             append(child.selectorName());
             append(',');
+            append(SINGLE_QUOTE);
             append(child.getParentPath());
+            append(SINGLE_QUOTE);
             append(')');
         }
 
@@ -905,9 +950,9 @@ public class Visitors {
                 append(".*");
             } else {
                 String propertyName = column.getPropertyName();
-                append('.').append(propertyName);
+                append('.').appendPropertyName(propertyName);
                 if (!propertyName.equals(column.getColumnName()) && !propertyName.equals(column.getColumnName())) {
-                    append(" AS ").append(column.getColumnName());
+                    append(" AS ").appendAlias(column.getColumnName());
                 }
             }
         }
@@ -924,7 +969,9 @@ public class Visitors {
             append("ISDESCENDANTNODE(");
             append(descendant.selectorName());
             append(',');
+            append(SINGLE_QUOTE);
             append(descendant.getAncestorPath());
+            append(SINGLE_QUOTE);
             append(')');
         }
 
@@ -939,16 +986,16 @@ public class Visitors {
 
         @Override
         public void visit( EquiJoinCondition condition ) {
-            append(condition.selector1Name()).append('.').append(condition.getProperty1Name());
+            append(condition.selector1Name()).append('.').appendPropertyName(condition.getProperty1Name());
             append(" = ");
-            append(condition.selector2Name()).append('.').append(condition.getProperty2Name());
+            append(condition.selector2Name()).append('.').appendPropertyName(condition.getProperty2Name());
         }
 
         @Override
         public void visit( FullTextSearch fullText ) {
             append("CONTAINS(").append(fullText.selectorName());
             if (fullText.getPropertyName() != null) {
-                append('.').append(fullText.getPropertyName());
+                append('.').appendPropertyName(fullText.getPropertyName());
             }
             sb.append(",'").append(fullText.fullTextSearchExpression()).append("')");
         }
@@ -989,15 +1036,106 @@ public class Visitors {
 
         @Override
         public void visit( Literal literal ) {
-            Object value = literal.value();
-            boolean quote = value instanceof String || value instanceof Path || value instanceof Name;
-            if (quote) append('\'');
-            if (context == null) {
-                append(literal.value().toString());
+            if (literal instanceof LiteralValue) {
+                LiteralValue literalValue = (LiteralValue)literal;
+                Value value = literalValue.getLiteralValue();
+                String typeName = null;
+                ValueFactories factories = context.getValueFactories();
+                switch (value.getType()) {
+                    case PropertyType.UNDEFINED:
+                    case PropertyType.STRING:
+                        append(SINGLE_QUOTE);
+                        String str = factories.getStringFactory().create(literalValue.value());
+                        append(str);
+                        append(SINGLE_QUOTE);
+                        return;
+                    case PropertyType.PATH:
+                        append("CAST(");
+                        append(factories.getPathFactory().create(literalValue.value()));
+                        append(" AS ").append(PropertyType.TYPENAME_PATH.toUpperCase()).append(')');
+                        return;
+                    case PropertyType.NAME:
+                        append("CAST(");
+                        append(factories.getNameFactory().create(literalValue.value()));
+                        append(" AS ").append(PropertyType.TYPENAME_NAME.toUpperCase()).append(')');
+                        return;
+                    case PropertyType.REFERENCE:
+                        typeName = PropertyType.TYPENAME_REFERENCE;
+                        break;
+                    case PropertyType.WEAKREFERENCE:
+                        typeName = PropertyType.TYPENAME_WEAKREFERENCE;
+                        break;
+                    case PropertyType.BINARY:
+                        typeName = PropertyType.TYPENAME_BINARY;
+                        break;
+                    case PropertyType.BOOLEAN:
+                        typeName = PropertyType.TYPENAME_BOOLEAN;
+                        break;
+                    case PropertyType.DATE:
+                        typeName = PropertyType.TYPENAME_DATE;
+                        break;
+                    case PropertyType.DECIMAL:
+                        typeName = PropertyType.TYPENAME_DECIMAL;
+                        break;
+                    case PropertyType.DOUBLE:
+                        typeName = PropertyType.TYPENAME_DOUBLE;
+                        break;
+                    case PropertyType.LONG:
+                        typeName = PropertyType.TYPENAME_LONG;
+                        break;
+                    case PropertyType.URI:
+                        typeName = PropertyType.TYPENAME_URI;
+                        break;
+                }
+                assert typeName != null;
+                String str = factories.getStringFactory().create(literalValue.value());
+                append("CAST('").append(str).append("' AS ").append(typeName.toUpperCase()).append(')');
             } else {
-                append(context.getValueFactories().getStringFactory().create(literal.value()));
+                Object value = literal.value();
+                String typeName = null;
+                ValueFactories factories = context.getValueFactories();
+                if (value instanceof String) {
+                    append(SINGLE_QUOTE);
+                    String str = factories.getStringFactory().create(value);
+                    append(str);
+                    append(SINGLE_QUOTE);
+                    return;
+                }
+                if (value instanceof Path) {
+                    append("CAST(");
+                    append(factories.getPathFactory().create(value));
+                    append(" AS ").append(PropertyType.TYPENAME_PATH.toUpperCase()).append(')');
+                    return;
+                }
+                if (value instanceof Name) {
+                    append("CAST(");
+                    append(factories.getNameFactory().create(value));
+                    append(" AS ").append(PropertyType.TYPENAME_NAME.toUpperCase()).append(')');
+                    return;
+                }
+                if (value instanceof Reference) {
+                    typeName = ((Reference)value).isWeak() ? PropertyType.TYPENAME_WEAKREFERENCE : PropertyType.TYPENAME_REFERENCE;
+                } else if (value instanceof Binary) {
+                    typeName = PropertyType.TYPENAME_BINARY;
+                } else if (value instanceof Boolean) {
+                    typeName = PropertyType.TYPENAME_BOOLEAN;
+                } else if (value instanceof DateTime) {
+                    typeName = PropertyType.TYPENAME_DATE;
+                } else if (value instanceof BigDecimal) {
+                    typeName = PropertyType.TYPENAME_DECIMAL;
+                } else if (value instanceof Double || value instanceof Float) {
+                    typeName = PropertyType.TYPENAME_DOUBLE;
+                } else if (value instanceof Long || value instanceof Integer || value instanceof Short) {
+                    typeName = PropertyType.TYPENAME_LONG;
+                } else if (value instanceof URI) {
+                    typeName = PropertyType.TYPENAME_URI;
+                } else {
+
+                }
+                assert typeName != null;
+                String str = factories.getStringFactory().create(value);
+                append("CAST('").append(str).append("' AS ").append(typeName.toUpperCase()).append(')');
             }
-            if (quote) append('\'');
         }
 
         @Override
@@ -1037,8 +1175,8 @@ public class Visitors {
 
         @Override
         public void visit( Not not ) {
-            append('(');
             append("NOT ");
+            append('(');
             not.getConstraint().accept(this);
             append(')');
         }
@@ -1060,19 +1198,19 @@ public class Visitors {
 
         @Override
         public void visit( PropertyExistence existence ) {
-            append(existence.selectorName()).append('.').append(existence.getPropertyName()).append(" IS NOT NULL");
+            append(existence.selectorName()).append('.').appendPropertyName(existence.getPropertyName()).append(" IS NOT NULL");
         }
 
         @Override
         public void visit( PropertyValue value ) {
-            append(value.selectorName()).append('.').append(value.getPropertyName());
+            append(value.selectorName()).append('.').appendPropertyName(value.getPropertyName());
         }
 
         @Override
         public void visit( ReferenceValue value ) {
             append(value.selectorName());
             if (value.getPropertyName() != null) {
-                append('.').append(value.getPropertyName());
+                append('.').appendPropertyName(value.getPropertyName());
             }
         }
 
@@ -1086,7 +1224,7 @@ public class Visitors {
                 boolean isFirst = true;
                 for (Column column : query.columns()) {
                     if (isFirst) isFirst = false;
-                    else append(',');
+                    else append(", ");
                     column.accept(this);
                 }
             }
@@ -1101,7 +1239,7 @@ public class Visitors {
                 boolean isFirst = true;
                 for (Ordering ordering : query.orderings()) {
                     if (isFirst) isFirst = false;
-                    else append(',');
+                    else append(", ");
                     ordering.accept(this);
                 }
             }
@@ -1120,14 +1258,14 @@ public class Visitors {
 
         @Override
         public void visit( SameNode sameNode ) {
-            append("ISSAMENODE(").append(sameNode.selectorName()).append(',').append(sameNode.getPath()).append(')');
+            append("ISSAMENODE(").append(sameNode.selectorName()).append(",'").append(sameNode.getPath()).append("')");
         }
 
         @Override
         public void visit( SameNodeJoinCondition condition ) {
             append("ISSAMENODE(").append(condition.selector1Name()).append(',').append(condition.selector2Name());
             if (condition.getSelector2Path() != null) {
-                append(',').append(condition.getSelector2Path());
+                append(",'").append(condition.getSelector2Path()).append('\'');
             }
             append(')');
         }
@@ -1162,5 +1300,73 @@ public class Visitors {
             append(')');
         }
 
+    }
+
+    public static class JcrSql2Writer extends ReadableVisitor {
+
+        public JcrSql2Writer( ExecutionContext context ) {
+            super(context);
+        }
+
+        protected final boolean needsQuotes( String str ) {
+            CharacterIterator iter = new StringCharacterIterator(str);
+            for (char c = iter.first(); c != CharacterIterator.DONE; c = iter.next()) {
+                if (!Character.isLetterOrDigit(c)) return true;
+            }
+            return false;
+        }
+
+        protected void appendQuoted( char openQuote,
+                                     String name,
+                                     char closeQuote ) {
+            // If the name contains any non-alphanumeric characters, then we'll quote.
+            // It's okay (and safer) to quote more often than necessary.
+            if (needsQuotes(name)) {
+                append(OPEN_SQUARE);
+                append(name);
+                append(CLOSE_SQUARE);
+            } else {
+                append(name);
+            }
+        }
+
+        @Override
+        protected ReadableVisitor append( String string ) {
+            return super.append(string);
+        }
+
+        @Override
+        protected ReadableVisitor append( char character ) {
+            return super.append(character);
+        }
+
+        @Override
+        protected ReadableVisitor append( int value ) {
+            return super.append(value);
+        }
+
+        @Override
+        protected ReadableVisitor appendColumnName( String columnName ) {
+            appendQuoted(OPEN_SQUARE, columnName, CLOSE_SQUARE);
+            return this;
+        }
+
+        @Override
+        protected ReadableVisitor appendPropertyName( String propertyName ) {
+            appendQuoted(OPEN_SQUARE, propertyName, CLOSE_SQUARE);
+            return this;
+        }
+
+        @Override
+        protected ReadableVisitor appendAlias( String alias ) {
+            appendQuoted(OPEN_SQUARE, alias, CLOSE_SQUARE);
+            return this;
+        }
+
+        @Override
+        protected ReadableVisitor append( SelectorName name ) {
+            appendQuoted(OPEN_SQUARE, name.name(), CLOSE_SQUARE);
+            return this;
+        }
     }
 }

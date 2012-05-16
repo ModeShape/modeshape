@@ -193,13 +193,15 @@ public final class GraphI18n {
     public static I18n columnTypeCannotBeUsedInArithmeticOperation;
     public static I18n dynamicOperandCannotBeUsedInArithmeticOperation;
     public static I18n selectorDoesNotExistInQuery;
+    public static I18n selectorNamesMayNotBeUsedMoreThanOnce;
     public static I18n propertyOnSelectorIsNotUsedInQuery;
     public static I18n errorResolvingNodesFromLocationsUsingSourceAndWorkspace;
     public static I18n queryHasNoResults;
     public static I18n schemataKeyReferencesNonExistingColumn;
     public static I18n nextMethodMustBeCalledBeforeGettingValue;
     public static I18n expectingValidName;
-    public static I18n expectingValidPath;
+    public static I18n pathIsNotValid;
+    public static I18n pathMustBeAbsolute;
     public static I18n columnMustBeScoped;
     public static I18n expectingValidNameAtLineAndColumn;
     public static I18n expectingValidPathAtLineAndColumn;
@@ -221,6 +223,8 @@ public final class GraphI18n {
     public static I18n operatorIsNotValidAgainstColumnInTable;
     public static I18n columnInTableIsNotOrderable;
     public static I18n missingVariableValue;
+    public static I18n lengthOperandRequiresLongLiteralType;
+    public static I18n nameOperandRequiresNameLiteralType;
 
     /* Search */
     public static I18n interruptedWhileClosingChannel;

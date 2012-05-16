@@ -58,10 +58,12 @@ public class QueryObjectModelFactory implements org.modeshape.jcr.api.query.qom.
                                          javax.jcr.query.qom.Column[] columns ) {
 
         SelectQuery query = select(source, constraint, orderings, columns, null, false);
-        String statement = query.toString();
+        // Produce the statement, but use our ExecutionContext (primarily for namespaces and binary value usage) ...
+        String statement = Visitors.readable(query, context.getExecutionContext());
         // Set up the hints ...
         PlanHints hints = new PlanHints();
         hints.showPlan = true;
+        hints.hasFullTextSearch = true; // always include the score
         // We want to allow use of residual properties (not in the schemata) for criteria ...
         hints.validateColumnExistance = true;
         return new QueryObjectModel(context, statement, LANGUAGE, query, hints, null);
@@ -69,14 +71,28 @@ public class QueryObjectModelFactory implements org.modeshape.jcr.api.query.qom.
 
     @Override
     public SetQueryObjectModel createQuery( org.modeshape.jcr.api.query.qom.SetQuery command ) {
-        SetQuery setQuery = CheckArg.getInstanceOf(command, SetQuery.class, "source");
+        SetQuery setQuery = CheckArg.getInstanceOf(command, SetQuery.class, "command");
         String statement = setQuery.toString();
         // Set up the hints ...
         PlanHints hints = new PlanHints();
         hints.showPlan = true;
+        hints.hasFullTextSearch = true; // always include the score
         // We want to allow use of residual properties (not in the schemata) for criteria ...
         hints.validateColumnExistance = true;
         return new SetQueryObjectModel(context, statement, LANGUAGE, setQuery, hints, null);
+    }
+
+    @Override
+    public QueryObjectModel createQuery( org.modeshape.jcr.api.query.qom.SelectQuery command ) {
+        SelectQuery selectQuery = CheckArg.getInstanceOf(command, SelectQuery.class, "command");
+        String statement = selectQuery.toString();
+        // Set up the hints ...
+        PlanHints hints = new PlanHints();
+        hints.showPlan = true;
+        hints.hasFullTextSearch = true; // always include the score
+        // We want to allow use of residual properties (not in the schemata) for criteria ...
+        hints.validateColumnExistance = true;
+        return new QueryObjectModel(context, statement, LANGUAGE, selectQuery, hints, null);
     }
 
     @Override
@@ -169,7 +185,7 @@ public class QueryObjectModelFactory implements org.modeshape.jcr.api.query.qom.
             return new Column(selectorName(selectorName));
         }
         CheckArg.isNotNull(columnName, "columnName");
-        return new Column(selectorName(selectorName), selectorName, columnName);
+        return new Column(selectorName(selectorName), propertyName, columnName);
     }
 
     @Override
@@ -376,8 +392,8 @@ public class QueryObjectModelFactory implements org.modeshape.jcr.api.query.qom.
                                                         String selector2Name,
                                                         String selector2Path ) {
         CheckArg.isNotNull(selector1Name, "selector1Name");
-        CheckArg.isNotNull(selector1Name, "selector1Name");
-        return new SameNodeJoinCondition(selectorName(selector1Name), selectorName(selector1Name), selector2Path);
+        CheckArg.isNotNull(selector2Name, "selector2Name");
+        return new SameNodeJoinCondition(selectorName(selector1Name), selectorName(selector2Name), selector2Path);
     }
 
     @Override

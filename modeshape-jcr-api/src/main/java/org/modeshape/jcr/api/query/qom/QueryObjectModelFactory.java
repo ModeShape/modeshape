@@ -29,6 +29,7 @@ import javax.jcr.query.qom.Column;
 import javax.jcr.query.qom.Constraint;
 import javax.jcr.query.qom.DynamicOperand;
 import javax.jcr.query.qom.Ordering;
+import javax.jcr.query.qom.QueryObjectModel;
 import javax.jcr.query.qom.Source;
 import javax.jcr.query.qom.StaticOperand;
 
@@ -49,6 +50,18 @@ public interface QueryObjectModelFactory extends javax.jcr.query.qom.QueryObject
      * @throws RepositoryException if another error occurs.
      */
     public SetQueryObjectModel createQuery( SetQuery command ) throws InvalidQueryException, RepositoryException;
+
+    /**
+     * Creates a query for a select query command.
+     * 
+     * @param command select query; non-null
+     * @return the executable query; non-null
+     * @throws InvalidQueryException if a particular validity test is possible on this method, the implemention chooses to perform
+     *         that test and the parameters given fail that test. See the individual QOM factory methods for the validity criteria
+     *         of each query element.
+     * @throws RepositoryException if another error occurs.
+     */
+    public QueryObjectModel createQuery( SelectQuery command ) throws InvalidQueryException, RepositoryException;
 
     /**
      * Creates a query with one or more selectors.

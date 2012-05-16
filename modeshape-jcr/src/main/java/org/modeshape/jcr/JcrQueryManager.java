@@ -35,10 +35,8 @@ import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
-import javax.jcr.ValueFactory;
 import javax.jcr.query.InvalidQueryException;
 import javax.jcr.query.Query;
-import javax.jcr.query.QueryManager;
 import javax.jcr.version.VersionException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.Problem;
@@ -48,6 +46,7 @@ import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.JcrRepository.QueryLanguage;
 import org.modeshape.jcr.api.monitor.DurationMetric;
+import org.modeshape.jcr.api.query.QueryManager;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.query.JcrQuery;
@@ -93,7 +92,7 @@ class JcrQueryManager implements QueryManager {
     }
 
     @Override
-    public javax.jcr.query.qom.QueryObjectModelFactory getQOMFactory() {
+    public org.modeshape.jcr.api.query.qom.QueryObjectModelFactory getQOMFactory() {
         return factory;
     }
 
@@ -117,9 +116,9 @@ class JcrQueryManager implements QueryManager {
      * @throws InvalidQueryException if expression is invalid or language is unsupported
      * @throws RepositoryException if the session is no longer live
      */
-    public Query createQuery( String expression,
-                              String language,
-                              Path storedAtPath ) throws InvalidQueryException, RepositoryException {
+    public org.modeshape.jcr.api.query.Query createQuery( String expression,
+                                                          String language,
+                                                          Path storedAtPath ) throws InvalidQueryException, RepositoryException {
         session.checkLive();
         // Look for a parser for the specified language ...
         QueryParsers queryParsers = session.repository().runningState().queryParsers();
@@ -183,7 +182,7 @@ class JcrQueryManager implements QueryManager {
     }
 
     @Override
-    public Query getQuery( Node node ) throws InvalidQueryException, RepositoryException {
+    public org.modeshape.jcr.api.query.Query getQuery( Node node ) throws InvalidQueryException, RepositoryException {
         AbstractJcrNode jcrNode = CheckArg.getInstanceOf(node, AbstractJcrNode.class, "node");
 
         // Check the type of the node ...
@@ -207,11 +206,11 @@ class JcrQueryManager implements QueryManager {
         return languages.toArray(new String[languages.size()]);
     }
 
-    protected Query resultWith( String expression,
-                                String language,
-                                QueryCommand command,
-                                PlanHints hints,
-                                Path storedAtPath ) {
+    protected org.modeshape.jcr.api.query.Query resultWith( String expression,
+                                                            String language,
+                                                            QueryCommand command,
+                                                            PlanHints hints,
+                                                            Path storedAtPath ) {
         if (command instanceof SelectQuery) {
             SelectQuery query = (SelectQuery)command;
             return new QueryObjectModel(context, expression, language, query, hints, storedAtPath);
@@ -284,10 +283,12 @@ class JcrQueryManager implements QueryManager {
 
         @Override
         public Node getNode( Location location ) {
-            try {
-                return session.node(location.getKey(), null);
-            } catch (ItemNotFoundException e) {
-                // Must have been deleted from storage but not yet from the indexes ...
+            if (location != null) {
+                try {
+                    return session.node(location.getKey(), null);
+                } catch (ItemNotFoundException e) {
+                    // Must have been deleted from storage but not yet from the indexes ...
+                }
             }
             return null;
         }
@@ -437,7 +438,7 @@ class JcrQueryManager implements QueryManager {
         }
 
         @Override
-        public ValueFactory getValueFactory() {
+        public JcrValueFactory getValueFactory() {
             return session.valueFactory();
         }
     }
