@@ -104,6 +104,7 @@ public final class FileSystemI18n {
     public static I18n maxPathLengthExceeded;
     public static I18n couldNotStoreProperty;
     public static I18n couldNotStoreProperties;
+    public static I18n couldNotReadListOfFilesInDirectory;
 
     static {
         try {

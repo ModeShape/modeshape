@@ -569,7 +569,20 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> implements NodeCaching
             if (file == null) return null;
 
             if (file.isDirectory()) {
-                String[] childNames = file.list(source.filenameFilter(true));
+                String[] childNames = null;
+                int attempts = 5;
+                while (childNames == null && (--attempts) >= 0) {
+                    // there must have been an I/O error, so try again ...
+                    childNames = file.list(source.filenameFilter(true));
+                }
+                if (childNames == null) {
+                    // Still null after multiple attempts; we can't really proceed.
+                    // Meaning the file/directory will not be mapped as a node ...
+                    Logger.getLogger(getClass()).error(FileSystemI18n.couldNotReadListOfFilesInDirectory,
+                                                       file.getAbsolutePath(),
+                                                       path.getString(registry));
+                    return null;
+                }
                 Arrays.sort(childNames);
 
                 List<Segment> childSegments = new ArrayList<Segment>(childNames.length);
