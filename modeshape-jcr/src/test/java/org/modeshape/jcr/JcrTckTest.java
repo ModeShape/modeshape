@@ -121,6 +121,7 @@ import org.apache.jackrabbit.test.api.WorkspaceCopyReferenceableTest;
 import org.apache.jackrabbit.test.api.WorkspaceCopySameNameSibsTest;
 import org.apache.jackrabbit.test.api.WorkspaceCopyTest;
 import org.apache.jackrabbit.test.api.WorkspaceCopyVersionableTest;
+import org.apache.jackrabbit.test.api.WorkspaceManagementTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveReferenceableTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveSameNameSibsTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveTest;
@@ -247,7 +248,6 @@ public class JcrTckTest {
         return suite;
     }
 
-
     /**
      * Wrapper for read-only tests
      * 
@@ -358,8 +358,6 @@ public class JcrTckTest {
         suite.addTestSuite(NameTest.class);
         suite.addTestSuite(PathTest.class);
 
-        suite.addTestSuite(WorkspaceMoveReferenceableTest.class);
-        suite.addTestSuite(WorkspaceMoveTest.class);
 
         suite.addTestSuite(ImpersonateTest.class);
         suite.addTestSuite(CheckPermissionTest.class);
@@ -390,14 +388,12 @@ public class JcrTckTest {
         suite.addTestSuite(excludeTests(SessionUUIDTest.class, "testSaveReferentialIntegrityException"));
         /**
          * //TODO author=Horia Chiorean date=4/11/12 description=The following fail:
-         * testUpdate - https://issues.jboss.org/browse/MODE-1455
          * testRemoveInvalidItemStateException - https://issues.jboss.org/browse/MODE-1456
          * testRemoveMandatoryNode - https://issues.jboss.org/browse/MODE-1456
          * testSaveInvalidStateException - https://issues.jboss.org/browse/MODE-1456 (might not seem related at first, but it's
          * because a path of a node is determined incorrectly)
          */
         suite.addTestSuite(excludeTests(NodeTest.class,
-                                        "testUpdate",
                                         "testRemoveInvalidItemStateException",
                                         "testRemoveMandatoryNode",
                                         "testSaveInvalidStateException"));
@@ -417,8 +413,11 @@ public class JcrTckTest {
         suite.addTestSuite(WorkspaceCopySameNameSibsTest.class);
         suite.addTestSuite(WorkspaceCopyTest.class);
         suite.addTestSuite(WorkspaceCopyVersionableTest.class);
+        suite.addTestSuite(WorkspaceManagementTest.class);
         suite.addTestSuite(WorkspaceMoveSameNameSibsTest.class);
         suite.addTestSuite(WorkspaceMoveVersionableTest.class);
+        suite.addTestSuite(WorkspaceMoveReferenceableTest.class);
+        suite.addTestSuite(WorkspaceMoveTest.class);
 
 
         // TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1453
@@ -452,28 +451,12 @@ public class JcrTckTest {
             addTest(org.apache.jackrabbit.test.api.lock.TestAll.suite());
             addTest(org.apache.jackrabbit.test.api.util.TestAll.suite());
             addTest(org.apache.jackrabbit.test.api.retention.TestAll.suite());
-
-            addTest(new SecurityTests());
-            // addTest(org.apache.jackrabbit.test.api.security.TestAll.suite());
+            addTest(org.apache.jackrabbit.test.api.security.TestAll.suite());
 
             addTest(new QueryTests());
             // addTest(org.apache.jackrabbit.test.api.query.TestAll.suite());
             // TODO author=Horia Chiorean date=4/20/12 description=https://issues.jboss.org/browse/MODE-1468
             // addTest(org.apache.jackrabbit.test.api.query.qom.TestAll.suite());
-        }
-    }
-
-    private static class SecurityTests extends TestSuite {
-        @SuppressWarnings( "synthetic-access" )
-        protected SecurityTests() {
-            super("JCR Security Tests");
-            addTestSuite(AccessControlDiscoveryTest.class);
-            addTestSuite(AccessControlPolicyTest.class);
-            addTestSuite(AccessControlPolicyIteratorTest.class);
-            addTestSuite(AccessControlListTest.class);
-            addTestSuite(RSessionAccessControlDiscoveryTest.class);
-            addTestSuite(RSessionAccessControlPolicyTest.class);
-            addTestSuite(RSessionAccessControlTest.class);
         }
     }
 

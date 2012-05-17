@@ -2722,7 +2722,12 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     public void update( String srcWorkspace )
         throws NoSuchWorkspaceException, AccessDeniedException, LockException, InvalidItemStateException, RepositoryException {
         CheckArg.isNotNull(srcWorkspace, "srcWorkspace");
-        checkSession();
+
+        session().getWorkspace().validateCrossWorkspaceAction(srcWorkspace);
+
+        if (workspaceName().equalsIgnoreCase(srcWorkspace)) {
+            return;
+        }
 
         if (session().hasPendingChanges()) {
             throw new InvalidItemStateException(JcrI18n.noPendingChangesAllowed.text());
@@ -2730,16 +2735,33 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
         checkNotProtected();
 
-        Path correspondingPath = null;
+        Path srcPath = null;
         try {
-            correspondingPath = correspondingNodePath(srcWorkspace);
+            srcPath = correspondingNodePath(srcWorkspace);
         } catch (ItemNotFoundException infe) {
             return;
         }
 
-        // Need to force remove in case this node is not referenceable
-        // TODO: Clone
-        // cache.graphSession().immediateClone(correspondingPath, srcWorkspace, path(), true, true);
+        /*
+        * Check if the source is locked
+        */
+        JcrSession sourceSession = session.spawnSession(srcWorkspace, true);
+        AbstractJcrNode sourceNode = sourceSession.node(srcPath);
+        if (session.lockManager().isLocked(sourceNode) && !session.lockManager().hasLockToken(sourceNode.getLock().getLockToken())) {
+            throw new LockException(srcPath.toString());
+        }
+
+        /**
+         * Check if the destination is locked
+         */
+        Path dstPath = path();
+        if (isLocked() && !session.lockManager().hasLockToken(this.getLock().getLockToken())) {
+            throw new LockException(dstPath.toString());
+        }
+
+        //create an inner session for cloning
+        JcrSession cloneSession = session.spawnSession(false);
+        getSession().getWorkspace().deepClone(sourceSession, sourceNode.key(), cloneSession, key());
 
         session().refresh(false);
     }
