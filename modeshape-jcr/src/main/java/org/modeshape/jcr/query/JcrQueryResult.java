@@ -44,8 +44,8 @@ import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.query.QueryResults.Columns;
 import org.modeshape.jcr.query.QueryResults.Location;
 import org.modeshape.jcr.query.model.Column;
+import org.modeshape.jcr.query.model.SelectorName;
 import org.modeshape.jcr.query.validate.Schemata;
-import org.modeshape.jcr.query.validate.Schemata.Table;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 
@@ -118,12 +118,13 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
         if (columnTables == null) {
             // Discover the types ...
             Columns columns = results.getColumns();
+            Set<SelectorName> selectorNames = new HashSet<SelectorName>();
             List<String> tables = new ArrayList<String>(columns.getColumnCount());
             for (Column column : columns) {
-                String tableName = "";
-                Table table = schemata.getTable(column.selectorName());
-                if (table != null) tableName = table.getName().name();
-                tables.add(tableName);
+                SelectorName selectorName = column.selectorName();
+                if (selectorNames.add(column.selectorName())) {
+                    tables.add(selectorName.getString());
+                }
             }
             columnTables = tables;
         }

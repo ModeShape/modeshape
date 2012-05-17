@@ -307,7 +307,7 @@ public class QueryBuilder {
      * @return the named selector object; never null
      */
     protected NamedSelector namedSelector( String nameWithOptionalAlias ) {
-        String[] parts = nameWithOptionalAlias.split("\\sAS\\s");
+        String[] parts = nameWithOptionalAlias.split("\\s(AS|as)\\s");
         if (parts.length == 2) {
             return new NamedSelector(selector(parts[0]), selector(parts[1]));
         }
@@ -2072,7 +2072,7 @@ public class QueryBuilder {
          * @return the constraint builder; never null
          */
         public ConstraintBuilder literal( boolean literal ) {
-            return comparisonBuilder.isBetween(lowerBound, literal);
+            return comparisonBuilder.isBetween(lowerBound, new Literal(literal));
         }
 
         /**

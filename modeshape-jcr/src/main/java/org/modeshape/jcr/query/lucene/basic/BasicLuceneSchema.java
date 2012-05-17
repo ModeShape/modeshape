@@ -144,6 +144,7 @@ public class BasicLuceneSchema implements LuceneSchema {
         String name = null;
         String localName = null;
         int depth = 0;
+        int snsIndex = 1;
         if (path.isRoot()) {
             pathStr = "/";
             name = "";
@@ -151,10 +152,12 @@ public class BasicLuceneSchema implements LuceneSchema {
             depth = 0;
         } else {
             pathStr = stringFrom(path);
-            Name nodeName = path.getLastSegment().getName();
+            Path.Segment segment = path.getLastSegment();
+            Name nodeName = segment.getName();
             name = stringFrom(nodeName);
             localName = nodeName.getLocalName();
             depth = path.size();
+            snsIndex = segment.getIndex();
         }
 
         // Get the schemata tables for the primary type and mixin types ...
@@ -196,7 +199,7 @@ public class BasicLuceneSchema implements LuceneSchema {
         // dynamicField = new DynamicField(dynamicField, NodeInfoIndex.FieldName.FULL_TEXT, fullText.toString(), true, false);
 
         // Return the node information object ...
-        return new NodeInfo(id, workspace, pathStr, name, localName, depth, dynamicField);
+        return new NodeInfo(id, workspace, pathStr, name, localName, snsIndex, depth, dynamicField);
     }
 
     /**
@@ -225,7 +228,7 @@ public class BasicLuceneSchema implements LuceneSchema {
             previous = new DynamicField(previous, propertyName, str, false, true);
 
             // Add a field with the length of the value ...
-            previous = new DynamicField(previous, FieldName.LENGTH_PREFIX + propertyName, str.length(), false, true);
+            previous = new DynamicField(previous, FieldName.LENGTH_PREFIX + propertyName, (long)str.length(), false, true);
 
             if (fullTextSearchable) {
                 // Also add a field with the string value and DO analyze it so we can find it with full-text search ...
@@ -271,7 +274,7 @@ public class BasicLuceneSchema implements LuceneSchema {
 
             // Add a field with the length of the value ...
             String strValue = stringFactory.create(timestamp);
-            previous = new DynamicField(previous, FieldName.LENGTH_PREFIX + propertyName, strValue.length(), false, true);
+            previous = new DynamicField(previous, FieldName.LENGTH_PREFIX + propertyName, (long)strValue.length(), false, true);
 
             // No full-text search field for date-times ...
 
@@ -284,7 +287,7 @@ public class BasicLuceneSchema implements LuceneSchema {
 
             // Add a field with the length of the value ...
             strValue = stringFactory.create(decimal);
-            previous = new DynamicField(previous, FieldName.LENGTH_PREFIX + propertyName, strValue.length(), false, true);
+            previous = new DynamicField(previous, FieldName.LENGTH_PREFIX + propertyName, (long)strValue.length(), false, true);
 
             // No full-text search field for decimals ...
 
@@ -294,7 +297,11 @@ public class BasicLuceneSchema implements LuceneSchema {
             // Convert big decimals to a string, using a specific format ...
             previous = new DynamicField(previous, propertyName, bool ? TRUE_VALUE : FALSE_VALUE, false, true);
 
-            // No length or full-text search field for numbers ...
+            // Add a field with the length of the value ...
+            long len = bool.booleanValue() ? 4 : 5;
+            previous = new DynamicField(previous, FieldName.LENGTH_PREFIX + propertyName, len, false, true);
+
+            // No full-text search field for numbers ...
 
         } else if (value instanceof Number) {
             Number number = (Number)value;
@@ -302,7 +309,24 @@ public class BasicLuceneSchema implements LuceneSchema {
             // Convert big decimals to a string, using a specific format ...
             previous = new DynamicField(previous, propertyName, number, false, isStored);
 
-            // No length or full-text search field for numbers ...
+            // Add a field with the length of the value ...
+            String strValue = null;
+            if (value instanceof Integer) {
+                strValue = stringFactory.create(number.intValue());
+            } else if (value instanceof Long) {
+                strValue = stringFactory.create(number.longValue());
+            } else if (value instanceof Short) {
+                strValue = stringFactory.create(number.intValue());
+            } else if (value instanceof Float) {
+                strValue = stringFactory.create(number.floatValue());
+            } else if (value instanceof Double) {
+                strValue = stringFactory.create(number.doubleValue());
+            } else {
+                strValue = stringFactory.create(number);
+            }
+            previous = new DynamicField(previous, FieldName.LENGTH_PREFIX + propertyName, (long)strValue.length(), false, true);
+
+            // No full-text search field for numbers ...
 
         } else if (value instanceof Reference) {
             // We just will extract the string-form of the reference value and index it in the property field ...
@@ -316,7 +340,8 @@ public class BasicLuceneSchema implements LuceneSchema {
             previous = new DynamicField(previous, propName, stringifiedRef, false, isStored);
 
             // Add a field with the length of the value ...
-            previous = new DynamicField(previous, FieldName.LENGTH_PREFIX + propertyName, stringifiedRef.length(), false, true);
+            previous = new DynamicField(previous, FieldName.LENGTH_PREFIX + propertyName, (long)stringifiedRef.length(), false,
+                                        true);
 
             // No full-text search field for references ...
 
@@ -326,7 +351,7 @@ public class BasicLuceneSchema implements LuceneSchema {
             previous = new DynamicField(previous, propertyName, str, false, isStored);
 
             // Add a field with the length of the value (yes, we have to compute this) ...
-            previous = new DynamicField(previous, FieldName.LENGTH_PREFIX + propertyName, str.length(), false, true);
+            previous = new DynamicField(previous, FieldName.LENGTH_PREFIX + propertyName, (long)str.length(), false, true);
         }
         return previous;
     }

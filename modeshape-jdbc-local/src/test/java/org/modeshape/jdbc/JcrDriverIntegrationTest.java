@@ -87,33 +87,35 @@ public class JcrDriverIntegrationTest extends AbstractJdbcDriverTest {
     @Test
     public void shouldBeAbleToExecuteSqlSelectAllNodes() throws SQLException {
         String[] expected = {
-            "jcr:primaryType[STRING]    jcr:mixinTypes[STRING]    jcr:path[STRING]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
-            "mode:root    null    /        1.3860371112823486        0",
-            "nt:unstructured    null    /Cars    Cars    1.3860371112823486    Cars    1",
-            "nt:unstructured    null    /Cars/Hybrid    Hybrid    1.3860371112823486    Hybrid    2",
-            "car:Car    null    /Cars/Hybrid/Nissan Altima    Nissan Altima    1.3860371112823486    Nissan Altima    3",
-            "car:Car    null    /Cars/Hybrid/Toyota Highlander    Toyota Highlander    1.3860371112823486    Toyota Highlander    3",
-            "car:Car    null    /Cars/Hybrid/Toyota Prius    Toyota Prius    1.3860371112823486    Toyota Prius    3",
-            "nt:unstructured    null    /Cars/Luxury    Luxury    1.3860371112823486    Luxury    2",
-            "car:Car    null    /Cars/Luxury/Bentley Continental    Bentley Continental    1.3860371112823486    Bentley Continental    3",
-            "car:Car    null    /Cars/Luxury/Cadillac DTS    Cadillac DTS    1.3860371112823486    Cadillac DTS    3",
-            "car:Car    null    /Cars/Luxury/Lexus IS350    Lexus IS350    1.3860371112823486    Lexus IS350    3",
-            "nt:unstructured    null    /Cars/Sports    Sports    1.3860371112823486    Sports    2",
-            "car:Car    null    /Cars/Sports/Aston Martin DB9    Aston Martin DB9    1.3860371112823486    Aston Martin DB9    3",
-            "car:Car    null    /Cars/Sports/Infiniti G37    Infiniti G37    1.3860371112823486    Infiniti G37    3",
-            "nt:unstructured    null    /Cars/Utility    Utility    1.3860371112823486    Utility    2",
-            "car:Car    null    /Cars/Utility/Ford F-150    Ford F-150    1.3860371112823486    Ford F-150    3",
-            "car:Car    null    /Cars/Utility/Hummer H3    Hummer H3    1.3860371112823486    Hummer H3    3",
-            "car:Car    null    /Cars/Utility/Land Rover LR2    Land Rover LR2    1.3860371112823486    Land Rover LR2    3",
-            "car:Car    null    /Cars/Utility/Land Rover LR3    Land Rover LR3    1.3860371112823486    Land Rover LR3    3",
-            "nt:unstructured    null    /NodeB    NodeB    1.3860371112823486    NodeB    1",
-            "nt:unstructured    null    /Other    Other    1.3860371112823486    Other    1",
-            "nt:unstructured    null    /Other/NodeA    NodeA    1.3860371112823486    NodeA    2",
-            "nt:unstructured    null    /Other/NodeA[2]    NodeA    1.3860371112823486    NodeA    2",
-            "nt:unstructured    null    /Other/NodeA[3]    NodeA    1.3860371112823486    NodeA    2"};
+            "jcr:primaryType[STRING]    jcr:mixinTypes[STRING]    jcr:path[STRING]    jcr:name[STRING]    mode:localName[STRING]    mode:depth[LONG]",
+            "mode:root    null    /            0", "nt:unstructured    null    /Cars    Cars    Cars    1",
+            "nt:unstructured    null    /Cars/Hybrid    Hybrid    Hybrid    2",
+            "car:Car    null    /Cars/Hybrid/Nissan Altima    Nissan Altima    Nissan Altima    3",
+            "car:Car    null    /Cars/Hybrid/Toyota Highlander    Toyota Highlander    Toyota Highlander    3",
+            "car:Car    null    /Cars/Hybrid/Toyota Prius    Toyota Prius    Toyota Prius    3",
+            "nt:unstructured    null    /Cars/Luxury    Luxury    Luxury    2",
+            "car:Car    null    /Cars/Luxury/Bentley Continental    Bentley Continental    Bentley Continental    3",
+            "car:Car    null    /Cars/Luxury/Cadillac DTS    Cadillac DTS    Cadillac DTS    3",
+            "car:Car    null    /Cars/Luxury/Lexus IS350    Lexus IS350    Lexus IS350    3",
+            "nt:unstructured    null    /Cars/Sports    Sports    Sports    2",
+            "car:Car    null    /Cars/Sports/Aston Martin DB9    Aston Martin DB9    Aston Martin DB9    3",
+            "car:Car    null    /Cars/Sports/Infiniti G37    Infiniti G37    Infiniti G37    3",
+            "nt:unstructured    null    /Cars/Utility    Utility    Utility    2",
+            "car:Car    null    /Cars/Utility/Ford F-150    Ford F-150    Ford F-150    3",
+            "car:Car    null    /Cars/Utility/Hummer H3    Hummer H3    Hummer H3    3",
+            "car:Car    null    /Cars/Utility/Land Rover LR2    Land Rover LR2    Land Rover LR2    3",
+            "car:Car    null    /Cars/Utility/Land Rover LR3    Land Rover LR3    Land Rover LR3    3",
+            "nt:unstructured    null    /NodeB    NodeB    NodeB    1",
+            "nt:unstructured    null    /Other    Other    Other    1",
+            "nt:unstructured    null    /Other/NodeA    NodeA    NodeA    2",
+            "nt:unstructured    null    /Other/NodeA[2]    NodeA    NodeA    2",
+            "nt:unstructured    null    /Other/NodeA[3]    NodeA    NodeA    2"};
 
         // executeQuery("SELECT * FROM [nt:base] WHERE NOT( [jcr:path] LIKE '/jcr:*' ) ORDER BY [jcr:path]", expected, 23);
-        executeQuery("SELECT * FROM [nt:base] WHERE [jcr:path] NOT LIKE '/jcr:*' ORDER BY [jcr:path]", expected, 23);
+        // SELECT * FROM ... except the [jcr:score] column ...
+        executeQuery("SELECT [jcr:primaryType], [jcr:mixinTypes], [jcr:path], [jcr:name], [mode:localName], [mode:depth] FROM [nt:base] WHERE [jcr:path] NOT LIKE '/jcr:*' ORDER BY [jcr:path]",
+                     expected,
+                     23);
     }
 
     @Test
@@ -220,30 +222,31 @@ public class JcrDriverIntegrationTest extends AbstractJdbcDriverTest {
     @Test
     public void shouldBeAbleToExecuteSqlQueryToFindAllUnstructuredNodes() throws SQLException {
         String[] expected = {
-            "jcr:primaryType[STRING]    jcr:mixinTypes[STRING]    jcr:path[STRING]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
-            "car:Car    null    /Cars/Hybrid/Nissan Altima    Nissan Altima    1.8094093799591064    Nissan Altima    3",
-            "car:Car    null    /Cars/Hybrid/Toyota Highlander    Toyota Highlander    1.8094093799591064    Toyota Highlander    3",
-            "car:Car    null    /Cars/Hybrid/Toyota Prius    Toyota Prius    1.8094093799591064    Toyota Prius    3",
-            "car:Car    null    /Cars/Luxury/Bentley Continental    Bentley Continental    1.8094093799591064    Bentley Continental    3",
-            "car:Car    null    /Cars/Luxury/Cadillac DTS    Cadillac DTS    1.8094093799591064    Cadillac DTS    3",
-            "car:Car    null    /Cars/Luxury/Lexus IS350    Lexus IS350    1.8094093799591064    Lexus IS350    3",
-            "car:Car    null    /Cars/Sports/Aston Martin DB9    Aston Martin DB9    1.8094093799591064    Aston Martin DB9    3",
-            "car:Car    null    /Cars/Sports/Infiniti G37    Infiniti G37    1.8094093799591064    Infiniti G37    3",
-            "car:Car    null    /Cars/Utility/Ford F-150    Ford F-150    1.8094093799591064    Ford F-150    3",
-            "car:Car    null    /Cars/Utility/Hummer H3    Hummer H3    1.8094093799591064    Hummer H3    3",
-            "car:Car    null    /Cars/Utility/Land Rover LR2    Land Rover LR2    1.8094093799591064    Land Rover LR2    3",
-            "car:Car    null    /Cars/Utility/Land Rover LR3    Land Rover LR3    1.8094093799591064    Land Rover LR3    3",
-            "nt:unstructured    null    /Cars    Cars    1.9005035161972046    Cars    1",
-            "nt:unstructured    null    /Cars/Hybrid    Hybrid    1.9005035161972046    Hybrid    2",
-            "nt:unstructured    null    /Cars/Luxury    Luxury    1.9005035161972046    Luxury    2",
-            "nt:unstructured    null    /Cars/Sports    Sports    1.9005035161972046    Sports    2",
-            "nt:unstructured    null    /Cars/Utility    Utility    1.9005035161972046    Utility    2",
-            "nt:unstructured    null    /NodeB    NodeB    1.9005035161972046    NodeB    1",
-            "nt:unstructured    null    /Other    Other    1.9005035161972046    Other    1",
-            "nt:unstructured    null    /Other/NodeA    NodeA    1.9005035161972046    NodeA    2",
-            "nt:unstructured    null    /Other/NodeA[2]    NodeA    1.9005035161972046    NodeA    2",
-            "nt:unstructured    null    /Other/NodeA[3]    NodeA    1.9005035161972046    NodeA    2",};
-        executeQuery("SELECT * FROM [nt:unstructured] WHERE [jcr:path] NOT LIKE '/jcr:*' ORDER BY [jcr:primaryType], [jcr:path]",
+            "jcr:primaryType[STRING]    jcr:mixinTypes[STRING]    jcr:path[STRING]    jcr:name[STRING]    mode:localName[STRING]    mode:depth[LONG]",
+            "car:Car    null    /Cars/Hybrid/Nissan Altima    Nissan Altima    Nissan Altima    3",
+            "car:Car    null    /Cars/Hybrid/Toyota Highlander    Toyota Highlander    Toyota Highlander    3",
+            "car:Car    null    /Cars/Hybrid/Toyota Prius    Toyota Prius    Toyota Prius    3",
+            "car:Car    null    /Cars/Luxury/Bentley Continental    Bentley Continental    Bentley Continental    3",
+            "car:Car    null    /Cars/Luxury/Cadillac DTS    Cadillac DTS    Cadillac DTS    3",
+            "car:Car    null    /Cars/Luxury/Lexus IS350    Lexus IS350    Lexus IS350    3",
+            "car:Car    null    /Cars/Sports/Aston Martin DB9    Aston Martin DB9    Aston Martin DB9    3",
+            "car:Car    null    /Cars/Sports/Infiniti G37    Infiniti G37    Infiniti G37    3",
+            "car:Car    null    /Cars/Utility/Ford F-150    Ford F-150    Ford F-150    3",
+            "car:Car    null    /Cars/Utility/Hummer H3    Hummer H3    Hummer H3    3",
+            "car:Car    null    /Cars/Utility/Land Rover LR2    Land Rover LR2    Land Rover LR2    3",
+            "car:Car    null    /Cars/Utility/Land Rover LR3    Land Rover LR3    Land Rover LR3    3",
+            "nt:unstructured    null    /Cars    Cars    Cars    1",
+            "nt:unstructured    null    /Cars/Hybrid    Hybrid    Hybrid    2",
+            "nt:unstructured    null    /Cars/Luxury    Luxury    Luxury    2",
+            "nt:unstructured    null    /Cars/Sports    Sports    Sports    2",
+            "nt:unstructured    null    /Cars/Utility    Utility    Utility    2",
+            "nt:unstructured    null    /NodeB    NodeB    NodeB    1",
+            "nt:unstructured    null    /Other    Other    Other    1",
+            "nt:unstructured    null    /Other/NodeA    NodeA    NodeA    2",
+            "nt:unstructured    null    /Other/NodeA[2]    NodeA    NodeA    2",
+            "nt:unstructured    null    /Other/NodeA[3]    NodeA    NodeA    2",};
+        // SELECT * FROM ... except the [jcr:score] column ...
+        executeQuery("SELECT [jcr:primaryType], [jcr:mixinTypes], [jcr:path], [jcr:name], [mode:localName], [mode:depth] FROM [nt:unstructured] WHERE [jcr:path] NOT LIKE '/jcr:*' ORDER BY [jcr:primaryType], [jcr:path]",
                      expected,
                      22);
     }

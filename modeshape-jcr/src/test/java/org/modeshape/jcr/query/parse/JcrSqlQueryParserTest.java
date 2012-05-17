@@ -55,8 +55,6 @@ import org.modeshape.jcr.query.model.SelectorName;
 import org.modeshape.jcr.query.model.Source;
 import org.modeshape.jcr.query.model.StaticOperand;
 import org.modeshape.jcr.query.model.TypeSystem;
-import org.modeshape.jcr.query.parse.JcrSqlQueryParser;
-import org.modeshape.jcr.query.parse.BasicSqlQueryParser;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PropertyType;
@@ -384,18 +382,18 @@ public class JcrSqlQueryParserTest {
 
     @Test
     public void shouldRemoveBracketsAndQuotes() {
-        assertThat(parser.removeBracketsAndQuotes("string"), is("string"));
-        assertThat(parser.removeBracketsAndQuotes("'string'"), is("string"));
-        assertThat(parser.removeBracketsAndQuotes("word one and two"), is("word one and two"));
-        assertThat(parser.removeBracketsAndQuotes("'word one and two'"), is("word one and two"));
+        assertThat(parser.removeBracketsAndQuotes("string", null), is("string"));
+        assertThat(parser.removeBracketsAndQuotes("'string'", null), is("string"));
+        assertThat(parser.removeBracketsAndQuotes("word one and two", null), is("word one and two"));
+        assertThat(parser.removeBracketsAndQuotes("'word one and two'", null), is("word one and two"));
     }
 
     @Test
     public void shouldFailToRemoveDoubleQuotesAroundOneWord() {
-        assertThat(parser.removeBracketsAndQuotes("\"string\""), is("\"string\""));
-        assertThat(parser.removeBracketsAndQuotes("\"string\""), is("\"string\""));
-        assertThat(parser.removeBracketsAndQuotes("\"word one and two\""), is("\"word one and two\""));
-        assertThat(parser.removeBracketsAndQuotes("[word one and two]"), is("[word one and two]"));
+        assertThat(parser.removeBracketsAndQuotes("\"string\"", null), is("\"string\""));
+        assertThat(parser.removeBracketsAndQuotes("\"string\"", null), is("\"string\""));
+        assertThat(parser.removeBracketsAndQuotes("\"word one and two\"", null), is("\"word one and two\""));
+        assertThat(parser.removeBracketsAndQuotes("[word one and two]", null), is("[word one and two]"));
     }
 
     /*

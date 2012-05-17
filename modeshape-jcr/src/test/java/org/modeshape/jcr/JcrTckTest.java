@@ -182,13 +182,30 @@ import org.apache.jackrabbit.test.api.query.XPathDocOrderTest;
 import org.apache.jackrabbit.test.api.query.XPathJcrPathTest;
 import org.apache.jackrabbit.test.api.query.XPathOrderByTest;
 import org.apache.jackrabbit.test.api.query.XPathQueryLevel2Test;
-import org.apache.jackrabbit.test.api.security.AccessControlDiscoveryTest;
-import org.apache.jackrabbit.test.api.security.AccessControlListTest;
-import org.apache.jackrabbit.test.api.security.AccessControlPolicyIteratorTest;
-import org.apache.jackrabbit.test.api.security.AccessControlPolicyTest;
-import org.apache.jackrabbit.test.api.security.RSessionAccessControlDiscoveryTest;
-import org.apache.jackrabbit.test.api.security.RSessionAccessControlPolicyTest;
-import org.apache.jackrabbit.test.api.security.RSessionAccessControlTest;
+import org.apache.jackrabbit.test.api.query.qom.AndConstraintTest;
+import org.apache.jackrabbit.test.api.query.qom.BindVariableValueTest;
+import org.apache.jackrabbit.test.api.query.qom.ChildNodeJoinConditionTest;
+import org.apache.jackrabbit.test.api.query.qom.ChildNodeTest;
+import org.apache.jackrabbit.test.api.query.qom.ColumnTest;
+import org.apache.jackrabbit.test.api.query.qom.DescendantNodeJoinConditionTest;
+import org.apache.jackrabbit.test.api.query.qom.DescendantNodeTest;
+import org.apache.jackrabbit.test.api.query.qom.EquiJoinConditionTest;
+import org.apache.jackrabbit.test.api.query.qom.FullTextSearchScoreTest;
+import org.apache.jackrabbit.test.api.query.qom.GetQueryTest;
+import org.apache.jackrabbit.test.api.query.qom.LengthTest;
+import org.apache.jackrabbit.test.api.query.qom.NodeLocalNameTest;
+import org.apache.jackrabbit.test.api.query.qom.NodeNameTest;
+import org.apache.jackrabbit.test.api.query.qom.NotConstraintTest;
+import org.apache.jackrabbit.test.api.query.qom.OrConstraintTest;
+import org.apache.jackrabbit.test.api.query.qom.OrderingTest;
+import org.apache.jackrabbit.test.api.query.qom.PropertyExistenceTest;
+import org.apache.jackrabbit.test.api.query.qom.PropertyValueTest;
+import org.apache.jackrabbit.test.api.query.qom.QueryObjectModelFactoryTest;
+import org.apache.jackrabbit.test.api.query.qom.RowTest;
+import org.apache.jackrabbit.test.api.query.qom.SameNodeJoinConditionTest;
+import org.apache.jackrabbit.test.api.query.qom.SameNodeTest;
+import org.apache.jackrabbit.test.api.query.qom.SelectorTest;
+import org.apache.jackrabbit.test.api.query.qom.UpperLowerCaseTest;
 import org.apache.jackrabbit.test.api.version.ActivitiesTest;
 import org.apache.jackrabbit.test.api.version.CheckinTest;
 import org.apache.jackrabbit.test.api.version.CheckoutTest;
@@ -199,7 +216,6 @@ import org.apache.jackrabbit.test.api.version.GetCreatedTest;
 import org.apache.jackrabbit.test.api.version.GetPredecessorsTest;
 import org.apache.jackrabbit.test.api.version.GetReferencesNodeTest;
 import org.apache.jackrabbit.test.api.version.GetVersionableUUIDTest;
-import org.apache.jackrabbit.test.api.version.MergeActivityTest;
 import org.apache.jackrabbit.test.api.version.MergeCancelMergeTest;
 import org.apache.jackrabbit.test.api.version.MergeCheckedoutSubNodeTest;
 import org.apache.jackrabbit.test.api.version.MergeDoneMergeTest;
@@ -358,7 +374,6 @@ public class JcrTckTest {
         suite.addTestSuite(NameTest.class);
         suite.addTestSuite(PathTest.class);
 
-
         suite.addTestSuite(ImpersonateTest.class);
         suite.addTestSuite(CheckPermissionTest.class);
 
@@ -387,9 +402,8 @@ public class JcrTckTest {
         // TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1453
         suite.addTestSuite(excludeTests(SessionUUIDTest.class, "testSaveReferentialIntegrityException"));
         /**
-         * //TODO author=Horia Chiorean date=4/11/12 description=The following fail:
-         * testRemoveInvalidItemStateException - https://issues.jboss.org/browse/MODE-1456
-         * testRemoveMandatoryNode - https://issues.jboss.org/browse/MODE-1456
+         * //TODO author=Horia Chiorean date=4/11/12 description=The following fail: testRemoveInvalidItemStateException -
+         * https://issues.jboss.org/browse/MODE-1456 testRemoveMandatoryNode - https://issues.jboss.org/browse/MODE-1456
          * testSaveInvalidStateException - https://issues.jboss.org/browse/MODE-1456 (might not seem related at first, but it's
          * because a path of a node is determined incorrectly)
          */
@@ -418,7 +432,6 @@ public class JcrTckTest {
         suite.addTestSuite(WorkspaceMoveVersionableTest.class);
         suite.addTestSuite(WorkspaceMoveReferenceableTest.class);
         suite.addTestSuite(WorkspaceMoveTest.class);
-
 
         // TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1453
         suite.addTestSuite(excludeTests(GetWeakReferencesTest.class,
@@ -455,7 +468,7 @@ public class JcrTckTest {
 
             addTest(new QueryTests());
             // addTest(org.apache.jackrabbit.test.api.query.TestAll.suite());
-            // TODO author=Horia Chiorean date=4/20/12 description=https://issues.jboss.org/browse/MODE-1468
+            addTest(new QueryObjectModelTests());
             // addTest(org.apache.jackrabbit.test.api.query.qom.TestAll.suite());
         }
     }
@@ -515,8 +528,50 @@ public class JcrTckTest {
         }
     }
 
-    private static class ObservationTests extends TestSuite {
+    private static class QueryObjectModelTests extends TestSuite {
         @SuppressWarnings( "synthetic-access" )
+        protected QueryObjectModelTests() {
+            super("QOM Tests");
+
+            addTestSuite(AndConstraintTest.class);
+            addTestSuite(BindVariableValueTest.class);
+            // TODO author=Randall Hauch date=5/17/12 description=https://issues.apache.org/jira/browse/MODE-1485
+            addTestSuite(excludeTests(ChildNodeJoinConditionTest.class, "testRightOuterJoin"));
+            addTestSuite(ChildNodeTest.class);
+            // TODO author=Randall Hauch date=5/17/12 description=https://issues.apache.org/jira/browse/JCR-3313
+            addTestSuite(excludeTests(ColumnTest.class, "testExpandColumnsForNodeType"));
+            // TODO author=Randall Hauch date=5/17/12 description=https://issues.apache.org/jira/browse/MODE-1485
+            addTestSuite(excludeTests(DescendantNodeJoinConditionTest.class, "testRightOuterJoin"));
+            addTestSuite(DescendantNodeTest.class);
+            // TODO author=Randall Hauch date=5/17/12 description=https://issues.apache.org/jira/browse/MODE-1485
+            addTestSuite(excludeTests(EquiJoinConditionTest.class, "testInnerJoin1", "testRightOuterJoin1", "testLeftOuterJoin2"));
+            addTestSuite(FullTextSearchScoreTest.class);
+            addTestSuite(GetQueryTest.class);
+            addTestSuite(LengthTest.class);
+            addTestSuite(NodeLocalNameTest.class);
+            addTestSuite(NodeNameTest.class);
+            addTestSuite(NotConstraintTest.class);
+            addTestSuite(OrConstraintTest.class);
+            // TODO author=Randall Hauch date=5/17/12 description=https://issues.apache.org/jira/browse/MODE-1095
+            addTestSuite(excludeTests(OrderingTest.class, "testMultipleSelectors"));
+            addTestSuite(PropertyExistenceTest.class);
+            addTestSuite(PropertyValueTest.class);
+            addTestSuite(QueryObjectModelFactoryTest.class);
+            addTestSuite(RowTest.class);
+            // TODO author=Randall Hauch date=5/17/12 description=https://issues.apache.org/jira/browse/MODE-1485
+            addTestSuite(excludeTests(SameNodeJoinConditionTest.class,
+                                      "testRightOuterJoin",
+                                      "testLeftOuterJoin",
+                                      "testInnerJoinWithPath",
+                                      "testLeftOuterJoinWithPath",
+                                      "testRightOuterJoinWithPath"));
+            addTestSuite(SameNodeTest.class);
+            addTestSuite(SelectorTest.class);
+            addTestSuite(UpperLowerCaseTest.class);
+        }
+    }
+
+    private static class ObservationTests extends TestSuite {
         protected ObservationTests() {
             super("JCR Observation Tests");
 
@@ -590,8 +645,8 @@ public class JcrTckTest {
             addTestSuite(MergeNonVersionableSubNodeTest.class);
             addTestSuite(MergeSubNodeTest.class);
 
-            //TODO author=Horia Chiorean date=5/14/12 description=https://issues.apache.org/jira/browse/JCR-3307
-            //addTestSuite(MergeActivityTest.class);
+            // TODO author=Horia Chiorean date=5/14/12 description=https://issues.apache.org/jira/browse/JCR-3307
+            // addTestSuite(MergeActivityTest.class);
 
             // JCR 2.0
             addTestSuite(ActivitiesTest.class);

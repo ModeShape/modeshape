@@ -43,15 +43,12 @@ public class NodeKeyReference implements Reference {
 
     public NodeKeyReference( NodeKey key,
                              boolean weak,
-                             boolean isForeign) {
+                             boolean isForeign ) {
         this.key = key;
         this.isWeak = weak;
         this.isForeign = isForeign;
     }
 
-    /**
-     * {@link org.modeshape.jcr.AbstractJcrNode#isForeign()}
-     */
     public boolean isForeign() {
         return isForeign;
     }

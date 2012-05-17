@@ -32,6 +32,8 @@ import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.math.BigInteger;
+import java.text.CharacterIterator;
+import java.text.StringCharacterIterator;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -487,6 +489,24 @@ public class StringUtil {
      */
     public static boolean isBlank( String str ) {
         return str == null || str.trim().isEmpty();
+    }
+
+    /**
+     * Return whether the supplied string contains any of the supplied characters.
+     * 
+     * @param str the string to be examined; may not be null
+     * @param chars the characters to be found within the supplied string; may be zero-length
+     * @return true if the supplied string contains at least one of the supplied characters, or false otherwise
+     */
+    public static boolean containsAnyOf( String str,
+                                         char... chars ) {
+        CharacterIterator iter = new StringCharacterIterator(str);
+        for (char c = iter.first(); c != CharacterIterator.DONE; c = iter.next()) {
+            for (char match : chars) {
+                if (c == match) return true;
+            }
+        }
+        return false;
     }
 
     private StringUtil() {

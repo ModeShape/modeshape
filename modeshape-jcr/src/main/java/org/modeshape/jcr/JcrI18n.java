@@ -209,6 +209,7 @@ public final class JcrI18n {
     public static I18n selectorUsedInEquiJoinCriteriaDoesNotExistInQuery;
     public static I18n multipleSelectorsAppearInQueryRequireSpecifyingSelectorName;
     public static I18n equiJoinWithOneJcrPathPseudoColumnIsInvalid;
+    public static I18n noSuchVariableInQuery;
 
     // Type registration messages
     public static I18n invalidNodeTypeName;

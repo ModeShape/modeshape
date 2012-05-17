@@ -1,9 +1,12 @@
 package org.modeshape.web.jcr.rest;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -20,12 +23,17 @@ import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.modeshape.common.annotation.Immutable;
+import org.modeshape.common.collection.Collections;
 
 /**
  * Resource handler that implements REST methods for items.
  */
 @Immutable
 public class QueryHandler extends AbstractHandler {
+
+    private static final String[] SKIP_QUERY_PARAMETER_VALUES = {"offset", "limit"};
+    protected static final Set<String> SKIP_QUERY_PARAMETERS = Collections.unmodifiableSet(new HashSet<String>(
+                                                                                                               Arrays.asList(SKIP_QUERY_PARAMETER_VALUES)));
 
     public String postItem( HttpServletRequest request,
                             String rawRepositoryName,
@@ -53,6 +61,8 @@ public class QueryHandler extends AbstractHandler {
                 List<String> variableValues = entry.getValue();
                 if (variableValues == null) continue;
                 if (variableValues.isEmpty()) continue;
+                // We don't want to include the 'offset' and 'limit' query parameters in the variables ...
+                if (SKIP_QUERY_PARAMETERS.contains(variableName)) continue;
                 // Grab the first non-null value ...
                 Iterator<String> iter = variableValues.iterator();
                 String variableValue = null;

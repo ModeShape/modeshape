@@ -23,6 +23,7 @@
  */
 package org.modeshape.jcr;
 
+import static javax.jcr.query.qom.QueryObjectModelConstants.JCR_OPERATOR_LIKE;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
@@ -49,10 +50,15 @@ import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.jcr.nodetype.InvalidNodeTypeDefinitionException;
 import javax.jcr.query.Query;
-import javax.jcr.query.QueryManager;
 import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
+import javax.jcr.query.qom.Column;
+import javax.jcr.query.qom.Constraint;
+import javax.jcr.query.qom.Literal;
+import javax.jcr.query.qom.Ordering;
+import javax.jcr.query.qom.PropertyValue;
+import javax.jcr.query.qom.Selector;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.Json;
 import org.junit.AfterClass;
@@ -61,6 +67,10 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.jcr.api.query.QueryManager;
+import org.modeshape.jcr.api.query.qom.Limit;
+import org.modeshape.jcr.api.query.qom.QueryObjectModelFactory;
+import org.modeshape.jcr.api.query.qom.SelectQuery;
 import org.modeshape.jcr.query.JcrQueryResult;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path.Segment;
@@ -971,16 +981,17 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         }
     }
 
+    @Ignore( "MODE-1485" )
     @FixFor( "MODE-1277" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullOuterJoin() throws RepositoryException {
         String sql = "SELECT car.[jcr:name], category.[jcr:primaryType] from [car:Car] as car FULL OUTER JOIN [nt:unstructured] as category ON ISCHILDNODE(car,category) WHERE NAME(car) LIKE 'Toyota*'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
-        // print = true;
+        print = true;
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 3);
+        assertResults(query, result, 72);
         assertResultsHaveColumns(result, new String[] {"jcr:name", "jcr:primaryType"});
         RowIterator iter = result.getRows();
         String primaryType = "";
@@ -1154,14 +1165,14 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertThat(result, is(notNullValue()));
         assertResults(query, result, TOTAL_NODE_COUNT);
 
-        // Find all nodes that are NOT children of '/Cars' ... there should be 4 ...
+        // Find all nodes that are NOT children of '/Cars' (and not under '/jcr:system') ...
         sql = "SELECT [jcr:path] FROM [nt:base] WHERE NOT(ISCHILDNODE([nt:base],'/Cars')) AND NOT(ISDESCENDANTNODE([nt:base],'/jcr:system')) ORDER BY [jcr:path]";
         query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
         // print = true;
         result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 21L);
+        assertResults(query, result, 22L);
         assertResultsHaveColumns(result, new String[] {"jcr:path"});
         assertResultsHaveRows(result,
                               "jcr:path",
@@ -1185,7 +1196,8 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
                               "/Other/NodeA",
                               "/Other/NodeA[2]",
                               "/Other/NodeA[3]",
-                              "/Other/NodeC");
+                              "/Other/NodeC",
+                              "/jcr:system");
     }
 
     @FixFor( "MODE-1110" )
@@ -2226,5 +2238,85 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         for (NodeIterator iter = result.getNodes(); iter.hasNext();) {
             assertThat(iter.nextNode().hasProperty("something"), is(true));
         }
+    }
+
+    @FixFor( "MODE-1468" )
+    @Test
+    public void shouldAllowCreationAndExecutionOfQueryObjectModel() throws Exception {
+        QueryManager queryManager = session.getWorkspace().getQueryManager();
+        QueryObjectModelFactory qomFactory = queryManager.getQOMFactory();
+        Selector selector = qomFactory.selector("car:Car", "car");
+        PropertyValue propValue = qomFactory.propertyValue("car", "car:userRating");
+        Literal literal = qomFactory.literal(session.getValueFactory().createValue("4")); // use a String since it's LIKE
+        Constraint constraint = qomFactory.comparison(propValue, JCR_OPERATOR_LIKE, literal);
+        Column[] columns = new Column[4];
+        columns[0] = qomFactory.column("car", "car:maker", "maker");
+        columns[1] = qomFactory.column("car", "car:model", "car:model");
+        columns[2] = qomFactory.column("car", "car:year", "car:year");
+        columns[3] = qomFactory.column("car", "car:userRating", "car:userRating");
+        Ordering[] orderings = null;
+
+        // Build and execute the query ...
+        Query query1 = qomFactory.createQuery(selector, constraint, orderings, columns);
+        assertThat(query1, is(notNullValue()));
+        QueryResult result1 = query1.execute();
+        assertThat(result1, is(notNullValue()));
+        assertResults(query1, result1, 4L);
+        assertResultsHaveColumns(result1, "maker", "car:model", "car:year", "car:userRating");
+
+        // Now get the JCR-SQL2 statement from the QOM ...
+        String expectedExpr = "SELECT car.[car:maker] AS maker, car.[car:model], car.[car:year], car.[car:userRating] FROM [car:Car] AS car WHERE car.[car:userRating] LIKE '4'";
+        String expr = query1.getStatement();
+        assertThat(expr, is(expectedExpr));
+
+        // Now execute it ...
+        Query query2 = queryManager.createQuery(expr, Query.JCR_SQL2);
+        assertThat(query2, is(notNullValue()));
+        QueryResult result2 = query2.execute();
+        assertThat(result2, is(notNullValue()));
+        assertResults(query2, result2, 4L);
+        assertResultsHaveColumns(result2, "maker", "car:model", "car:year", "car:userRating");
+
+    }
+
+    @FixFor( "MODE-1468" )
+    @Test
+    public void shouldAllowCreationAndExecutionOfQueryObjectModelWithLimit() throws Exception {
+        QueryManager queryManager = session.getWorkspace().getQueryManager();
+        QueryObjectModelFactory qomFactory = queryManager.getQOMFactory();
+        Selector selector = qomFactory.selector("car:Car", "car");
+        PropertyValue propValue = qomFactory.propertyValue("car", "car:userRating");
+        Literal literal = qomFactory.literal(session.getValueFactory().createValue("4")); // use a String since it's LIKE
+        Constraint constraint = qomFactory.comparison(propValue, JCR_OPERATOR_LIKE, literal);
+        Column[] columns = new Column[4];
+        columns[0] = qomFactory.column("car", "car:maker", "maker");
+        columns[1] = qomFactory.column("car", "car:model", "car:model");
+        columns[2] = qomFactory.column("car", "car:year", "car:year");
+        columns[3] = qomFactory.column("car", "car:userRating", "car:userRating");
+        Ordering[] orderings = null;
+        Limit limit = qomFactory.limit(2, 0);
+        boolean isDistinct = false;
+
+        // Build and execute the query ...
+        SelectQuery selectQuery = qomFactory.select(selector, constraint, orderings, columns, limit, isDistinct);
+        Query query1 = qomFactory.createQuery(selectQuery);
+        assertThat(query1, is(notNullValue()));
+        QueryResult result1 = query1.execute();
+        assertThat(result1, is(notNullValue()));
+        assertResults(query1, result1, 2L);
+        assertResultsHaveColumns(result1, "maker", "car:model", "car:year", "car:userRating");
+
+        // Now get the JCR-SQL2 statement from the QOM ...
+        String expectedExpr = "SELECT car.[car:maker] AS maker, car.[car:model], car.[car:year], car.[car:userRating] FROM [car:Car] AS car WHERE car.[car:userRating] LIKE '4' LIMIT 2";
+        String expr = query1.getStatement();
+        assertThat(expr, is(expectedExpr));
+
+        // Now execute it ...
+        Query query2 = queryManager.createQuery(expr, Query.JCR_SQL2);
+        assertThat(query2, is(notNullValue()));
+        QueryResult result2 = query2.execute();
+        assertThat(result2, is(notNullValue()));
+        assertResults(query2, result2, 2L);
+        assertResultsHaveColumns(result2, "maker", "car:model", "car:year", "car:userRating");
     }
 }

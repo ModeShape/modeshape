@@ -24,6 +24,7 @@
 package org.modeshape.jcr.query.process;
 
 import java.util.Comparator;
+import java.util.List;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.QueryResults.Columns;
 import org.modeshape.jcr.query.QueryResults.Location;
@@ -324,6 +325,68 @@ public abstract class JoinComponent extends ProcessingComponent {
          */
         boolean evaluate( Object leftValue,
                           Object rightValue );
+    }
+
+    /**
+     * Interface defining what should be done with the tuples if they are not joinable (usually given the join type).
+     */
+    protected static interface NotJoinable {
+        void addTuples( List<Object[]> tuples,
+                        TupleMerger merger,
+                        Object[] leftTuple,
+                        Object[] rightTuple );
+    }
+
+    protected static NotJoinable notJoinableFor( JoinType joinType ) {
+        switch (joinType) {
+            case LEFT_OUTER:
+                return new NotJoinable() {
+                    @Override
+                    public void addTuples( List<Object[]> tuples,
+                                           TupleMerger merger,
+                                           Object[] leftTuple,
+                                           Object[] rightTuple ) {
+                        // include the LEFT tuple in the results ...
+                        tuples.add(merger.merge(leftTuple, null));
+                    }
+                };
+            case RIGHT_OUTER:
+                return new NotJoinable() {
+                    @Override
+                    public void addTuples( List<Object[]> tuples,
+                                           TupleMerger merger,
+                                           Object[] leftTuple,
+                                           Object[] rightTuple ) {
+                        // include the RIGHT tuple in the results ...
+                        tuples.add(merger.merge(null, rightTuple));
+                    }
+                };
+            case FULL_OUTER:
+                return new NotJoinable() {
+                    @Override
+                    public void addTuples( List<Object[]> tuples,
+                                           TupleMerger merger,
+                                           Object[] leftTuple,
+                                           Object[] rightTuple ) {
+                        // include the LEFT tuple in the results ...
+                        tuples.add(merger.merge(leftTuple, null));
+                        // include the RIGHT tuple in the results ...
+                        tuples.add(merger.merge(null, rightTuple));
+                    }
+                };
+            case CROSS:
+            case INNER:
+                break;
+        }
+        return new NotJoinable() {
+            @Override
+            public void addTuples( List<Object[]> tuples,
+                                   TupleMerger merger,
+                                   Object[] leftTuple,
+                                   Object[] rightTuple ) {
+                // do nothing ...
+            }
+        };
     }
 
     /**

@@ -39,7 +39,6 @@ import javax.jcr.Workspace;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.observation.ObservationManager;
-import javax.jcr.query.QueryManager;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import org.modeshape.common.annotation.ThreadSafe;
@@ -427,7 +426,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
     }
 
     @Override
-    public QueryManager getQueryManager() throws RepositoryException {
+    public JcrQueryManager getQueryManager() throws RepositoryException {
         session.checkLive();
         if (this.queryManager == null) {
             try {
@@ -487,7 +486,8 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
             try {
                 lock.lock();
                 if (observationManager == null) {
-                    observationManager = new JcrObservationManager(session, repository().repositoryCache(), repository().getRepositoryStatistics());
+                    observationManager = new JcrObservationManager(session, repository().repositoryCache(),
+                                                                   repository().getRepositoryStatistics());
                 }
             } finally {
                 lock.unlock();

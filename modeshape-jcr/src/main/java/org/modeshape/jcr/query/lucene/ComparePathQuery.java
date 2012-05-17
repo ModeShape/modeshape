@@ -28,6 +28,7 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Weight;
+import org.modeshape.jcr.query.lucene.CaseOperations.CaseOperation;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.ValueComparators;
 import org.modeshape.jcr.value.ValueFactories;
@@ -106,16 +107,16 @@ public class ComparePathQuery extends CompareQuery<Path> {
      * @param constraintPath the constraint path; may not be null
      * @param fieldName the name of the document field containing the path value; may not be null
      * @param factories the value factories that can be used during the scoring; may not be null
-     * @param caseSensitive true if the comparison should be done in a case-sensitive manner, or false if it is to be
-     *        case-insensitive
+     * @param caseOperation the operation that should be performed on the indexed values before the constraint value is being
+     *        evaluated; may not be null
      * @return the path query; never null
      */
     public static ComparePathQuery createQueryForNodesWithPathGreaterThan( Path constraintPath,
                                                                            String fieldName,
                                                                            ValueFactories factories,
-                                                                           boolean caseSensitive ) {
+                                                                           CaseOperation caseOperation ) {
         return new ComparePathQuery(fieldName, constraintPath, factories.getPathFactory(), factories.getStringFactory(),
-                                    PATH_IS_GREATER_THAN, caseSensitive);
+                                    PATH_IS_GREATER_THAN, caseOperation);
     }
 
     /**
@@ -125,16 +126,16 @@ public class ComparePathQuery extends CompareQuery<Path> {
      * @param constraintPath the constraint path; may not be null
      * @param fieldName the name of the document field containing the path value; may not be null
      * @param factories the value factories that can be used during the scoring; may not be null
-     * @param caseSensitive true if the comparison should be done in a case-sensitive manner, or false if it is to be
-     *        case-insensitive
+     * @param caseOperation the operation that should be performed on the indexed values before the constraint value is being
+     *        evaluated; may not be null
      * @return the path query; never null
      */
     public static ComparePathQuery createQueryForNodesWithPathGreaterThanOrEqualTo( Path constraintPath,
                                                                                     String fieldName,
                                                                                     ValueFactories factories,
-                                                                                    boolean caseSensitive ) {
+                                                                                    CaseOperation caseOperation ) {
         return new ComparePathQuery(fieldName, constraintPath, factories.getPathFactory(), factories.getStringFactory(),
-                                    PATH_IS_GREATER_THAN_OR_EQUAL_TO, caseSensitive);
+                                    PATH_IS_GREATER_THAN_OR_EQUAL_TO, caseOperation);
     }
 
     /**
@@ -144,16 +145,16 @@ public class ComparePathQuery extends CompareQuery<Path> {
      * @param constraintPath the constraint path; may not be null
      * @param fieldName the name of the document field containing the path value; may not be null
      * @param factories the value factories that can be used during the scoring; may not be null
-     * @param caseSensitive true if the comparison should be done in a case-sensitive manner, or false if it is to be
-     *        case-insensitive
+     * @param caseOperation the operation that should be performed on the indexed values before the constraint value is being
+     *        evaluated; may not be null
      * @return the path query; never null
      */
     public static ComparePathQuery createQueryForNodesWithPathLessThan( Path constraintPath,
                                                                         String fieldName,
                                                                         ValueFactories factories,
-                                                                        boolean caseSensitive ) {
+                                                                        CaseOperation caseOperation ) {
         return new ComparePathQuery(fieldName, constraintPath, factories.getPathFactory(), factories.getStringFactory(),
-                                    PATH_IS_LESS_THAN, caseSensitive);
+                                    PATH_IS_LESS_THAN, caseOperation);
     }
 
     /**
@@ -163,19 +164,19 @@ public class ComparePathQuery extends CompareQuery<Path> {
      * @param constraintPath the constraint path; may not be null
      * @param fieldName the name of the document field containing the path value; may not be null
      * @param factories the value factories that can be used during the scoring; may not be null
-     * @param caseSensitive true if the comparison should be done in a case-sensitive manner, or false if it is to be
-     *        case-insensitive
+     * @param caseOperation the operation that should be performed on the indexed values before the constraint value is being
+     *        evaluated; may not be null
      * @return the path query; never null
      */
     public static ComparePathQuery createQueryForNodesWithPathLessThanOrEqualTo( Path constraintPath,
                                                                                  String fieldName,
                                                                                  ValueFactories factories,
-                                                                                 boolean caseSensitive ) {
+                                                                                 CaseOperation caseOperation ) {
         return new ComparePathQuery(fieldName, constraintPath, factories.getPathFactory(), factories.getStringFactory(),
-                                    PATH_IS_LESS_THAN_OR_EQUAL_TO, caseSensitive);
+                                    PATH_IS_LESS_THAN_OR_EQUAL_TO, caseOperation);
     }
 
-    private final boolean caseSensitive;
+    private final CaseOperation caseOperation;
 
     /**
      * Construct a {@link Query} implementation that scores nodes according to the supplied comparator.
@@ -186,17 +187,17 @@ public class ComparePathQuery extends CompareQuery<Path> {
      * @param stringFactory the string factory that can be used during the scoring; may not be null
      * @param evaluator the {@link CompareQuery.Evaluator} implementation that returns whether the node path satisfies the
      *        constraint; may not be null
-     * @param caseSensitive true if the comparison should be done in a case-sensitive manner, or false if it is to be
-     *        case-insensitive
+     * @param caseOperation the operation that should be performed on the indexed values before the constraint value is being
+     *        evaluated; may not be null
      */
     protected ComparePathQuery( String fieldName,
                                 Path constraintPath,
                                 ValueFactory<Path> pathFactory,
                                 ValueFactory<String> stringFactory,
                                 Evaluator<Path> evaluator,
-                                boolean caseSensitive ) {
+                                CaseOperation caseOperation ) {
         super(fieldName, constraintPath, pathFactory, stringFactory, evaluator);
-        this.caseSensitive = caseSensitive;
+        this.caseOperation = caseOperation;
     }
 
     @Override
@@ -204,12 +205,13 @@ public class ComparePathQuery extends CompareQuery<Path> {
                                      int docId ) throws IOException {
         Document doc = reader.document(docId, fieldSelector);
         String valueString = doc.get(fieldName);
-        if (!caseSensitive) valueString = valueString.toLowerCase();
+        if (valueString == null) return null;
+        valueString = caseOperation.execute(valueString);
         return valueTypeFactory.create(valueString);
     }
 
     @Override
     public Object clone() {
-        return new ComparePathQuery(fieldName, constraintValue, valueTypeFactory, stringFactory, evaluator, caseSensitive);
+        return new ComparePathQuery(fieldName, constraintValue, valueTypeFactory, stringFactory, evaluator, caseOperation);
     }
 }

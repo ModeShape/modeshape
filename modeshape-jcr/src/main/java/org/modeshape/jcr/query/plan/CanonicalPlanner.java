@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import org.modeshape.common.i18n.I18n;
 import org.modeshape.jcr.GraphI18n;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.model.AllNodes;
@@ -245,6 +246,8 @@ public class CanonicalPlanner implements Planner {
                 if (table instanceof View) context.getHints().hasView = true;
                 if (usedSelectors.put(selector.aliasOrName(), table) != null) {
                     // There was already a table with this alias or name ...
+                    I18n msg = GraphI18n.selectorNamesMayNotBeUsedMoreThanOnce;
+                    context.getProblems().addError(msg, selector.aliasOrName().getString());
                 }
                 node.setProperty(Property.SOURCE_COLUMNS, table.getColumns());
             } else {
@@ -452,7 +455,7 @@ public class CanonicalPlanner implements Planner {
                 // Add the selector that is being used ...
                 projectNode.addSelector(tableName);
                 // Compute the columns from this selector ...
-                allColumnsFor(table, tableName, newColumns, newTypes);
+                allColumnsFor(table, tableName, newColumns, newTypes, false);
             }
         } else {
             // Add the selector used by each column ...
@@ -468,9 +471,10 @@ public class CanonicalPlanner implements Planner {
                 } else {
                     // Make sure that the column is in the table ...
                     String columnName = column.getPropertyName();
-                    if ("*".equals(columnName)) {
+                    if ("*".equals(columnName) || columnName == null) {
                         // This is a 'SELECT *' on this source, but this source is one of multiple sources ...
-                        allColumnsFor(table, tableName, newColumns, newTypes);
+                        // See https://issues.apache.org/jira/browse/JCR-3313; TCK test expects 'true' for last param
+                        allColumnsFor(table, tableName, newColumns, newTypes, false);
                     } else {
                         // This is a particular column, so add it ...
                         if (!newColumns.contains(column)) {
@@ -499,11 +503,15 @@ public class CanonicalPlanner implements Planner {
     protected void allColumnsFor( Table table,
                                   SelectorName tableName,
                                   List<Column> columns,
-                                  List<String> columnTypes ) {
+                                  List<String> columnTypes,
+                                  boolean includeSelectorNameInColumnName ) {
         // Compute the columns from this selector ...
         for (Schemata.Column column : table.getSelectAllColumns()) {
             String columnName = column.getName();
             String propertyName = columnName;
+            if (includeSelectorNameInColumnName) {
+                columnName = tableName.getString() + "." + columnName;
+            }
             Column newColumn = new Column(tableName, propertyName, columnName);
             if (!columns.contains(column)) {
                 columns.add(newColumn);

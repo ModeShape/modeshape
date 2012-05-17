@@ -59,6 +59,10 @@ public class NodeInfo {
     @Field( name = NodeInfoIndex.FieldName.LOCAL_NAME, analyze = Analyze.NO, store = Store.YES, index = Index.YES )
     private final String localName;
 
+    @Field( name = NodeInfoIndex.FieldName.SNS_INDEX, analyze = Analyze.NO, store = Store.YES, index = Index.YES )
+    @NumericField( forField = NodeInfoIndex.FieldName.SNS_INDEX )
+    private final int snsIndex;
+
     @Field( name = NodeInfoIndex.FieldName.DEPTH, analyze = Analyze.NO, store = Store.NO, index = Index.YES )
     @NumericField( forField = NodeInfoIndex.FieldName.DEPTH )
     private final int depth;
@@ -72,6 +76,7 @@ public class NodeInfo {
                      String path,
                      String localName,
                      String name,
+                     int snsIndex,
                      int depth,
                      DynamicField firstDynamicField ) {
         this.id = nodeKey;
@@ -79,6 +84,7 @@ public class NodeInfo {
         this.path = path;
         this.name = name;
         this.localName = localName;
+        this.snsIndex = snsIndex;
         this.depth = depth;
         this.firstDynamicField = firstDynamicField;
     }
@@ -117,6 +123,15 @@ public class NodeInfo {
      */
     public String getLocalName() {
         return localName;
+    }
+
+    /**
+     * Get the same-name-sibling index of the node.
+     * 
+     * @return the SNS index
+     */
+    public int getSnsIndex() {
+        return snsIndex;
     }
 
     /**

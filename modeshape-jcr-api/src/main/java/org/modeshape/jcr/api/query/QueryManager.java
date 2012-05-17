@@ -21,16 +21,22 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.query;
+package org.modeshape.jcr.api.query;
 
-import org.modeshape.jcr.JcrValueFactory;
-import org.modeshape.jcr.query.model.TypeSystem;
+import javax.jcr.Node;
+import javax.jcr.RepositoryException;
+import javax.jcr.query.InvalidQueryException;
+import org.modeshape.jcr.api.query.qom.QueryObjectModelFactory;
 
 /**
- * 
+ * A specialization of the standard JCR {@link javax.jcr.query.QueryManager} interface that returns the ModeShape-specific
+ * extension interfaces from {@link #getQOMFactory()} and {@link #getQuery(Node)}.
  */
-public interface JcrTypeSystem extends TypeSystem {
+public interface QueryManager extends javax.jcr.query.QueryManager {
 
-    JcrValueFactory getValueFactory();
+    @Override
+    public QueryObjectModelFactory getQOMFactory();
 
+    @Override
+    public Query getQuery( Node node ) throws InvalidQueryException, RepositoryException;
 }

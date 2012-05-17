@@ -1098,6 +1098,9 @@ public class DocumentTranslator {
             if (!Null.matches(valueStr = doc.getString("$uuid"))) {
                 return uuids.create(valueStr);
             }
+            if (!Null.matches(valueStr = doc.getString("$uri"))) {
+                return uris.create(valueStr);
+            }
             if (!Null.matches(valueStr = doc.getString("$sha1"))) {
                 String sha1 = valueStr;
                 long size = doc.getLong("$len");
@@ -1404,7 +1407,7 @@ public class DocumentTranslator {
      * @param doc the document
      * @return true if the change was made successfully, or false otherwise
      */
-    public boolean isLocked( EditableDocument doc) {
+    public boolean isLocked( EditableDocument doc ) {
         return hasProperty(doc, JcrLexicon.LOCK_OWNER) || hasProperty(doc, JcrLexicon.LOCK_IS_DEEP);
     }
 }

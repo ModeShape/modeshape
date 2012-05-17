@@ -24,6 +24,7 @@
 package org.modeshape.jcr.query;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -34,8 +35,12 @@ import javax.jcr.query.QueryResult;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.jcr.JcrI18n;
+import org.modeshape.jcr.query.model.BindVariableName;
 import org.modeshape.jcr.query.model.LiteralValue;
 import org.modeshape.jcr.query.model.QueryCommand;
+import org.modeshape.jcr.query.model.Subquery;
+import org.modeshape.jcr.query.model.Visitors;
 import org.modeshape.jcr.query.parse.QueryParser;
 import org.modeshape.jcr.query.plan.PlanHints;
 import org.modeshape.jcr.query.validate.Schemata;
@@ -50,6 +55,7 @@ public class JcrQuery extends JcrAbstractQuery {
     private QueryCommand query;
     private final PlanHints hints;
     private final Map<String, Object> variables;
+    private volatile Set<String> variableNames;
 
     /**
      * Creates a new JCR {@link Query} by specifying the query statement itself, the language in which the query is stated, the
@@ -127,13 +133,33 @@ public class JcrQuery extends JcrAbstractQuery {
                            Value value ) throws IllegalArgumentException, RepositoryException {
         CheckArg.isNotNull(varName, "varName");
         CheckArg.isNotNull(value, "value");
+        if (!variableNames().contains(varName) && !Subquery.isSubqueryVariableName(varName)) {
+            throw new IllegalArgumentException(JcrI18n.noSuchVariableInQuery.text(varName, statement));
+        }
         variables.put(varName, LiteralValue.rawValue(value));
     }
 
     @Override
     public String[] getBindVariableNames() {
-        Set<String> keys = variables.keySet();
-        return keys.toArray(new String[keys.size()]);
+        Set<String> names = variableNames();
+        // Always return a new array for immutability reasons ...
+        return names.toArray(new String[names.size()]);
+    }
+
+    protected final Set<String> variableNames() {
+        // This is idempotent, so no need to lock ...
+        if (variableNames == null) {
+            // Walk the query to find the bind variables ...
+            final Set<String> names = new HashSet<String>();
+            Visitors.visitAll(query, new Visitors.AbstractVisitor() {
+                @Override
+                public void visit( BindVariableName obj ) {
+                    names.add(obj.getBindVariableName());
+                }
+            });
+            variableNames = names;
+        }
+        return variableNames;
     }
 
     @Override

@@ -54,6 +54,7 @@ import org.modeshape.jcr.query.model.QueryCommand;
 import org.modeshape.jcr.query.model.SelectorName;
 import org.modeshape.jcr.query.model.SetCriteria;
 import org.modeshape.jcr.query.model.StaticOperand;
+import org.modeshape.jcr.query.model.Subquery;
 import org.modeshape.jcr.query.model.TypeSystem;
 import org.modeshape.jcr.query.plan.PlanNode.Property;
 import org.modeshape.jcr.query.plan.PlanNode.Type;
@@ -365,7 +366,7 @@ public class CanonicalPlannerTest {
         // The first child should be the plan for the subquery ...
         PlanNode subqueryPlan = plan.getFirstChild();
         assertProjectNode(subqueryPlan, "columnA");
-        assertThat(subqueryPlan.getProperty(Property.VARIABLE_NAME, String.class), is("__subquery1"));
+        assertThat(subqueryPlan.getProperty(Property.VARIABLE_NAME, String.class), is(Subquery.VARIABLE_PREFIX + "1"));
         assertThat(subqueryPlan.getChildCount(), is(1));
         assertThat(subqueryPlan.getSelectors(), is(selectors("otherTable")));
         PlanNode subquerySource = subqueryPlan.getFirstChild();
@@ -383,7 +384,7 @@ public class CanonicalPlannerTest {
         assertThat(criteriaNode.getChildCount(), is(1));
         assertThat(criteriaNode.getSelectors(), is(selectors("someTable")));
         assertThat(criteriaNode.getProperty(Property.SELECT_CRITERIA),
-                   is((Object)like(nodePath("someTable"), var("__subquery1"))));
+                   is((Object)like(nodePath("someTable"), var(Subquery.VARIABLE_PREFIX + "1"))));
 
         PlanNode source = criteriaNode.getFirstChild();
         assertSourceNode(source, "someTable", null, "column1", "column2", "column3");
@@ -441,7 +442,7 @@ public class CanonicalPlannerTest {
         // The first child should be the plan for the 2nd subquery (since it has to be executed first) ...
         PlanNode subqueryPlan2 = depQuery1.getFirstChild();
         assertProjectNode(subqueryPlan2, "columnY");
-        assertThat(subqueryPlan2.getProperty(Property.VARIABLE_NAME, String.class), is("__subquery2"));
+        assertThat(subqueryPlan2.getProperty(Property.VARIABLE_NAME, String.class), is(Subquery.VARIABLE_PREFIX + "2"));
         assertThat(subqueryPlan2.getChildCount(), is(1));
         assertThat(subqueryPlan2.getSelectors(), is(selectors("stillOther")));
         PlanNode criteriaNode2 = subqueryPlan2.getFirstChild();
@@ -457,7 +458,7 @@ public class CanonicalPlannerTest {
         // The second child of the dependent query should be the plan for the subquery ...
         PlanNode subqueryPlan1 = depQuery1.getLastChild();
         assertProjectNode(subqueryPlan1, "columnA");
-        assertThat(subqueryPlan1.getProperty(Property.VARIABLE_NAME, String.class), is("__subquery1"));
+        assertThat(subqueryPlan1.getProperty(Property.VARIABLE_NAME, String.class), is(Subquery.VARIABLE_PREFIX + "1"));
         assertThat(subqueryPlan1.getChildCount(), is(1));
         assertThat(subqueryPlan1.getSelectors(), is(selectors("otherTable")));
         PlanNode criteriaNode1 = subqueryPlan1.getFirstChild();
@@ -465,7 +466,7 @@ public class CanonicalPlannerTest {
         assertThat(criteriaNode1.getChildCount(), is(1));
         assertThat(criteriaNode1.getSelectors(), is(selectors("otherTable")));
         assertThat(criteriaNode1.getProperty(Property.SELECT_CRITERIA),
-                   is((Object)equals(property("otherTable", "columnB"), var("__subquery2"))));
+                   is((Object)equals(property("otherTable", "columnB"), var(Subquery.VARIABLE_PREFIX + "2"))));
         PlanNode subquerySource1 = criteriaNode1.getFirstChild();
         assertSourceNode(subquerySource1, "otherTable", null, "columnA", "columnB");
         assertThat(subquerySource1.getChildCount(), is(0));
@@ -481,7 +482,7 @@ public class CanonicalPlannerTest {
         assertThat(criteriaNode.getChildCount(), is(1));
         assertThat(criteriaNode.getSelectors(), is(selectors("someTable")));
         assertThat(criteriaNode.getProperty(Property.SELECT_CRITERIA),
-                   is((Object)like(nodePath("someTable"), var("__subquery1"))));
+                   is((Object)like(nodePath("someTable"), var(Subquery.VARIABLE_PREFIX + "1"))));
 
         PlanNode source = criteriaNode.getFirstChild();
         assertSourceNode(source, "someTable", null, "column1", "column2", "column3");
@@ -543,7 +544,7 @@ public class CanonicalPlannerTest {
         // The first child of the top node should be the plan for subquery1 ...
         PlanNode subqueryPlan1 = plan.getFirstChild();
         assertProjectNode(subqueryPlan1, "columnA");
-        assertThat(subqueryPlan1.getProperty(Property.VARIABLE_NAME, String.class), is("__subquery1"));
+        assertThat(subqueryPlan1.getProperty(Property.VARIABLE_NAME, String.class), is(Subquery.VARIABLE_PREFIX + "1"));
         assertThat(subqueryPlan1.getChildCount(), is(1));
         assertThat(subqueryPlan1.getSelectors(), is(selectors("otherTable")));
         PlanNode criteriaNode1 = subqueryPlan1.getFirstChild();
@@ -564,7 +565,7 @@ public class CanonicalPlannerTest {
         // The first child of the second dependent should be the plan for the 2nd subquery (since it has to be executed first) ...
         PlanNode subqueryPlan2 = depQuery2.getFirstChild();
         assertProjectNode(subqueryPlan2, "columnY");
-        assertThat(subqueryPlan2.getProperty(Property.VARIABLE_NAME, String.class), is("__subquery2"));
+        assertThat(subqueryPlan2.getProperty(Property.VARIABLE_NAME, String.class), is(Subquery.VARIABLE_PREFIX + "2"));
         assertThat(subqueryPlan2.getChildCount(), is(1));
         assertThat(subqueryPlan2.getSelectors(), is(selectors("stillOther")));
         PlanNode criteriaNode2 = subqueryPlan2.getFirstChild();
@@ -588,10 +589,10 @@ public class CanonicalPlannerTest {
         assertThat(criteriaNode3.getChildCount(), is(1));
         assertThat(criteriaNode3.getSelectors(), is(selectors("someTable")));
         assertThat(criteriaNode3.getProperty(Property.SELECT_CRITERIA),
-                   is((Object)like(nodePath("someTable"), var("__subquery2"))));
+                   is((Object)like(nodePath("someTable"), var(Subquery.VARIABLE_PREFIX + "2"))));
         PlanNode criteriaNode4 = criteriaNode3.getFirstChild();
         assertThat(criteriaNode4.getProperty(Property.SELECT_CRITERIA),
-                   is((Object)in(property("someTable", "column3"), var("__subquery1"))));
+                   is((Object)in(property("someTable", "column3"), var(Subquery.VARIABLE_PREFIX + "1"))));
 
         PlanNode source = criteriaNode4.getFirstChild();
         assertSourceNode(source, "someTable", null, "column1", "column2", "column3");

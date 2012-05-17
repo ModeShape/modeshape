@@ -57,6 +57,7 @@ import org.modeshape.jcr.api.query.qom.NodeDepth;
 import org.modeshape.jcr.api.query.qom.NodePath;
 import org.modeshape.jcr.api.query.qom.Operator;
 import org.modeshape.jcr.query.QueryContext;
+import org.modeshape.jcr.query.lucene.CaseOperations.CaseOperation;
 import org.modeshape.jcr.query.model.And;
 import org.modeshape.jcr.query.model.BindVariableName;
 import org.modeshape.jcr.query.model.ChildNode;
@@ -204,7 +205,7 @@ public abstract class LuceneQueryFactory {
                                upper,
                                between.isLowerBoundIncluded(),
                                between.isUpperBoundIncluded(),
-                               true);
+                               null);
         }
         if (constraint instanceof Comparison) {
             Comparison comparison = (Comparison)constraint;
@@ -242,16 +243,29 @@ public abstract class LuceneQueryFactory {
                               DynamicOperand left,
                               Operator operator,
                               StaticOperand right ) throws IOException {
-        return createQuery(selectorName, left, operator, right, true);
+        return createQuery(selectorName, left, operator, right, null);
     }
 
-    public Query createQuery( SelectorName selectorName,
-                              DynamicOperand left,
-                              Operator operator,
-                              StaticOperand right,
-                              boolean caseSensitive ) throws IOException {
+    /**
+     * Create a comparison query
+     * 
+     * @param selectorName
+     * @param left
+     * @param operator
+     * @param right
+     * @param caseOperation the case operation if known, or null if not known. Normally a non-null value would be required, but in
+     *        the case of chained functions such as UPPER(LOWER(...)) we only want to use the first one, so passing null allows us
+     *        to easily use the outer one
+     * @return the query
+     * @throws IOException
+     */
+    protected Query createQuery( SelectorName selectorName,
+                                 DynamicOperand left,
+                                 Operator operator,
+                                 StaticOperand right,
+                                 CaseOperation caseOperation ) throws IOException {
         // Handle the static operand ...
-        Object value = createOperand(selectorName, right, caseSensitive);
+        Object value = createOperand(selectorName, right, caseOperation);
         assert value != null;
 
         // Address the dynamic operand ...
@@ -259,27 +273,29 @@ public abstract class LuceneQueryFactory {
             // This can only be represented as a filter ...
             return null;
         } else if (left instanceof PropertyValue) {
-            return findNodesWith(selectorName, (PropertyValue)left, operator, value, caseSensitive);
+            return findNodesWith(selectorName, (PropertyValue)left, operator, value, caseOperation);
         } else if (left instanceof ReferenceValue) {
             return findNodesWith(selectorName, (ReferenceValue)left, operator, value);
         } else if (left instanceof Length) {
-            return findNodesWith(selectorName, (Length)left, operator, right);
+            return findNodesWith(selectorName, (Length)left, operator, value);
         } else if (left instanceof LowerCase) {
             LowerCase lowercase = (LowerCase)left;
-            return createQuery(selectorName, lowercase.getOperand(), operator, right, false);
+            if (caseOperation == null) caseOperation = CaseOperations.LOWERCASE;
+            return createQuery(selectorName, lowercase.getOperand(), operator, right, caseOperation);
         } else if (left instanceof UpperCase) {
-            UpperCase lowercase = (UpperCase)left;
-            return createQuery(selectorName, lowercase.getOperand(), operator, right, false);
+            UpperCase uppercase = (UpperCase)left;
+            if (caseOperation == null) caseOperation = CaseOperations.UPPERCASE;
+            return createQuery(selectorName, uppercase.getOperand(), operator, right, caseOperation);
         } else if (left instanceof NodeDepth) {
             assert operator != Operator.LIKE;
             // Could be represented as a result filter, but let's do this now ...
             return findNodesWith(selectorName, (NodeDepth)left, operator, value);
         } else if (left instanceof NodePath) {
-            return findNodesWith(selectorName, (NodePath)left, operator, value, caseSensitive);
+            return findNodesWith(selectorName, (NodePath)left, operator, value, caseOperation);
         } else if (left instanceof NodeName) {
-            return findNodesWith(selectorName, (NodeName)left, operator, value, caseSensitive);
+            return findNodesWith(selectorName, (NodeName)left, operator, value, caseOperation);
         } else if (left instanceof NodeLocalName) {
-            return findNodesWith(selectorName, (NodeLocalName)left, operator, value, caseSensitive);
+            return findNodesWith(selectorName, (NodeLocalName)left, operator, value, caseOperation);
         }
 
         assert false : "Unexpected DynamicOperand instance: class=" + (left != null ? left.getClass() : "null")
@@ -289,12 +305,15 @@ public abstract class LuceneQueryFactory {
 
     public Object createOperand( SelectorName selectorName,
                                  StaticOperand operand,
-                                 boolean caseSensitive ) {
+                                 CaseOperation caseOperation ) {
         Object value = null;
+        if (caseOperation == null) caseOperation = CaseOperations.AS_IS;
         if (operand instanceof Literal) {
             Literal literal = (Literal)operand;
             value = literal.value();
-            if (!caseSensitive) value = lowerCase(value);
+            // if (value instanceof String || value instanceof Binary) {
+            // value = caseOperation.execute(stringValueFrom(value));
+            // }
         } else if (operand instanceof BindVariableName) {
             BindVariableName variable = (BindVariableName)operand;
             String variableName = variable.getBindVariableName();
@@ -308,7 +327,9 @@ public abstract class LuceneQueryFactory {
             if (value == null) {
                 throw new LuceneException(JcrI18n.missingVariableValue.text(variableName));
             }
-            if (!caseSensitive) value = lowerCase(value);
+            // if (value instanceof String || value instanceof Binary) {
+            // value = caseOperation.execute(stringValueFrom(value));
+            // }
         } else {
             assert false;
         }
@@ -321,10 +342,10 @@ public abstract class LuceneQueryFactory {
                               StaticOperand upper,
                               boolean includesLower,
                               boolean includesUpper,
-                              boolean caseSensitive ) throws IOException {
+                              CaseOperation caseOperation ) throws IOException {
         // Handle the static operands ...
-        Object lowerValue = createOperand(selectorName, lower, caseSensitive);
-        Object upperValue = createOperand(selectorName, upper, caseSensitive);
+        Object lowerValue = createOperand(selectorName, lower, caseOperation);
+        Object upperValue = createOperand(selectorName, upper, caseOperation);
         assert lowerValue != null;
         assert upperValue != null;
 
@@ -356,21 +377,20 @@ public abstract class LuceneQueryFactory {
         BooleanQuery query = new BooleanQuery();
         Operator lowerOp = includesLower ? Operator.GREATER_THAN_OR_EQUAL_TO : Operator.GREATER_THAN;
         Operator upperOp = includesUpper ? Operator.LESS_THAN_OR_EQUAL_TO : Operator.LESS_THAN;
-        Query lowerQuery = createQuery(selectorName, left, lowerOp, lower, caseSensitive);
-        Query upperQuery = createQuery(selectorName, left, upperOp, upper, caseSensitive);
+        Query lowerQuery = createQuery(selectorName, left, lowerOp, lower, caseOperation);
+        Query upperQuery = createQuery(selectorName, left, upperOp, upper, caseOperation);
         if (lowerQuery == null || upperQuery == null) return null;
         query.add(lowerQuery, Occur.MUST);
         query.add(upperQuery, Occur.MUST);
         return query;
     }
 
-    public Object lowerCase( Object value ) {
+    protected String stringValueFrom( Object value ) {
         if (value == null) return null;
         if (value instanceof String) {
-            return ((String)value).toLowerCase();
+            return (String)value;
         }
-        assert !(value instanceof javax.jcr.Binary);
-        return stringFactory.create(value).toLowerCase();
+        return stringFactory.create(value);
     }
 
     public Query createQuery( SelectorName selectorName,
@@ -421,7 +441,7 @@ public abstract class LuceneQueryFactory {
                     @Override
                     protected org.apache.lucene.search.Query getWildcardQuery( String field,
                                                                                String termStr ) {
-                        return findNodesLike(selectorName, termStr, field, false);
+                        return findNodesLike(selectorName, termStr.toLowerCase(), field, CaseOperations.LOWERCASE);
                     }
                 };
                 parser.setAllowLeadingWildcard(true);
@@ -458,14 +478,14 @@ public abstract class LuceneQueryFactory {
     }
 
     protected Query not( Query notted ) {
-        if (notted == null) return new MatchAllDocsQuery();
-        return new NotQuery(notted);
-        // BooleanQuery query = new BooleanQuery();
-        // // We need at least some positive match, so get all docs ...
-        // // query.add(new MatchAllDocsQuery(), Occur.SHOULD);
-        // // Now apply the original query being 'NOT-ed' as a MUST_NOT occurrence ...
-        // query.add(notted, Occur.MUST_NOT);
-        // return query;
+        // if (notted == null) return new MatchAllDocsQuery();
+        // return new NotQuery(notted);
+        BooleanQuery query = new BooleanQuery();
+        // We need at least some positive match, so get all docs ...
+        query.add(new MatchAllDocsQuery(), Occur.SHOULD);
+        // Now apply the original query being 'NOT-ed' as a MUST_NOT occurrence ...
+        query.add(notted, Occur.MUST_NOT);
+        return query;
     }
 
     protected String fieldNameFor( String name ) {
@@ -528,13 +548,13 @@ public abstract class LuceneQueryFactory {
      * @param selectorName the name of the selector (or node type) being queried; may not be null
      * @param fieldName the name of the document field to search
      * @param likeExpression the JCR like expression
-     * @param caseSensitive true if the evaluation should be performed in a case sensitive manner, or false otherwise
+     * @param caseOperation the operation that should be performed on the indexed string before being used; may not be null
      * @return the query; never null
      */
     protected abstract Query findNodesLike( SelectorName selectorName,
                                             String fieldName,
                                             String likeExpression,
-                                            boolean caseSensitive );
+                                            CaseOperation caseOperation );
 
     /**
      * Create a query that finds documents with fields whose lengths fit the supplied operator/value criteria.
@@ -558,7 +578,8 @@ public abstract class LuceneQueryFactory {
      * @param propertyValue the property specification
      * @param operator the comparison operator
      * @param value the value
-     * @param caseSensitive true if the comparison should be performed in a case-sensitive manner, or false otherwise
+     * @param caseOperation the operation that should be used against the string values in the indexes before applying the
+     *        criteria, or null if the operation is not known
      * @return the query; never null
      * @throws IOException if there is an error creating the query
      */
@@ -566,7 +587,7 @@ public abstract class LuceneQueryFactory {
                                             PropertyValue propertyValue,
                                             Operator operator,
                                             Object value,
-                                            boolean caseSensitive ) throws IOException;
+                                            CaseOperation caseOperation ) throws IOException;
 
     /**
      * Create a query that finds documents with fields that are references that fit the supplied operator/value criteria.
@@ -625,19 +646,19 @@ public abstract class LuceneQueryFactory {
                                             NodePath nodePath,
                                             Operator operator,
                                             Object value,
-                                            boolean caseSensitive ) throws IOException;
+                                            CaseOperation caseOperation ) throws IOException;
 
     protected abstract Query findNodesWith( SelectorName selectorName,
                                             NodeName nodeName,
                                             Operator operator,
                                             Object value,
-                                            boolean caseSensitive ) throws IOException;
+                                            CaseOperation caseOperation ) throws IOException;
 
     protected abstract Query findNodesWith( SelectorName selectorName,
                                             NodeLocalName nodeName,
                                             Operator operator,
                                             Object value,
-                                            boolean caseSensitive ) throws IOException;
+                                            CaseOperation caseOperation ) throws IOException;
 
     protected abstract Query findNodesWith( SelectorName selectorName,
                                             NodeDepth depthConstraint,

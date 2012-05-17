@@ -553,6 +553,6 @@ final class JcrValue implements javax.jcr.Value {
 
     @Override
     public String toString() {
-        return (value == null ? "null" : value.toString()) + " (" + PropertyType.nameFromValue(type) + ")";
+        return value == null ? "null" : value.toString();
     }
 }

@@ -28,7 +28,11 @@ import java.math.BigDecimal;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import javax.jcr.*;
+import javax.jcr.Node;
+import javax.jcr.PropertyType;
+import javax.jcr.RepositoryException;
+import javax.jcr.ValueFactory;
+import javax.jcr.ValueFormatException;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.value.BinaryValue;
@@ -36,12 +40,11 @@ import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Reference;
 import org.modeshape.jcr.value.ReferenceFactory;
 import org.modeshape.jcr.value.ValueFactories;
-import org.modeshape.jcr.value.basic.NodeKeyReference;
 
 /**
  * The {@link ValueFactory} implementation for ModeShape.
  */
-class JcrValueFactory implements org.modeshape.jcr.api.ValueFactory {
+public class JcrValueFactory implements org.modeshape.jcr.api.ValueFactory {
 
     private static final JcrValue[] EMPTY_ARRAY = new JcrValue[0];
 
@@ -112,11 +115,11 @@ class JcrValueFactory implements org.modeshape.jcr.api.ValueFactory {
         if (!value.isNodeType(JcrMixLexicon.REFERENCEABLE.getString(namespaces))) {
             throw new RepositoryException(JcrI18n.nodeNotReferenceable.text());
         }
-        if (! (value instanceof AbstractJcrNode)) {
+        if (!(value instanceof AbstractJcrNode)) {
             throw new IllegalArgumentException("Invalid node type (expected a ModeShape node): " + value.getClass().toString());
         }
 
-        AbstractJcrNode node = (AbstractJcrNode) value;
+        AbstractJcrNode node = (AbstractJcrNode)value;
         if (!node.isInTheSameProcessAs(executionContextProcessId)) {
             throw new RepositoryException(JcrI18n.nodeNotInTheSameSession.text(node.path()));
         }
@@ -171,13 +174,18 @@ class JcrValueFactory implements org.modeshape.jcr.api.ValueFactory {
     }
 
     @Override
-    public BinaryValue createBinary( byte[] value )  {
+    public BinaryValue createBinary( byte[] value ) {
         return valueFactories.getBinaryFactory().create(value);
     }
 
     @Override
-    public JcrValue createValue( Date value ) throws ValueFormatException {
+    public JcrValue createValue( Date value ) {
         return new JcrValue(valueFactories, PropertyType.DATE, value);
+    }
+
+    public JcrValue createValue( Reference value ) {
+        int refType = value.isWeak() ? PropertyType.WEAKREFERENCE : PropertyType.REFERENCE;
+        return new JcrValue(valueFactories, refType, value);
     }
 
     @Override

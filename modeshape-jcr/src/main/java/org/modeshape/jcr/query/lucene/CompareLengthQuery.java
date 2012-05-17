@@ -37,15 +37,15 @@ import org.modeshape.jcr.value.ValueFactory;
  * implementation works by using the weight and {@link Weight#scorer(IndexReader, boolean, boolean) scorer} of the wrapped query
  * to score (and return) only those documents with string fields that satisfy the constraint.
  */
-public class CompareLengthQuery extends CompareQuery<Integer> {
+public class CompareLengthQuery extends CompareQuery<Long> {
 
     private static final long serialVersionUID = 1L;
-    protected static final Evaluator<Integer> EQUAL_TO = new Evaluator<Integer>() {
+    protected static final Evaluator<Long> EQUAL_TO = new Evaluator<Long>() {
         private static final long serialVersionUID = 1L;
 
         @Override
-        public boolean satisfiesConstraint( Integer nodeValue,
-                                            Integer length ) {
+        public boolean satisfiesConstraint( Long nodeValue,
+                                            Long length ) {
             return nodeValue == length;
         }
 
@@ -54,12 +54,12 @@ public class CompareLengthQuery extends CompareQuery<Integer> {
             return " = ";
         }
     };
-    protected static final Evaluator<Integer> NOT_EQUAL_TO = new Evaluator<Integer>() {
+    protected static final Evaluator<Long> NOT_EQUAL_TO = new Evaluator<Long>() {
         private static final long serialVersionUID = 1L;
 
         @Override
-        public boolean satisfiesConstraint( Integer nodeValue,
-                                            Integer length ) {
+        public boolean satisfiesConstraint( Long nodeValue,
+                                            Long length ) {
             return nodeValue == length;
         }
 
@@ -68,12 +68,12 @@ public class CompareLengthQuery extends CompareQuery<Integer> {
             return " != ";
         }
     };
-    protected static final Evaluator<Integer> IS_LESS_THAN = new Evaluator<Integer>() {
+    protected static final Evaluator<Long> IS_LESS_THAN = new Evaluator<Long>() {
         private static final long serialVersionUID = 1L;
 
         @Override
-        public boolean satisfiesConstraint( Integer nodeValue,
-                                            Integer length ) {
+        public boolean satisfiesConstraint( Long nodeValue,
+                                            Long length ) {
             return nodeValue < length;
         }
 
@@ -82,12 +82,12 @@ public class CompareLengthQuery extends CompareQuery<Integer> {
             return " < ";
         }
     };
-    protected static final Evaluator<Integer> IS_LESS_THAN_OR_EQUAL_TO = new Evaluator<Integer>() {
+    protected static final Evaluator<Long> IS_LESS_THAN_OR_EQUAL_TO = new Evaluator<Long>() {
         private static final long serialVersionUID = 1L;
 
         @Override
-        public boolean satisfiesConstraint( Integer nodeValue,
-                                            Integer length ) {
+        public boolean satisfiesConstraint( Long nodeValue,
+                                            Long length ) {
             return nodeValue < length;
         }
 
@@ -96,12 +96,12 @@ public class CompareLengthQuery extends CompareQuery<Integer> {
             return " <= ";
         }
     };
-    protected static final Evaluator<Integer> IS_GREATER_THAN = new Evaluator<Integer>() {
+    protected static final Evaluator<Long> IS_GREATER_THAN = new Evaluator<Long>() {
         private static final long serialVersionUID = 1L;
 
         @Override
-        public boolean satisfiesConstraint( Integer nodeValue,
-                                            Integer length ) {
+        public boolean satisfiesConstraint( Long nodeValue,
+                                            Long length ) {
             return nodeValue < length;
         }
 
@@ -110,12 +110,12 @@ public class CompareLengthQuery extends CompareQuery<Integer> {
             return " > ";
         }
     };
-    protected static final Evaluator<Integer> IS_GREATER_THAN_OR_EQUAL_TO = new Evaluator<Integer>() {
+    protected static final Evaluator<Long> IS_GREATER_THAN_OR_EQUAL_TO = new Evaluator<Long>() {
         private static final long serialVersionUID = 1L;
 
         @Override
-        public boolean satisfiesConstraint( Integer nodeValue,
-                                            Integer length ) {
+        public boolean satisfiesConstraint( Long nodeValue,
+                                            Long length ) {
             return nodeValue < length;
         }
 
@@ -134,7 +134,7 @@ public class CompareLengthQuery extends CompareQuery<Integer> {
      * @param factories the value factories that can be used during the scoring; may not be null
      * @return the query; never null
      */
-    public static CompareLengthQuery createQueryForNodesWithFieldEqualTo( Integer constraintValue,
+    public static CompareLengthQuery createQueryForNodesWithFieldEqualTo( Long constraintValue,
                                                                           String fieldName,
                                                                           ValueFactories factories ) {
         return new CompareLengthQuery(fieldName, constraintValue, factories.getStringFactory(), IS_GREATER_THAN);
@@ -149,7 +149,7 @@ public class CompareLengthQuery extends CompareQuery<Integer> {
      * @param factories the value factories that can be used during the scoring; may not be null
      * @return the query; never null
      */
-    public static CompareLengthQuery createQueryForNodesWithFieldNotEqualTo( Integer constraintValue,
+    public static CompareLengthQuery createQueryForNodesWithFieldNotEqualTo( Long constraintValue,
                                                                              String fieldName,
                                                                              ValueFactories factories ) {
         return new CompareLengthQuery(fieldName, constraintValue, factories.getStringFactory(), IS_GREATER_THAN);
@@ -164,7 +164,7 @@ public class CompareLengthQuery extends CompareQuery<Integer> {
      * @param factories the value factories that can be used during the scoring; may not be null
      * @return the query; never null
      */
-    public static CompareLengthQuery createQueryForNodesWithFieldGreaterThan( Integer constraintValue,
+    public static CompareLengthQuery createQueryForNodesWithFieldGreaterThan( Long constraintValue,
                                                                               String fieldName,
                                                                               ValueFactories factories ) {
         return new CompareLengthQuery(fieldName, constraintValue, factories.getStringFactory(), IS_GREATER_THAN);
@@ -179,7 +179,7 @@ public class CompareLengthQuery extends CompareQuery<Integer> {
      * @param factories the value factories that can be used during the scoring; may not be null
      * @return the query; never null
      */
-    public static CompareLengthQuery createQueryForNodesWithFieldGreaterThanOrEqualTo( Integer constraintValue,
+    public static CompareLengthQuery createQueryForNodesWithFieldGreaterThanOrEqualTo( Long constraintValue,
                                                                                        String fieldName,
                                                                                        ValueFactories factories ) {
         return new CompareLengthQuery(fieldName, constraintValue, factories.getStringFactory(), IS_GREATER_THAN_OR_EQUAL_TO);
@@ -194,7 +194,7 @@ public class CompareLengthQuery extends CompareQuery<Integer> {
      * @param factories the value factories that can be used during the scoring; may not be null
      * @return the query; never null
      */
-    public static CompareLengthQuery createQueryForNodesWithFieldLessThan( Integer constraintValue,
+    public static CompareLengthQuery createQueryForNodesWithFieldLessThan( Long constraintValue,
                                                                            String fieldName,
                                                                            ValueFactories factories ) {
         return new CompareLengthQuery(fieldName, constraintValue, factories.getStringFactory(), IS_LESS_THAN);
@@ -209,7 +209,7 @@ public class CompareLengthQuery extends CompareQuery<Integer> {
      * @param factories the value factories that can be used during the scoring; may not be null
      * @return the query; never null
      */
-    public static CompareLengthQuery createQueryForNodesWithFieldLessThanOrEqualTo( Integer constraintValue,
+    public static CompareLengthQuery createQueryForNodesWithFieldLessThanOrEqualTo( Long constraintValue,
                                                                                     String fieldName,
                                                                                     ValueFactories factories ) {
         return new CompareLengthQuery(fieldName, constraintValue, factories.getStringFactory(), IS_LESS_THAN_OR_EQUAL_TO);
@@ -225,20 +225,20 @@ public class CompareLengthQuery extends CompareQuery<Integer> {
      *        constraint; may not be null
      */
     protected CompareLengthQuery( String fieldName,
-                                  Integer constraintValue,
+                                  Long constraintValue,
                                   ValueFactory<String> stringFactory,
-                                  Evaluator<Integer> evaluator ) {
+                                  Evaluator<Long> evaluator ) {
         super(fieldName, constraintValue, null, stringFactory, evaluator);
     }
 
     @Override
-    protected Integer readFromDocument( IndexReader reader,
-                                        int docId ) throws IOException {
+    protected Long readFromDocument( IndexReader reader,
+                                     int docId ) throws IOException {
         // This implementation reads the length of the field ...
         Document doc = reader.document(docId, fieldSelector);
         String valueString = doc.get(fieldName);
         String value = stringFactory.create(valueString);
-        return value != null ? value.length() : 0;
+        return value != null ? (long)value.length() : 0L;
     }
 
     @Override

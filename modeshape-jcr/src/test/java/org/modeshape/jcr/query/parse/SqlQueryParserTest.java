@@ -1158,10 +1158,10 @@ public class SqlQueryParserTest {
 
     @Test
     public void shouldParseLiteralFromStringWithUncastLiteralValueAndRepresentValueAsStringRepresentation() {
-        assertThat(parser.parseLiteral(tokens("true"), typeSystem).value(), is((Object)Boolean.TRUE.toString()));
-        assertThat(parser.parseLiteral(tokens("false"), typeSystem).value(), is((Object)Boolean.FALSE.toString()));
-        assertThat(parser.parseLiteral(tokens("TRUE"), typeSystem).value(), is((Object)Boolean.TRUE.toString()));
-        assertThat(parser.parseLiteral(tokens("FALSE"), typeSystem).value(), is((Object)Boolean.FALSE.toString()));
+        assertThat(parser.parseLiteral(tokens("true"), typeSystem).value(), is((Object)Boolean.TRUE));
+        assertThat(parser.parseLiteral(tokens("false"), typeSystem).value(), is((Object)Boolean.FALSE));
+        assertThat(parser.parseLiteral(tokens("TRUE"), typeSystem).value(), is((Object)Boolean.TRUE));
+        assertThat(parser.parseLiteral(tokens("FALSE"), typeSystem).value(), is((Object)Boolean.FALSE));
         assertThat(parser.parseLiteral(tokens("123"), typeSystem).value(), is((Object)"123"));
         assertThat(parser.parseLiteral(tokens("+123"), typeSystem).value(), is((Object)"123"));
         assertThat(parser.parseLiteral(tokens("-123"), typeSystem).value(), is((Object)"-123"));
@@ -1238,10 +1238,10 @@ public class SqlQueryParserTest {
 
     @Test
     public void shouldParseLiteralValueFromStringWithBooleanValues() {
-        assertThat(parser.parseLiteralValue(tokens("true"), typeSystem), is((Object)Boolean.TRUE.toString()));
-        assertThat(parser.parseLiteralValue(tokens("false"), typeSystem), is((Object)Boolean.FALSE.toString()));
-        assertThat(parser.parseLiteralValue(tokens("TRUE"), typeSystem), is((Object)Boolean.TRUE.toString()));
-        assertThat(parser.parseLiteralValue(tokens("FALSE"), typeSystem), is((Object)Boolean.FALSE.toString()));
+        assertThat(parser.parseLiteralValue(tokens("true"), typeSystem), is((Object)Boolean.TRUE));
+        assertThat(parser.parseLiteralValue(tokens("false"), typeSystem), is((Object)Boolean.FALSE));
+        assertThat(parser.parseLiteralValue(tokens("TRUE"), typeSystem), is((Object)Boolean.TRUE));
+        assertThat(parser.parseLiteralValue(tokens("FALSE"), typeSystem), is((Object)Boolean.FALSE));
     }
 
     @Test
@@ -2133,14 +2133,14 @@ public class SqlQueryParserTest {
 
     @Test
     public void shouldRemoveBracketsAndQuotes() {
-        assertThat(parser.removeBracketsAndQuotes("string"), is("string"));
-        assertThat(parser.removeBracketsAndQuotes("[string]"), is("string"));
-        assertThat(parser.removeBracketsAndQuotes("'string'"), is("string"));
-        assertThat(parser.removeBracketsAndQuotes("\"string\""), is("string"));
-        assertThat(parser.removeBracketsAndQuotes("word one and two"), is("word one and two"));
-        assertThat(parser.removeBracketsAndQuotes("[word one and two]"), is("word one and two"));
-        assertThat(parser.removeBracketsAndQuotes("'word one and two'"), is("word one and two"));
-        assertThat(parser.removeBracketsAndQuotes("\"word one and two\""), is("word one and two"));
+        assertThat(parser.removeBracketsAndQuotes("string", null), is("string"));
+        assertThat(parser.removeBracketsAndQuotes("[string]", null), is("string"));
+        assertThat(parser.removeBracketsAndQuotes("'string'", null), is("string"));
+        assertThat(parser.removeBracketsAndQuotes("\"string\"", null), is("string"));
+        assertThat(parser.removeBracketsAndQuotes("word one and two", null), is("word one and two"));
+        assertThat(parser.removeBracketsAndQuotes("[word one and two]", null), is("word one and two"));
+        assertThat(parser.removeBracketsAndQuotes("'word one and two'", null), is("word one and two"));
+        assertThat(parser.removeBracketsAndQuotes("\"word one and two\"", null), is("word one and two"));
     }
 
     // ----------------------------------------------------------------------------------------------------------------
