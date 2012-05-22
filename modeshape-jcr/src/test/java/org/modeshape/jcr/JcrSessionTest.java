@@ -23,11 +23,14 @@
  */
 package org.modeshape.jcr;
 
+import javax.jcr.ReferentialIntegrityException;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -639,6 +642,49 @@ public class JcrSessionTest extends SingleUseAbstractTest {
     public void shouldNotHaveCapabilityToPerformInvalidAddNode() throws Exception {
         assertTrue(!session.hasCapability("addNode", session.getRootNode(), new String[] {"someNewNode[2]"}));
         assertTrue(!session.hasCapability("addNode", session.getRootNode(), new String[] {"someNewNode", "nt:invalidType"}));
+    }
+
+    @Test
+    public void shouldCheckReferentialIntegrityWhenRemovingNodes() throws Exception {
+        Node referenceableNode = session.getRootNode().addNode("referenceable");
+        referenceableNode.addMixin(JcrMixLexicon.REFERENCEABLE.toString());
+
+        Node node1 = session.getRootNode().addNode("node1");
+        JcrValueFactory valueFactory = session.getValueFactory();
+        node1.setProperty("ref1", valueFactory.createValue(referenceableNode, false));
+        node1.setProperty("ref2", valueFactory.createValue(referenceableNode, false));
+        node1.setProperty("wref1", valueFactory.createValue(referenceableNode, true));
+        node1.setProperty("wref2", valueFactory.createValue(referenceableNode, true));
+
+        session.save();
+
+        //there are 2 strong refs
+        referenceableNode.remove();
+        expectReferentialIntegrityException();
+
+        //remove the first strong ref
+        node1.setProperty("ref1", (Node) null);
+        referenceableNode.remove();
+        expectReferentialIntegrityException();
+
+        //remove the second strong ref (we should be able to remove the node now)
+        assertEquals(2, referenceableNode.getWeakReferences().getSize());
+        node1.setProperty("ref2", (Node) null);
+        referenceableNode.remove();
+        session.save();
+
+        //check the node was actually deleted
+        assertFalse(session.getRootNode().hasNode("referenceable"));
+    }
+
+    private void expectReferentialIntegrityException() throws RepositoryException {
+        try {
+            session.save();
+            fail("Expected a referential integrity exception");
+        } catch (ReferentialIntegrityException e) {
+            //expected
+            session.refresh(false);
+        }
     }
 
     @SuppressWarnings( "deprecation" )

@@ -23,14 +23,21 @@
  */
 package org.modeshape.jcr;
 
+import javax.jcr.Node;
+import javax.jcr.Property;
+import javax.jcr.PropertyIterator;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import javax.jcr.ImportUUIDBehavior;
 import org.junit.AfterClass;
+import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import java.util.HashSet;
+import java.util.Set;
 
 public class JcrNodeTest extends MultiUseAbstractTest {
 
@@ -98,5 +105,53 @@ public class JcrNodeTest extends MultiUseAbstractTest {
         } finally {
             altima2.remove(); // remove the node we added in this test to not interfere with other tests
         }
+    }
+
+    @Test
+    public void shouldRetrieveReferenceProperties() throws Exception {
+        Node referenceableNode = session.getRootNode().addNode("referenceable");
+        referenceableNode.addMixin(JcrMixLexicon.REFERENCEABLE.toString());
+
+        Node node1 = session.getRootNode().addNode("node1");
+        Property prop1 = node1.setProperty("prop1", session.getValueFactory().createValue(referenceableNode, false));
+        Property prop2 = node1.setProperty("prop2", session.getValueFactory().createValue(referenceableNode, true));
+
+        Node node2 = session.getRootNode().addNode("node2");
+        Property prop3 = node2.setProperty("prop3", session.getValueFactory().createValue(referenceableNode, false));
+        Property prop4 = node2.setProperty("prop4", session.getValueFactory().createValue(referenceableNode, true));
+
+        session.save();
+
+        //check all strong references
+        PropertyIterator propertyIterator = referenceableNode.getReferences();
+        assertEquals(2, propertyIterator.getSize());
+        Set<String> propertyNames = new HashSet<String>(2);
+        while (propertyIterator.hasNext()) {
+            propertyNames.add(propertyIterator.nextProperty().getName());
+        }
+        assertTrue(propertyNames.contains(prop1.getName()) && propertyNames.contains(prop3.getName()));
+
+        propertyIterator = referenceableNode.getReferences("prop1");
+        assertEquals(1, propertyIterator.getSize());
+        assertEquals(prop1.getName(), propertyIterator.nextProperty().getName());
+
+        propertyIterator = referenceableNode.getReferences("unknown");
+        assertEquals(0, propertyIterator.getSize());
+
+        //check all weak references
+        propertyIterator = referenceableNode.getWeakReferences();
+        assertEquals(2, propertyIterator.getSize());
+        propertyNames = new HashSet<String>(2);
+        while (propertyIterator.hasNext()) {
+            propertyNames.add(propertyIterator.nextProperty().getName());
+        }
+        assertTrue(propertyNames.contains(prop2.getName()) && propertyNames.contains(prop4.getName()));
+
+        propertyIterator = referenceableNode.getWeakReferences("prop4");
+        assertEquals(1, propertyIterator.getSize());
+        assertEquals(prop4.getName(), propertyIterator.nextProperty().getName());
+
+        propertyIterator = referenceableNode.getWeakReferences("unknown");
+        assertEquals(0, propertyIterator.getSize());
     }
 }
