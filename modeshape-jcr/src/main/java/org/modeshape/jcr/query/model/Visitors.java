@@ -45,6 +45,7 @@ import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Reference;
 import org.modeshape.jcr.value.ValueFactories;
+import org.modeshape.jcr.value.ValueFactory;
 
 /**
  * A set of common visitors that can be reused or extended, and methods that provide easy construction and calling of visitors.
@@ -112,6 +113,37 @@ public class Visitors {
                                    ExecutionContext context ) {
         // return visit(visitable, new ReadableVisitor()).getString();
         return visit(visitable, new JcrSql2Writer(context)).getString();
+    }
+
+    public static String readable( Object[] tuple ) {
+        return readable(tuple, DEFAULT_CONTEXT);
+    }
+
+    public static String readable( Object[] tuple,
+                                   ExecutionContext context ) {
+        if (tuple.length == 0) {
+            return "||";
+        }
+        ValueFactory<String> stringFactory = context.getValueFactories().getStringFactory();
+        StringBuilder sb = new StringBuilder();
+        sb.append("| ");
+        for (Object value : tuple) {
+            if (value != null) {
+                sb.append(' ');
+                if (value instanceof Object[]) {
+                    Object[] array = (Object[])value;
+                    int len = array.length;
+                    for (int i = 0; i != len; ++i) {
+                        if (i != 0) sb.append(", ");
+                        sb.append(stringFactory.create(array[i]));
+                    }
+                } else {
+                    sb.append(stringFactory.create(value));
+                }
+            }
+            sb.append(" |");
+        }
+        return sb.toString();
     }
 
     /**
@@ -1114,23 +1146,21 @@ public class Visitors {
                     return;
                 }
                 if (value instanceof Reference) {
-                    typeName = ((Reference)value).isWeak() ? PropertyType.TYPENAME_WEAKREFERENCE : PropertyType.TYPENAME_REFERENCE;
+                    typeName = ((Reference)value).isWeak() ? PropertyType.TYPENAME_WEAKREFERENCE.toUpperCase() : PropertyType.TYPENAME_REFERENCE.toUpperCase();
                 } else if (value instanceof Binary) {
-                    typeName = PropertyType.TYPENAME_BINARY;
+                    typeName = PropertyType.TYPENAME_BINARY.toUpperCase();
                 } else if (value instanceof Boolean) {
-                    typeName = PropertyType.TYPENAME_BOOLEAN;
+                    typeName = PropertyType.TYPENAME_BOOLEAN.toUpperCase();
                 } else if (value instanceof DateTime) {
-                    typeName = PropertyType.TYPENAME_DATE;
+                    typeName = PropertyType.TYPENAME_DATE.toUpperCase();
                 } else if (value instanceof BigDecimal) {
-                    typeName = PropertyType.TYPENAME_DECIMAL;
+                    typeName = PropertyType.TYPENAME_DECIMAL.toUpperCase();
                 } else if (value instanceof Double || value instanceof Float) {
-                    typeName = PropertyType.TYPENAME_DOUBLE;
+                    typeName = PropertyType.TYPENAME_DOUBLE.toUpperCase();
                 } else if (value instanceof Long || value instanceof Integer || value instanceof Short) {
-                    typeName = PropertyType.TYPENAME_LONG;
+                    typeName = PropertyType.TYPENAME_LONG.toUpperCase();
                 } else if (value instanceof URI) {
-                    typeName = PropertyType.TYPENAME_URI;
-                } else {
-
+                    typeName = PropertyType.TYPENAME_URI.toUpperCase();
                 }
                 assert typeName != null;
                 String str = factories.getStringFactory().create(value);

@@ -24,7 +24,6 @@
 package org.modeshape.jcr.query.process;
 
 import java.util.Comparator;
-import java.util.List;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.QueryResults.Columns;
 import org.modeshape.jcr.query.QueryResults.Location;
@@ -39,6 +38,7 @@ import org.modeshape.jcr.query.model.TypeSystem;
 import org.modeshape.jcr.query.model.TypeSystem.TypeFactory;
 import org.modeshape.jcr.query.validate.Schemata;
 import org.modeshape.jcr.value.Path;
+import org.modeshape.jcr.value.PathFactory;
 import org.modeshape.jcr.value.ValueComparators;
 
 /**
@@ -328,68 +328,6 @@ public abstract class JoinComponent extends ProcessingComponent {
     }
 
     /**
-     * Interface defining what should be done with the tuples if they are not joinable (usually given the join type).
-     */
-    protected static interface NotJoinable {
-        void addTuples( List<Object[]> tuples,
-                        TupleMerger merger,
-                        Object[] leftTuple,
-                        Object[] rightTuple );
-    }
-
-    protected static NotJoinable notJoinableFor( JoinType joinType ) {
-        switch (joinType) {
-            case LEFT_OUTER:
-                return new NotJoinable() {
-                    @Override
-                    public void addTuples( List<Object[]> tuples,
-                                           TupleMerger merger,
-                                           Object[] leftTuple,
-                                           Object[] rightTuple ) {
-                        // include the LEFT tuple in the results ...
-                        tuples.add(merger.merge(leftTuple, null));
-                    }
-                };
-            case RIGHT_OUTER:
-                return new NotJoinable() {
-                    @Override
-                    public void addTuples( List<Object[]> tuples,
-                                           TupleMerger merger,
-                                           Object[] leftTuple,
-                                           Object[] rightTuple ) {
-                        // include the RIGHT tuple in the results ...
-                        tuples.add(merger.merge(null, rightTuple));
-                    }
-                };
-            case FULL_OUTER:
-                return new NotJoinable() {
-                    @Override
-                    public void addTuples( List<Object[]> tuples,
-                                           TupleMerger merger,
-                                           Object[] leftTuple,
-                                           Object[] rightTuple ) {
-                        // include the LEFT tuple in the results ...
-                        tuples.add(merger.merge(leftTuple, null));
-                        // include the RIGHT tuple in the results ...
-                        tuples.add(merger.merge(null, rightTuple));
-                    }
-                };
-            case CROSS:
-            case INNER:
-                break;
-        }
-        return new NotJoinable() {
-            @Override
-            public void addTuples( List<Object[]> tuples,
-                                   TupleMerger merger,
-                                   Object[] leftTuple,
-                                   Object[] rightTuple ) {
-                // do nothing ...
-            }
-        };
-    }
-
-    /**
      * Create a {@link ValueSelector} that obtains the value required to use the supplied join condition.
      * 
      * @param left the left source component; may not be null
@@ -401,21 +339,83 @@ public abstract class JoinComponent extends ProcessingComponent {
                                            ProcessingComponent right,
                                            JoinCondition condition ) {
         if (condition instanceof SameNodeJoinCondition) {
+            SameNodeJoinCondition joinCondition = (SameNodeJoinCondition)condition;
+            if (left.getColumns().hasSelector(joinCondition.getSelector1Name())) {
+                final String relPathStr = joinCondition.getSelector2Path();
+                final PathFactory pathFactory = right.getContext().getExecutionContext().getValueFactories().getPathFactory();
+                final Path relPath = pathFactory.create(relPathStr);
+                if (relPath == null || relPath.isAbsolute()
+                    || (relPath.size() == 1 && relPath.getLastSegment().isSelfReference())) {
+                    return new Joinable() {
+                        @Override
+                        public boolean evaluate( Object locationA,
+                                                 Object locationB ) {
+                            Location location1 = (Location)locationA;
+                            Location location2 = (Location)locationB;
+                            return location1 != null && location1.isSame(location2);
+                        }
+                    };
+                }
+                // Get the path factory for the right-side ...
+                return new Joinable() {
+                    @Override
+                    public boolean evaluate( Object locationA,
+                                             Object locationB ) {
+                        Location location1 = (Location)locationA;
+                        Location location2 = (Location)locationB;
+                        Path path1 = location1.getPath();
+                        if (path1 == null) return false;
+                        Path path2a = location2.getPath();
+                        if (path2a == null) return false;
+                        Path path2 = pathFactory.create(path2a, relPath);
+                        return path2.isSameAs(path1);
+                    }
+                };
+            }
+            // This must be a right outer join that was reversed in query-plan optimization ...
+            final String relPathStr = joinCondition.getSelector2Path();
+            final PathFactory pathFactory = left.getContext().getExecutionContext().getValueFactories().getPathFactory();
+            final Path relPath = pathFactory.create(relPathStr);
+            if (relPath == null || relPath.isAbsolute() || (relPath.size() == 1 && relPath.getLastSegment().isSelfReference())) {
+                return new Joinable() {
+                    @Override
+                    public boolean evaluate( Object locationA,
+                                             Object locationB ) {
+                        Location location1 = (Location)locationA;
+                        Location location2 = (Location)locationB;
+                        return location1 != null && location1.isSame(location2);
+                    }
+                };
+            }
+            // Get the path factory for the left-side ...
             return new Joinable() {
                 @Override
                 public boolean evaluate( Object locationA,
                                          Object locationB ) {
                     Location location1 = (Location)locationA;
                     Location location2 = (Location)locationB;
-                    return location1 == null ? location2 == null : location1.isSame(location2);
+                    Path path1a = location1.getPath();
+                    if (path1a == null) return false;
+                    Path path2 = location2.getPath();
+                    if (path2 == null) return false;
+                    Path path1 = pathFactory.create(path1a, relPath);
+                    return path2.isSameAs(path1);
                 }
             };
+
         } else if (condition instanceof EquiJoinCondition) {
             return new Joinable() {
                 @Override
                 public boolean evaluate( Object leftValue,
                                          Object rightValue ) {
-                    return leftValue == null ? rightValue == null : leftValue.equals(rightValue);
+                    // Standard equi-joins treat nulls differently than one might expect:
+                    //
+                    // "NULL will never match any other value (not even NULL itself), unless the join condition
+                    // explicitly uses the IS NULL or IS NOT NULL predicates." JCR doesn't have "IS NULL" or "IS NOT NULL"
+                    // support for the join conditions.
+                    //
+                    // See http://en.wikipedia.org/wiki/Join_(SQL)#Inner_join
+                    return leftValue != null && leftValue.equals(rightValue);
                 }
             };
         } else if (condition instanceof ChildNodeJoinCondition) {

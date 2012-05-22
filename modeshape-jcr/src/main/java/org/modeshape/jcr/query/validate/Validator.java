@@ -170,7 +170,6 @@ public class Validator extends AbstractVisitor {
     @Override
     public void visit( Comparison obj ) {
         // The dynamic operand itself will be visited by the validator as it walks the comparison object.
-        // All we need to do here is check the operator ...
         verifyComparison(obj.getOperand1(), obj.operator(), obj.getOperand2());
     }
 

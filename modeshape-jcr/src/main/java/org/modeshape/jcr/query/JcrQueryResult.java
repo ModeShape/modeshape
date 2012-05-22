@@ -133,6 +133,9 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
 
     @Override
     public NodeIterator getNodes() throws RepositoryException {
+        if (getSelectorNames().length > 1) {
+            throw new RepositoryException(JcrI18n.multipleSelectorsAppearInQueryUnableToCallMethod.text(queryStatement));
+        }
         // Find all of the nodes in the results. We have to do this pre-emptively, since this
         // is the only method to throw RepositoryException ...
         final int numRows = results.getRowCount();
@@ -329,14 +332,18 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
             // Make sure that each node referenced by the tuple exists and is accessible ...
             Node[] nodes = new Node[locationIndexes.length];
             int index = 0;
+            boolean foundAtLeastOneNode = false;
             for (int locationIndex : locationIndexes) {
                 Location location = (Location)tuple[locationIndex];
                 Node node = context.getNode(location);
-                if (node == null) {
-                    // Skip this record because one of the nodes no longer exists ...
-                    return null;
+                if (node != null) {
+                    foundAtLeastOneNode = true;
                 }
                 nodes[index++] = node;
+            }
+            if (!foundAtLeastOneNode) {
+                // We found no nodes, so skip this row ...
+                return null;
             }
             return new MultiSelectorQueryResultRow(this, nodes, locationIndexes, tuple);
         }
