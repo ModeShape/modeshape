@@ -1613,7 +1613,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             throw new ConstraintViolationException(msg.text(propName, location(), readable(primaryType), readable(mixinTypes)));
         }
 
-        // The 'findBestPropertyDefintion' method checks constraints for all definitions exception those with a
+        // The 'findBestPropertyDefinition' method checks constraints for all definitions exception those with a
         // require type of REFERENCE. This is because checking such constraints may cause unnecessary loading of nodes.
         // Therefore, see if this is the case ...
         int requiredType = defn.getRequiredType();
@@ -1640,9 +1640,13 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         }
 
         // Create the JCR Property object ...
-        if (requiredType == PropertyType.UNDEFINED) requiredType = value.getType();
-        // Convert the value to the required type ...
-        value = value.asType(requiredType);
+        if (requiredType == PropertyType.UNDEFINED) {
+            requiredType = value.getType();
+        }
+        if (requiredType != value.getType()) {
+            // Convert the value to the required type ...
+            value = value.asType(requiredType);
+        }
         AbstractJcrProperty jcrProp = new JcrSingleValueProperty(this, name, requiredType);
         AbstractJcrProperty otherProp = this.jcrProperties.putIfAbsent(name, jcrProp);
         if (otherProp != null) {
@@ -2055,8 +2059,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             while (propIter.hasNext()) {
                 javax.jcr.Property prop = propIter.nextProperty();
                 // Look at the definition's required type ...
-                int propType = prop.getDefinition().getRequiredType();
-                if (propType == referenceType || propType == PropertyType.UNDEFINED || propType == PropertyType.STRING) {
+                if (prop.getType() == referenceType) {
                     if (propertyName != null && !propertyName.equals(prop.getName())) continue;
                     if (prop.getDefinition().isMultiple()) {
                         for (Value value : prop.getValues()) {
@@ -3266,10 +3269,38 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @throws InvalidItemStateException
      * @throws ItemNotFoundException
      */
-    protected boolean containsChangesWithExternalDependencies() throws InvalidItemStateException, ItemNotFoundException {
+    protected boolean containsChangesWithExternalDependencies() throws RepositoryException {
         Set<NodeKey> allChanges = sessionCache().getChangedNodeKeys();
         Set<NodeKey> changesAtOrBelowThis = sessionCache().getChangedNodeKeysAtOrBelow(this.node());
+        removeReferrerChanges(allChanges, changesAtOrBelowThis);
+
         return !changesAtOrBelowThis.containsAll(allChanges);
+    }
+
+    /**
+     * Removes all the keys from the first set which represent referrer node keys to any of the nodes in the second set.
+     */
+    private void removeReferrerChanges( Set<NodeKey> allChanges,
+                                        Set<NodeKey> changesAtOrBelowThis ) throws RepositoryException {
+        //check if there are any nodes in the overall list of changes (and outside the branch) due to reference changes
+        for (Iterator<NodeKey> allChangesIt = allChanges.iterator(); allChangesIt.hasNext(); ) {
+            NodeKey changedNodeKey = allChangesIt.next();
+            if (changesAtOrBelowThis.contains(changedNodeKey)) {
+                continue;
+            }
+            MutableCachedNode changedNodeOutsideBranch = session().cache().mutable(changedNodeKey);
+            boolean isReferenceable = session().node(changedNodeKey, null).isReferenceable();
+            if (!isReferenceable) {
+                continue;
+            }
+            Set<NodeKey> changedReferrers = changedNodeOutsideBranch.getChangedReferrerNodes();
+            for (NodeKey changedNodeInBranchKey : changesAtOrBelowThis) {
+                if (changedReferrers.contains(changedNodeInBranchKey)) {
+                    //one of the changes in the branch is a referrer of the node outside the branch so we won't take the outside node into account
+                    allChangesIt.remove();
+                }
+            }
+        }
     }
 
     protected static final class ChildNodeResolver implements JcrChildNodeIterator.NodeResolver {

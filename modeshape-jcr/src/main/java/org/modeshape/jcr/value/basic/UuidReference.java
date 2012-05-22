@@ -31,6 +31,7 @@ import org.modeshape.jcr.value.Reference;
 
 /**
  * A {@link Reference} implementation that uses a single {@link UUID} as the pointer.
+ * //TODO author=Horia Chiorean date=5/18/12 description=Decide if this reference implementation is still needed
  */
 @Immutable
 public class UuidReference implements Reference {

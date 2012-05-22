@@ -239,7 +239,12 @@ final class JcrVersionHistoryNode extends JcrSystemNode implements VersionHistor
 
         system.mutable(key).removeChild(system, version.key);
         system.destroy(version.key);
-        system.save();
+        try {
+            system.save();
+        } catch (org.modeshape.jcr.cache.ReferentialIntegrityException e) {
+            //expected by the tck
+            throw new ReferentialIntegrityException(e);
+        }
     }
 
     /*
@@ -254,7 +259,9 @@ final class JcrVersionHistoryNode extends JcrSystemNode implements VersionHistor
             if (referrer.isRoot()) {
                 throw new ReferentialIntegrityException(JcrI18n.cannotRemoveVersion.text(prop.getPath()));
             }
-            if (!this.equals(referrer)) {
+            boolean referrerIsAnotherVersion = (referrer instanceof JcrVersionNode) &&
+                    ((JcrVersionNode) referrer).getContainingHistory().getIdentifier().equals(version.getContainingHistory().getIdentifier());
+            if (!this.equals(referrer) && !referrerIsAnotherVersion) {
                 throw new ReferentialIntegrityException(JcrI18n.cannotRemoveVersion.text(prop.getPath()));
             }
         }

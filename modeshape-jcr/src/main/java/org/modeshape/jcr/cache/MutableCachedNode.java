@@ -310,4 +310,11 @@ public interface MutableCachedNode extends CachedNode {
      * @return a <code>Set&lt;{@link NodeKey}></code>, never null
      */
     public Set<NodeKey> removedChildren();
+
+    /**
+     * Returns a set with all the referencing nodes (nodes which are referring this node) which have changed.
+     *
+     * @return a {@code Set{@link NodeKey}) instances, never null.
+     */
+    public Set<NodeKey> getChangedReferrerNodes();
 }

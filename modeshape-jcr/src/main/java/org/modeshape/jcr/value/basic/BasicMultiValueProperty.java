@@ -72,7 +72,7 @@ public class BasicMultiValueProperty extends BasicProperty {
 
     @Override
     public boolean isEmpty() {
-        return false;
+        return size() == 0;
     }
 
     @Override
@@ -87,12 +87,12 @@ public class BasicMultiValueProperty extends BasicProperty {
 
     @Override
     public int size() {
-        return values.size();
+        return values != null ? values.size() : 0;
     }
 
     @Override
     public Object getFirstValue() {
-        return values.get(0);
+        return values != null ? values.get(0) : null;
     }
 
     @Override

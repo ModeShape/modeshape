@@ -97,6 +97,7 @@ public class WritableSessionCache extends AbstractSessionCache {
     private Map<NodeKey, SessionNode> changedNodes;
     private Set<NodeKey> replacedNodes;
     private LinkedHashSet<NodeKey> changedNodesInOrder;
+    private Map<NodeKey, ReferrerChanges> referrerChangesForRemovedNodes;
     private final TransactionManager tm;
 
     /**
@@ -112,6 +113,7 @@ public class WritableSessionCache extends AbstractSessionCache {
         super(context, workspaceCache, sessionContext);
         this.changedNodes = new HashMap<NodeKey, SessionNode>();
         this.changedNodesInOrder = new LinkedHashSet<NodeKey>();
+        this.referrerChangesForRemovedNodes = new HashMap<NodeKey, ReferrerChanges>();
         this.tm = sessionContext.getTransactionManager();
     }
 
@@ -367,6 +369,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
             // The changes have been made, so create a new map (we're using the keys from the current map) ...
             this.changedNodes = new HashMap<NodeKey, SessionNode>();
+            this.referrerChangesForRemovedNodes.clear();
             this.changedNodesInOrder.clear();
             this.replacedNodes = null;
         } catch (RuntimeException e) {
@@ -463,6 +466,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
             // The changes have been made, so create a new map (we're using the keys from the current map) ...
             this.changedNodes = new HashMap<NodeKey, SessionNode>();
+            this.referrerChangesForRemovedNodes.clear();
             this.changedNodesInOrder.clear();
             this.replacedNodes = null;
 
@@ -632,6 +636,9 @@ public class WritableSessionCache extends AbstractSessionCache {
                         preSaveOperation.process(changedNode, saveContext);
                     }
                     savedNodesInOrder.add(key);
+                } else if (!changedNode.getChangedReferrerNodes().isEmpty()){
+                    //we need to include any referrer changes
+                    savedNodesInOrder.add(key);
                 }
             } else {
                 // we can't ignore removed nodes below the top path
@@ -687,8 +694,6 @@ public class WritableSessionCache extends AbstractSessionCache {
         PathCache sessionPaths = new PathCache(this);
         PathCache workspacePaths = new PathCache(workspaceCache);
 
-        // Make the changes (in order the nodes were added to the session) ...
-        Set<NodeKey> referrers = null;
         Set<NodeKey> removedNodes = null;
         Set<BinaryKey> unusedBinaryKeys = new HashSet<BinaryKey>();
         for (NodeKey key : changedNodesInOrder) {
@@ -701,13 +706,17 @@ public class WritableSessionCache extends AbstractSessionCache {
                     // This was a persistent node, so we have to generate an event and deal with the remove ...
                     if (removedNodes == null) {
                         removedNodes = new HashSet<NodeKey>();
-                        referrers = new HashSet<NodeKey>();
                     }
-                    assert referrers != null;
-                    referrers.addAll(persisted.getReferrers(workspaceCache, ReferenceType.STRONG));
                     Path path = workspacePaths.getPath(persisted);
                     changes.nodeRemoved(key, persisted.getParentKey(workspaceCache), path);
                     removedNodes.add(key);
+
+                    //if there were any referrer changes for the removed nodes, we need to process them
+                    ReferrerChanges referrerChanges = referrerChangesForRemovedNodes.get(key);
+                    if (referrerChanges != null) {
+                        EditableDocument doc = database.get(keyStr).editDocumentContent();
+                        translator.changeReferrers(doc, referrerChanges);
+                    }
                     // Note 1: Do not actually remove the document from the database yet; see below (note 2)
                 }
                 // Otherwise, the removed node was created in the session (but not ever persisted),
@@ -940,9 +949,14 @@ public class WritableSessionCache extends AbstractSessionCache {
 
         if (removedNodes != null) {
             assert !removedNodes.isEmpty();
-            assert referrers != null;
-            // At least one node was deleted, so check referential integrity ...
+            //we need to collect the referrers at the end only, so that other potential changes in references have been computed
+            Set<NodeKey> referrers = new HashSet<NodeKey>();
+            for (NodeKey removedKey : removedNodes) {
+                referrers.addAll(workspaceCache.getNode(removedKey).getReferrers(workspaceCache, ReferenceType.STRONG));
+            }
+            // check referential integrity ...
             referrers.removeAll(removedNodes);
+
             if (!referrers.isEmpty()) {
                 throw new ReferentialIntegrityException(removedNodes, referrers);
             }
@@ -1025,6 +1039,10 @@ public class WritableSessionCache extends AbstractSessionCache {
                     // There was a node within this cache ...
                     children = node.getChildReferences(this);
                     removed.put(nodeKey, node);
+                    //we need to preserve any existing transient referrer changes for the node which we're removing, as they can influence ref integrity
+                    referrerChangesForRemovedNodes.put(nodeKey, node.getReferrerChanges());
+                    //cleanup (remove) all outgoing references from this node to other nodes
+                    node.removeAllReferences(this);
                 } else {
                     // The node did not exist in the session, so get it from the workspace ...
                     addToChangedNodes.add(nodeKey);
