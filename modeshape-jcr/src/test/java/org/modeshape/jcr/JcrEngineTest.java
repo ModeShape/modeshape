@@ -24,20 +24,10 @@ import org.modeshape.jcr.JcrEngine.State;
 import org.modeshape.jcr.RepositoryConfiguration.Default;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 
-public class JcrEngineTest {
+public class JcrEngineTest extends AbstractTransactionalTest {
 
     private RepositoryConfiguration config;
     private JcrEngine engine;
-
-    @BeforeClass
-    public static void beforeSuite() {
-        JTATestUtil.setJBossJTADefaultStoreLocations();
-    }
-
-    @AfterClass
-    public static void afterSuite() {
-        JTATestUtil.clearJBossJTADefaultStoreLocation();
-    }
 
     @Before
     public void beforeEach() throws Exception {

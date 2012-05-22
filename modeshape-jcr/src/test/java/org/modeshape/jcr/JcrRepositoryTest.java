@@ -50,7 +50,7 @@ import org.modeshape.jcr.api.monitor.DurationMetric;
 import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.api.monitor.Window;
 
-public class JcrRepositoryTest {
+public class JcrRepositoryTest extends AbstractTransactionalTest {
 
     private Environment environment;
     private RepositoryConfiguration config;
@@ -85,8 +85,6 @@ public class JcrRepositoryTest {
 
     @Test
     public void shouldCreateRepositoryInstanceWithoutPassingInCacheManager() throws Exception {
-        JTATestUtil.setJBossJTADefaultStoreLocations();
-
         RepositoryConfiguration config = new RepositoryConfiguration("repoName");
         JcrRepository repository = new JcrRepository(config);
         repository.start();

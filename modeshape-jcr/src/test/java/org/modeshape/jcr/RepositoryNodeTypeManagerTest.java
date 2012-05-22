@@ -51,7 +51,7 @@ import org.junit.Test;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
 
-public class RepositoryNodeTypeManagerTest {
+public class RepositoryNodeTypeManagerTest extends AbstractTransactionalTest {
 
     private RepositoryConfiguration config;
     private JcrRepository repository;

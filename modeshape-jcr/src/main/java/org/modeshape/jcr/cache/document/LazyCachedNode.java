@@ -62,7 +62,6 @@ public class LazyCachedNode implements CachedNode {
     private ChildReference parentReferenceToSelf;
     private boolean propertiesFullyLoaded = false;
     private ChildReferences childReferences;
-    private boolean checkReferrers = true; // assume there are referrers
 
     public LazyCachedNode( NodeKey key ) {
         this.key = key;
@@ -286,14 +285,9 @@ public class LazyCachedNode implements CachedNode {
     @Override
     public Set<NodeKey> getReferrers( NodeCache cache,
                                       ReferenceType type ) {
-        if (checkReferrers) {
-            return Collections.emptySet();
-        }
         // Get the referrers ...
         WorkspaceCache wsCache = workspaceCache(cache);
-        Set<NodeKey> result = wsCache.translator().getReferrers(document(wsCache), type);
-        checkReferrers = result.isEmpty();
-        return result;
+        return wsCache.translator().getReferrers(document(wsCache), type);
     }
 
     @Override

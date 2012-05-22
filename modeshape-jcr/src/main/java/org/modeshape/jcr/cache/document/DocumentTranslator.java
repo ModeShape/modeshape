@@ -28,6 +28,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -76,6 +77,8 @@ import org.modeshape.jcr.value.UuidFactory;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFactory;
 import org.modeshape.jcr.value.basic.NodeKeyReference;
+import org.modeshape.jcr.value.basic.StringReference;
+import org.modeshape.jcr.value.basic.UuidReference;
 import org.modeshape.jcr.value.binary.BinaryStoreException;
 import org.modeshape.jcr.value.binary.InMemoryBinaryValue;
 
@@ -813,18 +816,24 @@ public class DocumentTranslator {
                                       ReferenceType type ) {
         // Get the properties container ...
         Document referrers = document.getDocument(REFERRERS);
-        if (referrers == null) return Collections.emptySet();
+        if (referrers == null) return new HashSet<NodeKey>();
 
         // Get the NodeKeys in the respective arrays ...
         Set<NodeKey> result = new HashSet<NodeKey>();
         if (type != ReferenceType.WEAK) {
-            for (Object referrer : document.getArray(STRONG)) {
-                result.add(new NodeKey(valueFromDocument(referrer).toString()));
+            Document strong = referrers.getDocument(STRONG);
+            if (strong != null) {
+                for (String keyString : strong.keySet()) {
+                    result.add(new NodeKey(keyString));
+                }
             }
         }
         if (type != ReferenceType.STRONG) {
-            for (Object referrer : document.getArray(WEAK)) {
-                result.add(new NodeKey(valueFromDocument(referrer).toString()));
+            Document weak = referrers.getDocument(WEAK);
+            if (weak != null) {
+                for (String keyString : weak.keySet()) {
+                    result.add(new NodeKey(keyString));
+                }
             }
         }
         return result;
@@ -836,55 +845,92 @@ public class DocumentTranslator {
             // There are no changes requested ...
             return;
         }
+
         // Get the properties container ...
         EditableDocument referrers = document.getDocument(REFERRERS);
-        Set<NodeKey> strongAdded = changes.getAddedReferrers(ReferenceType.STRONG);
-        Set<NodeKey> weakAdded = changes.getAddedReferrers(ReferenceType.WEAK);
+        List<NodeKey> strongAdded = changes.getAddedReferrers(ReferenceType.STRONG);
+        List<NodeKey> weakAdded = changes.getAddedReferrers(ReferenceType.WEAK);
+
         if (referrers == null) {
             // There are no references in the document, so create it from the added references ...
-            referrers = document.getDocument(REFERRERS);
+            referrers = document.setDocument(REFERRERS);
             if (!strongAdded.isEmpty()) {
-                EditableArray strong = referrers.setArray(STRONG);
-                for (NodeKey key : strongAdded) {
-                    strong.addValue(key.toString());
+                Set<NodeKey> strongAddedSet = new HashSet<NodeKey>(strongAdded);
+                EditableDocument strong = referrers.setDocument(STRONG);
+                for (NodeKey key : strongAddedSet) {
+                    strong.set(key.toString(), Collections.frequency(strongAdded, key));
                 }
             }
             if (!weakAdded.isEmpty()) {
-                EditableArray weak = referrers.setArray(WEAK);
-                for (NodeKey key : weakAdded) {
-                    weak.addValue(key.toString());
+                Set<NodeKey> weakAddedSet = new HashSet<NodeKey>(weakAdded);
+                EditableDocument weak = referrers.setDocument(WEAK);
+                for (NodeKey key : weakAddedSet) {
+                    weak.set(key.toString(), Collections.frequency(weakAdded, key));
                 }
             }
             return;
         }
-        // There are already some references, so change them per the input parameter ...
-        Set<NodeKey> strongRemoved = changes.getRemovedReferrers(ReferenceType.STRONG);
-        Set<NodeKey> weakRemoved = changes.getRemovedReferrers(ReferenceType.WEAK);
-        EditableArray strong = referrers.setArray(STRONG);
-        EditableArray weak = referrers.setArray(WEAK);
 
-        // First remove the values that are to be removed ...
-        if (!strongRemoved.isEmpty()) {
-            for (NodeKey key : strongRemoved) {
-                strong.remove(key.toString());
+        // There are already some references, so update them
+        List<NodeKey> strongRemoved = changes.getRemovedReferrers(ReferenceType.STRONG);
+        Map<NodeKey, Integer> strongCount = computeReferrersCountDelta(strongAdded, strongRemoved);
+        if (!strongCount.isEmpty()) {
+            EditableDocument strong = referrers.getOrCreateDocument(STRONG);
+            updateReferrers(strong, strongCount);
+        }
+
+        List<NodeKey> weakRemoved = changes.getRemovedReferrers(ReferenceType.WEAK);
+        Map<NodeKey, Integer> weakCount = computeReferrersCountDelta(weakAdded, weakRemoved);
+        if (!weakCount.isEmpty()) {
+            EditableDocument weak = referrers.getOrCreateDocument(WEAK);
+            updateReferrers(weak, weakCount);
+        }
+    }
+
+    private void updateReferrers(EditableDocument owningDocument, Map<NodeKey, Integer> referrersCountDelta) {
+        for (NodeKey strongKey : referrersCountDelta.keySet()) {
+            int newCount = referrersCountDelta.get(strongKey);
+            String keyString = strongKey.toString();
+            Integer existingCount = (Integer)owningDocument.get(keyString);
+
+            if (existingCount != null) {
+                int actualCount = existingCount + newCount;
+                if (actualCount <= 0) {
+                    owningDocument.remove(keyString);
+                }
+                else {
+                    owningDocument.set(keyString, actualCount);
+                }
+            }
+            else if (newCount > 0) {
+                owningDocument.set(keyString, newCount);
             }
         }
-        if (!weakRemoved.isEmpty()) {
-            for (NodeKey key : weakRemoved) {
-                weak.remove(key.toString());
+    }
+
+    /**
+     * Given the lists of added & removed referrers (which may contain duplicates), compute the delta with which the count
+     * has to be updated in the document
+     * @return a map(nodekey, delta) pairs
+     */
+    private Map<NodeKey, Integer> computeReferrersCountDelta( List<NodeKey> addedReferrers,
+                                                              List<NodeKey> removedReferrers ) {
+        Map<NodeKey, Integer> referrersCountDelta = new HashMap<NodeKey, Integer>(0);
+
+        Set<NodeKey> addedReferrersUnique = new HashSet<NodeKey>(addedReferrers);
+        for (NodeKey addedReferrer : addedReferrersUnique) {
+            int referrersCount = Collections.frequency(addedReferrers, addedReferrer) - Collections.frequency(removedReferrers, addedReferrer);
+            referrersCountDelta.put(addedReferrer, referrersCount);
+        }
+
+        Set<NodeKey> removedReferrersUnique = new HashSet<NodeKey>(removedReferrers);
+        for (NodeKey removedReferrer : removedReferrersUnique) {
+            //process what's left in the removed list, only if not found in the added
+            if (!referrersCountDelta.containsKey(removedReferrer)) {
+                referrersCountDelta.put(removedReferrer, -1 * Collections.frequency(removedReferrers, removedReferrer));
             }
         }
-        // Then add in the values that are to be added ...
-        if (!strongAdded.isEmpty()) {
-            for (NodeKey key : strongAdded) {
-                strong.addValueIfAbsent(key.toString());
-            }
-        }
-        if (!weakAdded.isEmpty()) {
-            for (NodeKey key : weakAdded) {
-                weak.addValueIfAbsent(key.toString());
-            }
-        }
+        return referrersCountDelta;
     }
 
     protected Object valueToDocument( Object value,
@@ -1088,12 +1134,10 @@ public class DocumentTranslator {
                 return decimals.create(valueStr);
             }
             if (!Null.matches(valueStr = doc.getString("$ref"))) {
-                boolean isForeign = doc.getBoolean("$foreign");
-                return refs.create(new NodeKey(valueStr), isForeign);
+                return createReferenceFromString(refs, doc, valueStr);
             }
             if (!Null.matches(valueStr = doc.getString("$wref"))) {
-                boolean isForeign = doc.getBoolean("$foreign");
-                return weakrefs.create(new NodeKey(valueStr), isForeign);
+                return createReferenceFromString(weakrefs, doc, valueStr);
             }
             if (!Null.matches(valueStr = doc.getString("$uuid"))) {
                 return uuids.create(valueStr);
@@ -1119,6 +1163,23 @@ public class DocumentTranslator {
         }
         assert false : "Unexpected document value \"" + value + "\" of type " + value.getClass().getSimpleName();
         return null;
+    }
+
+    private Object createReferenceFromString( ReferenceFactory referenceFactory,
+                                              Document doc,
+                                              String valueStr ) {
+        boolean isForeign = doc.getBoolean("$foreign");
+        if (NodeKey.isValidFormat(valueStr)) {
+            return referenceFactory.create(new NodeKey(valueStr), isForeign);
+        }
+        else {
+            try {
+                UUID uuid = UUID.fromString(valueStr);
+                return refs.create(new UuidReference(uuid));
+            } catch (IllegalArgumentException e) {
+                return refs.create(new StringReference(valueStr));
+            }
+        }
     }
 
     protected List<Segment> segmentsFrom( List<?> segmentValues ) {

@@ -395,15 +395,12 @@ public class JcrTckTest {
 
         // lifecycle management
         suite.addTestSuite(LifecycleTest.class);
-
-        // TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1453
-        suite.addTestSuite(excludeTests(ReferencesTest.class, "testReferences", "testGetReferencesWithName", "testAlterReference"));
-
-        // TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1453
-        suite.addTestSuite(excludeTests(SessionUUIDTest.class, "testSaveReferentialIntegrityException"));
+        suite.addTestSuite(ReferencesTest.class);
+        suite.addTestSuite(SessionUUIDTest.class);
         /**
-         * //TODO author=Horia Chiorean date=4/11/12 description=The following fail: testRemoveInvalidItemStateException -
-         * https://issues.jboss.org/browse/MODE-1456 testRemoveMandatoryNode - https://issues.jboss.org/browse/MODE-1456
+         * //TODO author=Horia Chiorean date=4/11/12 description=The following fail:
+         * testRemoveInvalidItemStateException - https://issues.jboss.org/browse/MODE-1456
+         * testRemoveMandatoryNode - https://issues.jboss.org/browse/MODE-1456
          * testSaveInvalidStateException - https://issues.jboss.org/browse/MODE-1456 (might not seem related at first, but it's
          * because a path of a node is determined incorrectly)
          */
@@ -412,9 +409,7 @@ public class JcrTckTest {
                                         "testRemoveMandatoryNode",
                                         "testSaveInvalidStateException"));
 
-        // TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1453
-        suite.addTestSuite(excludeTests(NodeUUIDTest.class, "testSaveReferentialIntegrityException"));
-
+        suite.addTestSuite(NodeUUIDTest.class);
         suite.addTestSuite(WorkspaceCloneReferenceableTest.class);
         suite.addTestSuite(WorkspaceCloneSameNameSibsTest.class);
         suite.addTestSuite(WorkspaceCloneTest.class);
@@ -433,12 +428,7 @@ public class JcrTckTest {
         suite.addTestSuite(WorkspaceMoveReferenceableTest.class);
         suite.addTestSuite(WorkspaceMoveTest.class);
 
-        // TODO author=Horia Chiorean date=4/11/12 description=https://issues.jboss.org/browse/MODE-1453
-        suite.addTestSuite(excludeTests(GetWeakReferencesTest.class,
-                                        "testSingleValue",
-                                        "testSingleValueWithName",
-                                        "testMultiValues",
-                                        "testMultiValuesWithName"));
+        suite.addTestSuite(GetWeakReferencesTest.class);
 
         // shareable nodes
         // TODO author=Horia Chiorean date=4/13/12 description=https://issues.jboss.org/browse/MODE-1458
@@ -611,10 +601,8 @@ public class JcrTckTest {
             addTestSuite(CheckoutTest.class);
             addTestSuite(CheckinTest.class);
             addTestSuite(VersionGraphTest.class);
-
-            // TODO author=Horia Chiorean date=4/17/12 description=https://issues.jboss.org/browse/MODE-1453
-            addTestSuite(excludeTests(VersionHistoryTest.class, "testGetReferences"));
-            addTestSuite(excludeTests(RemoveVersionTest.class, "testReferentialIntegrityException"));
+            addTestSuite(VersionHistoryTest.class);
+            addTestSuite(RemoveVersionTest.class);
 
             addTestSuite(CopyTest.class);
 

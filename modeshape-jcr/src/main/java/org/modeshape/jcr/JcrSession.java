@@ -846,7 +846,10 @@ public class JcrSession implements Session {
             AbstractJcrNode problemNode = node(key, null);
             String path = problemNode.getPath();
             throw new InvalidItemStateException(JcrI18n.nodeCreatedBySessionUsedExistingKey.text(path, key), e);
-        } catch (Throwable t) {
+        } catch (org.modeshape.jcr.cache.ReferentialIntegrityException e) {
+            throw new ReferentialIntegrityException(e);
+        }
+        catch (Throwable t) {
             throw new RepositoryException(t);
         }
 
@@ -902,7 +905,10 @@ public class JcrSession implements Session {
             AbstractJcrNode problemNode = node(key, null);
             String path = problemNode.getPath();
             throw new InvalidItemStateException(JcrI18n.nodeCreatedBySessionUsedExistingKey.text(path, key), e);
-        } catch (Throwable t) {
+        } catch (org.modeshape.jcr.cache.ReferentialIntegrityException e) {
+            throw new ReferentialIntegrityException(e);
+        }
+        catch (Throwable t) {
             throw new RepositoryException(t);
         }
 

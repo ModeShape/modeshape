@@ -47,6 +47,7 @@ import org.infinispan.util.concurrent.ConcurrentHashSet;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.text.Inflector;
 import org.modeshape.jcr.JcrLexicon;
+import org.modeshape.jcr.JcrNtLexicon;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.ChildReferences;
@@ -65,6 +66,7 @@ import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.PropertyFactory;
+import org.modeshape.jcr.value.basic.NodeKeyReference;
 
 /**
  * A node used within a {@link SessionCache session} when that node has (or may have) transient (unsaved) changes. This node is an
@@ -487,19 +489,19 @@ public class SessionNode implements MutableCachedNode {
         CachedNode persisted = nodeInWorkspace(session);
         if (persisted == null) {
             if (changes == null) return Collections.emptySet();
-            return changes.getAddedReferrers(type);
+            return new HashSet<NodeKey>(changes.getAddedReferrers(type));
         }
         // Read the referrers from the workspace node ...
         Set<NodeKey> referrers = persisted.getReferrers(workspace(cache), type);
         if (changes != null) {
-            // Make a copy and then add and remove the changes ...
+            //we need to take the transient state into account, so add everything
             referrers.addAll(changes.getAddedReferrers(type));
             referrers.removeAll(changes.getRemovedReferrers(type));
         }
         return referrers;
     }
 
-    public ReferrerChanges getReferrerChanges() {
+    protected ReferrerChanges getReferrerChanges() {
         return referrerChanges(false);
     }
 
@@ -622,6 +624,66 @@ public class SessionNode implements MutableCachedNode {
         Name name = property.getName();
         changedProperties.put(name, property);
         if (!isNew) removedProperties.remove(name);
+        updateReferences(cache, name);
+    }
+
+
+    private void updateReferences(SessionCache cache, Name propertyName) {
+        if (!isNew()) {
+            //remove potential existing references
+            Property oldProperty = nodeInWorkspace(session(cache)).getProperty(propertyName, cache);
+            addOrRemoveReferrers(cache, oldProperty, false);
+        }
+
+        Property property = changedProperties.get(propertyName);
+        addOrRemoveReferrers(cache, property, true);
+    }
+
+    private boolean isReference( Property property ) {
+        if (property == null || property.isEmpty()) {
+            return false;
+        }
+        Object firstValue = property.getFirstValue();
+        return firstValue != null && firstValue instanceof NodeKeyReference;
+    }
+
+    protected void removeAllReferences(SessionCache cache) {
+        for (Iterator<Property> it = this.getProperties(cache); it.hasNext(); ) {
+            Property property = it.next();
+            this.addOrRemoveReferrers(cache, property, false);
+        }
+    }
+
+    protected void addOrRemoveReferrers( SessionCache cache,
+                                         Property property,
+                                         boolean add ) {
+
+        if (!isReference(property)) {
+            return;
+        }
+
+        boolean isFrozenNode = JcrNtLexicon.FROZEN_NODE.equals(this.getPrimaryType(cache));
+
+        for (Object value : property.getValuesAsArray()) {
+            NodeKeyReference ref = (NodeKeyReference)value;
+
+            if (isFrozenNode && !ref.isWeak()) {
+                //JCR 3.13.4.6 ignore all strong outgoing references from a frozen node
+                return;
+            }
+
+            NodeKey referredKey = ref.getNodeKey();
+            if (cache.getNode(referredKey) == null) {
+                continue;
+            }
+            SessionNode referredNode = writableSession(cache).mutable(referredKey);
+            ReferenceType referenceType = ref.isWeak() ? ReferenceType.WEAK : ReferenceType.STRONG;
+            if (add) {
+                referredNode.addReferrer(cache, key, referenceType);
+            } else {
+                referredNode.removeReferrer(cache, key, referenceType);
+            }
+        }
     }
 
     @Override
@@ -642,6 +704,7 @@ public class SessionNode implements MutableCachedNode {
             Name name = property.getName();
             changedProperties.put(name, property);
             if (!isNew) removedProperties.remove(name);
+            updateReferences(cache, name);
         }
     }
 
@@ -651,6 +714,7 @@ public class SessionNode implements MutableCachedNode {
         writableSession(cache).assertInSession(this);
         changedProperties.remove(name);
         if (!isNew) removedProperties.put(name, name);
+        updateReferences(cache, name);
     }
 
     @Override
@@ -941,6 +1005,15 @@ public class SessionNode implements MutableCachedNode {
         return changedChildren().getRemovals();
     }
 
+    @Override
+    public Set<NodeKey> getChangedReferrerNodes() {
+        Set<NodeKey> result = new HashSet<NodeKey>();
+        ReferrerChanges referrerChanges = getReferrerChanges();
+        result.addAll(referrerChanges.getAddedReferrers(ReferenceType.BOTH));
+        result.addAll(referrerChanges.getRemovedReferrers(ReferenceType.BOTH));
+        return result;
+    }
+
     private void copyProperties( SessionCache cache,
                                  CachedNode sourceNode,
                                  SessionCache sourceCache ) {
@@ -1036,6 +1109,10 @@ public class SessionNode implements MutableCachedNode {
                 }
                 sb.append(']');
             }
+        }
+        ReferrerChanges referrerChg = getReferrerChanges();
+        if (referrerChg != null && !referrerChg.isEmpty()) {
+            sb.append(" ").append(referrerChg.toString());
         }
         return sb.toString();
     }
@@ -1575,10 +1652,11 @@ public class SessionNode implements MutableCachedNode {
     }
 
     protected static class ReferrerChanges {
-        private final Set<NodeKey> addedWeak = new HashSet<NodeKey>();
-        private final Set<NodeKey> removedWeak = new HashSet<NodeKey>();
-        private final Set<NodeKey> addedStrong = new HashSet<NodeKey>();
-        private final Set<NodeKey> removedStrong = new HashSet<NodeKey>();
+        //we use lists to be able to count multiple references from the same referrer
+        private final List<NodeKey> addedWeak = new ArrayList<NodeKey>();
+        private final List<NodeKey> removedWeak = new ArrayList<NodeKey>();
+        private final List<NodeKey> addedStrong = new ArrayList<NodeKey>();
+        private final List<NodeKey> removedStrong = new ArrayList<NodeKey>();
 
         public void addWeakReferrer( NodeKey nodeKey ) {
             this.addedWeak.add(nodeKey);
@@ -1600,14 +1678,14 @@ public class SessionNode implements MutableCachedNode {
             this.removedStrong.add(nodeKey);
         }
 
-        public Set<NodeKey> getAddedReferrers( ReferenceType type ) {
+        public List<NodeKey> getAddedReferrers( ReferenceType type ) {
             switch (type) {
                 case STRONG:
                     return addedStrong;
                 case WEAK:
                     return addedWeak;
                 case BOTH:
-                    Set<NodeKey> result = new HashSet<NodeKey>();
+                    List<NodeKey> result = new ArrayList<NodeKey>();
                     result.addAll(addedWeak);
                     result.addAll(addedStrong);
                     return result;
@@ -1616,14 +1694,14 @@ public class SessionNode implements MutableCachedNode {
             return null;
         }
 
-        public Set<NodeKey> getRemovedReferrers( ReferenceType type ) {
+        public List<NodeKey> getRemovedReferrers( ReferenceType type ) {
             switch (type) {
                 case STRONG:
                     return removedStrong;
                 case WEAK:
                     return removedWeak;
                 case BOTH:
-                    Set<NodeKey> result = new HashSet<NodeKey>();
+                    List<NodeKey> result = new ArrayList<NodeKey>();
                     result.addAll(removedStrong);
                     result.addAll(removedWeak);
                     return result;
@@ -1634,6 +1712,25 @@ public class SessionNode implements MutableCachedNode {
 
         public boolean isEmpty() {
             return addedWeak.isEmpty() && removedWeak.isEmpty() && addedStrong.isEmpty() && removedStrong.isEmpty();
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder();
+            sb.append("ReferrerChanges: ");
+            if (!addedStrong.isEmpty()) {
+                sb.append(" addedStrong=").append(addedStrong);
+            }
+            if (!addedWeak.isEmpty()) {
+                sb.append(" addedWeak=").append(addedWeak);
+            }
+            if (!removedWeak.isEmpty()) {
+                sb.append(" removedWeak=").append(removedWeak);
+            }
+            if (!removedStrong.isEmpty()) {
+                sb.append(" removedStrong=").append(removedStrong);
+            }
+            return sb.toString();
         }
     }
 
