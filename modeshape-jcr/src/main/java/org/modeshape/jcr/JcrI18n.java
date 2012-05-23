@@ -333,6 +333,7 @@ public final class JcrI18n {
     public static I18n unableToDestroyDefaultWorkspaceInRepository;
     public static I18n unableToDestroySystemWorkspaceInRepository;
     public static I18n workspaceNotFound;
+    public static I18n unableToRestoreAtAbsPathNodeAlreadyExists;
 
     public static I18n unableToFindRepositoryConfigurationSchema;
     public static I18n unableToLoadRepositoryConfigurationSchema;

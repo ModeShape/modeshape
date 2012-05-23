@@ -117,12 +117,17 @@ final class JcrVersionHistoryNode extends JcrSystemNode implements VersionHistor
 
     @Override
     public String[] getVersionLabels() throws RepositoryException {
+        List<String> labels = new ArrayList<String>();
+
         PropertyIterator iter = versionLabels().getProperties();
-        String[] labels = new String[(int)iter.getSize()];
-        for (int i = 0; iter.hasNext(); i++) {
-            labels[i] = iter.nextProperty().getName();
+        while (iter.hasNext()) {
+            javax.jcr.Property property = iter.nextProperty();
+            if (property.getType() == PropertyType.REFERENCE) {
+                labels.add(property.getName());
+            }
         }
-        return labels;
+
+        return labels.toArray(new String[labels.size()]);
     }
 
     /**

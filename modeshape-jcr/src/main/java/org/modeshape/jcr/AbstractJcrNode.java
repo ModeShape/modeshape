@@ -2997,7 +2997,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         } catch (ConstraintViolationException cve) {
             throw new UnsupportedRepositoryOperationException(cve);
         }
-        versionManager().restore(getPath(), version, removeExisting);
+
+        versionManager().restoreAtAbsPath(getPath(), version, removeExisting, false);
     }
 
     @Override
@@ -3013,7 +3014,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         if (relPathAsPath.isAbsolute()) throw new RepositoryException(JcrI18n.invalidRelativePath.text(relPath));
         Path actualPath = pathFactory.create(path(), relPathAsPath).getCanonicalPath();
 
-        versionManager().restore(session.stringFactory().create(actualPath), version, removeExisting);
+        versionManager().restoreAtAbsPath(session.stringFactory().create(actualPath), version, removeExisting, false);
     }
 
     @Override

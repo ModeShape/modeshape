@@ -1950,7 +1950,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     @FixFor( "MODE-786" )
     @Test
     public void shouldReceiveEventsForChangesToVersionsInSystemContent() throws Exception {
-        int numEvents = 21;
+        int numEvents = 22;
         TestListener listener = addListener(session, numEvents, ALL_EVENTS, "/jcr:system", true, null, null, false);
 
         Node node = session.getRootNode().addNode("/test", "nt:unstructured");
