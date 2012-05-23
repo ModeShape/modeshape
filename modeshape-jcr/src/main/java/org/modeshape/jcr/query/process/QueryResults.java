@@ -269,6 +269,17 @@ public class QueryResults implements org.modeshape.jcr.query.QueryResults {
     protected String stringOf( TypeSystem typeSystem,
                                Object value ) {
         if (value == null) return null;
+        if (value instanceof Object[]) {
+            // Multi-valued ...
+            StringBuilder sb = new StringBuilder();
+            Object[] array = (Object[])value;
+            int len = array.length;
+            for (int i = 0; i != len; ++i) {
+                if (i != 0) sb.append(", ");
+                sb.append(stringOf(typeSystem, array[i]));
+            }
+            return sb.toString();
+        }
         if (typeSystem == null) return value.toString();
         TypeFactory<?> typeFactory = typeSystem.getTypeFactory(value);
         return typeFactory.asReadableString(value);

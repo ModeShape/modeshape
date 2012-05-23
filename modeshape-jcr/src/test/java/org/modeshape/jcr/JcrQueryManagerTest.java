@@ -247,7 +247,16 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
             System.out.println(" plan -> " + ((JcrQueryResult)result).getPlan());
             System.out.println(result);
         }
-        assertThat(result.getNodes().getSize(), is(numberOfResults));
+        if (result.getSelectorNames().length == 1) {
+            assertThat(result.getNodes().getSize(), is(numberOfResults));
+        } else {
+            try {
+                result.getNodes();
+                fail("should not be able to call this method when the query has multiple selectors");
+            } catch (RepositoryException e) {
+                // expected; can't call this when the query uses multiple selectors ...
+            }
+        }
         assertThat(result.getRows().getSize(), is(numberOfResults));
     }
 
@@ -981,29 +990,17 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         }
     }
 
-    @Ignore( "MODE-1485" )
-    @FixFor( "MODE-1277" )
+    @FixFor( {"MODE-1277", "MODE-1485"} )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullOuterJoin() throws RepositoryException {
         String sql = "SELECT car.[jcr:name], category.[jcr:primaryType] from [car:Car] as car FULL OUTER JOIN [nt:unstructured] as category ON ISCHILDNODE(car,category) WHERE NAME(car) LIKE 'Toyota*'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
-        print = true;
+        // print = true;
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 72);
+        assertResults(query, result, 72L);
         assertResultsHaveColumns(result, new String[] {"jcr:name", "jcr:primaryType"});
-        RowIterator iter = result.getRows();
-        String primaryType = "";
-        while (iter.hasNext()) {
-            Row row = iter.nextRow();
-            String nextCarName = row.getValues()[0].getString();
-            String nextCarName2 = row.getValue("jcr:name").getString();
-            assertThat(nextCarName, is(nextCarName2));
-            String nextCategoryPrimaryType = row.getValues()[1].getString();
-            assertThat(nextCategoryPrimaryType.compareTo(primaryType) >= 0, is(true));
-            primaryType = nextCategoryPrimaryType;
-        }
     }
 
     @FixFor( "MODE-934" )

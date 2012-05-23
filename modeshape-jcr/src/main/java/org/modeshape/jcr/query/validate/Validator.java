@@ -70,6 +70,7 @@ import org.modeshape.jcr.query.model.Visitor;
 import org.modeshape.jcr.query.model.Visitors;
 import org.modeshape.jcr.query.model.Visitors.AbstractVisitor;
 import org.modeshape.jcr.query.validate.Schemata.Table;
+import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.ValueFormatException;
 
@@ -170,7 +171,6 @@ public class Validator extends AbstractVisitor {
     @Override
     public void visit( Comparison obj ) {
         // The dynamic operand itself will be visited by the validator as it walks the comparison object.
-        // All we need to do here is check the operator ...
         verifyComparison(obj.getOperand1(), obj.operator(), obj.getOperand2());
     }
 
@@ -386,7 +386,7 @@ public class Validator extends AbstractVisitor {
                     switch (value.getType()) {
                         case PropertyType.PATH:
                             Path path = context.getExecutionContext().getValueFactories().getPathFactory().create(str);
-                            if (path.size() > 1) {
+                            if (path.size() != 1 || path.isAbsolute()) {
                                 fail = true;
                                 break;
                             } // else continue with the regular processing ...
@@ -399,9 +399,13 @@ public class Validator extends AbstractVisitor {
                                     // Then it is a URI, and per 3.6.4.9 the './' prefix should be removed ...
                                     str = str.substring(2);
                                 }
-                                // LIKE operator can have encodeable characters ...
-                                if (op != Operator.LIKE && Jsr283Encoder.containsEncodeableCharacters(str)) {
-                                    fail = true;
+                                // LIKE operator can have encodeable characters, but others cannot ...
+                                if (op != Operator.LIKE) {
+                                    // It needs to be convertable to a name ...
+                                    Name name = context.getExecutionContext().getValueFactories().getNameFactory().create(str);
+                                    if (Jsr283Encoder.containsEncodeableCharacters(name.getLocalName())) {
+                                        fail = true;
+                                    }
                                 }
                             } catch (ValueFormatException e) {
                                 // nope ...

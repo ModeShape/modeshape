@@ -52,7 +52,7 @@ public class RightOuterToLeftOuterJoins implements OptimizerRule {
                 left.removeFromParent(); // right is now the first child ...
                 left.setParent(joinNode);
                 joinNode.setProperty(Property.JOIN_TYPE, JoinType.LEFT_OUTER);
-                // The JoinCondition and Constraints don't need to be changed
+                // None of the Constraints or JoinCondition need to be changed (they refer to named selectors) ...
             }
         }
         return plan;

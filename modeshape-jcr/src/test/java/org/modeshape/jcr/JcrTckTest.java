@@ -514,16 +514,13 @@ public class JcrTckTest {
 
             addTestSuite(AndConstraintTest.class);
             addTestSuite(BindVariableValueTest.class);
-            // TODO author=Randall Hauch date=5/17/12 description=https://issues.apache.org/jira/browse/MODE-1485
-            addTestSuite(excludeTests(ChildNodeJoinConditionTest.class, "testRightOuterJoin"));
+            addTestSuite(ChildNodeJoinConditionTest.class);
             addTestSuite(ChildNodeTest.class);
             // TODO author=Randall Hauch date=5/17/12 description=https://issues.apache.org/jira/browse/JCR-3313
             addTestSuite(excludeTests(ColumnTest.class, "testExpandColumnsForNodeType"));
-            // TODO author=Randall Hauch date=5/17/12 description=https://issues.apache.org/jira/browse/MODE-1485
-            addTestSuite(excludeTests(DescendantNodeJoinConditionTest.class, "testRightOuterJoin"));
+            addTestSuite(DescendantNodeJoinConditionTest.class);
             addTestSuite(DescendantNodeTest.class);
-            // TODO author=Randall Hauch date=5/17/12 description=https://issues.apache.org/jira/browse/MODE-1485
-            addTestSuite(excludeTests(EquiJoinConditionTest.class, "testInnerJoin1", "testRightOuterJoin1", "testLeftOuterJoin2"));
+            addTestSuite(EquiJoinConditionTest.class);
             addTestSuite(FullTextSearchScoreTest.class);
             addTestSuite(GetQueryTest.class);
             addTestSuite(LengthTest.class);
@@ -537,13 +534,7 @@ public class JcrTckTest {
             addTestSuite(PropertyValueTest.class);
             addTestSuite(QueryObjectModelFactoryTest.class);
             addTestSuite(RowTest.class);
-            // TODO author=Randall Hauch date=5/17/12 description=https://issues.apache.org/jira/browse/MODE-1485
-            addTestSuite(excludeTests(SameNodeJoinConditionTest.class,
-                                      "testRightOuterJoin",
-                                      "testLeftOuterJoin",
-                                      "testInnerJoinWithPath",
-                                      "testLeftOuterJoinWithPath",
-                                      "testRightOuterJoinWithPath"));
+            addTestSuite(SameNodeJoinConditionTest.class);
             addTestSuite(SameNodeTest.class);
             addTestSuite(SelectorTest.class);
             addTestSuite(UpperLowerCaseTest.class);
