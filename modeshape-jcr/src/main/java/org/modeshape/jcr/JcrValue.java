@@ -50,7 +50,7 @@ import org.modeshape.graph.property.ValueFactories;
  * ModeShape implementation of a {@link Value JCR Value}.
  */
 @NotThreadSafe
-final class JcrValue implements org.modeshape.jcr.api.Value {
+public final class JcrValue implements org.modeshape.jcr.api.Value {
 
     static final JcrValue[] EMPTY_ARRAY = new JcrValue[] {};
 
@@ -110,7 +110,7 @@ final class JcrValue implements org.modeshape.jcr.api.Value {
      * 
      * @return a reference to the {@link #value} field.
      */
-    final Object value() {
+    public final Object value() {
         return value;
     }
 
@@ -586,11 +586,11 @@ final class JcrValue implements org.modeshape.jcr.api.Value {
 
     private Object unpackValue( Object value ) {
         if (value instanceof JcrBinary) {
-            value = ((JcrBinary) value).binary();
+            value = ((JcrBinary)value).binary();
         }
         if (value instanceof javax.jcr.Binary) {
-            //Support any implementation of javax.jcr.Binary (see MODE-1308)
-            javax.jcr.Binary jcrBinary = (javax.jcr.Binary) value;
+            // Support any implementation of javax.jcr.Binary (see MODE-1308)
+            javax.jcr.Binary jcrBinary = (javax.jcr.Binary)value;
             try {
                 value = valueFactories.getBinaryFactory().create(jcrBinary.getStream(), jcrBinary.getSize());
             } catch (RepositoryException e) {

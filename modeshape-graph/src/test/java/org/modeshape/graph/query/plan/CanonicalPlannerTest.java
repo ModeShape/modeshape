@@ -62,6 +62,7 @@ import org.modeshape.graph.query.validate.Schemata;
  */
 public class CanonicalPlannerTest {
 
+    private ExecutionContext context;
     private CanonicalPlanner planner;
     private TypeSystem typeSystem;
     private QueryBuilder builder;
@@ -77,11 +78,12 @@ public class CanonicalPlannerTest {
     @Before
     public void beforeEach() {
         planner = new CanonicalPlanner();
-        typeSystem = new ExecutionContext().getValueFactories().getTypeSystem();
+        context = new ExecutionContext();
+        typeSystem = context.getValueFactories().getTypeSystem();
         hints = new PlanHints();
         builder = new QueryBuilder(typeSystem);
         problems = new SimpleProblems();
-        schemataBuilder = ImmutableSchemata.createBuilder(typeSystem);
+        schemataBuilder = ImmutableSchemata.createBuilder(context, typeSystem);
         print = false;
     }
 
@@ -141,7 +143,7 @@ public class CanonicalPlannerTest {
     public void shouldProducePlanForSelectStarFromTable() {
         schemata = schemataBuilder.addTable("__ALLNODES__", "column1", "column2", "column3").build();
         query = builder.selectStar().fromAllNodes().query();
-        queryContext = new QueryContext(schemata, typeSystem, hints, problems);
+        queryContext = new QueryContext(context, schemata, typeSystem, hints, problems);
         plan = planner.createPlan(queryContext, query);
         assertThat(problems.isEmpty(), is(true));
         assertProjectNode(plan, "column1", "column2", "column3");
@@ -157,7 +159,7 @@ public class CanonicalPlannerTest {
     public void shouldProduceErrorWhenSelectingNonExistantTable() {
         schemata = schemataBuilder.addTable("someTable", "column1", "column2", "column3").build();
         query = builder.selectStar().fromAllNodes().query();
-        queryContext = new QueryContext(schemata, typeSystem, hints, problems);
+        queryContext = new QueryContext(context, schemata, typeSystem, hints, problems);
         plan = planner.createPlan(queryContext, query);
         assertThat(problems.hasErrors(), is(true));
     }
@@ -166,7 +168,7 @@ public class CanonicalPlannerTest {
     public void shouldProduceErrorWhenSelectingNonExistantColumnOnExistingTable() {
         schemata = schemataBuilder.addTable("someTable", "column1", "column2", "column3").build();
         query = builder.select("column1", "column4").from("someTable").query();
-        queryContext = new QueryContext(schemata, typeSystem, hints, problems);
+        queryContext = new QueryContext(context, schemata, typeSystem, hints, problems);
         plan = planner.createPlan(queryContext, query);
         assertThat(problems.hasErrors(), is(true));
     }
@@ -175,7 +177,7 @@ public class CanonicalPlannerTest {
     public void shouldProducePlanWhenSelectingAllColumnsOnExistingTable() {
         schemata = schemataBuilder.addTable("someTable", "column1", "column2", "column3").build();
         query = builder.selectStar().from("someTable").query();
-        queryContext = new QueryContext(schemata, typeSystem, hints, problems);
+        queryContext = new QueryContext(context, schemata, typeSystem, hints, problems);
         plan = planner.createPlan(queryContext, query);
         print(plan);
         assertThat(problems.hasErrors(), is(false));
@@ -192,7 +194,7 @@ public class CanonicalPlannerTest {
     public void shouldProducePlanWhenSelectingColumnsFromTableWithoutAlias() {
         schemata = schemataBuilder.addTable("someTable", "column1", "column2", "column3").build();
         query = builder.select("column1", "column2").from("someTable").where().path("someTable").isEqualTo(1L).end().query();
-        queryContext = new QueryContext(schemata, typeSystem, hints, problems);
+        queryContext = new QueryContext(context, schemata, typeSystem, hints, problems);
         plan = planner.createPlan(queryContext, query);
         assertThat(problems.hasErrors(), is(false));
         assertThat(plan.getType(), is(PlanNode.Type.PROJECT));
@@ -203,7 +205,7 @@ public class CanonicalPlannerTest {
     public void shouldProducePlanWhenSelectingColumnsFromTableWithAlias() {
         schemata = schemataBuilder.addTable("dna:someTable", "column1", "column2", "column3").build();
         query = builder.select("column1", "column2").from("dna:someTable AS t1").where().path("t1").isEqualTo(1L).end().query();
-        queryContext = new QueryContext(schemata, typeSystem, hints, problems);
+        queryContext = new QueryContext(context, schemata, typeSystem, hints, problems);
         plan = planner.createPlan(queryContext, query);
         assertThat(problems.hasErrors(), is(false));
         print(plan);
@@ -215,7 +217,7 @@ public class CanonicalPlannerTest {
     public void shouldProducePlanWhenSelectingAllColumnsFromTableWithAlias() {
         schemata = schemataBuilder.addTable("dna:someTable", "column1", "column2", "column3").build();
         query = builder.selectStar().from("dna:someTable AS t1").where().path("t1").isEqualTo(1L).end().query();
-        queryContext = new QueryContext(schemata, typeSystem, hints, problems);
+        queryContext = new QueryContext(context, schemata, typeSystem, hints, problems);
         plan = planner.createPlan(queryContext, query);
         assertThat(problems.hasErrors(), is(false));
         print(plan);
@@ -228,12 +230,12 @@ public class CanonicalPlannerTest {
         schemata = schemataBuilder.addTable("someTable", "column1", "column2", "column3").build();
         // Make sure the query without the search criteria does not have an error
         query = builder.select("column1", "column2").from("someTable").query();
-        queryContext = new QueryContext(schemata, typeSystem, hints, problems);
+        queryContext = new QueryContext(context, schemata, typeSystem, hints, problems);
         plan = planner.createPlan(queryContext, query);
         assertThat(problems.hasErrors(), is(false));
 
         query = builder.select("column1", "column2").from("someTable").where().search("someTable", "term1").end().query();
-        queryContext = new QueryContext(schemata, typeSystem, hints, problems);
+        queryContext = new QueryContext(context, schemata, typeSystem, hints, problems);
         plan = planner.createPlan(queryContext, query);
         assertThat(problems.hasErrors(), is(true));
     }
@@ -244,7 +246,7 @@ public class CanonicalPlannerTest {
                                   .makeSearchable("someTable", "column1")
                                   .build();
         query = builder.select("column1", "column4").from("someTable").where().search("someTable", "term1").end().query();
-        queryContext = new QueryContext(schemata, typeSystem, hints, problems);
+        queryContext = new QueryContext(context, schemata, typeSystem, hints, problems);
         plan = planner.createPlan(queryContext, query);
         assertThat(problems.hasErrors(), is(true));
     }
@@ -254,7 +256,7 @@ public class CanonicalPlannerTest {
         schemata = schemataBuilder.addTable("someTable", "column1", "column2", "column3").build();
         // Make sure the query without the search criteria does not have an error
         query = builder.select("column1", "column2").from("someTable").query();
-        queryContext = new QueryContext(schemata, typeSystem, hints, problems);
+        queryContext = new QueryContext(context, schemata, typeSystem, hints, problems);
         plan = planner.createPlan(queryContext, query);
         assertThat(problems.hasErrors(), is(false));
 
@@ -264,7 +266,7 @@ public class CanonicalPlannerTest {
                        .search("someTable", "column2", "term1")
                        .end()
                        .query();
-        queryContext = new QueryContext(schemata, typeSystem, hints, problems);
+        queryContext = new QueryContext(context, schemata, typeSystem, hints, problems);
         plan = planner.createPlan(queryContext, query);
         assertThat(problems.hasErrors(), is(true));
     }
@@ -280,7 +282,7 @@ public class CanonicalPlannerTest {
                        .search("someTable", "column1", "term1")
                        .end()
                        .query();
-        queryContext = new QueryContext(schemata, typeSystem, hints, problems);
+        queryContext = new QueryContext(context, schemata, typeSystem, hints, problems);
         plan = planner.createPlan(queryContext, query);
         assertThat(problems.hasErrors(), is(true));
     }
@@ -299,7 +301,7 @@ public class CanonicalPlannerTest {
                        .propertyValue("t1", "column1")
                        .end()
                        .query();
-        queryContext = new QueryContext(schemata, typeSystem, hints, problems);
+        queryContext = new QueryContext(context, schemata, typeSystem, hints, problems);
         plan = planner.createPlan(queryContext, query);
         assertThat(problems.hasErrors(), is(false));
         print(plan);
@@ -321,7 +323,7 @@ public class CanonicalPlannerTest {
                        .fullTextSearchScore("t1")
                        .end()
                        .query();
-        queryContext = new QueryContext(schemata, typeSystem, hints, problems);
+        queryContext = new QueryContext(context, schemata, typeSystem, hints, problems);
         plan = planner.createPlan(queryContext, query);
         assertThat(problems.hasErrors(), is(false));
         print(plan);
@@ -342,7 +344,7 @@ public class CanonicalPlannerTest {
 
         // Define the query command (which uses the subquery) ...
         query = builder.selectStar().from("someTable").where().path("someTable").isLike(subquery).end().query();
-        queryContext = new QueryContext(schemata, typeSystem, hints, problems);
+        queryContext = new QueryContext(context, schemata, typeSystem, hints, problems);
         plan = planner.createPlan(queryContext, query);
         // print = true;
         print(plan);
@@ -413,7 +415,7 @@ public class CanonicalPlannerTest {
 
         // Define the query command (which uses the subquery) ...
         query = builder.selectStar().from("someTable").where().path("someTable").isLike(subquery1).end().query();
-        queryContext = new QueryContext(schemata, typeSystem, hints, problems);
+        queryContext = new QueryContext(context, schemata, typeSystem, hints, problems);
         plan = planner.createPlan(queryContext, query);
         // print = true;
         print(plan);
@@ -520,7 +522,7 @@ public class CanonicalPlannerTest {
                        .isInSubquery(subquery1)
                        .end()
                        .query();
-        queryContext = new QueryContext(schemata, typeSystem, hints, problems);
+        queryContext = new QueryContext(context, schemata, typeSystem, hints, problems);
         plan = planner.createPlan(queryContext, query);
         // print = true;
         print(plan);

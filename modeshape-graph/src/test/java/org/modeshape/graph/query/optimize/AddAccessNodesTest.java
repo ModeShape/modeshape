@@ -28,14 +28,14 @@ import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import java.util.LinkedList;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.query.AbstractQueryTest;
 import org.modeshape.graph.query.QueryContext;
 import org.modeshape.graph.query.plan.PlanNode;
 import org.modeshape.graph.query.plan.PlanNode.Type;
 import org.modeshape.graph.query.validate.Schemata;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * 
@@ -47,7 +47,8 @@ public class AddAccessNodesTest extends AbstractQueryTest {
 
     @Before
     public void beforeEach() {
-        context = new QueryContext(mock(Schemata.class), new ExecutionContext().getValueFactories().getTypeSystem());
+        ExecutionContext execContext = new ExecutionContext();
+        context = new QueryContext(execContext, mock(Schemata.class), execContext.getValueFactories().getTypeSystem());
         rule = AddAccessNodes.INSTANCE;
     }
 

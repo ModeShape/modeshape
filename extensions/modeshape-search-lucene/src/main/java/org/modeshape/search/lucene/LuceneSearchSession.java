@@ -23,6 +23,21 @@
  */
 package org.modeshape.search.lucene;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringReader;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.regex.Pattern;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
@@ -94,27 +109,13 @@ import org.modeshape.search.lucene.IndexRules.FieldType;
 import org.modeshape.search.lucene.IndexRules.NumericRule;
 import org.modeshape.search.lucene.IndexRules.Rule;
 import org.modeshape.search.lucene.LuceneSearchWorkspace.ContentIndex;
+import org.modeshape.search.lucene.query.CaseOperations;
+import org.modeshape.search.lucene.query.CaseOperations.CaseOperation;
 import org.modeshape.search.lucene.query.CompareLengthQuery;
 import org.modeshape.search.lucene.query.CompareNameQuery;
 import org.modeshape.search.lucene.query.ComparePathQuery;
 import org.modeshape.search.lucene.query.CompareStringQuery;
 import org.modeshape.search.lucene.query.MatchNoneQuery;
-import org.modeshape.search.lucene.query.NotQuery;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringReader;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.regex.Pattern;
 
 /**
  * The {@link WorkspaceSession} implementation for the {@link LuceneSearchEngine}.
@@ -153,9 +154,9 @@ public class LuceneSearchSession implements WorkspaceSession {
     protected static final int MAX_SNS_INDEX = 1000; // assume there won't be more than 1000 same-name-siblings
 
     /**
-     *  A [workspaceName -> lock] map, which is used to make sure that only 1 index writer is active per thread
-     *  per workspace, when updating indexes. Otherwise, if multiple threads were using multiple index writers on the same
-     *  workspace, content could potentially be lost when indexing.
+     * A [workspaceName -> lock] map, which is used to make sure that only 1 index writer is active per thread per workspace, when
+     * updating indexes. Otherwise, if multiple threads were using multiple index writers on the same workspace, content could
+     * potentially be lost when indexing.
      */
     private static final ConcurrentHashMap<String, ReentrantLock> INDEX_WRITER_LOCKS = new ConcurrentHashMap<String, ReentrantLock>();
 
@@ -234,7 +235,7 @@ public class LuceneSearchSession implements WorkspaceSession {
     private void unlockIndexWriterAccess() {
         String workspaceName = getWorkspaceName();
         ReentrantLock lock = INDEX_WRITER_LOCKS.get(workspaceName);
-        while(lock.getHoldCount() > 0) {
+        while (lock.getHoldCount() > 0) {
             lock.unlock();
         }
     }
@@ -868,9 +869,9 @@ public class LuceneSearchSession implements WorkspaceSession {
     @Override
     public Query findNodesLike( String fieldName,
                                 String likeExpression,
-                                boolean caseSensitive ) {
+                                CaseOperation caseOperation ) {
         ValueFactories factories = processor.valueFactories;
-        return CompareStringQuery.createQueryForNodesWithFieldLike(likeExpression, fieldName, factories, caseSensitive);
+        return CompareStringQuery.createQueryForNodesWithFieldLike(likeExpression, fieldName, factories, caseOperation);
     }
 
     @Override
@@ -909,7 +910,8 @@ public class LuceneSearchSession implements WorkspaceSession {
     public Query findNodesWith( PropertyValue propertyValue,
                                 Operator operator,
                                 Object value,
-                                boolean caseSensitive ) {
+                                CaseOperation caseOperation ) {
+        if (caseOperation == null) caseOperation = CaseOperations.AS_IS;
         ValueFactory<String> stringFactory = processor.stringFactory;
         String field = stringFactory.create(propertyValue.propertyName());
         Name fieldName = processor.nameFactory.create(field);
@@ -929,47 +931,87 @@ public class LuceneSearchSession implements WorkspaceSession {
         switch (type) {
             case REFERENCE:
             case WEAK_REFERENCE:
-            case DECIMAL: // stored in lexicographically-ordered form
             case STRING:
                 String stringValue = stringFactory.create(value);
                 if (value instanceof Path) {
                     stringValue = processor.pathAsString((Path)value);
                 }
-                if (!caseSensitive) stringValue = stringValue.toLowerCase();
                 switch (operator) {
                     case EQUAL_TO:
                         return CompareStringQuery.createQueryForNodesWithFieldEqualTo(stringValue,
                                                                                       field,
                                                                                       factories,
-                                                                                      caseSensitive);
+                                                                                      caseOperation);
                     case NOT_EQUAL_TO:
                         Query query = CompareStringQuery.createQueryForNodesWithFieldEqualTo(stringValue,
                                                                                              field,
                                                                                              factories,
-                                                                                             caseSensitive);
-                        return new NotQuery(query);
+                                                                                             caseOperation);
+                        return not(query);
                     case GREATER_THAN:
                         return CompareStringQuery.createQueryForNodesWithFieldGreaterThan(stringValue,
                                                                                           field,
                                                                                           factories,
-                                                                                          caseSensitive);
+                                                                                          caseOperation);
                     case GREATER_THAN_OR_EQUAL_TO:
                         return CompareStringQuery.createQueryForNodesWithFieldGreaterThanOrEqualTo(stringValue,
                                                                                                    field,
                                                                                                    factories,
-                                                                                                   caseSensitive);
+                                                                                                   caseOperation);
                     case LESS_THAN:
                         return CompareStringQuery.createQueryForNodesWithFieldLessThan(stringValue,
                                                                                        field,
                                                                                        factories,
-                                                                                       caseSensitive);
+                                                                                       caseOperation);
                     case LESS_THAN_OR_EQUAL_TO:
                         return CompareStringQuery.createQueryForNodesWithFieldLessThanOrEqualTo(stringValue,
                                                                                                 field,
                                                                                                 factories,
-                                                                                                caseSensitive);
+                                                                                                caseOperation);
                     case LIKE:
-                        return findNodesLike(field, stringValue, caseSensitive);
+                        return findNodesLike(field, stringValue, caseOperation);
+                }
+                break;
+            case DECIMAL:
+                // Decimal values are stored in a special lexicographically sortable form, so we have to
+                // convert the value to this ...
+                BigDecimal decimalValue = factories.getDecimalFactory().create(value);
+                stringValue = FieldUtil.decimalToString(decimalValue);
+                // Now we can just create the query ...
+                switch (operator) {
+                    case EQUAL_TO:
+                        return CompareStringQuery.createQueryForNodesWithFieldEqualTo(stringValue,
+                                                                                      field,
+                                                                                      factories,
+                                                                                      caseOperation);
+                    case NOT_EQUAL_TO:
+                        Query query = CompareStringQuery.createQueryForNodesWithFieldEqualTo(stringValue,
+                                                                                             field,
+                                                                                             factories,
+                                                                                             caseOperation);
+                        return not(query);
+                    case GREATER_THAN:
+                        return CompareStringQuery.createQueryForNodesWithFieldGreaterThan(stringValue,
+                                                                                          field,
+                                                                                          factories,
+                                                                                          caseOperation);
+                    case GREATER_THAN_OR_EQUAL_TO:
+                        return CompareStringQuery.createQueryForNodesWithFieldGreaterThanOrEqualTo(stringValue,
+                                                                                                   field,
+                                                                                                   factories,
+                                                                                                   caseOperation);
+                    case LESS_THAN:
+                        return CompareStringQuery.createQueryForNodesWithFieldLessThan(stringValue,
+                                                                                       field,
+                                                                                       factories,
+                                                                                       caseOperation);
+                    case LESS_THAN_OR_EQUAL_TO:
+                        return CompareStringQuery.createQueryForNodesWithFieldLessThanOrEqualTo(stringValue,
+                                                                                                field,
+                                                                                                factories,
+                                                                                                caseOperation);
+                    case LIKE:
+                        return findNodesLike(field, stringValue, caseOperation);
                 }
                 break;
             case DATE:
@@ -982,7 +1024,7 @@ public class LuceneSearchSession implements WorkspaceSession {
                     case NOT_EQUAL_TO:
                         if (date < longRule.getMinimum() || date > longRule.getMaximum()) return new MatchAllDocsQuery();
                         Query query = NumericRangeQuery.newLongRange(field, date, date, true, true);
-                        return new NotQuery(query);
+                        return not(query);
                     case GREATER_THAN:
                         if (date > longRule.getMaximum()) return new MatchNoneQuery();
                         return NumericRangeQuery.newLongRange(field, date, longRule.getMaximum(), false, true);
@@ -1011,7 +1053,7 @@ public class LuceneSearchSession implements WorkspaceSession {
                     case NOT_EQUAL_TO:
                         if (longValue < longRule.getMinimum() || longValue > longRule.getMaximum()) return new MatchAllDocsQuery();
                         Query query = NumericRangeQuery.newLongRange(field, longValue, longValue, true, true);
-                        return new NotQuery(query);
+                        return not(query);
                     case GREATER_THAN:
                         if (longValue > longRule.getMaximum()) return new MatchNoneQuery();
                         return NumericRangeQuery.newLongRange(field, longValue, longRule.getMaximum(), false, true);
@@ -1072,7 +1114,7 @@ public class LuceneSearchSession implements WorkspaceSession {
                     case NOT_EQUAL_TO:
                         if (intValue < intRule.getMinimum() || intValue > intRule.getMaximum()) return new MatchAllDocsQuery();
                         Query query = NumericRangeQuery.newIntRange(field, intValue, intValue, true, true);
-                        return new NotQuery(query);
+                        return not(query);
                     case GREATER_THAN:
                         if (intValue > intRule.getMaximum()) return new MatchNoneQuery();
                         return NumericRangeQuery.newIntRange(field, intValue, intRule.getMaximum(), false, true);
@@ -1101,7 +1143,7 @@ public class LuceneSearchSession implements WorkspaceSession {
                     case NOT_EQUAL_TO:
                         if (doubleValue < dRule.getMinimum() || doubleValue > dRule.getMaximum()) return new MatchAllDocsQuery();
                         Query query = NumericRangeQuery.newDoubleRange(field, doubleValue, doubleValue, true, true);
-                        return new NotQuery(query);
+                        return not(query);
                     case GREATER_THAN:
                         if (doubleValue > dRule.getMaximum()) return new MatchNoneQuery();
                         return NumericRangeQuery.newDoubleRange(field, doubleValue, dRule.getMaximum(), false, true);
@@ -1130,7 +1172,7 @@ public class LuceneSearchSession implements WorkspaceSession {
                     case NOT_EQUAL_TO:
                         if (floatValue < fRule.getMinimum() || floatValue > fRule.getMaximum()) return new MatchAllDocsQuery();
                         Query query = NumericRangeQuery.newFloatRange(field, floatValue, floatValue, true, true);
-                        return new NotQuery(query);
+                        return not(query);
                     case GREATER_THAN:
                         if (floatValue > fRule.getMaximum()) return new MatchNoneQuery();
                         return NumericRangeQuery.newFloatRange(field, floatValue, fRule.getMaximum(), false, true);
@@ -1179,19 +1221,34 @@ public class LuceneSearchSession implements WorkspaceSession {
         String stringValue = processor.stringFactory.create(value);
         switch (operator) {
             case EQUAL_TO:
-                return CompareStringQuery.createQueryForNodesWithFieldEqualTo(stringValue, field, factories, true);
+                return CompareStringQuery.createQueryForNodesWithFieldEqualTo(stringValue, field, factories, CaseOperations.AS_IS);
             case NOT_EQUAL_TO:
-                return new NotQuery(CompareStringQuery.createQueryForNodesWithFieldEqualTo(stringValue, field, factories, true));
+                return not(CompareStringQuery.createQueryForNodesWithFieldEqualTo(stringValue,
+                                                                                  field,
+                                                                                  factories,
+                                                                                  CaseOperations.AS_IS));
             case GREATER_THAN:
-                return CompareStringQuery.createQueryForNodesWithFieldGreaterThan(stringValue, field, factories, true);
+                return CompareStringQuery.createQueryForNodesWithFieldGreaterThan(stringValue,
+                                                                                  field,
+                                                                                  factories,
+                                                                                  CaseOperations.AS_IS);
             case GREATER_THAN_OR_EQUAL_TO:
-                return CompareStringQuery.createQueryForNodesWithFieldGreaterThanOrEqualTo(stringValue, field, factories, true);
+                return CompareStringQuery.createQueryForNodesWithFieldGreaterThanOrEqualTo(stringValue,
+                                                                                           field,
+                                                                                           factories,
+                                                                                           CaseOperations.AS_IS);
             case LESS_THAN:
-                return CompareStringQuery.createQueryForNodesWithFieldLessThan(stringValue, field, factories, true);
+                return CompareStringQuery.createQueryForNodesWithFieldLessThan(stringValue,
+                                                                               field,
+                                                                               factories,
+                                                                               CaseOperations.AS_IS);
             case LESS_THAN_OR_EQUAL_TO:
-                return CompareStringQuery.createQueryForNodesWithFieldLessThanOrEqualTo(stringValue, field, factories, true);
+                return CompareStringQuery.createQueryForNodesWithFieldLessThanOrEqualTo(stringValue,
+                                                                                        field,
+                                                                                        factories,
+                                                                                        CaseOperations.AS_IS);
             case LIKE:
-                return findNodesLike(field, stringValue, false);
+                return findNodesLike(field, stringValue, CaseOperations.AS_IS);
         }
         return null;
     }
@@ -1255,17 +1312,18 @@ public class LuceneSearchSession implements WorkspaceSession {
                 BigDecimal upperDecimal = factories.getDecimalFactory().create(upperValue);
                 String lsv = FieldUtil.decimalToString(lowerDecimal);
                 String usv = FieldUtil.decimalToString(upperDecimal);
+                CaseOperation caseOp = CaseOperations.AS_IS; // decimals are stored the same way regardless
                 Query lower = null;
                 if (includesLower) {
-                    lower = CompareStringQuery.createQueryForNodesWithFieldGreaterThanOrEqualTo(lsv, field, factories, false);
+                    lower = CompareStringQuery.createQueryForNodesWithFieldGreaterThanOrEqualTo(lsv, field, factories, caseOp);
                 } else {
-                    lower = CompareStringQuery.createQueryForNodesWithFieldGreaterThan(lsv, field, factories, false);
+                    lower = CompareStringQuery.createQueryForNodesWithFieldGreaterThan(lsv, field, factories, caseOp);
                 }
                 Query upper = null;
                 if (includesUpper) {
-                    upper = CompareStringQuery.createQueryForNodesWithFieldLessThanOrEqualTo(usv, field, factories, false);
+                    upper = CompareStringQuery.createQueryForNodesWithFieldLessThanOrEqualTo(usv, field, factories, caseOp);
                 } else {
-                    upper = CompareStringQuery.createQueryForNodesWithFieldLessThan(usv, field, factories, false);
+                    upper = CompareStringQuery.createQueryForNodesWithFieldLessThan(usv, field, factories, caseOp);
                 }
                 BooleanQuery query = new BooleanQuery();
                 query.add(lower, Occur.MUST);
@@ -1306,15 +1364,15 @@ public class LuceneSearchSession implements WorkspaceSession {
     public Query findNodesWith( NodePath nodePath,
                                 Operator operator,
                                 Object value,
-                                boolean caseSensitive ) {
-        if (!caseSensitive) value = processor.stringFactory.create(value).toLowerCase();
+                                CaseOperation caseOperation ) {
+        if (caseOperation == null) caseOperation = CaseOperations.AS_IS;
         Path pathValue = operator != Operator.LIKE ? processor.pathFactory.create(value) : null;
         Query query = null;
         switch (operator) {
             case EQUAL_TO:
                 return findNodeAt(pathValue);
             case NOT_EQUAL_TO:
-                return new NotQuery(findNodeAt(pathValue));
+                return not(findNodeAt(pathValue));
             case LIKE:
                 String likeExpression = processor.stringFactory.create(value);
                 likeExpression = likeExpresionForWildcardPath(likeExpression);
@@ -1328,38 +1386,49 @@ public class LuceneSearchSession implements WorkspaceSession {
                     regex = regex.replace("%", ".*").replace("_", ".");
                     // Now create a regex query ...
                     RegexQuery regexQuery = new RegexQuery(new Term(ContentIndex.PATH, regex));
-                    int flags = caseSensitive ? 0 : Pattern.CASE_INSENSITIVE;
+                    int flags = caseOperation == CaseOperations.AS_IS ? 0 : Pattern.CASE_INSENSITIVE;
                     regexQuery.setRegexImplementation(new JavaUtilRegexCapabilities(flags));
                     query = regexQuery;
                 } else {
-                    query = findNodesLike(ContentIndex.PATH, likeExpression, caseSensitive);
+                    query = findNodesLike(ContentIndex.PATH, likeExpression, caseOperation);
                 }
                 break;
             case GREATER_THAN:
                 query = ComparePathQuery.createQueryForNodesWithPathGreaterThan(pathValue,
                                                                                 ContentIndex.PATH,
                                                                                 processor.valueFactories,
-                                                                                caseSensitive);
+                                                                                caseOperation);
                 break;
             case GREATER_THAN_OR_EQUAL_TO:
                 query = ComparePathQuery.createQueryForNodesWithPathGreaterThanOrEqualTo(pathValue,
                                                                                          ContentIndex.PATH,
                                                                                          processor.valueFactories,
-                                                                                         caseSensitive);
+                                                                                         caseOperation);
                 break;
             case LESS_THAN:
                 query = ComparePathQuery.createQueryForNodesWithPathLessThan(pathValue,
                                                                              ContentIndex.PATH,
                                                                              processor.valueFactories,
-                                                                             caseSensitive);
+                                                                             caseOperation);
                 break;
             case LESS_THAN_OR_EQUAL_TO:
                 query = ComparePathQuery.createQueryForNodesWithPathLessThanOrEqualTo(pathValue,
                                                                                       ContentIndex.PATH,
                                                                                       processor.valueFactories,
-                                                                                      caseSensitive);
+                                                                                      caseOperation);
                 break;
         }
+        return query;
+    }
+
+    protected Query not( Query notted ) {
+        // if (notted == null) return new MatchAllDocsQuery();
+        // return new NotQuery(notted);
+        BooleanQuery query = new BooleanQuery();
+        // We need at least some positive match, so get all docs ...
+        query.add(new MatchAllDocsQuery(), Occur.SHOULD);
+        // Now apply the original query being 'NOT-ed' as a MUST_NOT occurrence ...
+        query.add(notted, Occur.MUST_NOT);
         return query;
     }
 
@@ -1367,10 +1436,14 @@ public class LuceneSearchSession implements WorkspaceSession {
     public Query findNodesWith( NodeName nodeName,
                                 Operator operator,
                                 Object value,
-                                boolean caseSensitive ) {
+                                CaseOperation caseOperation ) {
+        if (caseOperation == null) caseOperation = CaseOperations.AS_IS;
         ValueFactories factories = processor.valueFactories;
         String stringValue = processor.stringFactory.create(value);
-        if (!caseSensitive) stringValue = stringValue.toLowerCase();
+        if (stringValue.startsWith("./") && stringValue.length() > 2) {
+            // Then it is a URI, and per 3.6.4.9 the './' prefix should be removed ...
+            stringValue = stringValue.substring(2);
+        }
         Path.Segment segment = operator != Operator.LIKE ? processor.pathFactory.createSegment(stringValue) : null;
         // Determine if the string value contained a SNS index ...
         boolean includeSns = stringValue.indexOf('[') != -1;
@@ -1378,29 +1451,28 @@ public class LuceneSearchSession implements WorkspaceSession {
         Query query = null;
         switch (operator) {
             case EQUAL_TO:
-                if (!includeSns) {
-                    return new TermQuery(new Term(ContentIndex.NODE_NAME, stringValue));
-                }
-                BooleanQuery booleanQuery = new BooleanQuery();
-                booleanQuery.add(new TermQuery(new Term(ContentIndex.NODE_NAME, stringValue)), Occur.MUST);
-                booleanQuery.add(NumericRangeQuery.newIntRange(ContentIndex.SNS_INDEX, snsIndex, snsIndex, true, true),
-                                 Occur.MUST);
-                return booleanQuery;
+                query = CompareNameQuery.createQueryForNodesWithNameEqualTo(segment,
+                                                                            ContentIndex.NODE_NAME,
+                                                                            ContentIndex.SNS_INDEX,
+                                                                            factories,
+                                                                            caseOperation,
+                                                                            includeSns);
+                break;
             case NOT_EQUAL_TO:
-                if (!includeSns) {
-                    return new NotQuery(new TermQuery(new Term(ContentIndex.NODE_NAME, stringValue)));
-                }
-                booleanQuery = new BooleanQuery();
-                booleanQuery.add(new TermQuery(new Term(ContentIndex.NODE_NAME, stringValue)), Occur.MUST);
-                booleanQuery.add(NumericRangeQuery.newIntRange(ContentIndex.SNS_INDEX, snsIndex, snsIndex, true, true),
-                                 Occur.MUST);
-                return new NotQuery(booleanQuery);
+                query = CompareNameQuery.createQueryForNodesWithNameEqualTo(segment,
+                                                                            ContentIndex.NODE_NAME,
+                                                                            ContentIndex.SNS_INDEX,
+                                                                            factories,
+                                                                            caseOperation,
+                                                                            includeSns);
+                query = not(query);
+                return query;
             case GREATER_THAN:
                 query = CompareNameQuery.createQueryForNodesWithNameGreaterThan(segment,
                                                                                 ContentIndex.NODE_NAME,
                                                                                 ContentIndex.SNS_INDEX,
                                                                                 factories,
-                                                                                caseSensitive,
+                                                                                caseOperation,
                                                                                 includeSns);
                 break;
             case GREATER_THAN_OR_EQUAL_TO:
@@ -1408,7 +1480,7 @@ public class LuceneSearchSession implements WorkspaceSession {
                                                                                          ContentIndex.NODE_NAME,
                                                                                          ContentIndex.SNS_INDEX,
                                                                                          factories,
-                                                                                         caseSensitive,
+                                                                                         caseOperation,
                                                                                          includeSns);
                 break;
             case LESS_THAN:
@@ -1416,7 +1488,7 @@ public class LuceneSearchSession implements WorkspaceSession {
                                                                              ContentIndex.NODE_NAME,
                                                                              ContentIndex.SNS_INDEX,
                                                                              factories,
-                                                                             caseSensitive,
+                                                                             caseOperation,
                                                                              includeSns);
                 break;
             case LESS_THAN_OR_EQUAL_TO:
@@ -1424,7 +1496,7 @@ public class LuceneSearchSession implements WorkspaceSession {
                                                                                       ContentIndex.NODE_NAME,
                                                                                       ContentIndex.SNS_INDEX,
                                                                                       factories,
-                                                                                      caseSensitive,
+                                                                                      caseOperation,
                                                                                       includeSns);
                 break;
             case LIKE:
@@ -1437,7 +1509,7 @@ public class LuceneSearchSession implements WorkspaceSession {
                     Query localNameQuery = CompareStringQuery.createQueryForNodesWithFieldLike(localNameExpression,
                                                                                                ContentIndex.NODE_NAME,
                                                                                                factories,
-                                                                                               caseSensitive);
+                                                                                               caseOperation);
                     Query snsQuery = createSnsIndexQuery(snsIndexExpression);
                     if (localNameQuery == null) {
                         if (snsQuery == null) {
@@ -1452,7 +1524,7 @@ public class LuceneSearchSession implements WorkspaceSession {
                             query = localNameQuery;
                         } else {
                             // There is both a local name part and a SNS part ...
-                            booleanQuery = new BooleanQuery();
+                            BooleanQuery booleanQuery = new BooleanQuery();
                             booleanQuery.add(localNameQuery, Occur.MUST);
                             booleanQuery.add(snsQuery, Occur.MUST);
                             query = booleanQuery;
@@ -1463,7 +1535,7 @@ public class LuceneSearchSession implements WorkspaceSession {
                     query = CompareStringQuery.createQueryForNodesWithFieldLike(likeExpression,
                                                                                 ContentIndex.NODE_NAME,
                                                                                 factories,
-                                                                                caseSensitive);
+                                                                                caseOperation);
                 }
                 assert query != null;
                 break;
@@ -1475,50 +1547,51 @@ public class LuceneSearchSession implements WorkspaceSession {
     public Query findNodesWith( NodeLocalName nodeName,
                                 Operator operator,
                                 Object value,
-                                boolean caseSensitive ) {
+                                CaseOperation caseOperation ) {
+        if (caseOperation == null) caseOperation = CaseOperations.AS_IS;
         String nameValue = processor.stringFactory.create(value);
         Query query = null;
         switch (operator) {
             case LIKE:
                 String likeExpression = processor.stringFactory.create(value);
-                query = findNodesLike(ContentIndex.LOCAL_NAME, likeExpression, caseSensitive);
+                query = findNodesLike(ContentIndex.LOCAL_NAME, likeExpression, caseOperation);
                 break;
             case EQUAL_TO:
                 query = CompareStringQuery.createQueryForNodesWithFieldEqualTo(nameValue,
                                                                                ContentIndex.LOCAL_NAME,
                                                                                processor.valueFactories,
-                                                                               caseSensitive);
+                                                                               caseOperation);
                 break;
             case NOT_EQUAL_TO:
                 query = CompareStringQuery.createQueryForNodesWithFieldEqualTo(nameValue,
                                                                                ContentIndex.LOCAL_NAME,
                                                                                processor.valueFactories,
-                                                                               caseSensitive);
-                query = new NotQuery(query);
+                                                                               caseOperation);
+                query = not(query);
                 break;
             case GREATER_THAN:
                 query = CompareStringQuery.createQueryForNodesWithFieldGreaterThan(nameValue,
                                                                                    ContentIndex.LOCAL_NAME,
                                                                                    processor.valueFactories,
-                                                                                   caseSensitive);
+                                                                                   caseOperation);
                 break;
             case GREATER_THAN_OR_EQUAL_TO:
                 query = CompareStringQuery.createQueryForNodesWithFieldGreaterThanOrEqualTo(nameValue,
                                                                                             ContentIndex.LOCAL_NAME,
                                                                                             processor.valueFactories,
-                                                                                            caseSensitive);
+                                                                                            caseOperation);
                 break;
             case LESS_THAN:
                 query = CompareStringQuery.createQueryForNodesWithFieldLessThan(nameValue,
                                                                                 ContentIndex.LOCAL_NAME,
                                                                                 processor.valueFactories,
-                                                                                caseSensitive);
+                                                                                caseOperation);
                 break;
             case LESS_THAN_OR_EQUAL_TO:
                 query = CompareStringQuery.createQueryForNodesWithFieldLessThanOrEqualTo(nameValue,
                                                                                          ContentIndex.LOCAL_NAME,
                                                                                          processor.valueFactories,
-                                                                                         caseSensitive);
+                                                                                         caseOperation);
                 break;
         }
         return query;
@@ -1534,7 +1607,7 @@ public class LuceneSearchSession implements WorkspaceSession {
                 return NumericRangeQuery.newIntRange(ContentIndex.DEPTH, depth, depth, true, true);
             case NOT_EQUAL_TO:
                 Query query = NumericRangeQuery.newIntRange(ContentIndex.DEPTH, depth, depth, true, true);
-                return new NotQuery(query);
+                return not(query);
             case GREATER_THAN:
                 return NumericRangeQuery.newIntRange(ContentIndex.DEPTH, depth, MAX_DEPTH, false, true);
             case GREATER_THAN_OR_EQUAL_TO:
@@ -1551,12 +1624,12 @@ public class LuceneSearchSession implements WorkspaceSession {
     }
 
     protected Query createLocalNameQuery( String likeExpression,
-                                          boolean caseSensitive ) {
+                                          CaseOperation caseOperation ) {
         if (likeExpression == null) return null;
         return CompareStringQuery.createQueryForNodesWithFieldLike(likeExpression,
                                                                    ContentIndex.LOCAL_NAME,
                                                                    processor.valueFactories,
-                                                                   caseSensitive);
+                                                                   caseOperation);
     }
 
     /**
@@ -1595,7 +1668,7 @@ public class LuceneSearchSession implements WorkspaceSession {
         if (likeExpression.indexOf('_') != -1) {
             if (likeExpression.indexOf('%') != -1) {
                 // Contains both ...
-                return findNodesLike(ContentIndex.SNS_INDEX, likeExpression, true);
+                return findNodesLike(ContentIndex.SNS_INDEX, likeExpression, CaseOperations.AS_IS);
             }
             // It presumably contains some numbers and at least one '_' character ...
             int firstWildcardChar = likeExpression.indexOf('_');
@@ -1604,7 +1677,7 @@ public class LuceneSearchSession implements WorkspaceSession {
                 int secondWildcardChar = likeExpression.indexOf('_', firstWildcardChar + 1);
                 if (secondWildcardChar != -1) {
                     // There are multiple '_' characters ...
-                    return findNodesLike(ContentIndex.SNS_INDEX, likeExpression, true);
+                    return findNodesLike(ContentIndex.SNS_INDEX, likeExpression, CaseOperations.AS_IS);
                 }
             }
             // There's only one '_', so parse the lowermost value and uppermost value ...
@@ -1622,7 +1695,7 @@ public class LuceneSearchSession implements WorkspaceSession {
         }
         if (likeExpression.indexOf('%') != -1) {
             // It presumably contains some numbers and at least one '%' character ...
-            return findNodesLike(ContentIndex.SNS_INDEX, likeExpression, true);
+            return findNodesLike(ContentIndex.SNS_INDEX, likeExpression, CaseOperations.AS_IS);
         }
         // This is not a LIKE expression but an exact value specification and should be a number ...
         try {
@@ -1867,7 +1940,7 @@ public class LuceneSearchSession implements WorkspaceSession {
             // Read the Location ...
             tuple[0] = session.readLocation(document);
             // And read the score ...
-            tuple[1] = scorer.score();
+            tuple[1] = new Float(scorer.score());
             // And add the tuple ...
             tuples.add(tuple);
         }

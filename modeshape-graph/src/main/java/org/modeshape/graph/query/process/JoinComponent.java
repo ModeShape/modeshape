@@ -26,6 +26,7 @@ package org.modeshape.graph.query.process;
 import java.util.Comparator;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.property.Path;
+import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.ValueComparators;
 import org.modeshape.graph.query.QueryContext;
 import org.modeshape.graph.query.QueryResults.Columns;
@@ -344,19 +345,78 @@ public abstract class JoinComponent extends ProcessingComponent {
                                            ProcessingComponent right,
                                            JoinCondition condition ) {
         if (condition instanceof SameNodeJoinCondition) {
+            SameNodeJoinCondition joinCondition = (SameNodeJoinCondition)condition;
+            if (left.getColumns().hasSelector(joinCondition.selector1Name().getString())) {
+                final String relPathStr = joinCondition.selector2Path();
+                final PathFactory pathFactory = right.getContext().getExecutionContext().getValueFactories().getPathFactory();
+                final Path relPath = pathFactory.create(relPathStr);
+                if (relPath == null || relPath.isAbsolute()
+                    || (relPath.size() == 1 && relPath.getLastSegment().isSelfReference())) {
+                    return new Joinable() {
+                        public boolean evaluate( Object locationA,
+                                                 Object locationB ) {
+                            Location location1 = (Location)locationA;
+                            Location location2 = (Location)locationB;
+                            return location1 != null && location1.isSame(location2);
+                        }
+                    };
+                }
+                // Get the path factory for the right-side ...
+                return new Joinable() {
+                    public boolean evaluate( Object locationA,
+                                             Object locationB ) {
+                        Location location1 = (Location)locationA;
+                        Location location2 = (Location)locationB;
+                        Path path1 = location1.getPath();
+                        if (path1 == null) return false;
+                        Path path2a = location2.getPath();
+                        if (path2a == null) return false;
+                        Path path2 = pathFactory.create(path2a, relPath);
+                        return path2.isSameAs(path1);
+                    }
+                };
+            }
+            // This must be a right outer join that was reversed in query-plan optimization ...
+            final String relPathStr = joinCondition.selector2Path();
+            final PathFactory pathFactory = left.getContext().getExecutionContext().getValueFactories().getPathFactory();
+            final Path relPath = pathFactory.create(relPathStr);
+            if (relPath == null || relPath.isAbsolute() || (relPath.size() == 1 && relPath.getLastSegment().isSelfReference())) {
+                return new Joinable() {
+                    public boolean evaluate( Object locationA,
+                                             Object locationB ) {
+                        Location location1 = (Location)locationA;
+                        Location location2 = (Location)locationB;
+                        return location1 != null && location1.isSame(location2);
+                    }
+                };
+            }
+            // Get the path factory for the left-side ...
             return new Joinable() {
                 public boolean evaluate( Object locationA,
                                          Object locationB ) {
                     Location location1 = (Location)locationA;
                     Location location2 = (Location)locationB;
-                    return location1 == null ? location2 == null : location1.isSame(location2);
+                    Path path1a = location1.getPath();
+                    if (path1a == null) return false;
+                    Path path2 = location2.getPath();
+                    if (path2 == null) return false;
+                    Path path1 = pathFactory.create(path1a, relPath);
+                    return path2.isSameAs(path1);
                 }
             };
+
         } else if (condition instanceof EquiJoinCondition) {
             return new Joinable() {
                 public boolean evaluate( Object leftValue,
                                          Object rightValue ) {
-                    return leftValue == null ? rightValue == null : leftValue.equals(rightValue);
+                    // Standard equi-joins treat nulls differently than one might expect:
+                    //
+                    // "NULL will never match any other value (not even NULL itself), unless the join condition
+                    // explicitly uses the IS NULL or IS NOT NULL predicates." JCR doesn't have "IS NULL" or "IS NOT NULL"
+                    // support for the join conditions.
+                    //
+                    // See http://en.wikipedia.org/wiki/Join_(SQL)#Inner_join
+                    return leftValue != null && leftValue.equals(rightValue);
                 }
             };
         } else if (condition instanceof ChildNodeJoinCondition) {

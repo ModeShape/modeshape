@@ -34,6 +34,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.property.PropertyType;
 import org.modeshape.graph.query.QueryContext;
@@ -62,7 +63,7 @@ public class QueryResultColumnsTest extends AbstractQueryResultsTest {
     @Before
     public void beforeEach() {
         MockitoAnnotations.initMocks(this);
-        context = new QueryContext(schemata, typeSystem);
+        context = new QueryContext(new ExecutionContext(), schemata, typeSystem);
         columnList = new ArrayList<Column>();
         columnList.add(new Column(selector("table1"), "colA", "colA"));
         columnList.add(new Column(selector("table1"), "colB", "colB"));

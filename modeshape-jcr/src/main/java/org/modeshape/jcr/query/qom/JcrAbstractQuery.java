@@ -28,10 +28,11 @@ import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.query.InvalidQueryException;
 import javax.jcr.query.Query;
 import org.modeshape.common.collection.Problem;
-import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.Problem.Status;
+import org.modeshape.common.collection.Problems;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.query.model.QueryCommand;
 import org.modeshape.graph.query.parse.QueryParser;
@@ -105,7 +106,7 @@ public abstract class JcrAbstractQuery implements Query {
      */
     public String getStoredQueryPath() throws ItemNotFoundException {
         if (storedAtPath == null) {
-            throw new ItemNotFoundException(JcrI18n.notStoredQuery.text());
+            throw new ItemNotFoundException(JcrI18n.notStoredQuery.text(statement));
         }
         return storedAtPath.getString(context.getExecutionContext().getNamespaceRegistry());
     }
@@ -130,7 +131,7 @@ public abstract class JcrAbstractQuery implements Query {
                 if (problem.getStatus() != Status.ERROR) continue;
                 msg.append(problem.getMessageString()).append("\n");
             }
-            throw new RepositoryException(msg.toString());
+            throw new InvalidQueryException(msg.toString());
         }
     }
 }

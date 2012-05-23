@@ -197,6 +197,8 @@ public final class GraphI18n {
     public static I18n nextMethodMustBeCalledBeforeGettingValue;
     public static I18n expectingValidName;
     public static I18n expectingValidPath;
+    public static I18n pathIsNotValid;
+    public static I18n pathMustBeAbsolute;
     public static I18n columnMustBeScoped;
     public static I18n expectingValidNameAtLineAndColumn;
     public static I18n expectingValidPathAtLineAndColumn;
@@ -218,6 +220,9 @@ public final class GraphI18n {
     public static I18n operatorIsNotValidAgainstColumnInTable;
     public static I18n columnInTableIsNotOrderable;
     public static I18n missingVariableValue;
+    public static I18n lengthOperandRequiresLongLiteralType;
+    public static I18n nameOperandRequiresNameLiteralType;
+    public static I18n selectorNamesMayNotBeUsedMoreThanOnce;
 
     /* Search */
     public static I18n interruptedWhileClosingChannel;

@@ -105,7 +105,7 @@ class NodeTypeSchemata implements Schemata {
 
         // Build the schemata for the current node types ...
         TypeSystem typeSystem = context.getValueFactories().getTypeSystem();
-        ImmutableSchemata.Builder builder = ImmutableSchemata.createBuilder(typeSystem);
+        ImmutableSchemata.Builder builder = ImmutableSchemata.createBuilder(context, typeSystem);
 
         // Build the fast-search for type names based upon PropertyType values ...
         types = new HashMap<Integer, String>();
@@ -527,7 +527,7 @@ class NodeTypeSchemata implements Schemata {
             this.session = session;
             this.context = this.session.getExecutionContext();
             this.nameFactory = context.getValueFactories().getNameFactory();
-            this.builder = ImmutableSchemata.createBuilder(context.getValueFactories().getTypeSystem());
+            this.builder = ImmutableSchemata.createBuilder(context, context.getValueFactories().getTypeSystem());
             // Add the "AllNodes" table ...
             addAllNodesTable(builder, null, context, pseudoProperties);
             this.schemata = builder.build();

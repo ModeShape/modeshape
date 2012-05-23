@@ -222,21 +222,18 @@ public class TeiidSequencerIntegrationTest extends AbstractSequencerTest {
         // Query for the VDBs by version range and description (which is actually on the derived/sequenced information) ...
         printQuery("SELECT [jcr:primaryType],[jcr:created],[jcr:createdBy] FROM [nt:file] WHERE PATH() IN "
                    + "( SELECT [vdb:originalFile] FROM [vdb:virtualDatabase] "
-                   + "WHERE [vdb:version] <= $maxVersion AND CONTAINS([vdb:description],'xml OR maybe'))",
-                   4,
-                   var("description", "*"),
+                   + "WHERE [vdb:version] <= $maxVersion AND CONTAINS([vdb:description],'xml OR maybe'))", 4,
+        // var("description", "*"),
                    var("maxVersion", "3"));
         printQuery("SELECT [jcr:primaryType],[jcr:created],[jcr:createdBy] FROM [nt:file] WHERE PATH() IN "
                    + "( SELECT [vdb:originalFile] FROM [vdb:virtualDatabase] "
-                   + "WHERE [vdb:version] <= $maxVersion AND CONTAINS([vdb:description],'xml maybe'))",
-                   1,
-                   var("description", "*"),
+                   + "WHERE [vdb:version] <= $maxVersion AND CONTAINS([vdb:description],'xml maybe'))", 1,
+        // var("description", "*"),
                    var("maxVersion", "3"));
         printQuery("SELECT [jcr:primaryType],[jcr:created],[jcr:createdBy] FROM [nt:file] WHERE PATH() IN "
                    + "( SELECT [vdb:originalFile] FROM [vdb:virtualDatabase] "
-                   + "WHERE [vdb:version] <= $maxVersion AND CONTAINS([vdb:description],'xml OR xml maybe'))",
-                   4,
-                   var("description", "*"),
+                   + "WHERE [vdb:version] <= $maxVersion AND CONTAINS([vdb:description],'xml OR xml maybe'))", 4,
+        // var("description", "*"),
                    var("maxVersion", "3"));
     }
 

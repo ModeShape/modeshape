@@ -61,9 +61,9 @@ import org.modeshape.graph.query.plan.CanonicalPlanner;
 import org.modeshape.graph.query.plan.JoinAlgorithm;
 import org.modeshape.graph.query.plan.PlanHints;
 import org.modeshape.graph.query.plan.PlanNode;
-import org.modeshape.graph.query.plan.PlanUtil;
 import org.modeshape.graph.query.plan.PlanNode.Property;
 import org.modeshape.graph.query.plan.PlanNode.Type;
+import org.modeshape.graph.query.plan.PlanUtil;
 import org.modeshape.graph.query.validate.ImmutableSchemata;
 import org.modeshape.graph.query.validate.Schemata;
 
@@ -81,8 +81,9 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
 
     @Before
     public void beforeEach() {
-        TypeSystem typeSystem = new ExecutionContext().getValueFactories().getTypeSystem();
-        ImmutableSchemata.Builder builder = ImmutableSchemata.createBuilder(typeSystem);
+        ExecutionContext execContext = new ExecutionContext();
+        TypeSystem typeSystem = execContext.getValueFactories().getTypeSystem();
+        ImmutableSchemata.Builder builder = ImmutableSchemata.createBuilder(execContext, typeSystem);
         builder.addTable("t1", "c11", "c12", "c13");
         builder.addTable("t2", "c21", "c22", "c23");
         builder.addTable("all", "a1", "a2", "a3", "a4", "primaryType", "mixins");
@@ -97,7 +98,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         builder.addView("type2",
                         "SELECT all.a3, all.a4 FROM all WHERE all.primaryType IN ('t2','t0') AND all.mixins IN ('t4','t5')");
         Schemata schemata = builder.build();
-        context = new QueryContext(schemata, typeSystem);
+        context = new QueryContext(execContext, schemata, typeSystem);
 
         node = new PlanNode(Type.ACCESS);
 
@@ -536,10 +537,11 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         // Create the expected plan ...
         PlanNode access = new PlanNode(Type.ACCESS, selector("type1"));
         PlanNode project = new PlanNode(Type.PROJECT, access, selector("type1"));
-        project.setProperty(Property.PROJECT_COLUMNS, columns(column("type1", "a1", "a"),
-                                                              column("type1", "a2", "b"),
-                                                              column("type1", "a3", "c"),
-                                                              column("type1", "a4", "d")));
+        project.setProperty(Property.PROJECT_COLUMNS,
+                            columns(column("type1", "a1", "a"),
+                                    column("type1", "a2", "b"),
+                                    column("type1", "a3", "c"),
+                                    column("type1", "a4", "d")));
         PlanNode select1 = new PlanNode(Type.SELECT, project, selector("type1"));
         select1.setProperty(Property.SELECT_CRITERIA, new FullTextSearch(selector("type1"), "a2", "something"));
         PlanNode select2 = new PlanNode(Type.SELECT, select1, selector("type1"));
@@ -570,10 +572,11 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
 
         // Create the expected plan ...
         PlanNode project = new PlanNode(Type.PROJECT, selector("type1"), selector("type2"));
-        project.setProperty(Property.PROJECT_COLUMNS, columns(column("type1", "a1", "a"),
-                                                              column("type1", "a2", "b"),
-                                                              column("type2", "a3", "c"),
-                                                              column("type2", "a4", "d")));
+        project.setProperty(Property.PROJECT_COLUMNS,
+                            columns(column("type1", "a1", "a"),
+                                    column("type1", "a2", "b"),
+                                    column("type2", "a3", "c"),
+                                    column("type2", "a4", "d")));
         PlanNode join = new PlanNode(Type.JOIN, project, selector("type1"), selector("type2"));
         join.setProperty(Property.JOIN_ALGORITHM, JoinAlgorithm.NESTED_LOOP);
         join.setProperty(Property.JOIN_TYPE, JoinType.INNER);
@@ -621,10 +624,11 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         // Create the expected plan ...
         PlanNode access = new PlanNode(Type.ACCESS, selector("type1"));
         PlanNode project = new PlanNode(Type.PROJECT, access, selector("type1"));
-        project.setProperty(Property.PROJECT_COLUMNS, columns(column("type1", "a1", "a"),
-                                                              column("type1", "a2", "b"),
-                                                              column("type1", "a3", "c"),
-                                                              column("type1", "a4", "d")));
+        project.setProperty(Property.PROJECT_COLUMNS,
+                            columns(column("type1", "a1", "a"),
+                                    column("type1", "a2", "b"),
+                                    column("type1", "a3", "c"),
+                                    column("type1", "a4", "d")));
         PlanNode select1 = new PlanNode(Type.SELECT, project, selector("type1"));
         select1.setProperty(Property.SELECT_CRITERIA, new FullTextSearch(selector("type1"), "a2", "something"));
         PlanNode select2 = new PlanNode(Type.SELECT, select1, selector("type1"));

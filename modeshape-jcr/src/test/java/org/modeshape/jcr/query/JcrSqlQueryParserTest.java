@@ -383,18 +383,18 @@ public class JcrSqlQueryParserTest {
 
     @Test
     public void shouldRemoveBracketsAndQuotes() {
-        assertThat(parser.removeBracketsAndQuotes("string"), is("string"));
-        assertThat(parser.removeBracketsAndQuotes("'string'"), is("string"));
-        assertThat(parser.removeBracketsAndQuotes("word one and two"), is("word one and two"));
-        assertThat(parser.removeBracketsAndQuotes("'word one and two'"), is("word one and two"));
+        assertThat(parser.removeBracketsAndQuotes("string", null), is("string"));
+        assertThat(parser.removeBracketsAndQuotes("'string'", null), is("string"));
+        assertThat(parser.removeBracketsAndQuotes("word one and two", null), is("word one and two"));
+        assertThat(parser.removeBracketsAndQuotes("'word one and two'", null), is("word one and two"));
     }
 
     @Test
     public void shouldFailToRemoveDoubleQuotesAroundOneWord() {
-        assertThat(parser.removeBracketsAndQuotes("\"string\""), is("\"string\""));
-        assertThat(parser.removeBracketsAndQuotes("\"string\""), is("\"string\""));
-        assertThat(parser.removeBracketsAndQuotes("\"word one and two\""), is("\"word one and two\""));
-        assertThat(parser.removeBracketsAndQuotes("[word one and two]"), is("[word one and two]"));
+        assertThat(parser.removeBracketsAndQuotes("\"string\"", null), is("\"string\""));
+        assertThat(parser.removeBracketsAndQuotes("\"string\"", null), is("\"string\""));
+        assertThat(parser.removeBracketsAndQuotes("\"word one and two\"", null), is("\"word one and two\""));
+        assertThat(parser.removeBracketsAndQuotes("[word one and two]", null), is("[word one and two]"));
     }
 
     /*

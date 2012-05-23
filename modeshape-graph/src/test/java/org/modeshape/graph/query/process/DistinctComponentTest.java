@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.property.PropertyType;
 import org.modeshape.graph.query.QueryContext;
 import org.modeshape.graph.query.QueryResults.Columns;
@@ -47,7 +48,7 @@ public class DistinctComponentTest extends AbstractQueryResultsTest {
 
     @Before
     public void beforeEach() {
-        context = new QueryContext(mock(Schemata.class), typeSystem);
+        context = new QueryContext(new ExecutionContext(), mock(Schemata.class), typeSystem);
         inputTuples = new ArrayList<Object[]>();
         // Define the columns for the results ...
         columns = resultColumns("Selector1",

@@ -81,16 +81,19 @@ import org.modeshape.graph.query.validate.Schemata;
 import org.modeshape.graph.request.AccessQueryRequest;
 import org.modeshape.graph.request.CloneBranchRequest;
 import org.modeshape.graph.request.CloneWorkspaceRequest;
+import org.modeshape.graph.request.CloneWorkspaceRequest.CloneConflictBehavior;
 import org.modeshape.graph.request.CompositeRequest;
 import org.modeshape.graph.request.CopyBranchRequest;
 import org.modeshape.graph.request.CreateNodeRequest;
 import org.modeshape.graph.request.CreateWorkspaceRequest;
+import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
 import org.modeshape.graph.request.DeleteBranchRequest;
 import org.modeshape.graph.request.DestroyWorkspaceRequest;
 import org.modeshape.graph.request.FullTextSearchRequest;
 import org.modeshape.graph.request.GetWorkspacesRequest;
 import org.modeshape.graph.request.InvalidRequestException;
 import org.modeshape.graph.request.LockBranchRequest;
+import org.modeshape.graph.request.LockBranchRequest.LockScope;
 import org.modeshape.graph.request.MoveBranchRequest;
 import org.modeshape.graph.request.ReadAllChildrenRequest;
 import org.modeshape.graph.request.ReadAllPropertiesRequest;
@@ -104,9 +107,6 @@ import org.modeshape.graph.request.UnlockBranchRequest;
 import org.modeshape.graph.request.UpdatePropertiesRequest;
 import org.modeshape.graph.request.VerifyNodeExistsRequest;
 import org.modeshape.graph.request.VerifyWorkspaceRequest;
-import org.modeshape.graph.request.CloneWorkspaceRequest.CloneConflictBehavior;
-import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
-import org.modeshape.graph.request.LockBranchRequest.LockScope;
 import org.modeshape.graph.request.processor.RequestProcessor;
 
 /**
@@ -1300,7 +1300,7 @@ public class GraphTest {
 
         // Execute the query, and verify the results were consumed by the processor ...
         TypeSystem typeSystem = context.getValueFactories().getTypeSystem();
-        Schemata schemata = ImmutableSchemata.createBuilder(typeSystem).addTable("t1", "c1", "c2", "c3").build();
+        Schemata schemata = ImmutableSchemata.createBuilder(context, typeSystem).addTable("t1", "c1", "c2", "c3").build();
         QueryCommand query = new SqlQueryParser().parseQuery("SELECT * FROM t1", typeSystem);
         QueryResults results = graph.query(query, schemata).execute();
         assertThat(nextColumns, is(nullValue()));
@@ -1323,7 +1323,7 @@ public class GraphTest {
 
         // Execute the query, and verify the results were consumed by the processor ...
         TypeSystem typeSystem = context.getValueFactories().getTypeSystem();
-        Schemata schemata = ImmutableSchemata.createBuilder(typeSystem).addTable("t1", "c1", "c2", "c3").build();
+        Schemata schemata = ImmutableSchemata.createBuilder(context, typeSystem).addTable("t1", "c1", "c2", "c3").build();
         QueryCommand query = new SqlQueryParser().parseQuery("SELECT * FROM t1", typeSystem);
         graph.query(query, schemata).execute();
     }

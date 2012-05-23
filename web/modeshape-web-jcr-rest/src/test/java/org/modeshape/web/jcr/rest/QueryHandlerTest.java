@@ -219,7 +219,7 @@ public class QueryHandlerTest {
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBindQueryParametersAsVariables() throws Exception {
-        URI absoluteUri = uri("query?var1=value1&var2=value2&var3=value3&limit=100");
+        URI absoluteUri = uri("query?limit=100");
         UriInfo uriInfo = new UriInfoImpl(absoluteUri, absoluteUri, absoluteUri.getRawPath(), absoluteUri.getRawQuery(),
                                           PathSegmentImpl.parseSegments(absoluteUri.getRawPath()));
 

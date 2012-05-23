@@ -683,7 +683,13 @@ public class PlanUtil {
                                     if (mappings.getMappedSelectorNames().size() == 1) {
                                         SelectorName sourceName = mappings.getSingleMappedSelectorName();
                                         if (sourceName != null) {
-                                            columns.set(i, new Column(sourceName, columnName, columnAlias));
+                                            Column newColumn = null;
+                                            if (columnName != null) {
+                                                newColumn = new Column(sourceName, columnName, columnAlias);
+                                            } else {
+                                                newColumn = new Column(sourceName);
+                                            }
+                                            columns.set(i, newColumn);
                                             node.addSelector(sourceName);
                                         } else {
                                             node.addSelector(column.selectorName());
@@ -1382,7 +1388,7 @@ public class PlanUtil {
             Subquery subquery = (Subquery)staticOperand;
             // Create a variable name ...
             int i = 1;
-            String variableName = "__subquery";
+            String variableName = Subquery.VARIABLE_PREFIX;
             while (context.getVariables().containsKey(variableName + i)) {
                 ++i;
             }

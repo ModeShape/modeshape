@@ -52,7 +52,6 @@ import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.query.QueryResults;
 import org.modeshape.graph.query.model.QueryCommand;
 import org.modeshape.graph.query.model.TypeSystem;
-import org.modeshape.graph.query.model.Visitors;
 import org.modeshape.graph.query.parse.QueryParser;
 import org.modeshape.graph.query.plan.PlanHints;
 import org.modeshape.graph.query.validate.Schemata;
@@ -175,7 +174,7 @@ class JcrQueryManager implements QueryManager {
             throw new InvalidQueryException(JcrI18n.queryInLanguageIsNotValid.text(QueryLanguage.JCR_SQL2, command));
         }
         // Produce the expression string ...
-        String expression = Visitors.readable(command);
+        String expression = org.modeshape.jcr.query.Visitors.readable(command, context.getExecutionContext());
         try {
             // Parsing must be done now ...
             PlanHints hints = new PlanHints();
@@ -1439,7 +1438,7 @@ class JcrQueryManager implements QueryManager {
          * @see org.modeshape.jcr.query.JcrQueryContext#getNode(Location)
          */
         public Node getNode( Location location ) throws RepositoryException {
-            if (!session.wasRemovedInSession(location)) {
+            if (location != null && !session.wasRemovedInSession(location)) {
                 try {
                     return session.getNode(location.getPath());
                 } catch (PathNotFoundException e) {
@@ -1456,7 +1455,7 @@ class JcrQueryManager implements QueryManager {
                 try {
                     return session.getNodeByUUID(uuid.toString());
                 } catch (ItemNotFoundException e) {
-                    //the node was not found
+                    // the node was not found
                 }
             }
             return null;
