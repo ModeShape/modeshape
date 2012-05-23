@@ -397,18 +397,7 @@ public class JcrTckTest {
         suite.addTestSuite(LifecycleTest.class);
         suite.addTestSuite(ReferencesTest.class);
         suite.addTestSuite(SessionUUIDTest.class);
-        /**
-         * //TODO author=Horia Chiorean date=4/11/12 description=The following fail:
-         * testRemoveInvalidItemStateException - https://issues.jboss.org/browse/MODE-1456
-         * testRemoveMandatoryNode - https://issues.jboss.org/browse/MODE-1456
-         * testSaveInvalidStateException - https://issues.jboss.org/browse/MODE-1456 (might not seem related at first, but it's
-         * because a path of a node is determined incorrectly)
-         */
-        suite.addTestSuite(excludeTests(NodeTest.class,
-                                        "testRemoveInvalidItemStateException",
-                                        "testRemoveMandatoryNode",
-                                        "testSaveInvalidStateException"));
-
+        suite.addTestSuite(NodeTest.class);
         suite.addTestSuite(NodeUUIDTest.class);
         suite.addTestSuite(WorkspaceCloneReferenceableTest.class);
         suite.addTestSuite(WorkspaceCloneSameNameSibsTest.class);

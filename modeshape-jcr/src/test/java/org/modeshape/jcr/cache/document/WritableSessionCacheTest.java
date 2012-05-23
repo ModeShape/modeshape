@@ -385,9 +385,8 @@ public class WritableSessionCacheTest extends AbstractSessionCacheTest {
 
         SessionCache sessionCache = session();
         NodeKey childKey = newKey("x-childA");
-        root.createChild(sessionCache, childKey, name("childA"), property("p1", "value A"));
-        root.removeChild(sessionCache, childKey);
-
+        MutableCachedNode child = root.createChild(sessionCache, childKey, name("childA"), property("p1", "value A"));
+        session1.destroy(child.getKey());
         assertEquals(new HashSet<NodeKey>(Arrays.asList(rootKey, childKey)), session1.getChangedNodeKeysAtOrBelow(root));
     }
 

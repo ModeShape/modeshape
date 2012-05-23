@@ -135,7 +135,8 @@ public interface SessionCache extends NodeCache {
     public boolean hasChanges();
 
     /**
-     * Returns a set with the {@link NodeKey}s of the transient nodes from this cache.
+     * Returns a set with the {@link NodeKey}s of the transient nodes from this cache. Please note that there may be nodes which
+     * have been removed by another session.
      * 
      * @return a <code>Set</code> with the changed keys, or an empty set if
      *         {@link org.modeshape.jcr.cache.SessionCache#hasChanges()} is false. The returned set is a mutable copy of the
@@ -149,9 +150,10 @@ public interface SessionCache extends NodeCache {
      * 
      * @param node a non-null {@link CachedNode} instance
      * @return a <set>Set</set> of nodekeys, or an empty set if no nodes are found
+     * @throws {@link NodeNotFoundException} if any of changes registered in this cache refer to nodes that have been removed in
+     * the meantime.
      */
-    public Set<NodeKey> getChangedNodeKeysAtOrBelow( CachedNode node );
-
+    public Set<NodeKey> getChangedNodeKeysAtOrBelow( CachedNode node ) throws NodeNotFoundException;
 
     /**
      * Returns a set with the {@link NodeKey}s of the existing nodes (persistent not transient & new) which are at
