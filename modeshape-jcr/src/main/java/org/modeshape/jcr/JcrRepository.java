@@ -2245,7 +2245,7 @@ public class JcrRepository implements Repository {
                     batch.execute();
                 }
             } catch (RepositoryException e) {
-                String queryStr = Visitors.readable(query);
+                String queryStr = Visitors.readable(query, context);
                 Logger.getLogger(JcrRepository.this.getClass()).error(e,
                                                                       JcrI18n.failedToQueryForDerivedContent,
                                                                       workspaceName,

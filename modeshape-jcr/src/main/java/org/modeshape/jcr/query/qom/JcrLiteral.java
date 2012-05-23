@@ -27,6 +27,8 @@ import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import org.modeshape.graph.query.model.Literal;
+import org.modeshape.jcr.JcrBinary;
+import org.modeshape.jcr.JcrValue;
 
 /**
  * Implementation of the literal value static operand for the JCR Query Object Model and the Graph API.
@@ -40,23 +42,27 @@ public class JcrLiteral extends Literal implements javax.jcr.query.qom.Literal, 
     public static Object rawValue( Value value ) throws RepositoryException {
         switch (value.getType()) {
             case PropertyType.BINARY:
-                return value.getBinary();
+                JcrBinary binary = (JcrBinary)value.getBinary();
+                return binary.binary();
             case PropertyType.BOOLEAN:
                 return value.getBoolean();
             case PropertyType.DATE:
-                return value.getDate();
+                JcrValue jcrValue = (JcrValue)value;
+                return jcrValue.value();
             case PropertyType.DECIMAL:
                 return value.getDecimal();
             case PropertyType.DOUBLE:
                 return value.getDouble();
             case PropertyType.LONG:
                 return value.getLong();
+            case PropertyType.REFERENCE:
+            case PropertyType.WEAKREFERENCE:
+                jcrValue = (JcrValue)value;
+                return jcrValue.value();
             case PropertyType.NAME:
             case PropertyType.PATH:
-            case PropertyType.REFERENCE:
             case PropertyType.STRING:
             case PropertyType.URI:
-            case PropertyType.WEAKREFERENCE:
             default:
                 return value.getString();
         }

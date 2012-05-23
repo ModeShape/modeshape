@@ -2661,10 +2661,12 @@ public class Graph {
              */
             public QueryResults execute() {
                 Batch batch = batch();
-                TypeSystem typeSystem = getContext().getValueFactories().getTypeSystem();
-                QueryContext context = new GraphQueryContext(schemata, typeSystem, hints, problems, variables, batch);
+                ExecutionContext context = getContext();
+                TypeSystem typeSystem = context.getValueFactories().getTypeSystem();
+                QueryContext queryContext = new GraphQueryContext(context, schemata, typeSystem, hints, problems, variables,
+                                                                  batch);
                 QueryEngine engine = getQueryEngine();
-                return engine.execute(context, query);
+                return engine.execute(queryContext, query);
             }
         };
     }
@@ -2713,13 +2715,14 @@ public class Graph {
     protected class GraphQueryContext extends QueryContext {
         private final Batch batch;
 
-        protected GraphQueryContext( Schemata schemata,
+        protected GraphQueryContext( ExecutionContext context,
+                                     Schemata schemata,
                                      TypeSystem typeSystem,
                                      PlanHints hints,
                                      Problems problems,
                                      Map<String, Object> variables,
                                      Batch batch ) {
-            super(schemata, typeSystem, hints, problems, variables);
+            super(context, schemata, typeSystem, hints, problems, variables);
             this.batch = batch;
             assert this.batch != null;
         }

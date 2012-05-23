@@ -78,6 +78,7 @@ import org.modeshape.jcr.api.query.qom.SetCriteria;
 import org.modeshape.jcr.api.query.qom.SetQuery;
 import org.modeshape.jcr.api.query.qom.Subquery;
 import org.modeshape.jcr.query.JcrQueryContext;
+import org.modeshape.jcr.query.Visitors;
 
 /**
  * An implementation of the JCR {@link QueryObjectModelFactory}. Note that this implementation constructs the query components but
@@ -109,12 +110,13 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
                                             Column[] columns ) {
 
         JcrSelectQuery query = select(source, constraint, orderings, columns, null, false);
-        String statement = query.toString();
+        String statement = Visitors.readable(query, context.getExecutionContext());
         // Set up the hints ...
         PlanHints hints = new PlanHints();
         hints.showPlan = true;
         // We want to allow use of residual properties (not in the schemata) for criteria ...
         hints.validateColumnExistance = true;
+        hints.hasFullTextSearch = true; // always include the score
         return new JcrQueryObjectModel(context, statement, LANGUAGE, query, hints, null);
     }
 
@@ -238,7 +240,7 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
             return new JcrColumn(selectorName(selectorName));
         }
         CheckArg.isNotNull(columnName, "columnName");
-        return new JcrColumn(selectorName(selectorName), selectorName, columnName);
+        return new JcrColumn(selectorName(selectorName), propertyName, columnName);
     }
 
     /**
@@ -544,8 +546,8 @@ public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.q
                                                         String selector2Name,
                                                         String selector2Path ) {
         CheckArg.isNotNull(selector1Name, "selector1Name");
-        CheckArg.isNotNull(selector1Name, "selector1Name");
-        return new JcrSameNodeJoinCondition(selectorName(selector1Name), selectorName(selector1Name), selector2Path);
+        CheckArg.isNotNull(selector2Name, "selector2Name");
+        return new JcrSameNodeJoinCondition(selectorName(selector1Name), selectorName(selector2Name), selector2Path);
     }
 
     /**

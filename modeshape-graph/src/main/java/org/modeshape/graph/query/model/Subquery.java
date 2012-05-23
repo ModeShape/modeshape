@@ -31,6 +31,12 @@ public class Subquery implements StaticOperand {
 
     private static final long serialVersionUID = 1L;
 
+    public static final String VARIABLE_PREFIX = "__subquery";
+
+    public static boolean isSubqueryVariableName( String variableName ) {
+        return variableName.startsWith(VARIABLE_PREFIX);
+    }
+
     private final QueryCommand query;
 
     /**

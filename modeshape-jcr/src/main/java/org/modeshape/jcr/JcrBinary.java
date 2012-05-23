@@ -31,7 +31,7 @@ import org.modeshape.graph.property.Binary;
 /**
  * An implementation of JCR 2.0 Binary that wraps a graph {@link Binary} value object.
  */
-class JcrBinary implements javax.jcr.Binary, org.modeshape.jcr.api.Binary {
+public class JcrBinary implements javax.jcr.Binary, org.modeshape.jcr.api.Binary {
 
     private final Binary binary;
 
@@ -40,7 +40,7 @@ class JcrBinary implements javax.jcr.Binary, org.modeshape.jcr.api.Binary {
         assert this.binary != null;
     }
 
-    Binary binary() {
+    public Binary binary() {
         return this.binary;
     }
 

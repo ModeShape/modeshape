@@ -51,6 +51,9 @@ import org.modeshape.graph.query.model.Constraint;
 import org.modeshape.graph.query.model.DescendantNode;
 import org.modeshape.graph.query.model.DynamicOperand;
 import org.modeshape.graph.query.model.FullTextSearch;
+import org.modeshape.graph.query.model.FullTextSearch.Conjunction;
+import org.modeshape.graph.query.model.FullTextSearch.Disjunction;
+import org.modeshape.graph.query.model.FullTextSearch.Term;
 import org.modeshape.graph.query.model.FullTextSearchScore;
 import org.modeshape.graph.query.model.Join;
 import org.modeshape.graph.query.model.Length;
@@ -78,9 +81,6 @@ import org.modeshape.graph.query.model.StaticOperand;
 import org.modeshape.graph.query.model.Subquery;
 import org.modeshape.graph.query.model.TypeSystem;
 import org.modeshape.graph.query.model.UpperCase;
-import org.modeshape.graph.query.model.FullTextSearch.Conjunction;
-import org.modeshape.graph.query.model.FullTextSearch.Disjunction;
-import org.modeshape.graph.query.model.FullTextSearch.Term;
 
 /**
  * 
@@ -2133,14 +2133,14 @@ public class SqlQueryParserTest {
 
     @Test
     public void shouldRemoveBracketsAndQuotes() {
-        assertThat(parser.removeBracketsAndQuotes("string"), is("string"));
-        assertThat(parser.removeBracketsAndQuotes("[string]"), is("string"));
-        assertThat(parser.removeBracketsAndQuotes("'string'"), is("string"));
-        assertThat(parser.removeBracketsAndQuotes("\"string\""), is("string"));
-        assertThat(parser.removeBracketsAndQuotes("word one and two"), is("word one and two"));
-        assertThat(parser.removeBracketsAndQuotes("[word one and two]"), is("word one and two"));
-        assertThat(parser.removeBracketsAndQuotes("'word one and two'"), is("word one and two"));
-        assertThat(parser.removeBracketsAndQuotes("\"word one and two\""), is("word one and two"));
+        assertThat(parser.removeBracketsAndQuotes("string", null), is("string"));
+        assertThat(parser.removeBracketsAndQuotes("[string]", null), is("string"));
+        assertThat(parser.removeBracketsAndQuotes("'string'", null), is("string"));
+        assertThat(parser.removeBracketsAndQuotes("\"string\"", null), is("string"));
+        assertThat(parser.removeBracketsAndQuotes("word one and two", null), is("word one and two"));
+        assertThat(parser.removeBracketsAndQuotes("[word one and two]", null), is("word one and two"));
+        assertThat(parser.removeBracketsAndQuotes("'word one and two'", null), is("word one and two"));
+        assertThat(parser.removeBracketsAndQuotes("\"word one and two\"", null), is("word one and two"));
     }
 
     // ----------------------------------------------------------------------------------------------------------------

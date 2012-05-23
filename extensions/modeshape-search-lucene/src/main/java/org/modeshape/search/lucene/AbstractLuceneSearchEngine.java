@@ -112,6 +112,8 @@ import org.modeshape.graph.search.AbstractSearchEngine;
 import org.modeshape.graph.search.SearchEngine;
 import org.modeshape.graph.search.SearchEngineProcessor;
 import org.modeshape.graph.search.SearchEngineWorkspace;
+import org.modeshape.search.lucene.query.CaseOperations;
+import org.modeshape.search.lucene.query.CaseOperations.CaseOperation;
 import org.modeshape.search.lucene.query.CompareStringQuery;
 import org.modeshape.search.lucene.query.HasValueQuery;
 import org.modeshape.search.lucene.query.MatchNoneQuery;
@@ -438,8 +440,8 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                 if (postProcessConstraint != null) {
                     // Create a delegate processing component that will return the tuples we've already found ...
                     final List<Object[]> allTuples = tuples;
-                    QueryContext queryContext = new QueryContext(request.schemata(), typeSystem, null, new SimpleProblems(),
-                                                                 request.variables());
+                    QueryContext queryContext = new QueryContext(getExecutionContext(), request.schemata(), typeSystem, null,
+                                                                 new SimpleProblems(), request.variables());
                     ProcessingComponent tuplesProcessor = new ProcessingComponent(queryContext, columns) {
                         @Override
                         public List<Object[]> execute() {
@@ -624,7 +626,7 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                                        upper,
                                        between.isLowerBoundIncluded(),
                                        between.isUpperBoundIncluded(),
-                                       true);
+                                       CaseOperations.AS_IS);
                 }
                 if (constraint instanceof Comparison) {
                     Comparison comparison = (Comparison)constraint;
@@ -660,15 +662,15 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
             public Query createQuery( DynamicOperand left,
                                       Operator operator,
                                       StaticOperand right ) throws IOException {
-                return createQuery(left, operator, right, true);
+                return createQuery(left, operator, right, null);
             }
 
             public Query createQuery( DynamicOperand left,
                                       Operator operator,
                                       StaticOperand right,
-                                      boolean caseSensitive ) throws IOException {
+                                      CaseOperation caseOperation ) throws IOException {
                 // Handle the static operand ...
-                Object value = createOperand(right, caseSensitive);
+                Object value = createOperand(right, caseOperation);
                 assert value != null;
 
                 // Address the dynamic operand ...
@@ -676,27 +678,29 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                     // This can only be represented as a filter ...
                     return null;
                 } else if (left instanceof PropertyValue) {
-                    return session.findNodesWith((PropertyValue)left, operator, value, caseSensitive);
+                    return session.findNodesWith((PropertyValue)left, operator, value, caseOperation);
                 } else if (left instanceof ReferenceValue) {
                     return session.findNodesWith((ReferenceValue)left, operator, value);
                 } else if (left instanceof Length) {
-                    return session.findNodesWith((Length)left, operator, right);
+                    return session.findNodesWith((Length)left, operator, value);
                 } else if (left instanceof LowerCase) {
                     LowerCase lowercase = (LowerCase)left;
-                    return createQuery(lowercase.operand(), operator, right, false);
+                    if (caseOperation == null) caseOperation = CaseOperations.LOWERCASE;
+                    return createQuery(lowercase.operand(), operator, right, caseOperation);
                 } else if (left instanceof UpperCase) {
                     UpperCase lowercase = (UpperCase)left;
-                    return createQuery(lowercase.operand(), operator, right, false);
+                    if (caseOperation == null) caseOperation = CaseOperations.UPPERCASE;
+                    return createQuery(lowercase.operand(), operator, right, caseOperation);
                 } else if (left instanceof NodeDepth) {
                     assert operator != Operator.LIKE;
                     // Could be represented as a result filter, but let's do this now ...
                     return session.findNodesWith((NodeDepth)left, operator, value);
                 } else if (left instanceof NodePath) {
-                    return session.findNodesWith((NodePath)left, operator, value, caseSensitive);
+                    return session.findNodesWith((NodePath)left, operator, value, caseOperation);
                 } else if (left instanceof NodeName) {
-                    return session.findNodesWith((NodeName)left, operator, value, caseSensitive);
+                    return session.findNodesWith((NodeName)left, operator, value, caseOperation);
                 } else if (left instanceof NodeLocalName) {
-                    return session.findNodesWith((NodeLocalName)left, operator, value, caseSensitive);
+                    return session.findNodesWith((NodeLocalName)left, operator, value, caseOperation);
                 } else {
                     assert false;
                     return null;
@@ -704,12 +708,12 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
             }
 
             public Object createOperand( StaticOperand operand,
-                                         boolean caseSensitive ) {
+                                         CaseOperation caseOperation ) {
                 Object value = null;
+                if (caseOperation == null) caseOperation = CaseOperations.AS_IS;
                 if (operand instanceof Literal) {
                     Literal literal = (Literal)operand;
                     value = literal.value();
-                    if (!caseSensitive) value = lowerCase(value);
                 } else if (operand instanceof BindVariableName) {
                     BindVariableName variable = (BindVariableName)operand;
                     String variableName = variable.variableName();
@@ -723,7 +727,6 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                     if (value == null) {
                         throw new LuceneException(LuceneI18n.missingVariableValue.text(variableName));
                     }
-                    if (!caseSensitive) value = lowerCase(value);
                 } else {
                     assert false;
                 }
@@ -735,10 +738,10 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                                       StaticOperand upper,
                                       boolean includesLower,
                                       boolean includesUpper,
-                                      boolean caseSensitive ) throws IOException {
+                                      CaseOperation caseOperation ) throws IOException {
                 // Handle the static operands ...
-                Object lowerValue = createOperand(lower, caseSensitive);
-                Object upperValue = createOperand(upper, caseSensitive);
+                Object lowerValue = createOperand(lower, caseOperation);
+                Object upperValue = createOperand(upper, caseOperation);
                 assert lowerValue != null;
                 assert upperValue != null;
 
@@ -773,8 +776,8 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                 BooleanQuery query = new BooleanQuery();
                 Operator lowerOp = includesLower ? Operator.GREATER_THAN_OR_EQUAL_TO : Operator.GREATER_THAN;
                 Operator upperOp = includesUpper ? Operator.LESS_THAN_OR_EQUAL_TO : Operator.LESS_THAN;
-                Query lowerQuery = createQuery(left, lowerOp, lower, caseSensitive);
-                Query upperQuery = createQuery(left, upperOp, upper, caseSensitive);
+                Query lowerQuery = createQuery(left, lowerOp, lower, caseOperation);
+                Query upperQuery = createQuery(left, upperOp, upper, caseOperation);
                 if (lowerQuery == null || upperQuery == null) return null;
                 query.add(lowerQuery, Occur.MUST);
                 query.add(upperQuery, Occur.MUST);
@@ -842,7 +845,10 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                             @Override
                             protected org.apache.lucene.search.Query getWildcardQuery( String field,
                                                                                        String termStr ) {
-                                return CompareStringQuery.createQueryForNodesWithFieldLike(termStr, field, valueFactories, false);
+                                return CompareStringQuery.createQueryForNodesWithFieldLike(termStr,
+                                                                                           field,
+                                                                                           valueFactories,
+                                                                                           CaseOperations.AS_IS);
                             }
                         };
                         parser.setAllowLeadingWildcard(true);
@@ -952,13 +958,14 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
          * 
          * @param fieldName the name of the document field to search
          * @param likeExpression the JCR like expression
-         * @param caseSensitive true if the evaluation should be performed in a case sensitive manner, or false otherwise
+         * @param caseOperation the operation that should be used upon the stored indexed value before comparing the supplied
+         *        value
          * @return the query; never null
          * @throws IOException if there is an error creating the query
          */
         Query findNodesLike( String fieldName,
                              String likeExpression,
-                             boolean caseSensitive ) throws IOException;
+                             CaseOperation caseOperation ) throws IOException;
 
         Query findNodesWith( Length propertyLength,
                              Operator operator,
@@ -967,7 +974,7 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
         Query findNodesWith( PropertyValue propertyValue,
                              Operator operator,
                              Object value,
-                             boolean caseSensitive ) throws IOException;
+                             CaseOperation caseOperation ) throws IOException;
 
         Query findNodesWith( ReferenceValue referenceValue,
                              Operator operator,
@@ -988,17 +995,17 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
         Query findNodesWith( NodePath nodePath,
                              Operator operator,
                              Object value,
-                             boolean caseSensitive ) throws IOException;
+                             CaseOperation caseOperation ) throws IOException;
 
         Query findNodesWith( NodeName nodeName,
                              Operator operator,
                              Object value,
-                             boolean caseSensitive ) throws IOException;
+                             CaseOperation caseOperation ) throws IOException;
 
         Query findNodesWith( NodeLocalName nodeName,
                              Operator operator,
                              Object value,
-                             boolean caseSensitive ) throws IOException;
+                             CaseOperation caseOperation ) throws IOException;
 
         Query findNodesWith( NodeDepth depthConstraint,
                              Operator operator,

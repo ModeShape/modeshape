@@ -66,7 +66,7 @@ public abstract class AbstractQueryResultsTest extends AbstractQueryTest {
 
     protected Schemata schemataFor( Columns columns,
                                     PropertyType... types ) {
-        ImmutableSchemata.Builder builder = ImmutableSchemata.createBuilder(typeSystem);
+        ImmutableSchemata.Builder builder = ImmutableSchemata.createBuilder(executionContext, typeSystem);
         for (String selectorName : columns.getSelectorNames()) {
             final SelectorName selector = selector(selectorName);
             int i = 0;

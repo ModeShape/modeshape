@@ -641,7 +641,7 @@ public class SqlQueryParser implements QueryParser {
             SelectorName selector1Name = parseSelectorName(tokens, typeSystem);
             tokens.consume(',');
             SelectorName selector2Name = parseSelectorName(tokens, typeSystem);
-            if (tokens.canConsume('.')) {
+            if (tokens.canConsume(',')) {
                 String path = parsePath(tokens, typeSystem);
                 tokens.consume(')');
                 return sameNodeJoinCondition(selector1Name, selector2Name, path);
@@ -698,11 +698,12 @@ public class SqlQueryParser implements QueryParser {
             // Either 'selectorName.propertyName', or 'selectorName.*' or 'propertyName' ...
             String first = tokens.consume();
             SelectorName selectorName = null;
+            Position position = tokens.previousPosition();
             String propertyName = null;
             if (tokens.canConsume(".", "*")) {
-                selectorName = new SelectorName(removeBracketsAndQuotes(first));
+                selectorName = new SelectorName(removeBracketsAndQuotes(first, position));
             } else if (tokens.canConsume('.')) {
-                selectorName = new SelectorName(removeBracketsAndQuotes(first));
+                selectorName = new SelectorName(removeBracketsAndQuotes(first, position));
                 propertyName = parseName(tokens, typeSystem);
             } else {
                 if (!(source instanceof Selector)) {
@@ -710,12 +711,13 @@ public class SqlQueryParser implements QueryParser {
                     throw new ParsingException(pos, msg);
                 }
                 selectorName = ((Selector)source).aliasOrName();
-                propertyName = removeBracketsAndQuotes(first);
+                propertyName = removeBracketsAndQuotes(first, position);
             }
             tokens.consume(',');
 
             // Followed by the full text search expression ...
-            String expression = removeBracketsAndQuotes(tokens.consume(), false); // don't remove nested quotes
+            String expression = removeBracketsAndQuotes(tokens.consume(), false, tokens.previousPosition()); // don't remove
+                                                                                                             // nested quotes
             Term term = parseFullTextSearchExpression(expression, tokens.previousPosition());
             tokens.consume(")");
             constraint = fullTextSearch(selectorName, propertyName, expression, term);
@@ -902,7 +904,7 @@ public class SqlQueryParser implements QueryParser {
                     throw new ParsingException(pos, msg);
                 }
                 selectorName = ((Selector)source).name();
-                propertyName = parseName(firstWord, typeSystem);
+                propertyName = parseName(firstWord, typeSystem, tokens.previousPosition());
             }
             if (tokens.canConsume("IS", "NOT", "NULL")) {
                 return propertyExistence(selectorName, propertyName);
@@ -979,7 +981,7 @@ public class SqlQueryParser implements QueryParser {
     protected Object parseLiteralValue( TokenStream tokens,
                                         TypeSystem typeSystem ) {
         if (tokens.matches(SqlTokenizer.QUOTED_STRING)) {
-            return removeBracketsAndQuotes(tokens.consume());
+            return removeBracketsAndQuotes(tokens.consume(), tokens.previousPosition());
         }
         TypeFactory<Boolean> booleanFactory = typeSystem.getBooleanFactory();
         if (booleanFactory != null) {
@@ -1283,11 +1285,13 @@ public class SqlQueryParser implements QueryParser {
      * properly-paired quotes or brackets are found, they will all be removed.
      * 
      * @param text the input text; may not be null
+     * @param position the position of the text; may not be null
      * @return the text without leading and trailing brackets and quotes, or <code>text</code> if there were no square brackets or
      *         quotes
      */
-    protected String removeBracketsAndQuotes( String text ) {
-        return removeBracketsAndQuotes(text, true);
+    protected String removeBracketsAndQuotes( String text,
+                                              Position position ) {
+        return removeBracketsAndQuotes(text, true, position);
     }
 
     /**
@@ -1296,23 +1300,31 @@ public class SqlQueryParser implements QueryParser {
      * @param text the input text; may not be null
      * @param recursive true if more than one pair of quotes, double-quotes, or square brackets should be removed, or false if
      *        just the first pair should be removed
+     * @param position the position of the text; may not be null
      * @return the text without leading and trailing brackets and quotes, or <code>text</code> if there were no square brackets or
      *         quotes
      */
     protected String removeBracketsAndQuotes( String text,
-                                              boolean recursive ) {
+                                              boolean recursive,
+                                              Position position ) {
         if (text.length() > 0) {
             char firstChar = text.charAt(0);
             switch (firstChar) {
                 case '\'':
                 case '"':
-                    assert text.charAt(text.length() - 1) == firstChar;
+                    if (text.charAt(text.length() - 1) != firstChar) {
+                        String msg = GraphI18n.expectingValidName.text(text, position.getLine(), position.getColumn());
+                        throw new ParsingException(position, msg);
+                    }
                     String removed = text.substring(1, text.length() - 1);
-                    return recursive ? removeBracketsAndQuotes(removed, recursive) : removed;
+                    return recursive ? removeBracketsAndQuotes(removed, recursive, position) : removed;
                 case '[':
-                    assert text.charAt(text.length() - 1) == ']';
+                    if (text.charAt(text.length() - 1) != ']') {
+                        String msg = GraphI18n.expectingValidName.text(text, position.getLine(), position.getColumn());
+                        throw new ParsingException(position, msg);
+                    }
                     removed = text.substring(1, text.length() - 1);
-                    return recursive ? removeBracketsAndQuotes(removed, recursive) : removed;
+                    return recursive ? removeBracketsAndQuotes(removed, recursive, position) : removed;
             }
         }
         return text;
@@ -1333,17 +1345,18 @@ public class SqlQueryParser implements QueryParser {
 
     protected String parsePath( TokenStream tokens,
                                 TypeSystem typeSystem ) {
-        return removeBracketsAndQuotes(tokens.consume());
+        return removeBracketsAndQuotes(tokens.consume(), tokens.previousPosition());
     }
 
     protected String parseName( TokenStream tokens,
                                 TypeSystem typeSystem ) {
-        return removeBracketsAndQuotes(tokens.consume());
+        return removeBracketsAndQuotes(tokens.consume(), tokens.previousPosition());
     }
 
     protected String parseName( String token,
-                                TypeSystem typeSystem ) {
-        return removeBracketsAndQuotes(token);
+                                TypeSystem typeSystem,
+                                Position position ) {
+        return removeBracketsAndQuotes(token, position);
     }
 
     protected Query query( Source source,

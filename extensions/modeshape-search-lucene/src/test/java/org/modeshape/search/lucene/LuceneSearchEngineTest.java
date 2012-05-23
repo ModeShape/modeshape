@@ -144,7 +144,7 @@ public class LuceneSearchEngineTest {
         }
 
         // Create the schemata for the workspaces ...
-        schemata = ImmutableSchemata.createBuilder(typeSystem)
+        schemata = ImmutableSchemata.createBuilder(context, typeSystem)
                                     .addTable("__ALLNODES__", "maker", "model", "year", "msrp", "mpgHighway", "mpgCity")
                                     .makeSearchable("__ALLNODES__", "maker")
                                     .build();

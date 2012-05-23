@@ -23,12 +23,6 @@
  */
 package org.modeshape.graph.request;
 
-import org.modeshape.common.util.Logger;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.GraphI18n;
-import org.modeshape.graph.connector.RepositoryConnection;
-import org.modeshape.graph.connector.RepositoryConnectionFactory;
-import org.modeshape.graph.request.processor.RequestProcessor;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,6 +36,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.modeshape.common.util.Logger;
+import org.modeshape.graph.ExecutionContext;
+import org.modeshape.graph.GraphI18n;
+import org.modeshape.graph.connector.RepositoryConnection;
+import org.modeshape.graph.connector.RepositoryConnectionFactory;
+import org.modeshape.graph.request.processor.RequestProcessor;
 
 /**
  * A channel for Request objects that can be submitted to a consumer (typically a {@link RequestProcessor} or
@@ -67,8 +67,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * </p>
  */
 public class CompositeRequestChannel {
-    private static final Logger LOGGER = Logger.getLogger(CompositeRequestChannel.class); 
-    
+    private static final Logger LOGGER = Logger.getLogger(CompositeRequestChannel.class);
+
     protected final String sourceName;
     /** The list of all requests that are or have been processed as part of this channel */
     protected final LinkedList<Request> allRequests = new LinkedList<Request>();
@@ -107,16 +107,17 @@ public class CompositeRequestChannel {
                                     boolean keepRequests ) {
         this(sourceName, keepRequests, false);
     }
-    
+
     /**
      * @see CompositeRequestChannel#CompositeRequestChannel(String, boolean)
-     * 
+     * @param sourceName
      * @param readOnlyRequest a boolean which indicates whether the {@link ChannelCompositeRequest} is created as a read-only
-     * request or not.
+     *        request or not.
+     * @param keepRequests
      */
     public CompositeRequestChannel( final String sourceName,
                                     boolean keepRequests,
-                                    boolean readOnlyRequest) {
+                                    boolean readOnlyRequest ) {
         assert sourceName != null;
         this.sourceName = sourceName;
         this.composite = new ChannelCompositeRequest(readOnlyRequest);
@@ -231,7 +232,7 @@ public class CompositeRequestChannel {
         });
     }
 
-    private void cancelAllRequestsDueToError(Throwable t) {
+    private void cancelAllRequestsDueToError( Throwable t ) {
         LOGGER.error(t, GraphI18n.executingRequest, sourceName);
         try {
             for (Request request : this.composite.getRequests()) {
@@ -274,11 +275,9 @@ public class CompositeRequestChannel {
             public String call() throws Exception {
                 try {
                     processor.process(composite);
-                }
-                catch (Throwable t) {
+                } catch (Throwable t) {
                     cancelAllRequestsDueToError(t);
-                }
-                finally {
+                } finally {
                     if (closeProcessorWhenCompleted) processor.close();
                 }
                 return sourceName;

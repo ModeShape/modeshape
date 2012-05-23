@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import org.modeshape.common.i18n.I18n;
 import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.query.QueryContext;
 import org.modeshape.graph.query.model.AllNodes;
@@ -240,6 +241,8 @@ public class CanonicalPlanner implements Planner {
                 if (table instanceof View) context.getHints().hasView = true;
                 if (usedSelectors.put(selector.aliasOrName(), table) != null) {
                     // There was already a table with this alias or name ...
+                    I18n msg = GraphI18n.selectorNamesMayNotBeUsedMoreThanOnce;
+                    context.getProblems().addError(msg, selector.aliasOrName().getString());
                 }
                 node.setProperty(Property.SOURCE_COLUMNS, table.getColumns());
             } else {
@@ -463,7 +466,7 @@ public class CanonicalPlanner implements Planner {
                 } else {
                     // Make sure that the column is in the table ...
                     String columnName = column.propertyName();
-                    if ("*".equals(columnName)) {
+                    if ("*".equals(columnName) || columnName == null) {
                         // This is a 'SELECT *' on this source, but this source is one of multiple sources ...
                         allColumnsFor(table, tableName, newColumns, newTypes);
                     } else {

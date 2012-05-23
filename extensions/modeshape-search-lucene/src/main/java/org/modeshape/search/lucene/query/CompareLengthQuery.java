@@ -60,7 +60,7 @@ public class CompareLengthQuery extends CompareQuery<Integer> {
         @Override
         public boolean satisfiesConstraint( Integer nodeValue,
                                             Integer length ) {
-            return nodeValue == length;
+            return nodeValue != length;
         }
 
         @Override
@@ -88,7 +88,7 @@ public class CompareLengthQuery extends CompareQuery<Integer> {
         @Override
         public boolean satisfiesConstraint( Integer nodeValue,
                                             Integer length ) {
-            return nodeValue < length;
+            return nodeValue <= length;
         }
 
         @Override
@@ -102,7 +102,7 @@ public class CompareLengthQuery extends CompareQuery<Integer> {
         @Override
         public boolean satisfiesConstraint( Integer nodeValue,
                                             Integer length ) {
-            return nodeValue < length;
+            return nodeValue > length;
         }
 
         @Override
@@ -116,7 +116,7 @@ public class CompareLengthQuery extends CompareQuery<Integer> {
         @Override
         public boolean satisfiesConstraint( Integer nodeValue,
                                             Integer length ) {
-            return nodeValue < length;
+            return nodeValue >= length;
         }
 
         @Override
@@ -137,7 +137,7 @@ public class CompareLengthQuery extends CompareQuery<Integer> {
     public static CompareLengthQuery createQueryForNodesWithFieldEqualTo( Integer constraintValue,
                                                                           String fieldName,
                                                                           ValueFactories factories ) {
-        return new CompareLengthQuery(fieldName, constraintValue, factories.getStringFactory(), IS_GREATER_THAN);
+        return new CompareLengthQuery(fieldName, constraintValue, factories.getStringFactory(), EQUAL_TO);
     }
 
     /**
@@ -152,7 +152,7 @@ public class CompareLengthQuery extends CompareQuery<Integer> {
     public static CompareLengthQuery createQueryForNodesWithFieldNotEqualTo( Integer constraintValue,
                                                                              String fieldName,
                                                                              ValueFactories factories ) {
-        return new CompareLengthQuery(fieldName, constraintValue, factories.getStringFactory(), IS_GREATER_THAN);
+        return new CompareLengthQuery(fieldName, constraintValue, factories.getStringFactory(), NOT_EQUAL_TO);
     }
 
     /**

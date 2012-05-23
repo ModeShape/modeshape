@@ -28,6 +28,7 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -265,7 +266,16 @@ public class JcrQueryManagerTest {
             System.out.println(" plan -> " + ((JcrQueryResult)result).getPlan());
             System.out.println(result);
         }
-        assertThat(result.getNodes().getSize(), is(numberOfResults));
+        if (result.getSelectorNames().length == 1) {
+            assertThat(result.getNodes().getSize(), is(numberOfResults));
+        } else {
+            try {
+                result.getNodes();
+                fail("should not be able to call this method when the query has multiple selectors");
+            } catch (RepositoryException e) {
+                // expected; can't call this when the query uses multiple selectors ...
+            }
+        }
         assertThat(result.getRows().getSize(), is(numberOfResults));
     }
 
@@ -888,19 +898,8 @@ public class JcrQueryManagerTest {
         // print = true;
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 3);
+        assertResults(query, result, 72L);
         assertResultsHaveColumns(result, new String[] {"jcr:name", "jcr:primaryType"});
-        RowIterator iter = result.getRows();
-        String primaryType = "";
-        while (iter.hasNext()) {
-            Row row = iter.nextRow();
-            String nextCarName = row.getValues()[0].getString();
-            String nextCarName2 = row.getValue("jcr:name").getString();
-            assertThat(nextCarName, is(nextCarName2));
-            String nextCategoryPrimaryType = row.getValues()[1].getString();
-            assertThat(nextCategoryPrimaryType.compareTo(primaryType) >= 0, is(true));
-            primaryType = nextCategoryPrimaryType;
-        }
     }
 
     @FixFor( "MODE-934" )

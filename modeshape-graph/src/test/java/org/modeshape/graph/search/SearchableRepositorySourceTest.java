@@ -31,9 +31,9 @@ import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.LinkedList;
@@ -41,6 +41,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.Node;
@@ -60,11 +65,6 @@ import org.modeshape.graph.query.validate.ImmutableSchemata;
 import org.modeshape.graph.query.validate.Schemata;
 import org.modeshape.graph.request.InvalidRequestException;
 import org.modeshape.graph.request.Request;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Mock;
 import org.xml.sax.SAXException;
 
 public class SearchableRepositorySourceTest {
@@ -87,7 +87,7 @@ public class SearchableRepositorySourceTest {
         this.context = new ExecutionContext();
         executor = Executors.newSingleThreadExecutor();
         typeSystem = context.getValueFactories().getTypeSystem();
-        schemata = ImmutableSchemata.createBuilder(typeSystem).addTable("t1", "c1", "c2", "c3").build();
+        schemata = ImmutableSchemata.createBuilder(context, typeSystem).addTable("t1", "c1", "c2", "c3").build();
         sql = new SqlQueryParser();
 
         InMemoryRepositorySource source = new InMemoryRepositorySource();
