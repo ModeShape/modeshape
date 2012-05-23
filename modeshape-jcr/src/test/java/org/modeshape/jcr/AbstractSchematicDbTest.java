@@ -49,6 +49,7 @@ import org.modeshape.common.util.Logger;
 /**
  * An abstract base class for unit tests that require an testable SchematicDb instance.
  */
+@SuppressWarnings( "deprecation" )
 public abstract class AbstractSchematicDbTest {
 
     private SchematicDb db;

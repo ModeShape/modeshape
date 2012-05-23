@@ -49,11 +49,7 @@ public class TextExtractorContext extends ExecutionContext implements TextExtrac
         this.problems = problems != null ? problems : new SimpleProblems();
     }
 
-    /**
-     * Get the MIME type of the content being processed, if it is known.
-     * 
-     * @return the MIME type, or null if the type is not known.
-     */
+    @Override
     public String getMimeType() {
         return this.mimeType;
     }

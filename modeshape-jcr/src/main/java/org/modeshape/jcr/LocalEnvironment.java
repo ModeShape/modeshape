@@ -43,6 +43,7 @@ import org.jgroups.Channel;
 /**
  * 
  */
+@SuppressWarnings( "deprecation" )
 public class LocalEnvironment implements Environment {
 
     public static final Class<? extends TransactionManagerLookup> DEFAULT_TRANSACTION_MANAGER_LOOKUP_CLASS = GenericTransactionManagerLookup.class;

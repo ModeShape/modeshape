@@ -24,24 +24,24 @@
 
 package org.modeshape.sequencer.zip;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import java.io.EOFException;
+import java.io.IOException;
+import java.util.Map;
 import javax.jcr.Binary;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import org.junit.Test;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.api.mimetype.MimeTypeConstants;
 import org.modeshape.jcr.api.observation.Event;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
-import java.io.EOFException;
-import java.io.IOException;
-import java.util.Map;
 
 /**
  * Unit test for {@link ZipSequencer}
- *
+ * 
  * @author Horia Chiorean
  */
 public class ZipSequencerTest extends AbstractSequencerTest {
@@ -64,7 +64,6 @@ public class ZipSequencerTest extends AbstractSequencerTest {
 
         assertFile(folder, "test2.txt", "This is a test content of file2\n");
     }
-
 
     private void assertFile( Node parentNode,
                              String relativePath,
@@ -95,7 +94,7 @@ public class ZipSequencerTest extends AbstractSequencerTest {
         assertSequencingEventInfo(outputNode, session.getUserID(), "ZIP sequencer", outputNode.getPath(), "/zip");
 
         // Find the sequenced node ...
-        String path = "/zip/test-files.zip";       
+        String path = "/zip/test-files.zip";
         assertNode(path + "/MODE-966-fix.patch", JcrConstants.NT_FILE);
         assertNode(path + "/MODE-966-fix.patch/jcr:content", JcrConstants.NT_RESOURCE);
         assertNode(path + "/testFolder", JcrConstants.NT_FOLDER);
@@ -105,7 +104,7 @@ public class ZipSequencerTest extends AbstractSequencerTest {
         assertNode(path + "/testFolder/testInnerFolder/MODE-960-fix.patch", JcrConstants.NT_FILE);
         assertNode(path + "/testFolder/testInnerFolder/MODE-960-fix.patch/jcr:content", JcrConstants.NT_RESOURCE);
         assertNode(path + "/testFolder/testInnerFolder/MODE-960-fix2.patch", JcrConstants.NT_FILE);
-        assertNode(path + "/testFolder/testInnerFolder/MODE-960-fix2.patch/jcr:content", JcrConstants.NT_RESOURCE);      
+        assertNode(path + "/testFolder/testInnerFolder/MODE-960-fix2.patch/jcr:content", JcrConstants.NT_RESOURCE);
     }
 
     @Test
@@ -115,8 +114,14 @@ public class ZipSequencerTest extends AbstractSequencerTest {
         Node outputNode = parent.getNode("jcr:content");
         expectSequencingFailure(outputNode);
 
-        Map sequencingEventInfo = assertSequencingEventInfo(outputNode, session.getUserID(), "ZIP sequencer", outputNode.getPath(), "/zip");
-        assertEquals(EOFException.class.getName(), sequencingEventInfo.get(Event.Sequencing.SEQUENCING_FAILURE_CAUSE).getClass().getName());
+        Map<?, ?> sequencingEventInfo = assertSequencingEventInfo(outputNode,
+                                                                  session.getUserID(),
+                                                                  "ZIP sequencer",
+                                                                  outputNode.getPath(),
+                                                                  "/zip");
+        assertEquals(EOFException.class.getName(), sequencingEventInfo.get(Event.Sequencing.SEQUENCING_FAILURE_CAUSE)
+                                                                      .getClass()
+                                                                      .getName());
     }
 
 }

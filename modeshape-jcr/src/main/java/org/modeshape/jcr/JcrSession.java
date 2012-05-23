@@ -72,7 +72,6 @@ import org.modeshape.jcr.api.monitor.DurationMetric;
 import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
-import org.modeshape.jcr.cache.ChildReferences;
 import org.modeshape.jcr.cache.DocumentAlreadyExistsException;
 import org.modeshape.jcr.cache.DocumentNotFoundException;
 import org.modeshape.jcr.cache.MutableCachedNode;
@@ -306,7 +305,7 @@ public class JcrSession implements Session {
     final JcrLockManager lockManager() {
         return workspace().lockManager();
     }
-    
+
     final JcrObservationManager observationManager() {
         return workspace().observationManager();
     }
@@ -487,7 +486,7 @@ public class JcrSession implements Session {
         if (absolutePath.isRoot()) return getRootNode();
         if (absolutePath.isIdentifier()) {
             // Look up the node by identifier ...
-            String identifierString = stringFactory().create(absolutePath).replaceAll("\\[","").replaceAll("\\]","");
+            String identifierString = stringFactory().create(absolutePath).replaceAll("\\[", "").replaceAll("\\]", "");
             return getNodeByIdentifier(identifierString);
         }
         CachedNode node = getRootNode().node();
@@ -535,7 +534,6 @@ public class JcrSession implements Session {
         }
         return path;
     }
-
 
     @Override
     public JcrRepository getRepository() {
@@ -795,9 +793,8 @@ public class JcrSession implements Session {
             throw new VersionException(JcrI18n.nodeIsCheckedIn.text(destParentNode.getPath()));
         }
 
-        //check whether the parent definition allows children which match the source
-        destParentNode.validateChildNodeDefinition(srcNode.name(),
-                                                   srcNode.getPrimaryTypeName(), true);
+        // check whether the parent definition allows children which match the source
+        destParentNode.validateChildNodeDefinition(srcNode.name(), srcNode.getPrimaryTypeName(), true);
 
         try {
             MutableCachedNode mutableSrcParent = srcParent.mutable();
@@ -844,8 +841,7 @@ public class JcrSession implements Session {
             throw new InvalidItemStateException(JcrI18n.nodeCreatedBySessionUsedExistingKey.text(path, key), e);
         } catch (org.modeshape.jcr.cache.ReferentialIntegrityException e) {
             throw new ReferentialIntegrityException(e);
-        }
-        catch (Throwable t) {
+        } catch (Throwable t) {
             throw new RepositoryException(t);
         }
 
@@ -865,18 +861,18 @@ public class JcrSession implements Session {
      * @see AbstractJcrNode#save()
      */
     void save( AbstractJcrNode node ) throws RepositoryException {
-        //first check the node is valid from a cache perspective
+        // first check the node is valid from a cache perspective
         CachedNode cachedNode = null;
         try {
             cachedNode = node.node();
             if (node.isNew()) {
-                //expected by TCK
+                // expected by TCK
                 throw new RepositoryException(JcrI18n.unableToSaveNodeThatWasCreatedSincePreviousSave.text(node.getPath(),
                                                                                                            workspaceName()));
             }
 
             if (node.containsChangesWithExternalDependencies()) {
-                //expected by TCK
+                // expected by TCK
                 I18n msg = JcrI18n.unableToSaveBranchBecauseChangesDependOnChangesToNodesOutsideOfBranch;
                 throw new ConstraintViolationException(msg.text(node.path(), workspaceName()));
             }
@@ -894,7 +890,8 @@ public class JcrSession implements Session {
         Map<NodeKey, NodeKey> baseVersionKeys = this.baseVersionKeys.get();
         Map<NodeKey, NodeKey> originalVersionKeys = this.originalVersionKeys.get();
         try {
-            sessionCache.save(cachedNode, systemContent.cache(), new JcrPreSave(systemContent, baseVersionKeys,                                                                                 originalVersionKeys));
+            sessionCache.save(cachedNode, systemContent.cache(), new JcrPreSave(systemContent, baseVersionKeys,
+                                                                                originalVersionKeys));
         } catch (WrappedException e) {
             Throwable cause = e.getCause();
             throw (cause instanceof RepositoryException) ? (RepositoryException)cause : new RepositoryException(e.getCause());
@@ -908,8 +905,7 @@ public class JcrSession implements Session {
             throw new InvalidItemStateException(JcrI18n.nodeCreatedBySessionUsedExistingKey.text(path, key), e);
         } catch (org.modeshape.jcr.cache.ReferentialIntegrityException e) {
             throw new ReferentialIntegrityException(e);
-        }
-        catch (Throwable t) {
+        } catch (Throwable t) {
             throw new RepositoryException(t);
         }
 
@@ -1338,12 +1334,14 @@ public class JcrSession implements Session {
                     ChildReference child = node.getChildReferences(cache).getChild(segment);
                     if (child == null) {
                         Path path = pathFactory().create(node.getPath(cache), segment);
-                        throw new ItemNotFoundException(JcrI18n.itemNotFoundAtPath.text(path.getString(namespaces()), workspaceName()));
+                        throw new ItemNotFoundException(JcrI18n.itemNotFoundAtPath.text(path.getString(namespaces()),
+                                                                                        workspaceName()));
                     }
                     CachedNode childNode = cache.getNode(child);
                     if (childNode == null) {
                         Path path = pathFactory().create(node.getPath(cache), segment);
-                        throw new ItemNotFoundException(JcrI18n.itemNotFoundAtPath.text(path.getString(namespaces()), workspaceName()));
+                        throw new ItemNotFoundException(JcrI18n.itemNotFoundAtPath.text(path.getString(namespaces()),
+                                                                                        workspaceName()));
                     }
                     node = childNode;
                 }
@@ -1379,7 +1377,7 @@ public class JcrSession implements Session {
 
         protected JcrPreSave( SystemContent content,
                               Map<NodeKey, NodeKey> baseVersionKeys,
-                              Map<NodeKey, NodeKey> originalVersionKeys) {
+                              Map<NodeKey, NodeKey> originalVersionKeys ) {
             assert content != null;
             this.cache = cache();
             this.systemContent = content;
@@ -1451,10 +1449,11 @@ public class JcrSession implements Session {
                     // Initialize the version history ...
                     NodeKey historyKey = systemContent.versionHistoryNodeKeyFor(versionableKey);
                     NodeKey baseVersionKey = baseVersionKeys == null ? null : baseVersionKeys.get(versionableKey);
-                    //it may happen during an import, that a node with version history & base version is assigned a new key and therefore
-                    //the base version points to an existing version while no version history is found initially
+                    // it may happen during an import, that a node with version history & base version is assigned a new key and
+                    // therefore
+                    // the base version points to an existing version while no version history is found initially
                     boolean shouldCreateNewVersionHistory = true;
-                    if (baseVersionKey != null){
+                    if (baseVersionKey != null) {
                         SessionCache systemCache = systemContent.cache();
                         CachedNode baseVersionNode = systemCache.getNode(baseVersionKey);
                         if (baseVersionNode != null) {
@@ -1463,7 +1462,8 @@ public class JcrSession implements Session {
                         }
                     }
                     if (shouldCreateNewVersionHistory) {
-                        //a new version history should be initialized
+                        // a new version history should be initialized
+                        assert historyKey != null;
                         if (baseVersionKey == null) baseVersionKey = historyKey.withRandomId();
                         NodeKey originalVersionKey = originalVersionKeys != null ? originalVersionKeys.get(versionableKey) : null;
                         Path versionHistoryPath = versionManager.versionHistoryPathFor(versionableKey);
@@ -1483,7 +1483,7 @@ public class JcrSession implements Session {
                     node.setProperty(cache, propertyFactory.create(JcrLexicon.IS_CHECKED_OUT, Boolean.TRUE));
                     node.setProperty(cache, propertyFactory.create(JcrLexicon.VERSION_HISTORY, historyRef));
                     node.setProperty(cache, propertyFactory.create(JcrLexicon.BASE_VERSION, baseVersionRef));
-                    //JSR 283 - 15.1
+                    // JSR 283 - 15.1
                     node.setProperty(cache, propertyFactory.create(JcrLexicon.PREDECESSORS, new Object[] {baseVersionRef}));
                 }
             }
@@ -1509,7 +1509,7 @@ public class JcrSession implements Session {
                                 jcrNode.setProperty(propName, defaultValues, defn.getRequiredType(), false);
                             } else {
                                 // don't skip constraint checks or protected checks
-                                jcrNode.setProperty(propName, defaultValues[0], false,false);
+                                jcrNode.setProperty(propName, defaultValues[0], false, false);
                             }
                         } else {
                             // There is no default for this mandatory property, so this is a constraint violation ...
@@ -1559,9 +1559,9 @@ public class JcrSession implements Session {
                 // covered by existing children ...
                 Set<NodeKey> allChildren = cache().getNodeKeysAtAndBelow(node.getKey());
                 allChildren.addAll(cache().getChangedNodeKeysAtOrBelow(node));
-                //remove the current node
+                // remove the current node
                 allChildren.remove(node.getKey());
-                //remove all the keys of the nodes which are removed
+                // remove all the keys of the nodes which are removed
                 allChildren.removeAll(node.removedChildren());
                 Set<Name> childrenNames = new HashSet<Name>();
 
@@ -1573,8 +1573,11 @@ public class JcrSession implements Session {
                     Name childName = defn.getInternalName();
                     if (!childrenNames.contains(childName)) {
                         throw new ConstraintViolationException(
-                                JcrI18n.propertyNoLongerSatisfiesConstraints.text(childName, readableLocation(node),
-                                                                                  defn.getName(), defn.getDeclaringNodeType().getName()));
+                                                               JcrI18n.propertyNoLongerSatisfiesConstraints.text(childName,
+                                                                                                                 readableLocation(node),
+                                                                                                                 defn.getName(),
+                                                                                                                 defn.getDeclaringNodeType()
+                                                                                                                     .getName()));
                     }
                 }
             }

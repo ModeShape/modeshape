@@ -46,8 +46,8 @@ import org.modeshape.common.util.SecureHash;
 import org.modeshape.common.util.SecureHash.Algorithm;
 import org.modeshape.common.util.SecureHash.HashingInputStream;
 import org.modeshape.jcr.JcrI18n;
-import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.BinaryKey;
+import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.binary.FileLocks.WrappedLock;
 
 /**
@@ -382,6 +382,7 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
         }
     }
 
+    @SuppressWarnings( "unused" )
     @Override
     public String getText( BinaryValue binary ) throws BinaryStoreException {
         return null;

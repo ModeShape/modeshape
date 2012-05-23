@@ -24,17 +24,8 @@
 
 package org.modeshape.jcr.bus;
 
-import org.junit.After;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import org.junit.Before;
-import org.junit.Test;
-import org.modeshape.jcr.api.value.DateTime;
-import org.modeshape.jcr.cache.NodeKey;
-import org.modeshape.jcr.cache.change.Change;
-import org.modeshape.jcr.cache.change.ChangeSet;
-import org.modeshape.jcr.cache.change.ChangeSetListener;
-import org.modeshape.jcr.value.basic.JodaDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -45,6 +36,15 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.modeshape.jcr.api.value.DateTime;
+import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.cache.change.Change;
+import org.modeshape.jcr.cache.change.ChangeSet;
+import org.modeshape.jcr.cache.change.ChangeSetListener;
+import org.modeshape.jcr.value.basic.JodaDateTime;
 
 /**
  * Unit test for {@link RepositoryChangeBus}
@@ -71,7 +71,7 @@ public class RepositoryChangeBusTest {
     public void afterEach() {
         changeBus.shutdown();
     }
-    
+
     @Test
     public void shouldNotAllowTheSameListenerTwice() {
         TestListener listener1 = new TestListener();
@@ -101,9 +101,9 @@ public class RepositoryChangeBusTest {
     public void shouldNotifyAllRegisteredListenersKeepingEventOrder() throws Exception {
         TestListener listener1 = new TestListener(4);
         getChangeBus().register(listener1);
-        
+
         TestListener listener2 = new TestListener(4);
-        getChangeBus().register(listener2);       
+        getChangeBus().register(listener2);
 
         getChangeBus().notify(new TestChangeSet(WORKSPACE1));
         getChangeBus().notify(new TestChangeSet(WORKSPACE1));
@@ -118,7 +118,7 @@ public class RepositoryChangeBusTest {
     @Test
     public void shouldOnlyDispatchEventsAfterListenerRegistration() throws Exception {
         getChangeBus().notify(new TestChangeSet(WORKSPACE1));
-        
+
         TestListener listener1 = new TestListener(4);
         getChangeBus().register(listener1);
 
@@ -145,7 +145,7 @@ public class RepositoryChangeBusTest {
 
         assertChangesDispatched(listener);
     }
-    
+
     @Test
     public void shouldNotDispatchEventsAfterListenerRemoval() throws Exception {
         TestListener listener1 = new TestListener(3);
@@ -153,7 +153,7 @@ public class RepositoryChangeBusTest {
 
         TestListener listener2 = new TestListener(2);
         getChangeBus().register(listener2);
-        
+
         getChangeBus().notify(new TestChangeSet(WORKSPACE1));
         getChangeBus().notify(new TestChangeSet(WORKSPACE2));
 
@@ -169,11 +169,11 @@ public class RepositoryChangeBusTest {
     public void shouldNotDispatchEventsIfShutdown() throws Exception {
         TestListener listener = new TestListener(1);
         getChangeBus().register(listener);
-        
+
         getChangeBus().notify(new TestChangeSet(WORKSPACE1));
 
         getChangeBus().shutdown();
-        
+
         getChangeBus().notify(new TestChangeSet(WORKSPACE2));
 
         assertChangesDispatched(listener);
@@ -204,6 +204,8 @@ public class RepositoryChangeBusTest {
     }
 
     protected static class TestChangeSet implements ChangeSet {
+
+        private static final long serialVersionUID = 1L;
 
         private final String workspaceName;
         private final DateTime dateTime;
@@ -287,7 +289,7 @@ public class RepositoryChangeBusTest {
             this(0);
         }
 
-        private TestListener(int expectedNumberOfChangeSet) {
+        protected TestListener( int expectedNumberOfChangeSet ) {
             latch = new CountDownLatch(expectedNumberOfChangeSet);
             receivedChangeSet = new ArrayList<TestChangeSet>();
         }
@@ -299,7 +301,7 @@ public class RepositoryChangeBusTest {
 
         @Override
         public void notify( ChangeSet changeSet ) {
-            if (! (changeSet instanceof TestChangeSet)) {
+            if (!(changeSet instanceof TestChangeSet)) {
                 throw new IllegalArgumentException("Invalid type of change set received");
             }
             receivedChangeSet.add((TestChangeSet)changeSet);

@@ -50,12 +50,12 @@ import org.modeshape.jcr.clustering.ChannelProvider;
 @ThreadSafe
 public final class ClusteredRepositoryChangeBus implements ChangeBus {
 
-    private static final Logger LOGGER = Logger.getLogger(ClusteredRepositoryChangeBus.class);
+    protected static final Logger LOGGER = Logger.getLogger(ClusteredRepositoryChangeBus.class);
 
     /**
      * The wrapped standalone bus to which standard bus operations are delegated
      */
-    private final ChangeBus delegate;
+    protected final ChangeBus delegate;
 
     /**
      * The listener for channel changes.
@@ -70,18 +70,18 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
     /**
      * Flag that dictates whether this bus has connected to the cluster.
      */
-    private final AtomicBoolean isOpen = new AtomicBoolean(false);
+    protected final AtomicBoolean isOpen = new AtomicBoolean(false);
 
     /**
      * Flag that dictates whether there are multiple participants in the cluster; if not, then the changes are propagated only to
      * the local observers.
      */
-    private final AtomicBoolean multipleAddressesInCluster = new AtomicBoolean(false);
+    protected final AtomicBoolean multipleAddressesInCluster = new AtomicBoolean(false);
 
     /**
      * The clustering configuration
      */
-    private final RepositoryConfiguration.Clustering clusteringConfiguration;
+    protected final RepositoryConfiguration.Clustering clusteringConfiguration;
 
     /**
      * The JGroups channel to which all {@link #notify(ChangeSet) change notifications} will be sent and from which all changes
@@ -257,7 +257,7 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
         }
     }
 
-    private void logSendOperation( ChangeSet changeSet ) {
+    protected final void logSendOperation( ChangeSet changeSet ) {
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("Sending to cluster '{0}' {1} changes on workspace {2} made by {3} from process '{4}' at {5}",
                          clusteringConfiguration.getClusterName(),
@@ -269,7 +269,7 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
         }
     }
 
-    private void logReceivedOperation( ChangeSet changeSet ) {
+    protected final void logReceivedOperation( ChangeSet changeSet ) {
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("Received on cluster '{0}' {1} changes on workspace {2} made by {3} from process '{4}' at {5}",
                          clusteringConfiguration.getClusterName(),
@@ -300,7 +300,7 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
         return (ChangeSet)Util.objectFromByteBuffer(data);
     }
 
-    private class Receiver extends ReceiverAdapter {
+    protected final class Receiver extends ReceiverAdapter {
 
         /**
          * {@inheritDoc}
@@ -368,7 +368,7 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
         }
     }
 
-    private class Listener implements ChannelListener {
+    protected final class Listener implements ChannelListener {
         /**
          * {@inheritDoc}
          * 

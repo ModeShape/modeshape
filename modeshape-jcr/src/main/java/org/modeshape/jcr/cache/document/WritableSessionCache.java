@@ -636,8 +636,8 @@ public class WritableSessionCache extends AbstractSessionCache {
                         preSaveOperation.process(changedNode, saveContext);
                     }
                     savedNodesInOrder.add(key);
-                } else if (!changedNode.getChangedReferrerNodes().isEmpty()){
-                    //we need to include any referrer changes
+                } else if (!changedNode.getChangedReferrerNodes().isEmpty()) {
+                    // we need to include any referrer changes
                     savedNodesInOrder.add(key);
                 }
             } else {
@@ -711,7 +711,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     changes.nodeRemoved(key, persisted.getParentKey(workspaceCache), path);
                     removedNodes.add(key);
 
-                    //if there were any referrer changes for the removed nodes, we need to process them
+                    // if there were any referrer changes for the removed nodes, we need to process them
                     ReferrerChanges referrerChanges = referrerChangesForRemovedNodes.get(key);
                     if (referrerChanges != null) {
                         EditableDocument doc = database.get(keyStr).editDocumentContent();
@@ -796,6 +796,9 @@ public class WritableSessionCache extends AbstractSessionCache {
                             if (translator.isLocked(doc)) {
                                 throw new LockFailureException(key);
                             }
+                            break;
+                        case UNLOCK:
+                            break;
                     }
                 }
 
@@ -896,10 +899,9 @@ public class WritableSessionCache extends AbstractSessionCache {
 
                             Path nodeNewPath = null;
                             if (nodeOldPath != null) {
-                                boolean isSnsReordering = nodeOldPath != null
-                                                          && nodeOldPath.getLastSegment()
-                                                                        .getName()
-                                                                        .equals(insertedBeforePath.getLastSegment().getName());
+                                boolean isSnsReordering = nodeOldPath.getLastSegment()
+                                                                     .getName()
+                                                                     .equals(insertedBeforePath.getLastSegment().getName());
                                 nodeNewPath = isSnsReordering ? insertedBeforePath : nodeOldPath;
                             } else {
                                 // there is no old path, which means the node is new and reordered at the same time (most likely
@@ -949,7 +951,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
         if (removedNodes != null) {
             assert !removedNodes.isEmpty();
-            //we need to collect the referrers at the end only, so that other potential changes in references have been computed
+            // we need to collect the referrers at the end only, so that other potential changes in references have been computed
             Set<NodeKey> referrers = new HashSet<NodeKey>();
             for (NodeKey removedKey : removedNodes) {
                 referrers.addAll(workspaceCache.getNode(removedKey).getReferrers(workspaceCache, ReferenceType.STRONG));
@@ -1039,9 +1041,10 @@ public class WritableSessionCache extends AbstractSessionCache {
                     // There was a node within this cache ...
                     children = node.getChildReferences(this);
                     removed.put(nodeKey, node);
-                    //we need to preserve any existing transient referrer changes for the node which we're removing, as they can influence ref integrity
+                    // we need to preserve any existing transient referrer changes for the node which we're removing, as they can
+                    // influence ref integrity
                     referrerChangesForRemovedNodes.put(nodeKey, node.getReferrerChanges());
-                    //cleanup (remove) all outgoing references from this node to other nodes
+                    // cleanup (remove) all outgoing references from this node to other nodes
                     node.removeAllReferences(this);
                 } else {
                     // The node did not exist in the session, so get it from the workspace ...

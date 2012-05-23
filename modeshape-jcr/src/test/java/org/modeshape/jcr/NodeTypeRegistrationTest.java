@@ -53,7 +53,7 @@ public class NodeTypeRegistrationTest extends SingleUseAbstractTest {
     @Before
     public void beforeEach() throws Exception {
         super.beforeEach();
-        this.nodeTypeManager = (NodeTypeManager)session.getWorkspace().getNodeTypeManager();
+        this.nodeTypeManager = session.getWorkspace().getNodeTypeManager();
     }
 
     protected InputStream resourceAsStream( String path ) {
@@ -72,7 +72,7 @@ public class NodeTypeRegistrationTest extends SingleUseAbstractTest {
 
     @Test
     public void shouldAccessCustomNodeTypeManagerViaCasting() throws Exception {
-        NodeTypeManager nodeTypeMgr = (NodeTypeManager)session.getWorkspace().getNodeTypeManager();
+        NodeTypeManager nodeTypeMgr = session.getWorkspace().getNodeTypeManager();
         assertThat(nodeTypeMgr, is(notNullValue()));
     }
 

@@ -37,7 +37,6 @@ import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.ItemExistsException;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.PathNotFoundException;
-import javax.jcr.Property;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
@@ -212,8 +211,8 @@ class JcrContentHandler extends DefaultHandler {
                     // Does the versionable node already have a base version?
                     AbstractJcrProperty baseVersionProp = node.getProperty(JcrLexicon.BASE_VERSION);
                     if (baseVersionProp != null) {
-                        //we rely on the fact that the base version ref is exported with full key
-                        NodeKeyReference baseVersionRef = (NodeKeyReference) baseVersionProp.getValue().value();
+                        // we rely on the fact that the base version ref is exported with full key
+                        NodeKeyReference baseVersionRef = (NodeKeyReference)baseVersionProp.getValue().value();
                         session.setDesiredBaseVersionKey(node.key(), baseVersionRef.getNodeKey());
                     }
                 }
@@ -611,15 +610,18 @@ class JcrContentHandler extends DefaultHandler {
                         if (value != null && propertyType == PropertyType.STRING) {
                             // Strings and binaries can be empty -- other data types cannot
                             values.add(valueFor(value, propertyType));
-                        } else if (value != null && (propertyType == PropertyType.REFERENCE || propertyType == PropertyType.WEAKREFERENCE)) {
+                        } else if (value != null
+                                   && (propertyType == PropertyType.REFERENCE || propertyType == PropertyType.WEAKREFERENCE)) {
                             try {
-                                boolean isSystemReference = name.getNamespaceUri().equals(JcrLexicon.Namespace.URI) ||
-                                        name.getNamespaceUri().equals(ModeShapeLexicon.NAMESPACE.getNamespaceUri());
+                                boolean isSystemReference = name.getNamespaceUri().equals(JcrLexicon.Namespace.URI)
+                                                            || name.getNamespaceUri()
+                                                                   .equals(ModeShapeLexicon.NAMESPACE.getNamespaceUri());
                                 if (!isSystemReference) {
-                                    //we only prepend the parent information for non-system references
+                                    // we only prepend the parent information for non-system references
                                     value = parentHandler().node().key().withId(value).toString();
                                 }
-                                // we only have the identifier of the node, so try to use the parent to determine the workspace & source key
+                                // we only have the identifier of the node, so try to use the parent to determine the workspace &
+                                // source key
                                 values.add(valueFor(value, propertyType));
                             } catch (SAXException e) {
                                 throw new EnclosingSAXException(e);
@@ -751,10 +753,12 @@ class JcrContentHandler extends DefaultHandler {
                         prop = child.setProperty(propertyName,
                                                  values.toArray(new JcrValue[values.size()]),
                                                  PropertyType.UNDEFINED,
-                                                 true, true);
+                                                 true,
+                                                 true);
                     }
 
-                    if (prop.getType() == PropertyType.REFERENCE && prop.getDefinition().getValueConstraints().length != 0 && !prop.getDefinition().isProtected()) {
+                    if (prop.getType() == PropertyType.REFERENCE && prop.getDefinition().getValueConstraints().length != 0
+                        && !prop.getDefinition().isProtected()) {
                         // This reference needs to be validated after all nodes have been imported ...
                         refPropsRequiringConstraintValidation.add(prop);
                     }

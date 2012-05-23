@@ -887,7 +887,8 @@ public class DocumentTranslator {
         }
     }
 
-    private void updateReferrers(EditableDocument owningDocument, Map<NodeKey, Integer> referrersCountDelta) {
+    private void updateReferrers( EditableDocument owningDocument,
+                                  Map<NodeKey, Integer> referrersCountDelta ) {
         for (NodeKey strongKey : referrersCountDelta.keySet()) {
             int newCount = referrersCountDelta.get(strongKey);
             String keyString = strongKey.toString();
@@ -897,20 +898,21 @@ public class DocumentTranslator {
                 int actualCount = existingCount + newCount;
                 if (actualCount <= 0) {
                     owningDocument.remove(keyString);
-                }
-                else {
+                } else {
                     owningDocument.set(keyString, actualCount);
                 }
-            }
-            else if (newCount > 0) {
+            } else if (newCount > 0) {
                 owningDocument.set(keyString, newCount);
             }
         }
     }
 
     /**
-     * Given the lists of added & removed referrers (which may contain duplicates), compute the delta with which the count
-     * has to be updated in the document
+     * Given the lists of added & removed referrers (which may contain duplicates), compute the delta with which the count has to
+     * be updated in the document
+     * 
+     * @param addedReferrers the list of referrers that was added
+     * @param removedReferrers the list of referrers that was removed
      * @return a map(nodekey, delta) pairs
      */
     private Map<NodeKey, Integer> computeReferrersCountDelta( List<NodeKey> addedReferrers,
@@ -919,13 +921,14 @@ public class DocumentTranslator {
 
         Set<NodeKey> addedReferrersUnique = new HashSet<NodeKey>(addedReferrers);
         for (NodeKey addedReferrer : addedReferrersUnique) {
-            int referrersCount = Collections.frequency(addedReferrers, addedReferrer) - Collections.frequency(removedReferrers, addedReferrer);
+            int referrersCount = Collections.frequency(addedReferrers, addedReferrer)
+                                 - Collections.frequency(removedReferrers, addedReferrer);
             referrersCountDelta.put(addedReferrer, referrersCount);
         }
 
         Set<NodeKey> removedReferrersUnique = new HashSet<NodeKey>(removedReferrers);
         for (NodeKey removedReferrer : removedReferrersUnique) {
-            //process what's left in the removed list, only if not found in the added
+            // process what's left in the removed list, only if not found in the added
             if (!referrersCountDelta.containsKey(removedReferrer)) {
                 referrersCountDelta.put(removedReferrer, -1 * Collections.frequency(removedReferrers, removedReferrer));
             }
@@ -986,8 +989,8 @@ public class DocumentTranslator {
         }
         if (value instanceof Reference) {
             Reference ref = (Reference)value;
-            String key = ref.isWeak() ? "$wref" : "$ref" ;
-            String refString = value instanceof NodeKeyReference ? ((NodeKeyReference) value).getNodeKey().toString() : this.strings.create(ref);
+            String key = ref.isWeak() ? "$wref" : "$ref";
+            String refString = value instanceof NodeKeyReference ? ((NodeKeyReference)value).getNodeKey().toString() : this.strings.create(ref);
             boolean isForeign = (value instanceof NodeKeyReference) && ((NodeKeyReference)value).isForeign();
             return Schematic.newDocument(key, refString, "$foreign", isForeign);
         }
@@ -1172,13 +1175,11 @@ public class DocumentTranslator {
         if (NodeKey.isValidFormat(valueStr)) {
             return referenceFactory.create(new NodeKey(valueStr), isForeign);
         }
-        else {
-            try {
-                UUID uuid = UUID.fromString(valueStr);
-                return refs.create(new UuidReference(uuid));
-            } catch (IllegalArgumentException e) {
-                return refs.create(new StringReference(valueStr));
-            }
+        try {
+            UUID uuid = UUID.fromString(valueStr);
+            return refs.create(new UuidReference(uuid));
+        } catch (IllegalArgumentException e) {
+            return refs.create(new StringReference(valueStr));
         }
     }
 

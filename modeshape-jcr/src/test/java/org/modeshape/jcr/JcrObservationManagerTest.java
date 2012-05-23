@@ -1711,7 +1711,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
      * @see WorkspaceOperationTest#testCopy()
      * @throws Exception
      */
-    @FixFor("MODE-1312")
+    @FixFor( "MODE-1312" )
     @Test
     public void shouldTestWorkspaceOperationTest_testCopy() throws Exception {
         // setup
@@ -1929,9 +1929,10 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         targetNode.setProperty("foo", "bar");
         session.save();
 
-        //no event should be fired from the system path for the lock (excluded explicitly because the TCK does not expect events from this)
+        // no event should be fired from the system path for the lock (excluded explicitly because the TCK does not expect events
+        // from this)
         TestListener systemListener = addListener(session, 1, 2, ALL_EVENTS, "/jcr:system", true, null, null, false);
-        //2 events (property added for isDeep and lock owner) should be fired for the lock in the regular path (as per TCK)
+        // 2 events (property added for isDeep and lock owner) should be fired for the lock in the regular path (as per TCK)
         TestListener nodeListener = addListener(session, 2, 2, ALL_EVENTS, parentNode.getPath(), true, null, null, false);
 
         lock(parentNode, true, true);
@@ -2169,12 +2170,12 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     private class TestListener implements EventListener {
 
         private String errorMessage;
-        private final List<Event> events;
-        private final List<String> userData;
+        protected final List<Event> events;
+        protected final List<String> userData;
         private int eventsProcessed = 0;
-        private final int eventTypes;
-        private final int expectedEventsCount;
-        private final CountDownLatch latch;
+        protected final int eventTypes;
+        protected final int expectedEventsCount;
+        protected final CountDownLatch latch;
 
         public TestListener( int expectedEventsCount,
                              int numIterators,
@@ -2202,11 +2203,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
             return this.expectedEventsCount;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.observation.EventListener#onEvent(javax.jcr.observation.EventIterator)
-         */
+        @Override
         public void onEvent( EventIterator itr ) {
             // this is called each time a "transaction" is committed. Most times this means after a session.save. But there are
             // other times, like a workspace.move and a node.lock

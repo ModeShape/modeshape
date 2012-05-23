@@ -25,7 +25,6 @@ package org.modeshape.jdbc;
 
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.logging.Level;
 import javax.jcr.Repository;
 import org.modeshape.jdbc.delegate.HttpRepositoryDelegate;
 

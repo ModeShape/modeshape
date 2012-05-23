@@ -150,17 +150,15 @@ public interface SessionCache extends NodeCache {
      * 
      * @param node a non-null {@link CachedNode} instance
      * @return a <set>Set</set> of nodekeys, or an empty set if no nodes are found
-     * @throws {@link NodeNotFoundException} if any of changes registered in this cache refer to nodes that have been removed in
-     * the meantime.
+     * @throws NodeNotFoundException if any of changes registered in this cache refer to nodes that have been removed in the
+     *         meantime.
      */
     public Set<NodeKey> getChangedNodeKeysAtOrBelow( CachedNode node ) throws NodeNotFoundException;
 
     /**
-     * Returns a set with the {@link NodeKey}s of the existing nodes (persistent not transient & new) which are at
-     * and below the path of the node with the given key.
-     *
-     * Note that this method will attempt to load each node
-     *
+     * Returns a set with the {@link NodeKey}s of the existing nodes (persistent not transient & new) which are at and below the
+     * path of the node with the given key. Note that this method will attempt to load each node
+     * 
      * @param nodeKey the key of node which will be considered the root node
      * @return a <set>Set</set> of nodekeys or an empty set
      */

@@ -1,6 +1,5 @@
 package org.modeshape.jcr;
 
-import javax.jcr.ItemNotFoundException;
 import static org.modeshape.jcr.api.observation.Event.Sequencing.NODE_SEQUENCED;
 import static org.modeshape.jcr.api.observation.Event.Sequencing.NODE_SEQUENCING_FAILURE;
 import static org.modeshape.jcr.api.observation.Event.Sequencing.OUTPUT_PATH;
@@ -25,6 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.jcr.AccessDeniedException;
+import javax.jcr.ItemNotFoundException;
 import javax.jcr.RangeIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.observation.Event;
@@ -156,14 +156,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
         this.changesReceivedAndDispatched = new ConcurrentHashMap<Integer, AtomicInteger>();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws javax.jcr.RepositoryException if the session is no longer live
-     * @throws IllegalArgumentException if <code>listener</code> is <code>null</code>
-     * @see javax.jcr.observation.ObservationManager#addEventListener(javax.jcr.observation.EventListener, int, java.lang.String,
-     *      boolean, java.lang.String[], java.lang.String[], boolean)
-     */
+    @Override
     public void addEventListener( EventListener listener,
                                   int eventTypes,
                                   String absPath,
@@ -243,11 +236,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.observation.ObservationManager#getRegisteredEventListeners()
-     */
+    @Override
     public EventListenerIterator getRegisteredEventListeners() throws RepositoryException {
         checkSession(); // make sure session is still active
         try {
@@ -286,15 +275,14 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
         return systemWorkspaceName;
     }
 
-    final String nodeIdentifier(NodeKey key) {
+    final String nodeIdentifier( NodeKey key ) {
         try {
             AbstractJcrNode node = session.node(key, null);
             return node.getIdentifier();
         } catch (ItemNotFoundException e) {
-            //the node was removed, so just return the identifier part of the key
+            // the node was removed, so just return the identifier part of the key
             return key.getIdentifier();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             LOGGER.debug(e, "Unexpected exception while retrieving the identifier of a node");
             return key.getIdentifier();
         }
@@ -316,12 +304,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws IllegalArgumentException if <code>listener</code> is <code>null</code>
-     * @see javax.jcr.observation.ObservationManager#removeEventListener(javax.jcr.observation.EventListener)
-     */
+    @Override
     public void removeEventListener( EventListener listener ) throws RepositoryException {
         checkSession(); // make sure session is still active
         CheckArg.isNotNull(listener, "listener");
@@ -336,14 +319,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * This method set's the user data information for this observation manager
-     * </p>
-     * 
-     * @see javax.jcr.observation.ObservationManager#setUserData(java.lang.String)
-     */
+    @Override
     public void setUserData( String userData ) {
         // User data value may be null
         this.session.addContextData(OBSERVATION_USER_DATA_KEY, userData);
@@ -357,6 +333,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
      * 
      * @see javax.jcr.observation.ObservationManager#getEventJournal()
      */
+    @Override
     public EventJournal getEventJournal() {
         return null;
     }
@@ -370,6 +347,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
      * @see javax.jcr.observation.ObservationManager#getEventJournal(int, java.lang.String, boolean, java.lang.String[],
      *      java.lang.String[])
      */
+    @Override
     public EventJournal getEventJournal( int eventTypes,
                                          String absPath,
                                          boolean isDeep,
@@ -404,38 +382,22 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
             this.elements = new ArrayList<E>(elements);
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.RangeIterator#getPosition()
-         */
+        @Override
         public long getPosition() {
             return this.position;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.RangeIterator#getSize()
-         */
+        @Override
         public long getSize() {
             return this.elements.size();
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.util.Iterator#hasNext()
-         */
+        @Override
         public boolean hasNext() {
             return (getPosition() < getSize());
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.util.Iterator#next()
-         */
+        @Override
         public Object next() {
             if (!hasNext()) {
                 throw new NoSuchElementException();
@@ -453,15 +415,12 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
          * @throws UnsupportedOperationException if called
          * @see java.util.Iterator#remove()
          */
+        @Override
         public void remove() {
             throw new UnsupportedOperationException();
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.RangeIterator#skip(long)
-         */
+        @Override
         public void skip( long skipNum ) {
             this.position += skipNum;
 
@@ -484,11 +443,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
             super(listeners);
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.observation.EventListenerIterator#nextEventListener()
-         */
+        @Override
         public EventListener nextEventListener() {
             return (EventListener)next();
         }
@@ -507,11 +462,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
             super(events);
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.observation.EventIterator#nextEvent()
-         */
+        @Override
         public Event nextEvent() {
             return (Event)next();
         }
@@ -618,65 +569,37 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
             this.info = info;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.observation.Event#getPath()
-         */
+        @Override
         public String getPath() {
             return this.path;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.observation.Event#getType()
-         */
+        @Override
         public int getType() {
             return this.type;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.observation.Event#getUserID()
-         */
+        @Override
         public String getUserID() {
             return bundle.getUserID();
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.observation.Event#getDate()
-         */
+        @Override
         public long getDate() {
             return bundle.getDate().getMilliseconds();
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.observation.Event#getIdentifier()
-         */
+        @Override
         public String getIdentifier() {
             return id;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.observation.Event#getUserData()
-         */
+        @Override
         public String getUserData() {
             return bundle.getUserData();
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.observation.Event#getInfo()
-         */
+        @Override
         public Map<String, ?> getInfo() {
             return info != null ? Collections.unmodifiableMap(info) : Collections.<String, String>emptyMap();
         }
@@ -729,8 +652,10 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                     return sb.toString();
                 case NODE_SEQUENCING_FAILURE: {
                     sb.append("Node sequencing failure");
-                    sb.append(" sequenced node:").append(info.get(SEQUENCED_NODE_ID)).append(" at path:").append(info.get(
-                            SEQUENCED_NODE_PATH));
+                    sb.append(" sequenced node:")
+                      .append(info.get(SEQUENCED_NODE_ID))
+                      .append(" at path:")
+                      .append(info.get(SEQUENCED_NODE_PATH));
                     sb.append(" ,cause: ").append(getInfo().get(SEQUENCING_FAILURE_CAUSE));
                     return sb.toString();
                 }
@@ -818,6 +743,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
             this.noLocal = noLocal;
         }
 
+        @SuppressWarnings( "synthetic-access" )
         @Override
         public void notify( ChangeSet changeSet ) {
             decrementEventQueueStatistic(changeSet);
@@ -919,14 +845,11 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                 NodeSequenced sequencedChange = (NodeSequenced)nodeChange;
 
                 Map<String, Object> infoMap = createEventInfoMapForSequencerChange(sequencedChange);
-                events.add(new JcrEvent(bundle,
-                                        NODE_SEQUENCED,
-                                        stringFor(sequencedChange.getOutputNodePath()),
-                                        nodeIdentifier(sequencedChange.getOutputNodeKey()),
-                                        infoMap));
+                events.add(new JcrEvent(bundle, NODE_SEQUENCED, stringFor(sequencedChange.getOutputNodePath()),
+                                        nodeIdentifier(sequencedChange.getOutputNodeKey()), infoMap));
             } else if (nodeChange instanceof NodeSequencingFailure && eventListenedFor(NODE_SEQUENCING_FAILURE)) {
-                //create event for the sequencing failure
-                NodeSequencingFailure sequencingFailure = (NodeSequencingFailure) nodeChange;
+                // create event for the sequencing failure
+                NodeSequencingFailure sequencingFailure = (NodeSequencingFailure)nodeChange;
 
                 Map<String, Object> infoMap = createEventInfoMapForSequencerChange(sequencingFailure);
                 infoMap.put(SEQUENCING_FAILURE_CAUSE, sequencingFailure.getCause());
@@ -934,7 +857,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
             }
         }
 
-        private Map<String, Object> createEventInfoMapForSequencerChange(AbstractSequencingChange sequencingChange) {
+        private Map<String, Object> createEventInfoMapForSequencerChange( AbstractSequencingChange sequencingChange ) {
             Map<String, Object> infoMap = new HashMap<String, Object>();
 
             infoMap.put(SEQUENCED_NODE_PATH, stringFor(sequencingChange.getPath()));
@@ -1012,6 +935,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
          * @return <code>true</code> if the {@link JcrSession#checkPermission(String, String)} returns true for a
          *         {@link ModeShapePermissions#READ} permission on the node from the change
          */
+        @SuppressWarnings( "synthetic-access" )
         private boolean acceptBasedOnPermission( AbstractNodeChange nodeChange ) {
             try {
                 session.checkPermission(parentNodePathOfChange(nodeChange), ModeShapePermissions.READ);
@@ -1042,6 +966,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
          * @param change the change being processed
          * @return <code>true</code> if all node types should be processed or if changed node type name matches a specified type
          */
+        @SuppressWarnings( "synthetic-access" )
         private boolean acceptBasedOnNodeTypeName( AbstractNodeChange change ) {
             // JSR 283#12.5.3.4.3
             if (nodeTypeNames != null && nodeTypeNames.length == 0) {
@@ -1076,15 +1001,15 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
          * @param change the change being processed
          * @return <code>true</code> if there is no absolute path or if change path matches or optionally is a deep match
          */
+        @SuppressWarnings( "synthetic-access" )
         private boolean acceptBasedOnPath( AbstractNodeChange change ) {
             if (!StringUtil.isBlank(absPath)) {
                 Path matchPath = session.pathFactory().create(this.absPath);
                 Path parentPath = parentNodePathOfChange(change);
 
                 return this.isDeep ? matchPath.isAtOrAbove(parentPath) : matchPath.equals(parentPath);
-            } else {
-                return true;
             }
+            return true;
         }
 
         /**
@@ -1109,9 +1034,8 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
             Path changePath = change.getPath();
             if (change instanceof PropertyAdded || change instanceof PropertyRemoved || change instanceof PropertyChanged) {
                 return changePath;
-            } else {
-                return changePath.isRoot() ? changePath : changePath.getParent();
             }
+            return changePath.isRoot() ? changePath : changePath.getParent();
         }
 
         /**
