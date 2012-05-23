@@ -14,8 +14,7 @@
     <artifactId>modeshape-jcr-tck</artifactId>
     <packaging>jar</packaging>
     <name>ModeShape JCR Compatibility Unit Tests</name>
-    <description>ModeShape unit tests to check compatibility with the JCR 1.0 API. This does NOT use the official TCK.
-    </description>
+    <description>ModeShape unit tests to check compatibility with the JCR 2.0 API. This does NOT use the official TCK.</description>
     <url>http://www.modeshape.org</url>
 
     <!--
@@ -31,6 +30,7 @@
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jcr</artifactId>
@@ -81,4 +81,22 @@
             <artifactId>picketbox-bare</artifactId>
         </dependency>
     </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <!--Disable bundle packaging because there aren't any sources-->
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>bundle-manifest</id>
+                        <phase>non-existant</phase>
+                        <goals>
+                            <goal>manifest</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

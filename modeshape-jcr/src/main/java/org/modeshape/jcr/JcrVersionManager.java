@@ -440,6 +440,7 @@ final class JcrVersionManager implements VersionManager {
                 props.add(factory.create(JcrLexicon.FROZEN_PRIMARY_TYPE, primaryTypeName));
                 props.add(factory.create(JcrLexicon.FROZEN_MIXIN_TYPES, mixinTypeNames));
                 props.add(factory.create(JcrLexicon.FROZEN_UUID, node.getIdentifier()));
+                props.add(factory.create(JcrLexicon.UUID, key));
                 addVersionedPropertiesFor(node, forceCopy, props);
                 MutableCachedNode newCopy = parentInVersionHistory.createChild(versionHistoryCache, key, node.name(), props);
 
@@ -689,10 +690,27 @@ final class JcrVersionManager implements VersionManager {
                          boolean removeExisting )
         throws PathNotFoundException, ItemExistsException, VersionException, ConstraintViolationException,
         UnsupportedRepositoryOperationException, LockException, InvalidItemStateException, RepositoryException {
+        restoreAtAbsPath(absPath, version, removeExisting, true);
+    }
+
+    protected void restoreAtAbsPath( String absPath,
+                                   Version version,
+                                   boolean removeExisting,
+                                   boolean failIfNodeAlreadyExists) throws RepositoryException {
         validateSessionLiveWithoutPendingChanges();
+
         // Create a new session in which we'll finish the restore, so this session remains thread-safe ...
         JcrSession restoreSession = session.spawnSession(false);
         Path path = restoreSession.absolutePathFor(absPath);
+
+        if (failIfNodeAlreadyExists) {
+            try {
+                AbstractJcrNode existingNode = restoreSession.node(path);
+                throw new VersionException(JcrI18n.unableToRestoreAtAbsPathNodeAlreadyExists.text(absPath, existingNode.key()));
+            } catch (PathNotFoundException e) {
+                //expected
+            }
+        }
         restore(restoreSession, path, version, null, removeExisting);
     }
 

@@ -985,14 +985,17 @@ public class SystemContent {
         MutableCachedNode rootVersion = history.createChild(system, rootVersionKey, JcrLexicon.ROOT_VERSION, rootProps);
 
         // And create the 'nt:rootVersion/nt:frozenNode' child node ...
+        NodeKey frozenNodeKey = rootVersion.getKey().withRandomId();
+
         List<Property> frozenProps = new ArrayList<Property>();
         frozenProps.add(propertyFactory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FROZEN_NODE));
         frozenProps.add(propertyFactory.create(JcrLexicon.FROZEN_UUID, versionableNodeKey.getIdentifier()));
         frozenProps.add(propertyFactory.create(JcrLexicon.FROZEN_PRIMARY_TYPE, primaryTypeName));
+        frozenProps.add(propertyFactory.create(JcrLexicon.UUID, frozenNodeKey));
         if (mixinTypeNames != null && !mixinTypeNames.isEmpty()) {
             frozenProps.add(propertyFactory.create(JcrLexicon.FROZEN_MIXIN_TYPES, mixinTypeNames));
         }
-        MutableCachedNode frozenNode = rootVersion.createChild(system, null, JcrLexicon.FROZEN_NODE, frozenProps);
+        MutableCachedNode frozenNode = rootVersion.createChild(system, frozenNodeKey, JcrLexicon.FROZEN_NODE, frozenProps);
         assert frozenNode != null;
 
         return history;
@@ -1072,13 +1075,16 @@ public class SystemContent {
         MutableCachedNode versionNode = historyNode.createChild(system, versionKey, versionName, props);
 
         // Create a 'nt:frozenNode' node under the 'nt:version' node ...
+        NodeKey frozenNodeKey = systemKey().withRandomId();
+
         props = new ArrayList<Property>();
         props.add(propertyFactory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FROZEN_NODE));
         props.add(propertyFactory.create(JcrLexicon.FROZEN_UUID, versionableNodeKey.getIdentifier()));
         props.add(propertyFactory.create(JcrLexicon.FROZEN_PRIMARY_TYPE, primaryTypeName));
         props.add(propertyFactory.create(JcrLexicon.FROZEN_MIXIN_TYPES, mixinTypeNames));
+        props.add(propertyFactory.create(JcrLexicon.UUID, frozenNodeKey));
+
         if (versionableProperties != null) props.addAll(versionableProperties);
-        NodeKey frozenNodeKey = systemKey().withRandomId();
         MutableCachedNode frozenNode = versionNode.createChild(system, frozenNodeKey, JcrLexicon.FROZEN_NODE, props);
         assert frozenNode != null;
         frozenNodeOutput.set(frozenNode);
