@@ -2869,7 +2869,13 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         // "Removing a node is considered an alteration of its parent. This means that a node within the scope of
         // a lock may be removed by a session that is not an owner of that lock, assuming no other restriction
         // prevents the removal."
-        AbstractJcrNode parent = getParent();
+        AbstractJcrNode parent = null;
+        try {
+            parent = getParent();
+        } catch (ItemNotFoundException e) {
+            //expected by the TCK
+            throw new InvalidItemStateException(e);
+        }
         parent.checkForLock();
         Path path = path();
         session.checkPermission(path, ModeShapePermissions.REMOVE);
@@ -3167,12 +3173,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     @Override
     public void remove()
         throws VersionException, LockException, ConstraintViolationException, AccessDeniedException, RepositoryException {
-
-        boolean nodeAlreadyRemoved = cache().getNode(this.key) == null;
-        if (nodeAlreadyRemoved) {
-            // this node has been removed by someone else
-            // TODO author=Horia Chiorean date=4/6/12 description=This case needs special handling and will cause a NPE
-        }
         // Since this node might be shareable, we want to implement 'remove()' by calling 'removeShare()',
         // which will behave correctly even if it is not shareable ...
         removeShare();
@@ -3289,7 +3289,14 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 continue;
             }
             MutableCachedNode changedNodeOutsideBranch = session().cache().mutable(changedNodeKey);
-            boolean isReferenceable = session().node(changedNodeKey, null).isReferenceable();
+            AbstractJcrNode changedNode = null;
+            try {
+                changedNode = session().node(changedNodeKey, null);
+            } catch (ItemNotFoundException e) {
+                //node was deleted
+                continue;
+            }
+            boolean isReferenceable = changedNode.isReferenceable();
             if (!isReferenceable) {
                 continue;
             }

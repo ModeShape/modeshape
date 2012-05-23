@@ -835,11 +835,7 @@ public class JcrSession implements Session {
             Throwable cause = e.getCause();
             throw (cause instanceof RepositoryException) ? (RepositoryException)cause : new RepositoryException(e.getCause());
         } catch (DocumentNotFoundException e) {
-            // Try to figure out which node in this transient state was the problem ...
-            NodeKey key = new NodeKey(e.getKey());
-            AbstractJcrNode problemNode = node(key, null);
-            String path = problemNode.getPath();
-            throw new InvalidItemStateException(JcrI18n.nodeModifiedBySessionWasRemovedByAnotherSession.text(path, key), e);
+            throw new InvalidItemStateException(JcrI18n.nodeModifiedBySessionWasRemovedByAnotherSession.text(e.getKey()), e);
         } catch (DocumentAlreadyExistsException e) {
             // Try to figure out which node in this transient state was the problem ...
             NodeKey key = new NodeKey(e.getKey());
@@ -869,15 +865,25 @@ public class JcrSession implements Session {
      * @see AbstractJcrNode#save()
      */
     void save( AbstractJcrNode node ) throws RepositoryException {
-        if (node.isNew()) {
-            //expected by TCK
-            throw new RepositoryException(JcrI18n.unableToSaveNodeThatWasCreatedSincePreviousSave.text(node.getPath(), workspaceName()));
-        }
+        //first check the node is valid from a cache perspective
+        CachedNode cachedNode = null;
+        try {
+            cachedNode = node.node();
+            if (node.isNew()) {
+                //expected by TCK
+                throw new RepositoryException(JcrI18n.unableToSaveNodeThatWasCreatedSincePreviousSave.text(node.getPath(),
+                                                                                                           workspaceName()));
+            }
 
-        if (node.containsChangesWithExternalDependencies()) {
-            //expected by TCK
-            I18n msg = JcrI18n.unableToSaveBranchBecauseChangesDependOnChangesToNodesOutsideOfBranch;
-            throw new ConstraintViolationException(msg.text(node.path(), workspaceName()));
+            if (node.containsChangesWithExternalDependencies()) {
+                //expected by TCK
+                I18n msg = JcrI18n.unableToSaveBranchBecauseChangesDependOnChangesToNodesOutsideOfBranch;
+                throw new ConstraintViolationException(msg.text(node.path(), workspaceName()));
+            }
+        } catch (ItemNotFoundException e) {
+            throw new InvalidItemStateException(e);
+        } catch (NodeNotFoundException e) {
+            throw new InvalidItemStateException(e);
         }
 
         SessionCache sessionCache = cache();
@@ -888,17 +894,12 @@ public class JcrSession implements Session {
         Map<NodeKey, NodeKey> baseVersionKeys = this.baseVersionKeys.get();
         Map<NodeKey, NodeKey> originalVersionKeys = this.originalVersionKeys.get();
         try {
-            sessionCache.save(node.node(), systemContent.cache(), new JcrPreSave(systemContent, baseVersionKeys,
-                                                                                 originalVersionKeys));
+            sessionCache.save(cachedNode, systemContent.cache(), new JcrPreSave(systemContent, baseVersionKeys,                                                                                 originalVersionKeys));
         } catch (WrappedException e) {
             Throwable cause = e.getCause();
             throw (cause instanceof RepositoryException) ? (RepositoryException)cause : new RepositoryException(e.getCause());
         } catch (DocumentNotFoundException e) {
-            // Try to figure out which node in this transient state was the problem ...
-            NodeKey key = new NodeKey(e.getKey());
-            AbstractJcrNode problemNode = node(key, null);
-            String path = problemNode.getPath();
-            throw new InvalidItemStateException(JcrI18n.nodeModifiedBySessionWasRemovedByAnotherSession.text(path, key), e);
+            throw new InvalidItemStateException(JcrI18n.nodeModifiedBySessionWasRemovedByAnotherSession.text(e.getKey()), e);
         } catch (DocumentAlreadyExistsException e) {
             // Try to figure out which node in this transient state was the problem ...
             NodeKey key = new NodeKey(e.getKey());

@@ -76,8 +76,9 @@ public interface CachedNode {
      * @return the node's path; never null with at least one segment for all nodes except the root node
      * @see #getName(NodeCache)
      * @see #getSegment(NodeCache)
+     * @throws NodeNotFoundException if this node does not exist anymore
      */
-    Path getPath( NodeCache cache );
+    Path getPath( NodeCache cache ) throws NodeNotFoundException;
 
     /**
      * Get the node key for this node's primary parent.

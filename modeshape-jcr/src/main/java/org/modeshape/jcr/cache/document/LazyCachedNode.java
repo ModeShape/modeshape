@@ -180,6 +180,10 @@ public class LazyCachedNode implements CachedNode {
             Path parentPath = parent.getPath(wsCache);
             return wsCache.pathFactory().create(parentPath, getSegment(wsCache));
         }
+        //check that the node hasn't been removed in the meantime
+        if (wsCache.getNode(key) == null) {
+            throw new NodeNotFoundException(key);
+        }
         // This is the root node ...
         return wsCache.rootPath();
     }

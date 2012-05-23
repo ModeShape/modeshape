@@ -341,6 +341,11 @@ public class SessionNode implements MutableCachedNode {
             Path parentPath = parent.getPath(session);
             return session.pathFactory().create(parentPath, getSegment(session, parent));
         }
+        //make sure that this isn't a node which has been removed in the meantime
+        CachedNode persistedNode = workspace(cache).getNode(key);
+        if (persistedNode == null) {
+            throw new NodeNotFoundException(key);
+        }
         // This is the root node ...
         return session.rootPath();
     }
