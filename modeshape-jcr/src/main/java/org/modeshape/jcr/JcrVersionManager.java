@@ -541,7 +541,7 @@ final class JcrVersionManager implements VersionManager {
         NodeKey baseVersionKey = node.getBaseVersion().key();
         PropertyFactory props = propertyFactory();
         Reference baseVersionRef = session.referenceFactory().create(baseVersionKey, true);
-        versionable.setProperty(versionSession, props.create(JcrLexicon.PREDECESSORS, new Object[]{baseVersionRef}));
+        versionable.setProperty(versionSession, props.create(JcrLexicon.PREDECESSORS, new Object[] {baseVersionRef}));
         versionable.setProperty(versionSession, props.create(JcrLexicon.IS_CHECKED_OUT, Boolean.TRUE));
         versionSession.save();
     }
@@ -694,9 +694,9 @@ final class JcrVersionManager implements VersionManager {
     }
 
     protected void restoreAtAbsPath( String absPath,
-                                   Version version,
-                                   boolean removeExisting,
-                                   boolean failIfNodeAlreadyExists) throws RepositoryException {
+                                     Version version,
+                                     boolean removeExisting,
+                                     boolean failIfNodeAlreadyExists ) throws RepositoryException {
         validateSessionLiveWithoutPendingChanges();
 
         // Create a new session in which we'll finish the restore, so this session remains thread-safe ...
@@ -708,7 +708,7 @@ final class JcrVersionManager implements VersionManager {
                 AbstractJcrNode existingNode = restoreSession.node(path);
                 throw new VersionException(JcrI18n.unableToRestoreAtAbsPathNodeAlreadyExists.text(absPath, existingNode.key()));
             } catch (PathNotFoundException e) {
-                //expected
+                // expected
             }
         }
         restore(restoreSession, path, version, null, removeExisting);
@@ -859,10 +859,10 @@ final class JcrVersionManager implements VersionManager {
         session.save();
     }
 
-    private void clearCheckoutStatus( MutableCachedNode node,
-                                      NodeKey baseVersion,
-                                      SessionCache cache,
-                                      PropertyFactory propFactory ) {
+    protected final void clearCheckoutStatus( MutableCachedNode node,
+                                              NodeKey baseVersion,
+                                              SessionCache cache,
+                                              PropertyFactory propFactory ) {
         Reference baseVersionRef = session.referenceFactory().create(baseVersion);
         node.setProperty(cache, propFactory.create(JcrLexicon.IS_CHECKED_OUT, Boolean.FALSE));
         node.setProperty(cache, propFactory.create(JcrLexicon.BASE_VERSION, baseVersionRef));
@@ -1218,8 +1218,8 @@ final class JcrVersionManager implements VersionManager {
                         Property idProp = resolvedChild.getProperty(JcrLexicon.FROZEN_UUID, cache);
                         String frozenUuid = string(idProp.getFirstValue());
                         desiredKey = target.getKey().withId(frozenUuid);
-                        //the name should be that of the versioned child
-                        desiredName = session.node(sourceChild, (Type) null).name();
+                        // the name should be that of the versioned child
+                        desiredName = session.node(sourceChild, (Type)null).name();
                     } else {
                         primaryTypeName = resolvedChild.getPrimaryType(cache);
                         Property idProp = resolvedChild.getProperty(JcrLexicon.UUID, cache);
@@ -1242,8 +1242,9 @@ final class JcrVersionManager implements VersionManager {
                     // Have to do this first, as the properties below only exist for mix:versionable nodes
                     if (shouldRestoreMixinsAndUuid) {
                         if (JcrNtLexicon.FROZEN_NODE.equals(resolvedPrimaryTypeName)) {
-                            //if we're dealing with a nt:versionedChild (and therefore the resolved node is a frozen node), we need the mixins from the frozen node
-                            restoreNodeMixinsFromProperty(resolvedChild, mutableTarget, cache,JcrLexicon.FROZEN_MIXIN_TYPES);
+                            // if we're dealing with a nt:versionedChild (and therefore the resolved node is a frozen node), we
+                            // need the mixins from the frozen node
+                            restoreNodeMixinsFromProperty(resolvedChild, mutableTarget, cache, JcrLexicon.FROZEN_MIXIN_TYPES);
                         } else {
                             restoreNodeMixins(sourceChild, mutableTarget, cache);
                         }

@@ -35,6 +35,7 @@ import org.infinispan.transaction.lookup.TransactionManagerLookup;
 /**
  * An {@link Environment} implementation that can be used for testing.
  */
+@SuppressWarnings( "deprecation" )
 public class TestingEnvironment extends LocalEnvironment {
 
     private final CacheLoaderConfig cacheLoaderConfiguration;

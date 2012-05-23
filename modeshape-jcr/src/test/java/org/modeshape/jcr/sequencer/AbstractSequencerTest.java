@@ -245,17 +245,16 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
         sequencingFailureLatches.remove(nodePath);
     }
 
-    private void createWaitingLatchIfNecessary( String expectedPath,
-                                                ConcurrentHashMap<String, CountDownLatch> latchesMap )
-        throws InterruptedException {
+    protected void createWaitingLatchIfNecessary( String expectedPath,
+                                                  ConcurrentHashMap<String, CountDownLatch> latchesMap ) {
         latchesMap.putIfAbsent(expectedPath, new CountDownLatch(1));
     }
 
-    private void smokeCheckSequencingEvent( Event event,
-                                            int expectedEventType,
-                                            String... expectedEventInfoKeys ) throws RepositoryException {
+    protected void smokeCheckSequencingEvent( Event event,
+                                              int expectedEventType,
+                                              String... expectedEventInfoKeys ) throws RepositoryException {
         assertEquals(event.getType(), expectedEventType);
-        Map info = event.getInfo();
+        Map<?, ?> info = event.getInfo();
         assertNotNull(info);
         for (String extraInfoKey : expectedEventInfoKeys) {
             assertNotNull(info.get(extraInfoKey));
@@ -267,18 +266,18 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
         assertEquals(session.getUserID(), node.getProperty(JcrLexicon.CREATED_BY.getString()).getString());
     }
 
-    private Map getSequencingEventInfo( Node sequencedNode ) throws RepositoryException {
+    private Map<?, ?> getSequencingEventInfo( Node sequencedNode ) throws RepositoryException {
         Event receivedEvent = sequencingEvents.get(sequencedNode.getPath());
         assertNotNull(receivedEvent);
         return receivedEvent.getInfo();
     }
 
-    protected Map assertSequencingEventInfo( Node sequencedNode,
-                                             String expectedUserId,
-                                             String expectedSequencerName,
-                                             String expectedSelectedPath,
-                                             String expectedOutputPath ) throws RepositoryException {
-        Map sequencingEventInfo = getSequencingEventInfo(sequencedNode);
+    protected Map<?, ?> assertSequencingEventInfo( Node sequencedNode,
+                                                   String expectedUserId,
+                                                   String expectedSequencerName,
+                                                   String expectedSelectedPath,
+                                                   String expectedOutputPath ) throws RepositoryException {
+        Map<?, ?> sequencingEventInfo = getSequencingEventInfo(sequencedNode);
         Assert.assertEquals(expectedUserId, sequencingEventInfo.get(Event.Sequencing.USER_ID));
         Assert.assertEquals(expectedSequencerName, sequencingEventInfo.get(Event.Sequencing.SEQUENCER_NAME));
         Assert.assertEquals(sequencedNode.getIdentifier(), sequencingEventInfo.get(Event.Sequencing.SEQUENCED_NODE_ID));
@@ -289,8 +288,9 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
         return sequencingEventInfo;
     }
 
-    private class SequencingListener implements EventListener {
+    protected final class SequencingListener implements EventListener {
 
+        @SuppressWarnings( "synthetic-access" )
         @Override
         public void onEvent( EventIterator events ) {
             while (events.hasNext()) {
@@ -320,7 +320,8 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
         }
     }
 
-    private class SequencingFailureListener implements EventListener {
+    protected final class SequencingFailureListener implements EventListener {
+        @SuppressWarnings( "synthetic-access" )
         @Override
         public void onEvent( EventIterator events ) {
             while (events.hasNext()) {

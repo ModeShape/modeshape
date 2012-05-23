@@ -24,20 +24,19 @@
 
 package org.modeshape.sequencer.wsdl;
 
-import javax.jcr.Node;
-import javax.wsdl.WSDLException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import java.util.Map;
+import javax.jcr.Node;
+import javax.wsdl.WSDLException;
 import org.junit.Test;
 import org.modeshape.jcr.api.observation.Event;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
-import java.util.Map;
 
 /**
- * Unit test for {@link WsdlSequencer}
- *
- * Note: this was ported from 2.x and is just a suite of smoke-tests, as the sequenced content isn't asserted anywhere.
+ * Unit test for {@link WsdlSequencer} Note: this was ported from 2.x and is just a suite of smoke-tests, as the sequenced content
+ * isn't asserted anywhere.
  */
 public class WsdlSequencerTest extends AbstractSequencerTest {
 
@@ -118,7 +117,11 @@ public class WsdlSequencerTest extends AbstractSequencerTest {
         Node sequencedNode = rootNode.getNode("invalid.wsdl/jcr:content");
 
         expectSequencingFailure(sequencedNode);
-        Map eventInfo = assertSequencingEventInfo(sequencedNode, session.getUserID(), "WSDL sequencer", sequencedNode.getPath(), "/wsdl");
+        Map<?, ?> eventInfo = assertSequencingEventInfo(sequencedNode,
+                                                        session.getUserID(),
+                                                        "WSDL sequencer",
+                                                        sequencedNode.getPath(),
+                                                        "/wsdl");
         assertEquals(WSDLException.class.getName(), eventInfo.get(Event.Sequencing.SEQUENCING_FAILURE_CAUSE).getClass().getName());
     }
 

@@ -32,7 +32,6 @@ import javax.jcr.Node;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**

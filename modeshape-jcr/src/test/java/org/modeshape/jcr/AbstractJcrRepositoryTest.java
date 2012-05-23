@@ -25,7 +25,6 @@ package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
-import org.junit.AfterClass;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
@@ -106,9 +105,10 @@ public abstract class AbstractJcrRepositoryTest extends AbstractTransactionalTes
 
         }
         return node;
-    } 
-    
-    protected Node assertNode( String path, String primaryType ) throws RepositoryException {
+    }
+
+    protected Node assertNode( String path,
+                               String primaryType ) throws RepositoryException {
         Node node = assertNode(path);
         assertEquals(primaryType, node.getPrimaryNodeType().getName());
         return node;

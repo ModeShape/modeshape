@@ -23,6 +23,16 @@
  */
 package org.modeshape.jcr;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.AccessControlException;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Future;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.InvalidItemStateException;
 import javax.jcr.InvalidSerializedDataException;
@@ -61,16 +71,6 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
-import java.io.IOException;
-import java.io.InputStream;
-import java.security.AccessControlException;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Future;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * The ModeShape implementation of the {@link Workspace JCR Workspace}. This implementation is pretty lightweight, and only
@@ -160,7 +160,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
         }
 
         try {
-            //create an inner session for copying
+            // create an inner session for copying
             JcrSession copySession = session.spawnSession(false);
 
             // Use the session to verify that the node location has a definition and is valid with the new cloned child.
@@ -181,7 +181,8 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
              */
             JcrSession sourceSession = session.spawnSession(srcWorkspace, true);
             AbstractJcrNode sourceNode = sourceSession.node(srcPath);
-            if (session.lockManager().isLocked(sourceNode) && !session.lockManager().hasLockToken(sourceNode.getLock().getLockToken())) {
+            if (session.lockManager().isLocked(sourceNode)
+                && !session.lockManager().hasLockToken(sourceNode.getLock().getLockToken())) {
                 throw new LockException(srcAbsPath);
             }
 
@@ -189,7 +190,9 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
             * Use the JCR add child here to perform the parent validations
             */
             AbstractJcrNode copy = parentNode.addChildNode(newNodeName, sourceNode.getPrimaryTypeName(), null);
-            Map<NodeKey, NodeKey> nodeKeyCorrespondence = copy.mutable().deepCopy(copySession.cache(), sourceNode.node(), sourceSession.cache());
+            Map<NodeKey, NodeKey> nodeKeyCorrespondence = copy.mutable().deepCopy(copySession.cache(),
+                                                                                  sourceNode.node(),
+                                                                                  sourceSession.cache());
 
             /**
              * Do some extra processing for each copied node
@@ -202,19 +205,19 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
                 AbstractJcrNode dstNode = copySession.node(dstNodeKey, null);
 
                 if (srcNode.isNodeType(JcrMixLexicon.VERSIONABLE)) {
-                    //For the nodes which were versionable, set the mappings for the original version
+                    // For the nodes which were versionable, set the mappings for the original version
                     copySession.setOriginalVersionKey(dstNodeKey, srcNode.getBaseVersion().key());
                 }
 
                 if (dstNode.isNodeType(JcrMixLexicon.REFERENCEABLE) && dstNode.hasProperty(JcrLexicon.UUID)) {
-                    //for referenceable nodes, update the UUID to be be same as the new identifier
+                    // for referenceable nodes, update the UUID to be be same as the new identifier
                     JcrValue identifierValue = dstNode.valueFactory().createValue(dstNode.getIdentifier());
                     dstNode.setProperty(JcrLexicon.UUID, identifierValue, true, true);
 
-                    //if there are any incoming references within the copied subgraph, they need to point to the new nodes
+                    // if there are any incoming references within the copied subgraph, they need to point to the new nodes
                     for (PropertyIterator incomingReferencesIterator = dstNode.getAllReferences(); incomingReferencesIterator.hasNext();) {
                         Property incomingRef = incomingReferencesIterator.nextProperty();
-                        NodeKey referringNodeKey = ((AbstractJcrNode) incomingRef.getParent()).key();
+                        NodeKey referringNodeKey = ((AbstractJcrNode)incomingRef.getParent()).key();
                         boolean isReferrerWithinSubgraph = srcNodeKeys.contains(referringNodeKey);
                         if (isReferrerWithinSubgraph) {
                             incomingRef.setValue(copySession.node(dstNodeKey, null));
@@ -223,7 +226,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
                 }
             }
 
-            //save the copy session
+            // save the copy session
             copySession.save();
 
         } catch (ItemNotFoundException e) {
@@ -277,7 +280,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
         }
 
         try {
-            //create an inner session for cloning
+            // create an inner session for cloning
             JcrSession cloneSession = session.spawnSession(false);
 
             // Use the session to verify that the node location has a definition and is valid with the new cloned child.
@@ -298,64 +301,70 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
              */
             JcrSession sourceSession = session.spawnSession(srcWorkspace, true);
             AbstractJcrNode sourceNode = sourceSession.node(srcPath);
-            if (session.lockManager().isLocked(sourceNode) && !session.lockManager().hasLockToken(sourceNode.getLock().getLockToken())) {
+            if (session.lockManager().isLocked(sourceNode)
+                && !session.lockManager().hasLockToken(sourceNode.getLock().getLockToken())) {
                 throw new LockException(srcAbsPath);
             }
 
             if (sameWorkspace && sourceNode.isNodeType(JcrMixLexicon.SHAREABLE)) {
-                //cloning in the same workspace should produce a shareable node
+                // cloning in the same workspace should produce a shareable node
                 assert !removeExisting;
-                //TODO author=Horia Chiorean date=5/9/12 description=Shared nodes additional handling
+                // TODO author=Horia Chiorean date=5/9/12 description=Shared nodes additional handling
                 AbstractJcrNode clone = parentNode.addChildNode(newNodeName, ModeShapeLexicon.SHARE, null);
                 clone.setProperty(ModeShapeLexicon.SHARED_UUID, session.valueFactory().createValue(sourceNode), false, true);
-            }
-            else {
-                //use the source session to load all the keys from the source subgraph
+            } else {
+                // use the source session to load all the keys from the source subgraph
                 SessionCache sourceCache = sourceSession.cache();
                 Set<NodeKey> sourceKeys = sourceCache.getNodeKeysAtAndBelow(sourceNode.key());
 
                 for (NodeKey srcKey : sourceKeys) {
                     try {
-                        //use the current session to try and load each cloneSessionNode. If we find such a cloneSessionNode in the current session,
-                        //we need to perform some checks
+                        // use the current session to try and load each cloneSessionNode. If we find such a cloneSessionNode in
+                        // the current session,
+                        // we need to perform some checks
                         AbstractJcrNode srcNode = sourceSession.node(srcKey, null);
                         NodeKey cloneKey = parentNode.key().withId(srcNode.key().getIdentifier());
                         AbstractJcrNode cloneSessionNode = null;
                         try {
                             cloneSessionNode = cloneSession.node(cloneKey, null);
                         } catch (ItemNotFoundException e) {
-                            //no node exists
+                            // no node exists
                             continue;
                         }
                         if (cloneSessionNode.nodeDefinition().isMandatory()) {
-                            throw new ConstraintViolationException(JcrI18n.cannotRemoveNodeFromClone.text(cloneSessionNode.getPath(), cloneSessionNode.getIdentifier()));
+                            throw new ConstraintViolationException(
+                                                                   JcrI18n.cannotRemoveNodeFromClone.text(cloneSessionNode.getPath(),
+                                                                                                          cloneSessionNode.getIdentifier()));
                         }
 
-                        boolean hasAnyPendingChanges = !session.cache().getChangedNodeKeysAtOrBelow(cloneSessionNode.node()).isEmpty();
+                        boolean hasAnyPendingChanges = !session.cache()
+                                                               .getChangedNodeKeysAtOrBelow(cloneSessionNode.node())
+                                                               .isEmpty();
                         if (hasAnyPendingChanges) {
-                            throw new RepositoryException(JcrI18n.cannotRemoveNodeFromCloneDueToChangesInSession.text(cloneSessionNode.getPath(), cloneSessionNode.getIdentifier()));
+                            throw new RepositoryException(
+                                                          JcrI18n.cannotRemoveNodeFromCloneDueToChangesInSession.text(cloneSessionNode.getPath(),
+                                                                                                                      cloneSessionNode.getIdentifier()));
                         }
 
                         if (!removeExisting) {
-                            throw new ItemExistsException(JcrI18n.itemAlreadyExistsWithUuid.text(srcKey, workspaceName,
+                            throw new ItemExistsException(JcrI18n.itemAlreadyExistsWithUuid.text(srcKey,
+                                                                                                 workspaceName,
                                                                                                  cloneSessionNode.getPath()));
                         }
-                        else {
-                           cloneSessionNode.remove();
-                        }
+
+                        cloneSessionNode.remove();
                     } catch (PathNotFoundException e) {
-                        //means we don't have a node with the same path
+                        // means we don't have a node with the same path
                     }
                 }
 
-                //Use the JCR add child here to perform the parent validations
+                // Use the JCR add child here to perform the parent validations
                 NodeKey cloneKey = parentNode.key().withId(sourceNode.key().getIdentifier());
                 parentNode.addChildNode(newNodeName, sourceNode.getPrimaryTypeName(), cloneKey);
 
                 deepClone(sourceSession, sourceNode.key(), cloneSession, cloneKey);
             }
-        }
-        catch (ItemNotFoundException e) {
+        } catch (ItemNotFoundException e) {
             // The destination path was not found ...
             throw new PathNotFoundException(e.getLocalizedMessage(), e);
         } catch (AccessControlException ace) {
@@ -365,7 +374,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
         }
     }
 
-    protected void validateCrossWorkspaceAction( String srcWorkspace) throws RepositoryException {
+    protected void validateCrossWorkspaceAction( String srcWorkspace ) throws RepositoryException {
         CheckArg.isNotEmpty(srcWorkspace, "srcWorkspace");
 
         session.checkLive();
@@ -625,10 +634,16 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
         JcrSession newWorkspaceSession = session.spawnSession(name, false);
         JcrSession srcWorkspaceSession = session.spawnSession(srcWorkspace, true);
 
-        deepClone(srcWorkspaceSession, srcWorkspaceSession.getRootNode().key(), newWorkspaceSession, newWorkspaceSession.getRootNode().key());
+        deepClone(srcWorkspaceSession,
+                  srcWorkspaceSession.getRootNode().key(),
+                  newWorkspaceSession,
+                  newWorkspaceSession.getRootNode().key());
     }
 
-    protected void deepClone(JcrSession sourceSession, NodeKey sourceNodeKey, JcrSession cloneSession, NodeKey cloneNodeKey) throws RepositoryException {
+    protected void deepClone( JcrSession sourceSession,
+                              NodeKey sourceNodeKey,
+                              JcrSession cloneSession,
+                              NodeKey cloneNodeKey ) throws RepositoryException {
         assert !cloneSession.cache().isReadOnly();
 
         SessionCache sourceCache = sourceSession.cache();
@@ -650,7 +665,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
         for (NodeKey sourceKey : sourceKeys) {
             AbstractJcrNode srcNode = sourceSession.node(sourceKey, null);
             if (srcNode.isNodeType(JcrMixLexicon.VERSIONABLE)) {
-                //Preserve the base version of the versionable nodes (this will in turn preserve the version history)
+                // Preserve the base version of the versionable nodes (this will in turn preserve the version history)
                 cloneSession.setDesiredBaseVersionKey(sourceKey, srcNode.getBaseVersion().key());
             }
         }

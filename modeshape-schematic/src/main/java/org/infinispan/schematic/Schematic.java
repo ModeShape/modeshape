@@ -32,7 +32,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import org.infinispan.Cache;
-import org.infinispan.config.GlobalConfiguration;
+import org.infinispan.configuration.global.GlobalConfiguration;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.marshall.AbstractExternalizer;
 import org.infinispan.marshall.AdvancedExternalizer;

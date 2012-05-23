@@ -24,10 +24,6 @@
 
 package org.modeshape.jcr.bus;
 
-import org.modeshape.common.annotation.GuardedBy;
-import org.modeshape.common.annotation.ThreadSafe;
-import org.modeshape.jcr.cache.change.ChangeSet;
-import org.modeshape.jcr.cache.change.ChangeSetListener;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
@@ -36,10 +32,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.modeshape.common.annotation.GuardedBy;
+import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.jcr.cache.change.ChangeSet;
+import org.modeshape.jcr.cache.change.ChangeSetListener;
 
 /**
  * A standard {@link ChangeBus} implementation.
- *
+ * 
  * @author Horia Chiorean
  */
 @ThreadSafe
@@ -53,16 +53,17 @@ public final class RepositoryChangeBus implements ChangeBus {
     private final Set<ChangeSetListener> listeners;
     private final ReadWriteLock listenersLock = new ReentrantReadWriteLock(true);
 
-    private volatile boolean shutdown;
+    protected volatile boolean shutdown;
 
-    //TODO author=Horia Chiorean date=2/29/12 description=The following members can be removed once multi-threaded changes (MODE-1411)
-    //and the system workspace are fixed
+    // TODO author=Horia Chiorean date=2/29/12 description=The following members can be removed once multi-threaded changes
+    // (MODE-1411)
+    // and the system workspace are fixed
     private final String systemWorkspaceName;
     private final boolean separateThreadForSystemWorkspace;
 
     public RepositoryChangeBus( ExecutorService executor,
-                         String systemWorkspaceName,
-                         boolean separateThreadForSystemWorkspace ) {
+                                String systemWorkspaceName,
+                                boolean separateThreadForSystemWorkspace ) {
         this.systemWorkspaceName = systemWorkspaceName;
         this.separateThreadForSystemWorkspace = separateThreadForSystemWorkspace;
         this.workspaceListenerQueues = new ConcurrentHashMap<String, ConcurrentHashMap<ChangeSetListener, BlockingQueue<ChangeSet>>>();
@@ -138,8 +139,7 @@ public final class RepositoryChangeBus implements ChangeBus {
             return;
         }
 
-        ConcurrentHashMap<ChangeSetListener, BlockingQueue<ChangeSet>> listenersForWorkspace = workspaceListenerQueues.get(
-                workspaceName);
+        ConcurrentHashMap<ChangeSetListener, BlockingQueue<ChangeSet>> listenersForWorkspace = workspaceListenerQueues.get(workspaceName);
         if (listenersForWorkspace == null) {
             listenersForWorkspace = new ConcurrentHashMap<ChangeSetListener, BlockingQueue<ChangeSet>>();
             workspaceListenerQueues.putIfAbsent(workspaceName, listenersForWorkspace);
@@ -208,7 +208,7 @@ public final class RepositoryChangeBus implements ChangeBus {
                     listener.notify(changeSet);
                 }
             } catch (InterruptedException e) {
-                //ignore   
+                // ignore
             }
         }
     }

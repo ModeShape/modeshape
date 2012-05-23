@@ -46,6 +46,8 @@ import org.modeshape.jcr.value.Property;
 @ThreadSafe
 public class RecordingChanges implements Changes, ChangeSet {
 
+    private static final long serialVersionUID = 1L;
+
     private final String processKey;
     private final String repositoryKey;
     private final String workspaceName;
@@ -111,13 +113,12 @@ public class RecordingChanges implements Changes, ChangeSet {
         events.add(new NodeMoved(key, newParent, oldParent, newPath, oldPath));
     }
 
-
     @Override
     public void nodeReordered( NodeKey key,
                                NodeKey parent,
                                Path newPath,
                                Path oldPath,
-                               Path reorderedBeforePath) {
+                               Path reorderedBeforePath ) {
         events.add(new NodeReordered(key, parent, newPath, oldPath, reorderedBeforePath));
     }
 
@@ -135,15 +136,9 @@ public class RecordingChanges implements Changes, ChangeSet {
                                String outputPath,
                                String userId,
                                String selectedPath,
-                               String sequencerName) {
-        events.add(new NodeSequenced(sequencedNodeKey,
-                                     sequencedNodePath,
-                                     outputNodeKey,
-                                     outputNodePath,
-                                     outputPath,
-                                     userId,
-                                     selectedPath,
-                                     sequencerName));
+                               String sequencerName ) {
+        events.add(new NodeSequenced(sequencedNodeKey, sequencedNodePath, outputNodeKey, outputNodePath, outputPath, userId,
+                                     selectedPath, sequencerName));
     }
 
     @Override
@@ -153,14 +148,9 @@ public class RecordingChanges implements Changes, ChangeSet {
                                        String userId,
                                        String selectedPath,
                                        String sequencerName,
-                                       Throwable cause) {
-        events.add(new NodeSequencingFailure(sequencedNodeKey,
-                                             sequencedNodePath,
-                                             outputPath,
-                                             userId,
-                                             selectedPath,
-                                             sequencerName,
-                                             cause));
+                                       Throwable cause ) {
+        events.add(new NodeSequencingFailure(sequencedNodeKey, sequencedNodePath, outputPath, userId, selectedPath,
+                                             sequencerName, cause));
     }
 
     @Override

@@ -52,7 +52,7 @@ public class JcrRepositoryFactoryTest {
     @Test
     public void shouldReturnRepositoryFromConfigurationFile() {
         url = "file:src/test/resources/config/simple-repo-config.json";
-        params = Collections.singletonMap(JcrRepositoryFactory.URL, url);
+        params = Collections.singletonMap(RepositoryFactory.URL, url);
 
         repository = repositoryFor(params);
         assertThat(repository, is(notNullValue()));
@@ -61,7 +61,7 @@ public class JcrRepositoryFactoryTest {
     @Test
     public void shouldReturnRepositoryFromConfigurationClasspathResourceUsingFileScheme() {
         url = "file:///config/simple-repo-config.json";
-        params = Collections.singletonMap(JcrRepositoryFactory.URL, url);
+        params = Collections.singletonMap(RepositoryFactory.URL, url);
 
         repository = repositoryFor(params);
         assertThat(repository, is(notNullValue()));
@@ -70,7 +70,7 @@ public class JcrRepositoryFactoryTest {
     @Test
     public void shouldReturnSameRepositoryFromSameConfigurationFile() {
         url = "file:///config/simple-repo-config.json";
-        params = Collections.singletonMap(JcrRepositoryFactory.URL, url);
+        params = Collections.singletonMap(RepositoryFactory.URL, url);
 
         repository = repositoryFor(params);
         assertThat(repository, is(notNullValue()));
@@ -84,13 +84,13 @@ public class JcrRepositoryFactoryTest {
     @Test
     public void shouldNotReturnRepositoryForInvalidUrl() {
         url = "file:?Test Repository Source";
-        assertThat(repositoryFor(Collections.singletonMap(JcrRepositoryFactory.URL, url)), is(nullValue()));
+        assertThat(repositoryFor(Collections.singletonMap(RepositoryFactory.URL, url)), is(nullValue()));
 
         url = "file:src/test/resources/nonExistentFile";
-        assertThat(repositoryFor(Collections.singletonMap(JcrRepositoryFactory.URL, url)), is(nullValue()));
+        assertThat(repositoryFor(Collections.singletonMap(RepositoryFactory.URL, url)), is(nullValue()));
 
         url = "file:src/test/resources/nonExistentFile";
-        assertThat(repositoryFor(Collections.singletonMap(JcrRepositoryFactory.URL, url)), is(nullValue()));
+        assertThat(repositoryFor(Collections.singletonMap(RepositoryFactory.URL, url)), is(nullValue()));
     }
 
     protected Repository repositoryFor( Map<String, String> parameters ) {

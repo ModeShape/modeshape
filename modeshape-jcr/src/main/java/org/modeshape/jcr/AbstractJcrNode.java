@@ -253,9 +253,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     }
 
     /**
-     * Checks if this node is foreign by comparing the node's source key & workspace key against the same keys from the
-     * session root. This method is used for reference resolving.
-     *
+     * Checks if this node is foreign by comparing the node's source key & workspace key against the same keys from the session
+     * root. This method is used for reference resolving.
+     * 
      * @return true if the node is considered foreign, false otherwise.
      */
     protected final boolean isForeign() {
@@ -592,15 +592,18 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     }
 
     final JcrValue valueFrom( javax.jcr.Node value ) throws RepositoryException {
-        if (! (value instanceof AbstractJcrNode)) {
+        if (!(value instanceof AbstractJcrNode)) {
             throw new IllegalArgumentException("Invalid node type (expected a ModeShape node): " + value.getClass().toString());
         }
-        AbstractJcrNode node = (AbstractJcrNode) value;
+        AbstractJcrNode node = (AbstractJcrNode)value;
         if (!this.isInTheSameProcessAs(node.session().context().getProcessId())) {
             throw new RepositoryException(JcrI18n.nodeNotInTheSameSession.text(node.path()));
         }
         NodeKey key = ((AbstractJcrNode)value).key();
-        Reference ref = session.context().getValueFactories().getReferenceFactory().create(key, ((AbstractJcrNode)value).isForeign());
+        Reference ref = session.context()
+                               .getValueFactories()
+                               .getReferenceFactory()
+                               .create(key, ((AbstractJcrNode)value).isForeign());
         return valueFrom(PropertyType.REFERENCE, ref);
     }
 
@@ -2014,11 +2017,11 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     protected PropertyIterator getAllReferences() throws RepositoryException {
         List<javax.jcr.Property> allReferences = new ArrayList<javax.jcr.Property>();
 
-        for (PropertyIterator strongRefIterator = getReferences(); strongRefIterator.hasNext(); ) {
+        for (PropertyIterator strongRefIterator = getReferences(); strongRefIterator.hasNext();) {
             allReferences.add(strongRefIterator.nextProperty());
         }
 
-        for (PropertyIterator weakRefIterator = getReferences(); weakRefIterator.hasNext(); ) {
+        for (PropertyIterator weakRefIterator = getReferences(); weakRefIterator.hasNext();) {
             allReferences.add(weakRefIterator.nextProperty());
         }
 
@@ -2750,7 +2753,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         */
         JcrSession sourceSession = session.spawnSession(srcWorkspace, true);
         AbstractJcrNode sourceNode = sourceSession.node(srcPath);
-        if (session.lockManager().isLocked(sourceNode) && !session.lockManager().hasLockToken(sourceNode.getLock().getLockToken())) {
+        if (session.lockManager().isLocked(sourceNode)
+            && !session.lockManager().hasLockToken(sourceNode.getLock().getLockToken())) {
             throw new LockException(srcPath.toString());
         }
 
@@ -2762,7 +2766,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             throw new LockException(dstPath.toString());
         }
 
-        //create an inner session for cloning
+        // create an inner session for cloning
         JcrSession cloneSession = session.spawnSession(false);
         getSession().getWorkspace().deepClone(sourceSession, sourceNode.key(), cloneSession, key());
 
@@ -2857,6 +2861,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     @Override
     public void removeSharedSet() throws VersionException, LockException, ConstraintViolationException, RepositoryException {
+        // TODO: Query
+        // TODO: Shared nodes
     }
 
     @Override
@@ -2873,7 +2879,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         try {
             parent = getParent();
         } catch (ItemNotFoundException e) {
-            //expected by the TCK
+            // expected by the TCK
             throw new InvalidItemStateException(e);
         }
         parent.checkForLock();
@@ -3036,7 +3042,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         if (!hasProperty(JcrLexicon.BASE_VERSION)) {
             throw new UnsupportedRepositoryOperationException(JcrI18n.requiresVersionable.text());
         }
-        NodeKey baseVersionKey = ((NodeKeyReference) getProperty(JcrLexicon.BASE_VERSION).getValue().value()).getNodeKey();
+        NodeKey baseVersionKey = ((NodeKeyReference)getProperty(JcrLexicon.BASE_VERSION).getValue().value()).getNodeKey();
         return (JcrVersionNode)session().node(baseVersionKey, null);
     }
 
@@ -3269,6 +3275,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @return true if this node's hierarchy has nodes with changes dependent on nodes from outside the hierarchy
      * @throws InvalidItemStateException
      * @throws ItemNotFoundException
+     * @throws RepositoryException
      */
     protected boolean containsChangesWithExternalDependencies() throws RepositoryException {
         Set<NodeKey> allChanges = sessionCache().getChangedNodeKeys();
@@ -3280,11 +3287,15 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     /**
      * Removes all the keys from the first set which represent referrer node keys to any of the nodes in the second set.
+     * 
+     * @param allChanges the set of keys to the referrer nodes
+     * @param changesAtOrBelowThis the set of referrers that were changed at or below this node
+     * @throws RepositoryException if there is a problem
      */
     private void removeReferrerChanges( Set<NodeKey> allChanges,
                                         Set<NodeKey> changesAtOrBelowThis ) throws RepositoryException {
-        //check if there are any nodes in the overall list of changes (and outside the branch) due to reference changes
-        for (Iterator<NodeKey> allChangesIt = allChanges.iterator(); allChangesIt.hasNext(); ) {
+        // check if there are any nodes in the overall list of changes (and outside the branch) due to reference changes
+        for (Iterator<NodeKey> allChangesIt = allChanges.iterator(); allChangesIt.hasNext();) {
             NodeKey changedNodeKey = allChangesIt.next();
             if (changesAtOrBelowThis.contains(changedNodeKey)) {
                 continue;
@@ -3294,7 +3305,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             try {
                 changedNode = session().node(changedNodeKey, null);
             } catch (ItemNotFoundException e) {
-                //node was deleted
+                // node was deleted
                 continue;
             }
             boolean isReferenceable = changedNode.isReferenceable();
@@ -3304,7 +3315,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             Set<NodeKey> changedReferrers = changedNodeOutsideBranch.getChangedReferrerNodes();
             for (NodeKey changedNodeInBranchKey : changesAtOrBelowThis) {
                 if (changedReferrers.contains(changedNodeInBranchKey)) {
-                    //one of the changes in the branch is a referrer of the node outside the branch so we won't take the outside node into account
+                    // one of the changes in the branch is a referrer of the node outside the branch so we won't take the outside
+                    // node into account
                     allChangesIt.remove();
                 }
             }

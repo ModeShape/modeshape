@@ -23,7 +23,6 @@
  */
 package org.modeshape.jcr.store;
 
-import java.io.File;
 import org.infinispan.loaders.CacheLoaderConfig;
 import org.infinispan.loaders.jdbc.stringbased.JdbcStringBasedCacheStoreConfig;
 import org.junit.Ignore;
@@ -34,7 +33,6 @@ import org.junit.Ignore;
 @Ignore
 public class JdbcStringCacheStoreTest extends InMemoryTest {
 
-    private final File dbDir = new File("target/test/db");
     private final DataSourceConfig dataSourceConfig = new DataSourceConfig();
 
     @Override
