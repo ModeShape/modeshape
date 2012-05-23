@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.property.PropertyType;
 import org.modeshape.graph.query.QueryContext;
 import org.modeshape.graph.query.QueryResults.Columns;
@@ -58,7 +59,7 @@ public class SortValuesComponentTest extends AbstractQueryResultsTest {
                                 PropertyType.STRING);
         schemata = schemataFor(columns, PropertyType.STRING, PropertyType.LONG, PropertyType.STRING);
         // Define the context ...
-        context = new QueryContext(schemata, typeSystem);
+        context = new QueryContext(new ExecutionContext(), schemata, typeSystem);
         inputTuples = new ArrayList<Object[]>();
         // And define the delegating component ...
         delegate = new ProcessingComponent(context, columns) {

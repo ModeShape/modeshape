@@ -46,8 +46,8 @@ import org.modeshape.graph.property.Path;
 import org.modeshape.graph.query.QueryResults;
 import org.modeshape.graph.query.QueryResults.Columns;
 import org.modeshape.graph.query.model.Column;
+import org.modeshape.graph.query.model.SelectorName;
 import org.modeshape.graph.query.validate.Schemata;
-import org.modeshape.graph.query.validate.Schemata.Table;
 import org.modeshape.jcr.JcrI18n;
 
 /**
@@ -131,12 +131,13 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
         if (columnTables == null) {
             // Discover the types ...
             Columns columns = results.getColumns();
+            Set<SelectorName> selectorNames = new HashSet<SelectorName>();
             List<String> tables = new ArrayList<String>(columns.getColumnCount());
             for (Column column : columns) {
-                String tableName = "";
-                Table table = schemata.getTable(column.selectorName());
-                if (table != null) tableName = table.getName().name();
-                tables.add(tableName);
+                SelectorName selectorName = column.selectorName();
+                if (selectorNames.add(column.selectorName())) {
+                    tables.add(selectorName.getString());
+                }
             }
             columnTables = tables;
         }
@@ -149,6 +150,9 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
      * @see javax.jcr.query.QueryResult#getNodes()
      */
     public NodeIterator getNodes() throws RepositoryException {
+        if (getSelectorNames().length != 1) {
+            throw new RepositoryException(JcrI18n.multipleSelectorsAppearInQueryUnableToCallMethod.text(queryStatement));
+        }
         // Find all of the nodes in the results. We have to do this pre-emptively, since this
         // is the only method to throw RepositoryException ...
         final int numRows = results.getRowCount();
@@ -159,12 +163,14 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
         final int locationIndex = results.getColumns().getLocationIndex(selectorName);
         for (Object[] tuple : results.getTuples()) {
             Location location = (Location)tuple[locationIndex];
+            if (location == null) continue;
             Node node = null;
-            //search first by UUID, because the node's path may've been changed in the session (e.g. same name siblings - MODE-1422)
+            // search first by UUID, because the node's path may've been changed in the session (e.g. same name siblings -
+            // MODE-1422)
             if (location.getUuid() != null) {
                 node = context.getNode(location.getUuid());
             }
-            //if we didn't find anything by UUID, try by location
+            // if we didn't find anything by UUID, try by location
             if (node == null) {
                 node = context.getNode(location);
             }
@@ -411,14 +417,18 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
             // Make sure that each node referenced by the tuple exists and is accessible ...
             Node[] nodes = new Node[locationIndexes.length];
             int index = 0;
+            boolean foundAtLeastOneNode = false;
             for (int locationIndex : locationIndexes) {
                 Location location = (Location)tuple[locationIndex];
                 Node node = context.getNode(location);
-                if (node == null) {
-                    // Skip this record because one of the nodes no longer exists ...
-                    return null;
+                if (node != null) {
+                    foundAtLeastOneNode = true;
                 }
                 nodes[index++] = node;
+            }
+            if (!foundAtLeastOneNode) {
+                // We found no nodes, so skip this row ...
+                return null;
             }
             return new MultiSelectorQueryResultRow(this, nodes, locationIndexes, tuple);
         }

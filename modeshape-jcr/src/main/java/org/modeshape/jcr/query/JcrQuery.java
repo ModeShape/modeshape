@@ -24,6 +24,7 @@
 package org.modeshape.jcr.query;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import javax.jcr.RepositoryException;
@@ -35,10 +36,14 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.query.QueryResults;
+import org.modeshape.graph.query.model.BindVariableName;
 import org.modeshape.graph.query.model.QueryCommand;
+import org.modeshape.graph.query.model.Subquery;
+import org.modeshape.graph.query.model.Visitors;
 import org.modeshape.graph.query.parse.QueryParser;
 import org.modeshape.graph.query.plan.PlanHints;
 import org.modeshape.graph.query.validate.Schemata;
+import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.query.qom.JcrAbstractQuery;
 import org.modeshape.jcr.query.qom.JcrLiteral;
 
@@ -51,6 +56,7 @@ public class JcrQuery extends JcrAbstractQuery {
     private QueryCommand query;
     private final PlanHints hints;
     private final Map<String, Object> variables;
+    private volatile Set<String> variableNames;
 
     /**
      * Creates a new JCR {@link Query} by specifying the query statement itself, the language in which the query is stated, the
@@ -121,26 +127,38 @@ public class JcrQuery extends JcrAbstractQuery {
                + "AQM -> " + query;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.query.Query#bindValue(java.lang.String, javax.jcr.Value)
-     */
+    @Override
     public void bindValue( String varName,
                            Value value ) throws IllegalArgumentException, RepositoryException {
         CheckArg.isNotNull(varName, "varName");
         CheckArg.isNotNull(value, "value");
+        if (!variableNames().contains(varName) && !Subquery.isSubqueryVariableName(varName)) {
+            throw new IllegalArgumentException(JcrI18n.noSuchVariableInQuery.text(varName, statement));
+        }
         variables.put(varName, JcrLiteral.rawValue(value));
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.query.Query#getBindVariableNames()
-     */
+    @Override
     public String[] getBindVariableNames() {
-        Set<String> keys = variables.keySet();
-        return keys.toArray(new String[keys.size()]);
+        Set<String> names = variableNames();
+        // Always return a new array for immutability reasons ...
+        return names.toArray(new String[names.size()]);
+    }
+
+    protected final Set<String> variableNames() {
+        // This is idempotent, so no need to lock ...
+        if (variableNames == null) {
+            // Walk the query to find the bind variables ...
+            final Set<String> names = new HashSet<String>();
+            Visitors.visitAll(query, new Visitors.AbstractVisitor() {
+                @Override
+                public void visit( BindVariableName obj ) {
+                    names.add(obj.variableName());
+                }
+            });
+            variableNames = names;
+        }
+        return variableNames;
     }
 
     /**

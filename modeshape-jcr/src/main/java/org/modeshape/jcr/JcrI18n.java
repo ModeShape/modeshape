@@ -183,6 +183,7 @@ public final class JcrI18n {
 
     // Query-related messages
     public static I18n notStoredQuery;
+    public static I18n noSuchVariableInQuery;
     public static I18n invalidQueryLanguage;
     public static I18n queryCannotBeParsedUsingLanguage;
     public static I18n queryInLanguageIsNotValid;
@@ -192,6 +193,7 @@ public final class JcrI18n {
     public static I18n selectorNotUsedInQuery;
     public static I18n selectorUsedInEquiJoinCriteriaDoesNotExistInQuery;
     public static I18n multipleSelectorsAppearInQueryRequireSpecifyingSelectorName;
+    public static I18n multipleSelectorsAppearInQueryUnableToCallMethod;
     public static I18n equiJoinWithOneJcrPathPseudoColumnIsInvalid;
 
     // Type registration messages

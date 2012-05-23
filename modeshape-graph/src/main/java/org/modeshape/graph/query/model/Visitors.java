@@ -23,6 +23,10 @@
  */
 package org.modeshape.graph.query.model;
 
+import java.math.BigDecimal;
+import java.net.URI;
+import java.text.CharacterIterator;
+import java.text.StringCharacterIterator;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,14 +36,26 @@ import java.util.Map;
 import java.util.Set;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.ExecutionContext;
+import org.modeshape.graph.property.Binary;
+import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
+import org.modeshape.graph.property.PropertyType;
+import org.modeshape.graph.property.Reference;
+import org.modeshape.graph.property.ValueFactories;
 
 /**
  * A set of common visitors that can be reused or extended, and methods that provide easy construction and calling of visitors.
  */
 public class Visitors {
+
+    protected static final char OPEN_SQUARE = '[';
+    protected static final char CLOSE_SQUARE = ']';
+    protected static final char DOUBLE_QUOTE = '"';
+    protected static final char SINGLE_QUOTE = '\'';
+
+    protected static final ExecutionContext DEFAULT_CONTEXT = new ExecutionContext();
 
     /**
      * Visit all objects in the supplied {@link Visitable object} using a {@link NavigationVisitor} (specifically a
@@ -80,7 +96,21 @@ public class Visitors {
      * @return the string representation
      */
     public static String readable( Visitable visitable ) {
-        return visit(visitable, new ReadableVisitor()).getString();
+        // return visit(visitable, new ReadableVisitor()).getString();
+        return visit(visitable, new JcrSql2Writer(DEFAULT_CONTEXT)).getString();
+    }
+
+    /**
+     * Using a visitor, obtain the readable string representation of the supplied {@link Visitable object}
+     * 
+     * @param visitable the visitable
+     * @param context the execution context in which the visitable should be converted to a string
+     * @return the string representation
+     */
+    public static String readable( Visitable visitable,
+                                   ExecutionContext context ) {
+        // return visit(visitable, new ReadableVisitor()).getString();
+        return visit(visitable, new JcrSql2Writer(context)).getString();
     }
 
     /**
@@ -1064,9 +1094,9 @@ public class Visitors {
     }
 
     public static class ReadableVisitor implements Visitor {
-        private final StringBuilder sb = new StringBuilder();
-        private final ExecutionContext context;
-        private final NamespaceRegistry registry;
+        protected final StringBuilder sb = new StringBuilder();
+        protected final ExecutionContext context;
+        protected final NamespaceRegistry registry;
 
         public ReadableVisitor( ExecutionContext context ) {
             CheckArg.isNotNull(context, "context");
@@ -1074,40 +1104,52 @@ public class Visitors {
             this.registry = context == null ? null : context.getNamespaceRegistry();
         }
 
-        public ReadableVisitor() {
-            this.context = null;
-            this.registry = null;
+        protected ReadableVisitor appendAlias( String columnName ) {
+            append(columnName);
+            return this;
         }
 
-        protected final ReadableVisitor append( String string ) {
+        protected ReadableVisitor appendColumnName( String columnName ) {
+            append(columnName);
+            return this;
+        }
+
+        protected ReadableVisitor appendPropertyName( String columnName ) {
+            append(columnName);
+            return this;
+        }
+
+        protected ReadableVisitor append( String string ) {
             sb.append(string);
             return this;
         }
 
-        protected final ReadableVisitor append( char character ) {
+        protected ReadableVisitor append( char character ) {
             sb.append(character);
             return this;
         }
 
-        protected final ReadableVisitor append( int value ) {
+        protected ReadableVisitor append( int value ) {
             sb.append(value);
             return this;
         }
 
-        protected final ReadableVisitor append( SelectorName name ) {
+        protected ReadableVisitor append( SelectorName name ) {
             sb.append(name.getString());
             return this;
         }
 
-        protected final ReadableVisitor append( Name name ) {
-            sb.append(name.getString(registry, null, null));
+        protected ReadableVisitor append( Name name ) {
+            append(SINGLE_QUOTE);
+            append(name.getString(registry, null, null));
+            append(SINGLE_QUOTE);
             return this;
         }
 
-        protected final ReadableVisitor append( Path path ) {
-            sb.append('\'');
+        protected ReadableVisitor append( Path path ) {
+            sb.append(SINGLE_QUOTE);
             sb.append(path.getString(registry));
-            sb.append('\'');
+            sb.append(SINGLE_QUOTE);
             return this;
         }
 
@@ -1127,21 +1169,11 @@ public class Visitors {
             return sb.toString();
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.lang.Object#toString()
-         */
         @Override
         public String toString() {
             return sb.toString();
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.AllNodes)
-         */
         public void visit( AllNodes allNodes ) {
             append(allNodes.name());
             if (allNodes.hasAlias()) {
@@ -1149,11 +1181,6 @@ public class Visitors {
             }
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.And)
-         */
         public void visit( And and ) {
             append('(');
             and.left().accept(this);
@@ -1162,11 +1189,6 @@ public class Visitors {
             append(')');
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.ArithmeticOperand)
-         */
         public void visit( ArithmeticOperand arithmeticOperand ) {
             append('(');
             arithmeticOperand.left().accept(this);
@@ -1177,11 +1199,6 @@ public class Visitors {
             append(')');
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.Between)
-         */
         public void visit( Between between ) {
             between.operand().accept(this);
             append(" BETWEEN ");
@@ -1192,33 +1209,20 @@ public class Visitors {
             if (!between.isUpperBoundIncluded()) append(" EXCLUSIVE");
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.BindVariableName)
-         */
         public void visit( BindVariableName variable ) {
             append('$').append(variable.variableName());
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.ChildNode)
-         */
         public void visit( ChildNode child ) {
             append("ISCHILDNODE(");
             append(child.selectorName());
             append(',');
+            append(SINGLE_QUOTE);
             append(child.parentPath());
+            append(SINGLE_QUOTE);
             append(')');
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.ChildNodeJoinCondition)
-         */
         public void visit( ChildNodeJoinCondition condition ) {
             append("ISCHILDNODE(");
             append(condition.childSelectorName());
@@ -1227,53 +1231,35 @@ public class Visitors {
             append(')');
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.Column)
-         */
         public void visit( Column column ) {
             append(column.selectorName());
             if (column.propertyName() == null) {
                 append(".*");
             } else {
                 String propertyName = column.propertyName();
-                append('.').append(propertyName);
+                append('.').appendPropertyName(propertyName);
                 if (!propertyName.equals(column.columnName()) && !propertyName.equals(column.columnName())) {
-                    append(" AS ").append(column.columnName());
+                    append(" AS ").appendAlias(column.columnName());
                 }
             }
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.Comparison)
-         */
         public void visit( Comparison comparison ) {
             comparison.operand1().accept(this);
             append(' ').append(comparison.operator().symbol()).append(' ');
             comparison.operand2().accept(this);
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.DescendantNode)
-         */
         public void visit( DescendantNode descendant ) {
             append("ISDESCENDANTNODE(");
             append(descendant.selectorName());
             append(',');
+            append(SINGLE_QUOTE);
             append(descendant.ancestorPath());
+            append(SINGLE_QUOTE);
             append(')');
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.DescendantNodeJoinCondition)
-         */
         public void visit( DescendantNodeJoinCondition condition ) {
             append("ISDESCENDANTNODE(");
             append(condition.descendantSelectorName());
@@ -1282,44 +1268,24 @@ public class Visitors {
             append(')');
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.EquiJoinCondition)
-         */
         public void visit( EquiJoinCondition condition ) {
-            append(condition.selector1Name()).append('.').append(condition.property1Name());
+            append(condition.selector1Name()).append('.').appendPropertyName(condition.property1Name());
             append(" = ");
-            append(condition.selector2Name()).append('.').append(condition.property2Name());
+            append(condition.selector2Name()).append('.').appendPropertyName(condition.property2Name());
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.FullTextSearch)
-         */
         public void visit( FullTextSearch fullText ) {
             append("CONTAINS(").append(fullText.selectorName());
             if (fullText.propertyName() != null) {
-                append('.').append(fullText.propertyName());
+                append('.').appendPropertyName(fullText.propertyName());
             }
             sb.append(",'").append(fullText.fullTextSearchExpression()).append("')");
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.FullTextSearchScore)
-         */
         public void visit( FullTextSearchScore score ) {
             append("SCORE(").append(score.selectorName()).append(')');
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.Join)
-         */
         public void visit( Join join ) {
             join.left().accept(this);
             // if (join.getType() != JoinType.INNER) {
@@ -1333,22 +1299,12 @@ public class Visitors {
             join.joinCondition().accept(this);
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.Length)
-         */
         public void visit( Length length ) {
             append("LENGTH(");
             length.propertyValue().accept(this);
             append(')');
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.Limit)
-         */
         public void visit( Limit limit ) {
             append("LIMIT ").append(limit.rowLimit());
             if (limit.offset() != 0) {
@@ -1356,75 +1312,74 @@ public class Visitors {
             }
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.Literal)
-         */
         public void visit( Literal literal ) {
             Object value = literal.value();
-            boolean quote = value instanceof String || value instanceof Path || value instanceof Name;
-            if (quote) append('\'');
-            if (context == null) {
-                append(literal.value().toString());
-            } else {
-                append(context.getValueFactories().getStringFactory().create(literal.value()));
+            String typeName = null;
+            ValueFactories factories = context.getValueFactories();
+            if (value instanceof String) {
+                append(SINGLE_QUOTE);
+                String str = factories.getStringFactory().create(value);
+                append(str);
+                append(SINGLE_QUOTE);
+                return;
             }
-            if (quote) append('\'');
+            if (value instanceof Path) {
+                append("CAST(");
+                append(factories.getPathFactory().create(value));
+                append(" AS ").append(PropertyType.PATH.getName().toUpperCase()).append(')');
+                return;
+            }
+            if (value instanceof Name) {
+                append("CAST(");
+                append(factories.getNameFactory().create(value));
+                append(" AS ").append(PropertyType.NAME.getName().toUpperCase()).append(')');
+                return;
+            }
+            if (value instanceof Reference) {
+                typeName = ((Reference)value).isWeak() ? PropertyType.WEAKREFERENCE.getName().toUpperCase() : PropertyType.REFERENCE.getName()
+                                                                                                                                    .toUpperCase();
+            } else if (value instanceof Binary) {
+                typeName = PropertyType.BINARY.getName().toUpperCase();
+            } else if (value instanceof Boolean) {
+                typeName = PropertyType.BOOLEAN.getName().toUpperCase();
+            } else if (value instanceof DateTime) {
+                typeName = PropertyType.DATE.getName().toUpperCase();
+            } else if (value instanceof BigDecimal) {
+                typeName = PropertyType.DECIMAL.getName().toUpperCase();
+            } else if (value instanceof Double || value instanceof Float) {
+                typeName = PropertyType.DOUBLE.getName().toUpperCase();
+            } else if (value instanceof Long || value instanceof Integer || value instanceof Short) {
+                typeName = PropertyType.LONG.getName().toUpperCase();
+            } else if (value instanceof URI) {
+                typeName = PropertyType.URI.getName().toUpperCase();
+            }
+            assert typeName != null;
+            String str = factories.getStringFactory().create(value);
+            append("CAST('").append(str).append("' AS ").append(typeName.toUpperCase()).append(')');
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.LowerCase)
-         */
         public void visit( LowerCase lowerCase ) {
             append("LOWER(");
             lowerCase.operand().accept(this);
             append(')');
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.NodeDepth)
-         */
         public void visit( NodeDepth depth ) {
             append("DEPTH(").append(depth.selectorName()).append(')');
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.NodePath)
-         */
         public void visit( NodePath path ) {
             append("PATH(").append(path.selectorName()).append(')');
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.NodeLocalName)
-         */
         public void visit( NodeLocalName name ) {
             append("LOCALNAME(").append(name.selectorName()).append(')');
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.NodeName)
-         */
         public void visit( NodeName name ) {
             append("NAME(").append(name.selectorName()).append(')');
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.NamedSelector)
-         */
         public void visit( NamedSelector selector ) {
             append(selector.name());
             if (selector.hasAlias()) {
@@ -1432,23 +1387,13 @@ public class Visitors {
             }
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.Not)
-         */
         public void visit( Not not ) {
-            append('(');
             append("NOT ");
+            append('(');
             not.constraint().accept(this);
             append(')');
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.Or)
-         */
         public void visit( Or or ) {
             append('(');
             or.left().accept(this);
@@ -1457,51 +1402,26 @@ public class Visitors {
             append(')');
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.Ordering)
-         */
         public void visit( Ordering ordering ) {
             ordering.operand().accept(this);
             append(' ').append(ordering.order().symbol());
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.PropertyExistence)
-         */
         public void visit( PropertyExistence existence ) {
-            append(existence.selectorName()).append('.').append(existence.propertyName()).append(" IS NOT NULL");
+            append(existence.selectorName()).append('.').appendPropertyName(existence.propertyName()).append(" IS NOT NULL");
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.PropertyValue)
-         */
         public void visit( PropertyValue value ) {
-            append(value.selectorName()).append('.').append(value.propertyName());
+            append(value.selectorName()).append('.').appendPropertyName(value.propertyName());
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.ReferenceValue)
-         */
         public void visit( ReferenceValue value ) {
             append(value.selectorName());
             if (value.propertyName() != null) {
-                append('.').append(value.propertyName());
+                append('.').appendPropertyName(value.propertyName());
             }
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.Query)
-         */
         public void visit( Query query ) {
             append("SELECT ");
             if (query.isDistinct()) append("DISTINCT ");
@@ -1511,7 +1431,7 @@ public class Visitors {
                 boolean isFirst = true;
                 for (Column column : query.columns()) {
                     if (isFirst) isFirst = false;
-                    else append(',');
+                    else append(", ");
                     column.accept(this);
                 }
             }
@@ -1526,7 +1446,7 @@ public class Visitors {
                 boolean isFirst = true;
                 for (Ordering ordering : query.orderings()) {
                     if (isFirst) isFirst = false;
-                    else append(',');
+                    else append(", ");
                     ordering.accept(this);
                 }
             }
@@ -1536,44 +1456,24 @@ public class Visitors {
             }
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.Subquery)
-         */
         public void visit( Subquery subquery ) {
             append('(');
             subquery.query().accept(this);
             append(')');
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.SameNode)
-         */
         public void visit( SameNode sameNode ) {
-            append("ISSAMENODE(").append(sameNode.selectorName()).append(',').append(sameNode.path()).append(')');
+            append("ISSAMENODE(").append(sameNode.selectorName()).append(",'").append(sameNode.path()).append("')");
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.SameNodeJoinCondition)
-         */
         public void visit( SameNodeJoinCondition condition ) {
             append("ISSAMENODE(").append(condition.selector1Name()).append(',').append(condition.selector2Name());
             if (condition.selector2Path() != null) {
-                append(',').append(condition.selector2Path());
+                append(",'").append(condition.selector2Path()).append('\'');
             }
             append(')');
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.SetCriteria)
-         */
         public void visit( SetCriteria criteria ) {
             criteria.leftOperand().accept(this);
             append(" IN (");
@@ -1588,11 +1488,6 @@ public class Visitors {
             append(')');
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.SetQuery)
-         */
         public void visit( SetQuery query ) {
             query.left().accept(this);
             append(' ').append(query.operation().getSymbol()).append(' ');
@@ -1600,16 +1495,79 @@ public class Visitors {
             query.right().accept(this);
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.UpperCase)
-         */
         public void visit( UpperCase upperCase ) {
             append("UPPER(");
             upperCase.operand().accept(this);
             append(')');
         }
 
+    }
+
+    public static class JcrSql2Writer extends ReadableVisitor {
+
+        public JcrSql2Writer( ExecutionContext context ) {
+            super(context);
+        }
+
+        protected final boolean needsQuotes( String str ) {
+            CharacterIterator iter = new StringCharacterIterator(str);
+            for (char c = iter.first(); c != CharacterIterator.DONE; c = iter.next()) {
+                if (!Character.isLetterOrDigit(c)) return true;
+            }
+            return false;
+        }
+
+        protected void appendQuoted( char openQuote,
+                                     String name,
+                                     char closeQuote ) {
+            // If the name contains any non-alphanumeric characters, then we'll quote.
+            // It's okay (and safer) to quote more often than necessary.
+            if (needsQuotes(name)) {
+                append(OPEN_SQUARE);
+                append(name);
+                append(CLOSE_SQUARE);
+            } else {
+                append(name);
+            }
+        }
+
+        @Override
+        protected ReadableVisitor append( String string ) {
+            return super.append(string);
+        }
+
+        @Override
+        protected ReadableVisitor append( char character ) {
+            return super.append(character);
+        }
+
+        @Override
+        protected ReadableVisitor append( int value ) {
+            return super.append(value);
+        }
+
+        @Override
+        protected ReadableVisitor appendColumnName( String columnName ) {
+            appendQuoted(OPEN_SQUARE, columnName, CLOSE_SQUARE);
+            return this;
+        }
+
+        @Override
+        protected ReadableVisitor appendPropertyName( String propertyName ) {
+            appendQuoted(OPEN_SQUARE, propertyName, CLOSE_SQUARE);
+            return this;
+        }
+
+        @Override
+        protected ReadableVisitor appendAlias( String alias ) {
+            appendQuoted(OPEN_SQUARE, alias, CLOSE_SQUARE);
+            return this;
+        }
+
+        @Override
+        protected ReadableVisitor append( SelectorName name ) {
+            appendQuoted(OPEN_SQUARE, name.name(), CLOSE_SQUARE);
+            return this;
+        }
     }
 }

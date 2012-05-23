@@ -27,14 +27,14 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.property.PropertyType;
 import org.modeshape.graph.query.model.SelectorName;
 import org.modeshape.graph.query.validate.Schemata.Table;
 import org.modeshape.graph.query.validate.Schemata.View;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * 
@@ -50,7 +50,7 @@ public class ImmutableSchemataBuilderTest {
     @Before
     public void beforeEach() {
         context = new ExecutionContext();
-        builder = ImmutableSchemata.createBuilder(context.getValueFactories().getTypeSystem());
+        builder = ImmutableSchemata.createBuilder(context, context.getValueFactories().getTypeSystem());
     }
 
     @After

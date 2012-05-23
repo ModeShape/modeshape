@@ -44,8 +44,8 @@ import org.modeshape.graph.query.model.NodePath;
 import org.modeshape.graph.query.model.PropertyValue;
 import org.modeshape.graph.query.model.ReferenceValue;
 import org.modeshape.graph.query.model.TypeSystem;
-import org.modeshape.graph.query.model.UpperCase;
 import org.modeshape.graph.query.model.TypeSystem.TypeFactory;
+import org.modeshape.graph.query.model.UpperCase;
 import org.modeshape.graph.query.validate.Schemata;
 
 /**
@@ -317,7 +317,7 @@ public abstract class ProcessingComponent {
                     }
 
                     public Object evaluate( Object[] tuple ) {
-                        return new Double(0.0d);
+                        return new Float(0.0f);
                     }
                 };
             }
@@ -327,7 +327,7 @@ public abstract class ProcessingComponent {
                 }
 
                 public Object evaluate( Object[] tuple ) {
-                    return tuple[index];
+                    return new Double(((Float)tuple[index]).doubleValue());
                 }
             };
         }

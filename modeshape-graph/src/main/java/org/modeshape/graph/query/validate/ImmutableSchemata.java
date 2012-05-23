@@ -37,6 +37,7 @@ import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.query.QueryContext;
 import org.modeshape.graph.query.model.Operator;
@@ -61,13 +62,15 @@ public class ImmutableSchemata implements Schemata {
     /**
      * Obtain a new instance for building Schemata objects.
      * 
+     * @param context the execution context
      * @param typeSystem the type system that this schemata should use
      * @return the new builder; never null
      * @throws IllegalArgumentException if the context is null
      */
-    public static Builder createBuilder( TypeSystem typeSystem ) {
+    public static Builder createBuilder( ExecutionContext context,
+                                         TypeSystem typeSystem ) {
         CheckArg.isNotNull(typeSystem, "typeSystem");
-        return new Builder(typeSystem);
+        return new Builder(context, typeSystem);
     }
 
     /**
@@ -76,6 +79,7 @@ public class ImmutableSchemata implements Schemata {
     @NotThreadSafe
     public static class Builder {
 
+        private final ExecutionContext context;
         private final TypeSystem typeSystem;
         private final Map<String, MutableTable> tables = new HashMap<String, MutableTable>();
         private final Map<SelectorName, QueryCommand> viewDefinitions = new HashMap<SelectorName, QueryCommand>();
@@ -83,7 +87,9 @@ public class ImmutableSchemata implements Schemata {
         private final Map<String, Map<String, Boolean>> orderableColumnsByTableName = new HashMap<String, Map<String, Boolean>>();
         private final Map<String, Map<String, Set<Operator>>> operatorsForColumnsByTableName = new HashMap<String, Map<String, Set<Operator>>>();
 
-        protected Builder( TypeSystem typeSystem ) {
+        protected Builder( ExecutionContext context,
+                           TypeSystem typeSystem ) {
+            this.context = context;
             this.typeSystem = typeSystem;
         }
 
@@ -445,7 +451,7 @@ public class ImmutableSchemata implements Schemata {
                     // Create the canonical plan for the definition ...
                     PlanHints hints = new PlanHints();
                     hints.validateColumnExistance = false;
-                    QueryContext queryContext = new QueryContext(schemata, typeSystem, hints);
+                    QueryContext queryContext = new QueryContext(context, schemata, typeSystem, hints);
                     CanonicalPlanner planner = new CanonicalPlanner();
                     PlanNode plan = planner.createPlan(queryContext, command);
                     if (queryContext.getProblems().hasErrors()) {

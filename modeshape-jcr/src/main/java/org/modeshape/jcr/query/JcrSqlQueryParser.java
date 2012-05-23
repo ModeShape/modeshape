@@ -653,10 +653,10 @@ public class JcrSqlQueryParser extends SqlQueryParser {
     protected String parseName( TokenStream tokens,
                                 TypeSystem typeSystem ) {
         String token1 = tokens.consume();
-        token1 = removeBracketsAndQuotes(token1);
+        token1 = removeBracketsAndQuotes(token1, tokens.previousPosition());
         if (tokens.canConsume(':')) {
             String token2 = tokens.consume();
-            token2 = removeBracketsAndQuotes(token2);
+            token2 = removeBracketsAndQuotes(token2, tokens.previousPosition());
             return token1 + ':' + token2;
         }
         return token1;
@@ -674,7 +674,7 @@ public class JcrSqlQueryParser extends SqlQueryParser {
         if (tokens.canConsume("TIMESTAMP")) {
             Position pos = tokens.previousPosition();
             // This should be a timestamp represented as a single-quoted string ...
-            String value = removeBracketsAndQuotes(tokens.consume());
+            String value = removeBracketsAndQuotes(tokens.consume(), tokens.previousPosition());
             TypeFactory<?> dateTimeFactory = typeSystem.getDateTimeFactory();
             try {
                 // Convert to a date and then back to a string to get canonical form ...
@@ -696,13 +696,14 @@ public class JcrSqlQueryParser extends SqlQueryParser {
      * @return the text without leading and trailing quotes, or <code>text</code> if there were no quotes
      */
     @Override
-    protected String removeBracketsAndQuotes( String text ) {
+    protected String removeBracketsAndQuotes( String text,
+                                              Position position ) {
         if (text.length() > 0) {
             char firstChar = text.charAt(0);
             switch (firstChar) {
                 case '\'':
                     assert text.charAt(text.length() - 1) == firstChar;
-                    return removeBracketsAndQuotes(text.substring(1, text.length() - 1));
+                    return removeBracketsAndQuotes(text.substring(1, text.length() - 1), position);
             }
         }
         return text;

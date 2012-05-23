@@ -141,6 +141,7 @@ public class ValueTypeSystem implements TypeSystem {
         factories.put(PropertyType.OBJECT, new Factory<Object>(valueFactories.getObjectFactory()));
         factories.put(PropertyType.PATH, this.pathFactory);
         factories.put(PropertyType.REFERENCE, new Factory<Reference>(valueFactories.getReferenceFactory()));
+        factories.put(PropertyType.WEAKREFERENCE, new Factory<Reference>(valueFactories.getWeakReferenceFactory()));
         factories.put(PropertyType.URI, new Factory<URI>(valueFactories.getUriFactory()));
         factories.put(PropertyType.UUID, new Factory<UUID>(valueFactories.getUuidFactory()));
         factories.put(PropertyType.BINARY, this.binaryFactory);

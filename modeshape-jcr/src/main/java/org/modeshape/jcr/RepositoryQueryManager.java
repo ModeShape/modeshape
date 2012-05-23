@@ -430,8 +430,8 @@ abstract class RepositoryQueryManager {
             TypeSystem typeSystem = context.getValueFactories().getTypeSystem();
             SearchEngineProcessor processor = searchEngine.createProcessor(context, null, true);
             try {
-                QueryContext context = new GraphQueryContext(schemata, typeSystem, hints, new SimpleProblems(), variables,
-                                                             processor, workspaceName);
+                QueryContext context = new GraphQueryContext(this.context, schemata, typeSystem, hints, new SimpleProblems(),
+                                                             variables, processor, workspaceName);
                 return queryEngine.execute(context, query);
             } finally {
                 processor.close();
@@ -533,14 +533,15 @@ abstract class RepositoryQueryManager {
             private final RequestProcessor processor;
             private final String workspaceName;
 
-            protected GraphQueryContext( Schemata schemata,
+            protected GraphQueryContext( ExecutionContext context,
+                                         Schemata schemata,
                                          TypeSystem typeSystem,
                                          PlanHints hints,
                                          Problems problems,
                                          Map<String, Object> variables,
                                          RequestProcessor processor,
                                          String workspaceName ) {
-                super(schemata, typeSystem, hints, problems, variables);
+                super(context, schemata, typeSystem, hints, problems, variables);
                 this.processor = processor;
                 this.workspaceName = workspaceName;
             }

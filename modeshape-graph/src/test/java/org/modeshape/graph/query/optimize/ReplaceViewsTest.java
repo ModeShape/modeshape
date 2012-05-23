@@ -28,6 +28,8 @@ import static org.junit.Assert.assertThat;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.query.AbstractQueryTest;
 import org.modeshape.graph.query.QueryContext;
@@ -43,8 +45,6 @@ import org.modeshape.graph.query.plan.PlanNode.Property;
 import org.modeshape.graph.query.plan.PlanNode.Type;
 import org.modeshape.graph.query.validate.ImmutableSchemata;
 import org.modeshape.graph.query.validate.Schemata;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * 
@@ -58,15 +58,16 @@ public class ReplaceViewsTest extends AbstractQueryTest {
 
     @Before
     public void beforeEach() {
-        TypeSystem typeSystem = new ExecutionContext().getValueFactories().getTypeSystem();
+        ExecutionContext execContext = new ExecutionContext();
+        TypeSystem typeSystem = execContext.getValueFactories().getTypeSystem();
         rule = ReplaceViews.INSTANCE;
-        builder = ImmutableSchemata.createBuilder(typeSystem);
+        builder = ImmutableSchemata.createBuilder(execContext, typeSystem);
         builder.addTable("t1", "c11", "c12", "c13");
         builder.addTable("t2", "c21", "c22", "c23");
         builder.addView("v1", "SELECT c11, c12 FROM t1 WHERE c13 < CAST('3' AS LONG)");
         builder.addView("v2", "SELECT t1.c11, t1.c12, t2.c23 FROM t1 JOIN t2 ON t1.c11 = t2.c21");
         schemata = builder.build();
-        context = new QueryContext(schemata, typeSystem);
+        context = new QueryContext(execContext, schemata, typeSystem);
     }
 
     /**

@@ -59,7 +59,8 @@ public class RewriteAsRangeCriteriaTest extends AbstractQueryTest {
         rule = RewriteAsRangeCriteria.INSTANCE;
         rules = new LinkedList<OptimizerRule>();
         rules.add(rule);
-        context = new QueryContext(mock(Schemata.class), new ExecutionContext().getValueFactories().getTypeSystem());
+        ExecutionContext execContext = new ExecutionContext();
+        context = new QueryContext(execContext, mock(Schemata.class), execContext.getValueFactories().getTypeSystem());
         print = false;
     }
 

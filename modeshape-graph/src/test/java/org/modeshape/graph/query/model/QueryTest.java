@@ -124,7 +124,7 @@ public class QueryTest extends AbstractQueryObjectTest {
         orderings = Collections.singletonList(new Ordering(new NodeName(selector("selector1")), Order.ASCENDING));
         query = new Query(source, constraint, orderings, columns, limits, distinct);
         assertThat(Visitors.readable(query),
-                   is("SELECT selector1.* FROM nt:unstructured WHERE selector1.jcr:uuid IS NOT NULL ORDER BY NAME(selector1) ASC"));
+                   is("SELECT selector1.* FROM [nt:unstructured] WHERE selector1.[jcr:uuid] IS NOT NULL ORDER BY NAME(selector1) ASC"));
     }
 
     @Test
@@ -136,7 +136,7 @@ public class QueryTest extends AbstractQueryObjectTest {
         limits = new Limit(10, 100);
         query = new Query(source, constraint, orderings, columns, limits, distinct);
         assertThat(Visitors.readable(query),
-                   is("SELECT selector1.* FROM nt:unstructured WHERE selector1.jcr:uuid IS NOT NULL ORDER BY NAME(selector1) ASC LIMIT 10 OFFSET 100"));
+                   is("SELECT selector1.* FROM [nt:unstructured] WHERE selector1.[jcr:uuid] IS NOT NULL ORDER BY NAME(selector1) ASC LIMIT 10 OFFSET 100"));
     }
 
     @Test
@@ -147,7 +147,7 @@ public class QueryTest extends AbstractQueryObjectTest {
         orderings = Collections.singletonList(new Ordering(new NodeName(selector("selector1")), Order.ASCENDING));
         query = new Query(source, constraint, orderings, columns, limits, distinct);
         assertThat(Visitors.readable(query),
-                   is("SELECT * FROM nt:unstructured WHERE selector1.jcr:uuid IS NOT NULL ORDER BY NAME(selector1) ASC"));
+                   is("SELECT * FROM [nt:unstructured] WHERE selector1.[jcr:uuid] IS NOT NULL ORDER BY NAME(selector1) ASC"));
     }
 
     @Test
@@ -157,7 +157,8 @@ public class QueryTest extends AbstractQueryObjectTest {
         constraint = new PropertyExistence(selector("selector1"), "jcr:uuid");
         orderings = Collections.emptyList();
         query = new Query(source, constraint, orderings, columns, limits, distinct);
-        assertThat(Visitors.readable(query), is("SELECT selector1.* FROM nt:unstructured WHERE selector1.jcr:uuid IS NOT NULL"));
+        assertThat(Visitors.readable(query),
+                   is("SELECT selector1.* FROM [nt:unstructured] WHERE selector1.[jcr:uuid] IS NOT NULL"));
     }
 
     @Test
@@ -167,7 +168,7 @@ public class QueryTest extends AbstractQueryObjectTest {
         constraint = null;
         orderings = Collections.singletonList(new Ordering(new NodeName(selector("selector1")), Order.ASCENDING));
         query = new Query(source, constraint, orderings, columns, limits, distinct);
-        assertThat(Visitors.readable(query), is("SELECT selector1.* FROM nt:unstructured ORDER BY NAME(selector1) ASC"));
+        assertThat(Visitors.readable(query), is("SELECT selector1.* FROM [nt:unstructured] ORDER BY NAME(selector1) ASC"));
     }
 
     @Test
@@ -178,11 +179,11 @@ public class QueryTest extends AbstractQueryObjectTest {
         orderings = Collections.emptyList();
         distinct = true;
         query = new Query(source, constraint, orderings, columns, limits, distinct);
-        assertThat(Visitors.readable(query), is("SELECT DISTINCT * FROM nt:unstructured"));
+        assertThat(Visitors.readable(query), is("SELECT DISTINCT * FROM [nt:unstructured]"));
 
         source = new AllNodes();
         query = new Query(source, constraint, orderings, columns, limits, distinct);
-        assertThat(Visitors.readable(query), is("SELECT DISTINCT * FROM __ALLNODES__"));
+        assertThat(Visitors.readable(query), is("SELECT DISTINCT * FROM [__ALLNODES__]"));
     }
 
     @Test
@@ -192,10 +193,10 @@ public class QueryTest extends AbstractQueryObjectTest {
         constraint = null;
         orderings = Collections.emptyList();
         query = new Query(source, constraint, orderings, columns, limits, distinct);
-        assertThat(Visitors.readable(query), is("SELECT * FROM nt:unstructured"));
+        assertThat(Visitors.readable(query), is("SELECT * FROM [nt:unstructured]"));
 
         source = new AllNodes();
         query = new Query(source, constraint, orderings, columns, limits, distinct);
-        assertThat(Visitors.readable(query), is("SELECT * FROM __ALLNODES__"));
+        assertThat(Visitors.readable(query), is("SELECT * FROM [__ALLNODES__]"));
     }
 }

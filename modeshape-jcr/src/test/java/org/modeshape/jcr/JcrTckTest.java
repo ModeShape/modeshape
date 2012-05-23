@@ -187,6 +187,28 @@ import org.apache.jackrabbit.test.api.query.XPathJcrPathTest;
 import org.apache.jackrabbit.test.api.query.XPathOrderByTest;
 import org.apache.jackrabbit.test.api.query.XPathPosIndexTest;
 import org.apache.jackrabbit.test.api.query.XPathQueryLevel2Test;
+import org.apache.jackrabbit.test.api.query.qom.AndConstraintTest;
+import org.apache.jackrabbit.test.api.query.qom.BindVariableValueTest;
+import org.apache.jackrabbit.test.api.query.qom.ChildNodeJoinConditionTest;
+import org.apache.jackrabbit.test.api.query.qom.ChildNodeTest;
+import org.apache.jackrabbit.test.api.query.qom.DescendantNodeJoinConditionTest;
+import org.apache.jackrabbit.test.api.query.qom.DescendantNodeTest;
+import org.apache.jackrabbit.test.api.query.qom.EquiJoinConditionTest;
+import org.apache.jackrabbit.test.api.query.qom.FullTextSearchScoreTest;
+import org.apache.jackrabbit.test.api.query.qom.GetQueryTest;
+import org.apache.jackrabbit.test.api.query.qom.LengthTest;
+import org.apache.jackrabbit.test.api.query.qom.NodeLocalNameTest;
+import org.apache.jackrabbit.test.api.query.qom.NodeNameTest;
+import org.apache.jackrabbit.test.api.query.qom.NotConstraintTest;
+import org.apache.jackrabbit.test.api.query.qom.OrConstraintTest;
+import org.apache.jackrabbit.test.api.query.qom.PropertyExistenceTest;
+import org.apache.jackrabbit.test.api.query.qom.PropertyValueTest;
+import org.apache.jackrabbit.test.api.query.qom.QueryObjectModelFactoryTest;
+import org.apache.jackrabbit.test.api.query.qom.RowTest;
+import org.apache.jackrabbit.test.api.query.qom.SameNodeJoinConditionTest;
+import org.apache.jackrabbit.test.api.query.qom.SameNodeTest;
+import org.apache.jackrabbit.test.api.query.qom.SelectorTest;
+import org.apache.jackrabbit.test.api.query.qom.UpperLowerCaseTest;
 import org.apache.jackrabbit.test.api.version.ActivitiesTest;
 import org.apache.jackrabbit.test.api.version.CheckinTest;
 import org.apache.jackrabbit.test.api.version.CheckoutTest;
@@ -446,6 +468,7 @@ public class JcrTckTest {
 
             addTest(new ShareableNodesTests());
             addTest(new QueryTests());
+            addTest(new QueryObjectModelTests());
             addTest(new ObservationTests()); // remove this and the ObservationTests inner class when all tests pass and
             // uncomment observation.TestAll
 
@@ -511,6 +534,39 @@ public class JcrTckTest {
             addTestSuite(OrderByURITest.class);
             addTestSuite(SetLimitTest.class);
             addTestSuite(SetOffsetTest.class);
+        }
+    }
+
+    private static class QueryObjectModelTests extends TestSuite {
+        protected QueryObjectModelTests() {
+            super("QOM Tests");
+
+            addTestSuite(AndConstraintTest.class);
+            addTestSuite(BindVariableValueTest.class);
+            addTestSuite(ChildNodeJoinConditionTest.class);
+            addTestSuite(ChildNodeTest.class);
+            // TODO author=Randall Hauch date=5/17/12 description=https://issues.apache.org/jira/browse/JCR-3313
+            // addTestSuite(ColumnTest.class);
+            addTestSuite(DescendantNodeJoinConditionTest.class);
+            addTestSuite(DescendantNodeTest.class);
+            addTestSuite(EquiJoinConditionTest.class);
+            addTestSuite(FullTextSearchScoreTest.class);
+            addTestSuite(GetQueryTest.class);
+            addTestSuite(LengthTest.class);
+            addTestSuite(NodeLocalNameTest.class);
+            addTestSuite(NodeNameTest.class);
+            addTestSuite(NotConstraintTest.class);
+            addTestSuite(OrConstraintTest.class);
+            // TODO author=Randall Hauch date=5/17/12 description=https://issues.apache.org/jira/browse/MODE-1095
+            // addTestSuite(OrderingTest.class);
+            addTestSuite(PropertyExistenceTest.class);
+            addTestSuite(PropertyValueTest.class);
+            addTestSuite(QueryObjectModelFactoryTest.class);
+            addTestSuite(RowTest.class);
+            addTestSuite(SameNodeJoinConditionTest.class);
+            addTestSuite(SameNodeTest.class);
+            addTestSuite(SelectorTest.class);
+            addTestSuite(UpperLowerCaseTest.class);
         }
     }
 

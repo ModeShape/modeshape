@@ -53,37 +53,37 @@ public class QueryBuilderTest {
     @Test
     public void shouldBuildSelectStarFromAllNodes() {
         query = builder.selectStar().fromAllNodes().query();
-        assertThatSql(query, is("SELECT * FROM __ALLNODES__"));
+        assertThatSql(query, is("SELECT * FROM [__ALLNODES__]"));
     }
 
     @Test
     public void shouldBuildSelectStarFromAllNodesAs() {
         query = builder.selectStar().fromAllNodesAs("nodes").query();
-        assertThatSql(query, is("SELECT * FROM __ALLNODES__ AS nodes"));
+        assertThatSql(query, is("SELECT * FROM [__ALLNODES__] AS nodes"));
     }
 
     @Test
     public void shouldBuildSelectStarWithoutOtherClausesAsFromAllNodes() {
         query = builder.selectStar().query();
-        assertThatSql(query, is("SELECT * FROM __ALLNODES__"));
+        assertThatSql(query, is("SELECT * FROM [__ALLNODES__]"));
     }
 
     @Test
     public void shouldBuildSelectColumnsFromAllNodes() {
         query = builder.select("col1", "col2").fromAllNodes().query();
-        assertThatSql(query, is("SELECT __ALLNODES__.col1,__ALLNODES__.col2 FROM __ALLNODES__"));
+        assertThatSql(query, is("SELECT [__ALLNODES__].col1, [__ALLNODES__].col2 FROM [__ALLNODES__]"));
     }
 
     @Test
     public void shouldBuildSelectColumnsFromAllNodesAs() {
         query = builder.select("col1", "col2").fromAllNodesAs("nodes").query();
-        assertThatSql(query, is("SELECT nodes.col1,nodes.col2 FROM __ALLNODES__ AS nodes"));
+        assertThatSql(query, is("SELECT nodes.col1, nodes.col2 FROM [__ALLNODES__] AS nodes"));
     }
 
     @Test
     public void shouldBuildSelectColumnsUsingAliasFromAllNodesAs() {
         query = builder.select("col1", "nodes.col2").fromAllNodesAs("nodes").query();
-        assertThatSql(query, is("SELECT nodes.col1,nodes.col2 FROM __ALLNODES__ AS nodes"));
+        assertThatSql(query, is("SELECT nodes.col1, nodes.col2 FROM [__ALLNODES__] AS nodes"));
     }
 
     @Test
@@ -101,19 +101,19 @@ public class QueryBuilderTest {
     @Test
     public void shouldBuildSelectColumnsFromOneTable() {
         query = builder.select("col1", "col2").from("table").query();
-        assertThatSql(query, is("SELECT table.col1,table.col2 FROM table"));
+        assertThatSql(query, is("SELECT table.col1, table.col2 FROM table"));
     }
 
     @Test
     public void shouldBuildSelectColumnsFromOneTableAs() {
         query = builder.select("col1", "col2").from("table AS nodes").query();
-        assertThatSql(query, is("SELECT nodes.col1,nodes.col2 FROM table AS nodes"));
+        assertThatSql(query, is("SELECT nodes.col1, nodes.col2 FROM table AS nodes"));
     }
 
     @Test
     public void shouldBuildSelectColumnsUsingAliasFromOneTableAs() {
         query = builder.select("col1", "nodes.col2").from("table AS  nodes").query();
-        assertThatSql(query, is("SELECT nodes.col1,nodes.col2 FROM table AS nodes"));
+        assertThatSql(query, is("SELECT nodes.col1, nodes.col2 FROM table AS nodes"));
     }
 
     @Test
@@ -125,7 +125,7 @@ public class QueryBuilderTest {
                        .from("table2 AS  edges")
                        .query();
         assertThatSql(query,
-                      is("SELECT nodes.col1,nodes.col2 FROM table1 AS nodes UNION SELECT edges.col3,edges.col4 FROM table2 AS edges"));
+                      is("SELECT nodes.col1, nodes.col2 FROM table1 AS nodes UNION SELECT edges.col3, edges.col4 FROM table2 AS edges"));
     }
 
     @Test
@@ -137,7 +137,7 @@ public class QueryBuilderTest {
                        .from("table2 AS  edges")
                        .query();
         assertThatSql(query,
-                      is("SELECT nodes.col1,nodes.col2 FROM table1 AS nodes UNION ALL SELECT edges.col3,edges.col4 FROM table2 AS edges"));
+                      is("SELECT nodes.col1, nodes.col2 FROM table1 AS nodes UNION ALL SELECT edges.col3, edges.col4 FROM table2 AS edges"));
     }
 
     @Test
@@ -152,7 +152,7 @@ public class QueryBuilderTest {
                        .from("table3")
                        .query();
         assertThatSql(query,
-                      is("SELECT nodes.col1,nodes.col2 FROM table1 AS nodes UNION SELECT edges.col3,edges.col4 FROM table2 AS edges UNION ALL SELECT table3.col5,table3.col6 FROM table3"));
+                      is("SELECT nodes.col1, nodes.col2 FROM table1 AS nodes UNION SELECT edges.col3, edges.col4 FROM table2 AS edges UNION ALL SELECT table3.col5, table3.col6 FROM table3"));
     }
 
     @Test
@@ -164,7 +164,7 @@ public class QueryBuilderTest {
                        .from("table2 AS  edges")
                        .query();
         assertThatSql(query,
-                      is("SELECT nodes.col1,nodes.col2 FROM table1 AS nodes INTERSECT SELECT edges.col3,edges.col4 FROM table2 AS edges"));
+                      is("SELECT nodes.col1, nodes.col2 FROM table1 AS nodes INTERSECT SELECT edges.col3, edges.col4 FROM table2 AS edges"));
     }
 
     @Test
@@ -176,7 +176,7 @@ public class QueryBuilderTest {
                        .from("table2 AS  edges")
                        .query();
         assertThatSql(query,
-                      is("SELECT nodes.col1,nodes.col2 FROM table1 AS nodes INTERSECT ALL SELECT edges.col3,edges.col4 FROM table2 AS edges"));
+                      is("SELECT nodes.col1, nodes.col2 FROM table1 AS nodes INTERSECT ALL SELECT edges.col3, edges.col4 FROM table2 AS edges"));
     }
 
     @Test
@@ -188,7 +188,7 @@ public class QueryBuilderTest {
                        .from("table2 AS  edges")
                        .query();
         assertThatSql(query,
-                      is("SELECT nodes.col1,nodes.col2 FROM table1 AS nodes INTERSECT SELECT edges.col3,edges.col4 FROM table2 AS edges"));
+                      is("SELECT nodes.col1, nodes.col2 FROM table1 AS nodes INTERSECT SELECT edges.col3, edges.col4 FROM table2 AS edges"));
     }
 
     @Test
@@ -200,25 +200,25 @@ public class QueryBuilderTest {
                        .from("table2 AS  edges")
                        .query();
         assertThatSql(query,
-                      is("SELECT nodes.col1,nodes.col2 FROM table1 AS nodes INTERSECT ALL SELECT edges.col3,edges.col4 FROM table2 AS edges"));
+                      is("SELECT nodes.col1, nodes.col2 FROM table1 AS nodes INTERSECT ALL SELECT edges.col3, edges.col4 FROM table2 AS edges"));
     }
 
     @Test
     public void shouldBuildEquiJoin() {
         query = builder.select("t1.c1", "t2.c2").from("table1 AS  t1").join("table2 as t2").on(" t1.c0= t2. c0").query();
-        assertThatSql(query, is("SELECT t1.c1,t2.c2 FROM table1 AS t1 INNER JOIN table2 as t2 ON t1.c0 = t2.c0"));
+        assertThatSql(query, is("SELECT t1.c1, t2.c2 FROM table1 AS t1 INNER JOIN table2 AS t2 ON t1.c0 = t2.c0"));
     }
 
     @Test
     public void shouldBuildInnerEquiJoin() {
         query = builder.select("t1.c1", "t2.c2").from("table1 AS  t1").innerJoin("table2 as t2").on(" t1.c0= t2. c0").query();
-        assertThatSql(query, is("SELECT t1.c1,t2.c2 FROM table1 AS t1 INNER JOIN table2 as t2 ON t1.c0 = t2.c0"));
+        assertThatSql(query, is("SELECT t1.c1, t2.c2 FROM table1 AS t1 INNER JOIN table2 AS t2 ON t1.c0 = t2.c0"));
     }
 
     @Test
     public void shouldBuildLeftOuterEquiJoin() {
         query = builder.select("t1.c1", "t2.c2").from("table1 AS  t1").leftOuterJoin("table2 as t2").on(" t1.c0= t2. c0").query();
-        assertThatSql(query, is("SELECT t1.c1,t2.c2 FROM table1 AS t1 LEFT OUTER JOIN table2 as t2 ON t1.c0 = t2.c0"));
+        assertThatSql(query, is("SELECT t1.c1, t2.c2 FROM table1 AS t1 LEFT OUTER JOIN table2 AS t2 ON t1.c0 = t2.c0"));
     }
 
     @Test
@@ -228,19 +228,19 @@ public class QueryBuilderTest {
                        .rightOuterJoin("table2 as t2")
                        .on(" t1.c0= t2. c0")
                        .query();
-        assertThatSql(query, is("SELECT t1.c1,t2.c2 FROM table1 AS t1 RIGHT OUTER JOIN table2 as t2 ON t1.c0 = t2.c0"));
+        assertThatSql(query, is("SELECT t1.c1, t2.c2 FROM table1 AS t1 RIGHT OUTER JOIN table2 AS t2 ON t1.c0 = t2.c0"));
     }
 
     @Test
     public void shouldBuildFullOuterEquiJoin() {
         query = builder.select("t1.c1", "t2.c2").from("table1 AS  t1").fullOuterJoin("table2 as t2").on(" t1.c0= t2. c0").query();
-        assertThatSql(query, is("SELECT t1.c1,t2.c2 FROM table1 AS t1 FULL OUTER JOIN table2 as t2 ON t1.c0 = t2.c0"));
+        assertThatSql(query, is("SELECT t1.c1, t2.c2 FROM table1 AS t1 FULL OUTER JOIN table2 AS t2 ON t1.c0 = t2.c0"));
     }
 
     @Test
     public void shouldBuildCrossEquiJoin() {
         query = builder.select("t1.c1", "t2.c2").from("table1 AS  t1").crossJoin("table2 as t2").on(" t1.c0= t2. c0").query();
-        assertThatSql(query, is("SELECT t1.c1,t2.c2 FROM table1 AS t1 CROSS JOIN table2 as t2 ON t1.c0 = t2.c0"));
+        assertThatSql(query, is("SELECT t1.c1, t2.c2 FROM table1 AS t1 CROSS JOIN table2 AS t2 ON t1.c0 = t2.c0"));
     }
 
     @Test
@@ -252,9 +252,9 @@ public class QueryBuilderTest {
                        .join("table3 as t3")
                        .on(" t1.c0= t3. c0")
                        .query();
-        assertThatSql(query, is("SELECT t1.c1,t2.c2 FROM table1 AS t1 " + //
-                                "INNER JOIN table2 as t2 ON t1.c0 = t2.c0 " + //
-                                "INNER JOIN table3 as t3 ON t1.c0 = t3.c0"));
+        assertThatSql(query, is("SELECT t1.c1, t2.c2 FROM table1 AS t1 " + //
+                                "INNER JOIN table2 AS t2 ON t1.c0 = t2.c0 " + //
+                                "INNER JOIN table3 AS t3 ON t1.c0 = t3.c0"));
     }
 
     @Test
@@ -266,9 +266,9 @@ public class QueryBuilderTest {
                        .crossJoin("table3 as t3")
                        .on(" t1.c0= t3. c0")
                        .query();
-        assertThatSql(query, is("SELECT t1.c1,t2.c2 FROM table1 AS t1 " + //
-                                "INNER JOIN table2 as t2 " + //
-                                "CROSS JOIN table3 as t3 ON t1.c0 = t3.c0 ON t1.c0 = t2.c0"));
+        assertThatSql(query, is("SELECT t1.c1, t2.c2 FROM table1 AS t1 " + //
+                                "INNER JOIN table2 AS t2 " + //
+                                "CROSS JOIN table3 AS t3 ON t1.c0 = t3.c0 ON t1.c0 = t2.c0"));
     }
 
     @Test
@@ -289,7 +289,7 @@ public class QueryBuilderTest {
                        .literal(true)
                        .end()
                        .query();
-        assertThatSql(query, is("SELECT * FROM table AS nodes WHERE nodes.col1 BETWEEN 'lower' AND true"));
+        assertThatSql(query, is("SELECT * FROM table AS nodes WHERE nodes.col1 BETWEEN 'lower' AND CAST('true' AS BOOLEAN)"));
 
         query = builder.selectStar()
                        .from("table AS nodes")
@@ -318,7 +318,8 @@ public class QueryBuilderTest {
                        .asBoolean()
                        .end()
                        .query();
-        assertThatSql(query, is("SELECT * FROM table AS nodes WHERE nodes.col1 BETWEEN true AND false"));
+        assertThatSql(query,
+                      is("SELECT * FROM table AS nodes WHERE nodes.col1 BETWEEN CAST('true' AS BOOLEAN) AND CAST('false' AS BOOLEAN)"));
     }
 
     @Test
@@ -330,19 +331,19 @@ public class QueryBuilderTest {
     @Test
     public void shouldBuildQueryWithChildConstraint() {
         query = builder.selectStar().from("table AS nodes").where().isChild("nodes", "/parent/path").end().query();
-        assertThatSql(query, is("SELECT * FROM table AS nodes WHERE ISCHILDNODE(nodes,/parent/path)"));
+        assertThatSql(query, is("SELECT * FROM table AS nodes WHERE ISCHILDNODE(nodes,'/parent/path')"));
     }
 
     @Test
     public void shouldBuildQueryWithDescendantConstraint() {
         query = builder.selectStar().from("table AS nodes").where().isBelowPath("nodes", "/parent/path").end().query();
-        assertThatSql(query, is("SELECT * FROM table AS nodes WHERE ISDESCENDANTNODE(nodes,/parent/path)"));
+        assertThatSql(query, is("SELECT * FROM table AS nodes WHERE ISDESCENDANTNODE(nodes,'/parent/path')"));
     }
 
     @Test
     public void shouldBuildQueryWithSameNodeConstraint() {
         query = builder.selectStar().from("table AS nodes").where().isSameNode("nodes", "/other/path").end().query();
-        assertThatSql(query, is("SELECT * FROM table AS nodes WHERE ISSAMENODE(nodes,/other/path)"));
+        assertThatSql(query, is("SELECT * FROM table AS nodes WHERE ISSAMENODE(nodes,'/other/path')"));
     }
 
     @Test
@@ -519,7 +520,7 @@ public class QueryBuilderTest {
                        .end()
                        .query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE ((DEPTH(nodes) + DEPTH(nodes)) + DEPTH(nodes)) = 3"));
+                                "WHERE ((DEPTH(nodes) + DEPTH(nodes)) + DEPTH(nodes)) = CAST('3' AS LONG)"));
     }
 
     @Test
@@ -536,7 +537,7 @@ public class QueryBuilderTest {
                        .end()
                        .query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE (DEPTH(nodes) - (DEPTH(nodes) + SCORE(nodes))) = 3"));
+                                "WHERE (DEPTH(nodes) - (DEPTH(nodes) + SCORE(nodes))) = CAST('3' AS LONG)"));
     }
 
     @Test
@@ -719,21 +720,21 @@ public class QueryBuilderTest {
     public void shouldBuildQueryWithCriteriaUsingNodeDepthEqualToLiteral() {
         query = builder.selectStar().from("table AS nodes").where().depth("nodes").isEqualTo(3).end().query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE DEPTH(nodes) = 3"));
+                                "WHERE DEPTH(nodes) = CAST('3' AS LONG)"));
     }
 
     @Test
     public void shouldBuildQueryWithCriteriaUsingNodeDepthLessThanOrEqualToLongLiteral() {
         query = builder.selectStar().from("table AS nodes").where().depth("nodes").isLessThanOrEqualTo(3).end().query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE DEPTH(nodes) <= 3"));
+                                "WHERE DEPTH(nodes) <= CAST('3' AS LONG)"));
     }
 
     @Test
     public void shouldBuildQueryWithCriteriaUsingNodeDepthLessThanOrEqualToStringLiteral() {
         query = builder.selectStar().from("table AS nodes").where().depth("nodes").isLessThanOrEqualTo(3).end().query();
         assertThatSql(query, is("SELECT * FROM table AS nodes " + //
-                                "WHERE DEPTH(nodes) <= 3"));
+                                "WHERE DEPTH(nodes) <= CAST('3' AS LONG)"));
     }
 
     @Test

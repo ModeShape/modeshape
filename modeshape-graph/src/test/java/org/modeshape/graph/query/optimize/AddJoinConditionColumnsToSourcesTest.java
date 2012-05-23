@@ -47,7 +47,8 @@ public class AddJoinConditionColumnsToSourcesTest extends AbstractQueryTest {
 
     @Before
     public void beforeEach() {
-        context = new QueryContext(mock(Schemata.class), new ExecutionContext().getValueFactories().getTypeSystem());
+        ExecutionContext execContext = new ExecutionContext();
+        context = new QueryContext(execContext, mock(Schemata.class), execContext.getValueFactories().getTypeSystem());
         rule = AddJoinConditionColumnsToSources.INSTANCE;
         context.getHints().hasJoin = true;
     }

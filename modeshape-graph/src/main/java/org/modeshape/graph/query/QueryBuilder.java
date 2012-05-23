@@ -84,13 +84,13 @@ import org.modeshape.graph.query.model.Selector;
 import org.modeshape.graph.query.model.SelectorName;
 import org.modeshape.graph.query.model.SetCriteria;
 import org.modeshape.graph.query.model.SetQuery;
+import org.modeshape.graph.query.model.SetQuery.Operation;
 import org.modeshape.graph.query.model.Source;
 import org.modeshape.graph.query.model.StaticOperand;
 import org.modeshape.graph.query.model.Subquery;
 import org.modeshape.graph.query.model.TypeSystem;
 import org.modeshape.graph.query.model.UpperCase;
 import org.modeshape.graph.query.model.Visitors;
-import org.modeshape.graph.query.model.SetQuery.Operation;
 
 /**
  * A component that can be used to programmatically create {@link QueryCommand} objects. Simply call methods to build the selector
@@ -307,7 +307,7 @@ public class QueryBuilder {
      * @return the named selector object; never null
      */
     protected NamedSelector namedSelector( String nameWithOptionalAlias ) {
-        String[] parts = nameWithOptionalAlias.split("\\sAS\\s");
+        String[] parts = nameWithOptionalAlias.split("\\s(AS|as)\\s");
         if (parts.length == 2) {
             return new NamedSelector(selector(parts[0]), selector(parts[1]));
         }
@@ -1739,8 +1739,8 @@ public class QueryBuilder {
          */
         @Override
         public ConstraintBuilder as( String type ) {
-            return upperBoundary.comparisonBuilder.isBetween(upperBoundary.lowerBound, typeSystem.getTypeFactory(type)
-                                                                                                 .create(value));
+            return upperBoundary.comparisonBuilder.isBetween(upperBoundary.lowerBound,
+                                                             typeSystem.getTypeFactory(type).create(value));
         }
     }
 
@@ -2174,7 +2174,7 @@ public class QueryBuilder {
          * @return the constraint builder; never null
          */
         public ConstraintBuilder literal( boolean literal ) {
-            return comparisonBuilder.isBetween(lowerBound, literal);
+            return comparisonBuilder.isBetween(lowerBound, new Literal(literal));
         }
 
         /**
