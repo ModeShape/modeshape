@@ -469,7 +469,9 @@ public class QueryResultColumns implements Columns {
                                            List<String> columnNames,
                                            Set<Column> columnsWithDuplicateNames ) {
         String columnName = column.getColumnName() != null ? column.getColumnName() : column.getPropertyName();
-        if (columnNames.contains(columnName) || columnsWithDuplicateNames.contains(column)) {
+        if (column.getPropertyName() == null || columnNames.contains(columnName) || columnsWithDuplicateNames.contains(column)) {
+            // Per section 6.7.39 of the JSR-283 specification, if the property name for a column is not given
+            // then the name for the column in the result set must be "selectorName.propertyName" ...
             columnName = column.selectorName() + "." + columnName;
         }
         columnNames.add(columnName);
