@@ -25,7 +25,7 @@
 package org.modeshape.jcr;
 
 import junit.framework.Test;
-import junit.framework.TestSuite;
+import org.apache.jackrabbit.test.JCRTestSuite;
 
 /**
  * Test suite to wrap Apache Jackrabbit JCR technology compatibility kit (TCK) unit tests. Note that technically these are not the
@@ -34,25 +34,12 @@ import junit.framework.TestSuite;
 public class JcrTckTest {
 
     /**
-     * Wrapper so that the Jackrabbit TCK test suite gets picked up by the ModeShape Maven test target.
+     * Creates the JCR TCK test suite.
      * 
      * @return a new instance of {@link org.apache.jackrabbit.test.JCRTestSuite}.
      */
     public static Test suite() {
-        TestSuite suite = new TestSuite("JCR API tests");
-        suite.addTest(org.apache.jackrabbit.test.api.TestAll.suite());
-        suite.addTest(org.apache.jackrabbit.test.api.query.TestAll.suite());
-        suite.addTest(org.apache.jackrabbit.test.api.query.qom.TestAll.suite());
-        suite.addTest(org.apache.jackrabbit.test.api.nodetype.TestAll.suite());
-        suite.addTest(org.apache.jackrabbit.test.api.util.TestAll.suite());
-        suite.addTest(org.apache.jackrabbit.test.api.lock.TestAll.suite());
-        suite.addTest(org.apache.jackrabbit.test.api.version.TestAll.suite());
-        //TODO author=Horia Chiorean date=5/23/12 description=Should we include the simple versioning tests - some of the tests are incompatible with full versioning
-        suite.addTest(org.apache.jackrabbit.test.api.version.simple.TestAll.suite());
-        suite.addTest(org.apache.jackrabbit.test.api.observation.TestAll.suite());
-        suite.addTest(org.apache.jackrabbit.test.api.retention.TestAll.suite());
-        suite.addTest(org.apache.jackrabbit.test.api.security.TestAll.suite());
-
-        return suite;
-   }
+        // Create the Jackrabbit test suite, which runs the tests concurrently (reducing the overall clock time) ...
+        return new JCRTestSuite();
+    }
 }
