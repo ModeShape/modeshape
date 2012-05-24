@@ -52,17 +52,10 @@ class AddModeShapeSubsystem extends AbstractAddStepHandler {
     EngineService engine;
 
     SingletonInitialContextFactory scf = new SingletonInitialContextFactory();
-
-    final JBossLifeCycleListener shutdownListener = new JBossLifeCycleListener();
+    final JBossLifeCycleListener shutdownListener = new JBossLifeCycleListener();//todo why defined here and then again inside initializeModeShapeEngine
 
     @Override
-    protected void populateModel( ModelNode operation,
-                                  ModelNode model ) throws OperationFailedException {
-        populate(operation, model);
-    }
-
-    static void populate( ModelNode operation,
-                          ModelNode model ) throws OperationFailedException {
+    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
         for (AttributeDefinition attribute : ModelAttributes.SUBSYSTEM_ATTRIBUTES) {
             attribute.validateAndSet(operation, model);
         }
@@ -89,7 +82,7 @@ class AddModeShapeSubsystem extends AbstractAddStepHandler {
                                             final List<ServiceController<?>> newControllers ) {
         ServiceTarget target = context.getServiceTarget();
 
-        final JBossLifeCycleListener shutdownListener = new JBossLifeCycleListener();
+        final JBossLifeCycleListener shutdownListener = new JBossLifeCycleListener();  //what is right, this or one defined in top?
 
         engine = buildModeShapeEngine(model);
 

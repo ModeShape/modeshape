@@ -22,13 +22,15 @@
 package org.modeshape.jboss.subsystem;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESCRIBE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+
 import java.util.List;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SubsystemRegistration;
+import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
@@ -42,12 +44,20 @@ public class ModeShapeExtension implements Extension {
     private static final int MANAGEMENT_API_MAJOR_VERSION = 1;
     private static final int MANAGEMENT_API_MINOR_VERSION = 2;
 
-    private static final PathElement repositoryPath = PathElement.pathElement(ModelKeys.REPOSITORY);
-    private static final PathElement sequencerPath = PathElement.pathElement(ModelKeys.SEQUENCER);
-    private static final PathElement indexStoragePath = PathElement.pathElement(ModelKeys.INDEX_STORAGE,
-                                                                                ModelKeys.INDEX_STORAGE_NAME);
-    private static final PathElement binaryStoragePath = PathElement.pathElement(ModelKeys.BINARY_STORAGE,
-                                                                                 ModelKeys.BINARY_STORAGE_NAME);
+    private static final String RESOURCE_NAME = ModeShapeExtension.class.getPackage().getName() + ".LocalDescriptions";
+    static final PathElement SUBSYSTEM_PATH = PathElement.pathElement(SUBSYSTEM,SUBSYSTEM_NAME);
+    static final PathElement REPOSITORY_PATH = PathElement.pathElement(ModelKeys.REPOSITORY);
+    static final PathElement SEQUENCER_PATH = PathElement.pathElement(ModelKeys.SEQUENCER);
+    static final PathElement INDEX_STORAGE_PATH = PathElement.pathElement(ModelKeys.INDEX_STORAGE, ModelKeys.INDEX_STORAGE_NAME);
+    static final PathElement BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.BINARY_STORAGE, ModelKeys.BINARY_STORAGE_NAME);
+
+    static StandardResourceDescriptionResolver getResourceDescriptionResolver(final String... keyPrefix) {
+        StringBuilder prefix = new StringBuilder(SUBSYSTEM_NAME);
+        for (String kp : keyPrefix) {
+            prefix.append('.').append(kp);
+        }
+        return new StandardResourceDescriptionResolver(prefix.toString(), RESOURCE_NAME, ModeShapeExtension.class.getClassLoader(), true, false);
+    }
 
     @Override
     public void initialize( ExtensionContext context ) {
@@ -55,46 +65,21 @@ public class ModeShapeExtension implements Extension {
                                                                              MANAGEMENT_API_MAJOR_VERSION,
                                                                              MANAGEMENT_API_MINOR_VERSION);
 
-        // LogManager.setLogListener(new Log4jListener());
-
         registration.registerXMLElementWriter(new ModeShapeSubsystemXMLWriter());
-
         // ModeShape system, with children repositories.
-        final ManagementResourceRegistration modeShapeSubsystem = registration.registerSubsystemModel(ModeShapeSubsystemProviders.SUBSYSTEM);
-        modeShapeSubsystem.registerOperationHandler(ADD,
-                                                    AddModeShapeSubsystem.INSTANCE,
-                                                    ModeShapeSubsystemProviders.SUBSYSTEM_ADD,
-                                                    false);
-        modeShapeSubsystem.registerOperationHandler(DESCRIBE,
-                                                    DescribeModeShapeSubsystem.INSTANCE,
-                                                    ModeShapeSubsystemProviders.SUBSYSTEM_DESCRIBE,
-                                                    false);
-
+        final ManagementResourceRegistration modeShapeSubsystem = registration.registerSubsystemModel(ModeShapeRootResource.INSTANCE);
         // Repository submodel
-        final ManagementResourceRegistration repositorySubmodel = modeShapeSubsystem.registerSubModel(repositoryPath,
-                                                                                                      ModeShapeSubsystemProviders.REPOSITORY);
-        repositorySubmodel.registerOperationHandler(ADD,
-                                                    AddRepository.INSTANCE,
-                                                    ModeShapeSubsystemProviders.REPOSITORY_ADD,
-                                                    false);
-        repositorySubmodel.registerOperationHandler(REMOVE,
-                                                    RemoveRepository.INSTANCE,
-                                                    ModeShapeSubsystemProviders.REPOSITORY_REMOVE,
-                                                    false);
-        RepositoryWriteAttributeHandler.INSTANCE.registerAttributes(repositorySubmodel);
+        final ManagementResourceRegistration repositorySubmodel = modeShapeSubsystem.registerSubModel(ModeShapeRepositoryResource.INSTANCE);
 
         // Sequencer submodel
-        final ManagementResourceRegistration sequencerSubmodel = repositorySubmodel.registerSubModel(sequencerPath,
-                                                                                                     ModeShapeSubsystemProviders.SEQUENCER);
-        sequencerSubmodel.registerOperationHandler(ADD, AddSequencer.INSTANCE, ModeShapeSubsystemProviders.SEQUENCER_ADD, false);
-        sequencerSubmodel.registerOperationHandler(REMOVE,
-                                                   RemoveSequencer.INSTANCE,
-                                                   ModeShapeSubsystemProviders.SEQUENCER_REMOVE,
-                                                   false);
-        SequencerWriteAttributeHandler.INSTANCE.registerAttributes(sequencerSubmodel);
+        final ManagementResourceRegistration sequencerSubmodel = repositorySubmodel.registerSubModel(ModeShapeSequencerResource.INSTANCE);
+
 
         // Index storage submodel
-        final ManagementResourceRegistration indexStorageSubmodel = repositorySubmodel.registerSubModel(indexStoragePath,
+        //todo not migrated to resource definition as current concept is wrong!
+        //final ManagementResourceRegistration indexStorageSubmodel = repositorySubmodel.registerSubModel(ModeShapeIndexStorageResource);
+
+        final ManagementResourceRegistration indexStorageSubmodel = repositorySubmodel.registerSubModel(INDEX_STORAGE_PATH,
                                                                                                         ModeShapeSubsystemProviders.INDEX_STORAGE);
         indexStorageSubmodel.registerOperationHandler(ModelKeys.ADD_RAM_INDEX_STORAGE,
                                                       AddRamIndexStorage.INSTANCE,
@@ -127,7 +112,7 @@ public class ModeShapeExtension implements Extension {
         IndexStorageWriteAttributeHandler.INSTANCE.registerAttributes(indexStorageSubmodel);
 
         // Binary storage submodel
-        final ManagementResourceRegistration binaryStorageSubmodel = repositorySubmodel.registerSubModel(binaryStoragePath,
+        final ManagementResourceRegistration binaryStorageSubmodel = repositorySubmodel.registerSubModel(BINARY_STORAGE_PATH,
                                                                                                          ModeShapeSubsystemProviders.BINARY_STORAGE);
         binaryStorageSubmodel.registerOperationHandler(ModelKeys.ADD_FILE_BINARY_STORAGE,
                                                        AddFileBinaryStorage.INSTANCE,

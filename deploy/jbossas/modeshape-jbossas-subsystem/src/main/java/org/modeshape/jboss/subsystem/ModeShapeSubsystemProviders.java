@@ -32,46 +32,7 @@ import org.jboss.dmr.ModelNode;
  */
 public class ModeShapeSubsystemProviders {
 
-    static final DescriptionProvider SUBSYSTEM = new DescriptionProvider() {
-        @Override
-        public ModelNode getModelDescription( Locale locale ) {
-            return ModeShapeDescriptions.getSubsystemDescription(locale);
-        }
-    };
-    static final DescriptionProvider SUBSYSTEM_ADD = new DescriptionProvider() {
-        @Override
-        public ModelNode getModelDescription( Locale locale ) {
-            return ModeShapeDescriptions.getSubsystemAddDescription(locale);
-        }
-    };
-
-    static final DescriptionProvider SUBSYSTEM_DESCRIBE = new DescriptionProvider() {
-        @Override
-        public ModelNode getModelDescription( Locale locale ) {
-            return ModeShapeDescriptions.getSubsystemDescribeDescription(locale);
-        }
-    };
-
-    static final DescriptionProvider REPOSITORY = new DescriptionProvider() {
-        @Override
-        public ModelNode getModelDescription( Locale locale ) {
-            return ModeShapeDescriptions.getRepositoryDescription(locale);
-        }
-    };
-
-    static final DescriptionProvider REPOSITORY_ADD = new DescriptionProvider() {
-        @Override
-        public ModelNode getModelDescription( Locale locale ) {
-            return ModeShapeDescriptions.getRepositoryAddDescription(locale);
-        }
-    };
-    static final DescriptionProvider REPOSITORY_REMOVE = new DescriptionProvider() {
-        @Override
-        public ModelNode getModelDescription( Locale locale ) {
-            return ModeShapeDescriptions.getRepositoryRemoveDescription(locale);
-        }
-    };
-    static final DescriptionProvider SEQUENCER = new DescriptionProvider() {
+   static final DescriptionProvider SEQUENCER = new DescriptionProvider() {
         @Override
         public ModelNode getModelDescription( Locale locale ) {
             return ModeShapeDescriptions.getSequencerDescription(locale);

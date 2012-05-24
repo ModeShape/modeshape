@@ -3,7 +3,7 @@
     <parent>
         <groupId>org.jboss</groupId>
         <artifactId>jboss-parent</artifactId>
-        <version>8</version>
+        <version>9</version>
         <relativePath></relativePath>
     </parent>
 
@@ -215,7 +215,7 @@
         <modeshape.java.version>1.6</modeshape.java.version>
 
         <joda.time.version>1.6.2</joda.time.version>
-        <junit.version>4.8.2</junit.version>
+        <junit.version>4.10</junit.version>
         <hamcrest.version>1.1</hamcrest.version>
         <mockito.all.version>1.8.4</mockito.all.version>
         <slf4j.api.version>1.6.1</slf4j.api.version>
@@ -238,9 +238,9 @@
         <hibernate.search.jackson-core-asl.version>1.9.2</hibernate.search.jackson-core-asl.version>
         <hibernate.search.paranamer.version>2.3</hibernate.search.paranamer.version>
         <hibernate.search.snappy.version>1.0.1-rc3</hibernate.search.snappy.version>
-        <infinispan.version>5.1.2.FINAL</infinispan.version>
+        <infinispan.version>5.1.4.FINAL</infinispan.version>
         <!--Make sure the jgroups version is the same as the one used by ISPN -->
-        <jgroups.version>3.0.6.Final</jgroups.version>
+        <jgroups.version>3.0.9.Final</jgroups.version>
         <sun.xml.bind.jaxbimpl.version>2.1.12</sun.xml.bind.jaxbimpl.version>
         <jdbc.mysql.version>5.0.7</jdbc.mysql.version>
         <jdbc.derby.version>10.8.1.2</jdbc.derby.version>
@@ -290,15 +290,15 @@
         <jboss.profile.service.spi.version>5.1.0.CR2</jboss.profile.service.spi.version>
         <javax.connector-api.version>1.5</javax.connector-api.version>
         <javax.jta.version>1.1</javax.jta.version>
-        <jbossas-version>7.1.0.Alpha1-SNAPSHOT</jbossas-version>
+        <jbossas-version>7.1.1.Final</jbossas-version>
         <jboss.common.core.version>2.2.17.GA</jboss.common.core.version>
-        <jboss.staxmapper.version>1.0.0.Final</jboss.staxmapper.version>
-        <jboss.dmr.version>1.0.0.Final</jboss.dmr.version>
-        <jboss.msc.version>1.0.0.GA</jboss.msc.version>
-        <jboss.modules.version>1.0.3.GA</jboss.modules.version>
-        <jboss.vfs.version>3.0.1.GA</jboss.vfs.version>
+        <jboss.staxmapper.version>1.1.0.Final</jboss.staxmapper.version>
+        <jboss.dmr.version>1.1.1.Final</jboss.dmr.version>
+        <jboss.msc.version>1.0.2.GA</jboss.msc.version>
+        <jboss.modules.version>1.1.2.GA</jboss.modules.version>
+        <jboss.vfs.version>3.1.0.Final</jboss.vfs.version>
         <!-- If used an explicit dependency (JBoss AS) it must match the version required by ISPN -->
-        <jboss.logging.version>3.1.0.Beta3</jboss.logging.version>
+        <jboss.logging.version>3.1.1.GA</jboss.logging.version>
         <jboss.logging-generator.version>1.0.0.CR1</jboss.logging-generator.version>
         <jboss.logging-spi.version>2.2.0.CR1</jboss.logging-spi.version>
         <saxon.saxonhe.version>9.2.1.5</saxon.saxonhe.version>
@@ -497,10 +497,10 @@
                     </dependency>
                 </dependencies>
                 <configuration>
-                    <includes>
+                    <!--<includes>
                         <include>**/*TestCase.java</include>
                         <include>**/*Test.java</include>
-                    </includes>
+                    </includes>-->
                     <!--
                              excludes> <exclude>**/Abstract*TestCase.java</exclude>
                              <exclude>**/Abstract*Test.java</exclude> </excludes -->
@@ -824,6 +824,16 @@
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-core</artifactId>
                 <version>${infinispan.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.codehaus.woodstox</groupId>
+                        <artifactId>woodstox-core-asl</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.codehaus.woodstox</groupId>
+                        <artifactId>stax2-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <!--
                 JGroups is used for the changes bus, but it's optional. Most of the times though, this will be in the classpath
@@ -1709,6 +1719,13 @@
                 <groupId>org.jboss.as</groupId>
                 <artifactId>jboss-as-controller</artifactId>
                 <version>${jbossas-version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.as</groupId>
+                <artifactId>jboss-as-naming</artifactId>
+                <version>${jbossas-version}</version>
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.jboss</groupId>
@@ -1751,54 +1768,33 @@
                 <version>${picketbox.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.jboss.as</groupId>
-                <artifactId>jboss-as-server</artifactId>
-                <version>${jbossas-version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.as</groupId>
-                <artifactId>jboss-as-connector</artifactId>
-                <version>${jbossas-version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.as</groupId>
-                <artifactId>jboss-as-security</artifactId>
-                <version>${jbossas-version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.as</groupId>
-                <artifactId>jboss-as-controller-client</artifactId>
-                <version>${jbossas-version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.as</groupId>
-                <artifactId>jboss-as-cli</artifactId>
-                <version>${jbossas-version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.jboss.logging</groupId>
                 <artifactId>jboss-logging</artifactId>
                 <version>${jboss.logging.version}</version>
             </dependency>
-            <dependency>
+            <dependency><!-- todo this is no longer used -->
                 <groupId>org.jboss.logging</groupId>
                 <artifactId>jboss-logging-generator</artifactId>
                 <version>${jboss.logging-generator.version}</version>
+                <scope>provided</scope>
             </dependency>
-            <dependency>
+            <dependency><!-- todo this is no longer used -->
                 <groupId>org.jboss.logging</groupId>
                 <artifactId>jboss-logging-spi</artifactId>
                 <version>${jboss.logging-spi.version}</version>
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.jboss.as</groupId>
                 <artifactId>jboss-as-clustering-jgroups</artifactId>
                 <version>${jbossas-version}</version>
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.jboss.as</groupId>
                 <artifactId>jboss-as-subsystem-test</artifactId>
                 <version>${jbossas-version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>net.sourceforge.saxon</groupId>
