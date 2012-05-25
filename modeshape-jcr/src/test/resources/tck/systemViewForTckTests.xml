@@ -153,6 +153,11 @@ Line 2</sv:value>
         <sv:value>&lt;foo&amp;foo&gt;</sv:value>
       </sv:property>
     </sv:node>
+    <sv:node sv:name="lockingWorkarea">
+      <sv:property sv:name="jcr:primaryType" sv:type="Name">
+        <sv:value>nt:unstructured</sv:value>
+      </sv:property>
+    </sv:node>
     <sv:node sv:name="someQueryableNodeA">
       <sv:property sv:name="jcr:primaryType" sv:type="Name">
         <sv:value>modetest:queryable</sv:value>
