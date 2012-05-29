@@ -914,7 +914,7 @@ public class Wsdl11Reader extends WsdlReader<javax.wsdl.Definition> {
     protected void processUnknownExtensionElement( ExtensibilityElement element,
                                                    Node parentNode ) throws Exception {
         // ignore for now
-        logger.debug("Unknown extension element {}", element);
+        logger.debug("Unknown extension element: {0}", element);
     }
 
     protected void setReferenceable( Node node,

@@ -153,7 +153,7 @@ public class MSOfficeMetadataSequencer extends Sequencer {
             return true;
         }
 
-        logger.warn("Unknown mimetype: {} for microsoft office", mimeType);
+        getLogger().warn("Unknown mimetype: {0} for microsoft office", mimeType);
         return false;
     }
 

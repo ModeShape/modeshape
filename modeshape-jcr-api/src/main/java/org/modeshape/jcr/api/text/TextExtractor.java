@@ -33,7 +33,7 @@ import java.io.InputStream;
  */
 public abstract class TextExtractor {
 
-    protected Logger logger;
+    private Logger logger;
 
     /**
      * Determine if this extractor is capable of processing content with the supplied MIME type.
@@ -61,11 +61,15 @@ public abstract class TextExtractor {
                       TextExtractorOutput output,
                       Context context ) throws IOException;
 
-    protected void setLogger(Logger logger) {
+    protected final void setLogger(Logger logger) {
         if (logger ==  null) {
             throw new IllegalArgumentException("Logger cannot be null");
         }
         this.logger = logger;
+    }
+
+    protected final Logger getLogger() {
+        return logger;
     }
 
     public interface Context {

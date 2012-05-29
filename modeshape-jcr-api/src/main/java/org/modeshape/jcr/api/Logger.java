@@ -33,7 +33,13 @@ public interface Logger {
 
     /**
      * Log a message at the DEBUG level according to the specified format and (optional) parameters. The message should contain a
-     * pair of empty curly braces for each of the parameter, which should be passed in the correct order.
+     * pair of empty curly braces for each of the parameter, which should be passed in the correct order. The pattern consists of
+     * zero or more keys of the form <code>{n}</code>, where <code>n</code> is an integer starting at 0. Therefore, the first
+     * parameter replaces all occurrences of "{0}", the second parameter replaces all occurrences of "{1}", etc.
+     * <p>
+     * If any parameter is null, the corresponding key is replaced with the string "null". Therefore, consider using an empty
+     * string when keys are to be removed altogether.
+     * </p>
      *
      * @param message the message string
      * @param params the parameter values that are to replace the variables in the format string
@@ -55,7 +61,13 @@ public interface Logger {
 
     /**
      * Log a message at the ERROR level according to the specified format and (optional) parameters. The message should contain a
-     * pair of empty curly braces for each of the parameter, which should be passed in the correct order.
+     * pair of empty curly braces for each of the parameter, which should be passed in the correct order. The pattern consists of
+     * zero or more keys of the form <code>{n}</code>, where <code>n</code> is an integer starting at 0. Therefore, the first
+     * parameter replaces all occurrences of "{0}", the second parameter replaces all occurrences of "{1}", etc.
+     * <p>
+     * If any parameter is null, the corresponding key is replaced with the string "null". Therefore, consider using an empty
+     * string when keys are to be removed altogether.
+     * </p>
      *
      * @param message the message string
      * @param params the parameter values that are to replace the variables in the format string
@@ -77,7 +89,13 @@ public interface Logger {
 
     /**
      * Log a message at the INFO level according to the specified format and (optional) parameters. The message should contain a
-     * pair of empty curly braces for each of the parameter, which should be passed in the correct order.
+     * pair of empty curly braces for each of the parameter, which should be passed in the correct order. The pattern consists of
+     * zero or more keys of the form <code>{n}</code>, where <code>n</code> is an integer starting at 0. Therefore, the first
+     * parameter replaces all occurrences of "{0}", the second parameter replaces all occurrences of "{1}", etc.
+     * <p>
+     * If any parameter is null, the corresponding key is replaced with the string "null". Therefore, consider using an empty
+     * string when keys are to be removed altogether.
+     * </p>
      *
      * @param message the message string
      * @param params the parameter values that are to replace the variables in the format string
@@ -99,7 +117,13 @@ public interface Logger {
 
     /**
      * Log a message at the TRACE level according to the specified format and (optional) parameters. The message should contain a
-     * pair of empty curly braces for each of the parameter, which should be passed in the correct order.
+     * pair of empty curly braces for each of the parameter, which should be passed in the correct order. The pattern consists of
+     * zero or more keys of the form <code>{n}</code>, where <code>n</code> is an integer starting at 0. Therefore, the first
+     * parameter replaces all occurrences of "{0}", the second parameter replaces all occurrences of "{1}", etc.
+     * <p>
+     * If any parameter is null, the corresponding key is replaced with the string "null". Therefore, consider using an empty
+     * string when keys are to be removed altogether.
+     * </p>
      *
      * @param message the message string
      * @param params the parameter values that are to replace the variables in the format string
@@ -121,7 +145,13 @@ public interface Logger {
 
     /**
      * Log a message at the WARNING level according to the specified format and (optional) parameters. The message should contain
-     * a pair of empty curly braces for each of the parameter, which should be passed in the correct order.
+     * a pair of empty curly braces for each of the parameter, which should be passed in the correct order. The pattern consists of
+     * zero or more keys of the form <code>{n}</code>, where <code>n</code> is an integer starting at 0. Therefore, the first
+     * parameter replaces all occurrences of "{0}", the second parameter replaces all occurrences of "{1}", etc.
+     * <p>
+     * If any parameter is null, the corresponding key is replaced with the string "null". Therefore, consider using an empty
+     * string when keys are to be removed altogether.
+     * </p>
      *
      * @param message the message string
      * @param params the parameter values that are to replace the variables in the format string

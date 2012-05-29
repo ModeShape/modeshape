@@ -57,7 +57,7 @@ public class JavaFileSequencer extends Sequencer {
             sourceFileRecorder.record(context, outputNode, javaMetadata);
             return true;
         } catch (Exception ex) {
-            logger.error("Error sequencing file", ex);
+            getLogger().error("Error sequencing file", ex);
             return false;
         }
     }

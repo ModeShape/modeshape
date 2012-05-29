@@ -80,7 +80,7 @@ public class ImageMetadataSequencer extends Sequencer {
 
         // Process the image stream and extract the metadata ...
         if (!metadata.check()) {
-            logger.info("Unknown format detected. Skipping sequencing");
+            getLogger().info("Unknown format detected. Skipping sequencing");
             return false;
         }
         Node imageNode = getImageMetadataNode(outputNode);

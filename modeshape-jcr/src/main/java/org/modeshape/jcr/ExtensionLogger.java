@@ -64,29 +64,35 @@ public final class ExtensionLogger implements org.modeshape.jcr.api.Logger {
     @Override
     public void error( String message,
                        Object... params ) {
-        logger.error(new I18n(message), params);
+        if (logger.isErrorEnabled()) {
+            logger.error(new I18n(message), params);
+        }
     }
 
     @Override
     public void error( Throwable t,
                        String message,
                        Object... params ) {
-        logger.error(t, new I18n(message), params);
+        if (logger.isErrorEnabled()) {
+            logger.error(t, new I18n(message), params);
+        }
     }
 
     @Override
     public void info( String message,
                       Object... params ) {
-        logger.info(new I18n(message), params);
-
+        if (logger.isInfoEnabled()) {
+            logger.info(new I18n(message), params);
+        }
     }
 
     @Override
     public void info( Throwable t,
                       String message,
                       Object... params ) {
-        logger.info(t, new I18n(message), params);
-
+        if (logger.isInfoEnabled()) {
+            logger.info(t, new I18n(message), params);
+        }
     }
 
     @Override
@@ -105,15 +111,18 @@ public final class ExtensionLogger implements org.modeshape.jcr.api.Logger {
     @Override
     public void warn( String message,
                       Object... params ) {
-        logger.warn(new I18n(message), params);
-
+        if (logger.isWarnEnabled()) {
+            logger.warn(new I18n(message), params);
+        }
     }
 
     @Override
     public void warn( Throwable t,
                       String message,
                       Object... params ) {
-        logger.warn(t, new I18n(message), params);
+        if (logger.isWarnEnabled()) {
+            logger.warn(t, new I18n(message), params);
+        }
     }
 
     /**

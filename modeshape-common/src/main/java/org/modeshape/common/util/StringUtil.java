@@ -96,8 +96,8 @@ public class StringUtil {
 
     /**
      * Create a string by substituting the parameters into all key occurrences in the supplied format. The pattern consists of
-     * zero or more keys of the form <code>{n}</code>, where <code>n</code> is an integer starting at 1. Therefore, the first
-     * parameter replaces all occurrences of "{1}", the second parameter replaces all occurrences of "{2}", etc.
+     * zero or more keys of the form <code>{n}</code>, where <code>n</code> is an integer starting at 0. Therefore, the first
+     * parameter replaces all occurrences of "{0}", the second parameter replaces all occurrences of "{1}", etc.
      * <p>
      * If any parameter is null, the corresponding key is replaced with the string "null". Therefore, consider using an empty
      * string when keys are to be removed altogether.

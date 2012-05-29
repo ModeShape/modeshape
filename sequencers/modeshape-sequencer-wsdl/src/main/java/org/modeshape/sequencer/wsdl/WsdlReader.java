@@ -60,7 +60,7 @@ public abstract class WsdlReader<T> extends AbstractResolvingReader {
     @Override
     public void read( InputSource source,
                       Node outputNode ) throws Exception {
-        logger.debug("Processing XSD '{}'", outputNode.getName());
+        logger.debug("Processing XSD '{0}'", outputNode.getName());
         Reader reader = null;
         InputStream stream = null;
         try {

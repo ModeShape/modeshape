@@ -51,12 +51,12 @@ import org.modeshape.jcr.api.nodetype.NodeTypeManager;
  */
 public abstract class Sequencer {
 
+    private final UUID uuid = UUID.randomUUID();
+
     /**
      * The logger instance, set via reflection
      */
-    protected Logger logger;
-
-    private final UUID uuid = UUID.randomUUID();
+    private Logger logger;
     private String name;
     private String repositoryName;
     private Object[] pathExpressions;
@@ -236,6 +236,10 @@ public abstract class Sequencer {
             throw new IllegalArgumentException("The stream to the given cnd file is null");
         }
         nodeTypeManager.registerNodeTypes(cndStream, allowUpdate);
+    }
+
+    protected final Logger getLogger() {
+        return logger;
     }
 
     /**

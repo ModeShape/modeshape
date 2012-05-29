@@ -54,7 +54,7 @@ public abstract class Logger {
      * @return the current locale used for logging, or null if the system locale is used
      * @see #setLoggingLocale(Locale)
      */
-    public Locale getLoggingLocale() {
+    public static Locale getLoggingLocale() {
         return LOGGING_LOCALE.get();
     }
 
