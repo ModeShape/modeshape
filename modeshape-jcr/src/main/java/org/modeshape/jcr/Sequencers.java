@@ -44,7 +44,7 @@ import org.infinispan.util.ReflectionUtil;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.HashCode;
-import org.modeshape.common.util.Logger;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.RepositoryConfiguration.Component;
 import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.api.monitor.ValueMetric;
@@ -129,6 +129,9 @@ public class Sequencers implements ChangeSetListener {
                     Sequencer sequencer = component.createInstance(cl);
                     // Set the repository name field ...
                     ReflectionUtil.setValue(sequencer, "repositoryName", repoName);
+
+                    //Set the logger instance
+                    ReflectionUtil.setValue(sequencer, "logger", ExtensionLogger.getLogger(sequencer.getClass()));
                     // We'll initialize it later in #intialize() ...
 
                     // For each sequencer, figure out which workspaces apply ...

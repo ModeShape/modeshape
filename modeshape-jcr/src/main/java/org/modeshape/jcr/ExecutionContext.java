@@ -38,7 +38,7 @@ import org.modeshape.common.component.StandardClassLoaderFactory;
 import org.modeshape.common.component.ThreadPoolFactory;
 import org.modeshape.common.component.ThreadPools;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.common.util.Logger;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.SecureHash;
 import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.mimetype.ExtensionBasedMimeTypeDetector;

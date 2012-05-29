@@ -29,8 +29,6 @@ import org.modeshape.common.util.SizeMeasuringInputStream;
 import org.modeshape.common.util.SizeMeasuringReader;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.modeshape.sequencer.sramp.AbstractResolvingReader;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.xml.sax.InputSource;
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,8 +45,6 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 @NotThreadSafe
 public abstract class WsdlReader<T> extends AbstractResolvingReader {
-
-    protected final Logger logger = LoggerFactory.getLogger(getClass());
 
     /**
      * the URI of the document being read; never null or empty
@@ -88,14 +84,14 @@ public abstract class WsdlReader<T> extends AbstractResolvingReader {
                 try {
                     reader.close();
                 } catch (IOException e) {
-                    logger.warn("Cannot close reader ", e);
+                    logger.debug("Cannot close reader ", e);
                 }
             }
             if (stream != null) {
                 try {
                     stream.close();
                 } catch (IOException e) {
-                    logger.warn("Cannot close stream ", e);
+                    logger.debug("Cannot close stream ", e);
                 }
             }
         }

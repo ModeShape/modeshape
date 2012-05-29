@@ -36,7 +36,7 @@ import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.ClassUtil;
-import org.modeshape.common.util.Logger;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.api.JaasCredentials;

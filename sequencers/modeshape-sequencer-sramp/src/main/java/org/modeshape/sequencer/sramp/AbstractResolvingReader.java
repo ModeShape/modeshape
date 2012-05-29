@@ -31,6 +31,7 @@ import java.util.List;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.xml.sax.InputSource;
@@ -46,6 +47,7 @@ public abstract class AbstractResolvingReader {
     private List<ResolveFuture> resolveFutures = new LinkedList<ResolveFuture>();
 
     protected final Sequencer.Context context;
+    protected final Logger logger = Logger.getLogger(getClass());
 
     public AbstractResolvingReader( Sequencer.Context context,
                                     SymbolSpaceResolvers resolvers ) {

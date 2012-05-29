@@ -22,32 +22,56 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-/**
- * The abstract class for the LogFactory, which is called to create a specific implementation of the @link Logger.
- */
-
-package org.modeshape.common.util.log;
+package org.modeshape.common.logging;
 
 import org.modeshape.common.util.ClassUtil;
-import org.modeshape.common.util.Logger;
+import org.modeshape.common.logging.jdk.JdkLoggerFactory;
+import org.modeshape.common.logging.log4j.Log4jLoggerFactory;
+import org.modeshape.common.logging.slf4j.SLF4JLoggerFactory;
 
+/**
+ * The abstract class for the LogFactory, which is called to create a specific implementation of the {@link Logger}.
+ */
 public abstract class LogFactory {
 
     private static LogFactory LOGFACTORY;
 
     static {
-        try {
-            ClassUtil.loadClassStrict("org.slf4j.LoggerFactory");
-            ClassUtil.loadClassStrict("org.slf4j.Logger");
+        if (isSLF4JAvailable()) {
             LOGFACTORY = new SLF4JLoggerFactory();
-
-        } catch (ClassNotFoundException cnfe) {
+        }
+        else if (isLog4jAvailable()) {
+            LOGFACTORY = new Log4jLoggerFactory();
+        }
+        else {
             LOGFACTORY = new JdkLoggerFactory();
         }
-
     }
 
-    public static LogFactory getLogFactory() {
+    private static boolean isSLF4JAvailable() {
+        try {
+            //check if the api is in the classpath
+            ClassUtil.loadClassStrict("org.slf4j.LoggerFactory");
+            ClassUtil.loadClassStrict("org.slf4j.Logger");
+
+            //check if there's at least one implementation
+            ClassUtil.loadClassStrict("org.slf4j.impl.StaticLoggerBinder");
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
+
+    private static boolean isLog4jAvailable() {
+        try {
+            ClassUtil.loadClassStrict("org.apache.log4j.Logger");
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
+
+    static LogFactory getLogFactory() {
         return LOGFACTORY;
     }
 
@@ -57,7 +81,9 @@ public abstract class LogFactory {
      * @param clazz the returned logger will be named after clazz
      * @return logger
      */
-    public abstract Logger getLogger( Class<?> clazz );
+    Logger getLogger( Class<?> clazz ) {
+        return Logger.getLogger(clazz.getName());
+    }
 
     /**
      * Return a logger named according to the name parameter.
@@ -65,6 +91,6 @@ public abstract class LogFactory {
      * @param name The name of the logger.
      * @return logger
      */
-    public abstract Logger getLogger( String name );
+    protected abstract Logger getLogger( String name );
 
 }

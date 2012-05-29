@@ -71,8 +71,6 @@ import org.modeshape.sequencer.msoffice.powerpoint.PowerpointMetadata;
 import org.modeshape.sequencer.msoffice.powerpoint.SlideMetadata;
 import org.modeshape.sequencer.msoffice.word.WordMetadata;
 import org.modeshape.sequencer.msoffice.word.WordMetadataReader;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A sequencer that processes the content of an MS Office document, extracts the metadata for the file, and then writes that
@@ -116,8 +114,6 @@ import org.slf4j.LoggerFactory;
  */
 public class MSOfficeMetadataSequencer extends Sequencer {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(MSOfficeMetadataSequencer.class);
-
     @Override
     public void initialize( NamespaceRegistry registry,
                             NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
@@ -157,7 +153,7 @@ public class MSOfficeMetadataSequencer extends Sequencer {
             return true;
         }
 
-        LOGGER.warn("Unknown mimetype: {} for microsoft office", mimeType);
+        logger.warn("Unknown mimetype: {} for microsoft office", mimeType);
         return false;
     }
 

@@ -62,7 +62,7 @@ import javax.jcr.version.VersionException;
 import org.infinispan.schematic.SchematicEntry;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.common.util.Logger;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.AbstractJcrNode.Type;
 import org.modeshape.jcr.JcrContentHandler.EnclosingSAXException;
 import org.modeshape.jcr.JcrNamespaceRegistry.Behavior;

@@ -66,7 +66,7 @@ public class SecureHashTest {
         assertSecureHashStreamWorks(algorithm, "/org/modeshape/common/i18n/I18nTest$TestI18n_fr.properties");
         assertSecureHashStreamWorks(algorithm, "/org/modeshape/common/i18n/MockI18n.properties");
         assertSecureHashStreamWorks(algorithm, "/org/modeshape/common/util/additionalmime.types");
-        assertSecureHashStreamWorks(algorithm, "/org/modeshape/common/util/LoggerTest.properties");
+        assertSecureHashStreamWorks(algorithm, "/org/modeshape/common/logging/LoggerTest.properties");
         assertSecureHashStreamWorks(algorithm, "/log4j.properties");
         assertSecureHashStreamWorks(algorithm, "/maven-metadata-repository.jboss.org.xml");
     }

@@ -29,8 +29,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import org.modeshape.common.math.FloatOperations;
 import org.modeshape.common.math.IntegerOperations;
-import org.modeshape.common.statistic.DetailedStatistics;
-import org.modeshape.common.util.Logger;
+import org.modeshape.common.logging.Logger;
 import org.junit.Test;
 
 public class DetailedStatisticsTest {

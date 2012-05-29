@@ -34,6 +34,7 @@ import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
+import org.modeshape.jcr.api.Logger;
 import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 
@@ -49,6 +50,11 @@ import org.modeshape.jcr.api.nodetype.NodeTypeManager;
  * </p>
  */
 public abstract class Sequencer {
+
+    /**
+     * The logger instance, set via reflection
+     */
+    protected Logger logger;
 
     private final UUID uuid = UUID.randomUUID();
     private String name;

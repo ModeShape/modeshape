@@ -52,7 +52,7 @@ import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.ImmediateFuture;
-import org.modeshape.common.util.Logger;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.NamedThreadFactory;
 import org.modeshape.jcr.api.Repositories;
 

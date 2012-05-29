@@ -4,7 +4,6 @@
         <groupId>org.jboss</groupId>
         <artifactId>jboss-parent</artifactId>
         <version>8</version>
-        <relativePath></relativePath>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -947,15 +946,12 @@
                 <version>${byteman.version}</version>
                 <scope>test</scope>
             </dependency>
-            <!--
-                   Logging (require SLF4J API for compiling, but use Log4J and its
-                   SLF4J binding for testing)
-               -->
+            <!-- Logging (all of the libraries should be optional, as the logging implementation falls back to JUL if nothig is found -->
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
                 <version>${slf4j.api.version}</version>
-                <scope>compile</scope>
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -967,7 +963,16 @@
                 <groupId>log4j</groupId>
                 <artifactId>log4j</artifactId>
                 <version>${log4j.version}</version>
-                <scope>test</scope>
+                <scope>provided</scope>
+            </dependency>
+            <!--
+                Demo module
+            -->
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>${logback.version}</version>
+                <scope>provided</scope>
             </dependency>
             <!-- Java Content Repository API -->
             <dependency>
@@ -1820,16 +1825,6 @@
                         <artifactId>jaxb-api</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-
-            <!--
-                Demo module
-            -->
-            <dependency>
-                <groupId>ch.qos.logback</groupId>
-                <artifactId>logback-classic</artifactId>
-                <version>${logback.version}</version>
-                <scope>runtime</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

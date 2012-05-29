@@ -44,7 +44,7 @@ import org.infinispan.test.fwk.TestCacheManagerFactory;
 import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.junit.After;
 import org.junit.Before;
-import org.modeshape.common.util.Logger;
+import org.modeshape.common.logging.Logger;
 
 /**
  * An abstract base class for unit tests that require an testable SchematicDb instance.

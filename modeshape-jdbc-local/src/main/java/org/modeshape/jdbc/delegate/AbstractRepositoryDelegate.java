@@ -29,7 +29,7 @@ import java.util.Properties;
 import java.util.Set;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
-import org.modeshape.common.util.Logger;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.jdbc.DriverInfo;
 import org.modeshape.jdbc.JcrConnection;
 import org.modeshape.jdbc.JdbcLocalI18n;

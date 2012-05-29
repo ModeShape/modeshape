@@ -41,7 +41,7 @@ import javax.jcr.RepositoryException;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.IoUtil;
-import org.modeshape.common.util.Logger;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.SecureHash;
 import org.modeshape.common.util.SecureHash.Algorithm;
 import org.modeshape.common.util.SecureHash.HashingInputStream;

@@ -25,7 +25,7 @@ package org.modeshape.jcr.value.binary;
 
 import java.util.HashSet;
 import java.util.Set;
-import org.modeshape.common.util.Logger;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.cache.change.BinaryValueUnused;
 import org.modeshape.jcr.cache.change.Change;

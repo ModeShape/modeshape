@@ -248,7 +248,7 @@ public class Wsdl11Reader extends WsdlReader<javax.wsdl.Definition> {
 
     protected boolean processXsdAnnotation( Element element,
                                             Node parentNode ) {
-        logger.warn("Ignoring xsd annotation");
+        logger.debug("Ignoring xsd annotation");
         String localName = element.getLocalName();
         // Currently ignoring the annotation
         return XsdLexicon.ANNOTATION.equals(localName);
@@ -914,7 +914,7 @@ public class Wsdl11Reader extends WsdlReader<javax.wsdl.Definition> {
     protected void processUnknownExtensionElement( ExtensibilityElement element,
                                                    Node parentNode ) throws Exception {
         // ignore for now
-        logger.warn("Unknown extension element {}", element);
+        logger.debug("Unknown extension element {}", element);
     }
 
     protected void setReferenceable( Node node,

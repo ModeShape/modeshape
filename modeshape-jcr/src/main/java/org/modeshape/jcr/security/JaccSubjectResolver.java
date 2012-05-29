@@ -25,7 +25,7 @@ package org.modeshape.jcr.security;
 
 import javax.security.auth.Subject;
 import javax.security.jacc.PolicyContext;
-import org.modeshape.common.util.Logger;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.security.JaasProvider.SubjectResolver;
 
 /**

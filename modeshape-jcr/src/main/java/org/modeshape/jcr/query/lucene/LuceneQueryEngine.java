@@ -36,7 +36,7 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.util.Version;
 import org.hibernate.search.SearchFactory;
 import org.hibernate.search.engine.spi.SearchFactoryImplementor;
-import org.modeshape.common.util.Logger;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.RepositoryCache;

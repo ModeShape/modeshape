@@ -151,10 +151,6 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
         </dependency>
-        <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-        </dependency>
         <!--
           Apache JCR API unit tests (for any JCR implementation), which is a subset of the official TCK
         -->

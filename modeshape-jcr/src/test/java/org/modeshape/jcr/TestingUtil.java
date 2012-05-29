@@ -31,7 +31,7 @@ import javax.jcr.Repository;
 import javax.transaction.TransactionManager;
 import org.infinispan.Cache;
 import org.modeshape.common.util.FileUtil;
-import org.modeshape.common.util.Logger;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.JcrEngine.State;
 import org.modeshape.jcr.value.binary.TransientBinaryStore;
 

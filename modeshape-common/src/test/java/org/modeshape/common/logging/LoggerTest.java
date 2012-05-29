@@ -22,7 +22,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.modeshape.common.util;
+package org.modeshape.common.logging;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
@@ -47,9 +47,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * Test the {@link Logger} class, ensuring that it uses Log4J appropriately. The {@link Logger} class uses the SLF4J generalized
+ * Test the {@link org.modeshape.common.logging.Logger} class, ensuring that it uses Log4J appropriately. The {@link org.modeshape.common.logging.Logger} class uses the SLF4J generalized
  * logging framework, which can sit on top of multiple logging frameworks, including Log4J. Therefore, this test assumes that
- * SLF4J works correctly for all logging frameworks, then the {@link Logger} class can be tested by using it and checking the
+ * SLF4J works correctly for all logging frameworks, then the {@link org.modeshape.common.logging.Logger} class can be tested by using it and checking the
  * resulting Log4J output.
  * <p>
  * To ensure that the Log4J configuration used in the remaining tests (in <code>src/test/resources/log4j.properties</code>)
@@ -394,7 +394,7 @@ public class LoggerTest {
 
     /**
      * A special Log4J Appender that records log messages and whose content can be
-     * {@link #removeFirst(org.modeshape.common.util.Logger.Level, String, Class) validated} to ensure that the log contains
+     * {@link #removeFirst(org.modeshape.common.logging.Logger.Level, String, Class) validated} to ensure that the log contains
      * messages in the proper order and with the proper content.
      */
     public class LogRecorder extends WriterAppender {

@@ -27,7 +27,7 @@ import java.io.Serializable;
 import java.util.Iterator;
 import org.modeshape.common.collection.Problem.Status;
 import org.modeshape.common.i18n.I18n;
-import org.modeshape.common.util.Logger;
+import org.modeshape.common.logging.Logger;
 
 /**
  * An interface for a collection of {@link Problem} objects, with multiple overloaded methods for adding errors, warnings, and

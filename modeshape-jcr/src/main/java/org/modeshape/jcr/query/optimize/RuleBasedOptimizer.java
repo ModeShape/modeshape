@@ -26,7 +26,7 @@ package org.modeshape.jcr.query.optimize;
 import java.util.LinkedList;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.Problems;
-import org.modeshape.common.util.Logger;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.plan.PlanHints;
 import org.modeshape.jcr.query.plan.PlanNode;

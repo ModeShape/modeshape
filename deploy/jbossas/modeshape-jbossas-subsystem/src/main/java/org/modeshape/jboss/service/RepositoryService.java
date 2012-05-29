@@ -41,7 +41,7 @@ import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.jgroups.Channel;
 import org.modeshape.common.collection.Problems;
-import org.modeshape.common.util.Logger;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.jboss.subsystem.MappedAttributeDefinition;
 import org.modeshape.jcr.ConfigurationException;
 import org.modeshape.jcr.Environment;

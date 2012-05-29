@@ -33,7 +33,7 @@ import javax.jcr.Repository;
 import javax.naming.Context;
 import javax.naming.NamingException;
 import org.modeshape.common.collection.Collections;
-import org.modeshape.common.util.Logger;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.jdbc.delegate.ConnectionInfo;
 import org.modeshape.jdbc.delegate.LocalRepositoryDelegate;
 import org.modeshape.jdbc.delegate.RepositoryDelegate;
