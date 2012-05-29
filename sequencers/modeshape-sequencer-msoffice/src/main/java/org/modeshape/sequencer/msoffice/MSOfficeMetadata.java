@@ -28,15 +28,14 @@ import org.apache.poi.hpsf.PropertySetFactory;
 import org.apache.poi.hpsf.SummaryInformation;
 import org.apache.poi.poifs.eventfilesystem.POIFSReaderEvent;
 import org.apache.poi.poifs.eventfilesystem.POIFSReaderListener;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.modeshape.common.logging.Logger;
 
 /**
  * Metadata about an Microsoft Office file.
  */
 public class MSOfficeMetadata implements POIFSReaderListener {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(MSOfficeMetadata.class);
+    private static final Logger LOGGER = Logger.getLogger(MSOfficeMetadata.class);
 
     private String title;
     private String subject;

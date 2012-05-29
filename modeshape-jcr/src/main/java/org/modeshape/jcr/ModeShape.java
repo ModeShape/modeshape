@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 import org.modeshape.common.collection.UnmodifiableProperties;
-import org.modeshape.common.util.Logger;
+import org.modeshape.common.logging.Logger;
 
 /**
  * Information about ModeShape.

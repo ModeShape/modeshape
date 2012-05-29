@@ -32,7 +32,7 @@ import org.apache.poi.hwpf.HWPFDocument;
 import org.apache.poi.hwpf.model.StyleSheet;
 import org.apache.poi.hwpf.usermodel.Paragraph;
 import org.apache.poi.hwpf.usermodel.Range;
-import org.modeshape.common.util.Logger;
+import org.modeshape.common.logging.Logger;
 
 /**
  * Infers table of contents from Word document by reading all paragraphs with style <code>Heading*</code>. This is analogous to

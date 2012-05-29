@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import org.modeshape.common.annotation.Immutable;
-import org.modeshape.common.util.Logger;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.RepositoryConfiguration.Component;
 import org.modeshape.jcr.api.text.TextExtractor;
 import org.modeshape.jcr.api.text.TextExtractorOutput;
@@ -38,7 +38,7 @@ import org.modeshape.jcr.api.text.TextExtractorOutput;
  * Facility for managing {@link TextExtractor} instances.
  */
 @Immutable
-public final class TextExtractors implements TextExtractor {
+public final class TextExtractors extends TextExtractor {
 
     public static final String DEFAULT_MIME_TYPE = "application/octet-stream";
 
@@ -56,6 +56,7 @@ public final class TextExtractors implements TextExtractor {
                 ClassLoader cl = context.getClassLoader(component.getClasspath());
                 if (cl == null) cl = defaultClassLoader;
                 TextExtractor extractor = component.createInstance(cl);
+                setLogger(ExtensionLogger.getLogger(extractor.getClass()));
                 this.extractors.add(extractor);
             } catch (Throwable t) {
                 String desc = component.getName();

@@ -21,23 +21,18 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.common.util.log;
+package org.modeshape.common.logging.jdk;
 
-import org.modeshape.common.util.Logger;
+import org.modeshape.common.logging.Logger;
+import org.modeshape.common.logging.LogFactory;
 
 /**
- * Factory used to create the {@link Logger} implementation that uses the SLF4J logging framework.
+ * Factory used to create the {@link Logger} implementation that uses the JDK logging framework.
  */
-public final class SLF4JLoggerFactory extends LogFactory {
+public final class JdkLoggerFactory extends LogFactory {
 
     @Override
-    public Logger getLogger( Class<?> clazz ) {
-        return getLogger(clazz.getName());
+    protected Logger getLogger( String name ) {
+        return new JdkLoggerImpl(name);
     }
-
-    @Override
-    public Logger getLogger( String name ) {
-        return new SLF4JLoggerImpl(name);
-    }
-
 }

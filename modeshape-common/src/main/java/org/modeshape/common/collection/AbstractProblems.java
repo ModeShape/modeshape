@@ -29,8 +29,8 @@ import java.util.Iterator;
 import java.util.List;
 import org.modeshape.common.collection.Problem.Status;
 import org.modeshape.common.i18n.I18n;
-import org.modeshape.common.util.Logger;
-import org.modeshape.common.util.Logger.Level;
+import org.modeshape.common.logging.Logger;
+import org.modeshape.common.logging.Logger.Level;
 
 /**
  * A list of problems for some execution context. The problems will be {@link #iterator() returned} in the order in which they
@@ -321,7 +321,7 @@ public abstract class AbstractProblems implements Problems {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.common.collection.Problems#writeTo(org.modeshape.common.util.Logger)
+     * @see org.modeshape.common.collection.Problems#writeTo(org.modeshape.common.logging.Logger)
      */
     @Override
     public void writeTo( Logger logger ) {
@@ -336,7 +336,7 @@ public abstract class AbstractProblems implements Problems {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.common.collection.Problems#writeTo(org.modeshape.common.util.Logger,
+     * @see org.modeshape.common.collection.Problems#writeTo(org.modeshape.common.logging.Logger,
      *      org.modeshape.common.collection.Problem.Status,org.modeshape.common.collection.Problem.Status[])
      */
     @Override

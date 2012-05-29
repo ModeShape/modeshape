@@ -55,7 +55,7 @@ import org.modeshape.common.collection.HashMultimap;
 import org.modeshape.common.collection.Multimap;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.common.util.Logger;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.api.query.qom.QueryCommand;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;

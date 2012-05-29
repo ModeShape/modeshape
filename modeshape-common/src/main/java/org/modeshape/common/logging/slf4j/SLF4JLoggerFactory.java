@@ -4,13 +4,13 @@
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
  * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors. 
+ * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- *
+ * 
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -21,33 +21,19 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
+package org.modeshape.common.logging.slf4j;
 
-package org.modeshape.common.util;
+import org.modeshape.common.logging.Logger;
+import org.modeshape.common.logging.LogFactory;
 
-import org.modeshape.common.i18n.MockI18n;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+/**
+ * Factory used to create the {@link Logger} implementation that uses the SLF4J logging framework.
+ */
+public final class SLF4JLoggerFactory extends LogFactory {
 
-public class LogContextTest {
-
-    private Logger logger;
-
-    @Before
-    public void beforeEach() {
-        logger = Logger.getLogger(LoggerTest.class);
-    }
-
-    @After
-    public void afterEach() {
-        LogContext.clear();
-    }
-
-    @Test
-    public void shouldAcceptValidKeys() {
-        LogContext.set("username", "jsmith");
-        logger.info(MockI18n.passthrough, "tracking activity for username");
-        logger.info(MockI18n.passthrough, "A second log message");
+    @Override
+    protected Logger getLogger( String name ) {
+        return new SLF4JLoggerImpl(name);
     }
 
 }

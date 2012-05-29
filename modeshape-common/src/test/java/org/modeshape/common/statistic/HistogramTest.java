@@ -34,9 +34,8 @@ import java.util.Random;
 import org.modeshape.common.i18n.MockI18n;
 import org.modeshape.common.math.FloatOperations;
 import org.modeshape.common.math.MathOperations;
-import org.modeshape.common.statistic.Histogram;
 import org.modeshape.common.text.Inflector;
-import org.modeshape.common.util.Logger;
+import org.modeshape.common.logging.Logger;
 import org.junit.Test;
 
 public class HistogramTest {

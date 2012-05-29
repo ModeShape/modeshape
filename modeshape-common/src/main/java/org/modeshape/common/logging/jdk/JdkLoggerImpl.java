@@ -22,10 +22,10 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.modeshape.common.util.log;
+package org.modeshape.common.logging.jdk;
 
 import java.util.logging.Logger;
-import org.modeshape.common.i18n.I18n;
+import org.modeshape.common.i18n.I18nResource;
 import org.modeshape.common.util.StringUtil;
 
 /**
@@ -33,7 +33,7 @@ import org.modeshape.common.util.StringUtil;
  * 
  * @since 2.5
  */
-public class JdkLoggerImpl extends org.modeshape.common.util.Logger {
+final class JdkLoggerImpl extends org.modeshape.common.logging.Logger {
 
     private final java.util.logging.Logger logger;
 
@@ -107,29 +107,29 @@ public class JdkLoggerImpl extends org.modeshape.common.util.Logger {
     }
 
     @Override
-    public void error( I18n message,
+    public void error( I18nResource message,
                        Object... params ) {
-        log(java.util.logging.Level.SEVERE, message.text(LOGGING_LOCALE.get(), params), null);
+        log(java.util.logging.Level.SEVERE, message.text(getLoggingLocale(), params), null);
     }
 
     @Override
     public void error( Throwable t,
-                       I18n message,
+                       I18nResource message,
                        Object... params ) {
-        log(java.util.logging.Level.SEVERE, message.text(LOGGING_LOCALE.get(), params), t);
+        log(java.util.logging.Level.SEVERE, message.text(getLoggingLocale(), params), t);
     }
 
     @Override
-    public void info( I18n message,
+    public void info( I18nResource message,
                       Object... params ) {
-        log(java.util.logging.Level.INFO, message.text(LOGGING_LOCALE.get(), params), null);
+        log(java.util.logging.Level.INFO, message.text(getLoggingLocale(), params), null);
     }
 
     @Override
     public void info( Throwable t,
-                      I18n message,
+                      I18nResource message,
                       Object... params ) {
-        log(java.util.logging.Level.INFO, message.text(LOGGING_LOCALE.get(), params), t);
+        log(java.util.logging.Level.INFO, message.text(getLoggingLocale(), params), t);
     }
 
     @Override
@@ -142,22 +142,21 @@ public class JdkLoggerImpl extends org.modeshape.common.util.Logger {
     public void trace( Throwable t,
                        String message,
                        Object... params ) {
-        // TODO Auto-generated method stub
         log(java.util.logging.Level.FINER, StringUtil.createString(message, params), t);
 
     }
 
     @Override
-    public void warn( I18n message,
+    public void warn( I18nResource message,
                       Object... params ) {
-        log(java.util.logging.Level.WARNING, message.text(LOGGING_LOCALE.get(), params), null);
+        log(java.util.logging.Level.WARNING, message.text(getLoggingLocale(), params), null);
     }
 
     @Override
     public void warn( Throwable t,
-                      I18n message,
+                      I18nResource message,
                       Object... params ) {
-        log(java.util.logging.Level.WARNING, message.text(LOGGING_LOCALE.get(), params), t);
+        log(java.util.logging.Level.WARNING, message.text(getLoggingLocale(), params), t);
 
     }
 }

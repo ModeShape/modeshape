@@ -28,7 +28,6 @@ import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
-import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -46,8 +45,6 @@ import java.io.InputStreamReader;
 @ThreadSafe
 public abstract class AbstractTextSequencer extends Sequencer {
 
-    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(AbstractTextSequencer.class);
-    
     private String rowFactoryClassName = null;
     private String commentMarker = null;
     private int maximumLinesToRead = -1;
@@ -86,7 +83,7 @@ public abstract class AbstractTextSequencer extends Sequencer {
                     reader.close();
                 }
             } catch (Exception e) {
-                LOGGER.warn("Cannot close reader ", e);
+                getLogger().warn("Cannot close reader ", e);
             }
         }
         return true;

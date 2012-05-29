@@ -31,8 +31,6 @@ import javax.jcr.RepositoryException;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
@@ -47,8 +45,6 @@ import java.io.IOException;
  */
 public class XmlSequencer extends Sequencer {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(XmlSequencer.class);
-    
     /**
      * The choices for how attributes that have no namespace prefix should be assigned a namespace.
      *
@@ -125,15 +121,15 @@ public class XmlSequencer extends Sequencer {
      * @param featureName the name of the feature; may not be null
      * @param value the value for the feature
      */
-    static void setFeature( XMLReader reader,
-                            String featureName,
-                            boolean value ) {
+    void setFeature( XMLReader reader,
+                     String featureName,
+                     boolean value ) {
         try {
             if (reader.getFeature(featureName) != value) {
                 reader.setFeature(featureName, value);
             }
         } catch (SAXException e) {
-            LOGGER.warn("Cannot set feature " + featureName, e);
+            getLogger().warn("Cannot set feature " + featureName, e);
         }
     }
 

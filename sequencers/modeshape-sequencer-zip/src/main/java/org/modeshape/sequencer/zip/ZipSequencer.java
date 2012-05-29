@@ -38,8 +38,6 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A sequencer that processes and extract the files and folders from ZIP archive files.
@@ -47,8 +45,6 @@ import org.slf4j.LoggerFactory;
  * @author Horia Chiorean
  */
 public class ZipSequencer extends Sequencer {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(ZipSequencer.class);
 
     @Override
     public void initialize( NamespaceRegistry registry,
@@ -79,7 +75,7 @@ public class ZipSequencer extends Sequencer {
                 try {
                     zipInputStream.close();
                 } catch (Exception e) {
-                    LOGGER.warn("Cannot close zip input stream", e);
+                    getLogger().warn("Cannot close zip input stream", e);
                 }
             }
         }

@@ -36,7 +36,7 @@ import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
-import org.modeshape.common.util.Logger;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.JcrRepository.RunningState;
 import org.modeshape.jcr.Sequencers.SequencingContext;
 import org.modeshape.jcr.Sequencers.SequencingWorkItem;
@@ -134,7 +134,8 @@ final class SequencingRunner implements Runnable {
 
             // Execute the sequencer ...
             DateTime now = outputSession.dateFactory().create();
-            Sequencer.Context context = new SequencingContext(now, outputSession.getValueFactory(),
+            Sequencer.Context context = new SequencingContext(now,
+                                                              outputSession.getValueFactory(),
                                                               outputSession.context().getMimeTypeDetector());
             if (inputSession.isLive() && (inputSession == outputSession || outputSession.isLive())) {
                 final long start = System.nanoTime();

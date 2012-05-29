@@ -21,24 +21,21 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.common.util;
+package org.modeshape.common.logging;
 
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import org.modeshape.common.annotation.ThreadSafe;
-import org.modeshape.common.i18n.I18n;
-import org.modeshape.common.util.log.LogFactory;
+import org.modeshape.common.i18n.I18nResource;
 
 /**
- * A simple logging interface that is fully compatible with multiple logging implementations. If no log4j implementation is found,
- * then its defaulted to the JDK Logger implementation. This interface does take advantage of the variable arguments and
+ * A simple logging interface that is fully compatible with multiple logging implementations. If no specific logging implementation
+ * is found, then its defaulted to the JDK Logger implementation. This interface does take advantage of the variable arguments and
  * autoboxing features in Java 5, reducing the number of methods that are necessary and allowing callers to supply primitive
  * values as parameters.
  */
 @ThreadSafe
 public abstract class Logger {
-
-    static final LogFactory LOG_FACTORY;
 
     public enum Level {
         OFF,
@@ -46,15 +43,10 @@ public abstract class Logger {
         WARNING,
         INFO,
         DEBUG,
-        TRACE;
+        TRACE
     }
 
-    static {
-        LOG_FACTORY = LogFactory.getLogFactory();
-
-    }
-
-    protected static final AtomicReference<Locale> LOGGING_LOCALE = new AtomicReference<Locale>(null);
+    private static final AtomicReference<Locale> LOGGING_LOCALE = new AtomicReference<Locale>(null);
 
     /**
      * Get the locale used for the logs. If null, the {@link Locale#getDefault() default locale} is used.
@@ -85,7 +77,7 @@ public abstract class Logger {
      * @return logger
      */
     public static Logger getLogger( Class<?> clazz ) {
-        return LOG_FACTORY.getLogger(clazz);
+        return LogFactory.getLogFactory().getLogger(clazz);
     }
 
     /**
@@ -95,7 +87,7 @@ public abstract class Logger {
      * @return logger
      */
     public static Logger getLogger( String name ) {
-        return LOG_FACTORY.getLogger(name);
+        return LogFactory.getLogFactory().getLogger(name);
     }
 
     /**
@@ -106,7 +98,7 @@ public abstract class Logger {
     public abstract String getName();
 
     /**
-     * Log a message at the suplied level according to the specified format and (optional) parameters. The message should contain
+     * Log a message at the supplied level according to the specified format and (optional) parameters. The message should contain
      * a pair of empty curly braces for each of the parameter, which should be passed in the correct order. This method is
      * efficient and avoids superfluous object creation when the logger is disabled for the desired level.
      * 
@@ -115,7 +107,7 @@ public abstract class Logger {
      * @param params the parameter values that are to replace the variables in the format string
      */
     public void log( Level level,
-                     I18n message,
+                     I18nResource message,
                      Object... params ) {
         if (message == null) return;
         switch (level) {
@@ -150,7 +142,7 @@ public abstract class Logger {
      */
     public void log( Level level,
                      Throwable t,
-                     I18n message,
+                     I18nResource message,
                      Object... params ) {
         if (message == null) return;
         switch (level) {
@@ -201,46 +193,46 @@ public abstract class Logger {
      * Log a message at the ERROR level according to the specified format and (optional) parameters. The message should contain a
      * pair of empty curly braces for each of the parameter, which should be passed in the correct order. This method is efficient
      * and avoids superfluous object creation when the logger is disabled for the ERROR level.
-     * 
+     *
      * @param message the message string
      * @param params the parameter values that are to replace the variables in the format string
      */
-    public abstract void error( I18n message,
+    public abstract void error( I18nResource message,
                                 Object... params );
 
     /**
      * Log an exception (throwable) at the ERROR level with an accompanying message. If the exception is null, then this method
-     * calls {@link #error(I18n, Object...)}.
-     * 
+     * calls {@link #error(org.modeshape.common.i18n.I18nResource, Object...)}.
+     *
      * @param t the exception (throwable) to log
      * @param message the message accompanying the exception
      * @param params the parameter values that are to replace the variables in the format string
      */
     public abstract void error( Throwable t,
-                                I18n message,
+                                I18nResource message,
                                 Object... params );
 
     /**
      * Log a message at the INFO level according to the specified format and (optional) parameters. The message should contain a
      * pair of empty curly braces for each of the parameter, which should be passed in the correct order. This method is efficient
      * and avoids superfluous object creation when the logger is disabled for the INFO level.
-     * 
+     *
      * @param message the message string
      * @param params the parameter values that are to replace the variables in the format string
      */
-    public abstract void info( I18n message,
+    public abstract void info( I18nResource message,
                                Object... params );
 
     /**
      * Log an exception (throwable) at the INFO level with an accompanying message. If the exception is null, then this method
-     * calls {@link #info(I18n, Object...)}.
-     * 
+     * calls {@link #info(org.modeshape.common.i18n.I18nResource, Object...)}.
+     *
      * @param t the exception (throwable) to log
      * @param message the message accompanying the exception
      * @param params the parameter values that are to replace the variables in the format string
      */
     public abstract void info( Throwable t,
-                               I18n message,
+                               I18nResource message,
                                Object... params );
 
     /**
@@ -270,23 +262,23 @@ public abstract class Logger {
      * Log a message at the WARNING level according to the specified format and (optional) parameters. The message should contain
      * a pair of empty curly braces for each of the parameter, which should be passed in the correct order. This method is
      * efficient and avoids superfluous object creation when the logger is disabled for the WARNING level.
-     * 
+     *
      * @param message the message string
      * @param params the parameter values that are to replace the variables in the format string
      */
-    public abstract void warn( I18n message,
+    public abstract void warn( I18nResource message,
                                Object... params );
 
     /**
      * Log an exception (throwable) at the WARNING level with an accompanying message. If the exception is null, then this method
-     * calls {@link #warn(I18n, Object...)}.
-     * 
+     * calls {@link #warn(org.modeshape.common.i18n.I18nResource, Object...)}.
+     *
      * @param t the exception (throwable) to log
      * @param message the message accompanying the exception
      * @param params the parameter values that are to replace the variables in the format string
      */
     public abstract void warn( Throwable t,
-                               I18n message,
+                               I18nResource message,
                                Object... params );
 
     /**
@@ -323,19 +315,4 @@ public abstract class Logger {
      * @return true if TRACE log messages are currently being logged, or false otherwise.
      */
     public abstract boolean isTraceEnabled();
-
-    /**
-     * Get the logging level at which this logger is current set.
-     * 
-     * @return the current logging level
-     */
-    public Level getLevel() {
-        if (this.isTraceEnabled()) return Level.TRACE;
-        if (this.isDebugEnabled()) return Level.DEBUG;
-        if (this.isInfoEnabled()) return Level.INFO;
-        if (this.isWarnEnabled()) return Level.WARNING;
-        if (this.isErrorEnabled()) return Level.ERROR;
-        return Level.OFF;
-    }
-
 }

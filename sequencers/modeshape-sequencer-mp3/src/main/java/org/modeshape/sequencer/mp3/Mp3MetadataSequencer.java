@@ -28,8 +28,6 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import static org.modeshape.sequencer.mp3.Mp3MetadataLexicon.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import java.io.IOException;
 
 
@@ -52,8 +50,6 @@ import java.io.IOException;
  * </p>
  */
 public class Mp3MetadataSequencer extends Sequencer {
-    
-    private static final Logger LOGGER = LoggerFactory.getLogger(Mp3MetadataSequencer.class); 
 
     @Override
     public void initialize( NamespaceRegistry registry, NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
@@ -83,7 +79,7 @@ public class Mp3MetadataSequencer extends Sequencer {
             return true;
 
         } catch (Exception e) {
-            LOGGER.error("Cannot sequence mp3 content ", e);
+            getLogger().error("Cannot sequence mp3 content ", e);
             return false;
         }
     }

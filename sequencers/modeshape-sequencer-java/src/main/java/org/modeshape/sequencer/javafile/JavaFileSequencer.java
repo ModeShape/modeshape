@@ -29,8 +29,6 @@ import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.modeshape.sequencer.classfile.ClassFileSequencer;
 import org.modeshape.sequencer.javafile.metadata.JavaMetadata;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import java.io.IOException;
 
 /**
@@ -41,8 +39,6 @@ import java.io.IOException;
  */
 public class JavaFileSequencer extends Sequencer {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(JavaFileSequencer.class);
-
     private static final SourceFileRecorder DEFAULT_SOURCE_FILE_RECORDER = new ClassSourceFileRecorder();
     private SourceFileRecorder sourceFileRecorder = DEFAULT_SOURCE_FILE_RECORDER;
 
@@ -61,7 +57,7 @@ public class JavaFileSequencer extends Sequencer {
             sourceFileRecorder.record(context, outputNode, javaMetadata);
             return true;
         } catch (Exception ex) {
-            LOGGER.error("Error sequencing file", ex);
+            getLogger().error("Error sequencing file", ex);
             return false;
         }
     }

@@ -71,8 +71,6 @@ import org.modeshape.sequencer.sramp.SrampLexicon;
 import static org.modeshape.sequencer.sramp.SrampLexicon.DESCRIPTION;
 import org.modeshape.sequencer.sramp.SymbolSpace;
 import static org.modeshape.sequencer.xsd.XsdLexicon.IMPORT;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.xml.sax.InputSource;
@@ -107,8 +105,6 @@ public class XsdReader extends AbstractResolvingReader {
     public static final SymbolSpace MODEL_GROUP_DEFINITIONS = new SymbolSpace("ModelGroupDeclarations");
     public static final SymbolSpace IDENTITY_CONSTRAINT_DEFINITIONS = new SymbolSpace("IdentityConstraintDeclarations");
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(XsdReader.class);
-
     public XsdReader( Sequencer.Context context ) {
         super(context);
     }
@@ -116,7 +112,7 @@ public class XsdReader extends AbstractResolvingReader {
     @Override
     public void read( InputSource source,
                       Node outputNode ) throws Exception {
-        LOGGER.debug("Processing XSD '{}'", outputNode);
+        logger.debug("Processing XSD '{}'", outputNode);
         Reader reader = null;
         InputStream stream = null;
         try {
@@ -144,12 +140,12 @@ public class XsdReader extends AbstractResolvingReader {
             try {
                 if (reader != null) reader.close();
             } catch (Exception e) {
-                LOGGER.warn("Cannot close reader stream ", e);
+                logger.debug(e, "Cannot close reader stream ");
             } finally {
                 try {
                     if (stream != null) stream.close();
                 } catch (Exception e) {
-                    LOGGER.warn("Cannot close reader stream ", e);
+                    logger.debug(e, "Cannot close reader stream ");
                 }
             }
         }
@@ -170,7 +166,7 @@ public class XsdReader extends AbstractResolvingReader {
                             Node rootNode ) throws Exception {
         assert schema != null;
 
-        LOGGER.debug("Target namespace: '{0}'", schema.getTargetNamespace());
+        logger.debug("Target namespace: '{0}'", schema.getTargetNamespace());
         rootNode.setProperty(SrampLexicon.CONTENT_TYPE, MimeTypeConstants.XSD);
         if (encoding != null) {
             rootNode.setProperty(SrampLexicon.CONTENT_ENCODING, encoding);
@@ -212,7 +208,7 @@ public class XsdReader extends AbstractResolvingReader {
 
     protected void processImport( XSDImport xsdImport,
                                   Node parentNode ) throws RepositoryException {
-        LOGGER.debug("Import: '{}' with location '{}' ", xsdImport.getNamespace(), xsdImport.getSchemaLocation());
+        logger.debug("Import: '{}' with location '{}' ", xsdImport.getNamespace(), xsdImport.getSchemaLocation());
         Node importNode = parentNode.addNode(IMPORT, IMPORT);
         importNode.setProperty(XsdLexicon.NAMESPACE, xsdImport.getNamespace());
         importNode.setProperty(XsdLexicon.SCHEMA_LOCATION, xsdImport.getSchemaLocation());
@@ -221,7 +217,7 @@ public class XsdReader extends AbstractResolvingReader {
 
     protected void processInclude( XSDInclude xsdInclude,
                                    Node parentNode ) throws RepositoryException {
-        LOGGER.debug("Include: '{}' ", xsdInclude.getSchemaLocation());
+        logger.debug("Include: '{}' ", xsdInclude.getSchemaLocation());
         Node includeNode = parentNode.addNode(XsdLexicon.INCLUDE, XsdLexicon.INCLUDE);
         includeNode.setProperty(XsdLexicon.SCHEMA_LOCATION, xsdInclude.getSchemaLocation());
         processNonSchemaAttributes(xsdInclude, includeNode);
@@ -229,7 +225,7 @@ public class XsdReader extends AbstractResolvingReader {
 
     protected void processRedefine( XSDRedefine redefine,
                                     Node parentNode ) throws RepositoryException {
-        LOGGER.debug("Include: '{}' ", redefine.getSchemaLocation());
+        logger.debug("Include: '{}' ", redefine.getSchemaLocation());
         Node redefineNode = parentNode.addNode(XsdLexicon.REDEFINE, XsdLexicon.REDEFINE);
         redefineNode.setProperty(XsdLexicon.SCHEMA_LOCATION, redefine.getSchemaLocation());
         processNonSchemaAttributes(redefine, redefineNode);
@@ -240,7 +236,7 @@ public class XsdReader extends AbstractResolvingReader {
         boolean isAnonymous = type.getName() == null;
         String nodeName = isAnonymous ? XsdLexicon.SIMPLE_TYPE : type.getName();
         // This is a normal simple type definition ...
-        LOGGER.debug("Simple type: '{}' in ns '{}' ", type.getName(), type.getTargetNamespace());
+        logger.debug("Simple type: '{}' in ns '{}' ", type.getName(), type.getTargetNamespace());
 
         Node typeNode = node.addNode(nodeName, XsdLexicon.SIMPLE_TYPE_DEFINITION);
         typeNode.setProperty(XsdLexicon.NAMESPACE, type.getTargetNamespace());
@@ -312,7 +308,7 @@ public class XsdReader extends AbstractResolvingReader {
 
     protected void processComplexTypeDefinition( XSDComplexTypeDefinition type,
                                                  Node parentNode ) throws RepositoryException {
-        LOGGER.debug("Complex type: '{}' in ns '{}' ", type.getName(), type.getTargetNamespace());
+        logger.debug("Complex type: '{}' in ns '{}' ", type.getName(), type.getTargetNamespace());
         boolean isAnonymous = type.getName() == null;
 
         String nodeName = isAnonymous ? XsdLexicon.COMPLEX_TYPE : type.getName();
@@ -356,7 +352,7 @@ public class XsdReader extends AbstractResolvingReader {
         if (decl == null) {
             return null;
         }
-        LOGGER.debug("Element declaration: '{}' in ns '{}' ", decl.getName(), decl.getTargetNamespace());
+        logger.debug("Element declaration: '{}' in ns '{}' ", decl.getName(), decl.getTargetNamespace());
         Node declarationNode;
         if (decl.getName() != null) {
             // Normal element declaration ...
@@ -423,7 +419,7 @@ public class XsdReader extends AbstractResolvingReader {
         if (decl == null) {
             return null;
         }
-        LOGGER.debug("Attribute declaration: '{0}' in ns '{1}' ", decl.getName(), decl.getTargetNamespace());
+        logger.debug("Attribute declaration: '{0}' in ns '{1}' ", decl.getName(), decl.getTargetNamespace());
 
         Node attributeDeclarationNode = parentNode.addNode(decl.getName(), XsdLexicon.ATTRIBUTE_DECLARATION);
         attributeDeclarationNode.setProperty(XsdLexicon.NC_NAME, decl.getName());
@@ -579,7 +575,7 @@ public class XsdReader extends AbstractResolvingReader {
         Node attributeGroupNode = null;
         if (defn.isAttributeGroupDefinitionReference()) {
             XSDAttributeGroupDefinition resolved = defn.getResolvedAttributeGroupDefinition();
-            LOGGER.debug("Attribute Group definition (ref): '{}' in ns '{}' ", resolved.getName(), resolved.getTargetNamespace());
+            logger.debug("Attribute Group definition (ref): '{}' in ns '{}' ", resolved.getName(), resolved.getTargetNamespace());
             attributeGroupNode = parentNode.addNode(resolved.getName(), XsdLexicon.ATTRIBUTE_GROUP);
             setReference(attributeGroupNode,
                          XsdLexicon.REF,
@@ -587,7 +583,7 @@ public class XsdReader extends AbstractResolvingReader {
                          resolved.getTargetNamespace(),
                          resolved.getName());
         } else {
-            LOGGER.debug("Attribute Group definition: '{}' in ns '{}' ", defn.getName(), defn.getTargetNamespace());
+            logger.debug("Attribute Group definition: '{}' in ns '{}' ", defn.getName(), defn.getTargetNamespace());
             attributeGroupNode = parentNode.addNode(defn.getName(), XsdLexicon.ATTRIBUTE_GROUP);
             registerForSymbolSpace(ATTRIBUTE_GROUP_DEFINITIONS, defn.getTargetNamespace(), defn.getName(),
                                    attributeGroupNode.getIdentifier());
@@ -611,7 +607,7 @@ public class XsdReader extends AbstractResolvingReader {
         if (wildcard == null) {
             return null;
         }
-        LOGGER.debug("Any Attribute");
+        logger.debug("Any Attribute");
 
         Node anyAttributeNode = parentNode.addNode(XsdLexicon.ANY_ATTRIBUTE, XsdLexicon.ANY_ATTRIBUTE);
 

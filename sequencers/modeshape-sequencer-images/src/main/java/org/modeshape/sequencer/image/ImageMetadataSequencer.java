@@ -28,8 +28,7 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 
 /**
@@ -67,8 +66,6 @@ import java.io.IOException;
  */
 public class ImageMetadataSequencer extends Sequencer {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ImageMetadataSequencer.class);
-
     @Override
     public boolean execute( Property inputProperty,
                             Node outputNode,
@@ -83,7 +80,7 @@ public class ImageMetadataSequencer extends Sequencer {
 
         // Process the image stream and extract the metadata ...
         if (!metadata.check()) {
-            LOGGER.info("Unknown format detected. Skipping sequencing");
+            getLogger().info("Unknown format detected. Skipping sequencing");
             return false;
         }
         Node imageNode = getImageMetadataNode(outputNode);

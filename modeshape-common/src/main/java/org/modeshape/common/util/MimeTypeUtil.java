@@ -39,6 +39,7 @@ import java.util.regex.Pattern;
 import org.modeshape.common.CommonI18n;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.i18n.I18n;
+import org.modeshape.common.logging.Logger;
 
 /**
  * A simple utility that determines an appropriate MIME type by matching the extension of the supplied filename against a set of
@@ -58,6 +59,8 @@ public class MimeTypeUtil {
      * The default location of the properties file containing the extension patterns to MIME types. Value is "{@value} ".
      */
     public static final String MIME_TYPE_EXTENSIONS_RESOURCE_PATH = "org/modeshape/mime.types";
+
+    private static final Logger LOGGER = Logger.getLogger(MimeTypeUtil.class);
 
     /**
      * The mapping of extension (which includes the leading '.') to MIME type.
@@ -169,7 +172,7 @@ public class MimeTypeUtil {
             lines = StringUtil.splitLines(content);
         } catch (IOException e) {
             I18n msg = CommonI18n.unableToAccessResourceFileFromClassLoader;
-            Logger.getLogger(MimeTypeUtil.class).warn(e, msg, MIME_TYPE_EXTENSIONS_RESOURCE_PATH);
+            LOGGER.warn(e, msg, MIME_TYPE_EXTENSIONS_RESOURCE_PATH);
         }
         Map<String, String> mimeTypesByExtension = new HashMap<String, String>();
         if (lines != null) {

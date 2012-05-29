@@ -43,18 +43,17 @@ import org.modeshape.common.CommonI18n;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.ClassUtil;
-import org.modeshape.common.util.Logger;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.StringUtil;
-import org.modeshape.common.util.log.LogFactory;
 
 /**
  * An internalized string object, which manages the initialization of internationalization (i18n) files, substitution of values
  * within i18n message placeholders, and dynamically reading properties from i18n property files.
  */
 @ThreadSafe
-public final class I18n {
+public final class I18n implements I18nResource {
 
-    private static final Logger LOGGER = LogFactory.getLogFactory().getLogger(I18n.class);
+    private static final Logger LOGGER = Logger.getLogger(I18n.class);
 
     private static final LocalizationRepository DEFAULT_LOCALIZATION_REPOSITORY = new ClasspathLocalizationRepository();
 

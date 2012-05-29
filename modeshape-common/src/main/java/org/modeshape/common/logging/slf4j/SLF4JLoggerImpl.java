@@ -22,10 +22,11 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.modeshape.common.util.log;
+package org.modeshape.common.logging.slf4j;
 
-import org.modeshape.common.i18n.I18n;
+import org.modeshape.common.i18n.I18nResource;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.common.logging.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -33,7 +34,7 @@ import org.slf4j.LoggerFactory;
  * 
  * @since 2.5
  */
-public class SLF4JLoggerImpl extends org.modeshape.common.util.Logger {
+final class SLF4JLoggerImpl extends Logger {
     private final org.slf4j.Logger logger;
 
     public SLF4JLoggerImpl( String category ) {
@@ -72,7 +73,7 @@ public class SLF4JLoggerImpl extends org.modeshape.common.util.Logger {
 
     @Override
     public void warn( Throwable t,
-                      I18n message,
+                      I18nResource message,
                       Object... params ) {
         if (!isWarnEnabled()) return;
         if (t == null) {
@@ -83,15 +84,15 @@ public class SLF4JLoggerImpl extends org.modeshape.common.util.Logger {
             logger.warn(null, t);
             return;
         }
-        logger.warn(message.text(LOGGING_LOCALE.get(), params), t);
+        logger.warn(message.text(getLoggingLocale(), params), t);
     }
 
     @Override
-    public void warn( I18n message,
+    public void warn( I18nResource message,
                       Object... params ) {
         if (!isWarnEnabled()) return;
         if (message == null) return;
-        logger.warn(message.text(LOGGING_LOCALE.get(), params));
+        logger.warn(message.text(getLoggingLocale(), params));
     }
 
     /**
@@ -138,29 +139,29 @@ public class SLF4JLoggerImpl extends org.modeshape.common.util.Logger {
      * Log a message at the ERROR level according to the specified format and (optional) parameters. The message should contain a
      * pair of empty curly braces for each of the parameter, which should be passed in the correct order. This method is efficient
      * and avoids superfluous object creation when the logger is disabled for the ERROR level.
-     * 
+     *
      * @param message the message string
      * @param params the parameter values that are to replace the variables in the format string
      */
     @Override
-    public void error( I18n message,
+    public void error( I18nResource message,
                        Object... params ) {
         if (!isErrorEnabled()) return;
         if (message == null) return;
-        logger.error(message.text(LOGGING_LOCALE.get(), params));
+        logger.error(message.text(getLoggingLocale(), params));
     }
 
     /**
      * Log an exception (throwable) at the ERROR level with an accompanying message. If the exception is null, then this method
-     * calls {@link #error(I18n, Object...)}.
-     * 
+     * calls {@link org.modeshape.common.logging.Logger#error(org.modeshape.common.i18n.I18nResource, Object...)}.
+     *
      * @param t the exception (throwable) to log
      * @param message the message accompanying the exception
      * @param params the parameter values that are to replace the variables in the format string
      */
     @Override
     public void error( Throwable t,
-                       I18n message,
+                       I18nResource message,
                        Object... params ) {
         if (!isErrorEnabled()) return;
         if (t == null) {
@@ -171,36 +172,36 @@ public class SLF4JLoggerImpl extends org.modeshape.common.util.Logger {
             logger.error(null, t);
             return;
         }
-        logger.error(message.text(LOGGING_LOCALE.get(), params), t);
+        logger.error(message.text(getLoggingLocale(), params), t);
     }
 
     /**
      * Log a message at the INFO level according to the specified format and (optional) parameters. The message should contain a
      * pair of empty curly braces for each of the parameter, which should be passed in the correct order. This method is efficient
      * and avoids superfluous object creation when the logger is disabled for the INFO level.
-     * 
+     *
      * @param message the message string
      * @param params the parameter values that are to replace the variables in the format string
      */
     @Override
-    public void info( I18n message,
+    public void info( I18nResource message,
                       Object... params ) {
         if (!isInfoEnabled()) return;
         if (message == null) return;
-        logger.info(message.text(LOGGING_LOCALE.get(), params));
+        logger.info(message.text(getLoggingLocale(), params));
     }
 
     /**
      * Log an exception (throwable) at the INFO level with an accompanying message. If the exception is null, then this method
-     * calls {@link #info(I18n, Object...)}.
-     * 
+     * calls {@link org.modeshape.common.logging.Logger#info(org.modeshape.common.i18n.I18nResource, Object...)}.
+     *
      * @param t the exception (throwable) to log
      * @param message the message accompanying the exception
      * @param params the parameter values that are to replace the variables in the format string
      */
     @Override
     public void info( Throwable t,
-                      I18n message,
+                      I18nResource message,
                       Object... params ) {
         if (!isInfoEnabled()) return;
         if (t == null) {
@@ -211,7 +212,7 @@ public class SLF4JLoggerImpl extends org.modeshape.common.util.Logger {
             logger.info(null, t);
             return;
         }
-        logger.info(message.text(LOGGING_LOCALE.get(), params), t);
+        logger.info(message.text(getLoggingLocale(), params), t);
     }
 
     /**

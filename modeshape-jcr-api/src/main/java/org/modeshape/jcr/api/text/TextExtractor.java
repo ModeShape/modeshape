@@ -23,6 +23,7 @@
  */
 package org.modeshape.jcr.api.text;
 
+import org.modeshape.jcr.api.Logger;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -30,7 +31,9 @@ import java.io.InputStream;
  * An abstraction for components that are able to extract text content from an input stream.
  * //TODO author=Horia Chiorean date=2/9/12 description=Refine this class when porting/implementing extractors
  */
-public interface TextExtractor {
+public abstract class TextExtractor {
+
+    private Logger logger;
 
     /**
      * Determine if this extractor is capable of processing content with the supplied MIME type.
@@ -38,7 +41,7 @@ public interface TextExtractor {
      * @param mimeType the MIME type; never null
      * @return true if this extractor can process content with the supplied MIME type, or false otherwise.
      */
-    boolean supportsMimeType( String mimeType );
+    public abstract boolean supportsMimeType( String mimeType );
 
     /**
      * Sequence the data found in the supplied stream, placing the output information into the supplied map.
@@ -54,14 +57,22 @@ public interface TextExtractor {
      * @param context the context for the sequencing operation; never <code>null</code>
      * @throws IOException if there is a problem reading the stream
      */
-    void extractFrom( InputStream stream,
+    public abstract void extractFrom( InputStream stream,
                       TextExtractorOutput output,
                       Context context ) throws IOException;
 
+    protected final void setLogger(Logger logger) {
+        if (logger ==  null) {
+            throw new IllegalArgumentException("Logger cannot be null");
+        }
+        this.logger = logger;
+    }
+
+    protected final Logger getLogger() {
+        return logger;
+    }
 
     public interface Context {
-        //TODO author=Horia Chiorean date=2/9/12 description=define
-
         String getMimeType();
     }
 

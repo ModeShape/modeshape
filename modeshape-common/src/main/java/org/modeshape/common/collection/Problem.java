@@ -27,7 +27,7 @@ import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.HashCode;
-import org.modeshape.common.util.Logger;
+import org.modeshape.common.logging.Logger;
 
 /**
  * An immutable representation of a problem, with a status, code, internationalized and parameterized message, values for the

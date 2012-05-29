@@ -82,7 +82,7 @@ import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.common.util.Logger;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.NamedThreadFactory;
 import org.modeshape.jcr.JcrEngine.State;
 import org.modeshape.jcr.RepositoryConfiguration.AnonymousSecurity;
@@ -1057,7 +1057,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             }
 
             if (other != null && !change.extractorsChanged) {
-                List<Component> extractorComponents = config.getQuery().getTextExtractors();
+                List<Component> extractorComponents = other.config.getQuery().getTextExtractors();
                 this.extractors = new TextExtractors(this, extractorComponents);
             } else {
                 List<Component> extractorComponents = config.getQuery().getTextExtractors();

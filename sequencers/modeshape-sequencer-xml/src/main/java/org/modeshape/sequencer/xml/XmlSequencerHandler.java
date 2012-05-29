@@ -31,13 +31,12 @@ import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.text.XmlNameEncoder;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.JcrConstants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
@@ -48,7 +47,7 @@ import org.xml.sax.ext.DefaultHandler2;
  */
 public class XmlSequencerHandler extends DefaultHandler2 {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(XmlSequencerHandler.class);
+    private static final Logger LOGGER = Logger.getLogger(XmlSequencerHandler.class);
 
     /**
      * Decoder for XML names, to turn '_xHHHH_' sequences in the XML element and attribute names into the corresponding UTF-16
@@ -526,7 +525,7 @@ public class XmlSequencerHandler extends DefaultHandler2 {
      */
     @Override
     public void warning( SAXParseException warning ) {
-        LOGGER.warn("SAX warning:", warning);
+        LOGGER.debug(warning, "SAX warning:");
     }
 
     /**
@@ -534,6 +533,6 @@ public class XmlSequencerHandler extends DefaultHandler2 {
      */
     @Override
     public void error( SAXParseException error ) {
-        LOGGER.error("SAX error:", error);
+        LOGGER.debug(error, "SAX error:");
     }
 }

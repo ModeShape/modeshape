@@ -26,7 +26,7 @@ package org.modeshape.jcr.value.binary;
 import java.io.File;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.ThreadSafe;
-import org.modeshape.common.util.Logger;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.JcrI18n;
 
 /**

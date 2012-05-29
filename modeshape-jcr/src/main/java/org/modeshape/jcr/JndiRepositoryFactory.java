@@ -18,7 +18,7 @@ import javax.naming.event.NamespaceChangeListener;
 import javax.naming.event.NamingEvent;
 import javax.naming.event.NamingExceptionEvent;
 import javax.naming.spi.ObjectFactory;
-import org.modeshape.common.util.Logger;
+import org.modeshape.common.logging.Logger;
 import org.xml.sax.SAXException;
 
 /**
