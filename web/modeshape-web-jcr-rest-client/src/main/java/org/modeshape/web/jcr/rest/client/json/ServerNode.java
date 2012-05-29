@@ -31,8 +31,8 @@ import java.util.Iterator;
 import java.util.Map;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONObject;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.common.util.Logger;
 import org.modeshape.web.jcr.rest.client.domain.Repository;
 import org.modeshape.web.jcr.rest.client.domain.Server;
 

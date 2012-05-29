@@ -30,7 +30,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import net.sf.webdav.IWebdavStore;
 import net.sf.webdav.WebdavServlet;
-import org.modeshape.common.util.Logger;
+import org.modeshape.common.logging.Logger;
 
 /**
  * Custom servlet implementation that provides WebDAV access to a JCR repository. Nodes in the repository with a specified primary

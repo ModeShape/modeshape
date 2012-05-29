@@ -11,7 +11,7 @@ import java.util.Set;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.servlet.ServletContext;
-import org.modeshape.common.util.Logger;
+import org.modeshape.common.logging.Logger;
 
 public class DefaultContentMapper implements ContentMapper {
 
