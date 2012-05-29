@@ -24,17 +24,18 @@
 
 package org.modeshape.sequencer.wsdl;
 
+import static org.modeshape.sequencer.wsdl.WsdlLexicon.WSDL_DOCUMENT;
+import java.io.IOException;
 import javax.jcr.Binary;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.jcr.api.mimetype.MimeTypeConstants;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.sequencer.sramp.AbstractSrampSequencer;
-import static org.modeshape.sequencer.wsdl.WsdlLexicon.WSDL_DOCUMENT;
 import org.modeshape.sequencer.xsd.XsdSequencer;
-import java.io.IOException;
 
 /**
  * A sequencer that processes and extract the schema object model from XML Schema Document files.
@@ -47,6 +48,7 @@ public class WsdlSequencer extends AbstractSrampSequencer {
         super.initialize(registry, nodeTypeManager);
         registerNodeTypes(XsdSequencer.class.getResourceAsStream("xsd.cnd"), nodeTypeManager, true);
         registerNodeTypes("wsdl.cnd", nodeTypeManager, true);
+        registerAcceptedMimeTypes(MimeTypeConstants.WSDL, MimeTypeConstants.APPLICATION_XML, MimeTypeConstants.TEXT_XML);
     }
 
     @Override

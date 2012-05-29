@@ -24,17 +24,17 @@
 
 package org.modeshape.sequencer.xsd;
 
+import static org.modeshape.sequencer.xsd.XsdLexicon.SCHEMA_DOCUMENT;
+import java.io.IOException;
 import javax.jcr.Binary;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.jcr.api.mimetype.MimeTypeConstants;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.sequencer.sramp.AbstractSrampSequencer;
-import static org.modeshape.sequencer.xsd.XsdLexicon.SCHEMA_DOCUMENT;
-import java.io.IOException;
-
 
 /**
  * A sequencer that processes and extract the schema object model from XML Schema Document files.
@@ -42,20 +42,23 @@ import java.io.IOException;
 public class XsdSequencer extends AbstractSrampSequencer {
 
     @Override
-    public void initialize( NamespaceRegistry registry, NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
+    public void initialize( NamespaceRegistry registry,
+                            NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
         super.initialize(registry, nodeTypeManager);
         registerNodeTypes("xsd.cnd", nodeTypeManager, true);
+        registerAcceptedMimeTypes(MimeTypeConstants.XSD, MimeTypeConstants.APPLICATION_XML, MimeTypeConstants.TEXT_XML);
     }
 
     @Override
-    public boolean execute( Property inputProperty, Node outputNode, Context context ) throws Exception {
+    public boolean execute( Property inputProperty,
+                            Node outputNode,
+                            Context context ) throws Exception {
         Binary binaryValue = inputProperty.getBinary();
         CheckArg.isNotNull(binaryValue, "binary");
-        
+
         if (outputNode.isNew()) {
             outputNode.setPrimaryType(SCHEMA_DOCUMENT);
-        }
-        else {
+        } else {
             outputNode = outputNode.addNode(SCHEMA_DOCUMENT, SCHEMA_DOCUMENT);
         }
         new XsdReader(context).read(binaryValue.getStream(), outputNode);

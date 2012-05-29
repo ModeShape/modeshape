@@ -36,8 +36,15 @@ public final class MimeTypeConstants {
     public static final String RTF = "text/rtf";
     public static final String XML = "text/xml";
     public static final String HTML = "text/html";
-    public static final String WSDL = "application/wsdl";
+    public static final String WSDL = "application/wsdl+xml";
     public static final String XSD = "application/xsd";
+    public static final String APPLICATION_XML = "application/xml";
+    public static final String TEXT_XML = "text/xml";
+    public static final String HTML_XML = "application/xhtml+xml";
+    public static final String XOP_XML = "application/xop+xml";
+    public static final String XSLT = "application/xslt+xml";
+    public static final String XSFP = "application/xsfp+xml";
+    public static final String MXML = "application/xv+xml";
 
     public static final String MP3 = "audio/mpeg";
     public static final String WAV = "audio/x-wav";
@@ -49,13 +56,17 @@ public final class MimeTypeConstants {
     public static final String GIF = "image/gif";
     public static final String ICON = "image/x-icon";
     public static final String JPEG = "image/jpeg";
+    public static final String PBM = "image/x-portable-bitmap";
+    public static final String PGM = "image/x-portable-graymap";
+    public static final String PPM = "image/x-portable-pixmap";
     public static final String PORTABLE_PIXMAP = "image/x-portable-pixmap";
     public static final String PNG = "image/png";
+    public static final String RAS = "image/x-cmu-raster";
     public static final String TIFF = "image/tiff";
     public static final String TGA = "image/x-tga";
-    public static final String WMF= "image/wmf";
-    public static final String XCF= "image/xcf";
-    public static final String XPM= "image/xpm";
+    public static final String WMF = "image/wmf";
+    public static final String XCF = "image/xcf";
+    public static final String XPM = "image/xpm";
     public static final String PHOTOSHOP = "image/vnd.adobe.photoshop";
     public static final String PCX = "image/x-pcx";
 
@@ -71,7 +82,6 @@ public final class MimeTypeConstants {
     public static final String ZIP = "application/zip";
     public static final String LZW = "application/x-compress";
     public static final String TAR = "application/x-tar";
-
 
     public static final String BASH = "application/x-bash";
     public static final String SH = "application/x-sh";
@@ -100,6 +110,7 @@ public final class MimeTypeConstants {
     public static final String STAR_OFFICE_IMPRESS = "application/vnd.stardivision.impress";
     public static final String STAR_OFFICE_WRITER = "application/vnd.stardivision.writer";
 
+    public static final String MICROSOFT_APPLICATION_MS_WORD = "application/msword";
     public static final String MICROSOFT_OFFICE = "application/vnd.ms-office";
     public static final String MICROSOFT_WORD = "application/vnd.ms-word";
     public static final String MICROSOFT_OFFICE_DOCUMENT_OPENXML = "application/vnd.openxmlformats-officedocument.wordprocessingml";

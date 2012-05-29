@@ -728,6 +728,14 @@
                             "name" : {
                                 "type" : "string",
                                 "description" : "The optional unique name of the sequencer configuration, used for administration and reporting purposes. If not specified, the description will be a combination of the type and path expressions."
+                            },
+                            "acceptedMimeTypes" : {
+                                "type" : "array",
+                                "items" : {
+                                    "type" : "string",
+                                },
+                                "uniqueItems" : true, 
+                                "description" : "The optional MIME types for the kind of content that this sequencer configuration should process. If not specified, then the sequencer class' default MIME types will be used. Set to an empty array to forcibly allow processing content with any MIME type."
                             }
                         }
                     }

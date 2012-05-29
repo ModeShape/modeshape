@@ -35,6 +35,7 @@ import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
+import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.JcrRepository.RunningState;
@@ -80,7 +81,6 @@ final class SequencingRunner implements Runnable {
             if (sequencer == null) return;
             sequencerName = sequencer.getName();
 
-
             // Find the selected node ...
             AbstractJcrNode selectedNode = inputSession.getNode(work.getSelectedPath());
 
@@ -95,6 +95,50 @@ final class SequencingRunner implements Runnable {
                 changedProperty = changedNode.getProperty(work.getChangedPropertyName());
             }
             assert changedProperty != null;
+
+            if (sequencer.hasAcceptedMimeTypes()) {
+                // Get the MIME type, first by looking at the changed property's parent node
+                // (or grand-parent node if parent is 'jcr:content') ...
+                Node parent = changedProperty.getParent();
+                String mimeType = null;
+                if (parent.hasProperty(JcrConstants.JCR_MIME_TYPE)) {
+                    // The parent node has a 'jcr:mimeType' node ...
+                    Property property = parent.getProperty(JcrConstants.JCR_MIME_TYPE);
+                    if (!property.isMultiple()) {
+                        // The standard 'jcr:mimeType' property is single valued, but we're technically not checking if
+                        // the property has that particular property definition (only by name) ...
+                        mimeType = property.getString();
+                    }
+                } else if (parent.getName().equals(JcrConstants.JCR_CONTENT)) {
+                    // There is no 'jcr:mimeType' property, and since the sequenced property is on the 'jcr:content' node,
+                    // get the parent (probably 'nt:file') node and look for the 'jcr:mimeType' property there ...
+                    try {
+                        parent = parent.getParent();
+                        if (parent.hasProperty(JcrConstants.JCR_MIME_TYPE)) {
+                            Property property = parent.getProperty(JcrConstants.JCR_MIME_TYPE);
+                            if (!property.isMultiple()) {
+                                // The standard 'jcr:mimeType' property is single valued, but we're technically not checking if
+                                // the property has that particular property definition (only by name) ...
+                                mimeType = property.getString();
+                            }
+                        }
+                    } catch (ItemNotFoundException e) {
+                        // must be the root ...
+                    }
+                }
+                if (mimeType == null && !changedProperty.isMultiple() && changedProperty.getType() == PropertyType.BINARY) {
+                    // Still don't know the MIME type of the property, so if it's a BINARY property we can check it ...
+                    javax.jcr.Binary binary = changedProperty.getBinary();
+                    if (binary instanceof org.modeshape.jcr.api.Binary) {
+                        mimeType = ((org.modeshape.jcr.api.Binary)binary).getMimeType(parent.getName());
+                    }
+                }
+
+                // See if the sequencer accepts the MIME type ...
+                if (mimeType != null && !sequencer.isAccepted(mimeType)) {
+                    return; // nope
+                }
+            }
 
             AbstractJcrNode outputNode = null;
             String primaryType = null;
@@ -120,10 +164,9 @@ final class SequencingRunner implements Runnable {
 
                 // Create the output node
                 if (parentOfOutput.isNew() && parentOfOutput.getName().equals(outputNodeName)) {
-                    //avoid creating a duplicate path with the same name
+                    // avoid creating a duplicate path with the same name
                     outputNode = (AbstractJcrNode)parentOfOutput;
-                }
-                else {
+                } else {
                     outputNode = (AbstractJcrNode)parentOfOutput.addNode(outputNodeName, JcrConstants.NT_UNSTRUCTURED);
                 }
 
@@ -134,8 +177,7 @@ final class SequencingRunner implements Runnable {
 
             // Execute the sequencer ...
             DateTime now = outputSession.dateFactory().create();
-            Sequencer.Context context = new SequencingContext(now,
-                                                              outputSession.getValueFactory(),
+            Sequencer.Context context = new SequencingContext(now, outputSession.getValueFactory(),
                                                               outputSession.context().getMimeTypeDetector());
             if (inputSession.isLive() && (inputSession == outputSession || outputSession.isLive())) {
                 final long start = System.nanoTime();
@@ -151,10 +193,11 @@ final class SequencingRunner implements Runnable {
                         // find the new nodes created by the sequencing before saving, so we can properly fire the events
                         List<AbstractJcrNode> outputNodes = findOutputNodes(outputNode);
 
-                        //set the createdBy property (if it applies) to the user which triggered the sequencing, not the context of the saving session
+                        // set the createdBy property (if it applies) to the user which triggered the sequencing, not the context
+                        // of the saving session
                         setCreatedByIfNecessary(outputSession, outputNodes);
 
-                        //outputSession
+                        // outputSession
                         outputSession.save();
 
                         // fire the sequencing event after save (hopefully by this time the transaction has been committed)
@@ -165,11 +208,14 @@ final class SequencingRunner implements Runnable {
                         payload.put("sequencerName", sequencer.getClass().getName());
                         payload.put("sequencedPath", changedProperty.getPath());
                         payload.put("outputPath", outputNode.getPath());
-                        stats.recordDuration(DurationMetric.SEQUENCER_EXECUTION_TIME, durationInNanos, TimeUnit.NANOSECONDS, payload);
+                        stats.recordDuration(DurationMetric.SEQUENCER_EXECUTION_TIME,
+                                             durationInNanos,
+                                             TimeUnit.NANOSECONDS,
+                                             payload);
                     }
                 } catch (Throwable t) {
                     fireSequencingFailureEvent(selectedNode, inputSession, t, sequencerName);
-                    //let it bubble down, because we still want to log it and update the stats
+                    // let it bubble down, because we still want to log it and update the stats
                     throw t;
                 }
             }
@@ -203,12 +249,11 @@ final class SequencingRunner implements Runnable {
 
     private void setCreatedByIfNecessary( JcrSession outputSession,
                                           List<AbstractJcrNode> outputNodes ) throws RepositoryException {
-        //if the mix:created mixin is on any of the new nodes, we need to set the createdBy here, otherwise it will be
-        //set by the system session when it saves and it will default to "modeshape-worker"
+        // if the mix:created mixin is on any of the new nodes, we need to set the createdBy here, otherwise it will be
+        // set by the system session when it saves and it will default to "modeshape-worker"
         for (AbstractJcrNode node : outputNodes) {
             if (node.isNodeType(JcrMixLexicon.CREATED)) {
-                node.setProperty(JcrLexicon.CREATED_BY, outputSession.getValueFactory().createValue(work.getUserId()),
-                                 true, true);
+                node.setProperty(JcrLexicon.CREATED_BY, outputSession.getValueFactory().createValue(work.getUserId()), true, true);
             }
         }
     }
@@ -216,7 +261,7 @@ final class SequencingRunner implements Runnable {
     private void fireSequencingEvent( AbstractJcrNode sequencedNode,
                                       List<AbstractJcrNode> outputNodes,
                                       JcrSession outputSession,
-                                      String sequencerName) throws RepositoryException {
+                                      String sequencerName ) throws RepositoryException {
 
         RecordingChanges sequencingChanges = new RecordingChanges(outputSession.context().getProcessId(),
                                                                   outputSession.getRepository().repositoryKey(),
@@ -238,7 +283,7 @@ final class SequencingRunner implements Runnable {
     private void fireSequencingFailureEvent( AbstractJcrNode sequencedNode,
                                              JcrSession inputSession,
                                              Throwable cause,
-                                             String sequencerName) throws RepositoryException {
+                                             String sequencerName ) throws RepositoryException {
         assert sequencedNode != null;
         assert inputSession != null;
         RecordingChanges sequencingChanges = new RecordingChanges(inputSession.context().getProcessId(),

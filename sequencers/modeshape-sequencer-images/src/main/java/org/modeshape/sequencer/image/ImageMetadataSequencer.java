@@ -23,13 +23,17 @@
  */
 package org.modeshape.sequencer.image;
 
-import javax.jcr.*;
+import java.io.IOException;
+import javax.jcr.Binary;
+import javax.jcr.NamespaceRegistry;
+import javax.jcr.Node;
+import javax.jcr.Property;
+import javax.jcr.RepositoryException;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.JcrConstants;
+import org.modeshape.jcr.api.mimetype.MimeTypeConstants;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
-
-import java.io.IOException;
 
 /**
  * A sequencer that processes the binary content of an image file, extracts the metadata for the image, and then writes that image
@@ -98,7 +102,7 @@ public class ImageMetadataSequencer extends Sequencer {
 
     private void setImagePropertiesOnNode( Node node,
                                            ImageMetadata metadata ) throws Exception {
-        node.setProperty(JcrConstants.JCR_MIMETYPE, metadata.getMimeType());
+        node.setProperty(JcrConstants.JCR_MIME_TYPE, metadata.getMimeType());
         // output.setProperty(metadataNode, nameFactory.create(IMAGE_ENCODING), "");
         node.setProperty(ImageMetadataLexicon.FORMAT_NAME, metadata.getFormatName());
         node.setProperty(ImageMetadataLexicon.WIDTH, metadata.getWidth());
@@ -117,5 +121,16 @@ public class ImageMetadataSequencer extends Sequencer {
     public void initialize( NamespaceRegistry registry,
                             NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
         registerNodeTypes("images.cnd", nodeTypeManager, true);
+        registerAcceptedMimeTypes(MimeTypeConstants.JPEG,
+                                    MimeTypeConstants.BMP,
+                                    MimeTypeConstants.GIF,
+                                    MimeTypeConstants.PCX,
+                                    MimeTypeConstants.PNG,
+                                    MimeTypeConstants.TIFF,
+                                    MimeTypeConstants.RAS,
+                                    MimeTypeConstants.PBM,
+                                    MimeTypeConstants.PGM,
+                                    MimeTypeConstants.PPM,
+                                    MimeTypeConstants.PHOTOSHOP);
     }
 }

@@ -23,13 +23,22 @@
  */
 package org.modeshape.sequencer.mp3;
 
-import javax.jcr.*;
+import static org.modeshape.sequencer.mp3.Mp3MetadataLexicon.ALBUM;
+import static org.modeshape.sequencer.mp3.Mp3MetadataLexicon.AUTHOR;
+import static org.modeshape.sequencer.mp3.Mp3MetadataLexicon.COMMENT;
+import static org.modeshape.sequencer.mp3.Mp3MetadataLexicon.METADATA_NODE;
+import static org.modeshape.sequencer.mp3.Mp3MetadataLexicon.TITLE;
+import static org.modeshape.sequencer.mp3.Mp3MetadataLexicon.YEAR;
+import java.io.IOException;
+import javax.jcr.Binary;
+import javax.jcr.NamespaceRegistry;
+import javax.jcr.Node;
+import javax.jcr.Property;
+import javax.jcr.RepositoryException;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.jcr.api.mimetype.MimeTypeConstants;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
-import static org.modeshape.sequencer.mp3.Mp3MetadataLexicon.*;
-import java.io.IOException;
-
 
 /**
  * A sequencer that processes the binary content of an MP3 audio file, extracts the metadata for the file, and then writes that
@@ -52,12 +61,16 @@ import java.io.IOException;
 public class Mp3MetadataSequencer extends Sequencer {
 
     @Override
-    public void initialize( NamespaceRegistry registry, NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
+    public void initialize( NamespaceRegistry registry,
+                            NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
         super.registerNodeTypes("mp3.cnd", nodeTypeManager, true);
+        registerAcceptedMimeTypes(MimeTypeConstants.MP3);
     }
 
     @Override
-    public boolean execute( Property inputProperty, Node outputNode, Context context ) throws Exception {
+    public boolean execute( Property inputProperty,
+                            Node outputNode,
+                            Context context ) throws Exception {
         Binary binaryValue = inputProperty.getBinary();
         CheckArg.isNotNull(binaryValue, "binary");
         try {
@@ -65,11 +78,10 @@ public class Mp3MetadataSequencer extends Sequencer {
             Node sequencedNode = outputNode;
             if (outputNode.isNew()) {
                 outputNode.setPrimaryType(METADATA_NODE);
-            }
-            else {
+            } else {
                 sequencedNode = outputNode.addNode(METADATA_NODE, METADATA_NODE);
             }
-            
+
             sequencedNode.setProperty(TITLE, metadata.getTitle());
             sequencedNode.setProperty(AUTHOR, metadata.getAuthor());
             sequencedNode.setProperty(ALBUM, metadata.getAlbum());

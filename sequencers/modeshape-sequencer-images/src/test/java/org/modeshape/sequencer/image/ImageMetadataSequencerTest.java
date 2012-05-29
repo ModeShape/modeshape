@@ -91,7 +91,7 @@ public class ImageMetadataSequencerTest extends AbstractSequencerTest {
         assertNotNull(metadataNode);
 
         assertEquals(ImageMetadataLexicon.METADATA_NODE, metadataNode.getProperty(JcrConstants.JCR_PRIMARY_TYPE).getString());
-        assertEquals(mimeType, metadataNode.getProperty(JcrConstants.JCR_MIMETYPE).getString());
+        assertEquals(mimeType, metadataNode.getProperty(JcrConstants.JCR_MIME_TYPE).getString());
         assertEquals(format, metadataNode.getProperty(ImageMetadataLexicon.FORMAT_NAME).getString().toLowerCase());
         assertEquals(width, metadataNode.getProperty(ImageMetadataLexicon.WIDTH).getLong());
         assertEquals(height, metadataNode.getProperty(ImageMetadataLexicon.HEIGHT).getLong());

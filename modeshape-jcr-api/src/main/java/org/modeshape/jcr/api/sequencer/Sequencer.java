@@ -27,7 +27,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import javax.jcr.NamespaceException;
 import javax.jcr.NamespaceRegistry;
@@ -57,10 +59,36 @@ public abstract class Sequencer {
      * The logger instance, set via reflection
      */
     private Logger logger;
+
+    /**
+     * The name of this sequencer, set via reflection
+     */
     private String name;
+
+    /**
+     * The name of the repository that owns this sequencer, set via reflection
+     */
     private String repositoryName;
+
+    /**
+     * The multiple path expressions for this sequencer, set via reflection
+     */
     private Object[] pathExpressions;
+
+    /**
+     * The singular path expression of this sequencer, set via reflection
+     */
     private String pathExpression;
+
+    /**
+     * The set of MIME types that this sequencer will process. Subclasses should set call
+     * {@link #registerAcceptedMimeTypes(String...)} in the no-arg constructor to set the default MIME types for the sequencer,
+     * but the field may be overwritten in the sequencer's configuration by setting the "acceptedMimeTypes" field to an array of
+     * string values.
+     */
+    private String[] acceptedMimeTypes = {};
+
+    private volatile Set<String> acceptedMimeTypesSet = null;
 
     /**
      * Return the unique identifier for this sequencer.
@@ -240,6 +268,68 @@ public abstract class Sequencer {
 
     protected final Logger getLogger() {
         return logger;
+    }
+
+    /**
+     * Set the MIME types that are accepted by default, if there are any. This method should be called from the
+     * {@link #initialize(NamespaceRegistry, NodeTypeManager)} method in the subclass.
+     * <p>
+     * This method can be called more than once to add additional mime types.
+     * </p>
+     * 
+     * @param mimeTypes the array of MIME types that are accepted by this sequencer
+     * @see #isAccepted(String)
+     */
+    protected synchronized final void registerAcceptedMimeTypes( String... mimeTypes ) {
+        if (mimeTypes != null && mimeTypes.length != 0 && acceptedMimeTypes.length == 0) {
+            // There are no overridden mime types, so we can regiser the default MIME types ...
+            if (acceptedMimeTypesSet == null) acceptedMimeTypesSet = new HashSet<String>();
+            for (String mimeType : mimeTypes) {
+                if (mimeType == null) continue;
+                mimeType = mimeType.trim();
+                if (mimeType.length() == 0) continue;
+                acceptedMimeTypesSet.add(mimeType);
+            }
+        }
+    }
+
+    protected final Set<String> getAcceptedMimeTypes() {
+        if (acceptedMimeTypesSet == null) {
+            // No defaults are registered, so use those non-defaults ...
+            acceptedMimeTypesSet = new HashSet<String>();
+            for (String mimeType : acceptedMimeTypes) {
+                if (mimeType == null) continue;
+                mimeType = mimeType.trim();
+                if (mimeType.length() == 0) continue;
+                acceptedMimeTypesSet.add(mimeType);
+            }
+        }
+        return acceptedMimeTypesSet;
+
+    }
+
+    /**
+     * Determine if this sequencer requires the content to have a specific MIME type
+     * 
+     * @return true if this sequencer can only process certain MIME types, or false if there are no restrictions
+     */
+    public final boolean hasAcceptedMimeTypes() {
+        return !getAcceptedMimeTypes().isEmpty();
+    }
+
+    /**
+     * Determine if this sequencer has been configured to accept and process content with the supplied MIME type.
+     * 
+     * @param mimeType the MIME type
+     * @return true if content with the supplied the MIME type is to be processed (or when <code>mimeType</code> is null and
+     *         therefore not known), or false otherwise
+     * @see #hasAcceptedMimeTypes()
+     */
+    public final boolean isAccepted( String mimeType ) {
+        if (mimeType != null && hasAcceptedMimeTypes()) {
+            return getAcceptedMimeTypes().contains(mimeType.trim());
+        }
+        return true; // accept all mime types
     }
 
     /**

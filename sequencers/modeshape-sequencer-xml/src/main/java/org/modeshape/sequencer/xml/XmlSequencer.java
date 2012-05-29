@@ -23,19 +23,20 @@
  */
 package org.modeshape.sequencer.xml;
 
+import java.io.IOException;
 import javax.jcr.Binary;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.jcr.api.mimetype.MimeTypeConstants;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
-import java.io.IOException;
 
 /**
  * A sequencer for XML files, which maintains DTD, entity, comments, and other content. Note that by default the sequencer uses
@@ -47,7 +48,7 @@ public class XmlSequencer extends Sequencer {
 
     /**
      * The choices for how attributes that have no namespace prefix should be assigned a namespace.
-     *
+     * 
      * @author Randall Hauch
      */
     public enum AttributeScoping {
@@ -80,6 +81,13 @@ public class XmlSequencer extends Sequencer {
     public void initialize( NamespaceRegistry registry,
                             NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
         super.registerNodeTypes("xml.cnd", nodeTypeManager, true);
+        registerAcceptedMimeTypes(MimeTypeConstants.APPLICATION_XML,
+                                  MimeTypeConstants.TEXT_XML,
+                                  MimeTypeConstants.HTML_XML,
+                                  MimeTypeConstants.XOP_XML,
+                                  MimeTypeConstants.XSLT,
+                                  MimeTypeConstants.XSFP,
+                                  MimeTypeConstants.MXML);
     }
 
     @Override
@@ -116,7 +124,7 @@ public class XmlSequencer extends Sequencer {
     /**
      * Sets the reader's named feature to the supplied value, only if the feature is not already set to that value. This method
      * does nothing if the feature is not known to the reader.
-     *
+     * 
      * @param reader the reader; may not be null
      * @param featureName the name of the feature; may not be null
      * @param value the value for the feature

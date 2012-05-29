@@ -29,7 +29,6 @@ package org.modeshape.jcr.api;
  * @author Horia Chiorean
  */
 public final class JcrConstants {
-    public static final String JCR_MIMETYPE = "jcr:mimetype";
     public static final String JCR_CONTENT = "jcr:content";
     public static final String JCR_NAME = "jcr:name";
     public static final String JCR_PATH = "jcr:path";
