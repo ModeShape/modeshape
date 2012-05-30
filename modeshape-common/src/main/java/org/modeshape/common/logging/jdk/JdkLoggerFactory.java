@@ -23,8 +23,8 @@
  */
 package org.modeshape.common.logging.jdk;
 
-import org.modeshape.common.logging.Logger;
 import org.modeshape.common.logging.LogFactory;
+import org.modeshape.common.logging.Logger;
 
 /**
  * Factory used to create the {@link Logger} implementation that uses the JDK logging framework.

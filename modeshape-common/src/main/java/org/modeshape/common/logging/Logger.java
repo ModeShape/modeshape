@@ -27,12 +27,13 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.i18n.I18nResource;
+import org.modeshape.common.util.CheckArg;
 
 /**
- * A simple logging interface that is fully compatible with multiple logging implementations. If no specific logging implementation
- * is found, then its defaulted to the JDK Logger implementation. This interface does take advantage of the variable arguments and
- * autoboxing features in Java 5, reducing the number of methods that are necessary and allowing callers to supply primitive
- * values as parameters.
+ * A simple logging interface that is fully compatible with multiple logging implementations. If no specific logging
+ * implementation is found, then its defaulted to the JDK Logger implementation. This interface does take advantage of the
+ * variable arguments and autoboxing features in Java 5, reducing the number of methods that are necessary and allowing callers to
+ * supply primitive values as parameters.
  */
 @ThreadSafe
 public abstract class Logger {
@@ -47,6 +48,17 @@ public abstract class Logger {
     }
 
     private static final AtomicReference<Locale> LOGGING_LOCALE = new AtomicReference<Locale>(null);
+
+    /**
+     * Generally this method only needs to be used if a custom {@link Logger} implementation is to be used, and in such cases
+     * needs to be called as soon as possible (before the ModeShape components are initialized).
+     * 
+     * @param logFactory the custom log factory; may not be null
+     */
+    public static void useCustomLogging( LogFactory logFactory ) {
+        CheckArg.isNotNull(logFactory, "logFactory");
+        LogFactory.setLogFactory(logFactory);
+    }
 
     /**
      * Get the locale used for the logs. If null, the {@link Locale#getDefault() default locale} is used.
@@ -193,7 +205,7 @@ public abstract class Logger {
      * Log a message at the ERROR level according to the specified format and (optional) parameters. The message should contain a
      * pair of empty curly braces for each of the parameter, which should be passed in the correct order. This method is efficient
      * and avoids superfluous object creation when the logger is disabled for the ERROR level.
-     *
+     * 
      * @param message the message string
      * @param params the parameter values that are to replace the variables in the format string
      */
@@ -203,7 +215,7 @@ public abstract class Logger {
     /**
      * Log an exception (throwable) at the ERROR level with an accompanying message. If the exception is null, then this method
      * calls {@link #error(org.modeshape.common.i18n.I18nResource, Object...)}.
-     *
+     * 
      * @param t the exception (throwable) to log
      * @param message the message accompanying the exception
      * @param params the parameter values that are to replace the variables in the format string
@@ -216,7 +228,7 @@ public abstract class Logger {
      * Log a message at the INFO level according to the specified format and (optional) parameters. The message should contain a
      * pair of empty curly braces for each of the parameter, which should be passed in the correct order. This method is efficient
      * and avoids superfluous object creation when the logger is disabled for the INFO level.
-     *
+     * 
      * @param message the message string
      * @param params the parameter values that are to replace the variables in the format string
      */
@@ -226,7 +238,7 @@ public abstract class Logger {
     /**
      * Log an exception (throwable) at the INFO level with an accompanying message. If the exception is null, then this method
      * calls {@link #info(org.modeshape.common.i18n.I18nResource, Object...)}.
-     *
+     * 
      * @param t the exception (throwable) to log
      * @param message the message accompanying the exception
      * @param params the parameter values that are to replace the variables in the format string
@@ -262,7 +274,7 @@ public abstract class Logger {
      * Log a message at the WARNING level according to the specified format and (optional) parameters. The message should contain
      * a pair of empty curly braces for each of the parameter, which should be passed in the correct order. This method is
      * efficient and avoids superfluous object creation when the logger is disabled for the WARNING level.
-     *
+     * 
      * @param message the message string
      * @param params the parameter values that are to replace the variables in the format string
      */
@@ -272,7 +284,7 @@ public abstract class Logger {
     /**
      * Log an exception (throwable) at the WARNING level with an accompanying message. If the exception is null, then this method
      * calls {@link #warn(org.modeshape.common.i18n.I18nResource, Object...)}.
-     *
+     * 
      * @param t the exception (throwable) to log
      * @param message the message accompanying the exception
      * @param params the parameter values that are to replace the variables in the format string
