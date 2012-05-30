@@ -32,18 +32,18 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
-import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.CommonI18n;
 import org.modeshape.common.SystemFailureException;
+import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.ClassUtil;
-import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.StringUtil;
 
 /**
@@ -241,7 +241,8 @@ public final class I18n implements I18nResource {
             final String localizationBaseName = i18nClass.getName();
             URL bundleUrl = repos.getLocalizationBundle(localizationBaseName, locale);
             if (bundleUrl == null) {
-                LOGGER.warn(CommonI18n.i18nBundleNotFoundInClasspath, repos.getPathsToSearchForBundle(localizationBaseName, locale));
+                LOGGER.warn(CommonI18n.i18nBundleNotFoundInClasspath,
+                            repos.getPathsToSearchForBundle(localizationBaseName, locale));
                 // Nothing was found, so try the default locale
                 Locale defaultLocale = Locale.getDefault();
                 if (!defaultLocale.equals(locale)) {
@@ -249,7 +250,8 @@ public final class I18n implements I18nResource {
                 }
                 // Return if no applicable localization file could be found
                 if (bundleUrl == null) {
-                    LOGGER.error(CommonI18n.i18nBundleNotFoundInClasspath, repos.getPathsToSearchForBundle(localizationBaseName, defaultLocale));
+                    LOGGER.error(CommonI18n.i18nBundleNotFoundInClasspath,
+                                 repos.getPathsToSearchForBundle(localizationBaseName, defaultLocale));
                     LOGGER.error(CommonI18n.i18nLocalizationFileNotFound, localizationBaseName);
                     problems.add(CommonI18n.i18nLocalizationFileNotFound.text(localizationBaseName));
                     return;
@@ -268,7 +270,8 @@ public final class I18n implements I18nResource {
                             try {
                                 I18n i18n = (I18n)fld.get(null);
                                 if (i18n.localeToTextMap.get(locale) == null) {
-                                    i18n.localeToProblemMap.put(locale, CommonI18n.i18nPropertyMissing.text(fld.getName(), bundleUrl));
+                                    i18n.localeToProblemMap.put(locale,
+                                                                CommonI18n.i18nPropertyMissing.text(fld.getName(), bundleUrl));
                                 }
                             } catch (IllegalAccessException notPossible) {
                                 // Would have already occurred in initialize method, but allowing for the impossible...
@@ -285,7 +288,9 @@ public final class I18n implements I18nResource {
         }
     }
 
-    private static Properties prepareBundleLoading( final Class<?> i18nClass, final Locale locale, final URL bundleUrl,
+    private static Properties prepareBundleLoading( final Class<?> i18nClass,
+                                                    final Locale locale,
+                                                    final URL bundleUrl,
                                                     final Set<String> problems ) {
         return new Properties() {
             private static final long serialVersionUID = 3920620306881072843L;
@@ -306,7 +311,8 @@ public final class I18n implements I18nResource {
                         if (i18n.localeToTextMap.putIfAbsent(locale, text) != null) {
                             // Duplicate id encountered
                             String prevProblem = i18n.localeToProblemMap.putIfAbsent(locale,
-                                    CommonI18n.i18nPropertyDuplicate.text(id, bundleUrl));
+                                                                                     CommonI18n.i18nPropertyDuplicate.text(id,
+                                                                                                                           bundleUrl));
                             assert prevProblem == null;
                         }
                     }
@@ -414,6 +420,7 @@ public final class I18n implements I18nResource {
      * @param arguments the arguments for the parameter replacement; may be <code>null</code> or empty
      * @return the localized text
      */
+    @Override
     public String text( Object... arguments ) {
         return text(null, arguments);
     }
@@ -425,6 +432,7 @@ public final class I18n implements I18nResource {
      * @param arguments the arguments for the parameter replacement; may be <code>null</code> or empty
      * @return the localized text
      */
+    @Override
     public String text( Locale locale,
                         Object... arguments ) {
         try {

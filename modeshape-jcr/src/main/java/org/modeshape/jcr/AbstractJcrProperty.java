@@ -330,6 +330,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
     @Override
     public abstract JcrValue getValue() throws ValueFormatException, RepositoryException;
 
+    @SuppressWarnings( "deprecation" )
     @Override
     public void save() throws RepositoryException {
         checkSession();

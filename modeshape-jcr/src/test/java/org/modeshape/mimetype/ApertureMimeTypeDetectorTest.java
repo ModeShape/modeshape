@@ -23,8 +23,74 @@
  */
 package org.modeshape.mimetype;
 
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.BASH;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.BMP;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.CALENDAR;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.COREL_PRESENTATION;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.COREL_QUATTRO_PRO;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.COREL_QUATTRO_SPREADSHEET;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.COREL_WORD_PERFECT;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.GIF;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.GZIP;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.HTML;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.ICON;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.JAR;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.JAR_MANIFEST;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.JAVA;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.JAVA_CLASS;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.JPEG;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.MESSAGE_RFC;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.MICROSOFT_EXCEL;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.MICROSOFT_EXCEL_OPENXML;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.MICROSOFT_OFFICE;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.MICROSOFT_OFFICE_DOCUMENT_OPENXML;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.MICROSOFT_OUTLOOK;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.MICROSOFT_POWERPOINT;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.MICROSOFT_POWERPOINT_OPENXML;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.MICROSOFT_PUBLISHER;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.MICROSOFT_VISIO;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.MICROSOFT_WORD;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.MICROSOFT_WORKS;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.MOZILLA_ADDRESS_BOOK;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.MP3;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.OGG;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.OPEN_DOC_FORMULA;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.OPEN_DOC_GRAPHICS;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.OPEN_DOC_GRAPHICS_TEMPLATE;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.OPEN_DOC_PRESENTATION;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.OPEN_DOC_PRESENTATION_TEMPLATE;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.OPEN_DOC_SPREADSHEET;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.OPEN_DOC_SPREADSHEET_TEMPLATE;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.OPEN_DOC_TEXT;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.OPEN_DOC_TEXT_TEMPLATE;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.OPEN_OFFICE_CALC;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.OPEN_OFFICE_CALC_TEMPLATE;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.OPEN_OFFICE_DRAW;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.OPEN_OFFICE_DRAW_TEMPLATE;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.OPEN_OFFICE_IMPRESS;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.OPEN_OFFICE_IMPRESS_TEMPLATE;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.OPEN_OFFICE_WRITER;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.OPEN_OFFICE_WRITER_TEMPLATE;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.PDF;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.PNG;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.PORTABLE_PIXMAP;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.POSTSCRIPT;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.RTF;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.STAR_OFFICE_CALC;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.STAR_OFFICE_DRAW;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.STAR_OFFICE_IMPRESS;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.STAR_OFFICE_WRITER;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.TEXT_PLAIN;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.TEXT_XML;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.TGA;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.TIFF;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.VCARD;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.WAV;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.WMF;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.XCF;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.XPM;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.ZIP;
 import org.junit.Test;
-import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.*;
 import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.mimetype.ApertureMimeTypeDetector;
 
@@ -34,7 +100,7 @@ import org.modeshape.jcr.mimetype.ApertureMimeTypeDetector;
  * @author Horia Chiorean
  */
 public class ApertureMimeTypeDetectorTest extends AbstractMimeTypeTest {
- 
+
     @Override
     protected MimeTypeDetector getDetector() {
         return new ApertureMimeTypeDetector();
@@ -222,52 +288,52 @@ public class ApertureMimeTypeDetectorTest extends AbstractMimeTypeTest {
 
     @Test
     public void shouldProvideMimeTypeForXml_test_xml() throws Exception {
-        testMimeType("test.xml", XML);
+        testMimeType("test.xml", TEXT_XML);
     }
 
     @Test
     public void shouldProvideMimeTypeForXml_test_excel_spreadsheet_xml() throws Exception {
-        testMimeType("test_excel_spreadsheet.xml", XML);
+        testMimeType("test_excel_spreadsheet.xml", TEXT_XML);
     }
 
     @Test
     public void shouldProvideMimeTypeForXml_CurrencyFormatterExample_mxml() throws Exception {
-        testMimeType("CurrencyFormatterExample.mxml", XML);
+        testMimeType("CurrencyFormatterExample.mxml", TEXT_XML);
     }
 
     @Test
     public void shouldProvideMimeTypeForXml_xml_handwritten_xml() throws Exception {
-        testMimeType("docs/xml-handwritten.xml", XML);
+        testMimeType("docs/xml-handwritten.xml", TEXT_XML);
     }
 
     @Test
     public void shouldProvideMimeTypeForXml_xml_nonexistent_dtd_xml() throws Exception {
-        testMimeType("docs/xml-nonexistent-dtd.xml", XML);
+        testMimeType("docs/xml-nonexistent-dtd.xml", TEXT_XML);
     }
 
     @Test
     public void shouldProvideMimeTypeForXml_xml_nonexistent_remote_dtd_xml() throws Exception {
-        testMimeType("docs/xml-nonexistent-remote-dtd.xml", XML);
+        testMimeType("docs/xml-nonexistent-remote-dtd.xml", TEXT_XML);
     }
 
     @Test
     public void shouldProvideMimeTypeForXml_xml_nonexistent_remote_xsd_xml() throws Exception {
-        testMimeType("docs/xml-nonexistent-remote-xsd.xml", XML);
+        testMimeType("docs/xml-nonexistent-remote-xsd.xml", TEXT_XML);
     }
 
     @Test
     public void shouldProvideMimeTypeForXml_xml_nonexistent_xsd_xml() throws Exception {
-        testMimeType("docs/xml-nonexistent-xsd.xml", XML);
+        testMimeType("docs/xml-nonexistent-xsd.xml", TEXT_XML);
     }
 
     @Test
     public void shouldProvideMimeTypeForXml_xml_utf8_bom() throws Exception {
-        testMimeType("docs/xml-utf8-bom", XML);
+        testMimeType("docs/xml-utf8-bom", TEXT_XML);
     }
 
     @Test
     public void shouldProvideMimeTypeForXsd() throws Exception {
-        testMimeType("Descriptor.1.0.xsd", XML);
+        testMimeType("Descriptor.1.0.xsd", TEXT_XML);
     }
 
     @Test

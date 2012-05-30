@@ -41,12 +41,16 @@ import org.modeshape.sequencer.sramp.AbstractSrampSequencer;
  */
 public class XsdSequencer extends AbstractSrampSequencer {
 
+    @SuppressWarnings( "deprecation" )
     @Override
     public void initialize( NamespaceRegistry registry,
                             NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
         super.initialize(registry, nodeTypeManager);
         registerNodeTypes("xsd.cnd", nodeTypeManager, true);
-        registerDefaultMimeTypes(MimeTypeConstants.XSD, MimeTypeConstants.APPLICATION_XML, MimeTypeConstants.TEXT_XML);
+        registerDefaultMimeTypes(MimeTypeConstants.XSD, // just in case clients set these mime type
+                                 MimeTypeConstants.XSD_XML, // on nodes to be sequenced
+                                 MimeTypeConstants.APPLICATION_XML,
+                                 MimeTypeConstants.TEXT_XML);
     }
 
     @Override

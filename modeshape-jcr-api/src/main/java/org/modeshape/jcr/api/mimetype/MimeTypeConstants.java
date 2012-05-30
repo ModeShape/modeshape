@@ -34,10 +34,8 @@ public final class MimeTypeConstants {
 
     public static final String TEXT_PLAIN = "text/plain";
     public static final String RTF = "text/rtf";
-    public static final String XML = "text/xml";
     public static final String HTML = "text/html";
     public static final String WSDL = "application/wsdl+xml";
-    public static final String XSD = "application/xsd";
     public static final String APPLICATION_XML = "application/xml";
     public static final String TEXT_XML = "text/xml";
     public static final String HTML_XML = "application/xhtml+xml";
@@ -45,6 +43,12 @@ public final class MimeTypeConstants {
     public static final String XSLT = "application/xslt+xml";
     public static final String XSFP = "application/xsfp+xml";
     public static final String MXML = "application/xv+xml";
+
+    /** This is not a valid MIME type, but we're using it in case other people use it */
+    @Deprecated
+    public static final String XSD = "application/xsd";
+    @Deprecated
+    public static final String XSD_XML = "application/xsd+xml";
 
     public static final String MP3 = "audio/mpeg";
     public static final String WAV = "audio/x-wav";
