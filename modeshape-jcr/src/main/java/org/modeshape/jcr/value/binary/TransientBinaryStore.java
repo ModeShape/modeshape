@@ -39,6 +39,8 @@ public final class TransientBinaryStore extends FileSystemBinaryStore {
 
     private static final String JAVA_IO_TMPDIR = "java.io.tmpdir";
 
+    private static final String JBOSS_SERVER_DATA_DIR = "jboss.server.data.dir";
+
     private static final TransientBinaryStore INSTANCE = new TransientBinaryStore();
 
     protected static final File TRANSIENT_STORE_DIRECTORY = INSTANCE.getDirectory();
@@ -64,7 +66,11 @@ public final class TransientBinaryStore extends FileSystemBinaryStore {
             throw new SystemFailureException(JcrI18n.tempDirectorySystemPropertyMustBeSet.text(JAVA_IO_TMPDIR));
         }
         File tempDir = new File(tempDirName);
-        Logger.getLogger(TransientBinaryStore.class).info(JcrI18n.tempDirectoryLocation, tempDir.getAbsolutePath());
+        if (System.getProperty(JBOSS_SERVER_DATA_DIR) == null) {
+            // We're not running in JBoss AS (where we always specify the directory where the binaries are stored),
+            // so log where the temporary directory is ...
+            Logger.getLogger(TransientBinaryStore.class).info(JcrI18n.tempDirectoryLocation, tempDir.getAbsolutePath());
+        }
 
         // Create a temporary directory in the "java.io.tmpdir" directory ...
         return new File(tempDir, "modeshape-binary-store");
