@@ -118,7 +118,7 @@ public class MSOfficeMetadataSequencer extends Sequencer {
     public void initialize( NamespaceRegistry registry,
                             NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
         registerNodeTypes("msoffice.cnd", nodeTypeManager, true);
-        registerAcceptedMimeTypes(MimeTypeConstants.MICROSOFT_EXCEL,
+        registerDefaultMimeTypes(MimeTypeConstants.MICROSOFT_EXCEL,
                                   MimeTypeConstants.MICROSOFT_POWERPOINT,
                                   MimeTypeConstants.MICROSOFT_WORD,
                                   MimeTypeConstants.MICROSOFT_APPLICATION_MS_WORD);

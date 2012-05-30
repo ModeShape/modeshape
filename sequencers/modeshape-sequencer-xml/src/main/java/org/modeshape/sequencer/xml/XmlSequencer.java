@@ -81,7 +81,7 @@ public class XmlSequencer extends Sequencer {
     public void initialize( NamespaceRegistry registry,
                             NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
         super.registerNodeTypes("xml.cnd", nodeTypeManager, true);
-        registerAcceptedMimeTypes(MimeTypeConstants.APPLICATION_XML,
+        registerDefaultMimeTypes(MimeTypeConstants.APPLICATION_XML,
                                   MimeTypeConstants.TEXT_XML,
                                   MimeTypeConstants.HTML_XML,
                                   MimeTypeConstants.XOP_XML,

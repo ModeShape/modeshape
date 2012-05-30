@@ -46,7 +46,7 @@ public class XsdSequencer extends AbstractSrampSequencer {
                             NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
         super.initialize(registry, nodeTypeManager);
         registerNodeTypes("xsd.cnd", nodeTypeManager, true);
-        registerAcceptedMimeTypes(MimeTypeConstants.XSD, MimeTypeConstants.APPLICATION_XML, MimeTypeConstants.TEXT_XML);
+        registerDefaultMimeTypes(MimeTypeConstants.XSD, MimeTypeConstants.APPLICATION_XML, MimeTypeConstants.TEXT_XML);
     }
 
     @Override

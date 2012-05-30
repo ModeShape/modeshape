@@ -48,7 +48,7 @@ public class WsdlSequencer extends AbstractSrampSequencer {
         super.initialize(registry, nodeTypeManager);
         registerNodeTypes(XsdSequencer.class.getResourceAsStream("xsd.cnd"), nodeTypeManager, true);
         registerNodeTypes("wsdl.cnd", nodeTypeManager, true);
-        registerAcceptedMimeTypes(MimeTypeConstants.WSDL, MimeTypeConstants.APPLICATION_XML, MimeTypeConstants.TEXT_XML);
+        registerDefaultMimeTypes(MimeTypeConstants.WSDL, MimeTypeConstants.APPLICATION_XML, MimeTypeConstants.TEXT_XML);
     }
 
     @Override

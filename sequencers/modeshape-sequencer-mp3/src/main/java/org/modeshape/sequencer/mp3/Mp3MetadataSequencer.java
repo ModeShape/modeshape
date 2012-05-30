@@ -64,7 +64,7 @@ public class Mp3MetadataSequencer extends Sequencer {
     public void initialize( NamespaceRegistry registry,
                             NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
         super.registerNodeTypes("mp3.cnd", nodeTypeManager, true);
-        registerAcceptedMimeTypes(MimeTypeConstants.MP3);
+        registerDefaultMimeTypes(MimeTypeConstants.MP3);
     }
 
     @Override

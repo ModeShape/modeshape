@@ -121,7 +121,7 @@ public class ImageMetadataSequencer extends Sequencer {
     public void initialize( NamespaceRegistry registry,
                             NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
         registerNodeTypes("images.cnd", nodeTypeManager, true);
-        registerAcceptedMimeTypes(MimeTypeConstants.JPEG,
+        registerDefaultMimeTypes(MimeTypeConstants.JPEG,
                                     MimeTypeConstants.BMP,
                                     MimeTypeConstants.GIF,
                                     MimeTypeConstants.PCX,

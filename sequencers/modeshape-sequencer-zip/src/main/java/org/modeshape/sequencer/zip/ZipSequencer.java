@@ -51,7 +51,7 @@ public class ZipSequencer extends Sequencer {
     public void initialize( NamespaceRegistry registry,
                             NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
         super.registerNodeTypes("zip.cnd", nodeTypeManager, true);
-        registerAcceptedMimeTypes(MimeTypeConstants.JAR, MimeTypeConstants.ZIP);
+        registerDefaultMimeTypes(MimeTypeConstants.JAR, MimeTypeConstants.ZIP);
     }
 
     @Override

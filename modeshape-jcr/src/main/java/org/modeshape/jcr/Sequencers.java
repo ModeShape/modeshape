@@ -24,6 +24,7 @@
 package org.modeshape.jcr;
 
 import java.io.Serializable;
+import java.lang.reflect.Method;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -43,8 +44,8 @@ import javax.jcr.nodetype.NodeTypeManager;
 import org.infinispan.util.ReflectionUtil;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.Immutable;
-import org.modeshape.common.util.HashCode;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.HashCode;
 import org.modeshape.jcr.RepositoryConfiguration.Component;
 import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.api.monitor.ValueMetric;
@@ -130,7 +131,7 @@ public class Sequencers implements ChangeSetListener {
                     // Set the repository name field ...
                     ReflectionUtil.setValue(sequencer, "repositoryName", repoName);
 
-                    //Set the logger instance
+                    // Set the logger instance
                     ReflectionUtil.setValue(sequencer, "logger", ExtensionLogger.getLogger(sequencer.getClass()));
                     // We'll initialize it later in #intialize() ...
 
@@ -194,6 +195,10 @@ public class Sequencers implements ChangeSetListener {
                 Sequencer sequencer = sequencersIterator.next().getValue();
                 try {
                     sequencer.initialize(registry, (org.modeshape.jcr.api.nodetype.NodeTypeManager)nodeTypeManager);
+
+                    // If successful, call the 'postInitialize' method reflectively (due to inability to call directly) ...
+                    Method postInitialize = ReflectionUtil.findMethod(Sequencer.class, "postInitialize");
+                    ReflectionUtil.invokeAccessibly(sequencer, postInitialize, new Object[] {});
                 } catch (Throwable t) {
                     logger.error(JcrI18n.unableToInitializeSequencer, sequencer, repository.name(), t.getMessage());
                     sequencersIterator.remove();
@@ -295,14 +300,13 @@ public class Sequencers implements ChangeSetListener {
                                Matcher matcher,
                                String inputWorkspaceName,
                                String propertyName,
-                               String userId) {
+                               String userId ) {
         if (shutdown) return;
         // Convert the input path (which has a '@' to denote a property) to a standard JCR path ...
         SequencingWorkItem workItem = new SequencingWorkItem(sequencingConfig.getSequencer().getUniqueId(), userId,
-                                                             inputWorkspaceName,
-                                                             matcher.getSelectedPath(), matcher.getJcrInputPath(),
-                                                             matcher.getOutputPath(), matcher.getOutputWorkspaceName(),
-                                                             propertyName);
+                                                             inputWorkspaceName, matcher.getSelectedPath(),
+                                                             matcher.getJcrInputPath(), matcher.getOutputPath(),
+                                                             matcher.getOutputWorkspaceName(), propertyName);
         statistics().increment(ValueMetric.SEQUENCER_QUEUE_SIZE);
         workQueue.submit(workItem);
     }
@@ -532,7 +536,7 @@ public class Sequencers implements ChangeSetListener {
 
         /**
          * Get the id (username) of the user which triggered the sequencing
-         *
+         * 
          * @return the user id, never null
          */
         public String getUserId() {
