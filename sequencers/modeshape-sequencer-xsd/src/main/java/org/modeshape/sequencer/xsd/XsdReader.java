@@ -23,6 +23,16 @@
  */
 package org.modeshape.sequencer.xsd;
 
+import static org.modeshape.sequencer.sramp.SrampLexicon.DESCRIPTION;
+import static org.modeshape.sequencer.xsd.XsdLexicon.IMPORT;
+import java.io.InputStream;
+import java.io.Reader;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.PropertyType;
@@ -68,20 +78,10 @@ import org.modeshape.jcr.api.mimetype.MimeTypeConstants;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.modeshape.sequencer.sramp.AbstractResolvingReader;
 import org.modeshape.sequencer.sramp.SrampLexicon;
-import static org.modeshape.sequencer.sramp.SrampLexicon.DESCRIPTION;
 import org.modeshape.sequencer.sramp.SymbolSpace;
-import static org.modeshape.sequencer.xsd.XsdLexicon.IMPORT;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.xml.sax.InputSource;
-import java.io.InputStream;
-import java.io.Reader;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * A class that can parse XML Schema Documents and create a node structure based on the schema information.
@@ -91,7 +91,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 @NotThreadSafe
 public class XsdReader extends AbstractResolvingReader {
-    
+
     /**
      * In XML Schema, there is a distinct symbol space within each target namespace for each kind of <a
      * href="http://www.w3.org/TR/xmlschema-1/#concepts-data-model">declaration and definition component</a>, except that within a
@@ -167,7 +167,7 @@ public class XsdReader extends AbstractResolvingReader {
         assert schema != null;
 
         logger.debug("Target namespace: '{0}'", schema.getTargetNamespace());
-        rootNode.setProperty(SrampLexicon.CONTENT_TYPE, MimeTypeConstants.XSD);
+        rootNode.setProperty(SrampLexicon.CONTENT_TYPE, MimeTypeConstants.APPLICATION_XML);
         if (encoding != null) {
             rootNode.setProperty(SrampLexicon.CONTENT_ENCODING, encoding);
         }
@@ -242,8 +242,7 @@ public class XsdReader extends AbstractResolvingReader {
         typeNode.setProperty(XsdLexicon.NAMESPACE, type.getTargetNamespace());
         if (!isAnonymous) {
             typeNode.setProperty(XsdLexicon.NC_NAME, type.getName());
-            registerForSymbolSpace(TYPE_DEFINITIONS, type.getTargetNamespace(), type.getName(),
-                                   typeNode.getIdentifier());
+            registerForSymbolSpace(TYPE_DEFINITIONS, type.getTargetNamespace(), type.getName(), typeNode.getIdentifier());
         }
         processTypeFacets(type, typeNode, type.getBaseType());
         processNonSchemaAttributes(type, typeNode);
@@ -316,8 +315,7 @@ public class XsdReader extends AbstractResolvingReader {
         typeNode.setProperty(XsdLexicon.NAMESPACE, type.getTargetNamespace());
         if (!isAnonymous) {
             typeNode.setProperty(XsdLexicon.NC_NAME, type.getName());
-            registerForSymbolSpace(TYPE_DEFINITIONS, type.getTargetNamespace(), type.getName(),
-                                   typeNode.getIdentifier());
+            registerForSymbolSpace(TYPE_DEFINITIONS, type.getTargetNamespace(), type.getName(), typeNode.getIdentifier());
         }
         XSDTypeDefinition baseType = type.getBaseType();
         if (baseType == type) {
@@ -365,14 +363,12 @@ public class XsdReader extends AbstractResolvingReader {
             declarationNode = parentNode.addNode(resolved.getName(), XsdLexicon.ELEMENT_DECLARATION);
             declarationNode.setProperty(XsdLexicon.REF_NAME, resolved.getName());
             declarationNode.setProperty(XsdLexicon.REF_NAMESPACE, resolved.getTargetNamespace());
-            setReference(declarationNode,
-                         XsdLexicon.REF,
-                         ELEMENT_DECLARATION,
-                         resolved.getTargetNamespace(),
-                         resolved.getName());
+            setReference(declarationNode, XsdLexicon.REF, ELEMENT_DECLARATION, resolved.getTargetNamespace(), resolved.getName());
         }
         if (decl.isGlobal()) {
-            registerForSymbolSpace(ELEMENT_DECLARATION, decl.getTargetNamespace(), decl.getName(),
+            registerForSymbolSpace(ELEMENT_DECLARATION,
+                                   decl.getTargetNamespace(),
+                                   decl.getName(),
                                    declarationNode.getIdentifier());
         }
 
@@ -383,11 +379,7 @@ public class XsdReader extends AbstractResolvingReader {
         if (type != null) {
             declarationNode.setProperty(XsdLexicon.TYPE_NAME, type.getName());
             declarationNode.setProperty(XsdLexicon.TYPE_NAMESPACE, type.getTargetNamespace());
-            setReference(declarationNode,
-                         XsdLexicon.TYPE_REFERENCE,
-                         TYPE_DEFINITIONS,
-                         type.getTargetNamespace(),
-                         type.getName());
+            setReference(declarationNode, XsdLexicon.TYPE_REFERENCE, TYPE_DEFINITIONS, type.getTargetNamespace(), type.getName());
         }
 
         if (decl.getAnonymousTypeDefinition() == type) {
@@ -425,7 +417,9 @@ public class XsdReader extends AbstractResolvingReader {
         attributeDeclarationNode.setProperty(XsdLexicon.NC_NAME, decl.getName());
         attributeDeclarationNode.setProperty(XsdLexicon.NAMESPACE, decl.getTargetNamespace());
         if (decl.isGlobal() && !isUse) {
-            registerForSymbolSpace(ATTRIBUTE_DECLARATIONS, decl.getTargetNamespace(), decl.getName(),
+            registerForSymbolSpace(ATTRIBUTE_DECLARATIONS,
+                                   decl.getTargetNamespace(),
+                                   decl.getName(),
                                    attributeDeclarationNode.getIdentifier());
         }
         XSDTypeDefinition type = decl.getType();
@@ -585,7 +579,9 @@ public class XsdReader extends AbstractResolvingReader {
         } else {
             logger.debug("Attribute Group definition: '{}' in ns '{}' ", defn.getName(), defn.getTargetNamespace());
             attributeGroupNode = parentNode.addNode(defn.getName(), XsdLexicon.ATTRIBUTE_GROUP);
-            registerForSymbolSpace(ATTRIBUTE_GROUP_DEFINITIONS, defn.getTargetNamespace(), defn.getName(),
+            registerForSymbolSpace(ATTRIBUTE_GROUP_DEFINITIONS,
+                                   defn.getTargetNamespace(),
+                                   defn.getName(),
                                    attributeGroupNode.getIdentifier());
             attributeGroupNode.setProperty(XsdLexicon.NC_NAME, defn.getName());
             attributeGroupNode.setProperty(XsdLexicon.NAMESPACE, defn.getTargetNamespace());
@@ -729,10 +725,9 @@ public class XsdReader extends AbstractResolvingReader {
 
     /**
      * Given an {@link XSDFacet}, determines the JCR property type based on the value of the facet.
-     *
+     * 
      * @param facetValue a String representing the lexical value of the facet, which can be null.
      * @param defaultPropertyType a given property type, of which we expected the string value to be convertible to.
-     *
      * @return a property type to which the string value can be converted
      */
     private int determineJCRPropertyTypeForFacet( String facetValue,
