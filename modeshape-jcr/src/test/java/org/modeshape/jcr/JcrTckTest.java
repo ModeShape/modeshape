@@ -131,6 +131,7 @@ import org.apache.jackrabbit.test.api.WorkspaceTest;
 import org.apache.jackrabbit.test.api.nodetype.NodeTypeCreationTest;
 import org.apache.jackrabbit.test.api.observation.AddEventListenerTest;
 import org.apache.jackrabbit.test.api.observation.EventIteratorTest;
+import org.apache.jackrabbit.test.api.observation.EventJournalTest;
 import org.apache.jackrabbit.test.api.observation.EventTest;
 import org.apache.jackrabbit.test.api.observation.GetDateTest;
 import org.apache.jackrabbit.test.api.observation.GetIdentifierTest;
@@ -216,6 +217,7 @@ import org.apache.jackrabbit.test.api.version.GetCreatedTest;
 import org.apache.jackrabbit.test.api.version.GetPredecessorsTest;
 import org.apache.jackrabbit.test.api.version.GetReferencesNodeTest;
 import org.apache.jackrabbit.test.api.version.GetVersionableUUIDTest;
+import org.apache.jackrabbit.test.api.version.MergeActivityTest;
 import org.apache.jackrabbit.test.api.version.MergeCancelMergeTest;
 import org.apache.jackrabbit.test.api.version.MergeCheckedoutSubNodeTest;
 import org.apache.jackrabbit.test.api.version.MergeDoneMergeTest;
@@ -561,8 +563,7 @@ public class JcrTckTest {
             addTestSuite(WorkspaceOperationTest.class);
             //
             // JCR 2.0
-            // TODO author=Horia Chiorean date=4/19/12 description=https://issues.apache.org/jira/browse/JCR-2662
-            // addTestSuite(EventJournalTest.class);
+            addTestSuite(EventJournalTest.class);
             addTestSuite(GetDateTest.class);
             addTestSuite(GetIdentifierTest.class);
             addTestSuite(GetInfoTest.class);
@@ -612,9 +613,7 @@ public class JcrTckTest {
             addTestSuite(MergeShallowTest.class);
             addTestSuite(MergeNonVersionableSubNodeTest.class);
             addTestSuite(MergeSubNodeTest.class);
-
-            // TODO author=Horia Chiorean date=5/14/12 description=https://issues.apache.org/jira/browse/JCR-3307
-            // addTestSuite(MergeActivityTest.class);
+            addTestSuite(MergeActivityTest.class);
 
             // JCR 2.0
             addTestSuite(ActivitiesTest.class);
