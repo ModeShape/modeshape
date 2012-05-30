@@ -118,6 +118,10 @@ public class MSOfficeMetadataSequencer extends Sequencer {
     public void initialize( NamespaceRegistry registry,
                             NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
         registerNodeTypes("msoffice.cnd", nodeTypeManager, true);
+        registerDefaultMimeTypes(MimeTypeConstants.MICROSOFT_EXCEL,
+                                  MimeTypeConstants.MICROSOFT_POWERPOINT,
+                                  MimeTypeConstants.MICROSOFT_WORD,
+                                  MimeTypeConstants.MICROSOFT_APPLICATION_MS_WORD);
     }
 
     @Override
@@ -180,7 +184,9 @@ public class MSOfficeMetadataSequencer extends Sequencer {
     }
 
     private boolean isWord( String mimeType ) {
-        return MimeTypeConstants.MICROSOFT_WORD.equalsIgnoreCase(mimeType);
+        // See http://blogs.msdn.com/b/vsofficedeveloper/archive/2008/05/08/office-2007-open-xml-mime-types.aspx
+        return MimeTypeConstants.MICROSOFT_WORD.equalsIgnoreCase(mimeType)
+               || MimeTypeConstants.MICROSOFT_APPLICATION_MS_WORD.equalsIgnoreCase(mimeType);
     }
 
     private void sequenceWord( Node rootNode,

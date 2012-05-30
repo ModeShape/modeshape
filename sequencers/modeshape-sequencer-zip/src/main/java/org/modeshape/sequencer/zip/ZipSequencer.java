@@ -36,6 +36,7 @@ import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.JcrConstants;
+import org.modeshape.jcr.api.mimetype.MimeTypeConstants;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 
@@ -50,6 +51,7 @@ public class ZipSequencer extends Sequencer {
     public void initialize( NamespaceRegistry registry,
                             NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
         super.registerNodeTypes("zip.cnd", nodeTypeManager, true);
+        registerDefaultMimeTypes(MimeTypeConstants.JAR, MimeTypeConstants.ZIP);
     }
 
     @Override
@@ -70,6 +72,7 @@ public class ZipSequencer extends Sequencer {
             while (entry != null) {
                 entry = sequenceZipEntry(outputNode, context, zipInputStream, entry);
             }
+            return true;
         } finally {
             if (zipInputStream != null) {
                 try {
@@ -79,7 +82,6 @@ public class ZipSequencer extends Sequencer {
                 }
             }
         }
-        return true;
     }
 
     private Node createTopLevelNode( Node outputNode ) throws RepositoryException {

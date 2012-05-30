@@ -845,7 +845,7 @@ application/xcon-conference-info+xml
 application/xenc+xml                xenc
 application/xhtml+xml               xhtml xht
 application/xhtml-voice+xml
-application/xml                 xml xsl
+application/xml                 xml xsl xsd
 application/xml-dtd             dtd
 application/xml-external-parsed-entity
 application/xmpp+xml

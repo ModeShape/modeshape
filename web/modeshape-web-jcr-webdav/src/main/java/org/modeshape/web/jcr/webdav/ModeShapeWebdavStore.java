@@ -48,9 +48,9 @@ import net.sf.webdav.IWebdavStore;
 import net.sf.webdav.StoredObject;
 import net.sf.webdav.exceptions.WebdavException;
 import org.modeshape.common.i18n.I18n;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.IoUtil;
-import org.modeshape.common.util.Logger;
 import org.modeshape.web.jcr.RepositoryManager;
 
 /**

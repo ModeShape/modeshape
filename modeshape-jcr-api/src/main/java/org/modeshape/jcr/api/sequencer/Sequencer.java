@@ -27,7 +27,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import javax.jcr.NamespaceException;
 import javax.jcr.NamespaceRegistry;
@@ -57,10 +60,38 @@ public abstract class Sequencer {
      * The logger instance, set via reflection
      */
     private Logger logger;
+
+    /**
+     * The name of this sequencer, set via reflection
+     */
     private String name;
+
+    /**
+     * The name of the repository that owns this sequencer, set via reflection
+     */
     private String repositoryName;
+
+    /**
+     * The multiple path expressions for this sequencer, set via reflection
+     */
     private Object[] pathExpressions;
+
+    /**
+     * The singular path expression of this sequencer, set via reflection
+     */
     private String pathExpression;
+
+    /**
+     * The set of MIME types that this sequencer will process. Subclasses should set call
+     * {@link #registerDefaultMimeTypes(String...)} in the no-arg constructor to set the default MIME types for the sequencer, but
+     * the field may be overwritten in the sequencer's configuration by setting the "acceptedMimeTypes" field to an array of
+     * string values.
+     */
+    private String[] acceptedMimeTypes = {};
+
+    private Set<String> acceptedMimeTypesSet = null;
+
+    private boolean initialized = false;
 
     /**
      * Return the unique identifier for this sequencer.
@@ -112,6 +143,7 @@ public abstract class Sequencer {
 
     private void addExpression( List<String> values,
                                 Object value ) {
+        assert !initialized : "No expressions can be added after the sequencer has been initialized";
         if (value instanceof String) {
             String str = (String)value;
             str = str.trim();
@@ -122,7 +154,8 @@ public abstract class Sequencer {
     }
 
     /**
-     * Initialize the sequencer. This is called automatically by ModeShape, and should not be called by the sequencer.
+     * Initialize the sequencer. This is called automatically by ModeShape once for each Sequencer instance, and should not be
+     * called by the sequencer.
      * <p>
      * By default this method does nothing, so it should be overridden by implementations to do a one-time initialization of any
      * internal components. For example, sequencers can use the supplied <code>registry</code> and <code>nodeTypeManager</code>
@@ -136,6 +169,26 @@ public abstract class Sequencer {
      */
     public void initialize( NamespaceRegistry registry,
                             NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
+        // Subclasses may not necessarily call 'super.initialize(...)', but if they do then we can make this assertion ...
+        assert !initialized : "The Sequencer.initialize(...) method should not be called by subclasses; ModeShape has already (and automatically) initialized the Sequencer";
+    }
+
+    /**
+     * Method called by the code calling {@link #initialize(NamespaceRegistry, NodeTypeManager)} (typically via reflection) to
+     * signal that the initialize method is completed. See Sequencers.initialize() for details, and no this method is indeed used.
+     */
+    @SuppressWarnings( "unused" )
+    private void postInitialize() {
+        if (!initialized) {
+            initialized = true;
+
+            // ------------------------------------------------------------------------------------------------------------
+            // Add any code here that needs to run after #initialize(...), which will be overwritten by subclasses
+            // ------------------------------------------------------------------------------------------------------------
+
+            // Make immutable the Set<String> of accepts MIME types ...
+            acceptedMimeTypesSet = Collections.unmodifiableSet(getAcceptedMimeTypes());
+        }
     }
 
     /**
@@ -153,6 +206,11 @@ public abstract class Sequencer {
      * </p>
      * <p>
      * The implementation is expected to always clean up all resources that it acquired, even in the case of exceptions.
+     * </p>
+     * <p>
+     * Note: This method <em>must</em> be threadsafe: ModeShape will likely invoke this method concurrently in separate threads,
+     * and the method should never modify the state or fields of the Sequencer implementation class. All initialization should be
+     * performed in {@link #initialize(NamespaceRegistry, NodeTypeManager)}.
      * </p>
      * 
      * @param inputProperty the property that was changed and that should be used as the input; never null
@@ -240,6 +298,76 @@ public abstract class Sequencer {
 
     protected final Logger getLogger() {
         return logger;
+    }
+
+    /**
+     * Set the MIME types that are accepted by default, if there are any. This method should be called from the
+     * {@link #initialize(NamespaceRegistry, NodeTypeManager)} method in the subclass.
+     * <p>
+     * This method can be called more than once to add additional mime types.
+     * </p>
+     * 
+     * @param mimeTypes the array of MIME types that are accepted by this sequencer
+     * @see #isAccepted(String)
+     */
+    protected final void registerDefaultMimeTypes( String... mimeTypes ) {
+        assert !initialized : "No default MIME types can be registered after the sequencer has been initialized";
+        if (mimeTypes != null && mimeTypes.length != 0 && acceptedMimeTypes.length == 0) {
+            // There are no overridden mime types, so we can regiser the default MIME types ...
+            if (acceptedMimeTypesSet == null) acceptedMimeTypesSet = new HashSet<String>();
+            for (String mimeType : mimeTypes) {
+                if (mimeType == null) continue;
+                mimeType = mimeType.trim();
+                if (mimeType.length() == 0) continue;
+                acceptedMimeTypesSet.add(mimeType);
+            }
+        }
+    }
+
+    /**
+     * Utility method to obtain the set of accepted MIME types. The resulting set will either be those set by default in the
+     * subclass' overridden {@link #initialize(NamespaceRegistry, NodeTypeManager)} method or the MIME types explicitly set in the
+     * sequencers configuration.
+     * 
+     * @return the set of MIME types that are accepted by this Sequencer instance; never null but possibly empty if this Sequencer
+     *         instance accepts all MIME types
+     */
+    protected final Set<String> getAcceptedMimeTypes() {
+        if (acceptedMimeTypesSet == null) {
+            // No defaults are registered, so use those non-defaults ...
+            acceptedMimeTypesSet = new HashSet<String>();
+            for (String mimeType : acceptedMimeTypes) {
+                if (mimeType == null) continue;
+                mimeType = mimeType.trim();
+                if (mimeType.length() == 0) continue;
+                acceptedMimeTypesSet.add(mimeType);
+            }
+        }
+        return acceptedMimeTypesSet;
+    }
+
+    /**
+     * Determine if this sequencer requires the content to have a specific MIME type
+     * 
+     * @return true if this sequencer can only process certain MIME types, or false if there are no restrictions
+     */
+    public final boolean hasAcceptedMimeTypes() {
+        return !getAcceptedMimeTypes().isEmpty();
+    }
+
+    /**
+     * Determine if this sequencer has been configured to accept and process content with the supplied MIME type.
+     * 
+     * @param mimeType the MIME type
+     * @return true if content with the supplied the MIME type is to be processed (or when <code>mimeType</code> is null and
+     *         therefore not known), or false otherwise
+     * @see #hasAcceptedMimeTypes()
+     */
+    public final boolean isAccepted( String mimeType ) {
+        if (mimeType != null && hasAcceptedMimeTypes()) {
+            return getAcceptedMimeTypes().contains(mimeType.trim());
+        }
+        return true; // accept all mime types
     }
 
     /**
