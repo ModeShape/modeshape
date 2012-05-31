@@ -81,6 +81,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
     private QueryContext context;
     private PlanNode node;
     private boolean print;
+    private boolean multipleSelectors = false;
 
     @Before
     public void beforeEach() {
@@ -418,6 +419,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
     @Test
     public void shouldOptimizePlanForEquiJoinQuery() {
         node = optimize("SELECT t1.c11, t1.c12, t2.c23 FROM t1 JOIN t2 ON t1.c11 = t2.c21");
+        multipleSelectors = true;
 
         // Create the expected plan ...
         PlanNode project = new PlanNode(Type.PROJECT, selector("t2"), selector("t1"));
@@ -436,7 +438,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
 
         PlanNode rightAccess = new PlanNode(Type.ACCESS, join, selector("t2"));
         PlanNode rightProject = new PlanNode(Type.PROJECT, rightAccess, selector("t2"));
-        rightProject.setProperty(Property.PROJECT_COLUMNS, columns(column("t2", "c23"), column("t2", "c21")));
+        rightProject.setProperty(Property.PROJECT_COLUMNS, columns(column("t2", "c23"), nonSelectedColumn("t2", "c21")));
         PlanNode rightSource = new PlanNode(Type.SOURCE, rightProject, selector("t2"));
         rightSource.setProperty(Property.SOURCE_NAME, selector("t2"));
         rightSource.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t2")).getColumns());
@@ -474,6 +476,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
     @Test
     public void shouldOptimizePlanForQueryUsingViewContainingJoin() {
         node = optimize("SELECT v2.c11 AS c1 FROM v2 WHERE v2.c11 = 'x' AND v2.c12 = 'y'");
+        multipleSelectors = true;
 
         // Create the expected plan ...
         PlanNode project = new PlanNode(Type.PROJECT, selector("t1"));
@@ -498,7 +501,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
 
         PlanNode rightAccess = new PlanNode(Type.ACCESS, join, selector("t2"));
         PlanNode rightProject = new PlanNode(Type.PROJECT, rightAccess, selector("t2"));
-        rightProject.setProperty(Property.PROJECT_COLUMNS, columns(column("t2", "c21")));
+        rightProject.setProperty(Property.PROJECT_COLUMNS, columns(nonSelectedColumn("t2", "c21")));
         PlanNode rightSelect1 = new PlanNode(Type.SELECT, rightProject, selector("t2"));
         rightSelect1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t2"), "c21"),
                                                                           Operator.EQUAL_TO, new Literal('x')));
@@ -987,6 +990,14 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
 
     protected Column column( String table,
                              String columnName ) {
+        if (multipleSelectors) {
+            return new Column(new SelectorName(table), columnName, table + "." + columnName);
+        }
+        return new Column(new SelectorName(table), columnName, columnName);
+    }
+
+    protected Column nonSelectedColumn( String table,
+                                        String columnName ) {
         return new Column(new SelectorName(table), columnName, columnName);
     }
 

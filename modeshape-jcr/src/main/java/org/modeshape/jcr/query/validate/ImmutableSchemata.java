@@ -494,13 +494,19 @@ public class ImmutableSchemata implements Schemata {
                             }
                         }
                         String viewColumnName = column.getColumnName();
+                        if (viewColumnName.equals(column.getSelectorName() + "." + column.getPropertyName())) {
+                            viewColumnName = column.getPropertyName();
+                        }
                         if (columnNames.contains(viewColumnName)) continue;
                         String sourceColumnName = column.getPropertyName(); // getColumnName() returns alias
                         Column sourceColumn = source.getColumn(sourceColumnName);
                         if (sourceColumn == null) {
-                            throw new InvalidQueryException(Visitors.readable(command),
-                                                            "The view references a non-existant column '"
-                                                            + column.getColumnName() + "' in '" + source.getName() + "'");
+                            sourceColumn = source.getColumn(column.getColumnName());
+                            if (sourceColumn == null) {
+                                throw new InvalidQueryException(Visitors.readable(command),
+                                                                "The view references a non-existant column '"
+                                                                + column.getColumnName() + "' in '" + source.getName() + "'");
+                            }
                         }
                         Set<Operator> operators = operators(name, viewColumnName, sourceColumn.getOperators());
                         boolean orderable = orderable(name, viewColumnName, sourceColumn.isOrderable());

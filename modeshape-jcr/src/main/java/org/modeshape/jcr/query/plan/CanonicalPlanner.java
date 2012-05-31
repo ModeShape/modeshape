@@ -447,6 +447,8 @@ public class CanonicalPlanner implements Planner {
 
         List<Column> newColumns = new LinkedList<Column>();
         List<String> newTypes = new ArrayList<String>();
+        final boolean multipleSelectors = selectors.size() > 1;
+        final boolean qualifyExpandedColumns = context.getHints().qualifyExpandedColumnNames;
         if (columns == null || columns.isEmpty()) {
             // SELECT *, so find all of the columns that are available from all the sources ...
             for (Map.Entry<SelectorName, Table> entry : selectors.entrySet()) {
@@ -455,7 +457,7 @@ public class CanonicalPlanner implements Planner {
                 // Add the selector that is being used ...
                 projectNode.addSelector(tableName);
                 // Compute the columns from this selector ...
-                allColumnsFor(table, tableName, newColumns, newTypes, false);
+                allColumnsFor(table, tableName, newColumns, newTypes, qualifyExpandedColumns);
             }
         } else {
             // Add the selector used by each column ...
@@ -474,10 +476,13 @@ public class CanonicalPlanner implements Planner {
                     if ("*".equals(columnName) || columnName == null) {
                         // This is a 'SELECT *' on this source, but this source is one of multiple sources ...
                         // See https://issues.apache.org/jira/browse/JCR-3313; TCK test expects 'true' for last param
-                        allColumnsFor(table, tableName, newColumns, newTypes, false);
+                        allColumnsFor(table, tableName, newColumns, newTypes, qualifyExpandedColumns);
                     } else {
                         // This is a particular column, so add it ...
                         if (!newColumns.contains(column)) {
+                            if (multipleSelectors && column.getPropertyName().equals(column.getColumnName())) {
+                                column = column.withColumnName(column.getSelectorName() + "." + column.getColumnName());
+                            }
                             newColumns.add(column);
                             org.modeshape.jcr.query.validate.Schemata.Column schemaColumn = table.getColumn(columnName);
                             if (schemaColumn != null) {

@@ -35,6 +35,7 @@ import javax.jcr.Value;
 import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
+import org.modeshape.jcr.query.QueryResults.Columns;
 import org.modeshape.jcr.query.QueryResults.Location;
 import org.modeshape.jcr.query.validate.Schemata;
 
@@ -57,14 +58,17 @@ public class XPathQueryResult extends JcrQueryResult {
                              QueryResults graphResults,
                              Schemata schemata ) {
         super(context, query, graphResults, schemata);
-        List<String> columnNames = new LinkedList<String>(graphResults.getColumns().getColumnNames());
-        List<String> columnTypes = new LinkedList<String>(graphResults.getColumns().getColumnTypes());
-        if (graphResults.getColumns().hasFullTextSearchScores() && !columnNames.contains(JCR_SCORE_COLUMN_NAME)) {
+        Columns resultColumns = graphResults.getColumns();
+        List<String> columnNames = new LinkedList<String>(resultColumns.getColumnNames());
+        List<String> columnTypes = new LinkedList<String>(resultColumns.getColumnTypes());
+        if (resultColumns.hasFullTextSearchScores() && !columnNames.contains(JCR_SCORE_COLUMN_NAME)) {
             columnNames.add(0, JCR_SCORE_COLUMN_NAME);
             columnTypes.add(0, JCR_SCORE_COLUMN_TYPE);
         }
-        columnNames.add(0, JCR_PATH_COLUMN_NAME);
-        columnTypes.add(0, JCR_PATH_COLUMN_TYPE);
+        if (!resultColumns.getColumnNames().contains(JCR_PATH_COLUMN_NAME)) {
+            columnNames.add(0, JCR_PATH_COLUMN_NAME);
+            columnTypes.add(0, JCR_PATH_COLUMN_TYPE);
+        }
         this.columnNames = Collections.unmodifiableList(columnNames);
         this.columnTypes = Collections.unmodifiableList(columnTypes);
     }

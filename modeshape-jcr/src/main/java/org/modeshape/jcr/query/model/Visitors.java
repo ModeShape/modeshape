@@ -1126,7 +1126,7 @@ public class Visitors {
                 Object value = literal.value();
                 String typeName = null;
                 ValueFactories factories = context.getValueFactories();
-                if (value instanceof String) {
+                if (value instanceof String || value instanceof Character) {
                     append(SINGLE_QUOTE);
                     String str = factories.getStringFactory().create(value);
                     append(str);

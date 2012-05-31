@@ -126,6 +126,10 @@ public class Column implements LanguageObject, javax.jcr.query.qom.Column {
         return new Column(newSelectorName, propertyName, columnName);
     }
 
+    public Column withColumnName( String columnName ) {
+        return new Column(selectorName, propertyName, columnName);
+    }
+
     @Override
     public void accept( Visitor visitor ) {
         visitor.visit(this);
