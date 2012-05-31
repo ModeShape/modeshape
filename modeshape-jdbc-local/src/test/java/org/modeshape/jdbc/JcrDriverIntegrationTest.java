@@ -122,7 +122,7 @@ public class JcrDriverIntegrationTest extends AbstractJdbcDriverTest {
     public void shouldBeAbleToExecuteSqlSelectAllCars() throws SQLException {
 
         String[] expected = {
-            "car:maker[STRING]    car:model[STRING]    car:year[STRING]    car:msrp[STRING]    car:userRating[LONG]    car:valueRating[LONG]    car:mpgCity[LONG]    car:mpgHighway[LONG]    car:lengthInInches[DOUBLE]    car:wheelbaseInInches[DOUBLE]    car:engine[STRING]    jcr:primaryType[STRING]    jcr:mixinTypes[STRING]    jcr:path[STRING]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
+            "car:Car.car:maker[STRING]    car:Car.car:model[STRING]    car:Car.car:year[STRING]    car:Car.car:msrp[STRING]    car:Car.car:userRating[LONG]    car:Car.car:valueRating[LONG]    car:Car.car:mpgCity[LONG]    car:Car.car:mpgHighway[LONG]    car:Car.car:lengthInInches[DOUBLE]    car:Car.car:wheelbaseInInches[DOUBLE]    car:Car.car:engine[STRING]    car:Car.jcr:primaryType[STRING]    car:Car.jcr:mixinTypes[STRING]    car:Car.jcr:path[STRING]    car:Car.jcr:name[STRING]    car:Car.jcr:score[DOUBLE]    car:Car.mode:localName[STRING]    car:Car.mode:depth[LONG]",
             "Aston Martin    DB9    2008    $171,600    5    null    12    19    185.5    108.0    5,935 cc 5.9 liters V 12    car:Car    null    /Cars/Sports/Aston Martin DB9    Aston Martin DB9    1.7436792850494385    Aston Martin DB9    3",
             "Bentley    Continental    2008    $170,990    null    null    10    17    null    null    null    car:Car    null    /Cars/Luxury/Bentley Continental    Bentley Continental    1.7436792850494385    Bentley Continental    3",
             "Cadillac    DTS    2008    null    1    null    null    null    null    null    3.6 liter V6    car:Car    null    /Cars/Luxury/Cadillac DTS    Cadillac DTS    1.7436792850494385    Cadillac DTS    3",
@@ -141,7 +141,7 @@ public class JcrDriverIntegrationTest extends AbstractJdbcDriverTest {
     @Test
     public void shouldBeAbleToExecuteSqlQueryWithOrderByClauseUsingDefault() throws SQLException {
         String[] expected = {
-            "car:maker[STRING]    car:model[STRING]    car:year[STRING]    car:msrp[STRING]    car:userRating[LONG]    car:valueRating[LONG]    car:mpgCity[LONG]    car:mpgHighway[LONG]    car:lengthInInches[DOUBLE]    car:wheelbaseInInches[DOUBLE]    car:engine[STRING]    jcr:primaryType[STRING]    jcr:mixinTypes[STRING]    jcr:path[STRING]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
+            "car:Car.car:maker[STRING]    car:Car.car:model[STRING]    car:Car.car:year[STRING]    car:Car.car:msrp[STRING]    car:Car.car:userRating[LONG]    car:Car.car:valueRating[LONG]    car:Car.car:mpgCity[LONG]    car:Car.car:mpgHighway[LONG]    car:Car.car:lengthInInches[DOUBLE]    car:Car.car:wheelbaseInInches[DOUBLE]    car:Car.car:engine[STRING]    car:Car.jcr:primaryType[STRING]    car:Car.jcr:mixinTypes[STRING]    car:Car.jcr:path[STRING]    car:Car.jcr:name[STRING]    car:Car.jcr:score[DOUBLE]    car:Car.mode:localName[STRING]    car:Car.mode:depth[LONG]",
             "Aston Martin    DB9    2008    $171,600    5    null    12    19    185.5    108.0    5,935 cc 5.9 liters V 12    car:Car    null    /Cars/Sports/Aston Martin DB9    Aston Martin DB9    1.7436792850494385    Aston Martin DB9    3",
             "Bentley    Continental    2008    $170,990    null    null    10    17    null    null    null    car:Car    null    /Cars/Luxury/Bentley Continental    Bentley Continental    1.7436792850494385    Bentley Continental    3",
             "Cadillac    DTS    2008    null    1    null    null    null    null    null    3.6 liter V6    car:Car    null    /Cars/Luxury/Cadillac DTS    Cadillac DTS    1.7436792850494385    Cadillac DTS    3",
@@ -173,7 +173,7 @@ public class JcrDriverIntegrationTest extends AbstractJdbcDriverTest {
     @Test
     public void shouldBeAbleToExecuteSqlQueryWithOrderedByClauseDesc() throws SQLException {
         String[] expected = {
-            "car:maker[STRING]    car:model[STRING]    car:year[STRING]    car:msrp[STRING]    car:userRating[LONG]    car:valueRating[LONG]    car:mpgCity[LONG]    car:mpgHighway[LONG]    car:lengthInInches[DOUBLE]    car:wheelbaseInInches[DOUBLE]    car:engine[STRING]    jcr:primaryType[STRING]    jcr:mixinTypes[STRING]    jcr:path[STRING]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
+            "car:Car.car:maker[STRING]    car:Car.car:model[STRING]    car:Car.car:year[STRING]    car:Car.car:msrp[STRING]    car:Car.car:userRating[LONG]    car:Car.car:valueRating[LONG]    car:Car.car:mpgCity[LONG]    car:Car.car:mpgHighway[LONG]    car:Car.car:lengthInInches[DOUBLE]    car:Car.car:wheelbaseInInches[DOUBLE]    car:Car.car:engine[STRING]    car:Car.jcr:primaryType[STRING]    car:Car.jcr:mixinTypes[STRING]    car:Car.jcr:path[STRING]    car:Car.jcr:name[STRING]    car:Car.jcr:score[DOUBLE]    car:Car.mode:localName[STRING]    car:Car.mode:depth[LONG]",
             "Land Rover    LR3    2008    $48,525    5    2    12    17    null    null    null    car:Car    null    /Cars/Utility/Land Rover LR3    Land Rover LR3    1.7436792850494385    Land Rover LR3    3",
             "Lexus    IS350    2008    $36,305    4    5    18    25    null    null    null    car:Car    null    /Cars/Luxury/Lexus IS350    Lexus IS350    1.7436792850494385    Lexus IS350    3",
             "Infiniti    G37    2008    $34,900    3    4    18    24    null    null    null    car:Car    null    /Cars/Sports/Infiniti G37    Infiniti G37    1.7436792850494385    Infiniti G37    3",
@@ -208,7 +208,7 @@ public class JcrDriverIntegrationTest extends AbstractJdbcDriverTest {
     @FixFor( "MODE-722" )
     @Test
     public void shouldBeAbleToExecuteSqlQueryUsingJoinToFindAllCarsUnderHybrid() throws SQLException {
-        String[] expected = {"car:maker[STRING]    car:model[STRING]    car:year[STRING]    car:msrp[STRING]",
+        String[] expected = {"car.car:maker[STRING]    car.car:model[STRING]    car.car:year[STRING]    car.car:msrp[STRING]",
             "Nissan    Altima    2008    $18,260", "Toyota    Prius    2008    $21,500",
             "Toyota    Highlander    2008    $34,200"};
 

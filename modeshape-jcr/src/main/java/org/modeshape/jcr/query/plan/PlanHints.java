@@ -85,6 +85,12 @@ public final class PlanHints implements Serializable, Cloneable {
      */
     public boolean useSessionContent = true;
 
+    /**
+     * Flag indicates whether to fully-qualify (with the selector name) the names of columns that are expanded from wildcard
+     * projections.
+     */
+    public boolean qualifyExpandedColumnNames = false;
+
     public PlanHints() {
     }
 
@@ -103,6 +109,8 @@ public final class PlanHints implements Serializable, Cloneable {
         sb.append(", showPlan=").append(showPlan);
         sb.append(", validateColumnExistance=").append(validateColumnExistance);
         sb.append(", includeSystemContent=").append(includeSystemContent);
+        sb.append(", useSessionContent=").append(useSessionContent);
+        sb.append(", qualifyExpandedColumnNames=").append(qualifyExpandedColumnNames);
         sb.append('}');
         return sb.toString();
     }
@@ -121,6 +129,8 @@ public final class PlanHints implements Serializable, Cloneable {
         clone.showPlan = this.showPlan;
         clone.validateColumnExistance = this.validateColumnExistance;
         clone.includeSystemContent = this.includeSystemContent;
+        clone.useSessionContent = this.useSessionContent;
+        clone.qualifyExpandedColumnNames = this.qualifyExpandedColumnNames;
         return clone;
     }
 }

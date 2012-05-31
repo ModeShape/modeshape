@@ -109,6 +109,25 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         return JcrQueryManagerTest.class.getClassLoader().getResourceAsStream(name);
     }
 
+    private static String[] prefixEach( String[] original,
+                                        String prefix ) {
+        String[] result = new String[original.length];
+        for (int i = 0; i != original.length; ++i) {
+            result[i] = prefix + original[i];
+        }
+        return result;
+    }
+
+    private static String[] allOf( String[]... arrays ) {
+        List<String> result = new ArrayList<String>();
+        for (String[] array : arrays) {
+            for (String value : array) {
+                result.add(value);
+            }
+        }
+        return result.toArray(new String[result.size()]);
+    }
+
     protected static String[] carColumnNames() {
         return new String[] {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:mpgHighway", "car:engine",
             "car:valueRating", "jcr:primaryType", "jcr:mixinTypes", "car:wheelbaseInInches", "car:model", "car:year", "car:msrp",
@@ -116,9 +135,17 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
             "car:alternateModels"};
     }
 
-    protected static String[] minimumColumnNames() {
+    protected static String[] carColumnNames( String selectorName ) {
+        return prefixEach(carColumnNames(), selectorName + ".");
+    }
+
+    protected static String[] allColumnNames() {
         return new String[] {"jcr:primaryType", "jcr:mixinTypes", "jcr:name", "jcr:path", "jcr:score", "mode:depth",
             "mode:localName"};
+    }
+
+    protected static String[] allColumnNames( String selectorName ) {
+        return prefixEach(allColumnNames(), selectorName + ".");
     }
 
     protected static String[] searchColumnNames() {
@@ -262,14 +289,16 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
     protected void assertResultsHaveColumns( QueryResult result,
                                              String... columnNames ) throws RepositoryException {
-        Set<String> expectedNames = new HashSet<String>();
+        List<String> expectedNames = new ArrayList<String>();
         for (String name : columnNames) {
             expectedNames.add(name);
         }
-        Set<String> actualNames = new HashSet<String>();
+        List<String> actualNames = new ArrayList<String>();
         for (String name : result.getColumnNames()) {
             actualNames.add(name);
         }
+        Collections.sort(expectedNames);
+        Collections.sort(actualNames);
         assertThat(actualNames, is(expectedNames));
     }
 
@@ -443,7 +472,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, TOTAL_NODE_COUNT);
-        assertResultsHaveColumns(result, minimumColumnNames());
+        assertResultsHaveColumns(result, allColumnNames("nt:base"));
     }
 
     @Test
@@ -455,7 +484,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, TOTAL_NODE_COUNT);
-        assertResultsHaveColumns(result, minimumColumnNames());
+        assertResultsHaveColumns(result, allColumnNames("nt:base"));
     }
 
     @FixFor( "MODE-1055" )
@@ -468,7 +497,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 13);
-        assertResultsHaveColumns(result, minimumColumnNames());
+        assertResultsHaveColumns(result, allColumnNames("nt:base"));
     }
 
     @FixFor( "MODE-1055" )
@@ -526,7 +555,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 13);
-        assertResultsHaveColumns(result, carColumnNames());
+        assertResultsHaveColumns(result, carColumnNames("car:Car"));
     }
 
     @Test
@@ -538,7 +567,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 13);
-        assertResultsHaveColumns(result, carColumnNames());
+        assertResultsHaveColumns(result, carColumnNames("car:Car"));
     }
 
     @Test
@@ -550,7 +579,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 13);
-        assertResultsHaveColumns(result, carColumnNames());
+        assertResultsHaveColumns(result, carColumnNames("car:Car"));
         // Results are sorted by lexicographic MSRP (as a string, not as a number)!!!
         assertRow(result, 1).has("car:model", "LR3").and("car:msrp", "$48,525").and("car:mpgCity", 12);
         assertRow(result, 2).has("car:model", "IS350").and("car:msrp", "$36,305").and("car:mpgCity", 18);
@@ -670,10 +699,10 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 3L);
-        assertResultsHaveColumns(result, "car:maker", "car:model", "car:year", "car:msrp");
-        assertRow(result).has("car:model", "Altima").and("car:msrp", "$18,260").and("car:year", 2008);
-        assertRow(result).has("car:model", "Highlander").and("car:msrp", "$34,200").and("car:year", 2008);
-        assertRow(result).has("car:model", "Prius").and("car:msrp", "$21,500").and("car:year", 2008);
+        assertResultsHaveColumns(result, "car.car:maker", "car.car:model", "car.car:year", "car.car:msrp");
+        assertRow(result).has("car:model", "Altima").and("car.car:msrp", "$18,260").and("car.car:year", 2008);
+        assertRow(result).has("car:model", "Highlander").and("car.car:msrp", "$34,200").and("car.car:year", 2008);
+        assertRow(result).has("car:model", "Prius").and("car.car:msrp", "$21,500").and("car.car:year", 2008);
     }
 
     @Test
@@ -683,7 +712,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 24);
-        assertResultsHaveColumns(result, minimumColumnNames());
+        assertResultsHaveColumns(result, allColumnNames("nt:unstructured"));
     }
 
     @FixFor( "MODE-1309" )
@@ -765,7 +794,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 1);
-        assertResultsHaveColumns(result, minimumColumnNames());
+        assertResultsHaveColumns(result, allColumnNames("nt:unstructured"));
     }
 
     @Test
@@ -778,7 +807,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 1);
-        assertResultsHaveColumns(result, minimumColumnNames());
+        assertResultsHaveColumns(result, allColumnNames("nt:unstructured"));
     }
 
     @Test
@@ -789,7 +818,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 5);
-        assertResultsHaveColumns(result, carColumnNames());
+        assertResultsHaveColumns(result, carColumnNames("car"));
     }
 
     @Test
@@ -801,11 +830,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 5L);
-        String[] expectedColumnNames = {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:engine",
-            "car:mpgHighway", "car:valueRating", "car.jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model",
-            "car:msrp", "jcr:created", "jcr:createdBy", "category.jcr:primaryType", "jcr:mixinTypes", "jcr:name", "jcr:path",
-            "jcr:score", "mode:depth", "mode:localName", "car:alternateModels"};
-        assertResultsHaveColumns(result, expectedColumnNames);
+        assertResultsHaveColumns(result, allOf(carColumnNames("car"), new String[] {"category.jcr:primaryType"}));
     }
 
     @Test
@@ -820,12 +845,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 26L);
-        String[] expectedColumnNames = {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:engine",
-            "car:mpgHighway", "car:valueRating", "car.jcr:primaryType", "car.jcr:mixinTypes", "car:wheelbaseInInches",
-            "car:year", "car:model", "car:msrp", "jcr:created", "jcr:createdBy", "all.jcr:primaryType", "car.jcr:name",
-            "car.jcr:path", "car.jcr:score", "car.mode:depth", "car.mode:localName", "all.jcr:mixinTypes", "all.jcr:name",
-            "all.jcr:path", "all.jcr:score", "all.mode:depth", "all.mode:localName", "car:alternateModels"};
-        assertResultsHaveColumns(result, expectedColumnNames);
+        assertResultsHaveColumns(result, allOf(carColumnNames("car"), allColumnNames("all")));
     }
 
     @Test
@@ -836,13 +856,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 13L);
-        String[] expectedColumnNames = {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:engine",
-            "car:mpgHighway", "car:valueRating", "car.jcr:primaryType", "car.jcr:mixinTypes", "car:wheelbaseInInches",
-            "car:year", "car:model", "car:msrp", "jcr:created", "jcr:createdBy", "category.jcr:primaryType", "car.jcr:name",
-            "car.jcr:path", "car.jcr:score", "car.mode:depth", "car.mode:localName", "category.jcr:mixinTypes",
-            "category.jcr:name", "category.jcr:path", "category.jcr:score", "category.mode:depth", "category.mode:localName",
-            "car:alternateModels"};
-        assertResultsHaveColumns(result, expectedColumnNames);
+        assertResultsHaveColumns(result, allOf(carColumnNames("car"), allColumnNames("category")));
     }
 
     @Test
@@ -853,7 +867,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 5);
-        assertResultsHaveColumns(result, carColumnNames());
+        assertResultsHaveColumns(result, carColumnNames("car"));
     }
 
     @Test
@@ -865,11 +879,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 5L);
-        String[] expectedColumnNames = {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:engine",
-            "car:mpgHighway", "car:valueRating", "car.jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model",
-            "car:msrp", "jcr:created", "jcr:createdBy", "category.jcr:primaryType", "jcr:mixinTypes", "jcr:name", "jcr:path",
-            "jcr:score", "mode:depth", "mode:localName", "car:alternateModels"};
-        assertResultsHaveColumns(result, expectedColumnNames);
+        assertResultsHaveColumns(result, allOf(carColumnNames("car"), new String[] {"category.jcr:primaryType"}));
     }
 
     @FixFor( "MODE-829" )
@@ -951,7 +961,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 13); // the 13 types of cars made by makers that made cars in 2008
-        assertResultsHaveColumns(result, carColumnNames());
+        assertResultsHaveColumns(result, carColumnNames("car:Car"));
     }
 
     @FixFor( "MODE-869" )
@@ -965,7 +975,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 4); // the 4 types of cars made by makers that make hybrids
-        assertResultsHaveColumns(result, carColumnNames());
+        assertResultsHaveColumns(result, carColumnNames("car:Car"));
     }
 
     @FixFor( "MODE-909" )
@@ -1000,7 +1010,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 72L);
-        assertResultsHaveColumns(result, new String[] {"jcr:name", "jcr:primaryType"});
+        assertResultsHaveColumns(result, new String[] {"car.jcr:name", "category.jcr:primaryType"});
     }
 
     @FixFor( "MODE-934" )
@@ -1097,7 +1107,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 13);
-        assertResultsHaveColumns(result, new String[] {"jcr:primaryType", "jcr:path", "car:year"});
+        assertResultsHaveColumns(result, new String[] {"base.jcr:primaryType", "base.jcr:path", "car.car:year"});
         RowIterator iter = result.getRows();
         while (iter.hasNext()) {
             Row row = iter.nextRow();
@@ -1114,7 +1124,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, TOTAL_NODE_COUNT);
-        assertResultsHaveColumns(result, minimumColumnNames());
+        assertResultsHaveColumns(result, allColumnNames("nt:base"));
         RowIterator iter = result.getRows();
         while (iter.hasNext()) {
             Row row = iter.nextRow();
@@ -1372,7 +1382,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 4); // the 4 types of cars
-        assertResultsHaveColumns(result, minimumColumnNames());
+        assertResultsHaveColumns(result, allColumnNames());
     }
 
     /**
@@ -1391,7 +1401,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 4); // the 4 types of cars
-        assertResultsHaveColumns(result, minimumColumnNames());
+        assertResultsHaveColumns(result, allColumnNames());
     }
 
     @Test
@@ -1513,7 +1523,8 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 13);
-        assertResultsHaveColumns(result, new String[] {"jcr:primaryType", "jcr:path", "car:year", "jcr:path", "jcr:score"});
+        assertResultsHaveColumns(result, new String[] {"nt:base.jcr:primaryType", "nt:base.jcr:path", "car:Car.car:year",
+            "jcr:path", "jcr:score"});
         RowIterator iter = result.getRows();
         while (iter.hasNext()) {
             Row row = iter.nextRow();
@@ -1531,7 +1542,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, TOTAL_NODE_COUNT);
-        assertResultsHaveColumns(result, minimumColumnNames());
+        assertResultsHaveColumns(result, allColumnNames());
         RowIterator iter = result.getRows();
         while (iter.hasNext()) {
             Row row = iter.nextRow();
@@ -1562,7 +1573,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertResults(query, result, TOTAL_NODE_COUNT);
-        assertResultsHaveColumns(result, minimumColumnNames());
+        assertResultsHaveColumns(result, allColumnNames());
     }
 
     @SuppressWarnings( "deprecation" )
@@ -1574,7 +1585,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertResults(query, result, TOTAL_NODE_COUNT);
-        assertResultsHaveColumns(result, minimumColumnNames());
+        assertResultsHaveColumns(result, allColumnNames());
     }
 
     @SuppressWarnings( "deprecation" )
@@ -1598,7 +1609,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryResult result = query.execute();
         assertResults(query, result, 24);
         assertThat(result, is(notNullValue()));
-        assertResultsHaveColumns(result, minimumColumnNames());
+        assertResultsHaveColumns(result, allColumnNames());
     }
 
     @SuppressWarnings( "deprecation" )
@@ -1713,7 +1724,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryResult result = query.execute();
         assertResults(query, result, 24);
         assertThat(result, is(notNullValue()));
-        assertResultsHaveColumns(result, minimumColumnNames());
+        assertResultsHaveColumns(result, allColumnNames());
     }
 
     @SuppressWarnings( "deprecation" )

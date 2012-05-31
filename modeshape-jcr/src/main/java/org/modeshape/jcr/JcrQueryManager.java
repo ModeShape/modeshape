@@ -134,10 +134,14 @@ class JcrQueryManager implements QueryManager {
                 // The query is not well-formed and cannot be parsed ...
                 throw new InvalidQueryException(JcrI18n.queryCannotBeParsedUsingLanguage.text(language, expression));
             }
+            // Set up the hints ...
             PlanHints hints = new PlanHints();
             hints.showPlan = true;
             hints.hasFullTextSearch = true; // always include the score
             hints.validateColumnExistance = false; // see MODE-1055
+            if (parser.getLanguage().equals(QueryLanguage.JCR_SQL2)) {
+                hints.qualifyExpandedColumnNames = true;
+            }
             return resultWith(expression, parser.getLanguage(), command, hints, storedAtPath);
         } catch (ParsingException e) {
             // The query is not well-formed and cannot be parsed ...
@@ -173,6 +177,7 @@ class JcrQueryManager implements QueryManager {
             PlanHints hints = new PlanHints();
             hints.showPlan = true;
             hints.hasFullTextSearch = true; // always include the score
+            hints.qualifyExpandedColumnNames = true; // always qualify expanded names with the selector name in JCR-SQL2
             return resultWith(expression, QueryLanguage.JCR_SQL2, command, hints, null);
         } catch (org.modeshape.jcr.query.parse.InvalidQueryException e) {
             // The query was parsed, but there is an error in the query

@@ -198,6 +198,10 @@ public class QueryResultColumns implements Columns {
             Integer columnIndex = wrappedAround.columnIndexForName(columnName);
             if (columnIndex == null) {
                 String columnNameWithoutSelector = column.getColumnName() != null ? column.getColumnName() : column.getPropertyName();
+                if (columnNameWithoutSelector.startsWith(selectorName + ".")
+                    && columnNameWithoutSelector.length() > (selectorName.length() + 1)) {
+                    columnNameWithoutSelector = columnNameWithoutSelector.substring(selectorName.length() + 1);
+                }
                 columnIndex = wrappedAround.columnIndexForName(columnNameWithoutSelector);
                 if (columnIndex == null) {
                     String columnNameWithSelector = column.selectorName() + "." + columnNameWithoutSelector;
