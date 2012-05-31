@@ -24,37 +24,35 @@
 
 package org.modeshape.common.logging;
 
-import org.modeshape.common.util.ClassUtil;
 import org.modeshape.common.logging.jdk.JdkLoggerFactory;
 import org.modeshape.common.logging.log4j.Log4jLoggerFactory;
 import org.modeshape.common.logging.slf4j.SLF4JLoggerFactory;
+import org.modeshape.common.util.ClassUtil;
 
 /**
  * The abstract class for the LogFactory, which is called to create a specific implementation of the {@link Logger}.
  */
 public abstract class LogFactory {
 
-    private static LogFactory LOGFACTORY;
+    private static volatile LogFactory LOGFACTORY;
 
     static {
         if (isSLF4JAvailable()) {
             LOGFACTORY = new SLF4JLoggerFactory();
-        }
-        else if (isLog4jAvailable()) {
+        } else if (isLog4jAvailable()) {
             LOGFACTORY = new Log4jLoggerFactory();
-        }
-        else {
+        } else {
             LOGFACTORY = new JdkLoggerFactory();
         }
     }
 
     private static boolean isSLF4JAvailable() {
         try {
-            //check if the api is in the classpath
+            // check if the api is in the classpath
             ClassUtil.loadClassStrict("org.slf4j.LoggerFactory");
             ClassUtil.loadClassStrict("org.slf4j.Logger");
 
-            //check if there's at least one implementation
+            // check if there's at least one implementation
             ClassUtil.loadClassStrict("org.slf4j.impl.StaticLoggerBinder");
             return true;
         } catch (ClassNotFoundException e) {
@@ -73,6 +71,20 @@ public abstract class LogFactory {
 
     static LogFactory getLogFactory() {
         return LOGFACTORY;
+    }
+
+    /**
+     * Manually set the log factory that should be used. This is package-protected so that it cannot be directly called by
+     * subclasses.
+     * 
+     * @param logFactory the log factory that should be used from now forward
+     * @see Logger#useCustomLogging(LogFactory)
+     */
+    static void setLogFactory( LogFactory logFactory ) {
+        if (logFactory != null && LOGFACTORY != logFactory && !LOGFACTORY.getClass().equals(logFactory.getClass())) {
+            // Start using the new log factory ...
+            LOGFACTORY = logFactory;
+        }
     }
 
     /**
