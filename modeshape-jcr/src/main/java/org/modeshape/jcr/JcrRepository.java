@@ -64,6 +64,7 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.naming.NoInitialContextException;
 import javax.security.auth.login.LoginContext;
+import javax.transaction.Status;
 import javax.transaction.Synchronization;
 import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
@@ -81,8 +82,8 @@ import org.infinispan.schematic.internal.document.Paths;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
-import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.NamedThreadFactory;
 import org.modeshape.jcr.JcrEngine.State;
 import org.modeshape.jcr.RepositoryConfiguration.AnonymousSecurity;
@@ -106,6 +107,8 @@ import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.SessionEnvironment;
+import org.modeshape.jcr.cache.SessionEnvironment.Monitor;
+import org.modeshape.jcr.cache.SessionEnvironment.MonitorFactory;
 import org.modeshape.jcr.cache.WorkspaceNotFoundException;
 import org.modeshape.jcr.cache.change.Change;
 import org.modeshape.jcr.cache.change.ChangeSet;
@@ -124,6 +127,8 @@ import org.modeshape.jcr.security.AuthenticationProvider;
 import org.modeshape.jcr.security.AuthenticationProviders;
 import org.modeshape.jcr.security.JaasProvider;
 import org.modeshape.jcr.security.SecurityContext;
+import org.modeshape.jcr.txn.SynchronizedTransactions;
+import org.modeshape.jcr.txn.Transactions;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Property;
@@ -389,10 +394,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         return true;
     }
 
-    private final Cache<String, SchematicEntry> infinispanCache() {
-        return database().getCache();
-    }
-
     protected final SchematicDb database() {
         return runningState().database();
     }
@@ -407,10 +408,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
     protected final RepositoryStatistics statistics() {
         return runningState().statistics();
-    }
-
-    protected final TransactionManager txnManager() {
-        return infinispanCache().getAdvancedCache().getTransactionManager();
     }
 
     protected final RepositoryNodeTypeManager nodeTypeManager() {
@@ -453,17 +450,21 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         return running;
     }
 
-    protected final boolean hasWorkspace(String workspaceName) {
+    protected final boolean hasWorkspace( String workspaceName ) {
         return repositoryCache().getWorkspaceNames().contains(workspaceName);
     }
 
-    protected final NodeCache workspaceCache(String workspaceName) {
+    protected final NodeCache workspaceCache( String workspaceName ) {
         return repositoryCache().getWorkspaceCache(workspaceName);
     }
 
     final SessionCache createSystemSession( ExecutionContext context,
                                             boolean readOnly ) {
         return repositoryCache().createSession(context, systemWorkspaceName(), readOnly);
+    }
+
+    protected final TransactionManager transactionManager() {
+        return runningState().txnManager();
     }
 
     /**
@@ -887,6 +888,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final RepositoryNodeTypeManager nodeTypes;
         private final RepositoryLockManager lockManager;
         private final TransactionManager txnMgr;
+        private final Transactions transactions;
         private final String jndiName;
         private final SystemNamespaceRegistry persistentRegistry;
         private final ExecutionContext context;
@@ -955,6 +957,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 // reuse the existing storage-related components ...
                 this.database = other.database;
                 this.txnMgr = other.txnMgr;
+                this.transactions = other.transactions;
                 this.cache = other.cache;
                 this.context = other.context;
                 if (change.largeValueChanged) {
@@ -985,6 +988,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.database = Schematic.get(container, cacheName);
                 assert this.database != null;
                 this.txnMgr = this.database.getCache().getAdvancedCache().getTransactionManager();
+                MonitorFactory monitorFactory = new RepositoryMonitorFactory(this);
+                this.transactions = new SynchronizedTransactions(monitorFactory, this.txnMgr);
 
                 // Set up the binary store ...
                 BinaryStorage binaryStorageConfig = config.getBinaryStorage();
@@ -1009,7 +1014,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.changeBus.start();
 
                 // Set up the repository cache ...
-                SessionEnvironment sessionEnv = statsRollupService != null ? new RepositorySessionEnvironment(this) : null;
+                final SessionEnvironment sessionEnv = new RepositorySessionEnvironment(this.transactions);
                 this.cache = new RepositoryCache(context, database, config, new SystemContentInitializer(), sessionEnv, changeBus);
                 assert this.cache != null;
 
@@ -1522,20 +1527,29 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
     }
 
     protected static class RepositorySessionEnvironment implements SessionEnvironment {
-        private final RunningState runningState;
+        private final Transactions transactions;
 
-        protected RepositorySessionEnvironment( RunningState runningState ) {
-            this.runningState = runningState;
+        protected RepositorySessionEnvironment( Transactions transactions ) {
+            this.transactions = transactions;
         }
 
         @Override
-        public TransactionManager getTransactionManager() {
-            return runningState.txnManager();
+        public Transactions getTransactions() {
+            return transactions;
+        }
+    }
+
+    protected static class RepositoryMonitorFactory implements MonitorFactory {
+        private final RunningState runningState;
+
+        protected RepositoryMonitorFactory( RunningState runningState ) {
+            this.runningState = runningState;
         }
 
         protected Transaction currentTransaction() {
             try {
-                return getTransactionManager().getTransaction();
+                Transaction txn = runningState.txnManager().getTransaction();
+                return (txn != null && txn.getStatus() == Status.STATUS_ACTIVE) ? txn : null;
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -1596,13 +1610,14 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
                 @Override
                 public void registerSynchronization( Synchronization synchronization ) {
+                    // Never log a synchronization ...
                     CheckArg.isNotNull(synchronization, "synchronization");
-                    if (txn != null) {
-                        try {
+                    try {
+                        if (txn != null && txn.getStatus() == Status.STATUS_ACTIVE) {
                             txn.registerSynchronization(synchronization);
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
                         }
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
                     }
                 }
             };
@@ -1642,6 +1657,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
             };
         }
+
     }
 
     private final class InternalSecurityContext implements SecurityContext {

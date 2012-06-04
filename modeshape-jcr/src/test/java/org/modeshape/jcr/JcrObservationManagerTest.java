@@ -37,8 +37,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.Property;
@@ -191,24 +189,24 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         stopRepository();
     }
 
-    TestListener addListener( int expectedEventsCount,
-                              int eventTypes,
-                              String absPath,
-                              boolean isDeep,
-                              String[] uuids,
-                              String[] nodeTypeNames,
-                              boolean noLocal ) throws Exception {
+    SimpleListener addListener( int expectedEventsCount,
+                                int eventTypes,
+                                String absPath,
+                                boolean isDeep,
+                                String[] uuids,
+                                String[] nodeTypeNames,
+                                boolean noLocal ) throws Exception {
         return addListener(expectedEventsCount, 1, eventTypes, absPath, isDeep, uuids, nodeTypeNames, noLocal);
     }
 
-    TestListener addListener( int expectedEventsCount,
-                              int numIterators,
-                              int eventTypes,
-                              String absPath,
-                              boolean isDeep,
-                              String[] uuids,
-                              String[] nodeTypeNames,
-                              boolean noLocal ) throws Exception {
+    SimpleListener addListener( int expectedEventsCount,
+                                int numIterators,
+                                int eventTypes,
+                                String absPath,
+                                boolean isDeep,
+                                String[] uuids,
+                                String[] nodeTypeNames,
+                                boolean noLocal ) throws Exception {
         return addListener(this.session,
                            expectedEventsCount,
                            numIterators,
@@ -220,27 +218,27 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
                            noLocal);
     }
 
-    TestListener addListener( Session session,
-                              int expectedEventsCount,
-                              int eventTypes,
-                              String absPath,
-                              boolean isDeep,
-                              String[] uuids,
-                              String[] nodeTypeNames,
-                              boolean noLocal ) throws Exception {
+    SimpleListener addListener( Session session,
+                                int expectedEventsCount,
+                                int eventTypes,
+                                String absPath,
+                                boolean isDeep,
+                                String[] uuids,
+                                String[] nodeTypeNames,
+                                boolean noLocal ) throws Exception {
         return addListener(session, expectedEventsCount, 1, eventTypes, absPath, isDeep, uuids, nodeTypeNames, noLocal);
     }
 
-    TestListener addListener( Session session,
-                              int expectedEventsCount,
-                              int numIterators,
-                              int eventTypes,
-                              String absPath,
-                              boolean isDeep,
-                              String[] uuids,
-                              String[] nodeTypeNames,
-                              boolean noLocal ) throws Exception {
-        TestListener listener = new TestListener(expectedEventsCount, numIterators, eventTypes);
+    SimpleListener addListener( Session session,
+                                int expectedEventsCount,
+                                int numIterators,
+                                int eventTypes,
+                                String absPath,
+                                boolean isDeep,
+                                String[] uuids,
+                                String[] nodeTypeNames,
+                                boolean noLocal ) throws Exception {
+        SimpleListener listener = new SimpleListener(expectedEventsCount, numIterators, eventTypes);
         session.getWorkspace()
                .getObservationManager()
                .addEventListener(listener, eventTypes, absPath, isDeep, uuids, nodeTypeNames, noLocal);
@@ -256,7 +254,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         return (JcrSession)session;
     }
 
-    void checkResults( TestListener listener ) {
+    void checkResults( SimpleListener listener ) {
         if (listener.getActualEventCount() != listener.getExpectedEventCount()) {
             // Wrong number ...
             StringBuilder sb = new StringBuilder(" Actual events were: ");
@@ -270,7 +268,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         }
     }
 
-    boolean containsPath( TestListener listener,
+    boolean containsPath( SimpleListener listener,
                           String path ) throws Exception {
         for (Event event : listener.getEvents()) {
             if (event.getPath().equals(path)) return true;
@@ -291,7 +289,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         return this.session.getWorkspace();
     }
 
-    void removeListener( TestListener listener ) throws Exception {
+    void removeListener( SimpleListener listener ) throws Exception {
         this.session.getWorkspace().getObservationManager().removeEventListener(listener);
     }
 
@@ -307,13 +305,13 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         save();
 
         // register listener
-        TestListener listener = addListener(0,
-                                            Event.PROPERTY_ADDED,
-                                            getRoot().getPath(),
-                                            true,
-                                            new String[] {UUID.randomUUID().toString()},
-                                            null,
-                                            false);
+        SimpleListener listener = addListener(0,
+                                              Event.PROPERTY_ADDED,
+                                              getRoot().getPath(),
+                                              true,
+                                              new String[] {UUID.randomUUID().toString()},
+                                              null,
+                                              false);
 
         // create properties
         n1.setProperty("prop1", "foo");
@@ -334,7 +332,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         save();
 
         // register listener
-        TestListener listener = addListener(0, ALL_EVENTS, null, false, null, new String[] {REF_MIXIN}, false);
+        SimpleListener listener = addListener(0, ALL_EVENTS, null, false, null, new String[] {REF_MIXIN}, false);
 
         // create event triggers
         node1.setProperty("newProperty", "newValue"); // node1 is NOT referenceable
@@ -351,7 +349,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     @Test
     public void shouldReceiveNodeAddedEventWhenRegisteredToReceiveAllEvents() throws Exception {
         // register listener (add + primary type property)
-        TestListener listener = addListener(2, ALL_EVENTS, null, false, null, null, false);
+        SimpleListener listener = addListener(2, ALL_EVENTS, null, false, null, null, false);
 
         // add node
         Node addedNode = getRoot().addNode("node1", UNSTRUCTURED);
@@ -375,7 +373,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         save();
 
         // register listener (add + 3 property events)
-        TestListener listener = addListener(1, ALL_EVENTS, null, false, null, null, false);
+        SimpleListener listener = addListener(1, ALL_EVENTS, null, false, null, null, false);
 
         // remove node
         String path = addedNode.getPath();
@@ -399,7 +397,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         save();
 
         // register listener
-        TestListener listener = addListener(1, ALL_EVENTS, null, false, null, null, false);
+        SimpleListener listener = addListener(1, ALL_EVENTS, null, false, null, null, false);
 
         // add the property
         Property prop1 = node.setProperty("prop1", "prop1 content");
@@ -424,7 +422,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         save();
 
         // register listener
-        TestListener listener = addListener(1, ALL_EVENTS, null, false, null, null, false);
+        SimpleListener listener = addListener(1, ALL_EVENTS, null, false, null, null, false);
 
         // change the property
         prop1.setValue("prop1 modified content");
@@ -450,7 +448,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         save();
 
         // register listener
-        TestListener listener = addListener(1, ALL_EVENTS, null, false, null, null, false);
+        SimpleListener listener = addListener(1, ALL_EVENTS, null, false, null, null, false);
 
         // remove the property
         prop.remove();
@@ -470,7 +468,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     public void shouldReceivePropertyAddedEventWhenRegisteredToReceiveEventsBasedUponNodeTypeName() throws Exception {
         // register listener
         String[] nodeTypeNames = {"mode:root"};
-        TestListener listener = addListener(1, ALL_EVENTS, null, true, null, nodeTypeNames, false);
+        SimpleListener listener = addListener(1, ALL_EVENTS, null, true, null, nodeTypeNames, false);
 
         // add the property
         this.session.getRootNode().setProperty("fooProp", "bar");
@@ -498,7 +496,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     @Test
     public void shouldTestEventIteratorTest_testGetPosition() throws Exception {
         // register listener
-        TestListener listener = addListener(3, Event.NODE_ADDED, null, false, null, null, false);
+        SimpleListener listener = addListener(3, Event.NODE_ADDED, null, false, null, null, false);
 
         // add nodes to generate events
         getRoot().addNode("node1", UNSTRUCTURED);
@@ -521,7 +519,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     @Test
     public void shouldTestEventIteratorTest_testGetSize() throws Exception {
         // register listener
-        TestListener listener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
+        SimpleListener listener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
 
         // add node to generate event
         getRoot().addNode("node1", UNSTRUCTURED);
@@ -581,7 +579,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     @Test
     public void shouldTestEventTest_testGetNodePath() throws Exception {
         // register listener
-        TestListener listener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
+        SimpleListener listener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
 
         // add node to generate event
         Node addedNode = getRoot().addNode("node1", UNSTRUCTURED);
@@ -605,7 +603,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     @Test
     public void shouldTestEventTest_testGetType() throws Exception {
         // register listener
-        TestListener listener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
+        SimpleListener listener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
 
         // add node to generate event
         getRoot().addNode("node1", UNSTRUCTURED);
@@ -627,7 +625,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     @Test
     public void shouldTestEventTest_testGetUserId() throws Exception {
         // register listener
-        TestListener listener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
+        SimpleListener listener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
 
         // add a node to generate event
         getRoot().addNode("node1", UNSTRUCTURED);
@@ -657,7 +655,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
                    is(0L));
 
         // register listener
-        TestListener listener = addListener(0, ALL_EVENTS, null, false, null, null, false);
+        SimpleListener listener = addListener(0, ALL_EVENTS, null, false, null, null, false);
         addListener(0, ALL_EVENTS, null, false, null, null, false);
         assertThat("Wrong number of event listeners.", getObservationManager().getRegisteredEventListeners().getSize(), is(2L));
 
@@ -673,7 +671,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
      */
     @Test
     public void shouldTestGetRegisteredEventListenersTest_testRemoveEventListener() throws Exception {
-        TestListener listener1 = addListener(0, ALL_EVENTS, null, false, null, null, false);
+        SimpleListener listener1 = addListener(0, ALL_EVENTS, null, false, null, null, false);
         EventListener listener2 = addListener(0, ALL_EVENTS, null, false, null, null, false);
         assertThat("Wrong number of event listeners.", getObservationManager().getRegisteredEventListeners().getSize(), is(2L));
 
@@ -707,7 +705,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         save();
 
         // register listener
-        TestListener listener = addListener(2, 2, Event.PROPERTY_ADDED, getRoot().getPath(), true, null, null, false);
+        SimpleListener listener = addListener(2, 2, Event.PROPERTY_ADDED, getRoot().getPath(), true, null, null, false);
 
         // lock node (no save needed)
         session.getWorkspace().getLockManager().lock(lockable.getPath(), false, true, 1L, "me");
@@ -738,7 +736,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         session.getWorkspace().getLockManager().lock(lockable.getPath(), false, true, 1L, "me");
 
         // register listener
-        TestListener listener = addListener(2, Event.PROPERTY_REMOVED, null, false, null, null, false);
+        SimpleListener listener = addListener(2, Event.PROPERTY_REMOVED, null, false, null, null, false);
 
         // lock node (no save needed)
         session.getWorkspace().getLockManager().unlock(lockable.getPath());
@@ -764,7 +762,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     @Test
     public void shouldTestNodeAddedTest_testMultipleNodeAdded1() throws Exception {
         // register listener
-        TestListener listener = addListener(2, Event.NODE_ADDED, null, false, null, null, false);
+        SimpleListener listener = addListener(2, Event.NODE_ADDED, null, false, null, null, false);
 
         // add a couple sibling nodes
         Node addedNode1 = getRoot().addNode("node1", UNSTRUCTURED);
@@ -788,7 +786,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     @Test
     public void shouldTestNodeAddedTest_testMultipleNodeAdded2() throws Exception {
         // register listener
-        TestListener listener = addListener(2, Event.NODE_ADDED, null, false, null, null, false);
+        SimpleListener listener = addListener(2, Event.NODE_ADDED, null, false, null, null, false);
 
         // add node and child node
         Node addedNode = getRoot().addNode("node1", UNSTRUCTURED);
@@ -812,7 +810,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     @Test
     public void shouldTestNodeAddedTest_testSingleNodeAdded() throws Exception {
         // register listener
-        TestListener listener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
+        SimpleListener listener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
 
         // add node
         Node addedNode = getRoot().addNode("node1", UNSTRUCTURED);
@@ -836,7 +834,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     @Test
     public void shouldTestNodeAddedTest_testTransientNodeAddedRemoved() throws Exception {
         // register listener
-        TestListener listener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
+        SimpleListener listener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
 
         // add a child node and immediately remove it
         Node addedNode = getRoot().addNode("node1", UNSTRUCTURED);
@@ -867,7 +865,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     @Test
     public void shouldTestNodeRemovedTest_testMultiNodesRemoved() throws Exception {
         // register listener
-        TestListener listener = addListener(2, Event.NODE_REMOVED, null, false, null, null, false);
+        SimpleListener listener = addListener(2, Event.NODE_REMOVED, null, false, null, null, false);
 
         // add nodes to be removed
         Node addedNode = getRoot().addNode("node1", UNSTRUCTURED);
@@ -897,7 +895,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     @Test
     public void shouldTestNodeRemovedTest_testSingleNodeRemoved() throws Exception {
         // register listener
-        TestListener listener = addListener(1, Event.NODE_REMOVED, null, false, null, null, false);
+        SimpleListener listener = addListener(1, Event.NODE_REMOVED, null, false, null, null, false);
 
         // add the node that will be removed
         Node addedNode = getRoot().addNode("node1", UNSTRUCTURED);
@@ -938,9 +936,9 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         save();
 
         // register listeners
-        TestListener moveNodeListener = addListener(1, Event.NODE_MOVED, null, false, null, null, false);
-        TestListener addNodeListener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
-        TestListener removeNodeListener = addListener(1, Event.NODE_REMOVED, null, false, null, null, false);
+        SimpleListener moveNodeListener = addListener(1, Event.NODE_MOVED, null, false, null, null, false);
+        SimpleListener addNodeListener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
+        SimpleListener removeNodeListener = addListener(1, Event.NODE_REMOVED, null, false, null, null, false);
 
         // move node
         String newPath = getRoot().getPath() + '/' + node2;
@@ -987,9 +985,9 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         save();
 
         // register listeners
-        TestListener moveNodeListener = addListener(1, Event.NODE_MOVED, null, false, null, null, false);
-        TestListener addNodeListener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
-        TestListener removeNodeListener = addListener(1, Event.NODE_REMOVED, null, false, null, null, false);
+        SimpleListener moveNodeListener = addListener(1, Event.NODE_MOVED, null, false, null, null, false);
+        SimpleListener addNodeListener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
+        SimpleListener removeNodeListener = addListener(1, Event.NODE_REMOVED, null, false, null, null, false);
 
         // move node
         String newPath = getRoot().getPath() + "/node3";
@@ -1036,9 +1034,9 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         save();
 
         // register listeners
-        TestListener moveNodeListener = addListener(1, Event.NODE_MOVED, null, false, null, null, false);
-        TestListener addNodeListener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
-        TestListener removeNodeListener = addListener(2, 2, Event.NODE_REMOVED, null, false, null, null, false);
+        SimpleListener moveNodeListener = addListener(1, Event.NODE_MOVED, null, false, null, null, false);
+        SimpleListener addNodeListener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
+        SimpleListener removeNodeListener = addListener(2, 2, Event.NODE_REMOVED, null, false, null, null, false);
 
         // move node
         String oldPath = n2.getPath();
@@ -1094,9 +1092,9 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         save();
 
         // register listeners
-        TestListener moveNodeListener = addListener(1, Event.NODE_MOVED, null, false, null, null, false);
-        TestListener addNodeListener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
-        TestListener removeNodeListener = addListener(1, Event.NODE_REMOVED, null, false, null, null, false);
+        SimpleListener moveNodeListener = addListener(1, Event.NODE_MOVED, null, false, null, null, false);
+        SimpleListener addNodeListener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
+        SimpleListener removeNodeListener = addListener(1, Event.NODE_REMOVED, null, false, null, null, false);
 
         // reorder to trigger events
         getRoot().orderBefore(n3.getName(), n2.getName());
@@ -1143,9 +1141,9 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         save();
 
         // register listeners + "[2]"
-        TestListener moveNodeListener = addListener(1, Event.NODE_MOVED, null, false, null, null, false);
-        TestListener addNodeListener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
-        TestListener removeNodeListener = addListener(1, Event.NODE_REMOVED, null, false, null, null, false);
+        SimpleListener moveNodeListener = addListener(1, Event.NODE_MOVED, null, false, null, null, false);
+        SimpleListener addNodeListener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
+        SimpleListener removeNodeListener = addListener(1, Event.NODE_REMOVED, null, false, null, null, false);
 
         // reorder to trigger events
         getRoot().orderBefore(node1 + "[3]", node1 + "[2]");
@@ -1195,9 +1193,9 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         save();
 
         // register listeners + "[2]"
-        TestListener moveNodeListener = addListener(1, Event.NODE_MOVED, null, false, null, null, false);
-        TestListener addNodeListener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
-        TestListener removeNodeListener = addListener(2, Event.NODE_REMOVED, null, false, null, null, false);
+        SimpleListener moveNodeListener = addListener(1, Event.NODE_MOVED, null, false, null, null, false);
+        SimpleListener addNodeListener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
+        SimpleListener removeNodeListener = addListener(2, Event.NODE_REMOVED, null, false, null, null, false);
 
         // trigger events
         getRoot().orderBefore(node1 + "[2]", null);
@@ -1246,7 +1244,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         save();
 
         // register listener
-        TestListener listener = addListener(2, Event.PROPERTY_ADDED, null, false, null, null, false);
+        SimpleListener listener = addListener(2, Event.PROPERTY_ADDED, null, false, null, null, false);
 
         // add multiple properties
         Property prop1 = node.setProperty("prop1", "prop1 content");
@@ -1274,7 +1272,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         save();
 
         // register listener
-        TestListener listener = addListener(1, Event.PROPERTY_ADDED, null, false, null, null, false);
+        SimpleListener listener = addListener(1, Event.PROPERTY_ADDED, null, false, null, null, false);
 
         // add the property
         Property prop1 = node.setProperty("prop1", "prop1 content");
@@ -1298,7 +1296,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     @Test
     public void shouldTestPropertyAddedTest_testSystemGenerated() throws Exception {
         // register listener
-        TestListener listener = addListener(1, Event.PROPERTY_ADDED, null, false, null, null, false);
+        SimpleListener listener = addListener(1, Event.PROPERTY_ADDED, null, false, null, null, false);
 
         // create node (which adds 1 property)
         Node node = getRoot().addNode("node1", UNSTRUCTURED);
@@ -1331,7 +1329,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         save();
 
         // register listener
-        TestListener listener = addListener(2, Event.PROPERTY_CHANGED, null, false, null, null, false);
+        SimpleListener listener = addListener(2, Event.PROPERTY_CHANGED, null, false, null, null, false);
 
         // add multiple properties
         prop1.setValue("prop1 modified content");
@@ -1362,8 +1360,8 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         save();
 
         // register listeners
-        TestListener listener1 = addListener(1, Event.PROPERTY_CHANGED, null, false, null, null, false);
-        TestListener listener2 = addListener(2, Event.PROPERTY_ADDED | Event.PROPERTY_REMOVED, null, false, null, null, false);
+        SimpleListener listener1 = addListener(1, Event.PROPERTY_CHANGED, null, false, null, null, false);
+        SimpleListener listener2 = addListener(2, Event.PROPERTY_ADDED | Event.PROPERTY_REMOVED, null, false, null, null, false);
 
         // trigger events
         prop.remove();
@@ -1402,7 +1400,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         save();
 
         // register listener
-        TestListener listener = addListener(1, Event.PROPERTY_CHANGED, null, false, null, null, false);
+        SimpleListener listener = addListener(1, Event.PROPERTY_CHANGED, null, false, null, null, false);
 
         // change the property
         prop1.setValue("prop1 modified content");
@@ -1431,7 +1429,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         save();
 
         // register listener
-        TestListener listener = addListener(1, Event.PROPERTY_CHANGED, null, false, null, null, false);
+        SimpleListener listener = addListener(1, Event.PROPERTY_CHANGED, null, false, null, null, false);
 
         // change the property
         prop1.setValue("prop1 modified content");
@@ -1467,7 +1465,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         save();
 
         // register listener
-        TestListener listener = addListener(2, Event.PROPERTY_REMOVED, null, false, null, null, false);
+        SimpleListener listener = addListener(2, Event.PROPERTY_REMOVED, null, false, null, null, false);
 
         // remove the property
         String prop1Path = prop1.getPath();
@@ -1499,7 +1497,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         save();
 
         // register listener
-        TestListener listener = addListener(1, Event.PROPERTY_REMOVED, null, false, null, null, false);
+        SimpleListener listener = addListener(1, Event.PROPERTY_REMOVED, null, false, null, null, false);
 
         // remove the property
         prop.remove();
@@ -1530,7 +1528,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         String path = getRoot().getPath() + '/' + node1;
 
         // register listener
-        TestListener listener = addListener(1, Event.NODE_ADDED, path, false, null, null, false);
+        SimpleListener listener = addListener(1, Event.NODE_ADDED, path, false, null, null, false);
 
         // add child node under the path we care about
         Node n1 = getRoot().addNode(node1, UNSTRUCTURED);
@@ -1559,7 +1557,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         save();
 
         // register listener
-        TestListener listener = addListener(1, Event.PROPERTY_ADDED, n1.getPath(), false, null, null, false);
+        SimpleListener listener = addListener(1, Event.PROPERTY_ADDED, n1.getPath(), false, null, null, false);
 
         // add property
         String prop = "prop";
@@ -1591,13 +1589,13 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         save();
 
         // register listener
-        TestListener listener = addListener(1,
-                                            Event.NODE_ADDED,
-                                            getRoot().getPath(),
-                                            true,
-                                            null,
-                                            new String[] {LOCK_MIXIN},
-                                            false);
+        SimpleListener listener = addListener(1,
+                                              Event.NODE_ADDED,
+                                              getRoot().getPath(),
+                                              true,
+                                              null,
+                                              new String[] {LOCK_MIXIN},
+                                              false);
 
         // trigger events
         String node3 = "node3";
@@ -1622,7 +1620,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     @Test
     public void shouldTestAddEventListenerTest_testNoLocalTrue() throws Exception {
         // register listener
-        TestListener listener = addListener(0, Event.NODE_ADDED, getRoot().getPath(), true, null, null, true);
+        SimpleListener listener = addListener(0, Event.NODE_ADDED, getRoot().getPath(), true, null, null, true);
 
         // trigger events
         getRoot().addNode("node1", UNSTRUCTURED);
@@ -1647,7 +1645,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         String path = getRoot().getPath() + '/' + node1;
 
         // register listener
-        TestListener listener = addListener(1, Event.NODE_ADDED, path, true, null, null, false);
+        SimpleListener listener = addListener(1, Event.NODE_ADDED, path, true, null, null, false);
 
         // add child node under the path we care about
         Node n1 = getRoot().addNode(node1, UNSTRUCTURED);
@@ -1679,13 +1677,13 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         save();
 
         // register listener
-        TestListener listener = addListener(1,
-                                            Event.PROPERTY_ADDED,
-                                            getRoot().getPath(),
-                                            true,
-                                            new String[] {n1.getIdentifier()},
-                                            null,
-                                            false);
+        SimpleListener listener = addListener(1,
+                                              Event.PROPERTY_ADDED,
+                                              getRoot().getPath(),
+                                              true,
+                                              new String[] {n1.getIdentifier()},
+                                              null,
+                                              false);
 
         // create properties
         String prop1 = "prop1";
@@ -1721,7 +1719,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         save();
 
         // register listener
-        TestListener listener = addListener(2, Event.NODE_ADDED, null, false, null, null, false);
+        SimpleListener listener = addListener(2, Event.NODE_ADDED, null, false, null, null, false);
 
         // perform copy
         String targetPath = getRoot().getPath() + "/node3";
@@ -1753,9 +1751,9 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         save();
 
         // register listeners
-        TestListener moveNodeListener = addListener(1, Event.NODE_MOVED, null, false, null, null, false);
-        TestListener addNodeListener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
-        TestListener removeNodeListener = addListener(1, Event.NODE_REMOVED, null, false, null, null, false);
+        SimpleListener moveNodeListener = addListener(1, Event.NODE_MOVED, null, false, null, null, false);
+        SimpleListener addNodeListener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
+        SimpleListener removeNodeListener = addListener(1, Event.NODE_REMOVED, null, false, null, null, false);
 
         // perform move
         String oldPath = n1.getPath();
@@ -1802,9 +1800,9 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         save();
 
         // register listeners
-        TestListener moveNodeListener = addListener(1, Event.NODE_MOVED, null, false, null, null, false);
-        TestListener addNodeListener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
-        TestListener removeNodeListener = addListener(1, Event.NODE_REMOVED, null, false, null, null, false);
+        SimpleListener moveNodeListener = addListener(1, Event.NODE_MOVED, null, false, null, null, false);
+        SimpleListener addNodeListener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
+        SimpleListener removeNodeListener = addListener(1, Event.NODE_REMOVED, null, false, null, null, false);
 
         // rename node
         String oldPath = n1.getPath();
@@ -1843,12 +1841,12 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         Session session2 = login(WORKSPACE2);
 
         // Register 2 listeners in the first session ...
-        TestListener listener1 = addListener(session, 2, ALL_EVENTS, "/", true, null, null, false);
-        TestListener addListener1 = addListener(session, 1, Event.NODE_ADDED, "/", true, null, null, false);
+        SimpleListener listener1 = addListener(session, 2, ALL_EVENTS, "/", true, null, null, false);
+        SimpleListener addListener1 = addListener(session, 1, Event.NODE_ADDED, "/", true, null, null, false);
 
         // Register 2 listeners in the second session ...
-        TestListener listener2 = addListener(session2, 0, ALL_EVENTS, "/", true, null, null, false);
-        TestListener addListener2 = addListener(session2, 0, Event.NODE_ADDED, "/", true, null, null, false);
+        SimpleListener listener2 = addListener(session2, 0, ALL_EVENTS, "/", true, null, null, false);
+        SimpleListener addListener2 = addListener(session2, 0, Event.NODE_ADDED, "/", true, null, null, false);
 
         // Add a node to the first session ...
         session.getRootNode().addNode("nodeA", "nt:unstructured");
@@ -1880,7 +1878,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         String prefix = "foobar";
         assertNoSessionNamespace(uri, prefix);
 
-        TestListener listener = addListener(session, 0, ALL_EVENTS, "/jcr:system", true, null, null, false);
+        SimpleListener listener = addListener(session, 0, ALL_EVENTS, "/jcr:system", true, null, null, false);
         session.setNamespacePrefix(prefix, uri);
 
         // Wait for the events on the session's listeners (that should NOT get the events) ...
@@ -1900,8 +1898,8 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
         Session session2 = login(WORKSPACE2);
 
-        TestListener listener = addListener(session, 4, ALL_EVENTS, "/jcr:system", true, null, null, false);
-        TestListener listener2 = addListener(session2, 4, ALL_EVENTS, "/jcr:system", true, null, null, false);
+        SimpleListener listener = addListener(session, 4, ALL_EVENTS, "/jcr:system", true, null, null, false);
+        SimpleListener listener2 = addListener(session2, 4, ALL_EVENTS, "/jcr:system", true, null, null, false);
 
         session.getWorkspace().getNamespaceRegistry().registerNamespace(prefix, uri);
 
@@ -1931,9 +1929,9 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
         // no event should be fired from the system path for the lock (excluded explicitly because the TCK does not expect events
         // from this)
-        TestListener systemListener = addListener(session, 1, 2, ALL_EVENTS, "/jcr:system", true, null, null, false);
+        SimpleListener systemListener = addListener(session, 1, 2, ALL_EVENTS, "/jcr:system", true, null, null, false);
         // 2 events (property added for isDeep and lock owner) should be fired for the lock in the regular path (as per TCK)
-        TestListener nodeListener = addListener(session, 2, 2, ALL_EVENTS, parentNode.getPath(), true, null, null, false);
+        SimpleListener nodeListener = addListener(session, 2, 2, ALL_EVENTS, parentNode.getPath(), true, null, null, false);
 
         lock(parentNode, true, true);
 
@@ -1952,7 +1950,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     @Test
     public void shouldReceiveEventsForChangesToVersionsInSystemContent() throws Exception {
         int numEvents = 22;
-        TestListener listener = addListener(session, numEvents, ALL_EVENTS, "/jcr:system", true, null, null, false);
+        SimpleListener listener = addListener(session, numEvents, ALL_EVENTS, "/jcr:system", true, null, null, false);
 
         Node node = session.getRootNode().addNode("/test", "nt:unstructured");
         node.addMixin("mix:versionable");
@@ -1995,7 +1993,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         car.setProperty("car:maker", "Audi");
         session.save();
 
-        TestListener listener = addListener(1, Event.PROPERTY_REMOVED, null, true, null, new String[] {"car:Car"}, false);
+        SimpleListener listener = addListener(1, Event.PROPERTY_REMOVED, null, true, null, new String[] {"car:Car"}, false);
         Property carMakerProperty = car.getProperty("car:maker");
         String propertyPath = carMakerProperty.getPath();
         carMakerProperty.remove();
@@ -2011,7 +2009,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     @Test
     public void shouldReceiveUserDataWithEventWhenObservationSessionIsSameThatMadeChange() throws Exception {
         // register listener
-        TestListener listener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
+        SimpleListener listener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
 
         // add node
         Node addedNode = getRoot().addNode("node1", UNSTRUCTURED);
@@ -2048,7 +2046,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     @Test
     public void shouldReceiveUserDataWithEventWhenUserDataSetOnSessionThatMadeChange() throws Exception {
         // Now register a listener
-        TestListener listener = new TestListener(1, 1, Event.NODE_ADDED);
+        SimpleListener listener = new SimpleListener(1, 1, Event.NODE_ADDED);
         session.getWorkspace()
                .getObservationManager()
                .addEventListener(listener, Event.NODE_ADDED, null, true, null, null, false);
@@ -2095,7 +2093,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         om.setUserData(userData);
 
         // Now register a listener
-        TestListener listener = new TestListener(1, 1, Event.NODE_ADDED);
+        SimpleListener listener = new SimpleListener(1, 1, Event.NODE_ADDED);
         session.getWorkspace()
                .getObservationManager()
                .addEventListener(listener, Event.NODE_ADDED, null, true, null, null, false);
@@ -2162,102 +2160,5 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
                          boolean isDeep,
                          boolean isSessionScoped ) throws RepositoryException {
         session.getWorkspace().getLockManager().lock(node.getPath(), isDeep, isSessionScoped, 1L, "owner");
-    }
-
-    /**
-     * Test implementation of an {@link javax.jcr.observation.EventListener}
-     */
-    private class TestListener implements EventListener {
-
-        private String errorMessage;
-        protected final List<Event> events;
-        protected final List<String> userData;
-        private int eventsProcessed = 0;
-        protected final int eventTypes;
-        protected final int expectedEventsCount;
-        protected final CountDownLatch latch;
-
-        public TestListener( int expectedEventsCount,
-                             int numIterators,
-                             int eventTypes ) {
-            this.eventTypes = eventTypes;
-            this.expectedEventsCount = expectedEventsCount;
-            this.events = new ArrayList<Event>();
-            this.userData = new ArrayList<String>();
-            this.latch = new CountDownLatch(numIterators);
-        }
-
-        public int getActualEventCount() {
-            return this.eventsProcessed;
-        }
-
-        public String getErrorMessage() {
-            return this.errorMessage;
-        }
-
-        public List<Event> getEvents() {
-            return this.events;
-        }
-
-        public int getExpectedEventCount() {
-            return this.expectedEventsCount;
-        }
-
-        @Override
-        public void onEvent( EventIterator itr ) {
-            // this is called each time a "transaction" is committed. Most times this means after a session.save. But there are
-            // other times, like a workspace.move and a node.lock
-            try {
-                long position = itr.getPosition();
-
-                // iterator position must be set initially zero
-                if (position == 0) {
-                    while (itr.hasNext()) {
-                        Event event = itr.nextEvent();
-                        // System.out.println(event + " from " + this);
-
-                        // check iterator position
-                        if (++position != itr.getPosition()) {
-                            this.errorMessage = "EventIterator position was " + itr.getPosition() + " and should be " + position;
-                            break;
-                        }
-
-                        try {
-                            String userData = event.getUserData();
-                            this.userData.add(userData);
-                        } catch (RepositoryException e) {
-                            this.errorMessage = e.getMessage();
-                        }
-
-                        // add event to collection and increment total
-                        this.events.add(event);
-                        ++this.eventsProcessed;
-
-                        // check to make sure we haven't received too many events
-                        if (this.eventsProcessed > this.expectedEventsCount) {
-                            break;
-                        }
-
-                        // check event type
-                        int eventType = event.getType();
-
-                        if ((this.eventTypes & eventType) == 0) {
-                            this.errorMessage = "Received a wrong event type of " + eventType;
-                            break;
-                        }
-                    }
-                } else {
-                    this.errorMessage = "EventIterator position was not initially set to zero";
-                }
-            } finally {
-                // This has to be done LAST, otherwise waitForEvents() will return before the above stuff is done
-                this.latch.countDown();
-            }
-        }
-
-        public void waitForEvents() throws Exception {
-            long millis = this.expectedEventsCount == 0 ? 50 : 500;
-            this.latch.await(millis, TimeUnit.MILLISECONDS);
-        }
     }
 }

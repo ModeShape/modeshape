@@ -29,7 +29,11 @@ import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.SessionEnvironment;
+import org.modeshape.jcr.cache.SessionEnvironment.Monitor;
+import org.modeshape.jcr.cache.SessionEnvironment.MonitorFactory;
 import org.modeshape.jcr.cache.change.PrintingChangeSetListener;
+import org.modeshape.jcr.txn.NoClientTransactions;
+import org.modeshape.jcr.txn.Transactions;
 
 /**
  * Abstract base class for tests that operate against a SessionCache. Note that all methods must be able to operate against all
@@ -57,15 +61,16 @@ public abstract class AbstractSessionCacheTest extends AbstractNodeCacheTest {
 
     protected SessionEnvironment createSessionContext() {
         final TransactionManager txnMgr = txnManager();
-        return new SessionEnvironment() {
-            @Override
-            public TransactionManager getTransactionManager() {
-                return txnMgr;
-            }
-
+        final MonitorFactory monitorFactory = new MonitorFactory() {
             @Override
             public Monitor createMonitor() {
                 return null;
+            }
+        };
+        return new SessionEnvironment() {
+            @Override
+            public Transactions getTransactions() {
+                return new NoClientTransactions(monitorFactory, txnMgr);
             }
         };
     }

@@ -26,7 +26,7 @@ package org.modeshape.jcr.cache;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
-import javax.transaction.TransactionManager;
+import org.modeshape.jcr.txn.Transactions;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Property;
@@ -37,18 +37,11 @@ import org.modeshape.jcr.value.Property;
 public interface SessionEnvironment {
 
     /**
-     * Get the transaction manager for the session.
+     * Get the interface for working with transactions.
      * 
-     * @return the transaction manager; never null
+     * @return the transactions object
      */
-    TransactionManager getTransactionManager();
-
-    /**
-     * Get an indexer that can be used to index the changes made within the supplied transaction context.
-     * 
-     * @return the indexer; may be null if no monitoring is to be performed
-     */
-    Monitor createMonitor();
+    Transactions getTransactions();
 
     public static interface Monitor {
         /**
@@ -100,6 +93,18 @@ public interface SessionEnvironment {
          * @param changedNodesCount
          */
         void recordChanged( long changedNodesCount );
+    }
+
+    /**
+     * A simple interface used to construct {@link Monitor} instances.
+     */
+    public static interface MonitorFactory {
+        /**
+         * Get an indexer that can be used to index the changes made within the supplied transaction context.
+         * 
+         * @return the indexer; may be null if no monitoring is to be performed
+         */
+        Monitor createMonitor();
     }
 
 }

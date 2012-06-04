@@ -205,7 +205,7 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
      * 
      * @param changes the changes to be made; may not be null
      */
-    protected void changed( ChangeSet changes ) {
+    public void changed( ChangeSet changes ) {
         checkNotClosed();
         // Clear this workspace's cached nodes (iteratively is okay since it's a ConcurrentMap) ...
         for (NodeKey key : changes.changedNodes()) {

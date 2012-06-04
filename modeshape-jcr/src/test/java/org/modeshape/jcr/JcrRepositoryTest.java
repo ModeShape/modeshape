@@ -35,9 +35,14 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.NamespaceException;
 import javax.jcr.NoSuchWorkspaceException;
+import javax.jcr.Node;
 import javax.jcr.Repository;
 import javax.jcr.Session;
 import javax.jcr.ValueFormatException;
+import javax.jcr.observation.Event;
+import javax.jcr.query.Query;
+import javax.jcr.query.QueryResult;
+import javax.transaction.TransactionManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -81,6 +86,10 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
                 }
             }
         }
+    }
+
+    protected TransactionManager getTransactionManager() {
+        return repository.transactionManager();
     }
 
     @Test
@@ -545,6 +554,247 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
         Future<Boolean> future = session.getWorkspace().reindexAsync("/");
         assertThat(future, is(notNullValue()));
         assertThat(future.get(), is(true)); // get() blocks until done
+    }
+
+    @FixFor( "MODE-1498" )
+    @Test
+    public void shouldWorkWithUserDefinedTransactions() throws Exception {
+        session = createSession();
+
+        Session session2 = createSession();
+        try {
+
+            // Create a listener to count the changes ...
+            SimpleListener listener = addListener(3); // we'll create 3 nodes ...
+            assertThat(listener.getActualEventCount(), is(0));
+
+            // Check that the node is not visible to the other session ...
+            session.refresh(false);
+            nodeDoesNotExist(session2, "/", "txnNode1");
+            nodeDoesNotExist(session2, "/", "txnNode2");
+
+            // Start a transaction ...
+            final TransactionManager txnMgr = getTransactionManager();
+            txnMgr.begin();
+            assertThat(listener.getActualEventCount(), is(0));
+            Node txnNode1 = session.getRootNode().addNode("txnNode1");
+            Node txnNode1a = txnNode1.addNode("txnNodeA");
+            assertThat(txnNode1a, is(notNullValue()));
+            session.save();
+            assertThat(listener.getActualEventCount(), is(0));
+
+            // Check that the node is not visible to the other session ...
+            nodeDoesNotExist(session2, "/", "txnNode1");
+            nodeDoesNotExist(session2, "/", "txnNode2");
+            session2.refresh(false);
+            nodeDoesNotExist(session2, "/", "txnNode1");
+            nodeDoesNotExist(session2, "/", "txnNode2");
+
+            // sleep a bit to let any incorrect events propagate through the system ...
+            Thread.sleep(100L);
+            assertThat(listener.getActualEventCount(), is(0));
+
+            Node txnNode2 = session.getRootNode().addNode("txnNode2");
+            assertThat(txnNode2, is(notNullValue()));
+            session.save();
+            assertThat(listener.getActualEventCount(), is(0));
+            assertThat(session.getRootNode().hasNode("txnNode1"), is(true));
+            assertThat(session.getRootNode().hasNode("txnNode2"), is(true));
+
+            // Check that the node is not visible to the other session ...
+            nodeDoesNotExist(session2, "/", "txnNode1");
+            nodeDoesNotExist(session2, "/", "txnNode2");
+            session2.refresh(false);
+            nodeDoesNotExist(session2, "/", "txnNode1");
+            nodeDoesNotExist(session2, "/", "txnNode2");
+
+            // sleep a bit to let any incorrect events propagate through the system ...
+            Thread.sleep(100L);
+            assertThat(listener.getActualEventCount(), is(0));
+
+            assertThat(session.getRootNode().hasNode("txnNode1"), is(true));
+            assertThat(session.getRootNode().hasNode("txnNode2"), is(true));
+
+            // Now commit the transaction ...
+            txnMgr.commit();
+            listener.waitForEvents();
+
+            nodeExists(session, "/", "txnNode1");
+            nodeExists(session, "/", "txnNode2");
+
+            // Check that the node IS visible to the other session ...
+            nodeExists(session2, "/", "txnNode1");
+            nodeExists(session2, "/", "txnNode2");
+            session2.refresh(false);
+            nodeExists(session2, "/", "txnNode1");
+            nodeExists(session2, "/", "txnNode2");
+
+        } finally {
+            session2.logout();
+        }
+    }
+
+    @FixFor( "MODE-1498" )
+    @Test
+    public void shouldWorkWithUserDefinedTransactionsThatUseRollback() throws Exception {
+        session = createSession();
+
+        Session session2 = createSession();
+        try {
+
+            // Create a listener to count the changes ...
+            SimpleListener listener = addListener(3); // we'll create 3 nodes ...
+            assertThat(listener.getActualEventCount(), is(0));
+
+            // Check that the node is not visible to the other session ...
+            session.refresh(false);
+            nodeDoesNotExist(session2, "/", "txnNode1");
+            nodeDoesNotExist(session2, "/", "txnNode2");
+
+            // Start a transaction ...
+            final TransactionManager txnMgr = getTransactionManager();
+            txnMgr.begin();
+            assertThat(listener.getActualEventCount(), is(0));
+            Node txnNode1 = session.getRootNode().addNode("txnNode1");
+            Node txnNode1a = txnNode1.addNode("txnNodeA");
+            assertThat(txnNode1a, is(notNullValue()));
+            session.save();
+            assertThat(listener.getActualEventCount(), is(0));
+
+            // Check that the node is not visible to the other session ...
+            nodeDoesNotExist(session2, "/", "txnNode1");
+            nodeDoesNotExist(session2, "/", "txnNode2");
+            session2.refresh(false);
+            nodeDoesNotExist(session2, "/", "txnNode1");
+            nodeDoesNotExist(session2, "/", "txnNode2");
+
+            // sleep a bit to let any incorrect events propagate through the system ...
+            Thread.sleep(100L);
+            assertThat(listener.getActualEventCount(), is(0));
+
+            Node txnNode2 = session.getRootNode().addNode("txnNode2");
+            assertThat(txnNode2, is(notNullValue()));
+            session.save();
+            assertThat(listener.getActualEventCount(), is(0));
+            assertThat(session.getRootNode().hasNode("txnNode1"), is(true));
+            assertThat(session.getRootNode().hasNode("txnNode2"), is(true));
+
+            // Check that the node is not visible to the other session ...
+            nodeDoesNotExist(session2, "/", "txnNode1");
+            nodeDoesNotExist(session2, "/", "txnNode2");
+            session2.refresh(false);
+            nodeDoesNotExist(session2, "/", "txnNode1");
+            nodeDoesNotExist(session2, "/", "txnNode2");
+
+            // sleep a bit to let any incorrect events propagate through the system ...
+            Thread.sleep(100L);
+            assertThat(listener.getActualEventCount(), is(0));
+
+            assertThat(session.getRootNode().hasNode("txnNode1"), is(true));
+            assertThat(session.getRootNode().hasNode("txnNode2"), is(true));
+
+            // Now commit the transaction ...
+            txnMgr.rollback();
+
+            // There should have been no events ...
+            Thread.sleep(100L);
+            assertThat(listener.getActualEventCount(), is(0));
+
+            // The nodes still exist in the session, since 'refresh' hasn't been called ...
+            assertThat(session.getRootNode().hasNode("txnNode1"), is(true));
+            assertThat(session.getRootNode().hasNode("txnNode2"), is(true));
+            session.refresh(false);
+            assertThat(session.getRootNode().hasNode("txnNode1"), is(false));
+            assertThat(session.getRootNode().hasNode("txnNode2"), is(false));
+
+            // Check that the node IS NOT visible to the other session ...
+            session2.refresh(false);
+            nodeDoesNotExist(session2, "/", "txnNode1");
+            nodeDoesNotExist(session2, "/", "txnNode2");
+
+        } finally {
+            session2.logout();
+        }
+    }
+
+    protected void nodeExists( Session session,
+                               String parentPath,
+                               String childName,
+                               boolean exists ) throws Exception {
+        Node parent = session.getNode(parentPath);
+        assertThat(parent.hasNode(childName), is(exists));
+        String path = parent.getPath();
+        if (parent.getDepth() != 0) path = path + "/";
+        path = path + childName;
+
+        String sql = "SELECT * FROM [nt:base] WHERE PATH() = '" + path + "'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        assertThat(result.getNodes().getSize(), is(exists ? 1L : 0L));
+    }
+
+    protected void nodeExists( Session session,
+                               String parentPath,
+                               String childName ) throws Exception {
+        nodeExists(session, parentPath, childName, true);
+    }
+
+    protected void nodeDoesNotExist( Session session,
+                                     String parentPath,
+                                     String childName ) throws Exception {
+        nodeExists(session, parentPath, childName, false);
+    }
+
+    private static final int ALL_EVENTS = Event.NODE_ADDED | Event.NODE_REMOVED | Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED
+                                          | Event.PROPERTY_REMOVED;
+
+    SimpleListener addListener( int expectedEventsCount ) throws Exception {
+        return addListener(expectedEventsCount, ALL_EVENTS, null, false, null, null, false);
+    }
+
+    SimpleListener addListener( int expectedEventsCount,
+                                int eventTypes,
+                                String absPath,
+                                boolean isDeep,
+                                String[] uuids,
+                                String[] nodeTypeNames,
+                                boolean noLocal ) throws Exception {
+        return addListener(expectedEventsCount, 1, eventTypes, absPath, isDeep, uuids, nodeTypeNames, noLocal);
+    }
+
+    SimpleListener addListener( int expectedEventsCount,
+                                int numIterators,
+                                int eventTypes,
+                                String absPath,
+                                boolean isDeep,
+                                String[] uuids,
+                                String[] nodeTypeNames,
+                                boolean noLocal ) throws Exception {
+        return addListener(this.session,
+                           expectedEventsCount,
+                           numIterators,
+                           eventTypes,
+                           absPath,
+                           isDeep,
+                           uuids,
+                           nodeTypeNames,
+                           noLocal);
+    }
+
+    SimpleListener addListener( Session session,
+                                int expectedEventsCount,
+                                int numIterators,
+                                int eventTypes,
+                                String absPath,
+                                boolean isDeep,
+                                String[] uuids,
+                                String[] nodeTypeNames,
+                                boolean noLocal ) throws Exception {
+        SimpleListener listener = new SimpleListener(expectedEventsCount, numIterators, eventTypes);
+        session.getWorkspace()
+               .getObservationManager()
+               .addEventListener(listener, eventTypes, absPath, isDeep, uuids, nodeTypeNames, noLocal);
+        return listener;
     }
 
 }
