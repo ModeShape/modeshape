@@ -612,7 +612,12 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             SecurityContext securityContext = sessionContext.getSecurityContext();
             boolean writable = JcrSession.hasRole(securityContext, ModeShapeRoles.READWRITE, repoName, workspaceName)
                                || JcrSession.hasRole(securityContext, ModeShapeRoles.ADMIN, repoName, workspaceName);
-            JcrSession session = new JcrSession(this, workspaceName, sessionContext, attributes, !writable);
+            JcrSession session = null;
+            if (running.useXaSessions()) {
+                session = new JcrXaSession(this, workspaceName, sessionContext, attributes, !writable);
+            } else {
+                session = new JcrSession(this, workspaceName, sessionContext, attributes, !writable);
+            }
 
             // Need to make sure that the user has access to this session
             session.checkPermission(workspaceName, null, ModeShapePermissions.READ);
@@ -912,6 +917,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final TextExtractors extractors;
         private final ChangeBus changeBus;
         private final ExecutorService changeDispatchingQueue;
+        private final boolean useXaSessions;
 
         protected RunningState() throws IOException, NamingException {
             this(null, null);
@@ -1061,6 +1067,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.statistics.set(ValueMetric.WORKSPACE_COUNT, cache.getWorkspaceNames().size());
             }
 
+            this.useXaSessions = this.transactions instanceof SynchronizedTransactions;
+
             if (other != null && !change.securityChanged) {
                 this.authenticators = other.authenticators;
                 this.anonymousCredentialsIfSuppliedCredentialsFail = other.anonymousCredentialsIfSuppliedCredentialsFail;
@@ -1174,6 +1182,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
         protected final Sequencers sequencers() {
             return sequencers;
+        }
+
+        protected final boolean useXaSessions() {
+            return useXaSessions;
         }
 
         private final ClassLoader classLoader() {
