@@ -40,7 +40,6 @@ import javax.transaction.HeuristicRollbackException;
 import javax.transaction.NotSupportedException;
 import javax.transaction.RollbackException;
 import javax.transaction.SystemException;
-import javax.transaction.TransactionManager;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
@@ -49,8 +48,8 @@ import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.GuardedBy;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.i18n.I18n;
-import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrLexicon;
@@ -78,6 +77,9 @@ import org.modeshape.jcr.cache.document.SessionNode.ChangedChildren;
 import org.modeshape.jcr.cache.document.SessionNode.LockChange;
 import org.modeshape.jcr.cache.document.SessionNode.MixinChanges;
 import org.modeshape.jcr.cache.document.SessionNode.ReferrerChanges;
+import org.modeshape.jcr.txn.Transactions;
+import org.modeshape.jcr.txn.Transactions.Transaction;
+import org.modeshape.jcr.txn.Transactions.TransactionFunction;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
@@ -98,7 +100,7 @@ public class WritableSessionCache extends AbstractSessionCache {
     private Set<NodeKey> replacedNodes;
     private LinkedHashSet<NodeKey> changedNodesInOrder;
     private Map<NodeKey, ReferrerChanges> referrerChangesForRemovedNodes;
-    private final TransactionManager tm;
+    private final Transactions txns;
 
     /**
      * Create a new SessionCache that can be used for making changes to the workspace.
@@ -114,7 +116,7 @@ public class WritableSessionCache extends AbstractSessionCache {
         this.changedNodes = new HashMap<NodeKey, SessionNode>();
         this.changedNodesInOrder = new LinkedHashSet<NodeKey>();
         this.referrerChangesForRemovedNodes = new HashMap<NodeKey, ReferrerChanges>();
-        this.tm = sessionContext.getTransactionManager();
+        this.txns = sessionContext.getTransactions();
     }
 
     protected final void assertInSession( SessionNode node ) {
@@ -161,6 +163,12 @@ public class WritableSessionCache extends AbstractSessionCache {
                 }
             } finally {
                 lock.unlock();
+            }
+        } else {
+            // The node was found in the 'changedNodes', but it may not be in 'changedNodesInOrder'
+            // (if the JCR client is using transactions and there were multiple saves), so make sure it's there ...
+            if (!changedNodesInOrder.contains(key)) {
+                changedNodesInOrder.add(key);
             }
         }
         return sessionNode;
@@ -320,33 +328,33 @@ public class WritableSessionCache extends AbstractSessionCache {
             }
 
             try {
-                // Try to begin a transaction, if there is a transaction manager ...
-                boolean closeTxn = false;
-                if (tm != null) {
-                    // Start a transaction ...
-                    tm.begin();
-                    closeTxn = true;
-                }
+                // Start a ModeShape transaction (which may be a part of a larger JTA transaction) ...
+                Transaction txn = txns.begin();
 
-                // Get a monitor ...
-                Monitor monitor = sessionContext().createMonitor();
-
+                // Get a monitor via the transaction ...
+                final Monitor monitor = txn.createMonitor();
                 try {
                     // Now persist the changes ...
                     events = persistChanges(this.changedNodesInOrder, monitor);
+                    clearModifiedState();
                 } catch (RuntimeException e) {
                     // Some error occurred (likely within our code) ...
-                    if (tm != null) tm.rollback();
+                    txn.rollback();
                     throw e;
                 }
 
-                if (closeTxn) {
-                    assert tm != null;
-                    // Commit the transaction ...
-                    tm.commit();
-                }
+                // Register a handler that will execute upon successful commit of the transaction (whever that happens) ...
+                final ChangeSet changes = events;
+                txn.uponCompletion(new TransactionFunction() {
+                    @Override
+                    public void transactionComplete() {
+                        if (changes != null && monitor != null) monitor.recordChanged(changes.changedNodes().size());
+                        clearState();
+                    }
+                });
 
-                if (events != null && monitor != null) monitor.recordChanged(events.changedNodes().size());
+                // Commit the transaction ...
+                txn.commit();
 
             } catch (NotSupportedException err) {
                 // No nested transactions are supported ...
@@ -367,11 +375,6 @@ public class WritableSessionCache extends AbstractSessionCache {
                 throw new SystemFailureException(err);
             }
 
-            // The changes have been made, so create a new map (we're using the keys from the current map) ...
-            this.changedNodes = new HashMap<NodeKey, SessionNode>();
-            this.referrerChangesForRemovedNodes.clear();
-            this.changedNodesInOrder.clear();
-            this.replacedNodes = null;
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -384,14 +387,44 @@ public class WritableSessionCache extends AbstractSessionCache {
             logger.debug("Completing SessionCache.save()");
         }
 
-        fireChanges(events);
+        txns.updateCache(workspaceCache, events);
+    }
+
+    protected void clearState() {
+        // The changes have been made, so create a new map (we're using the keys from the current map) ...
+        this.changedNodes = new HashMap<NodeKey, SessionNode>();
+        this.referrerChangesForRemovedNodes.clear();
+        this.changedNodesInOrder.clear();
+        this.replacedNodes = null;
+    }
+
+    protected void clearState( Iterable<NodeKey> savedNodesInOrder ) {
+        // The changes have been made, so remove the changes from this session's map ...
+        for (NodeKey savedNode : savedNodesInOrder) {
+            this.changedNodes.remove(savedNode);
+            this.changedNodesInOrder.remove(savedNode);
+            if (this.replacedNodes != null) {
+                this.replacedNodes.remove(savedNode);
+            }
+        }
+    }
+
+    protected void clearModifiedState() {
+        this.changedNodesInOrder.clear();
+    }
+
+    protected void clearModifiedState( Iterable<NodeKey> savedNodesInOrder ) {
+        // The changes have been made, so remove the changes from this session's map ..
+        for (NodeKey savedNode : savedNodesInOrder) {
+            this.changedNodesInOrder.remove(savedNode);
+        }
     }
 
     @Override
     public void save( SessionCache other,
                       PreSave preSaveOperation ) {
         // Try getting locks on both sessions ...
-        WritableSessionCache that = (WritableSessionCache)other;
+        final WritableSessionCache that = (WritableSessionCache)other;
         Lock thisLock = this.lock.writeLock();
         Lock thatLock = that.lock.writeLock();
 
@@ -414,36 +447,40 @@ public class WritableSessionCache extends AbstractSessionCache {
                     }
                 }
 
-                // Try to begin a transaction, if there is a transaction manager ...
-                boolean closeTxn = false;
-                if (tm != null) {
-                    // Start a transaction ...
-                    tm.begin();
-                    closeTxn = true;
-                }
+                // Start a ModeShape transaction (which may be a part of a larger JTA transaction) ...
+                Transaction txn = txns.begin();
 
-                // Get a monitor ...
-                Monitor monitor = sessionContext().createMonitor();
-
+                // Get a monitor via the transaction ...
+                final Monitor monitor = txn.createMonitor();
                 try {
                     // Now persist the changes ...
                     events1 = persistChanges(this.changedNodesInOrder, monitor);
                     events2 = that.persistChanges(that.changedNodesInOrder, monitor);
+                    this.clearModifiedState();
+                    that.clearModifiedState();
                 } catch (RuntimeException e) {
                     // Some error occurred (likely within our code) ...
-                    if (tm != null) tm.rollback();
+                    txn.rollback();
                     throw e;
                 }
 
-                if (closeTxn) {
-                    assert tm != null;
-                    // Commit the transaction ...
-                    tm.commit();
-                }
-                if (monitor != null) {
-                    if (events1 != null) monitor.recordChanged(events1.changedNodes().size());
-                    if (events2 != null) monitor.recordChanged(events2.changedNodes().size());
-                }
+                // Register a handler that will execute upon successful commit of the transaction (whever that happens) ...
+                final ChangeSet changes1 = events1;
+                final ChangeSet changes2 = events2;
+                txn.uponCompletion(new TransactionFunction() {
+                    @Override
+                    public void transactionComplete() {
+                        if (monitor != null) {
+                            if (changes1 != null) monitor.recordChanged(changes1.changedNodes().size());
+                            if (changes2 != null) monitor.recordChanged(changes2.changedNodes().size());
+                        }
+                        clearState();
+                        that.clearState();
+                    }
+                });
+
+                // Commit the transaction ...
+                txn.commit();
 
             } catch (NotSupportedException err) {
                 // No nested transactions are supported ...
@@ -464,17 +501,6 @@ public class WritableSessionCache extends AbstractSessionCache {
                 throw new SystemFailureException(err);
             }
 
-            // The changes have been made, so create a new map (we're using the keys from the current map) ...
-            this.changedNodes = new HashMap<NodeKey, SessionNode>();
-            this.referrerChangesForRemovedNodes.clear();
-            this.changedNodesInOrder.clear();
-            this.replacedNodes = null;
-
-            // And in the referenced session ...
-            that.changedNodes = new HashMap<NodeKey, SessionNode>();
-            that.changedNodesInOrder.clear();
-            that.replacedNodes = null;
-
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -489,8 +515,8 @@ public class WritableSessionCache extends AbstractSessionCache {
 
         // TODO: Events ... these events should be combined, but cannot each ChangeSet only has a single workspace
         // Notify the workspaces of the changes made. This is done outside of our lock but still before the save returns ...
-        fireChanges(events1);
-        fireChanges(events2);
+        txns.updateCache(this.workspaceCache, events1);
+        txns.updateCache(that.workspaceCache, events2);
     }
 
     private void checkNodeNotRemovedByAnotherTransaction( MutableCachedNode node ) {
@@ -525,7 +551,7 @@ public class WritableSessionCache extends AbstractSessionCache {
         }
 
         // Try getting locks on both sessions ...
-        WritableSessionCache that = (WritableSessionCache)other;
+        final WritableSessionCache that = (WritableSessionCache)other;
         Lock thisLock = this.lock.writeLock();
         Lock thatLock = that.lock.writeLock();
 
@@ -536,40 +562,44 @@ public class WritableSessionCache extends AbstractSessionCache {
             thatLock.lock();
 
             // Before we start the transaction, apply the pre-save operations to the new and changed nodes below the path ...
-            List<NodeKey> savedNodesInOrder = filterChangesAtOrBelowPath(topPath, preSaveOperation);
+            final List<NodeKey> savedNodesInOrder = filterChangesAtOrBelowPath(topPath, preSaveOperation);
 
             try {
-                // Try to begin a transaction, if there is a transaction manager ...
-                boolean closeTxn = false;
-                if (tm != null) {
-                    // Start a transaction ...
-                    tm.begin();
-                    closeTxn = true;
-                }
+                // Start a ModeShape transaction (which may be a part of a larger JTA transaction) ...
+                Transaction txn = txns.begin();
 
-                // Get a monitor ...
-                Monitor monitor = sessionContext().createMonitor();
+                // Get a monitor via the transaction ...
+                final Monitor monitor = txn.createMonitor();
 
                 try {
                     // Now persist the changes ...
                     events1 = persistChanges(savedNodesInOrder, monitor);
                     events2 = that.persistChanges(that.changedNodesInOrder, monitor);
+                    clearModifiedState(savedNodesInOrder);
+                    clearModifiedState();
                 } catch (RuntimeException e) {
                     // Some error occurred (likely within our code) ...
-                    if (tm != null) tm.rollback();
+                    txn.rollback();
                     throw e;
                 }
 
-                if (closeTxn) {
-                    assert tm != null;
-                    // Commit the transaction ...
-                    tm.commit();
-                }
+                // Register a handler that will execute upon successful commit of the transaction (whever that happens) ...
+                final ChangeSet changes1 = events1;
+                final ChangeSet changes2 = events2;
+                txn.uponCompletion(new TransactionFunction() {
+                    @Override
+                    public void transactionComplete() {
+                        if (monitor != null) {
+                            if (changes1 != null) monitor.recordChanged(changes1.changedNodes().size());
+                            if (changes2 != null) monitor.recordChanged(changes2.changedNodes().size());
+                        }
+                        clearState(savedNodesInOrder);
+                        that.clearState();
+                    }
+                });
 
-                if (monitor != null) {
-                    if (events1 != null) monitor.recordChanged(events1.changedNodes().size());
-                    if (events2 != null) monitor.recordChanged(events2.changedNodes().size());
-                }
+                // Commit the transaction ...
+                txn.commit();
 
             } catch (NotSupportedException err) {
                 // No nested transactions are supported ...
@@ -590,20 +620,6 @@ public class WritableSessionCache extends AbstractSessionCache {
                 throw new SystemFailureException(err);
             }
 
-            // The changes have been made, so remove the changes from this session's map ...
-            for (NodeKey savedNode : savedNodesInOrder) {
-                this.changedNodes.remove(savedNode);
-                this.changedNodesInOrder.remove(savedNode);
-                if (this.replacedNodes != null) {
-                    this.replacedNodes.remove(savedNode);
-                }
-            }
-
-            // And in the referenced session ...
-            that.changedNodes = new HashMap<NodeKey, SessionNode>();
-            that.changedNodesInOrder.clear();
-            that.replacedNodes = null;
-
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -617,8 +633,8 @@ public class WritableSessionCache extends AbstractSessionCache {
         }
 
         // TODO: Events ... these events should be combined, but cannot each ChangeSet only has a single workspace
-        fireChanges(events1);
-        fireChanges(events2);
+        txns.updateCache(this.workspaceCache, events1);
+        txns.updateCache(that.workspaceCache, events2);
     }
 
     private List<NodeKey> filterChangesAtOrBelowPath( Path topPath,
@@ -653,14 +669,6 @@ public class WritableSessionCache extends AbstractSessionCache {
             }
         }
         return savedNodesInOrder;
-    }
-
-    private void fireChanges( ChangeSet changeSet ) {
-        // Notify the workspaces of the changes made. This is done outside of our lock but still before the save returns ...
-        if (changeSet != null && changeSet.size() != 0) {
-            // Notify the workspace (outside of the lock, but still before the save returns) ...
-            workspaceCache.changed(changeSet);
-        }
     }
 
     /**
