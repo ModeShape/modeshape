@@ -36,6 +36,7 @@ import org.modeshape.common.collection.Problems;
 import org.modeshape.jcr.RepositoryConfiguration.AnonymousSecurity;
 import org.modeshape.jcr.RepositoryConfiguration.JaasSecurity;
 import org.modeshape.jcr.RepositoryConfiguration.Security;
+import org.modeshape.jcr.RepositoryConfiguration.TransactionMode;
 
 public class RepositoryConfigurationTest {
 
@@ -81,7 +82,14 @@ public class RepositoryConfigurationTest {
 
     @Test
     public void shouldSuccessfullyValidateSampleRepositoryConfiguration() {
-        assertValid("sample-repo-config.json");
+        RepositoryConfiguration config = assertValid("sample-repo-config.json");
+        assertThat(config.getTransactionMode(), is(TransactionMode.AUTO));
+    }
+
+    @Test
+    public void shouldSuccessfullyValidateSampleRepositoryConfiguration2() {
+        RepositoryConfiguration config = assertValid("config/sample-repo-config.json");
+        assertThat(config.getTransactionMode(), is(TransactionMode.NONE));
     }
 
     @Test
@@ -219,23 +227,26 @@ public class RepositoryConfigurationTest {
         String clusterName = "testCluster";
         String providerClass = "someClass";
         String channelConfig = "someConfig";
-        
-        RepositoryConfiguration config = RepositoryConfiguration.read("{ \"clustering\" : {\"clusterName\":\"" + clusterName +
-            "\", \"channelProvider\":\"" + providerClass + "\", \"channelConfiguration\": \"" + channelConfig + "\"} }");
+
+        RepositoryConfiguration config = RepositoryConfiguration.read("{ \"clustering\" : {\"clusterName\":\"" + clusterName
+                                                                      + "\", \"channelProvider\":\"" + providerClass
+                                                                      + "\", \"channelConfiguration\": \"" + channelConfig
+                                                                      + "\"} }");
         RepositoryConfiguration.Clustering clusteringConfiguration = config.getClustering();
         assertEquals(clusterName, clusteringConfiguration.getClusterName());
         assertEquals(providerClass, clusteringConfiguration.getChannelProviderClassName());
         assertEquals(channelConfig, clusteringConfiguration.getChannelConfiguration());
         assertNotNull(clusteringConfiguration.getDocument());
     }
-    
-    protected void assertValid( RepositoryConfiguration config ) {
+
+    protected RepositoryConfiguration assertValid( RepositoryConfiguration config ) {
         Problems results = config.validate();
         assertThat(results.toString(), results.hasProblems(), is(false));
+        return config;
     }
 
-    protected void assertValid( String configContent ) {
-        assertValid(assertRead(configContent));
+    protected RepositoryConfiguration assertValid( String configContent ) {
+        return assertValid(assertRead(configContent));
     }
 
     protected void assertNotValid( int numberOfErrors,

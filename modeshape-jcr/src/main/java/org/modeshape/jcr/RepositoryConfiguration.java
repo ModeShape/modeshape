@@ -197,6 +197,15 @@ public class RepositoryConfiguration {
         public static final String JNDI_NAME = "jndiName";
 
         /**
+         * The specification of whether the repository should expect and detect whether JCR clients modify the content within
+         * transactions. The default value of 'auto' will automatically detect the use of both user- and container-managed
+         * transactions and also works when the JCR client does not use transactions; this will work in most situations. The value
+         * of 'none' specifies that the repository should not attempt to detect existing transactions; this setting is an
+         * optimization that should be used *only* if JCR clients will never use transactions to change the repository content.
+         */
+        public static final String TRANSACTION_MODE = "transactionMode";
+
+        /**
          * The name for the field whose value is a document containing the monitoring information.
          */
         public static final String MONITORING = "monitoring";
@@ -401,6 +410,11 @@ public class RepositoryConfiguration {
          * The default value of the {@link FieldName#DEFAULT} field is '{@value} '.
          */
         public static final String DEFAULT = "default";
+
+        /**
+         * The default value of the {@link FieldName#TRANSACTION_MODE} field is '{@value} '.
+         */
+        public static final TransactionMode TRANSACTION_MODE = TransactionMode.AUTO;
 
         /**
          * The default value of the {@link FieldName#CACHE_TRANSACTION_MANAGER_LOOKUP} field is
@@ -916,6 +930,11 @@ public class RepositoryConfiguration {
         return Default.ALLOW_CREATION;
     }
 
+    public TransactionMode getTransactionMode() {
+        String mode = doc.getString(FieldName.TRANSACTION_MODE);
+        return mode != null ? TransactionMode.valueOf(mode.trim().toUpperCase()) : Default.TRANSACTION_MODE;
+    }
+
     /**
      * Get the name of the workspace that should be used for sessions where the client does not specify the name of the workspace.
      * 
@@ -1157,6 +1176,14 @@ public class RepositoryConfiguration {
     public enum QueryRebuild {
         ALWAYS,
         IF_MISSING;
+    }
+
+    /**
+     * Possible options for rebuilding the indexes upon startup.
+     */
+    public enum TransactionMode {
+        AUTO,
+        NONE;
     }
 
     /**

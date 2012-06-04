@@ -93,6 +93,7 @@ import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.RepositoryConfiguration.JaasSecurity;
 import org.modeshape.jcr.RepositoryConfiguration.QuerySystem;
 import org.modeshape.jcr.RepositoryConfiguration.Security;
+import org.modeshape.jcr.RepositoryConfiguration.TransactionMode;
 import org.modeshape.jcr.Sequencers.SequencingWorkItem;
 import org.modeshape.jcr.api.AnonymousCredentials;
 import org.modeshape.jcr.api.Repository;
@@ -127,6 +128,7 @@ import org.modeshape.jcr.security.AuthenticationProvider;
 import org.modeshape.jcr.security.AuthenticationProviders;
 import org.modeshape.jcr.security.JaasProvider;
 import org.modeshape.jcr.security.SecurityContext;
+import org.modeshape.jcr.txn.NoClientTransactions;
 import org.modeshape.jcr.txn.SynchronizedTransactions;
 import org.modeshape.jcr.txn.Transactions;
 import org.modeshape.jcr.value.Name;
@@ -646,6 +648,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final Path WORKSPACES_PATH = Paths.path(FieldName.WORKSPACES);
         private final Path PREDEFINED_PATH = Paths.path(FieldName.WORKSPACES, FieldName.PREDEFINED);
         private final Path JNDI_PATH = Paths.path(FieldName.JNDI_NAME);
+        private final Path TRANSACTION_MODE_PATH = Paths.path(FieldName.TRANSACTION_MODE);
         private final Path MINIMUM_BINARY_SIZE_IN_BYTES_PATH = Paths.path(FieldName.STORAGE,
                                                                           FieldName.BINARY_STORAGE,
                                                                           FieldName.MINIMUM_BINARY_SIZE_IN_BYTES);
@@ -663,6 +666,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         protected boolean workspacesChanged = false;
         protected boolean predefinedWorkspacesChanged = false;
         protected boolean jndiChanged = false;
+        protected boolean transactionMode = false;
         protected boolean largeValueChanged = false;
         protected boolean nameChanged = false;
         protected boolean monitoringChanged = false;
@@ -718,6 +722,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             if (!predefinedWorkspacesChanged && path.startsWith(PREDEFINED_PATH)) predefinedWorkspacesChanged = true;
             if (!indexingChanged && path.startsWith(QUERY_PATH) && !path.startsWith(EXTRACTORS_PATH)) indexingChanged = true;
             if (!jndiChanged && path.equals(JNDI_PATH)) jndiChanged = true;
+            if (!transactionMode && path.equals(TRANSACTION_MODE_PATH)) transactionMode = true;
             if (!nameChanged && path.equals(NAME_PATH)) nameChanged = true;
             if (!monitoringChanged && path.equals(MONITORING_PATH)) monitoringChanged = true;
         }
@@ -957,7 +962,12 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 // reuse the existing storage-related components ...
                 this.database = other.database;
                 this.txnMgr = other.txnMgr;
-                this.transactions = other.transactions;
+                if (change.transactionMode) {
+                    MonitorFactory monitorFactory = new RepositoryMonitorFactory(this);
+                    this.transactions = createTransactions(config.getTransactionMode(), monitorFactory, this.txnMgr);
+                } else {
+                    this.transactions = other.transactions;
+                }
                 this.cache = other.cache;
                 this.context = other.context;
                 if (change.largeValueChanged) {
@@ -989,7 +999,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 assert this.database != null;
                 this.txnMgr = this.database.getCache().getAdvancedCache().getTransactionManager();
                 MonitorFactory monitorFactory = new RepositoryMonitorFactory(this);
-                this.transactions = new SynchronizedTransactions(monitorFactory, this.txnMgr);
+                this.transactions = createTransactions(config.getTransactionMode(), monitorFactory, this.txnMgr);
 
                 // Set up the binary store ...
                 BinaryStorage binaryStorageConfig = config.getBinaryStorage();
@@ -1141,6 +1151,18 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 }
             }
 
+        }
+
+        protected Transactions createTransactions( TransactionMode mode,
+                                                   MonitorFactory monitorFactory,
+                                                   TransactionManager txnMgr ) {
+            switch (mode) {
+                case NONE:
+                    return new NoClientTransactions(monitorFactory, txnMgr);
+                case AUTO:
+                    break;
+            }
+            return new SynchronizedTransactions(monitorFactory, txnMgr);
         }
 
         /**
