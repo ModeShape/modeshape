@@ -14,6 +14,11 @@
             "type" : "string",
             "description" : "The name in JNDI where this repository is to be registered. If not specified, the location is assumed to be 'java:jcr/local/<name>', where '<name>' is the repository name. Setting this field to an empty string signals that the repository should not be registered in JNDI."
         },
+        "transactionMode" : {
+            "type" : "string",
+            "description" : "Whether the repository should expect and detect whether JCR clients modify the content within transactions. The default value of 'auto' will automatically detect the use of both user- and container-managed transactions and also works when the JCR client does not use transactions; this will work in most situations. The value of 'none' specifies that the repository should not attempt to detect existing transactions; this setting is an optimization that should be used *only* if JCR clients will never use transactions to change the repository content.",
+            "enum" : [ "auto", "none" ]
+        },
         "monitoring" : {
             "type" : "object",
             "description" : "The specification for the monitoring system for the repositories.",
