@@ -61,8 +61,8 @@ import javax.jcr.security.AccessControlManager;
 import javax.jcr.version.VersionException;
 import org.infinispan.schematic.SchematicEntry;
 import org.modeshape.common.i18n.I18n;
-import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.AbstractJcrNode.Type;
 import org.modeshape.jcr.JcrContentHandler.EnclosingSAXException;
 import org.modeshape.jcr.JcrNamespaceRegistry.Behavior;
@@ -110,7 +110,7 @@ public class JcrSession implements Session {
 
     private static final String[] NO_ATTRIBUTES_NAMES = new String[] {};
 
-    private final JcrRepository repository;
+    protected final JcrRepository repository;
     private final SessionCache cache;
     private final JcrRootNode rootNode;
     private final ConcurrentMap<NodeKey, AbstractJcrNode> jcrNodes = new ConcurrentHashMap<NodeKey, AbstractJcrNode>();
