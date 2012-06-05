@@ -47,7 +47,6 @@ public final class CommonI18n {
     public static I18n i18nRequiredToSuppliedParameterMismatch;
     public static I18n i18nBundleNotFoundInClasspath;
 
-
     // Core-related fields
     public static I18n argumentDidNotContainKey;
     public static I18n argumentDidNotContainObject;
@@ -119,6 +118,8 @@ public final class CommonI18n {
     public static I18n componentConfigClasspathPropertyDescription;
     public static I18n componentConfigClasspathPropertyLabel;
     public static I18n componentConfigClasspathPropertyCategory;
+
+    public static I18n errorInitializingCustomLoggerFactory;
 
     static {
         try {

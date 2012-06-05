@@ -31,8 +31,32 @@ import org.modeshape.common.logging.slf4j.SLF4JLoggerFactory;
 
 /**
  * The abstract class for the LogFactory, which is called to create a specific implementation of the {@link Logger}.
+ * <p>
+ * ModeShape provides out of the box several LogFactory implementations that work with common log frameworks:
+ * <ol>
+ *  <li>SLF4J (which sits atop several logging frameworks)</li>
+ *  <li>Log4J</li>
+ *  <li>JDK Util Logging</li>
+ * </ol>
+ * The static initializer for this class checks the classpath for the availability of these frameworks, and as soon as one 
+ * is found the LogFactory implementation for that framework is instantiated and used for all ModeShape logging.
+ * </p>
+ * <p>
+ * However, since ModeShape can be embedded into any application, it is possible that applications use a logging
+ * framework other than those listed above. So before falling back to the JDK logging, ModeShape looks for the 
+ * <code>org.modeshape.common.logging.CustomLoggerFactory</code> class, and if found attempts to instantiate and use it. 
+ * But ModeShape does not provide this class out of the box; rather an application that is embedding ModeShape can provide 
+ * its own version of that class that should extend {@link LogFactory} and create an appropriate implementation of 
+ * {@link Logger} that forwards ModeShape log messages to the application's logging framework.
+ * </p>
  */
 public abstract class LogFactory {
+    
+    /**
+     * The name of the {@link LogFactory} implementation that is not provided out of the box but can be created,
+     * implemented, and placed on the classpath to have ModeShape send log messages to a custom framework.
+     */
+    public static final String CUSTOM_LOG_FACTORY_CLASSNAME = "org.modeshape.common.logging.CustomLoggerFactory";
 
     private static LogFactory LOGFACTORY;
 
@@ -42,6 +66,19 @@ public abstract class LogFactory {
         }
         else if (isLog4jAvailable()) {
             LOGFACTORY = new Log4jLoggerFactory();
+        }
+        else if (isCustomLoggerAvailable()) {
+            try {
+                @SuppressWarnings( "unchecked" )
+                Class<LogFactory> customClass = (Class<LogFactory>)Class.forName(CUSTOM_LOG_FACTORY_CLASSNAME);
+                LOGFACTORY = customClass.newInstance();
+            } catch ( Throwable e ) {
+                // We're going to fallback to the JDK logger anyway, so use it and log this problem ...
+                LOGFACTORY = new JdkLoggerFactory();
+                java.util.logging.Logger jdkLogger = java.util.logging.Logger.getLogger(LogFactory.class.getName());
+                String msg = org.modeshape.common.CommonI18n.errorInitializingCustomLoggerFactory.text(CUSTOM_LOG_FACTORY_CLASSNAME);
+                jdkLogger.log(java.util.logging.Level.WARNING, msg,e);
+            }
         }
         else {
             LOGFACTORY = new JdkLoggerFactory();
@@ -65,6 +102,15 @@ public abstract class LogFactory {
     private static boolean isLog4jAvailable() {
         try {
             ClassUtil.loadClassStrict("org.apache.log4j.Logger");
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
+
+    private static boolean isCustomLoggerAvailable() {
+        try {
+            ClassUtil.loadClassStrict(CUSTOM_LOG_FACTORY_CLASSNAME);
             return true;
         } catch (ClassNotFoundException e) {
             return false;
