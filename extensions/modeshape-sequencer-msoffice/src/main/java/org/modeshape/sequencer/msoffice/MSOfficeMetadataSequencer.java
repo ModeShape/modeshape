@@ -199,7 +199,10 @@ public class MSOfficeMetadataSequencer implements StreamSequencer {
             output.setProperty(metadataNode, MSOfficeMetadataLexicon.WORDS, metadata.getWords());
             output.setProperty(metadataNode, MSOfficeMetadataLexicon.CHARACTERS, metadata.getCharacters());
             output.setProperty(metadataNode, MSOfficeMetadataLexicon.CREATING_APPLICATION, metadata.getCreatingApplication());
-            output.setProperty(metadataNode, MSOfficeMetadataLexicon.THUMBNAIL, binary.create(metadata.getThumbnail()));
+            byte[] thumbnail = metadata.getThumbnail();
+            if (thumbnail != null && thumbnail.length > 0) {
+                output.setProperty(metadataNode, MSOfficeMetadataLexicon.THUMBNAIL, binary.create(thumbnail));
+            }
         }
     }
 }
