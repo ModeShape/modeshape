@@ -32,9 +32,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class MSOfficeSequencerIntegrationTest extends AbstractSequencerTest {
     /**
@@ -75,6 +74,12 @@ public class MSOfficeSequencerIntegrationTest extends AbstractSequencerTest {
     @Test
     public void shouldSequencePowerpointDocument() throws Exception {
         uploadAndAssertSequencedNode("powerpoint.ppt");
+    }
+
+    @Test
+    @FixFor("MODE-1502")
+    public void shouldSequenceDocumentWithoutThumbnail() throws Exception {
+        uploadAndAssertSequencedNode("document_without_thumbnail.doc");
     }
 
     private void uploadAndAssertSequencedNode(String fileName) throws RepositoryException, IOException, InterruptedException {
