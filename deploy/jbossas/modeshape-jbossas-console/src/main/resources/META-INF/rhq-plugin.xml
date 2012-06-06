@@ -21,7 +21,7 @@
 	-->
 
 <plugin name="ModeShapePlugin" displayName="ModeShape Plugin"
-	package="org.modeshape.rhq.plugin" version="1.0.1"
+	package="org.modeshape.rhq.plugin" version="1.2"
 	description="Supports management and monitoring of ModeShape"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="urn:xmlns:rhq-plugin"
 	xmlns:c="urn:xmlns:rhq-configuration">
