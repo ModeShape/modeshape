@@ -33,6 +33,7 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 import org.hibernate.annotations.Index;
+import org.hibernate.annotations.Type;
 import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.basic.JodaDateTime;
 
@@ -67,6 +68,7 @@ public class ChangeLogEntity {
 
     @Lob
     @Column( name = "CHANGES", updatable = false, nullable = false, unique = false )
+    @Type( type="org.hibernate.type.PrimitiveByteArrayBlobType" )
     private byte[] changes;
 
     public ChangeLogEntity( String username,

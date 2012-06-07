@@ -48,6 +48,7 @@ import javax.persistence.OrderBy;
 import javax.persistence.Query;
 import javax.persistence.Table;
 import org.hibernate.annotations.Index;
+import org.hibernate.annotations.Type;
 import org.modeshape.common.text.Inflector;
 import org.modeshape.common.util.HashCode;
 import org.modeshape.connector.store.jpa.JpaSource;
@@ -124,6 +125,7 @@ public class NodeEntity implements Serializable {
      */
     @Lob
     @Column( name = "DATA", nullable = true, unique = false, length = 1048576 )
+    @Type( type="org.hibernate.type.PrimitiveByteArrayBlobType" )
     private byte[] data;
 
     @Column( name = "NUM_PROPS", nullable = false )

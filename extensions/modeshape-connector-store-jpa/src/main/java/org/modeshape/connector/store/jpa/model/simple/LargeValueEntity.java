@@ -35,6 +35,7 @@ import javax.persistence.Lob;
 import javax.persistence.NamedQuery;
 import javax.persistence.Query;
 import javax.persistence.Table;
+import org.hibernate.annotations.Type;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.util.SecureHash;
 import org.modeshape.common.util.StringUtil;
@@ -109,6 +110,7 @@ public class LargeValueEntity implements Serializable {
      */
     @Lob
     @Column( name = "DATA", nullable = false, length = 1073741824 )
+    @Type( type="org.hibernate.type.PrimitiveByteArrayBlobType" )
     private byte[] data;
 
     public String getHash() {
