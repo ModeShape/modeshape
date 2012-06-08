@@ -115,43 +115,41 @@ public abstract class AbstractChildReferences implements ChildReferences {
 
             @Override
             public boolean hasNext() {
-                while (true) {
-                    while (next == null && iter.hasNext()) {
-                        // Verify the next reference is valid ...
-                        ChildReference next = iter.next();
+                while (next == null && iter.hasNext()) {
+                    // Verify the next reference is valid ...
+                    ChildReference next = iter.next();
 
-                        // See if there are any nodes inserted before this node ...
-                        ChildInsertions insertions = changes.insertionsBefore(next);
-                        if (insertions != null) {
-                            nextAfterIter = next;
-                            iter = insertions.inserted().iterator();
-                            continue;
-                        }
-
-                        // See if this child has been removed ...
-                        if (changes.isRemoved(next)) continue;
-
-                        // See if this child has been renamed ...
-                        Name newName = changes.renamed(next.getKey());
-                        if (newName != null) {
-                            next = next.with(newName, 1);
-                        }
-
-                        this.next = next;
+                    // See if there are any nodes inserted before this node ...
+                    ChildInsertions insertions = changes.insertionsBefore(next);
+                    if (insertions != null && nextAfterIter != next) {   //prevent circular references
+                        nextAfterIter = next;
+                        iter = insertions.inserted().iterator();
+                        continue;
                     }
-                    if (iter != delegate) {
-                        // This was an insertion iterator, so switch back to the delegate iterator ...
-                        try {
-                            iter = delegate;
-                            // But the next ref will actually be the 'next' we found before the inserted ...
-                            next = nextAfterIter;
-                            return true;
-                        } finally {
-                            nextAfterIter = null;
-                        }
+
+                    // See if this child has been removed ...
+                    if (changes.isRemoved(next)) continue;
+
+                    // See if this child has been renamed ...
+                    Name newName = changes.renamed(next.getKey());
+                    if (newName != null) {
+                        next = next.with(newName, 1);
                     }
-                    return next != null;
+
+                    this.next = next;
                 }
+                if (iter != delegate) {
+                    // This was an insertion iterator, so switch back to the delegate iterator ...
+                    try {
+                        iter = delegate;
+                        // But the next ref will actually be the 'next' we found before the inserted ...
+                        next = nextAfterIter;
+                        return true;
+                    } finally {
+                        nextAfterIter = null;
+                    }
+                }
+                return next != null;
             }
 
             @Override

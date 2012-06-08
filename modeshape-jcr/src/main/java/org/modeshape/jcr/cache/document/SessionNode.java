@@ -1220,6 +1220,9 @@ public class SessionNode implements MutableCachedNode {
          */
         public void insertBefore( ChildReference before,
                                   ChildReference inserted ) {
+            if (before == inserted) {
+                return;
+            }
             // Get or create atomically ...
             InsertedChildReferences insertions = this.insertions.get();
             if (insertions == null) {
@@ -1234,19 +1237,19 @@ public class SessionNode implements MutableCachedNode {
         @Override
         public boolean isRemoved( ChildReference ref ) {
             Set<NodeKey> removals = this.removals.get();
-            return removals == null ? false : removals.contains(ref.getKey());
+            return removals != null && removals.contains(ref.getKey());
         }
 
         @Override
         public boolean isRenamed( ChildReference ref ) {
             Map<NodeKey, Name> renames = this.newNames.get();
-            return renames == null ? false : renames.containsKey(ref.getKey());
+            return renames != null && renames.containsKey(ref.getKey());
         }
 
         @Override
         public boolean isRenamed( Name newName ) {
             Map<NodeKey, Name> renames = this.newNames.get();
-            return renames == null ? false : renames.containsValue(newName);
+            return renames != null && renames.containsValue(newName);
         }
 
         /**
