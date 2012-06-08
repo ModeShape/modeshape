@@ -1,27 +1,23 @@
 <!--This script builds a zip for ModeShape server Installation -->
 <assembly>
-
 	<id>jbossas-7-dist</id>
-
 	<formats>
 		<format>zip</format>
 	</formats>
-
 	<includeBaseDirectory>false</includeBaseDirectory>
-
 	<baseDirectory>/</baseDirectory>
 
 	<fileSets>
 
 		<fileSet>
-			<directory>kit/jboss-as7</directory>
+			<directory>../deploy/jbossas/kit/jboss-as7</directory>
 			<outputDirectory>/</outputDirectory>
 			<filtered>true</filtered>
 		</fileSet>
 
 		<!-- Module for the ModeShape subsystem -->
 		<fileSet>
-			<directory>modeshape-jbossas-subsystem/target</directory>
+			<directory>../deploy/jbossas/modeshape-jbossas-subsystem/target</directory>
 			<outputDirectory>modules/org/modeshape/main</outputDirectory>
 			<includes>
 				<include>modeshape-subsystem-${project.version}.jar</include>
@@ -31,7 +27,7 @@
 		<!-- Module for the ModeShape sequencers -->
 
 		<fileSet>
-			<directory>../../sequencers/modeshape-sequencer-ddl/target
+			<directory>../sequencers/modeshape-sequencer-ddl/target
 			</directory>
 			<outputDirectory>modules/org/modeshape/sequencer/ddl/main
 			</outputDirectory>
@@ -41,7 +37,7 @@
 		</fileSet>
 
 		<fileSet>
-			<directory>../../sequencers/modeshape-sequencer-zip/target
+			<directory>../sequencers/modeshape-sequencer-zip/target
 			</directory>
 			<outputDirectory>modules/org/modeshape/sequencer/zip/main
 			</outputDirectory>
@@ -51,7 +47,7 @@
 		</fileSet>
 
 		<fileSet>
-			<directory>../../sequencers/modeshape-sequencer-wsdl/target
+			<directory>../sequencers/modeshape-sequencer-wsdl/target
 			</directory>
 			<outputDirectory>modules/org/modeshape/sequencer/wsdl/main
 			</outputDirectory>
@@ -61,7 +57,7 @@
 		</fileSet>
 
 		<fileSet>
-			<directory>../../sequencers/modeshape-sequencer-text/target
+			<directory>../sequencers/modeshape-sequencer-text/target
 			</directory>
 			<outputDirectory>modules/org/modeshape/sequencer/text/main
 			</outputDirectory>
@@ -71,7 +67,7 @@
 		</fileSet>
 
 		<fileSet>
-			<directory>../../sequencers/modeshape-sequencer-teiid/target
+			<directory>../sequencers/modeshape-sequencer-teiid/target
 			</directory>
 			<outputDirectory>modules/org/modeshape/sequencer/teiid/main
 			</outputDirectory>
@@ -81,7 +77,7 @@
 		</fileSet>
 
 		<fileSet>
-			<directory>../../sequencers/modeshape-sequencer-sramp/target
+			<directory>../sequencers/modeshape-sequencer-sramp/target
 			</directory>
 			<outputDirectory>modules/org/modeshape/sequencer/sramp/main
 			</outputDirectory>
@@ -91,7 +87,7 @@
 		</fileSet>
 
 		<fileSet>
-			<directory>../../sequencers/modeshape-sequencer-msoffice/target
+			<directory>../sequencers/modeshape-sequencer-msoffice/target
 			</directory>
 			<outputDirectory>modules/org/modeshape/sequencer/msoffice/main
 			</outputDirectory>
@@ -102,7 +98,7 @@
 		</fileSet>
 
 		<fileSet>
-			<directory>../../sequencers/modeshape-sequencer-mp3/target
+			<directory>../sequencers/modeshape-sequencer-mp3/target
 			</directory>
 			<outputDirectory>modules/org/modeshape/sequencer/mp3/main
 			</outputDirectory>
@@ -112,7 +108,7 @@
 		</fileSet>
 
 		<fileSet>
-			<directory>../../sequencers/modeshape-sequencer-java/target
+			<directory>../sequencers/modeshape-sequencer-java/target
 			</directory>
 			<outputDirectory>modules/org/modeshape/sequencer/java/main
 			</outputDirectory>
@@ -122,7 +118,7 @@
 		</fileSet>
 
 		<fileSet>
-			<directory>../../sequencers/modeshape-sequencer-images/target
+			<directory>../sequencers/modeshape-sequencer-images/target
 			</directory>
 			<outputDirectory>modules/org/modeshape/sequencer/images/main
 			</outputDirectory>
@@ -132,7 +128,7 @@
 		</fileSet>
 
 		<fileSet>
-			<directory>../../sequencers/modeshape-sequencer-xml/target
+			<directory>../sequencers/modeshape-sequencer-xml/target
 			</directory>
 			<outputDirectory>modules/org/modeshape/sequencer/xml/main
 			</outputDirectory>
@@ -142,7 +138,7 @@
 		</fileSet>
 
 		<fileSet>
-			<directory>../../sequencers/modeshape-sequencer-xsd/target
+			<directory>../sequencers/modeshape-sequencer-xsd/target
 			</directory>
 			<outputDirectory>modules/org/modeshape/sequencer/xsd/main
 			</outputDirectory>
@@ -153,7 +149,7 @@
 
 		<!-- JDBC Driver for ModeShape -->
 		<fileSet>
-			<directory>../../modeshape-jdbc-local/target</directory>
+			<directory>../modeshape-jdbc-local/target</directory>
 			<outputDirectory>modules/org/modeshape/jdbc/main</outputDirectory>
 			<includes>
 				<include>modeshape-jdbc-local-${project.version}.jar</include>
@@ -162,20 +158,20 @@
 
 		<!-- Deployment for the ModeShape RESTful service WAR file -->
 		<fileSet>
-			<directory>modeshape-jbossas-web-rest-war/target/distribution/modeshape-rest-war-content
+			<directory>../deploy/jbossas/modeshape-jbossas-web-rest-war/target/distribution/modeshape-rest-war-content
 			</directory>
 			<outputDirectory>standalone/deployments/modeshape-rest.war
 			</outputDirectory>
 		</fileSet>
 
 		<!-- Deployment for the ModeShape WebDAV service WAR file -->
-		<!--fileSet> <directory>modeshape-jbossas-web-webdav-war/target/distribution/modeshape-webdav-war-content</directory> 
+		<!--fileSet> <directory>../deploy/jbossas/modeshape-jbossas-web-webdav-war/target/distribution/modeshape-webdav-war-content</directory> 
 			<outputDirectory>standalone/deployments/modeshape-webdav.war</outputDirectory> 
 			</fileSet -->
 
 		<!-- ModeShape subsystem XSD(s) -->
 		<fileSet>
-			<directory>modeshape-jbossas-subsystem/src/main/resources/schema/</directory>
+			<directory>../deploy/jbossas/modeshape-jbossas-subsystem/src/main/resources/schema/</directory>
 			<includes>
 				<include>modeshape_*.xsd</include>
 			</includes>
@@ -183,14 +179,6 @@
 		</fileSet>
 
 	</fileSets>
-
-	<files>
-		<file>
-			<source>modeshape-jbossas-web-rest-war/target/classes/modeshape-rest.war.dodeploy
-			</source>
-			<outputDirectory>standalone/deployments</outputDirectory>
-		</file>
-	</files>
 
 	<dependencySets>
 

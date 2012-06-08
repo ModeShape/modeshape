@@ -78,7 +78,11 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
 
     @Override
     public JcrRepository getValue() throws IllegalStateException, IllegalArgumentException {
-        return null;
+        try {
+            return getEngine().getRepository(repositoryName());
+        } catch (NoSuchRepositoryException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private JcrEngine getEngine() {

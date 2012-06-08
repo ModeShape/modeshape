@@ -34,6 +34,7 @@ import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
+import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.collection.Collections;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.ExecutionContext;
@@ -114,21 +115,27 @@ public class RepositoryCache implements Observable {
         this.changeBus.register(new LocalChangeListener());
 
         // Make sure the system workspace is configured to have a 'jcr:system' node ...
-        SessionCache system = createSession(context, systemWorkspaceName, false);
-        NodeKey systemRootKey = system.getRootKey();
-        CachedNode systemRoot = system.getNode(systemRootKey);
-        ChildReference systemRef = systemRoot.getChildReferences(system).getChild(JcrLexicon.SYSTEM);
-        CachedNode systemNode = systemRef != null ? system.getNode(systemRef) : null;
+        SessionCache systemSession = createSession(context, systemWorkspaceName, false);
+        NodeKey systemRootKey = systemSession.getRootKey();
+        CachedNode systemRoot = systemSession.getNode(systemRootKey);
+        ChildReference systemRef = systemRoot.getChildReferences(systemSession).getChild(JcrLexicon.SYSTEM);
+        CachedNode systemNode = systemRef != null ? systemSession.getNode(systemRef) : null;
         if (systemRef == null || systemNode == null) {
             logger.debug("Initializing the '{0}' workspace in repository '{1}'", systemWorkspaceName, name);
             // We have to create the initial "/jcr:system" content ...
-            MutableCachedNode root = system.mutable(systemRootKey);
+            MutableCachedNode root = systemSession.mutable(systemRootKey);
             if (initializer == null) initializer = NO_OP_INITIALIZER;
-            initializer.initialize(system, root);
-            system.save();
-            // Look the node up again ...
-            systemRoot = system.getNode(systemRootKey);
-            systemRef = systemRoot.getChildReferences(system).getChild(JcrLexicon.SYSTEM);
+            initializer.initialize(systemSession, root);
+            systemSession.save();
+            // Now we need to forcibly refresh the system workspace cache ...
+            refreshWorkspace(systemWorkspaceName);
+
+            systemSession = createSession(context, systemWorkspaceName, false);
+            systemRoot = systemSession.getNode(systemRootKey);
+            systemRef = systemRoot.getChildReferences(systemSession).getChild(JcrLexicon.SYSTEM);
+            if (systemRef == null) {
+                throw new SystemFailureException(JcrI18n.unableToInitializeSystemWorkspace.text(name));
+            }
         } else {
             logger.debug("Found existing '{0}' workspace in repository '{1}'", systemWorkspaceName, name);
         }
@@ -314,6 +321,20 @@ public class RepositoryCache implements Observable {
         assert !this.workspaceNames.contains(name);
         WorkspaceCache removed = this.workspaceCachesByName.remove(name);
         if (removed != null) removed.signalDeleted();
+    }
+
+    /**
+     * Drops any existing cache for the named workspace, so that the next time it's needed it will be reloaded from the persistent
+     * storage.
+     * <p>
+     * This method does nothing if a cache for the workspace with the supplied name hasn't yet been created.
+     * </p>
+     * 
+     * @param name the name of the workspace
+     */
+    void refreshWorkspace( String name ) {
+        assert name != null;
+        this.workspaceCachesByName.remove(name);
     }
 
     Iterable<WorkspaceCache> workspaces() {
