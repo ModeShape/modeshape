@@ -36,7 +36,7 @@
     -->
 	<context-param>
         <param-name>org.modeshape.jcr.URL</param-name>
-        <param-value>jndi:jcr/local</param-value>
+        <param-value>jndi:jcr</param-value>
 	</context-param>
 
 	<!--

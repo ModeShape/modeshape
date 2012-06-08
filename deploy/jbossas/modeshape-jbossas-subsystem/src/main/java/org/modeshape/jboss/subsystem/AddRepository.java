@@ -38,7 +38,6 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.services.path.RelativePathService;
 import org.jboss.as.naming.ManagedReferenceFactory;
-import org.jboss.as.naming.ManagedReferenceInjector;
 import org.jboss.as.naming.ServiceBasedNamingStore;
 import org.jboss.as.naming.deployment.ContextNames;
 import org.jboss.as.naming.service.BinderService;
@@ -48,8 +47,10 @@ import org.jboss.msc.service.ServiceBuilder.DependencyType;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.jboss.service.BinaryStorage;
 import org.modeshape.jboss.service.IndexStorage;
+import org.modeshape.jboss.service.ReferenceFactoryService;
 import org.modeshape.jboss.service.RepositoryService;
 import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.JcrRepository;
@@ -116,8 +117,10 @@ public class AddRepository extends AbstractAddStepHandler {
         configDoc.set(FieldName.NAME, repositoryName);
 
         // Determine the JNDI name ...
-        final String jndiName = ModeShapeJndiNames.jndiNameFrom(model, repositoryName);
         configDoc.set(FieldName.JNDI_NAME, "");// always set to empty string, since we'll register in JNDI here ...
+        final String jndiName = ModeShapeJndiNames.JNDI_BASE_NAME + repositoryName;
+        String jndiAlias = ModeShapeJndiNames.jndiNameFrom(model, repositoryName);
+        if (jndiName.equals(jndiAlias)) jndiAlias = null;
 
         // Always enable monitoring ...
         EditableDocument monitoring = configDoc.getOrCreateDocument(FieldName.MONITORING);
@@ -264,19 +267,33 @@ public class AddRepository extends AbstractAddStepHandler {
                               repositoryService.getBinaryStorageInjector());
 
         // Set up the JNDI binder service ...
+        final ReferenceFactoryService<JcrRepository> referenceFactoryService = new ReferenceFactoryService<JcrRepository>();
+        final ServiceName referenceFactoryServiceName = repositoryServiceName.append("reference-factory");
+        final ServiceBuilder<?> referenceBuilder = target.addService(referenceFactoryServiceName, referenceFactoryService);
+        referenceBuilder.addDependency(repositoryServiceName, JcrRepository.class, referenceFactoryService.getInjector());
+        referenceBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
+
         ContextNames.BindInfo bindInfo = ContextNames.bindInfoFor(jndiName);
         BinderService binder = new BinderService(bindInfo.getBindName());
-        ServiceBuilder<ManagedReferenceFactory> binderBuilder = target.addService(bindInfo.getBinderServiceName(), binder)
-                                                                      .addAliases(ContextNames.JAVA_CONTEXT_SERVICE_NAME.append(jndiName))
-                                                                      .addDependency(repositoryServiceName,
-                                                                                     JcrRepository.class,
-                                                                                     new ManagedReferenceInjector<JcrRepository>(
-                                                                                                                                 binder.getManagedObjectInjector()))
-                                                                      .addDependency(bindInfo.getParentContextServiceName(),
-                                                                                     ServiceBasedNamingStore.class,
-                                                                                     binder.getNamingStoreInjector())
-                                                                      .setInitialMode(ServiceController.Mode.PASSIVE);
-        newControllers.add(binderBuilder.install());
+        ServiceBuilder<?> binderBuilder = target.addService(bindInfo.getBinderServiceName(), binder);
+        if (jndiAlias != null) {
+            ContextNames.BindInfo aliasInfo = ContextNames.bindInfoFor(jndiAlias);
+            ServiceName alias = aliasInfo.getBinderServiceName();
+            binderBuilder.addAliases(alias);
+            Logger.getLogger(getClass()).debug("Binding repository '{0}' to JNDI name '{1}' and '{2}'",
+                                               repositoryName,
+                                               bindInfo.getAbsoluteJndiName(),
+                                               aliasInfo.getAbsoluteJndiName());
+        } else {
+            Logger.getLogger(getClass()).debug("Binding repository '{0}' to JNDI name '{1}'",
+                                               repositoryName,
+                                               bindInfo.getAbsoluteJndiName());
+        }
+        binderBuilder.addDependency(referenceFactoryServiceName, ManagedReferenceFactory.class, binder.getManagedObjectInjector());
+        binderBuilder.addDependency(bindInfo.getParentContextServiceName(),
+                                    ServiceBasedNamingStore.class,
+                                    binder.getNamingStoreInjector());
+        binderBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
 
         // Add dependency to the data directory ...
         ServiceName dataDirServiceName = ModeShapeServiceNames.dataDirectoryServiceName(repositoryName);
@@ -286,26 +303,12 @@ public class AddRepository extends AbstractAddStepHandler {
                                                           target));
         builder.addDependency(dataDirServiceName, String.class, repositoryService.getDataDirectoryPathInjector());
 
-        // // Add dependency to the default location in the data directory for binaries ...
-        // ServiceName indexStorageDirServiceName = ModeShapeServiceNames.indexStorageDirectoryServiceName(repositoryName);
-        // newControllers.add(RelativePathService.addService(indexStorageDirServiceName,
-        // "modeshape/" + repositoryName + "/indexes",
-        // ModeShapeExtension.DATA_DIR_VARIABLE,
-        // target));
-        // builder.addDependency(indexStorageDirServiceName, IndexStorage.class,
-        // repositoryService.getIndexStorageConfigInjector());
-        //
-        // // Add dependency to the default location in the data directory for binaries ...
-        // ServiceName binaryStorageDirServiceName = ModeShapeServiceNames.binaryStorageDirectoryServiceName(repositoryName);
-        // newControllers.add(RelativePathService.addService(binaryStorageDirServiceName,
-        // "modeshape/" + repositoryName + "/binaries",
-        // ModeShapeExtension.DATA_DIR_VARIABLE,
-        // target));
-        // builder.addDependency(binaryStorageDirServiceName, BinaryStorage.class, repositoryService.getBinaryStorageInjector());
-
         // Now add the controller for the RepositoryService ...
         builder.setInitialMode(ServiceController.Mode.ACTIVE);
         newControllers.add(builder.install());
+        newControllers.add(referenceBuilder.install());
+        newControllers.add(binderBuilder.install());
+
     }
 
     protected void writeIndexingBackendConfiguration( final OperationContext context,

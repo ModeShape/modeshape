@@ -8,76 +8,16 @@
 		<relativePath>../../modeshape-parent/pom.xml</relativePath>
 	</parent>
 	<packaging>pom</packaging>
-	<artifactId>jbossas</artifactId>
+	<artifactId>modeshape-jbossas7</artifactId>
 	<name>ModeShape JBoss Deployment Components</name>
 	<url>http://www.modeshape.org</url>
 	<description>Builds the ModeShape components that can be deployed to JBoss</description>
+	
 	<modules>
-		<!-- <module>modeshape-jbossas-console</module> -->
 		<module>modeshape-jbossas-subsystem</module>
 		<module>modeshape-jbossas-web-rest-war</module>
 		<!-- <module>modeshape-jbossas-web-webdav-war</module> -->
+		<!-- <module>modeshape-jbossas-console</module> -->
 	</modules>
 
-	<dependencies>
-		<dependency>
-			<groupId>org.modeshape</groupId>
-			<artifactId>modeshape-jcr</artifactId>
-		</dependency>
-		<!-- <dependency> <groupId>org.modeshape</groupId> <artifactId>modeshape-jdbc</artifactId> 
-			<version>${project.version}</version> </dependency> -->
-		<dependency>
-			<groupId>javax.jcr</groupId>
-			<artifactId>jcr</artifactId>
-		</dependency>
-	</dependencies>
-
-	<build>
-		<plugins>
-			<plugin>
-				<artifactId>maven-assembly-plugin</artifactId>
-
-				<configuration>
-						<finalName>modeshape-${project.version}</finalName>
-					<descriptors>
-					  <descriptor>assembly/kit-as7.xml</descriptor>
-					</descriptors>
-						<outputDirectory>target/distribution</outputDirectory>
-						<workDirectory>target/assembly/work</workDirectory>
-						<archive>
-							<manifest>
-								<addClasspath>true</addClasspath>
-							</manifest>
-						</archive>
-				</configuration>
-				<executions>
-					<execution>
-						<phase>package</phase>
-						<goals>
-							<goal>single</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-		</plugins>
-	</build>
-
-	<profiles>
-		<profile>
-			<!-- This profile is activated manually, as in "mvn ... -P release ..." -->
-			<id>release</id>
-			<build>
-				<plugins>
-					<plugin>
-						<artifactId>maven-assembly-plugin</artifactId>
-						<configuration>
-							<descriptors>
-								<descriptor>assembly/kit-as7.xml</descriptor>
-							</descriptors>
-						</configuration>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-	</profiles>
 </project>

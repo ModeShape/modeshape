@@ -278,15 +278,38 @@
                     <plugin>
                         <artifactId>maven-assembly-plugin</artifactId>
                         <configuration>
+                            <finalName>modeshape-${project.version}</finalName>
                             <descriptorRefs>
                                 <descriptorRef>binary-distribution</descriptorRef>
                                 <descriptorRef>source-distribution</descriptorRef>
+                                <descriptorRef>jbossas7-distribution</descriptorRef>
                             </descriptorRefs>
-                            <finalName>modeshape-${project.version}</finalName>
-                            <attach>false</attach>
                         </configuration>
                     </plugin>
 
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <!--
+              This profile is enabled by default and only builds the distributions required 
+              by the integration tests.
+            -->
+            <id>integration</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <configuration>
+                            <finalName>modeshape-${project.version}</finalName>
+                            <descriptorRefs>
+                                <descriptorRef>jbossas7-distribution</descriptorRef>
+                            </descriptorRefs>
+                        </configuration>
+                    </plugin>
                 </plugins>
             </build>
         </profile>

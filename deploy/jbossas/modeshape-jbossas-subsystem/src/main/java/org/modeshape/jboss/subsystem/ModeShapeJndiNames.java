@@ -30,7 +30,7 @@ import org.jboss.dmr.ModelNode;
  */
 public class ModeShapeJndiNames {
 
-    public static final String JNDI_BASE_NAME = "java:/jcr/local/";
+    public static final String JNDI_BASE_NAME = "jcr/";
 
     public static String jndiNameFrom( final ModelNode model,
                                        String repositoryName ) {
@@ -38,18 +38,8 @@ public class ModeShapeJndiNames {
         if (model.has(ModelKeys.JNDI_NAME) && model.get(ModelKeys.JNDI_NAME).isDefined()) {
             // A JNDI name is set on the model node ...
             jndiName = model.get(ModelKeys.JNDI_NAME).asString();
-            if (jndiName.length() != 0) {
-                // And the value is not zero-length, so remove leading prefixes ...
-                if (jndiName.startsWith("java:")) {
-                    jndiName = jndiName.substring(5);
-                } else if (!jndiName.startsWith("jboss") && !jndiName.startsWith("global") && !jndiName.startsWith("/")) {
-                    jndiName = "/" + jndiName;
-                }
-            } else {
-                // Otherwise, the name is set but it is 0-length, so we shouldn't set it ...
-                jndiName = "";
-            }
-        } else {
+        }
+        if (jndiName == null || jndiName.trim().length() == 0) {
             // Otherwise it's not set in the model node, so we use the default ...
             jndiName = JNDI_BASE_NAME + repositoryName;
         }

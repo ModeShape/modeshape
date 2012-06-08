@@ -38,6 +38,7 @@ import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.naming.SingletonInitialContextFactory;
 import org.modeshape.jboss.lifecycle.JBossLifeCycleListener;
 import org.modeshape.jboss.service.EngineService;
@@ -117,6 +118,8 @@ class AddModeShapeSubsystem extends AbstractAddStepHandler {
                                     ServiceBasedNamingStore.class,
                                     binderService.getNamingStoreInjector());
         binderBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
+
+        Logger.getLogger(getClass()).debug("Binding ModeShape to JNDI name '{0}'", bindInfo.getAbsoluteJndiName());
 
         newControllers.add(referenceBuilder.install());
         newControllers.add(binderBuilder.install());

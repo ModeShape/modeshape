@@ -24,16 +24,19 @@
 		<module>modeshape-common</module>
 		<module>modeshape-schematic</module>
 		<module>modeshape-jcr</module>
-        <module>sequencers</module>
-    <!--module>extractors/modeshape-extractor-tika</module-->
-    <module>modeshape-jdbc-local</module>
     <module>modeshape-unit-test</module>
+    <module>sequencers</module>
+    <!--module>extractors/modeshape-extractor-tika</module-->
+    <!--
+      The REST client needs the JDBC driver
+    -->
 		<module>web</module>
+    <module>modeshape-jdbc-local</module>
     <!--<module>modeshape-jdbc</module>-->
+    <!--
+      The JBoss AS7 subsystem needs the web components and (local) JDBC drivers.
+    -->
 		<module>deploy/jbossas</module>
-    <!--module>modeshape-integration-tests</module-->
-		<module>demos</module>
-
 	</modules>
 	<properties>
 		<rootDir>${project.basedir}</rootDir>
@@ -55,6 +58,24 @@
 		</profile>
 		<profile>
 			<!-- 
+			  This profile is used to run the build plus the integration tests
+				and must be activated manually, as in "mvn ... -Pintegration ..."
+			-->
+			<id>integration</id>
+			<activation>
+				<activeByDefault>false</activeByDefault>
+			</activation>
+			<modules>
+			  <!-- 
+			    Build the distribution before running the integration tests, 
+			    as some of the integration tests rely upon the distributions
+			  -->
+				<module>modeshape-distribution</module>
+				<module>integration</module>
+			</modules>
+		</profile>
+		<profile>
+			<!-- 
 			  This profile is used to build everything, including all assemblies,
 				and must be activated manually, as in "mvn ... -Passembly ..."
 			-->
@@ -69,7 +90,9 @@
         <profile>
             <id>dist</id>
             <modules>
+		            <module>demos</module>
                 <module>modeshape-distribution</module>
+				        <module>integration</module>
             </modules>
         </profile>
 		<profile>
