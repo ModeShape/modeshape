@@ -1308,6 +1308,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 throw new ItemNotFoundException(JcrI18n.invalidPathParameter.text(destChildRelPath, "destChildRelPath"));
             }
 
+            if (srcPath.isSameAs(destPath)) {
+                return;
+            }
+
             ChildReference destRef = childRefs.getChild(destPath.getLastSegment());
             if (destRef == null) {
                 String workspaceName = workspaceName();

@@ -24,6 +24,7 @@
 package org.modeshape.jcr;
 
 import javax.jcr.Node;
+import javax.jcr.NodeIterator;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 import static org.hamcrest.core.Is.is;
@@ -36,6 +37,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -153,5 +155,36 @@ public class JcrNodeTest extends MultiUseAbstractTest {
 
         propertyIterator = referenceableNode.getWeakReferences("unknown");
         assertEquals(0, propertyIterator.getSize());
+    }
+
+    @Test
+    @FixFor("MODE-1489")
+    public void shouldAllowMultipleOrderBeforeWithoutSave() throws Exception {
+        int childCount = 2;
+
+        Node parent = session.getRootNode().addNode("parent", "nt:unstructured");
+        for (int i = 0; i < childCount; i++) {
+            parent.addNode("Child " + i, "nt:unstructured");
+        }
+
+        session.save();
+
+        long childIdx = 0;
+        NodeIterator nodeIterator = parent.getNodes();
+        while (nodeIterator.hasNext()) {
+            parent.orderBefore("Child " + childIdx, "Child 0");
+            childIdx++;
+            nodeIterator.nextNode();
+        }
+
+        session.save();
+
+        nodeIterator = parent.getNodes();
+        childIdx = nodeIterator.getSize() - 1;
+        while (nodeIterator.hasNext()) {
+            Node child = nodeIterator.nextNode();
+            assertEquals("Child " + childIdx, child.getName());
+            childIdx--;
+        }
     }
 }
