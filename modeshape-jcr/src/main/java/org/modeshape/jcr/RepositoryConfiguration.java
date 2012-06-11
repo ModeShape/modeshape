@@ -1287,6 +1287,9 @@ public class RepositoryConfiguration {
                 setDefProp(props,
                            FieldName.INDEX_STORAGE_INFINISPAN_CHUNK_SIZE_IN_BYTES,
                            Default.INDEX_STORAGE_INFINISPAN_CHUNK_SIZE_IN_BYTES);
+                setDefProp(props, FieldName.CACHE_CONFIGURATION, getCacheConfiguration());
+                // The cache names will be set when the Hibernate Search configuration is created; that way we don't have
+                // the repository name hard-coded in the properties ...
             }
             return props;
         }
