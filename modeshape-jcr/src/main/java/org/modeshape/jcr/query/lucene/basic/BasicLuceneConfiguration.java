@@ -116,6 +116,17 @@ public class BasicLuceneConfiguration extends LuceneSearchConfiguration {
             setProperty("hibernate.search.default.data_cachename", dataCacheName);
             setProperty("hibernate.search.default.metadata_cachename", metaCacheName);
             setProperty("hibernate.search.default.chunk_size", chunkSize);
+            String cacheConfigValue = storage.getProperty(FieldName.CACHE_CONFIGURATION);
+            if (cacheConfigValue != null && cacheConfigValue.trim().length() != 0) {
+                File configFile = new File(cacheConfigValue);
+                if (configFile.exists() && configFile.isFile() && configFile.canRead() && configFile.getName().endsWith(".xml")) {
+                    // Looks like a file and ends in ".xml", so we'll assume a file ...
+                    setProperty("hibernate.search.default.configuration_resourcename", configFile.getAbsolutePath());
+                } else {
+                    // Must be a JNDI reference ??
+                    setProperty("hibernate.search.default.cachemanager_jndiname", cacheConfigValue.trim());
+                }
+            }
         } else if (storageType.equals(FieldValue.INDEX_STORAGE_CUSTOM)) {
             storageType = storage.getProperty(FieldName.CLASSNAME);
             setProperty("hibernate.search.default.directory_provider", storageType);
