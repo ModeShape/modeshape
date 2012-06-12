@@ -35,13 +35,20 @@
                 <exclude>**/*.epf/**</exclude>
                 <exclude>**/${project.build.directory}</exclude>
                 <exclude>**/${project.build.directory}/**</exclude>
-                <exclude>.project</exclude>
-                <exclude>.classpath</exclude>
-                <exclude>.settings</exclude>
+                <exclude>**/.project</exclude>
+                <exclude>**/.classpath</exclude>
+                <exclude>**/.settings</exclude>
+                <exclude>**/.settings/**</exclude>
+                <exclude>**/.metadata</exclude>
+                <exclude>**/.metadata/**</exclude>
+                <exclude>**/.scala_dependencies</exclude>
+                <exclude>**/.externalToolBuilders</exclude>
                 <exclude>.metadata</exclude>
-                <exclude>.scala_dependencies</exclude>
-                <exclude>.externalToolBuilders</exclude>
-                <exclude>.metadata</exclude>
+                <!-- Exclude the directories we don't really consider to be source or that we're not using -->
+                <exclude>sandbox</exclude>
+                <exclude>sandbox/**</exclude>
+                <exclude>extensions</exclude>
+                <exclude>extensions/**</exclude>
             </excludes>
         </fileSet>
     </fileSets>
