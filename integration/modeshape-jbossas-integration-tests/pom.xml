@@ -5,7 +5,7 @@
     <groupId>org.modeshape</groupId>
     <artifactId>modeshape-parent</artifactId>
     <version>3.0-SNAPSHOT</version>
-    <relativePath>../modeshape-parent/pom.xml</relativePath>
+    <relativePath>../../modeshape-parent/pom.xml</relativePath>
   </parent>
   <!-- The groupId and version values are inherited from parent  -->
   <artifactId>modeshape-jbossas-integration-tests</artifactId>
