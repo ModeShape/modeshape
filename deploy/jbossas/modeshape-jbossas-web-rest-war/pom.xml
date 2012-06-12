@@ -12,171 +12,65 @@
 	<description>ModeShape servlet that provides RESTful access to JCR items in a JBoss Application Server</description>
 	<url>http://www.modeshape.org</url>
 	<dependencies>
-
+    <dependency>
+        <groupId>javax.jcr</groupId>
+        <artifactId>jcr</artifactId>
+        <scope>provided</scope>
+    </dependency>
     <dependency>
         <groupId>org.modeshape</groupId>
-        <artifactId>modeshape-jcr</artifactId>
+        <artifactId>modeshape-common</artifactId>
+        <scope>provided</scope>
     </dependency>
-        
+    <dependency>
+        <groupId>org.modeshape</groupId>
+        <artifactId>modeshape-jcr-api</artifactId>
+        <scope>provided</scope>
+    </dependency>
 		<dependency>
 			<groupId>org.modeshape</groupId>
 			<artifactId>modeshape-web-jcr-rest</artifactId>
+			<exclusions>
+			  <!-- Exclude the artifacts that are provided with AS7; we only want the ModeShape code in the REST module. -->
+			  <exclusion>
+			    <groupId>org.jboss.resteasy</groupId>
+			    <artifactId>resteasy-jaxrs</artifactId>
+			  </exclusion>
+			  <exclusion>
+			    <groupId>org.jboss.resteasy</groupId>
+			    <artifactId>resteasy-jaxb-provider</artifactId>
+			  </exclusion>
+			  <exclusion>
+			    <groupId>org.jboss.resteasy</groupId>
+			    <artifactId>resteasy-jettison-provider</artifactId>
+			  </exclusion>
+			  <exclusion>
+			    <groupId>org.jboss.resteasy</groupId>
+			    <artifactId>jaxrs-api</artifactId>
+			  </exclusion>
+			  <!-- ModeShape REST service code uses this directly ...
+			  <exclusion>
+			    <groupId>org.codehaus.jettison</groupId>
+			    <artifactId>jettison</artifactId>
+			  </exclusion-->
+			</exclusions>
 		</dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-log4j12</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.sun.xml.bind</groupId>
-			<artifactId>jaxb-impl</artifactId>
-		</dependency>
-
-		<!--  TESTING DEPENDENCIES -->
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit-dep</artifactId>
-		</dependency>
-	</dependencies>
+  </dependencies>
+	
 	<build>
-		<finalName>modeshape-test</finalName>
-    <resources>
-        <resource>
-            <filtering>false</filtering>
-            <directory>src/main/resources</directory>
-            <includes>
-                <include>*</include>
-                <include>**/*</include>
-            </includes>
-        </resource>
-        <resource>
-            <filtering>false</filtering>
-            <directory>src/main/webapp</directory>
-            <includes>
-                <include>*</include>
-                <include>**/*</include>
-            </includes>
-        </resource>
-    </resources>
-
-<!--   
-        there are 2 wars being built, a test war and a deployment war
-        the deployment war is built with the limited jars that are needed for JBoss deployment kit
-        This war cant be used in testing because, at the moment, been unsuccessful
-        in passing to cargo an overriding classpath 
-    -->
 		<plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-war-plugin</artifactId>
-                <configuration>
-                    <warName>modeshape-test</warName>
-                    <webResources>
-                    	<resource>
-                        <!--  add in the configRepository.xml for running locally  -->
-                        <directory>${project.basedir}/src/test/resources/</directory>
-                      </resource>
-                      <resource>
-                        <!--  override the main web.xml with a web.xml that enables running locally  -->
-                        <directory>${project.basedir}/src/test/webapp/</directory>
-                      </resource>
-                    </webResources>
-                </configuration>
-            </plugin>
-			<plugin>
-				<groupId>org.codehaus.cargo</groupId>
-				<artifactId>cargo-maven2-plugin</artifactId>
-                <version>${maven.codehaus.cargo.plugin.version}</version>
-				<executions>
-					<execution>
-						<id>start-container</id>
-						<phase>pre-integration-test</phase>
-						<goals>
-							<goal>start</goal>
-						</goals>
-					</execution>
-					<execution>
-						<id>stop-container</id>
-						<phase>post-integration-test</phase>
-						<goals>
-							<goal>stop</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-                    <skip>${skipTests}</skip>
-					<container>
-						<containerId>${cargo.container}</containerId>
-						<systemProperties>
-							<java.io.tmpdir>${project.build.directory}/tmp</java.io.tmpdir>
-						</systemProperties>
-					</container>
-					<configuration>
-						<properties>
-							<cargo.logging>low</cargo.logging>
-							<cargo.servlet.users>dnauser:password:connect,readwrite|unauthorized:password:bogus</cargo.servlet.users>
-							<cargo.servlet.port>8090</cargo.servlet.port>
-						</properties>
-						<home>${project.build.directory}/cargo</home>
-					</configuration>
-				</configuration>
-			</plugin>
-			<!--
-				Override the default Surefire behavior to run during
-				integration-test phase
-			-->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<configuration>
-					<skip>true</skip>
-				</configuration>
-				<executions>
-					<execution>
-						<id>surefire-it</id>
-						<phase>integration-test</phase>
-						<goals>
-							<goal>test</goal>
-						</goals>
-						<configuration>
-							<skip>false</skip>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-
       <plugin>
-          <artifactId>maven-assembly-plugin</artifactId>
-          <configuration>
-               <finalName>modeshape</finalName>
-              <descriptors>
-                  <descriptor>src/assembly/kit.xml</descriptor>
-              </descriptors>
-              <outputDirectory>target/distribution</outputDirectory>
-              <workDirectory>target/assembly/work</workDirectory>
-          </configuration>
-          <executions>
-              <execution>
-                  <id>make-assembly</id>
-                  <phase>package</phase>
-                  <goals>
-                      <goal>attached</goal>
-                  </goals>
-              </execution>
-          </executions>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-war-plugin</artifactId>
       </plugin>
-       <plugin>
-           <groupId>org.apache.maven.plugins</groupId>
-           <artifactId>maven-deploy-plugin</artifactId>
-           <configuration>
-               <skip>false</skip>
-           </configuration>
-       </plugin>
-            
+      <!-- Skip the Surefire tests (all testing is done in the integration tests for JBoss AS7) -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <skipTests>true</skipTests>
+        </configuration>
+      </plugin>
 		</plugins>
 	</build>
 

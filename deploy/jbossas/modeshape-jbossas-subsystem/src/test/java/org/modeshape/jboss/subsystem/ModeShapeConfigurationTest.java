@@ -41,9 +41,9 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 @SuppressWarnings( "nls" )
-public class TestModeShapeConfiguration extends AbstractSubsystemTest {
+public class ModeShapeConfigurationTest extends AbstractSubsystemTest {
 
-    public TestModeShapeConfiguration() {
+    public ModeShapeConfigurationTest() {
         super(ModeShapeExtension.SUBSYSTEM_NAME, new ModeShapeExtension());
     }
 

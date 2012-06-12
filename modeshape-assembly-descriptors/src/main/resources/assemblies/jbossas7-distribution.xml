@@ -9,165 +9,12 @@
 
 	<fileSets>
 
+		<!-- The files for the kit -->
 		<fileSet>
 			<directory>../deploy/jbossas/kit/jboss-as7</directory>
 			<outputDirectory>/</outputDirectory>
 			<filtered>true</filtered>
 		</fileSet>
-
-		<!-- Module for the ModeShape subsystem -->
-		<fileSet>
-			<directory>../deploy/jbossas/modeshape-jbossas-subsystem/target</directory>
-			<outputDirectory>modules/org/modeshape/main</outputDirectory>
-			<includes>
-				<include>modeshape-subsystem-${project.version}.jar</include>
-			</includes>
-		</fileSet>
-
-		<!-- Module for the ModeShape sequencers -->
-
-		<fileSet>
-			<directory>../sequencers/modeshape-sequencer-ddl/target
-			</directory>
-			<outputDirectory>modules/org/modeshape/sequencer/ddl/main
-			</outputDirectory>
-			<includes>
-				<include>modeshape-sequencer-ddl-${project.version}.jar</include>
-			</includes>
-		</fileSet>
-
-		<fileSet>
-			<directory>../sequencers/modeshape-sequencer-zip/target
-			</directory>
-			<outputDirectory>modules/org/modeshape/sequencer/zip/main
-			</outputDirectory>
-			<includes>
-				<include>modeshape-sequencer-zip-${project.version}.jar</include>
-			</includes>
-		</fileSet>
-
-		<fileSet>
-			<directory>../sequencers/modeshape-sequencer-wsdl/target
-			</directory>
-			<outputDirectory>modules/org/modeshape/sequencer/wsdl/main
-			</outputDirectory>
-			<includes>
-				<include>modeshape-sequencer-wsdl-${project.version}.jar</include>
-			</includes>
-		</fileSet>
-
-		<fileSet>
-			<directory>../sequencers/modeshape-sequencer-text/target
-			</directory>
-			<outputDirectory>modules/org/modeshape/sequencer/text/main
-			</outputDirectory>
-			<includes>
-				<include>modeshape-sequencer-text-${project.version}.jar</include>
-			</includes>
-		</fileSet>
-
-		<fileSet>
-			<directory>../sequencers/modeshape-sequencer-teiid/target
-			</directory>
-			<outputDirectory>modules/org/modeshape/sequencer/teiid/main
-			</outputDirectory>
-			<includes>
-				<include>modeshape-sequencer-teiid-${project.version}.jar</include>
-			</includes>
-		</fileSet>
-
-		<fileSet>
-			<directory>../sequencers/modeshape-sequencer-sramp/target
-			</directory>
-			<outputDirectory>modules/org/modeshape/sequencer/sramp/main
-			</outputDirectory>
-			<includes>
-				<include>modeshape-sequencer-sramp-${project.version}.jar</include>
-			</includes>
-		</fileSet>
-
-		<fileSet>
-			<directory>../sequencers/modeshape-sequencer-msoffice/target
-			</directory>
-			<outputDirectory>modules/org/modeshape/sequencer/msoffice/main
-			</outputDirectory>
-			<includes>
-				<include>modeshape-sequencer-msoffice-${project.version}.jar
-				</include>
-			</includes>
-		</fileSet>
-
-		<fileSet>
-			<directory>../sequencers/modeshape-sequencer-mp3/target
-			</directory>
-			<outputDirectory>modules/org/modeshape/sequencer/mp3/main
-			</outputDirectory>
-			<includes>
-				<include>modeshape-sequencer-mp3-${project.version}.jar</include>
-			</includes>
-		</fileSet>
-
-		<fileSet>
-			<directory>../sequencers/modeshape-sequencer-java/target
-			</directory>
-			<outputDirectory>modules/org/modeshape/sequencer/java/main
-			</outputDirectory>
-			<includes>
-				<include>modeshape-sequencer-java-${project.version}.jar</include>
-			</includes>
-		</fileSet>
-
-		<fileSet>
-			<directory>../sequencers/modeshape-sequencer-images/target
-			</directory>
-			<outputDirectory>modules/org/modeshape/sequencer/images/main
-			</outputDirectory>
-			<includes>
-				<include>modeshape-sequencer-images-${project.version}.jar</include>
-			</includes>
-		</fileSet>
-
-		<fileSet>
-			<directory>../sequencers/modeshape-sequencer-xml/target
-			</directory>
-			<outputDirectory>modules/org/modeshape/sequencer/xml/main
-			</outputDirectory>
-			<includes>
-				<include>modeshape-sequencer-xml-${project.version}.jar</include>
-			</includes>
-		</fileSet>
-
-		<fileSet>
-			<directory>../sequencers/modeshape-sequencer-xsd/target
-			</directory>
-			<outputDirectory>modules/org/modeshape/sequencer/xsd/main
-			</outputDirectory>
-			<includes>
-				<include>modeshape-sequencer-xsd-${project.version}.jar</include>
-			</includes>
-		</fileSet>
-
-		<!-- JDBC Driver for ModeShape -->
-		<fileSet>
-			<directory>../modeshape-jdbc-local/target</directory>
-			<outputDirectory>modules/org/modeshape/jdbc/main</outputDirectory>
-			<includes>
-				<include>modeshape-jdbc-local-${project.version}.jar</include>
-			</includes>
-		</fileSet>
-
-		<!-- Deployment for the ModeShape RESTful service WAR file -->
-		<fileSet>
-			<directory>../deploy/jbossas/modeshape-jbossas-web-rest-war/target/distribution/modeshape-rest-war-content
-			</directory>
-			<outputDirectory>standalone/deployments/modeshape-rest.war
-			</outputDirectory>
-		</fileSet>
-
-		<!-- Deployment for the ModeShape WebDAV service WAR file -->
-		<!--fileSet> <directory>../deploy/jbossas/modeshape-jbossas-web-webdav-war/target/distribution/modeshape-webdav-war-content</directory> 
-			<outputDirectory>standalone/deployments/modeshape-webdav.war</outputDirectory> 
-			</fileSet -->
 
 		<!-- ModeShape subsystem XSD(s) -->
 		<fileSet>
@@ -178,8 +25,20 @@
 			<outputDirectory>docs/schema</outputDirectory>
 		</fileSet>
 
-	</fileSets>
+	  <!-- Deployment for the ModeShape RESTful service WAR (as an exploded directory) -->
+		<fileSet>
+			<directory>../deploy/jbossas/modeshape-jbossas-web-rest-war/target/modeshape-jbossas-web-rest-war-${project.version}</directory>
+		  <outputDirectory>standalone/deployments/modeshape-rest.war</outputDirectory>
+		</fileSet>
 
+	  <!-- Deployment for the ModeShape WebDAV service WAR (as an exploded directory) -->
+		<!--fileSet>
+			<directory>../deploy/jbossas/modeshape-jbossas-web-webdav-war/target/modeshape-jbossas-web-webdav-war-${project.version}</directory>
+		  <outputDirectory>standalone/deployments/modeshape-webdav.war</outputDirectory>
+		</fileSet-->
+
+	</fileSets>
+	
 	<dependencySets>
 
 		<!-- Module for the standard JCR API -->
@@ -197,6 +56,9 @@
 			<includes>
 				<include>org.modeshape:modeshape-jcr-api</include>
 			</includes>
+			<excludes>
+				<exclude>*:*:*:component-with-dependencies</exclude>
+			</excludes>
 			<unpack>false</unpack>
 		</dependencySet>
 
@@ -207,39 +69,55 @@
 				<include>org.modeshape:modeshape-jcr</include>
 				<include>org.modeshape:modeshape-common</include>
 				<include>org.modeshape:modeshape-schematic</include>
+				<include>org.modeshape:modeshape-jbossas-subsystem</include>
+				<!-- Include the Sequencer JARs (with dependencies) for all the built-in sequencers -->
+				<include>org.modeshape:modeshape-sequencer-*:*:module-with-dependencies</include>
 			</includes>
+			<excludes>
+			  <exclude>*:*:*:tests</exclude>
+				<exclude>org.modeshape:modeshape-jcr:*:component-with-dependencies</exclude>
+				<exclude>org.modeshape:modeshape-common:*:component-with-dependencies</exclude>
+				<exclude>org.modeshape:modeshape-schematic:*:component-with-dependencies</exclude>
+			</excludes>
 			<unpack>false</unpack>
 		</dependencySet>
 
 		<!-- Module for Hibernate Search (Engine) -->
 		<dependencySet>
-			<outputDirectory>modules/org/hibernate/search-engine/4.1</outputDirectory>
+			<outputDirectory>modules/org/hibernate/search-engine/${hibernate.search.module.slot}</outputDirectory>
 			<unpack>false</unpack>
 			<useTransitiveFiltering>true</useTransitiveFiltering>
 			<includes>
 				<include>org.hibernate:hibernate-search-engine</include>
-				<!--
-				<include>org.hibernate.common:hibernate-commons-annotations</include>
-				<include>org.apache.avro:avro</include>
-				<include>org.codehaus.jackson:jackson-mapper-asl</include>
-				<include>org.apache.avro:avro</include>
-				-->
+				<include>org.hibernate:hibernate-search-infinispan</include>
+				<include>org.infinispan:infinispan-lucene-directory</include>
 			</includes>
 			<excludes>
 			  <exclude>org.hibernate.common:hibernate-commons</exclude>
-			  <exclude>org.jboss.logging:jboss-logging</exclude>
 			</excludes>
 		</dependencySet>
 
 		<!-- Module for Lucene (Core + Regex) -->
 		<dependencySet>
-			<outputDirectory>modules/org/apache/lucene/3.5</outputDirectory>
+			<outputDirectory>modules/org/apache/lucene/${lucene.module.slot}</outputDirectory>
 			<useTransitiveFiltering>true</useTransitiveFiltering>
 			<includes>
 				<include>org.apache.lucene:lucene-core</include>
 				<include>org.apache.lucene:lucene-regex</include>
 				<include>jakarta-regexp:jakarta-regexp</include>
 			</includes>
+			<unpack>false</unpack>
+		</dependencySet>
+
+		<!-- Module for the ModeShape JDBC driver -->
+		<dependencySet>
+			<outputDirectory>modules/org/modeshape/jdbc/main</outputDirectory>
+			<includes>
+				<include>org.modeshape:modeshape-jdbc-local:*:</include>
+			</includes>
+			<excludes>
+			  <exclude>*:*:*:tests</exclude>
+			</excludes>
 			<unpack>false</unpack>
 		</dependencySet>
 

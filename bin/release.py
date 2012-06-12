@@ -176,15 +176,10 @@ def copy_artifacts_to_archive_location(archive_path,version):
     pass
     
   # Copy the 'modeshape-distribution' artifacts ...
-  from_files = ['dist.zip', 'source.zip']
-  to_files = ['dist.zip', 'source.zip']
+  from_files = ['dist.zip', 'source.zip', 'jbossas-7-dist']
+  to_files = ['dist.zip', 'source.zip', 'jbossas-7-dist']
   for fsuffix,tsuffix in zip(from_files,to_files):
     shutil.copy("modeshape-distribution/target/modeshape-%s-%s" % (version,fsuffix), "%s/modeshape-%s-%s" % (archive_path,version,tsuffix))
-
-  # Copy the 'deploy/jbossas' artifact(s) ...
-  from_path = os.path.join('deploy','jbossas','target','distribution','modeshape-%s-jbossas-7-dist.zip' % (version))
-  to_path = os.path.join(archive_path,'modeshape-%s-jbossas-7-dist.zip' % (version))
-  shutil.copy(from_path,to_path)
   
   # Make an area for the documentation ...
   docs_path = os.path.join(archive_path,version)
