@@ -23,19 +23,19 @@
  */
 package org.modeshape.jcr.mimetype;
 
-import org.modeshape.common.annotation.ThreadSafe;
 import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.OCTET_STREAM;
 import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.TEXT_PLAIN;
-import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 
 /**
- * Implementation of {@link MimeTypeDetector} which holds an inner list of different {@link MimeTypeDetector} implementations
- * and queries each of them, in order to determine a mime-type.
- *
+ * Implementation of {@link MimeTypeDetector} which holds an inner list of different {@link MimeTypeDetector} implementations and
+ * queries each of them, in order to determine a mime-type.
+ * 
  * @author Horia Chiorean
  */
 @ThreadSafe
@@ -44,22 +44,25 @@ public final class MimeTypeDetectors implements MimeTypeDetector {
     private static final List<MimeTypeDetector> MIME_TYPE_DETECTORS = new ArrayList<MimeTypeDetector>();
 
     static {
-        //detected if Aperture is present in the classpath
+        // detected if Aperture is present in the classpath
         try {
             Class.forName("org.semanticdesktop.aperture.mime.identifier.magic.MagicMimeTypeIdentifier",
-                          false, MimeTypeDetectors.class.getClassLoader());
+                          false,
+                          MimeTypeDetectors.class.getClassLoader());
             MIME_TYPE_DETECTORS.add(new ApertureMimeTypeDetector());
         } catch (ClassNotFoundException e) {
-            //not present
+            // not present
+        } catch (NoClassDefFoundError e) {
+            // not present
         }
         MIME_TYPE_DETECTORS.add(new ExtensionBasedMimeTypeDetector());
     }
 
     /**
-     * Returns the first non-null result of iterating over the {@link #MIME_TYPE_DETECTORS registered} MIME-type
-     * detectors If the MIME-type cannot be determined by any registered detector, "text/plain" or "application/octet-stream"
-     * will be returned, the former only if it is determined the stream contains no nulls.
-     *
+     * Returns the first non-null result of iterating over the {@link #MIME_TYPE_DETECTORS registered} MIME-type detectors If the
+     * MIME-type cannot be determined by any registered detector, "text/plain" or "application/octet-stream" will be returned, the
+     * former only if it is determined the stream contains no nulls.
+     * 
      * @param name The name of the data source; may be <code>null</code>.
      * @param content The content of the data source; may be <code>null</code>.
      * @return The MIME-type of the data source; never <code>null</code>.
@@ -89,7 +92,8 @@ public final class MimeTypeDetectors implements MimeTypeDetector {
         return TEXT_PLAIN;
     }
 
-    private String detectMimeTypeUsingDetectors( String name, InputStream content ) throws IOException {
+    private String detectMimeTypeUsingDetectors( String name,
+                                                 InputStream content ) throws IOException {
         for (MimeTypeDetector detector : MIME_TYPE_DETECTORS) {
             try {
                 tryMark(content);
