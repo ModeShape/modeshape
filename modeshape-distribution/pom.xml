@@ -157,7 +157,6 @@
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jdbc-local</artifactId>
-            <classifier>module-with-dependencies</classifier>
             <version>${project.version}</version>
         </dependency>
 
@@ -167,6 +166,12 @@
             <!--<classifier>jar-with-dependencies</classifier>-->
             <!--<version>${project.version}</version>-->
         <!--</dependency>-->
+
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jbossas-subsystem</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>org.modeshape.demo</groupId>
@@ -183,6 +188,7 @@
             <version>${project.version}</version>
             <type>zip</type>
         </dependency>
+
     </dependencies>
 
     <profiles>
