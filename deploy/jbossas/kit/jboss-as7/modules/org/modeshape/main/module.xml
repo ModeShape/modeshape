@@ -27,7 +27,20 @@
         <resource-root path="modeshape-common-${project.version}.jar" />
         <resource-root path="conf" />
         <resource-root path="modeshape-schematic-${project.version}.jar" />  
-        <resource-root path="modeshape-subsystem-${project.version}.jar" />
+        <resource-root path="modeshape-jbossas-subsystem-${project.version}.jar" />
+        <!-- Include all of the built-in sequencers -->
+        <resource-root path="modeshape-sequencer-ddl-${project.version}-module-with-dependencies.jar" />
+        <resource-root path="modeshape-sequencer-images-${project.version}-module-with-dependencies.jar" />
+        <resource-root path="modeshape-sequencer-java-${project.version}-module-with-dependencies.jar" />
+        <resource-root path="modeshape-sequencer-mp3-${project.version}-module-with-dependencies.jar" />
+        <resource-root path="modeshape-sequencer-msoffice-${project.version}-module-with-dependencies.jar" />
+        <resource-root path="modeshape-sequencer-sramp-${project.version}-module-with-dependencies.jar" />
+        <!--resource-root path="modeshape-sequencer-teiid-${project.version}-module-with-dependencies.jar" /-->
+        <resource-root path="modeshape-sequencer-text-${project.version}-module-with-dependencies.jar" />
+        <resource-root path="modeshape-sequencer-wsdl-${project.version}-module-with-dependencies.jar" />
+        <resource-root path="modeshape-sequencer-xml-${project.version}-module-with-dependencies.jar" />
+        <resource-root path="modeshape-sequencer-xsd-${project.version}-module-with-dependencies.jar" />
+        <resource-root path="modeshape-sequencer-zip-${project.version}-module-with-dependencies.jar" />
     </resources>
 
    <dependencies>
