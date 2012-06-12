@@ -117,6 +117,7 @@
       </testResource>
     </testResources>
   </build>
+
   <profiles>
     <profile>
       <id>arquillian-tests</id>
@@ -149,61 +150,29 @@
                 <goals>
                   <goal>unpack</goal>
                 </goals>
-                <!-- Unpack the JBoss AS7 version (from the Maven repository) into the 'target' directory -->
                 <configuration>
-                  <artifactItems>
-                    <artifactItem>
-                      <groupId>org.jboss.as</groupId>
-                      <artifactId>jboss-as-dist</artifactId>
-                      <version>${jbossas-version}</version>
-                      <type>zip</type>
-                      <overWrite>false</overWrite>
-                      <outputDirectory>${project.build.directory}</outputDirectory>
-                    </artifactItem>
-                  </artifactItems>
-                </configuration>
-              </execution>
-              <execution>
-                <id>unpack2</id>
-                <phase>process-test-classes</phase>
-                <goals>
-                  <goal>unpack</goal>
-                </goals>
-                <!-- Unpack the ModeShape subsystem for AS7 (from the Maven repository) into the AS7 installation -->
-                <configuration>
-                  <artifactItems>
-                    <artifactItem>
-                      <groupId>org.modeshape</groupId>
-                      <artifactId>modeshape-distribution</artifactId>
-                      <version>${project.version}</version>
-                      <classifier>jbossas-7-dist</classifier>
-                      <type>zip</type>
-                      <overWrite>false</overWrite>
-                      <outputDirectory>${project.build.directory}/jboss-as-${jbossas-version}</outputDirectory>
-                    </artifactItem>
-                  </artifactItems>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>default-test</id>
-                <goals>
-                  <goal>test</goal>
-                </goals>
-                <configuration>
-                  <systemPropertyVariables>
-                    <jbossHome>${project.build.directory}/jboss-as-${jbossas-version}</jbossHome>
-                    <serverConfig>standalone-modeshape.xml</serverConfig>
-                  </systemPropertyVariables>
-                  <includes>
-                    <include>**/*TestCase.java</include>
-                    <include>**/*Test.java</include>
-                  </includes>
+                    <artifactItems>
+                        <!-- Unpack the JBoss AS7 version (from the Maven repository) into the 'target' directory -->
+                        <artifactItem>
+                            <groupId>org.jboss.as</groupId>
+                            <artifactId>jboss-as-dist</artifactId>
+                            <version>${jbossas-version}</version>
+                            <type>zip</type>
+                            <overWrite>false</overWrite>
+                            <outputDirectory>${project.build.directory}</outputDirectory>
+                        </artifactItem>
+
+                        <!-- Unpack the ModeShape distribution which is installed (hopefully) locally-->
+                        <artifactItem>
+                            <groupId>org.modeshape</groupId>
+                            <artifactId>modeshape-distribution</artifactId>
+                            <version>${project.version}</version>
+                            <classifier>jbossas-7-dist</classifier>
+                            <type>zip</type>
+                            <overWrite>false</overWrite>
+                            <outputDirectory>${project.build.directory}/jboss-as-${jbossas-version}</outputDirectory>
+                        </artifactItem>
+                    </artifactItems>
                 </configuration>
               </execution>
             </executions>

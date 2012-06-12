@@ -65,7 +65,7 @@ public final class JsonRestClientTest {
     private static final String USER = "dnauser";
 
     private static final Server SERVER = new Server("http://localhost:8090/resources/test", USER, PSWD);
-    private static final String REPOSITORY_NAME = "mode:repository";
+    private static final String REPOSITORY_NAME = "repo";
     private static final Repository REPOSITORY1 = new Repository(REPOSITORY_NAME, SERVER);
     private static final String WORKSPACE_NAME = "default";
     private static final Workspace WORKSPACE1 = new Workspace(WORKSPACE_NAME, REPOSITORY1);
@@ -111,7 +111,7 @@ public final class JsonRestClientTest {
             Map<String, Object> metadata = repo.getMetadata();
             assertThat(metadata.get("jcr.specification.name"), is((Object)"Content Repository for Java Technology API"));
             assertThat(metadata.get("jcr.specification.version"), is((Object)"2.0"));
-            assertThat(metadata.get("jcr.repository.name"), is((Object)"ModeShape JCR Repository"));
+            assertThat(metadata.get("jcr.repository.name"), is((Object)"ModeShape"));
             assertThat(metadata.get("jcr.repository.vendor.url"), is((Object)"http://www.modeshape.org"));
             assertThat(metadata.get("jcr.repository.version").toString().startsWith("3."), is(true));
             assertThat(metadata.get("option.versioning.supported"), is((Object)"true"));
@@ -150,12 +150,16 @@ public final class JsonRestClientTest {
         File file = new File("bogusfile");
         Status status = this.restClient.unpublish(WORKSPACE1, WORKSPACE_PATH, file);
 
+        printExceptionIfStatusIsError(status);
+
+        assertThat(status.getMessage(), status.isInfo(), is(true));
+    }
+
+    private void printExceptionIfStatusIsError( Status status ) {
         if (status.isError()) {
             System.err.println(status.getMessage());
             status.getException().printStackTrace(System.err);
         }
-
-        assertThat(status.getMessage(), status.isInfo(), is(true));
     }
 
     @Test
@@ -167,10 +171,7 @@ public final class JsonRestClientTest {
         File file = new File(binaryFile.toURI());
         Status status = this.restClient.publish(WORKSPACE1, WORKSPACE_PATH, file);
 
-        if (status.isError()) {
-            System.err.println(status.getMessage());
-            status.getException().printStackTrace(System.err);
-        }
+        printExceptionIfStatusIsError(status);
 
         assertThat(status.isOk(), is(true));
 
@@ -199,10 +200,7 @@ public final class JsonRestClientTest {
         textfile = new File(textFile.toURI());
         Status status = this.restClient.publish(WORKSPACE1, WORKSPACE_PATH, textfile);
 
-        if (status.isError()) {
-            System.err.println(status.getMessage());
-            status.getException().printStackTrace(System.err);
-        }
+        printExceptionIfStatusIsError(status);
 
         assertThat(status.getMessage(), status.isOk(), is(true));
 
@@ -230,10 +228,7 @@ public final class JsonRestClientTest {
         File file = new File(ddlFile.toURI());
         Status status = this.restClient.publish(WORKSPACE1, WORKSPACE_PATH, file);
 
-        if (status.isError()) {
-            System.err.println(status.getMessage());
-            status.getException().printStackTrace(System.err);
-        }
+        printExceptionIfStatusIsError(status);
 
         assertThat(status.getMessage(), status.isOk(), is(true));
 
@@ -261,10 +256,7 @@ public final class JsonRestClientTest {
         File file = new File(textFile.toURI());
         Status status = this.restClient.publish(WORKSPACE1, WORKSPACE_UNUSUALPATH, file);
 
-        if (status.isError()) {
-            System.err.println(status.getMessage());
-            status.getException().printStackTrace(System.err);
-        }
+        printExceptionIfStatusIsError(status);
 
         assertThat(status.getMessage(), status.isOk(), is(true));
 
@@ -282,10 +274,7 @@ public final class JsonRestClientTest {
 
         Status status = this.restClient.unpublish(WORKSPACE1, WORKSPACE_PATH, textfile);
 
-        if (status.isError()) {
-            System.err.println(status.getMessage());
-            status.getException().printStackTrace(System.err);
-        }
+        printExceptionIfStatusIsError(status);
 
         assertThat(status.isOk(), is(true));
 
@@ -296,14 +285,10 @@ public final class JsonRestClientTest {
     protected void shouldUnpublishFile( File file ) throws Exception {
         Status status = this.restClient.unpublish(WORKSPACE1, WORKSPACE_PATH, file);
 
-        if (status.isError()) {
-            System.err.println(status.getMessage());
-            status.getException().printStackTrace(System.err);
-        }
+        printExceptionIfStatusIsError(status);
 
         // confirm it does not exist in repository
         assertThat(((JsonRestClient)this.restClient).pathExists(WORKSPACE1, WORKSPACE_PATH, file), is(false));
-
     }
 
     @Test
@@ -407,14 +392,11 @@ public final class JsonRestClientTest {
         // first publish
         shouldPublishTextResource();
 
-        String query = "SELECT [jcr:primaryType], [jcr:path], [jcr:title] FROM [mode:publishArea]";
+        String path = WORKSPACE_PATH.substring(0, WORKSPACE_PATH.lastIndexOf("/"));
+        String query = "SELECT [jcr:primaryType], [jcr:path], [jcr:title] FROM [nt:folder] WHERE [jcr:path] = '" + path + "'";
         List<QueryRow> results = this.restClient.query(WORKSPACE1, IJcrConstants.JCR_SQL2, query);
 
         assertThat(results.size(), is(1));
-        // System.out.println(results.get(0).getColumnNames());
-        // for (QueryRow row : results) {
-        // System.out.println(row);
-        // }
 
         QueryRow row = results.get(0);
 
@@ -427,7 +409,7 @@ public final class JsonRestClientTest {
         assertThat(row.getColumnType("jcr:primaryType"), is("STRING"));
         assertThat(row.getColumnType("jcr:title"), is("STRING"));
 
-        assertThat((String)row.getValue("jcr:path"), is("/files"));
+        assertThat((String)row.getValue("jcr:path"), is(path));
         assertThat((String)row.getValue("jcr:primaryType"), is("nt:folder"));
         assertThat(row.getValue("jcr:title"), is(nullValue()));
 

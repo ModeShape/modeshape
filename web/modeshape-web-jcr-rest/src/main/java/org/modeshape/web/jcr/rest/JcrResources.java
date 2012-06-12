@@ -280,7 +280,6 @@ public class JcrResources extends AbstractHandler {
      */
     @DELETE
     @Path( "/{repositoryName}/{workspaceName}/items{path:.*}" )
-    @Consumes( "application/json" )
     public void deleteItem( @Context HttpServletRequest request,
                             @PathParam( "repositoryName" ) String rawRepositoryName,
                             @PathParam( "workspaceName" ) String rawWorkspaceName,

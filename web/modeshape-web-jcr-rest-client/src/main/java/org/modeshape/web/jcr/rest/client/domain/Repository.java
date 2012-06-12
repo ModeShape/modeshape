@@ -68,7 +68,7 @@ public class Repository implements IModeShapeObject {
         assert server != null;
         this.name = name;
         this.server = server;
-        this.metadata = Collections.<String, Object>emptyMap();
+        this.metadata = Collections.emptyMap();
     }
 
     /**

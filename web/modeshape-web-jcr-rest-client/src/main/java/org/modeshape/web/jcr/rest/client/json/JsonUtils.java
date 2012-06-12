@@ -23,13 +23,10 @@
  */
 package org.modeshape.web.jcr.rest.client.json;
 
-import java.io.IOException;
-import java.io.InputStream;
+import org.modeshape.common.util.CheckArg;
 import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import org.modeshape.common.util.CheckArg;
 
 /**
  * The <code>JsonUtils</code> class provides utilities needed to work with the ModeShape REST server JSON API.
@@ -77,28 +74,6 @@ public final class JsonUtils {
         }
 
         return encoded.toString();
-    }
-
-    /**
-     * Note: The connection is not disconnected during this method.
-     * 
-     * @param connection the connection whose input stream is going to be read from (never <code>null</code>)
-     * @return the data read from the connection input stream (never <code>null</code>)
-     * @throws IOException if there is a problem reading from the connection
-     */
-    public static String readInputStream( HttpURLConnection connection ) throws IOException {
-        CheckArg.isNotNull(connection, "connection");
-
-        InputStream stream = connection.getInputStream();
-        int bytesRead;
-        byte[] bytes = new byte[1024];
-        StringBuffer buff = new StringBuffer();
-
-        while (-1 != (bytesRead = stream.read(bytes, 0, 1024))) {
-            buff.append(new String(bytes, 0, bytesRead));
-        }
-
-        return buff.toString();
     }
 
     // ===========================================================================================================================

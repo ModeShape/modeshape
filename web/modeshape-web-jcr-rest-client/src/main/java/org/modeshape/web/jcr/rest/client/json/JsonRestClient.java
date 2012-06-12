@@ -870,19 +870,12 @@ public final class JsonRestClient implements IRestClient {
 
                 String fileName = file.getName();
 
-                if (fileName == null || fileName.length() == 0) {
-                    return false;
-                }
-
-                return true;
+                return !(fileName == null || fileName.length() == 0);
 
             }
         };
 
-        File[] modelFiles = modelsDirFile.listFiles(fileFilter);
-
-        return modelFiles;
-
+        return modelsDirFile.listFiles(fileFilter);
     }
 
 }

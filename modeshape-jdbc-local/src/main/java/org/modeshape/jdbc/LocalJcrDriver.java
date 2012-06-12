@@ -107,10 +107,6 @@ public class LocalJcrDriver implements java.sql.Driver {
         }
     }
 
-    public static LocalJcrDriver getInstance() {
-        return INSTANCE;
-    }
-
     private final JcrContextFactory contextFactory;
     private final RepositoryDelegateFactory delegateFactory;
     private final DriverInfo driverInfo;
@@ -128,7 +124,7 @@ public class LocalJcrDriver implements java.sql.Driver {
      * 
      * @param namingContextFactory the naming context factory; may be null if one should be created automatically
      */
-    public LocalJcrDriver( JcrContextFactory namingContextFactory ) {
+    protected LocalJcrDriver( JcrContextFactory namingContextFactory ) {
         this(LocalRepositoryDelegate.FACTORY, new DriverInfo(JdbcLocalI18n.driverName.text(), JdbcLocalI18n.driverVendor.text(),
                                                              JdbcLocalI18n.driverVendorUrl.text(),
                                                              JdbcLocalI18n.driverVersion.text()), namingContextFactory);

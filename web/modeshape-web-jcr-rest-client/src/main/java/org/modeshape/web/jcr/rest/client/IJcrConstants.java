@@ -104,7 +104,7 @@ public interface IJcrConstants {
     /**
      * A list of the valid query languages
      */
-    List<String> VALID_QUERY_LANGUAGES = Arrays.asList(new String[] {IJcrConstants.XPATH, IJcrConstants.JCR_SQL,
-        IJcrConstants.JCR_SQL2, IJcrConstants.JCR_SEARCH});
+    List<String> VALID_QUERY_LANGUAGES = Arrays.asList(IJcrConstants.XPATH, IJcrConstants.JCR_SQL,
+                                                       IJcrConstants.JCR_SQL2, IJcrConstants.JCR_SEARCH);
 
 }

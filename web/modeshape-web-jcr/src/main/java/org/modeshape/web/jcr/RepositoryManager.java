@@ -67,21 +67,20 @@ public class RepositoryManager {
         factoryParams.clear();
         Enumeration<?> names = context.getInitParameterNames();
         if (names == null) {
-            addParameter(factoryParams, RepositoryFactory.URL, context);
-            addParameter(factoryParams, RepositoryFactory.REPOSITORY_NAME, context);
+            addParameter(RepositoryFactory.URL, context);
+            addParameter(RepositoryFactory.REPOSITORY_NAME, context);
         } else {
             while (names.hasMoreElements()) {
                 Object next = names.nextElement();
                 if (next == null) continue;
                 String name = next.toString();
-                addParameter(factoryParams, name, context);
+                addParameter(name, context);
             }
         }
     }
 
-    private static final void addParameter( Map<String, Object> params,
-                                            String name,
-                                            ServletContext context ) {
+    private static void addParameter( String name,
+                                      ServletContext context ) {
         String value = context.getInitParameter(name);
         if (value != null) factoryParams.put(name, value);
     }

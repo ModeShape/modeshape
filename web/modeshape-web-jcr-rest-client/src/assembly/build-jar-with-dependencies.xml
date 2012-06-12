@@ -11,49 +11,19 @@
   <dependencySets>
     <dependencySet>
         <unpack>true</unpack>
-
-        <outputFileNameMapping>${artifact.artifactId}-${artifact.version}.${artifact.extension}</outputFileNameMapping>
-         <useTransitiveDependencies>true</useTransitiveDependencies>
-    
-            <excludes>
-
-                <exclude>com.sun.xml.bind:jaxb-impl</exclude>
-                <exclude>com.sun.xml.stream:buffer.streambuffer</exclude>
-                <exclude>org.apache.log4j:*</exclude>
-                <exclude>org.scannotation:scannotation</exclude>
-                <exclude>javassist:javassist</exclude>
-                <exclude>javax.activation:activation</exclude>
-                <exclude>javax.annotation:jsr250-api</exclude>
-                <exclude>javax.xml:*</exclude>
-                <exclude>javax.ws:rs.jsr311-api</exclude>
-                <exclude>javax.xml:stream.stax-api</exclude>
-                
-               
-                 <exclude>org.modeshape:modeshape-web-jcr-rest-war:*.war</exclude>
-  
-            </excludes>
-        
-    </dependencySet>   
-
-    
-<!--       
-                <exclude>org.modeshape:modeshape-common</exclude>
-                <exclude>org.modeshape:modeshape-graph</exclude>
-                <exclude>org.modeshape:modeshape-cnd</exclude>
-                <exclude>com.google.collections:*</exclude>
-                <exclude>joda-time:*</exclude>
-                <exclude>org.slf4j:*</exclude>
-
-<dependencySet>
-        <unpack>true</unpack>
-       <include>org.modeshape:modeshape-web-jcr-rest-client</include> 
-       <useTransitiveDependencies>false</useTransitiveDependencies>
-       
-       <includes>
-            <include>org.modeshape:modeshape-web-jcr-rest-client</include>
-         </includes>
+        <excludes>
+            <exclude>com.sun.xml.bind:jaxb-impl</exclude>
+            <exclude>com.sun.xml.stream:buffer.streambuffer</exclude>
+            <exclude>org.apache.log4j:*</exclude>
+            <exclude>org.scannotation:scannotation</exclude>
+            <exclude>javassist:javassist</exclude>
+            <exclude>javax.activation:activation</exclude>
+            <exclude>javax.annotation:jsr250-api</exclude>
+            <exclude>javax.xml:*</exclude>
+            <exclude>javax.ws:rs.jsr311-api</exclude>
+            <exclude>javax.xml:stream.stax-api</exclude>
+            <exclude>org.modeshape:modeshape-web-jcr-rest-war:*</exclude>
+        </excludes>
     </dependencySet>
-
--->
   </dependencySets>
 </assembly>

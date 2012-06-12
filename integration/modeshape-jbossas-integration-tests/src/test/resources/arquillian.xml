@@ -11,9 +11,6 @@
   </engine>
 
   <container qualifier="jboss7" default="true">
-    <protocol type="jmx-as7">
-      <property name="executionType">REMOTE</property>
-    </protocol>
     <configuration>
       <property name="jbossHome">${project.build.directory}/jboss-as-${jbossas-version}</property>
       <property name="serverConfig">standalone-modeshape.xml</property>

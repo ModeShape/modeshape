@@ -16,28 +16,28 @@
 	<description>Builds the entire ModeShape distribution.</description>
 
 	<modules>
-		<!-- This must be first -->
-		<module>modeshape-parent</module>
-		<module>modeshape-assembly-descriptors</module>
-		<!-- Order is important -->
-		<module>modeshape-jcr-api</module>
-		<module>modeshape-common</module>
-		<module>modeshape-schematic</module>
-		<module>modeshape-jcr</module>
-    <module>modeshape-unit-test</module>
-    <module>sequencers</module>
-    <!--module>extractors/modeshape-extractor-tika</module-->
-    <!--
-      The REST client needs the JDBC driver
-    -->
-		<module>web</module>
-    <module>modeshape-jdbc-local</module>
-    <!--<module>modeshape-jdbc</module>-->
-    <!--
-      The JBoss AS7 subsystem needs the web components and (local) JDBC drivers.
-    -->
-		<module>deploy/jbossas</module>
-	</modules>
+        <!-- This must be first -->
+        <module>modeshape-parent</module>
+        <module>modeshape-assembly-descriptors</module>
+        <!-- Order is important -->
+        <module>modeshape-jcr-api</module>
+        <module>modeshape-common</module>
+        <module>modeshape-schematic</module>
+        <module>modeshape-jcr</module>
+        <module>modeshape-unit-test</module>
+        <module>sequencers</module>
+        <!--module>extractors/modeshape-extractor-tika</module-->
+        <!--
+          The REST client needs the JDBC driver
+        -->
+        <module>web</module>
+        <module>modeshape-jdbc-local</module>
+        <module>modeshape-jdbc</module>
+        <!--
+          The JBoss AS7 subsystem needs the web components and (local) JDBC drivers.
+        -->
+        <module>deploy/jbossas</module>
+    </modules>
 	<properties>
 		<rootDir>${project.basedir}</rootDir>
 	</properties>

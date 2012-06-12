@@ -59,19 +59,50 @@
 	
 	<build>
 		<plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-war-plugin</artifactId>
-      </plugin>
-      <!-- Skip the Surefire tests (all testing is done in the integration tests for JBoss AS7) -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <skipTests>true</skipTests>
-        </configuration>
-      </plugin>
-		</plugins>
-	</build>
-
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <configuration>
+                    <warName>modeshape-test</warName>
+                    <webResources>
+                    	<resource>
+                        <!--  add in the configRepository.xml for running locally  -->
+                        <directory>${project.basedir}/src/test/resources/</directory>
+                      </resource>
+                      <resource>
+                        <!--  override the main web.xml with a web.xml that enables running locally  -->
+                        <directory>${project.basedir}/src/test/webapp/</directory>
+                      </resource>
+                    </webResources>
+                </configuration>
+            </plugin>
+			<plugin>
+				<groupId>org.codehaus.cargo</groupId>
+				<artifactId>cargo-maven2-plugin</artifactId>
+			</plugin>
+			<!--
+				Override the default Surefire behavior to run during
+				integration-test phase
+			-->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<skip>true</skip>
+				</configuration>
+				<executions>
+					<execution>
+						<id>surefire-it</id>
+						<phase>integration-test</phase>
+						<goals>
+							<goal>test</goal>
+						</goals>
+						<configuration>
+							<skip>false</skip>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+    </plugins>
+    </build>
 </project>
