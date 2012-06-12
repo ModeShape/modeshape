@@ -27,6 +27,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.modeshape.jcr.api.JcrConstants.JCR_MIME_TYPE;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.MICROSOFT_APPLICATION_MS_WORD;
 import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.MICROSOFT_EXCEL;
 import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.MICROSOFT_POWERPOINT;
 import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.MICROSOFT_WORD;
@@ -88,7 +89,8 @@ public class MSOfficeMetadataSequencerTest extends AbstractSequencerTest {
         assertNotNull(outputNode);
 
         assertEquals(METADATA_NODE, outputNode.getPrimaryNodeType().getName());
-        assertEquals(MICROSOFT_WORD, outputNode.getProperty(JCR_MIME_TYPE).getString());
+        String mimeType = outputNode.getProperty(JCR_MIME_TYPE).getString();
+        assertEquals(MICROSOFT_WORD.equals(mimeType) || MICROSOFT_APPLICATION_MS_WORD.equals(mimeType), true);
         assertMetadata(outputNode);
 
         NodeIterator headingsIterator = outputNode.getNodes();
