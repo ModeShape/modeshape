@@ -24,6 +24,8 @@
 <module xmlns="urn:jboss:module:1.1" name="org.hibernate.search-engine" slot="4.1">
     <resources>
         <resource-root path="hibernate-search-engine-${hibernate.search.version}.jar" />
+        <resource-root path="hibernate-search-infinispan-${hibernate.search.version}.jar" />
+        <resource-root path="infinispan-lucene-directory-${infinispan.version}.jar" />
         <resource-root path="avro-${hibernate.search.avro.version}.jar" />
         <resource-root path="jackson-mapper-asl-${hibernate.search.jackson-mapper-asl.version}.jar" />
         <resource-root path="jackson-core-asl-${hibernate.search.jackson-core-asl.version}.jar" />
@@ -36,5 +38,9 @@
         <module name="org.apache.lucene" export="true" slot="3.5"/>
         <module name="org.jboss.logging" />
         <module name="org.jgroups" />
+        <module name="org.infinispan" />
+        <!-- For naming (used by Hibernate Search Infinispan)... -->
+        <module name="javax.api"/>
+        <module name="org.jboss.as.naming"/>
     </dependencies>
 </module>
