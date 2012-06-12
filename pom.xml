@@ -43,11 +43,11 @@
 	</properties>
 
 	<profiles>
+		<!-- 
+		  This profile is used to run the build plus the JCR TCK tests
+			and must be activated manually, as in "mvn ... -Pjcr-tck ..."
+		-->
 		<profile>
-			<!-- 
-			  This profile is used to run the build plus the JCR TCK tests
-				and must be activated manually, as in "mvn ... -Pjcr-tck ..."
-			-->
 			<id>jcr-tck</id>
 			<activation>
 				<activeByDefault>false</activeByDefault>
@@ -56,11 +56,12 @@
 				<module>modeshape-jcr-tck</module>
 			</modules>
 		</profile>
+		
+		<!-- 
+		  This profile is used to run the build plus the integration tests
+			and must be activated manually, as in "mvn ... -Pintegration ..."
+		-->
 		<profile>
-			<!-- 
-			  This profile is used to run the build plus the integration tests
-				and must be activated manually, as in "mvn ... -Pintegration ..."
-			-->
 			<id>integration</id>
 			<activation>
 				<activeByDefault>false</activeByDefault>
@@ -74,39 +75,37 @@
 				<module>integration</module>
 			</modules>
 		</profile>
+		
+		<!-- 
+		  This profile is used to run longer-running performance tests,
+		  and must be activated manually, as in "mvn ... -Pperformance ..."
+		-->
 		<profile>
-			<!-- 
-			  This profile is used to build everything, including all assemblies,
-				and must be activated manually, as in "mvn ... -Passembly ..."
-			-->
-			<id>assembly</id>
-			<activation>
-				<activeByDefault>false</activeByDefault>
-			</activation>
-			<modules>
-				<module>modeshape-distribution</module>
-			</modules>
-		</profile>
-        <profile>
-            <id>dist</id>
-            <modules>
-		            <module>demos</module>
-                <module>modeshape-distribution</module>
-				        <module>integration</module>
-            </modules>
-        </profile>
-		<profile>
-			<!-- 
-			  This profile is used to run longer-running performance tests,
-			  and must be activated manually, as in "mvn ... -Pperformance ..."
-			-->
 			<id>performance</id>
 			<activation>
 				<activeByDefault>false</activeByDefault>
 			</activation>
 			<modules>
+        <module>modeshape-distribution</module>
 				<module>modeshape-performance-tests</module>
 			</modules>
 		</profile>
+		
+		<!-- 
+		  This profile is used to build everything for a release, including all assemblies,
+			and must be activated manually, as in "mvn ... -Passembly ..."
+		-->
+		<profile>
+			<id>assembly</id>
+			<activation>
+				<activeByDefault>false</activeByDefault>
+			</activation>
+			<modules>
+        <module>demos</module>
+        <module>modeshape-distribution</module>
+        <module>integration</module>
+			</modules>
+		</profile>
+		
 	</profiles>
 </project>
