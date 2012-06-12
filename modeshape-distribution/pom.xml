@@ -201,6 +201,7 @@
                 <plugins>
                     <plugin>
                         <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>${version.javadoc.plugin}</version>
                         <configuration>
                             <!-- Workaround for http://jira.codehaus.org/browse/MJAVADOC-268 and http://jira.codehaus.org/browse/MJAVADOC-286 -->
                             <detectOfflineLinks>false</detectOfflineLinks>
