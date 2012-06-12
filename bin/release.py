@@ -247,14 +247,10 @@ def upload_artifacts(base_dir, version):
   os.makedirs("downloads/%s" % version)
 
   # Copy the 'modeshape-distribution' artifacts ...
-  from_files = ['dist.zip', 'source.zip']
-  to_files = ['dist.zip', 'source.zip']
+  from_files = ['dist.zip', 'source.zip', 'jbossas-7-dist.zip']
+  to_files = ['dist.zip', 'source.zip', 'jbossas-7-dist.zip']
   for fsuffix,tsuffix in zip(from_files,to_files):
     shutil.copy("%s/modeshape-distribution/target/modeshape-%s-%s" % (base_dir,version,fsuffix), "downloads/%s/modeshape-%s-%s" % (version,version,tsuffix))
-
-  # Copy the 'deploy/jbossas' artifact(s) ...
-  from_path = "%s/deploy/jbossas/target/distribution/modeshape-%s-jbossas-7-dist.zip" % (base_dir,version)
-  shutil.copy(from_path, "downloads/%s/modeshape-%s-jbossas-7-dist.zip" % (version,version))
   
   # Copy the readme files ...
   for readme in ['release.html','release.txt']:
