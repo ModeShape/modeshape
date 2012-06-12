@@ -119,7 +119,7 @@ public class ZipSequencer extends Sequencer {
         contentNode.setProperty(JcrConstants.JCR_DATA, contentBinary);
 
         // Figure out the mime type ...
-        String mimeType = context.mimeTypeDetector().mimeTypeOf(entry.getName(), contentBinary.getStream());
+        String mimeType = contentBinary.getMimeType(entry.getName());
         if (mimeType != null) {
             contentNode.setProperty(JcrConstants.JCR_MIME_TYPE, mimeType);
         }
