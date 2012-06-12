@@ -44,6 +44,7 @@ import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.JcrRepository.QueryLanguage;
 import org.modeshape.jcr.MultiUseAbstractTest;
 import org.modeshape.jcr.RepositoryConfiguration;
+import org.modeshape.jcr.TestingEnvironment;
 
 /**
  * This is a test suite that operates against a complete JcrRepository instance created and managed using the JcrEngine.

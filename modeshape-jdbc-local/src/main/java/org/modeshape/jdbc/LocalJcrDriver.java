@@ -246,7 +246,7 @@ public class LocalJcrDriver implements java.sql.Driver {
     }
 
     /**
-     * And interface that can be passed to this driver's contructor to create the JNDI naming context given the set of connection
+     * And interface that can be passed to this driver's constructor to create the JNDI naming context given the set of connection
      * properties.
      */
     public interface JcrContextFactory {
