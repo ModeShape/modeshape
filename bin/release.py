@@ -260,7 +260,7 @@ def upload_artifacts(base_dir, version):
 
   # rsync this stuff to filemgmt.jboss.org
   os.chdir("%s/target/downloads" % (base_dir))
-  uploader.upload_rsync(version, "modeshape@filemgmt.jboss.org:/downloads_htdocs/modeshape", flags = ['-rv', '--protocol=28'])
+  uploader.upload_rsync(version, "modeshape@filemgmt.jboss.org:/downloads_htdocs/modeshape", flags = ['--protocol=28'])
   
   # We're done, so go back to where we were ...
   os.chdir(base_dir)
@@ -284,7 +284,7 @@ def upload_documentation(base_dir, version):
 
   # rsync this stuff to filemgmt.jboss.org
   os.chdir("%s/target/docs" % (base_dir))
-  uploader.upload_rsync(version, "modeshape@filemgmt.jboss.org:/docs_htdocs/modeshape", flags = ['-rv', '--protocol=28'])
+  uploader.upload_rsync(version, "modeshape@filemgmt.jboss.org:/docs_htdocs/modeshape", flags = ['--protocol=28'])
   
   # We're done, so go back to where we were ...
   os.chdir(base_dir)

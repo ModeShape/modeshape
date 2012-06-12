@@ -368,10 +368,10 @@ class Uploader(object):
       self.rsync_cmd = ['rsync', '-r']
       
   def upload_scp(self, fr, to, flags = []):
-    self.upload(fr, to, flags, self.scp_cmd)
+    self.upload(fr, to, flags, list(self.scp_cmd))
   
   def upload_rsync(self, fr, to, flags = []):
-    self.upload(fr, to, flags, self.rsync_cmd)    
+    self.upload(fr, to, flags, list(self.rsync_cmd))    
   
   def upload(self, fr, to, flags, cmd):
     for e in flags:
