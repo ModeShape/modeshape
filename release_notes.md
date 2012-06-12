@@ -1,6 +1,6 @@
 # Release Notes for ModeShape &version;
 
-The ModeShape &version; release is the first release of our new architecture, and is suitable
+The ModeShape &version; release is the fifth release of our new architecture, and is suitable
 only for testing and previewing features. APIs and storage formats are still subject to change.
 
 ## What's new
@@ -28,6 +28,8 @@ while the repository is in use.
 repositories are still in use.
 - Sessions now immediately see all changes persisted/committed by other sessions, although
 transient changes of the session always take precedence.
+- Support for participation in JTA and XA transactions, allowing (container-managed or bean-managed)
+EJBs and JCR clients that programmatically use XA transactions to commit the changes in the transactions.
 - New monitoring API that allows accessing the history for over a dozen metrics.
 - New sequencing API, so sequencers now use the JCR API to get at the content being processed
 and create/update the derived content. Sequencers can also dynamically register namespaces and
@@ -45,12 +47,12 @@ while the server is running.
 
 There are also several major new features that are planned (but not yet available in this release):
 
-- JTA support is not yet working in this release but will be soon. It will allow
-JCR Sessions to participate in XA and container-managed transactions.
+- Shareable nodes.
 - Map-reduce based operations for performing reporting and custom read-only operations in parallel
 against the entire content of a repository. ModeShape will use this to enable validation of
 repository content against the current set or a proposed set of node types, as well as
 optimizing the storage format/layout of each node.
+- Full-text search is currently disabled.
 
 ## Features
 
@@ -142,6 +144,7 @@ and ready for testing. If any issues are found, please log a bug report in our J
 - Access through RESTful Service
 - JDBC driver for accessing ModeShape content through JDBC API and JCR-SQL2 queries
 - Embedded (in Server or JEE Archive) Deployment
+- JTA support, allowing Sessions to participate in XA and container-managed transactions 
 - OSGi-Compatible Archives
 
 ### Other ModeShape features
@@ -170,7 +173,6 @@ in the next release.
 ### ModeShape Deployment/Access Models
 - Clustering and grids
 - Access through WebDAV Service
-- JTA support, allowing Sessions to participate in XA and container-managed transactions 
 
 
 ## Bug Fixes, Features, and other Issues
