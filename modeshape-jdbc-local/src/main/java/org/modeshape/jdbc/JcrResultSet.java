@@ -78,10 +78,6 @@ public class JcrResultSet implements ResultSet {
     private Map<String, Integer> columnIndexesByName;
 
     private String[] columnIDs = null;
-    
-    /** default Calendar instance for converting date/time/timestamp values */
-    private Calendar defaultCalendar;
-
 
     protected JcrResultSet( JcrStatement statement,
                             QueryResult jcrResults,
@@ -109,7 +105,6 @@ public class JcrResultSet implements ResultSet {
             index++;
         }
 
-        assert !columnIndexesByName.isEmpty();
         this.columnIndexesByName = Collections.unmodifiableMap(columnIndexesByName);
 
         try {
@@ -129,14 +124,6 @@ public class JcrResultSet implements ResultSet {
         columnIndexesByName = Collections.emptyMap();
     }
     
-    
-    Calendar getDefaultCalendar() {
-        if (defaultCalendar == null) {
-            defaultCalendar = TimestampWithTimezone.getCalendar(); 
-        }
-        return defaultCalendar;
-    }
-     
     /**
      * {@inheritDoc}
      * 
@@ -212,10 +199,6 @@ public class JcrResultSet implements ResultSet {
 
     protected final void itemNotFoundUsingColunName( String columnName ) throws SQLException {
         throw new SQLException(JdbcLocalI18n.noSuchColumn.text(columnName));
-    }
-
-    protected final void itemNotFoundUsingColunIndex( int idx ) throws SQLException {
-        throw new SQLException(JdbcLocalI18n.noSuchColumn.text(String.valueOf(idx)));
     }
 
     /**
@@ -605,9 +588,9 @@ public class JcrResultSet implements ResultSet {
     	
     	Object o = getValueReturn(columnLabel, PropertyType.BOOLEAN);
     	if (o != null) {
-    		return ((Boolean) o).booleanValue();
+    		return (Boolean)o;
     	}
-    	return Boolean.FALSE.booleanValue();
+    	return false;
     }
 
     /**
@@ -787,7 +770,7 @@ public class JcrResultSet implements ResultSet {
     public double getDouble( String columnLabel ) throws SQLException {
     	Object o = getValueReturn(columnLabel, PropertyType.DOUBLE);
     	if (o != null) {
-    		return ((Double) o).doubleValue();
+    		return (Double)o;
     	}    	
     	return 0;
     }
@@ -867,7 +850,7 @@ public class JcrResultSet implements ResultSet {
     public long getLong( String columnLabel ) throws SQLException {  
     	Object o = getValueReturn(columnLabel, PropertyType.LONG);
     	if (o != null) {
-    		return ( (Long) o).longValue();
+    		return (Long)o;
     	}
     	return 0L;
     }

@@ -23,17 +23,6 @@
  */
 package org.modeshape.jdbc.delegate;
 
-import java.sql.DriverPropertyInfo;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.query.QueryResult;
@@ -41,9 +30,21 @@ import org.modeshape.jdbc.JcrDriver;
 import org.modeshape.jdbc.JdbcLocalI18n;
 import org.modeshape.jdbc.LocalJcrDriver.JcrContextFactory;
 import org.modeshape.web.jcr.rest.client.domain.QueryRow;
+import org.modeshape.web.jcr.rest.client.domain.Repository;
 import org.modeshape.web.jcr.rest.client.domain.Server;
 import org.modeshape.web.jcr.rest.client.domain.Workspace;
 import org.modeshape.web.jcr.rest.client.json.JsonRestClient;
+import java.sql.DriverPropertyInfo;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * The HTTPRepositoryDelegate provides remote Repository implementation to access the Jcr layer via HTTP lookup.
@@ -61,12 +62,9 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
          */
         @Override
         protected int determineProtocol( String url ) {
-            int protocol = super.determineProtocol(url);
-            if (protocol == -1) {
-                if (url.startsWith(JcrDriver.HTTP_URL_PREFIX) && url.length() > JcrDriver.HTTP_URL_PREFIX.length()) {
-                    // This fits the pattern so far ...
-                    return PROTOCOL_HTTP;
-                }
+            if (url.startsWith(JcrDriver.HTTP_URL_PREFIX) && url.length() > JcrDriver.HTTP_URL_PREFIX.length()) {
+                // This fits the pattern so far ...
+                return PROTOCOL_HTTP;
             }
             return super.determineProtocol(url);
         }
@@ -77,7 +75,7 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
                                              Properties info,
                                              JcrContextFactory contextFactory ) {
             if (protocol == PROTOCOL_HTTP) {
-                return new HttpRepositoryDelegate(url, info, contextFactory);
+                return new HttpRepositoryDelegate(url, info);
             }
             return super.create(protocol, url, info, contextFactory);
         }
@@ -89,10 +87,10 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
     private Workspace workspace = null;
     private Map<String, NodeType> nodeTypes;
     private final Lock nodeTypeLock = new ReentrantLock();
+    private Repository remoteRepository;
 
     public HttpRepositoryDelegate( String url,
-                                   Properties info,
-                                   JcrContextFactory contextFactory ) {
+                                   Properties info) {
         super(url, info);
     }
 
@@ -104,21 +102,15 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
 
     @Override
     public QueryResult execute( String query,
-                                String language ) {
-        LOGGER.trace("Executing query: {0}" + query);
+                                String language ) throws RepositoryException {
+        logger.trace("Executing query: {0}" + query);
 
         try {
             List<QueryRow> results = this.restClient.query(workspace, language, query);
-            Iterator<QueryRow> resultsIt = results.iterator();
-            while (resultsIt.hasNext()) {
-                /*final QueryRow row =*/resultsIt.next();
-
-            }
-
+            return new HttpQueryResult(results);
         } catch (Exception e) {
+            throw new RepositoryException(e.getMessage(), e);
         }
-
-        return null;
     }
 
     /**
@@ -128,7 +120,7 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
      */
     @Override
     public String getDescriptor( String descriptorKey ) {
-        return "";
+        return remoteRepository != null ? remoteRepository.getMetadata().get(descriptorKey).toString() : "";
     }
 
     @Override
@@ -170,8 +162,8 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
     }
 
     @Override
-    protected void createRepository() throws SQLException {
-        LOGGER.debug("Creating repository for HttpRepositoryDelegte");
+    protected void retrieveRepository() throws SQLException {
+        logger.debug("Creating repository for HttpRepositoryDelegate");
 
         ConnectionInfo info = getConnectionInfo();
         assert info != null;
@@ -186,29 +178,37 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
         if (info.getPassword() == null) {
             throw new SQLException("Missing password path from " + info.getUrl());
         }
-        if (info.getRepositoryName() == null) {
+
+        String expectedRepositoryName = info.getRepositoryName();
+        if (expectedRepositoryName == null) {
             throw new SQLException("Missing repo name from " + info.getUrl());
         }
         Server server = new Server("http://" + path, info.getUsername(), new String(info.getPassword()));
-        org.modeshape.web.jcr.rest.client.domain.Repository repo = new org.modeshape.web.jcr.rest.client.domain.Repository(
-                                                                                                                           info.getRepositoryName(),
-                                                                                                                           server);
+        Repository repo = new Repository(expectedRepositoryName, server);
         workspace = new Workspace(info.getWorkspaceName(), repo);
-
         restClient = new JsonRestClient();
 
         // this is only a connection test to confirm a connection can be made and results can be obtained.
         try {
-            restClient.getRepositories(server);
+            Set<String> repositoryNames = new TreeSet<String>();
+
+            Collection<Repository> repositories = restClient.getRepositories(server);
+            for (Repository repository : repositories) {
+                String repositoryName = repository.getName();
+                repositoryNames.add(repositoryName);
+                if (repositoryName.equalsIgnoreCase(expectedRepositoryName)) {
+                    this.remoteRepository = repository;
+                }
+            }
+
+            if (this.remoteRepository == null) {
+                throw new SQLException(JdbcLocalI18n.unableToFindNamedRepository.text(path, expectedRepositoryName));
+            }
+
+            this.setRepositoryNames(repositoryNames);
         } catch (Exception e) {
             throw new SQLException(JdbcLocalI18n.noRepositoryNamesFound.text(), e);
         }
-
-        Set<String> repositoryNames = new HashSet<String>(1);
-        repositoryNames.add(info.getRepositoryName());
-
-        this.setRepositoryNames(repositoryNames);
-
     }
 
     /**
@@ -237,15 +237,11 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
         if (nodeTypes != null) nodeTypes.clear();
     }
 
-    class HttpConnectionInfo extends ConnectionInfo {
-        /**
-         * @param url
-         * @param properties
-         */
+    private class HttpConnectionInfo extends ConnectionInfo {
+       
         protected HttpConnectionInfo( String url,
                                       Properties properties ) {
             super(url, properties);
-
         }
 
         @Override
@@ -316,7 +312,7 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
             // if the repository path doesn't have at least the {context}
             // example: server:8080/modeshape-rest where modeshape-rest is the context,
             // then the URL is considered invalid.
-            if (repositoryPath.indexOf("/") == -1) {
+            if (!repositoryPath.contains("/")) {
                 setUrl(null);
             }
             super.addUrlPropertyInfo(results);

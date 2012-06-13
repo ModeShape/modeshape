@@ -282,8 +282,8 @@ public class JcrMetaDataTest extends MultiUseAbstractTest {
         expected.put("getJDBCMajorVersion", new Integer(2));
         expected.put("getJDBCMinorVersion", new Integer(0));
         expected.put("getDefaultTransactionIsolation", Connection.TRANSACTION_NONE);
-        expected.put("getDriverMajorVersion", TestUtil.majorVersion());
-        expected.put("getDriverMinorVersion", TestUtil.minorVersion());
+        expected.put("getDriverMajorVersion", TestUtil.majorVersion(JdbcLocalI18n.driverVersion.text()));
+        expected.put("getDriverMinorVersion", TestUtil.minorVersion(JdbcLocalI18n.driverVersion.text()));
         expected.put("getMaxBinaryLiteralLength", new Integer(NO_LIMIT));
         expected.put("getMaxCatalogNameLength", new Integer(NO_LIMIT));
         expected.put("getMaxCharLiteralLength", new Integer(NO_LIMIT));

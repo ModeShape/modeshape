@@ -105,8 +105,6 @@ public class TestUtil {
 
     public static final String SQL_SELECT = "Select propA FROM typeA";
 
-    public static final String DRIVER_VERSION = JdbcLocalI18n.driverVersion.text();
-
     static {
 
         Calendar cal_instance = createTestCalendar();
@@ -127,24 +125,23 @@ public class TestUtil {
          *  the tuples data types for each column correspond to @see TYPE_NAMES
          */
 
-        TUPLES.add(new Object[] {"r1c1", new Long(1), null, null, new Double(1), new Boolean(true), cal_instance,
-            new String("Heres my data at r1").getBytes(), null});
+        TUPLES.add(new Object[] { "r1c1", (long)1, null, null, (double)1, true, cal_instance, "Heres my data at r1"
+                .getBytes(), null });
 
         cal_instance = createTestCalendar();
 
-        TUPLES.add(new Object[] {"r2c1", new Long(2), null, null, new Double(2), new Boolean(false), cal_instance,
-            new String("Heres my data r2   ").getBytes(), null});
+        TUPLES.add(new Object[] { "r2c1", (long)2, null, null, (double)2, false, cal_instance, "Heres my data r2   "
+                .getBytes(), null });
 
         cal_instance = createTestCalendar();
 
-        TUPLES.add(new Object[] {"r3c1", new Long(3), null, null, new Double(3), new Boolean(true), cal_instance,
-            new String("Heres my data at r3  ").getBytes(), null});
+        TUPLES.add(new Object[] { "r3c1", (long)3, null, null, (double)3, true, cal_instance, "Heres my data at r3  "
+                .getBytes(), null });
 
         cal_instance = createTestCalendar();
 
-        TUPLES.add(new Object[] {"r4c1", 4L, null, null, 4D, new Boolean(true).booleanValue(), cal_instance,
-            new String("Heres  my  data    r4  ").getBytes(), null});
-
+        TUPLES.add(new Object[] { "r4c1", 4L, null, null, 4D, Boolean.TRUE, cal_instance, "Heres  my  data    r4  "
+                .getBytes(), null });
     }
 
     private static Calendar createTestCalendar() {
@@ -180,23 +177,17 @@ public class TestUtil {
         return nodes;
     }
 
-    public static int minorVersion() {
-
-        String[] coords = DRIVER_VERSION.split("[.-]");
+    public static int minorVersion(String versionString) {
+        String[] coords = versionString.split("[.-]");
         @SuppressWarnings( "unused" )
         final int major = Integer.parseInt(coords[0]);
-        final int minor = Integer.parseInt(coords[1]);
 
-        return minor;
-
+        return Integer.parseInt(coords[1]);
     }
 
-    public static int majorVersion() {
-        String[] coords = DRIVER_VERSION.split("[.-]");
-        final int major = Integer.parseInt(coords[0]);
-
-        return major;
-
+    public static int majorVersion(String versionString) {
+        String[] coords = versionString.split("[.-]");
+        return Integer.parseInt(coords[0]);
     }
 
     public static QueryResult createQueryResult() {

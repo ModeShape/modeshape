@@ -34,7 +34,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -88,7 +87,7 @@ public class JcrMetaData implements DatabaseMetaData {
 
     /** CONSTANTS */
     protected static final String WILDCARD = "%"; //$NON-NLS-1$
-    protected static final Integer DEFAULT_ZERO = new Integer(0);
+    protected static final Integer DEFAULT_ZERO = 0;
     protected static final int NO_LIMIT = 0;
 
     private JcrConnection connection;
@@ -384,9 +383,8 @@ public class JcrMetaData implements DatabaseMetaData {
 
         JcrStatement stmt = new JcrStatement(this.connection);
         QueryResult queryresult = MetaDataQueryResult.createResultSet(records, resultSetMetaData);
-        ResultSet rs = new JcrResultSet(stmt, queryresult, resultSetMetaData);
 
-        return rs;
+        return new JcrResultSet(stmt, queryresult, resultSetMetaData);
     }
 
     /**
@@ -576,11 +574,8 @@ public class JcrMetaData implements DatabaseMetaData {
 
             List<NodeType> nodetypes = filterNodeTypes(tableNamePattern);
 
-            Iterator<NodeType> nodeIt = nodetypes.iterator();
             // process each node
-            while (nodeIt.hasNext()) {
-
-                NodeType type = nodeIt.next();
+            for (NodeType type : nodetypes) {
 
                 if (type.getPropertyDefinitions() == null) {
                     throw new SQLException("Program Error:  missing propertydefintions for " + type.getName());
@@ -589,22 +584,16 @@ public class JcrMetaData implements DatabaseMetaData {
                 List<PropertyDefinition> defns = filterPropertyDefnitions(columnNamePattern, type);
 
                 int ordinal = 0;
-                Iterator<PropertyDefinition> defnsIt = defns.iterator();
                 // build the list of records.
-                while (defnsIt.hasNext()) {
-
-                    PropertyDefinition propDefn = defnsIt.next();
+                for (PropertyDefinition propDefn : defns) {
 
                     JcrType jcrtype = JcrType.typeInfo(propDefn.getRequiredType());
 
-                    Integer nullable = propDefn.isMandatory() ? ResultsMetadataConstants.NULL_TYPES.NOT_NULL : ResultsMetadataConstants.NULL_TYPES.NULLABLE;
+                    Integer nullable = propDefn
+                            .isMandatory() ? ResultsMetadataConstants.NULL_TYPES.NOT_NULL : ResultsMetadataConstants.NULL_TYPES.NULLABLE;
 
-                    List<Object> currentRow = loadCurrentRow(type.getName(),
-                                                             propDefn.getName(),
-                                                             jcrtype,
-                                                             nullable,
-                                                             propDefn.isMandatory(),
-                                                             ordinal);
+                    List<Object> currentRow = loadCurrentRow(type.getName(), propDefn.getName(), jcrtype, nullable,
+                                                             propDefn.isMandatory(), ordinal);
 
                     // add the current row to the list of records.
                     records.add(currentRow);
@@ -614,19 +603,14 @@ public class JcrMetaData implements DatabaseMetaData {
                 // if columns where added and if Teiid Support is requested, then add the mode:properties to the list of columns
                 if (ordinal > 0 && this.connection.getRepositoryDelegate().getConnectionInfo().isTeiidSupport()) {
                     if (this.connection.getRepositoryDelegate().getConnectionInfo().isTeiidSupport()) {
-
-                        List<Object> currentRow = loadCurrentRow(type.getName(),
-                                                                 "mode:properties",
-                                                                 JcrType.typeInfo(PropertyType.STRING),
-                                                                 ResultsMetadataConstants.NULL_TYPES.NULLABLE,
-                                                                 Boolean.FALSE.booleanValue(),
-                                                                 ordinal);
+                        List<Object> currentRow = loadCurrentRow(type.getName(), "mode:properties", JcrType.typeInfo(
+                                PropertyType.STRING), ResultsMetadataConstants.NULL_TYPES.NULLABLE, false, ordinal);
 
                         records.add(currentRow);
                     }
                 }
 
-            }// end of while
+            }
 
             JcrStatement jcrstmt = new JcrStatement(this.connection);
             QueryResult queryresult = MetaDataQueryResult.createResultSet(records, resultSetMetaData);
@@ -664,7 +648,7 @@ public class JcrMetaData implements DatabaseMetaData {
         currentRow.add(JcrMetaData.DEFAULT_ZERO); // SQL_DATETIME_SUB
 
         currentRow.add(JcrMetaData.DEFAULT_ZERO); // CHAR_OCTET_LENGTH
-        currentRow.add(new Integer(ordinal + 1)); // ORDINAL_POSITION
+        currentRow.add(ordinal + 1); // ORDINAL_POSITION
         currentRow.add(isMandatory ? "NO" : "YES"); // IS_NULLABLE
         currentRow.add("NULL"); // SCOPE_CATLOG
         currentRow.add("NULL"); // SCOPE_SCHEMA
@@ -896,7 +880,7 @@ public class JcrMetaData implements DatabaseMetaData {
                 currentRow.add(catalogName); // INDEX_QUALIFIER
                 currentRow.add(type.getName() + "_UK"); // INDEX_NAME
                 currentRow.add(DatabaseMetaData.tableIndexHashed); // TYPE
-                currentRow.add(new Short((short)1)); // ORDINAL_POSITION
+                currentRow.add((short)1); // ORDINAL_POSITION
                 currentRow.add(type.getName()); // COLUMN_NAME
                 currentRow.add("A"); // ASC_OR_DESC
                 currentRow.add(0); // CARDINALITY
@@ -1457,7 +1441,7 @@ public class JcrMetaData implements DatabaseMetaData {
     public ResultSet getTableTypes() throws SQLException {
 
         List<List<?>> records = new ArrayList<List<?>>(1);
-        List<String> row = Arrays.asList(new String[] {ResultsMetadataConstants.TABLE_TYPES.VIEW});
+        List<String> row = Arrays.asList(ResultsMetadataConstants.TABLE_TYPES.VIEW);
         records.add(row);
 
         /***********************************************************************
@@ -1479,8 +1463,7 @@ public class JcrMetaData implements DatabaseMetaData {
 
         JcrStatement stmt = new JcrStatement(this.connection);
         QueryResult queryresult = MetaDataQueryResult.createResultSet(records, resultSetMetaData);
-        ResultSet rs = new JcrResultSet(stmt, queryresult, resultSetMetaData);
-        return rs;
+        return new JcrResultSet(stmt, queryresult, resultSetMetaData);
     }
 
     /**
@@ -1575,12 +1558,12 @@ public class JcrMetaData implements DatabaseMetaData {
         try {
             List<NodeType> nodetypes = filterNodeTypes(tableNamePattern);
 
-            Iterator<NodeType> nodeIt = nodetypes.iterator();
             // build the list of records from the nodetypes.
-            while (nodeIt.hasNext()) {
+            for (NodeType type : nodetypes) {
 
-                NodeType type = nodeIt.next();
-                if (!type.isQueryable()) continue;
+                if (!type.isQueryable()) {
+                    continue;
+                }
 
                 // list represents a record on the Results object.
                 List<Object> currentRow = new ArrayList<Object>(JDBCColumnPositions.TABLES.MAX_COLUMNS);
@@ -2662,12 +2645,8 @@ public class JcrMetaData implements DatabaseMetaData {
             }
 
             List<NodeType> nts = this.connection.getRepositoryDelegate().nodeTypes();
-            Iterator<NodeType> nodeIt = nts.iterator();
             // build the list of records from server's Results object.
-            while (nodeIt.hasNext()) {
-
-                NodeType type = nodeIt.next();
-
+            for (NodeType type : nts) {
                 if (isLeading) {
                     if (isTrailing) {
                         if (type.getName().indexOf(partName, 1) > -1) {
@@ -2732,10 +2711,7 @@ public class JcrMetaData implements DatabaseMetaData {
                 isTrailing = true;
             }
 
-            Iterator<PropertyDefinition> defnIt = allDefns.iterator();
-            while (defnIt.hasNext()) {
-                PropertyDefinition defn = defnIt.next();
-
+            for (PropertyDefinition defn : allDefns) {
                 if (isLeading) {
                     if (isTrailing) {
                         if (defn.getName().indexOf(partName, 1) > -1) {
@@ -2755,9 +2731,7 @@ public class JcrMetaData implements DatabaseMetaData {
         } else {
             resultDefns = new ArrayList<PropertyDefinition>();
 
-            Iterator<PropertyDefinition> defnIt = allDefns.iterator();
-            while (defnIt.hasNext()) {
-                PropertyDefinition defn = defnIt.next();
+            for (PropertyDefinition defn : allDefns) {
                 if (defn.getName().equals(columnNamePattern)) {
                     resultDefns.add(defn);
                 }

@@ -104,12 +104,12 @@ public class JcrDriverTest {
 
     @Test
     public void shouldHaveMajorVersion() {
-        assertThat(driver.getMajorVersion(), is(TestUtil.majorVersion()));
+        assertThat(driver.getMajorVersion(), is(TestUtil.majorVersion(JdbcLocalI18n.driverVersion.text())));
     }
 
     @Test
     public void shouldHaveMinorVersion() {
-        assertThat(driver.getMinorVersion(), is(TestUtil.minorVersion()));
+        assertThat(driver.getMinorVersion(), is(TestUtil.minorVersion(JdbcLocalI18n.driverVersion.text())));
     }
 
     @Test

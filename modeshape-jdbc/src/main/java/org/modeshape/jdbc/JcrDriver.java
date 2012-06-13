@@ -91,21 +91,12 @@ public class JcrDriver extends LocalJcrDriver {
     /* URL Prefix used for remote access */
     public static final String HTTP_URL_PREFIX = "jdbc:jcr:http://";
 
-    private static JcrDriver INSTANCE = new JcrDriver();
-
     static {
         try {
-            DriverManager.registerDriver(INSTANCE);
+            DriverManager.registerDriver(new JcrDriver(null));
         } catch (SQLException e) {
             logger.error(JdbcI18n.driverErrorRegistering, e.getMessage());
         }
-    }
-
-    /**
-     * No-arg constructor, required by the {@link DriverManager}.
-     */
-    public JcrDriver() {
-        this(null);
     }
 
     /**

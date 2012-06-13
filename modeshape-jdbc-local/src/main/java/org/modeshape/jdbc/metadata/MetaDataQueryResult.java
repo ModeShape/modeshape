@@ -23,26 +23,19 @@
  */
 package org.modeshape.jdbc.metadata;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.math.BigDecimal;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
-import javax.jcr.Binary;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
-import javax.jcr.ValueFormatException;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
+import org.modeshape.jdbc.JdbcJcrValueFactory;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
 
 /**
  * The MetaDataQueryResult is used to provide {@link NodeIterator} and the {@link RowIterator} in order to provide query results
@@ -58,8 +51,7 @@ public class MetaDataQueryResult implements javax.jcr.query.QueryResult {
     public static MetaDataQueryResult createResultSet( List<List<?>> records,
                                                        ResultSetMetaData resultSetMetaData ) throws SQLException {
         try {
-            MetaDataQueryResult mdqr = new MetaDataQueryResult(records, resultSetMetaData);
-            return mdqr;
+            return new MetaDataQueryResult(records, resultSetMetaData);
         } catch (RepositoryException e) {
             if (e.getCause() instanceof SQLException) throw (SQLException)e.getCause();
             throw new SQLException(e);
@@ -103,8 +95,7 @@ public class MetaDataQueryResult implements javax.jcr.query.QueryResult {
 
     @Override
     public RowIterator getRows() {
-        RowIterator ri = new QueryResultRowIterator(tuplesArray, columnNames);
-        return ri;
+        return new QueryResultRowIterator(tuplesArray, columnNames);
     }
 
     public String[] getColumnTypes() {
@@ -124,92 +115,6 @@ public class MetaDataQueryResult implements javax.jcr.query.QueryResult {
         throw new UnsupportedOperationException();
     }
 
-}
-
-/**
- */
-class QueryResultNodeIterator implements NodeIterator {
-    private final Node[] nodes;
-    private final int size;
-    private long position = 0L;
-
-    protected QueryResultNodeIterator( Node[] nodes ) {
-        this.nodes = nodes;
-        this.size = nodes.length;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.NodeIterator#nextNode()
-     */
-    @Override
-    public Node nextNode() {
-        Node node = nodes[(int)(position)];
-        ++position;
-        return node;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.RangeIterator#getPosition()
-     */
-    @Override
-    public long getPosition() {
-        return position;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.RangeIterator#getSize()
-     */
-    @Override
-    public long getSize() {
-        return size;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.RangeIterator#skip(long)
-     */
-    @Override
-    public void skip( long skipNum ) {
-        for (long i = 0L; i != skipNum; ++i)
-            nextNode();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.Iterator#hasNext()
-     */
-    @Override
-    public boolean hasNext() {
-        return (nodes.length > position);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.Iterator#next()
-     */
-    @Override
-    public Object next() {
-        return nextNode();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.Iterator#remove()
-     */
-    @Override
-    public void remove() {
-        throw new UnsupportedOperationException();
-    }
 }
 
 class QueryResultRowIterator implements RowIterator {
@@ -441,158 +346,7 @@ class QueryResultRow implements Row {
     }
 
     private Value createValue( final Object value ) {
-
-        if (value == null) return null;
-
-        Value rtnvalue = new Value() {
-            final Object valueObject = value;
-
-            @Override
-            public boolean getBoolean() throws ValueFormatException, IllegalStateException, RepositoryException {
-                if (value instanceof Boolean) {
-                    return ((Boolean)valueObject).booleanValue();
-                }
-                throw new ValueFormatException("Value not a Boolean");
-            }
-
-            @Override
-            public Calendar getDate() throws ValueFormatException, IllegalStateException, RepositoryException {
-                if (value instanceof Date) {
-                    Calendar c = Calendar.getInstance();
-                    c.setTime((Date)value);
-
-                    return c;
-                }
-                throw new ValueFormatException("Value not instance of Date");
-            }
-
-            @Override
-            public double getDouble() throws ValueFormatException, IllegalStateException, RepositoryException {
-                if (value instanceof Double) {
-                    return ((Double)valueObject).doubleValue();
-                }
-
-                throw new ValueFormatException("Value not a Double");
-            }
-
-            @Override
-            public long getLong() throws ValueFormatException, IllegalStateException, RepositoryException {
-                if (value instanceof Long) {
-                    return ((Long)valueObject).longValue();
-                }
-                throw new ValueFormatException("Value not a Long");
-            }
-
-            /**
-             * {@inheritDoc}
-             * 
-             * @see javax.jcr.Value#getBinary()
-             */
-            @Override
-            public Binary getBinary() throws RepositoryException {
-                if (value instanceof Binary) {
-                    return ((Binary)valueObject);
-                }
-                if (value instanceof byte[]) {
-                    final byte[] bytes = (byte[])value;
-                    return new Binary() {
-
-                        @Override
-                        public void dispose() {
-                        }
-
-                        @Override
-                        public long getSize() {
-                            return bytes.length;
-                        }
-
-                        @Override
-                        public InputStream getStream() {
-                            return new ByteArrayInputStream(bytes);
-                        }
-
-                        @Override
-                        public int read( byte[] b,
-                                         long position ) throws IOException {
-                            if (getSize() <= position) return -1;
-                            InputStream stream = null;
-                            IOException error = null;
-                            try {
-                                stream = getStream();
-                                // Read/skip the next 'position' bytes ...
-                                long skip = position;
-                                while (skip > 0) {
-                                    long skipped = stream.skip(skip);
-                                    if (skipped <= 0) return -1;
-                                    skip -= skipped;
-                                }
-                                return stream.read(b);
-                            } catch (IOException e) {
-                                error = e;
-                                throw e;
-                            } finally {
-                                if (stream != null) {
-                                    try {
-                                        stream.close();
-                                    } catch (RuntimeException t) {
-                                        // Only throw if we've not already
-                                        // thrown an exception ...
-                                        if (error == null) throw t;
-                                    } catch (IOException t) {
-                                        // Only throw if we've not already
-                                        // thrown an exception ...
-                                        if (error == null) throw t;
-                                    }
-                                }
-                            }
-                        }
-
-                    };
-                }
-                throw new ValueFormatException("Value not a Binary");
-            }
-
-            /**
-             * {@inheritDoc}
-             * 
-             * @see javax.jcr.Value#getDecimal()
-             */
-            @Override
-            public BigDecimal getDecimal() throws ValueFormatException, RepositoryException {
-                if (value instanceof BigDecimal) {
-                    return ((BigDecimal)valueObject);
-                }
-                throw new ValueFormatException("Value not a Decimal");
-            }
-
-            @Override
-            public InputStream getStream() throws IllegalStateException, RepositoryException {
-                if (value instanceof Binary) {
-                    return ((Binary)valueObject).getStream();
-                }
-                if (value instanceof InputStream) {
-                    return ((InputStream)valueObject);
-                }
-                throw new ValueFormatException("Value not an InputStream");
-            }
-
-            @Override
-            public String getString() throws IllegalStateException {
-                if (value instanceof String) {
-                    return (String)valueObject;
-                }
-                return valueObject.toString();
-            }
-
-            @Override
-            public int getType() {
-                return 1;
-            }
-
-        };
-
-        return rtnvalue;
-
+        return JdbcJcrValueFactory.createValue(value);
     }
 
 }

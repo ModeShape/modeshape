@@ -38,7 +38,8 @@ import org.modeshape.jdbc.JdbcLocalI18n;
  * The AbstractRepositoryDelegate provides the common logic for the implementation of the {@link RepositoryDelegate}
  */
 public abstract class AbstractRepositoryDelegate implements RepositoryDelegate {
-    protected static final Logger LOGGER = Logger.getLogger("org.modeshape.jdbc.delegate");
+
+    protected final Logger logger = Logger.getLogger(getClass());
 
     private Repository repository = null;
     private Set<String> repositoryNames = null;
@@ -48,17 +49,12 @@ public abstract class AbstractRepositoryDelegate implements RepositoryDelegate {
 
     public AbstractRepositoryDelegate( String url,
                                        Properties info ) {
-        super();
         this.url = url;
         this.propertiesInfo = info;
     }
 
     /**
      * The implementor must return a @link ConnectionInfo that provides the information that details r
-     * 
-     * @param url
-     * @param info
-     * @return ConnectionInfo
      */
     abstract ConnectionInfo createConnectionInfo( final String url,
                                                   final Properties info );
@@ -68,7 +64,7 @@ public abstract class AbstractRepositoryDelegate implements RepositoryDelegate {
      * 
      * @throws SQLException
      */
-    abstract void createRepository() throws SQLException;
+    abstract void retrieveRepository() throws SQLException;
 
     @Override
     public synchronized ConnectionInfo getConnectionInfo() {
@@ -119,15 +115,14 @@ public abstract class AbstractRepositoryDelegate implements RepositoryDelegate {
 
     @Override
     public Connection createConnection( DriverInfo info ) throws SQLException {
-        LOGGER.debug("Creating connection for RepositoryDelegte");
+        logger.debug("Creating connection for RepositoryDelegte");
         if (this.repository == null) {
-            createRepository();
+            retrieveRepository();
         }
-
         return new JcrConnection(this, info);
     }
 
-    public synchronized Repository getRepository() {
+    public Repository getRepository() {
         return this.repository;
     }
 

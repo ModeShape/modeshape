@@ -95,7 +95,6 @@ public class ConnectionResultsComparator extends ResultsComparator {
                     fail("Interrupted");
                     return;
                 }
-                continue;
             } finally {
                 util.closeResultSet();
                 util.closeStatement();

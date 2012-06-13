@@ -166,7 +166,9 @@ public class LocalJcrDriver implements java.sql.Driver {
     public DriverPropertyInfo[] getPropertyInfo( String url,
                                                  Properties info ) throws SQLException {
         // Get the connection information ...
-        return delegateFactory.createRepositoryDelegate(url, info, this.contextFactory).getConnectionInfo().getPropertyInfos();
+        RepositoryDelegate repositoryDelegate = delegateFactory.createRepositoryDelegate(url, info, this.contextFactory);
+        ConnectionInfo connectionInfo = repositoryDelegate.getConnectionInfo();
+        return connectionInfo.getPropertyInfos();
     }
 
     /**
@@ -180,7 +182,8 @@ public class LocalJcrDriver implements java.sql.Driver {
      */
     protected ConnectionInfo createConnectionInfo( String url,
                                                    Properties info ) throws SQLException {
-        return delegateFactory.createRepositoryDelegate(url, info, this.contextFactory).getConnectionInfo();
+        RepositoryDelegate repositoryDelegate = delegateFactory.createRepositoryDelegate(url, info, this.contextFactory);
+        return repositoryDelegate.getConnectionInfo();
     }
 
     /**
@@ -195,8 +198,11 @@ public class LocalJcrDriver implements java.sql.Driver {
     @Override
     public Connection connect( String url,
                                Properties info ) throws SQLException {
-
-        return delegateFactory.createRepositoryDelegate(url, info, this.contextFactory).createConnection(getDriverInfo());
+        if (!acceptsURL(url)) {
+            return null;
+        }
+        RepositoryDelegate repositoryDelegate = delegateFactory.createRepositoryDelegate(url, info, this.contextFactory);
+        return repositoryDelegate.createConnection(getDriverInfo());
     }
 
     /**

@@ -124,6 +124,57 @@
                 </includes>
             </resource>
         </resources>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <executions>
+                    <!--During the default test phase, excluded the Http tests which will run during the integration phase-->
+                    <execution>
+                        <!--The id of the default test phase of the maven plugin (do not change) -->
+                        <id>default-test</id>
+                        <configuration>
+                            <excludes>
+                                <exclude>**/*Http*Test.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                    <!--Execute the Http tests during the integration tests, in a running cargo container -->
+                    <execution>
+                        <id>integration-tests</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/*Http*Test.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!--Configuration inherited from parent pom -->
+            <plugin>
+                <groupId>org.codehaus.cargo</groupId>
+                <artifactId>cargo-maven2-plugin</artifactId>
+                <configuration>
+                    <configuration>
+                        <deployables>
+                            <!-- application to deploy (brought in as a transitive dependency of modeshape-rest-client -->
+                            <deployable>
+                                <groupId>org.modeshape</groupId>
+                                <artifactId>modeshape-web-jcr-rest-war</artifactId>
+                                <type>war</type>
+                                <properties>
+                                    <context>modeshape</context>
+                                </properties>
+                            </deployable>
+                        </deployables>
+                    </configuration>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 
     <profiles>

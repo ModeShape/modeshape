@@ -24,16 +24,15 @@
 package org.modeshape.jdbc;
 
 import static org.hamcrest.core.Is.is;
+import org.junit.After;
 import static org.junit.Assert.assertThat;
+import org.junit.Before;
+import org.junit.Test;
+import org.modeshape.jdbc.delegate.ConnectionInfo;
 import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.util.Properties;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.MockitoAnnotations;
-import org.modeshape.jdbc.delegate.ConnectionInfo;
 
 /**
  * 
@@ -49,7 +48,6 @@ public class JcrDriverHttpTest {
 
     @Before
     public void beforeEach() throws Exception {
-        MockitoAnnotations.initMocks(this);
         validRepositoryName = "MyRepository";
         validServerName = "serverName:8080";
         validWorkspaceName = "default";
@@ -57,7 +55,7 @@ public class JcrDriverHttpTest {
                    + validWorkspaceName + "?user=jsmith&password=secret";
         validProperties = new Properties();
 
-        driver = new JcrDriver();
+        driver = new JcrDriver(null);
     }
 
     @After
@@ -76,12 +74,12 @@ public class JcrDriverHttpTest {
 
     @Test
     public void shouldHaveMajorVersion() {
-        assertThat(driver.getMajorVersion(), is(TestUtil.majorVersion()));
+        assertThat(driver.getMajorVersion(), is(TestUtil.majorVersion(JdbcI18n.driverVersion.text())));
     }
 
     @Test
     public void shouldHaveMinorVersion() {
-        assertThat(driver.getMinorVersion(), is(TestUtil.minorVersion()));
+        assertThat(driver.getMinorVersion(), is(TestUtil.minorVersion(JdbcI18n.driverVersion.text())));
     }
 
     @Test
@@ -122,7 +120,7 @@ public class JcrDriverHttpTest {
         validProperties.put(JcrDriver.WORKSPACE_PROPERTY_NAME, "MyWorkspace");
         validProperties.put(JcrDriver.USERNAME_PROPERTY_NAME, "jsmith");
         validProperties.put(JcrDriver.PASSWORD_PROPERTY_NAME, "secret");
-        // validProperties.put(JdbcDriver.REPOSITORY_PROPERTY_NAME, validRepositoryName);
+
         DriverPropertyInfo[] infos = driver.getPropertyInfo(validUrl, validProperties);
         assertThat(infos.length, is(1));
         assertThat(infos[0].name, is(JdbcLocalI18n.repositoryNamePropertyName.text()));
@@ -133,10 +131,10 @@ public class JcrDriverHttpTest {
     @Test
     public void shouldReturnRepositoryPropertyInfoWhenMissingWorkspaceName() throws SQLException {
         validUrl = JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape-rest";
-        // validProperties.put(JdbcDriver.WORKSPACE_PROPERTY_NAME, "MyWorkspace");
         validProperties.put(JcrDriver.USERNAME_PROPERTY_NAME, "jsmith");
         validProperties.put(JcrDriver.PASSWORD_PROPERTY_NAME, "secret");
         validProperties.put(JcrDriver.REPOSITORY_PROPERTY_NAME, validRepositoryName);
+
         DriverPropertyInfo[] infos = driver.getPropertyInfo(validUrl, validProperties);
         assertThat(infos.length, is(1));
         assertThat(infos[0].name, is(JdbcLocalI18n.workspaceNamePropertyName.text()));
@@ -148,7 +146,6 @@ public class JcrDriverHttpTest {
     public void shouldReturnRepositoryPropertyInfoWhenMissingUsername() throws SQLException {
         validUrl = JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape-rest";
         validProperties.put(JcrDriver.WORKSPACE_PROPERTY_NAME, "MyWorkspace");
-        // validProperties.put(JdbcDriver.USERNAME_PROPERTY_NAME, "jsmith");
         validProperties.put(JcrDriver.PASSWORD_PROPERTY_NAME, "secret");
         validProperties.put(JcrDriver.REPOSITORY_PROPERTY_NAME, validRepositoryName);
         DriverPropertyInfo[] infos = driver.getPropertyInfo(validUrl, validProperties);
@@ -163,7 +160,6 @@ public class JcrDriverHttpTest {
         validUrl = JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape-rest";
         validProperties.put(JcrDriver.WORKSPACE_PROPERTY_NAME, "MyWorkspace");
         validProperties.put(JcrDriver.USERNAME_PROPERTY_NAME, "jsmith");
-        // validProperties.put(JdbcDriver.PASSWORD_PROPERTY_NAME, "secret");
         validProperties.put(JcrDriver.REPOSITORY_PROPERTY_NAME, validRepositoryName);
         DriverPropertyInfo[] infos = driver.getPropertyInfo(validUrl, validProperties);
         assertThat(infos.length, is(1));
@@ -174,15 +170,14 @@ public class JcrDriverHttpTest {
 
     @Test
     public void shouldAcceptValidUrls() {
-        assertThat(driver.acceptsURL(JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape-rest/" + this.validRepositoryName
-                                     + "/MyWorkspace" + "&user=jsmith&password=secret"),
+        assertThat(driver.acceptsURL(
+                JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape-rest/" + this.validRepositoryName + "/MyWorkspace&user=jsmith&password=secret"),
                    is(true));
-        assertThat(driver.acceptsURL(JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape-rest/" + this.validRepositoryName
-                                     + "&user=jsmith&password=secret"),
+        assertThat(driver.acceptsURL(
+                JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape-rest/" + this.validRepositoryName + "&user=jsmith&password=secret"),
                    is(true));
-        assertThat(driver.acceptsURL(JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape-rest/"
-                                     + "&user=jsmith&password=secret"),
-                   is(true));
+        assertThat(driver.acceptsURL(
+                JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape-rest/&user=jsmith&password=secret"), is(true));
     }
 
     @Test
@@ -196,23 +191,11 @@ public class JcrDriverHttpTest {
 
     @Test
     public void shouldCreateConnectionInfoForUrlWithEscapedCharacters() throws SQLException {
-        validUrl = JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape%20rest"
-                   + "?repositoryName=My%20Repository&workspace=My%20Workspace&user=j%20smith&password=secret";
+        validUrl = JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape%20rest?repositoryName=My%20Repository&workspace=My%20Workspace&user=j%20smith&password=secret";
         ConnectionInfo info = driver.createConnectionInfo(validUrl, validProperties);
         assertThat(info.getWorkspaceName(), is("My Workspace"));
         assertThat(info.getUsername(), is("j smith"));
         assertThat(info.getPassword(), is("secret".toCharArray()));
         assertThat(info.getRepositoryName(), is("My Repository"));
     }
-
-    // @Test
-    // public void shouldCreateConnectionWithDriverManagerAfterRegisteringDriver() throws SQLException {
-    // DriverManager.registerDriver(driver);
-    // Connection connection = DriverManager.getConnection(validUrl, validProperties);
-    // assertThat(connection, is(notNullValue()));
-    // assertThat(connection, is(instanceOf(JcrConnection.class)));
-    // assertThat(connection.isWrapperFor(JcrConnection.class), is(true));
-    // assertThat(connection.unwrap(JcrConnection.class), is(instanceOf(JcrConnection.class)));
-    // }
-
 }

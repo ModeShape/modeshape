@@ -104,10 +104,9 @@
             <resource>
                 <filtering>false</filtering>
                 <directory>src/main/resources</directory>
-                <includes>
-                    <include>*</include>
-                    <include>**/*</include>
-                </includes>
+                <excludes>
+                    <exclude>**/JdbcLocalI18n.properties</exclude>
+                </excludes>
             </resource>
             <!-- Apply the properties set in the POM to the resource files -->
             <resource>

@@ -71,6 +71,6 @@ public class JcrDriverIntegrationTest extends AbstractJdbcDriverIntegrationTest 
 
     @Override
     protected String createConnectionUrl( JcrRepository repository ) throws Exception {
-        return JcrDriver.JNDI_URL_PREFIX + "jcr/local?repositoryName=" + repository.getName();
+        return LocalJcrDriver.JNDI_URL_PREFIX + "jcr/local?repositoryName=" + repository.getName();
     }
 }

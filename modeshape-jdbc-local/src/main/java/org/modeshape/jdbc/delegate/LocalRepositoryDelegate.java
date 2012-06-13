@@ -70,9 +70,7 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
             jcrContext = new JcrContextFactory() {
                 @Override
                 public Context createContext( Properties properties ) throws NamingException {
-                    InitialContext initContext = ((properties == null || properties.isEmpty()) ? new InitialContext() : new InitialContext(
-                                                                                                                                           properties));
-                    return initContext;
+                    return ((properties == null || properties.isEmpty()) ? new InitialContext() : new InitialContext(properties));
                 }
             };
         } else {
@@ -135,7 +133,7 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
     @Override
     public QueryResult execute( String query,
                                 String language ) throws RepositoryException {
-        LOGGER.trace("Executing query: {0}" + query);
+        logger.trace("Executing query: {0}" + query);
 
         // Create the query ...
 
@@ -144,8 +142,8 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
     }
 
     @Override
-    protected void createRepository() throws SQLException {
-        LOGGER.debug("Creating repository for LocalRepositoryDelegte");
+    protected void retrieveRepository() throws SQLException {
+        logger.debug("Creating repository for LocalRepositoryDelegte");
 
         Repository repository = null;
         Set<String> repositoryNames = null;
@@ -176,7 +174,7 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
             repositoryName = connInfo.getRepositoryName();
 
             if (target instanceof Repositories) {
-                LOGGER.trace("JNDI Lookup found Repositories ");
+                logger.trace("JNDI Lookup found Repositories ");
                 Repositories repositories = (Repositories)target;
 
                 if (repositoryName == null) {
@@ -187,7 +185,7 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
                     if (repositoryNames.size() == 1) {
                         repositoryName = repositoryNames.iterator().next();
                         connInfo.setRepositoryName(repositoryName);
-                        LOGGER.trace("Setting Repository {0} as default", repositoryName);
+                        logger.trace("Setting Repository {0} as default", repositoryName);
 
                     } else {
                         throw new SQLException(JdbcLocalI18n.objectInJndiIsRepositories.text(jndiName));
@@ -199,7 +197,7 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
                     throw new SQLException(JdbcLocalI18n.unableToFindNamedRepository.text(jndiName, repositoryName));
                 }
             } else if (target instanceof Repository) {
-                LOGGER.trace("JNDI Lookup found a Repository");
+                logger.trace("JNDI Lookup found a Repository");
                 repository = (Repository)target;
                 repositoryNames = new HashSet<String>(1);
 
@@ -219,7 +217,6 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
         this.setRepository(repository);
         this.setRepositoryName(repositoryName);
         this.setRepositoryNames(repositoryNames);
-
     }
 
     /**
@@ -261,8 +258,7 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
      */
     @Override
     public void close() {
-        for (Iterator<LocalSession> it = TRANSACTION_IDS.iterator(); it.hasNext();) {
-            LocalSession id = it.next();
+        for (LocalSession id : TRANSACTION_IDS) {
             id.remove();
         }
     }

@@ -25,6 +25,7 @@ package org.modeshape.jdbc.delegate;
 
 import java.sql.SQLException;
 import java.util.Properties;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.jdbc.JdbcLocalI18n;
 import org.modeshape.jdbc.LocalJcrDriver;
 import org.modeshape.jdbc.LocalJcrDriver.JcrContextFactory;
@@ -66,10 +67,7 @@ public class RepositoryDelegateFactory {
      * @return true if this factory accepts the supplied URL, or false otherwise
      */
     public boolean acceptUrl( String url ) {
-        if (url == null) return false;
-        url = url.trim();
-        if (url.length() == 0) return false;
-        return (determineProtocol(url) > 0 ? true : false);
+        return !StringUtil.isBlank(url) && determineProtocol(url.trim()) > 0;
     }
 
     protected int determineProtocol( String url ) {
@@ -79,7 +77,7 @@ public class RepositoryDelegateFactory {
             // This fits the pattern so far ...
             return PROTOCOL_JNDI;
         }
-        return -1;
+        return PROTOCOL_UNKNOWN;
     }
 
     protected RepositoryDelegate create( int protocol,
@@ -90,7 +88,7 @@ public class RepositoryDelegateFactory {
             case PROTOCOL_JNDI:
                 return new LocalRepositoryDelegate(url, info, contextFactory);
             default:
-                return null;
+                throw new IllegalArgumentException("Invalid protocol: " + protocol);
         }
     }
 }

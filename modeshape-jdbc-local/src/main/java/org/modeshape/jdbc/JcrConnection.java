@@ -61,7 +61,6 @@ public class JcrConnection implements Connection {
 
     private boolean closed;
     private boolean autoCommit = true;
-    private int isolation = Connection.TRANSACTION_READ_COMMITTED;
     private SQLWarning warning;
     private Properties clientInfo = new Properties();
     private DatabaseMetaData metadata;
@@ -261,7 +260,7 @@ public class JcrConnection implements Connection {
     @Override
     public int getTransactionIsolation() throws SQLException {
         notClosed();
-        return isolation;
+        return Connection.TRANSACTION_READ_COMMITTED;
     }
 
     /**
@@ -669,11 +668,7 @@ public class JcrConnection implements Connection {
      */
     @Override
     public boolean isWrapperFor( Class<?> iface ) /*throws SQLException*/{
-        if (iface.isInstance(this)) {
-            return true;
-        }
-
-        return this.getRepositoryDelegate().isWrapperFor(iface);
+        return iface.isInstance(this) || this.getRepositoryDelegate().isWrapperFor(iface);
     }
 
     /**

@@ -104,12 +104,12 @@ public class JcrDriverTest {
 
     @Test
     public void shouldHaveMajorVersion() {
-        assertThat(driver.getMajorVersion(), is(TestUtil.majorVersion()));
+        assertThat(driver.getMajorVersion(), is(TestUtil.majorVersion(JdbcI18n.driverVersion.text())));
     }
 
     @Test
     public void shouldHaveMinorVersion() {
-        assertThat(driver.getMinorVersion(), is(TestUtil.minorVersion()));
+        assertThat(driver.getMinorVersion(), is(TestUtil.minorVersion(JdbcI18n.driverVersion.text())));
     }
 
     @Test
@@ -247,7 +247,7 @@ public class JcrDriverTest {
         assertThat(info.getUsername(), is("j smith"));
         assertThat(info.getPassword(), is("secret".toCharArray()));
         assertThat(info.getRepositoryName(), is("My Repository"));
-        assertThat(info.isTeiidSupport(), is(Boolean.TRUE.booleanValue()));
+        assertThat(info.isTeiidSupport(), is(true));
     }
 
     @Test
@@ -255,7 +255,7 @@ public class JcrDriverTest {
         validUrl = JcrDriver.JNDI_URL_PREFIX
                    + "java:nameInJndi?workspace=My%20Workspace&user=j%20smith&password=secret&repositoryName=My%20Repository";
         ConnectionInfo info = driver.createConnectionInfo(validUrl, validProperties);
-        assertThat(info.isTeiidSupport(), is(Boolean.FALSE.booleanValue()));
+        assertThat(info.isTeiidSupport(), is(false));
     }
 
     @Test
