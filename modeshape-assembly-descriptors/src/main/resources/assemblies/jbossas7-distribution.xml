@@ -54,7 +54,7 @@
 		<dependencySet>
 			<outputDirectory>modules/org/modeshape/jcr/api/main</outputDirectory>
 			<includes>
-				<include>org.modeshape:modeshape-jcr-api</include>
+				<include>org.modeshape:modeshape-jcr-api:jar</include>
 			</includes>
 			<excludes>
 				<exclude>*:*:*:component-with-dependencies</exclude>
@@ -66,18 +66,16 @@
 		<dependencySet>
 			<outputDirectory>modules/org/modeshape/main</outputDirectory>
 			<includes>
-				<include>org.modeshape:modeshape-jcr</include>
-				<include>org.modeshape:modeshape-common</include>
-				<include>org.modeshape:modeshape-schematic</include>
-				<include>org.modeshape:modeshape-jbossas-subsystem</include>
+				<include>org.modeshape:modeshape-jcr:jar</include>
+				<include>org.modeshape:modeshape-common:jar</include>
+				<include>org.modeshape:modeshape-schematic:jar</include>
+				<include>org.modeshape:modeshape-jbossas-subsystem:jar</include>
 				<!-- Include the Sequencer JARs (with dependencies) for all the built-in sequencers -->
-				<include>org.modeshape:modeshape-sequencer-*:*:module-with-dependencies</include>
+				<include>org.modeshape:modeshape-sequencer-*:jar</include>
 			</includes>
 			<excludes>
-			  <exclude>*:*:*:tests</exclude>
-				<exclude>org.modeshape:modeshape-jcr:*:component-with-dependencies</exclude>
-				<exclude>org.modeshape:modeshape-common:*:component-with-dependencies</exclude>
-				<exclude>org.modeshape:modeshape-schematic:*:component-with-dependencies</exclude>
+			  <exclude>*:*:*:component-with-dependencies</exclude>
+			  <exclude>*:*:*:module-with-dependencies</exclude>
 			</excludes>
 			<unpack>false</unpack>
 		</dependencySet>
@@ -113,10 +111,10 @@
 		<dependencySet>
 			<outputDirectory>modules/org/modeshape/jdbc/main</outputDirectory>
 			<includes>
-				<include>org.modeshape:modeshape-jdbc-local:*:</include>
+				<include>org.modeshape:modeshape-jdbc-local:jar</include>
 			</includes>
 			<excludes>
-			  <exclude>*:*:*:tests</exclude>
+              <exclude>*:*:*:module-with-dependencies</exclude>
 			</excludes>
 			<unpack>false</unpack>
 		</dependencySet>

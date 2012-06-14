@@ -19,166 +19,100 @@
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-common</artifactId>
             <version>${project.version}</version>
-            <classifier>component-with-dependencies</classifier>
         </dependency>
 
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jcr-api</artifactId>
             <version>${project.version}</version>
-            <classifier>component-with-dependencies</classifier>
         </dependency>
 
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-schematic</artifactId>
-            <classifier>component-with-dependencies</classifier>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jcr</artifactId>
-            <classifier>component-with-dependencies</classifier>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-images</artifactId>
-            <classifier>module-with-dependencies</classifier>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-unit-test</artifactId>
-            <classifier>module-with-dependencies</classifier>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-mp3</artifactId>
-            <classifier>module-with-dependencies</classifier>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-java</artifactId>
-            <classifier>module-with-dependencies</classifier>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-msoffice</artifactId>
-            <classifier>module-with-dependencies</classifier>
             <version>${project.version}</version>
         </dependency>
 
         <!--<dependency>-->
-            <!--<groupId>org.modeshape</groupId>-->
-            <!--<artifactId>modeshape-sequencer-teiid</artifactId>-->
-            <!--<classifier>module-with-dependencies</classifier>-->
-            <!--<version>${project.version}</version>-->
+        <!--<groupId>org.modeshape</groupId>-->
+        <!--<artifactId>modeshape-sequencer-teiid</artifactId>-->
+        <!--<version>${project.version}</version>-->
         <!--</dependency>-->
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-text</artifactId>
-            <classifier>module-with-dependencies</classifier>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-xml</artifactId>
-            <classifier>module-with-dependencies</classifier>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-xsd</artifactId>
-            <classifier>module-with-dependencies</classifier>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-wsdl</artifactId>
-            <classifier>module-with-dependencies</classifier>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-sramp</artifactId>
-            <classifier>module-with-dependencies</classifier>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-zip</artifactId>
-            <classifier>module-with-dependencies</classifier>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-ddl</artifactId>
-            <classifier>module-with-dependencies</classifier>
             <version>${project.version}</version>
         </dependency>
-
-        <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-web-jcr</artifactId>
-            <classifier>module-with-dependencies</classifier>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-web-jcr-rest</artifactId>
-            <classifier>module-with-dependencies</classifier>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-web-jcr-rest-client</artifactId>
-            <classifier>module-with-dependencies</classifier>
-            <version>${project.version}</version>
-        </dependency>
-
-        <!--<dependency>-->
-            <!--<groupId>org.modeshape</groupId>-->
-            <!--<artifactId>modeshape-web-jcr-webdav</artifactId>-->
-            <!--<classifier>module-with-dependencies</classifier>-->
-            <!--<version>${project.version}</version>-->
-        <!--</dependency>-->
 
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jdbc-local</artifactId>
-            <classifier>module-with-dependencies</classifier>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-jdbc</artifactId>
-            <classifier>module-with-dependencies</classifier>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-jdbc</artifactId>
-            <classifier>jar-with-dependencies</classifier>
             <version>${project.version}</version>
         </dependency>
 
@@ -187,23 +121,6 @@
             <artifactId>modeshape-jbossas-subsystem</artifactId>
             <version>${project.version}</version>
         </dependency>
-
-        <dependency>
-            <groupId>org.modeshape.demo</groupId>
-            <artifactId>modeshape-sequencers-demo</artifactId>
-            <classifier>example-with-dependencies</classifier>
-            <version>${project.version}</version>
-            <type>zip</type>
-        </dependency>
-
-        <dependency>
-            <groupId>org.modeshape.demo</groupId>
-            <artifactId>modeshape-embedded-repo-demo</artifactId>
-            <classifier>example-with-dependencies</classifier>
-            <version>${project.version}</version>
-            <type>zip</type>
-        </dependency>
-
     </dependencies>
 
     <profiles>
@@ -212,6 +129,196 @@
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.modeshape</groupId>
+                    <artifactId>modeshape-common</artifactId>
+                    <version>${project.version}</version>
+                    <classifier>component-with-dependencies</classifier>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.modeshape</groupId>
+                    <artifactId>modeshape-jcr-api</artifactId>
+                    <version>${project.version}</version>
+                    <classifier>component-with-dependencies</classifier>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.modeshape</groupId>
+                    <artifactId>modeshape-schematic</artifactId>
+                    <classifier>component-with-dependencies</classifier>
+                    <version>${project.version}</version>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.modeshape</groupId>
+                    <artifactId>modeshape-jcr</artifactId>
+                    <classifier>component-with-dependencies</classifier>
+                    <version>${project.version}</version>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.modeshape</groupId>
+                    <artifactId>modeshape-sequencer-images</artifactId>
+                    <classifier>module-with-dependencies</classifier>
+                    <version>${project.version}</version>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.modeshape</groupId>
+                    <artifactId>modeshape-unit-test</artifactId>
+                    <classifier>module-with-dependencies</classifier>
+                    <version>${project.version}</version>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.modeshape</groupId>
+                    <artifactId>modeshape-sequencer-mp3</artifactId>
+                    <classifier>module-with-dependencies</classifier>
+                    <version>${project.version}</version>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.modeshape</groupId>
+                    <artifactId>modeshape-sequencer-java</artifactId>
+                    <classifier>module-with-dependencies</classifier>
+                    <version>${project.version}</version>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.modeshape</groupId>
+                    <artifactId>modeshape-sequencer-msoffice</artifactId>
+                    <classifier>module-with-dependencies</classifier>
+                    <version>${project.version}</version>
+                </dependency>
+
+                <!--<dependency>-->
+                <!--<groupId>org.modeshape</groupId>-->
+                <!--<artifactId>modeshape-sequencer-teiid</artifactId>-->
+                <!--<classifier>module-with-dependencies</classifier>-->
+                <!--<version>${project.version}</version>-->
+                <!--</dependency>-->
+                <dependency>
+                    <groupId>org.modeshape</groupId>
+                    <artifactId>modeshape-sequencer-text</artifactId>
+                    <classifier>module-with-dependencies</classifier>
+                    <version>${project.version}</version>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.modeshape</groupId>
+                    <artifactId>modeshape-sequencer-xml</artifactId>
+                    <classifier>module-with-dependencies</classifier>
+                    <version>${project.version}</version>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.modeshape</groupId>
+                    <artifactId>modeshape-sequencer-xsd</artifactId>
+                    <classifier>module-with-dependencies</classifier>
+                    <version>${project.version}</version>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.modeshape</groupId>
+                    <artifactId>modeshape-sequencer-wsdl</artifactId>
+                    <classifier>module-with-dependencies</classifier>
+                    <version>${project.version}</version>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.modeshape</groupId>
+                    <artifactId>modeshape-sequencer-sramp</artifactId>
+                    <classifier>module-with-dependencies</classifier>
+                    <version>${project.version}</version>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.modeshape</groupId>
+                    <artifactId>modeshape-sequencer-zip</artifactId>
+                    <classifier>module-with-dependencies</classifier>
+                    <version>${project.version}</version>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.modeshape</groupId>
+                    <artifactId>modeshape-sequencer-ddl</artifactId>
+                    <classifier>module-with-dependencies</classifier>
+                    <version>${project.version}</version>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.modeshape</groupId>
+                    <artifactId>modeshape-web-jcr</artifactId>
+                    <classifier>module-with-dependencies</classifier>
+                    <version>${project.version}</version>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.modeshape</groupId>
+                    <artifactId>modeshape-web-jcr-rest</artifactId>
+                    <classifier>module-with-dependencies</classifier>
+                    <version>${project.version}</version>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.modeshape</groupId>
+                    <artifactId>modeshape-web-jcr-rest-client</artifactId>
+                    <classifier>module-with-dependencies</classifier>
+                    <version>${project.version}</version>
+                </dependency>
+
+                <!--<dependency>-->
+                <!--<groupId>org.modeshape</groupId>-->
+                <!--<artifactId>modeshape-web-jcr-webdav</artifactId>-->
+                <!--<classifier>module-with-dependencies</classifier>-->
+                <!--<version>${project.version}</version>-->
+                <!--</dependency>-->
+
+                <dependency>
+                    <groupId>org.modeshape</groupId>
+                    <artifactId>modeshape-jdbc-local</artifactId>
+                    <classifier>module-with-dependencies</classifier>
+                    <version>${project.version}</version>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.modeshape</groupId>
+                    <artifactId>modeshape-jdbc</artifactId>
+                    <classifier>module-with-dependencies</classifier>
+                    <version>${project.version}</version>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.modeshape</groupId>
+                    <artifactId>modeshape-jdbc</artifactId>
+                    <classifier>jar-with-dependencies</classifier>
+                    <version>${project.version}</version>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.modeshape</groupId>
+                    <artifactId>modeshape-jbossas-subsystem</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.modeshape.demo</groupId>
+                    <artifactId>modeshape-sequencers-demo</artifactId>
+                    <classifier>example-with-dependencies</classifier>
+                    <version>${project.version}</version>
+                    <type>zip</type>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.modeshape.demo</groupId>
+                    <artifactId>modeshape-embedded-repo-demo</artifactId>
+                    <classifier>example-with-dependencies</classifier>
+                    <version>${project.version}</version>
+                    <type>zip</type>
+                </dependency>
+            </dependencies>
             <build>
                 <plugins>
                     <plugin>
