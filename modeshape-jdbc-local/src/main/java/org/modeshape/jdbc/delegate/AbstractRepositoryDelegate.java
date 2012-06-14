@@ -54,7 +54,13 @@ public abstract class AbstractRepositoryDelegate implements RepositoryDelegate {
     }
 
     /**
-     * The implementor must return a @link ConnectionInfo that provides the information that details r
+     * Returns a  {@link ConnectionInfo} object which represents the information of a specific connection, from a
+     * given url format and some {@link Properties}
+     *
+     * @param url  a {@code non-null} string which represents a jdbc url
+     * @param info a {@code non-null} {@link Properties} instance which may contain extra information needed by the connection
+     *
+     * @return {@link ConnectionInfo} instance, never {@code null}
      */
     abstract ConnectionInfo createConnectionInfo( final String url,
                                                   final Properties info );
