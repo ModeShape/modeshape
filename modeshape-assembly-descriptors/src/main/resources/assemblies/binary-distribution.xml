@@ -53,8 +53,7 @@
                <include>*:*:*:example-with-dependencies</include>
             </includes>
         </dependencySet>
-        <!--JDBC jar renamed to client
-          //TODO author=Horia Chiorean date=3/27/12 description=Enable after modeshape-jdbc is brought back
+        <!--JDBC jar renamed to client-->
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
             <useTransitiveDependencies>false</useTransitiveDependencies>
@@ -66,7 +65,6 @@
             <outputFileNameMapping>modeshape-client-${project.version}.jar</outputFileNameMapping>
             <outputDirectory>/client</outputDirectory>
         </dependencySet>
-        -->
     </dependencySets>
 
     <fileSets>

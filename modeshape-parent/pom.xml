@@ -273,7 +273,6 @@
         <mongo.driver.version>2.7.3</mongo.driver.version>
         <json.simple.version>1.1</json.simple.version>
         <jbossjta.version>4.16.2.Final</jbossjta.version>
-        <antrun.ant.version>1.7</antrun.ant.version>
         <aperture.version>1.1.0.Beta1</aperture.version>
         <logback.version>0.9.29</logback.version>
 
@@ -410,17 +409,6 @@
           -->
         <pluginManagement>
             <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-antrun-plugin</artifactId>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.apache.ant</groupId>
-                            <artifactId>ant</artifactId>
-                            <version>${antrun.ant.version}</version>
-                        </dependency>
-                    </dependencies>
-                </plugin>
                 <!--
                         Fixes how test resources of a project can be used in projects
                         dependent on it

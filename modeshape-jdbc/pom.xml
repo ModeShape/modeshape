@@ -183,29 +183,41 @@
             <build>
                 <plugins>
                     <plugin>
-                        <!--
-                        We need to build a ZIP file so that the Ant task (below) can easily extract and rename the various files.
-                        However, this ZIP file is not needed for anything else, and we certainly don't want to install the ZIP
-                        file in the Maven repository, so we'll set "attach" to false.
-                        -->
                         <artifactId>maven-assembly-plugin</artifactId>
-                        <configuration>
-                            <descriptors>
-                                <descriptor>src/assembly/kit.xml</descriptor>
-                            </descriptors>
-                            <archive>
-                                <manifest>
-                                    <addClasspath>true</addClasspath>
-                                </manifest>
-                            </archive>
-                            <attach>false</attach>
-                        </configuration>
                         <executions>
+                            <!--Creates a temporary jar which will be unpacked and processed by ANT (see below) -->
                             <execution>
+                                <id>default</id>
                                 <phase>package</phase>
                                 <goals>
                                     <goal>single</goal>
                                 </goals>
+                                <configuration>
+                                    <attach>false</attach>
+                                    <descriptors>
+                                        <descriptor>src/assembly/kit.xml</descriptor>
+                                    </descriptors>
+                                    <attach>false</attach>
+                                </configuration>
+                            </execution>
+                            <!--Creates an assembly which will be included in the binary distribution -->
+                            <execution>
+                                <id>module-with-dependencies</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                                <configuration>
+                                    <descriptorRefs>
+                                        <descriptorRef>module-with-dependencies</descriptorRef>
+                                    </descriptorRefs>
+                                    <archive>
+                                        <manifest>
+                                            <addClasspath>true</addClasspath>
+                                        </manifest>
+                                    </archive>
+                                    <attach>true</attach>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
@@ -220,7 +232,6 @@
 
                        test dups:  unzip -l modeshape-jdbc-${project.version}-http-jar-with-dependencies.jar | awk '{print $NF}' | sort | uniq -c | grep -v "1 "
                     -->
-
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-antrun-plugin</artifactId>
@@ -233,8 +244,8 @@
                                         <unzip src="target/modeshape-jdbc-${project.version}-jar-with-dependencies.jar"
                                                dest="target/tempjars"/>
 
-                                        <unzip src="target/tempjars/jaxrs-api-1.2.1.GA.jar" dest="target/temploc"/>
-                                        <unzip src="target/tempjars/jcr-2.0.jar" dest="target/temploc"/>
+                                        <unzip src="target/tempjars/jaxrs-api-${resteasy.version}.jar" dest="target/temploc"/>
+                                        <unzip src="target/tempjars/jcr-${jcr.version}.jar" dest="target/temploc"/>
 
                                         <unzip src="target/tempjars/commons-codec-1.4.jar" dest="target/temploc"/>
                                         <move file="target/temploc/META-INF/LICENSE.txt"
@@ -246,35 +257,37 @@
                                         <move file="target/temploc/META-INF/NOTICE"
                                               tofile="target/temploc/META-INF/NOTICE_commons-logging.txt"/>
 
-                                        <unzip src="target/tempjars/httpclient-4.1.2.jar" dest="target/temploc"/>
+                                        <unzip src="target/tempjars/joda-time-${joda.time.version}.jar" dest="target/temploc"/>
+                                        <move file="target/temploc/META-INF/LICENSE.txt"
+                                              tofile="target/temploc/META-INF/LICENSE_joda-time.txt"/>
+                                        <move file="target/temploc/META-INF/NOTICE.txt"
+                                              tofile="target/temploc/META-INF/NOTICE_joda-time.txt"/>
+
+                                        <unzip src="target/tempjars/httpclient-${httpclient.version}.jar" dest="target/temploc"/>
                                         <move file="target/temploc/META-INF/LICENSE.txt"
                                               tofile="target/temploc/META-INF/LICENSE_httpclient.txt"/>
                                         <move file="target/temploc/META-INF/NOTICE.txt"
                                               tofile="target/temploc/META-INF/NOTICE_httpclient.txt"/>
 
-                                        <unzip src="target/tempjars/httpcore-4.1.2.jar" dest="target/temploc"/>
+                                        <unzip src="target/tempjars/httpcore-${httpclient.version}.jar" dest="target/temploc"/>
                                         <move file="target/temploc/META-INF/LICENSE.txt"
                                               tofile="target/temploc/META-INF/LICENSE_httpcore.txt"/>
                                         <move file="target/temploc/META-INF/NOTICE.txt"
                                               tofile="target/temploc/META-INF/NOTICE_httpcore.txt"/>
 
-                                        <unzip src="target/tempjars/jettison-1.1.jar" dest="target/temploc"/>
+                                        <unzip src="target/tempjars/jettison-${jettison.version}.jar" dest="target/temploc"/>
                                         <move file="target/temploc/META-INF/LICENSE"
                                               tofile="target/temploc/META-INF/LICENSE_jettison.txt"/>
 
-                                        <!--unzip src="target/tempjars/log4j-1.2.16.jar" dest="target/temploc" />
-                                     <move file="target/temploc/META-INF/LICENSE" tofile="target/temploc/META-INF/LICENSE_log4j.txt" />
-                                     <move file="target/temploc/META-INF/NOTICE" tofile="target/temploc/META-INF/NOTICE_log4j.txt" /-->
-
-                                        <unzip src="target/tempjars/resteasy-jaxrs-1.2.1.GA.jar" dest="target/temploc"/>
+                                        <unzip src="target/tempjars/resteasy-jaxrs-${resteasy.version}.jar" dest="target/temploc"/>
                                         <move file="target/temploc/META-INF/services/javax.ws.rs.ext.Providers"
                                               tofile="target/tempproviders/jaxrs_providers"/>
 
-                                        <unzip src="target/tempjars/resteasy-jaxb-provider-1.2.1.GA.jar" dest="target/temploc"/>
+                                        <unzip src="target/tempjars/resteasy-jaxb-provider-${resteasy.version}.jar" dest="target/temploc"/>
                                         <move file="target/temploc/META-INF/services/javax.ws.rs.ext.Providers"
                                               tofile="target/tempproviders/jaxb_providers"/>
 
-                                        <unzip src="target/tempjars/resteasy-jettison-provider-1.2.1.GA.jar"
+                                        <unzip src="target/tempjars/resteasy-jettison-provider-${resteasy.version}.jar"
                                                dest="target/temploc"/>
                                         <move file="target/temploc/META-INF/services/javax.ws.rs.ext.Providers"
                                               tofile="target/tempproviders/jet_providers"/>
@@ -292,19 +305,40 @@
                                         <unzip src="target/tempjars/modeshape-web-jcr-rest-client-${project.version}.jar"
                                                dest="target/temploc"/>
 
+                                        <move file="target/tempjars/META-INF/services/java.sql.Driver"
+                                              tofile="target/tempdrivers/jdbc_drivers"/>
+                                        <unzip src="target/tempjars/modeshape-jdbc-local-${project.version}.jar"
+                                               dest="target/temploc"/>
+                                        <move file="target/temploc/META-INF/services/java.sql.Driver"
+                                              tofile="target/tempdrivers/jdbc_local_drivers"/>
+
                                         <copy todir="target/temploc/org">
                                             <fileset dir="target/tempjars/org"/>
                                         </copy>
 
+                                        <concat destfile="target/temploc/META-INF/services/java.sql.Driver" fixlastline="yes">
+                                            <fileset file="target/tempdrivers/jdbc_drivers"/>
+                                            <fileset file="target/tempdrivers/jdbc_local_drivers"/>
+                                        </concat>
 
                                         <delete file="target/modeshape-jdbc-${project.version}-jar-with-dependencies.jar"/>
                                         <jar destfile="target/modeshape-jdbc-${project.version}-jar-with-dependencies.jar"
-                                             basedir="target/temploc"/>
-
+                                             basedir="target/temploc">
+                                            <manifest>
+                                                <attribute name="Implementation-URL" value="${project.url}"/>
+                                                <attribute name="Java-Version" value="${java.version}"/>
+                                                <attribute name="Java-Vendor" value="${java.vendor}"/>
+                                                <attribute name="Os-Name" value="${os.name}"/>
+                                                <attribute name="Os-Arch" value="${os.arch}"/>
+                                                <attribute name="Os-Version" value="${os.version}"/>
+                                                <attribute name="Scm-Url" value="${project.scm.url}"/>
+                                                <attribute name="Build-Timestamp" value="${build.datetime}"/>
+                                            </manifest>
+                                        </jar>
                                         <delete dir="target/tempjars"/>
                                         <delete dir="target/temploc"/>
                                         <delete dir="target/tempproviders"/>
-                                        <delete file="target/modeshape-jdbc-${project.version}-jar-with-dependencies.zip"/>
+                                        <delete dir="target/tempdrivers"/>
                                     </tasks>
                                 </configuration>
                                 <goals>
@@ -313,6 +347,7 @@
                             </execution>
                         </executions>
                     </plugin>
+
                     <!--Install the re-packaged assembly file in the repo, so it can be picked up by the distribution module-->
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
@@ -330,6 +365,7 @@
                                     <artifactId>${project.artifactId}</artifactId>
                                     <version>${project.version}</version>
                                     <classifier>jar-with-dependencies</classifier>
+                                    <packaging>jar</packaging>
                                 </configuration>
                             </execution>
                         </executions>

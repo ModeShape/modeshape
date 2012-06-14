@@ -147,6 +147,13 @@
             <version>${project.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-web-jcr-rest-client</artifactId>
+            <classifier>module-with-dependencies</classifier>
+            <version>${project.version}</version>
+        </dependency>
+
         <!--<dependency>-->
             <!--<groupId>org.modeshape</groupId>-->
             <!--<artifactId>modeshape-web-jcr-webdav</artifactId>-->
@@ -157,15 +164,23 @@
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jdbc-local</artifactId>
+            <classifier>module-with-dependencies</classifier>
             <version>${project.version}</version>
         </dependency>
 
-        <!--<dependency>-->
-            <!--<groupId>org.modeshape</groupId>-->
-            <!--<artifactId>modeshape-jdbc</artifactId>-->
-            <!--<classifier>jar-with-dependencies</classifier>-->
-            <!--<version>${project.version}</version>-->
-        <!--</dependency>-->
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jdbc</artifactId>
+            <classifier>module-with-dependencies</classifier>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jdbc</artifactId>
+            <classifier>jar-with-dependencies</classifier>
+            <version>${project.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>org.modeshape</groupId>
