@@ -18,14 +18,14 @@
   </properties>
   <dependencyManagement>
     <dependencies>
-      <!-- Define the version of JBoss' Java EE 6 APIs we want to import. 
-            Any dependencies from org.jboss.spec will have their version defined by this 
+      <!-- Define the version of JBoss' Java EE 6 APIs we want to import.
+            Any dependencies from org.jboss.spec will have their version defined by this
             BOM -->
-      <!-- JBoss distributes a complete set of Java EE 6 APIs including 
-            a Bill of Materials (BOM). A BOM specifies the versions of a "stack" (or 
-            a collection) of artifacts. We use this here so that we always get the correct 
-            versions of artifacts. Here we use the jboss-javaee-6.0-with-tools stack 
-            (you can read this as the JBoss stack of the Java EE 6 APIs, with some extras 
+      <!-- JBoss distributes a complete set of Java EE 6 APIs including
+            a Bill of Materials (BOM). A BOM specifies the versions of a "stack" (or
+            a collection) of artifacts. We use this here so that we always get the correct
+            versions of artifacts. Here we use the jboss-javaee-6.0-with-tools stack
+            (you can read this as the JBoss stack of the Java EE 6 APIs, with some extras
             tools for your project, such as Arquillian for testing) -->
       <dependency>
         <groupId>org.jboss.bom</groupId>
@@ -86,6 +86,27 @@
       <artifactId>arquillian-protocol-servlet</artifactId>
       <scope>test</scope>
     </dependency>
+      <!--Needed by the JDBC remote driver tets -->
+      <dependency>
+          <groupId>org.modeshape</groupId>
+          <artifactId>modeshape-jdbc</artifactId>
+          <version>${project.version}</version>
+          <scope>test</scope>
+      </dependency>
+      <dependency>
+          <groupId>org.modeshape</groupId>
+          <artifactId>modeshape-jdbc</artifactId>
+          <version>${project.version}</version>
+          <scope>test</scope>
+          <type>test-jar</type>
+      </dependency>
+      <dependency>
+          <groupId>org.modeshape</groupId>
+          <artifactId>modeshape-jdbc-local</artifactId>
+          <version>${project.version}</version>
+          <scope>test</scope>
+          <type>test-jar</type>
+      </dependency>
   </dependencies>
   <build>
     <resources>

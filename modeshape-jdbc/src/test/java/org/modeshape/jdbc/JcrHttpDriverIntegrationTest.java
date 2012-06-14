@@ -48,13 +48,6 @@ import java.util.Properties;
  */
 public class JcrHttpDriverIntegrationTest  {
 
-    /**
-     * Constants which are needed to connect to the remote repository and therefore, must match Cargo's configuration parameters
-     */
-    private static final String SERVER_URL = JcrDriver.HTTP_URL_PREFIX + "localhost:8090/modeshape/test";
-    private static final String REPOSITORY_NAME = "repo";
-    private static final String REPOSITORY_URL = SERVER_URL + "/" + REPOSITORY_NAME + "/default";
-
     private Properties driverProperties = new Properties();
     private JcrDriver driver = new JcrDriver(null);
 
@@ -62,8 +55,8 @@ public class JcrHttpDriverIntegrationTest  {
     public void before() throws Exception {
         DriverManager.registerDriver(driver);
 
-        driverProperties.setProperty(JcrDriver.USERNAME_PROPERTY_NAME, "dnauser");
-        driverProperties.setProperty(JcrDriver.PASSWORD_PROPERTY_NAME, "password");
+        driverProperties.setProperty(JcrDriver.USERNAME_PROPERTY_NAME, getUserName());
+        driverProperties.setProperty(JcrDriver.PASSWORD_PROPERTY_NAME, getPassword());
     }
 
     @After
@@ -81,7 +74,7 @@ public class JcrHttpDriverIntegrationTest  {
 
     @Test(expected = SQLException.class)
     public void shouldNotConnectWithInvalidRepositoryName() throws Exception {
-        DriverManager.getConnection(SERVER_URL + "/dummy", driverProperties);
+        DriverManager.getConnection(getContextPathUrl() + "/dummy", driverProperties);
     }
 
     @Test
@@ -128,8 +121,37 @@ public class JcrHttpDriverIntegrationTest  {
         }
     }
 
+    protected String getContextPathUrl() {
+        //must match Cargo's configuration
+        return "localhost:8090/modeshape/test";
+    }
+
+    protected String getRepositoryName() {
+        //must match the configuration from modeshape-web-jcr-rest-war
+        return "repo";
+    }
+
+    protected String getWorkspaceName() {
+        //must match the configuration from modeshape-web-jcr-rest-war
+        return "default";
+    }
+
+    protected String getUserName() {
+        //must match Cargo's configuration
+        return "dnauser";
+    }
+
+    protected String getPassword() {
+        //must match Cargo's configuration
+        return "password";
+    }
+
+    private String getRepositoryUrl() {
+        return JcrDriver.HTTP_URL_PREFIX + getContextPathUrl() + "/" + getRepositoryName() + "/" + getWorkspaceName();
+    }
+
     private Connection connectToRemoteRepository() throws SQLException {
-        Connection connection = DriverManager.getConnection(REPOSITORY_URL, driverProperties);
+        Connection connection = DriverManager.getConnection(getRepositoryUrl(), driverProperties);
         assertNotNull(connection);
         return connection;
     }

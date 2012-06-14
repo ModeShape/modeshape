@@ -103,7 +103,7 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
     @Override
     public QueryResult execute( String query,
                                 String language ) throws RepositoryException {
-        logger.trace("Executing query: {0}" + query);
+        logger.trace("Executing query: {0}",  query);
 
         try {
             List<QueryRow> results = this.restClient.query(workspace, language, query);
