@@ -383,8 +383,8 @@ public class PathExpression implements Serializable {
         }
 
         // Order is important here
-        expression = expression.replaceAll("[*]([^/(\\\\])", "[^/$1]*$1"); // '*' not followed by '/', '\\', or '('
-        expression = expression.replaceAll("(?<!\\[\\^/\\])[*]", "[^/]*");
+        expression = expression.replaceAll("[*]([^/(\\\\])", "[^/]*$1"); // '*' not followed by '/', '\\', or '('
+        expression = expression.replaceAll("(?<!\\[\\^/\\])[*]", "[^/]*"); // '*' not preceded by '[^/]'
         expression = expression.replaceAll("[/]{2,}$", "(?:/[^/]*)*"); // ending '//'
         expression = expression.replaceAll("[/]{2,}", "(?:/[^/]*)*/"); // other '//'
         return expression;
@@ -487,6 +487,7 @@ public class PathExpression implements Serializable {
                            String selectedWorkspace,
                            String selectedPath ) {
             this.inputMatcher = inputMatcher;
+            if (selectedPath != null) selectedPath = selectedPath.replaceAll("[/]*$", "");
             this.inputPath = inputPath;
             this.selectedWorkspace = selectedWorkspace == null || selectedWorkspace.length() == 0 ? null : selectedWorkspace;
             this.selectedPath = selectedPath;
