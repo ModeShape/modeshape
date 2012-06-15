@@ -118,6 +118,16 @@ public class RepositoryConfigurationTest {
     }
 
     @Test
+    public void shouldSuccessfullyValidateThoroughRepositoryConfiguration() {
+        assertValid("config/thorough-repo-config.json");
+    }
+
+    @Test
+    public void shouldSuccessfullyValidateThoroughRepositoryConfigurationWithDescriptions() {
+        assertValid("config/thorough-with-desc-repo-config.json");
+    }
+
+    @Test
     public void shouldNotSuccessfullyValidateSampleRepositoryConfigurationWithIndexStorageOnFilesystemAndExtraProperties() {
         assertNotValid(1, "config/invalid-index-storage-config-filesystem.json");
     }

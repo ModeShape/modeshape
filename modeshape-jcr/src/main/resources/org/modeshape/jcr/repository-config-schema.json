@@ -10,6 +10,10 @@
             "required" : true,
             "description" : "The name of the repository. If not provided, the name of the configuration file is used (minus the filename extension)."
         },
+        "description" : {
+            "type" : "string",
+            "description" : "The optional description of this repository. It is unused by ModeShape."
+        },
         "jndiName" : {
             "type" : "string",
             "description" : "The name in JNDI where this repository is to be registered. If not specified, the location is assumed to be 'java:jcr/local/<name>', where '<name>' is the repository name. Setting this field to an empty string signals that the repository should not be registered in JNDI."
@@ -28,7 +32,11 @@
                     "type" : "boolean",
                     "default" : true,
                     "description" : "The flag specifying whether the repositories should record monitoring statistics. This is enabled by default."
-                }
+                },
+                "description" : {
+                    "type" : "string",
+                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                },
             }
         },
         "storage" : {
@@ -36,6 +44,10 @@
             "description" : "The specification of how to obtain the Infinispan cache used for storage.",
             "additionalProperties" : false,
             "properties" : {
+                "description" : {
+                    "type" : "string",
+                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                },
                 "cacheName" : {
                     "type" : "string",
                     "description" : "The name of the Infinispan cache that this repository should use. If not specified, the repository's name is used."
@@ -65,6 +77,10 @@
                                     "default" : 4096,
                                     "description" : "The size threshold that dictates whether String and binary values should be stored in the binary store. String and binary values smaller than this value are stored with the node, whereas string and binary values with a size equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is '4096' bytes, or 4 kilobytes."
                                 },
+                                "description" : {
+                                    "type" : "string",
+                                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                },
                             }
                         },
                         {
@@ -86,6 +102,10 @@
                                     "default" : 4096,
                                     "description" : "The size threshold that dictates whether String and binary values should be stored in the binary store. String and binary values smaller than this value are stored with the node, whereas string and binary values with a size equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is '4096' bytes, or 4 kilobytes."
                                 },
+                                "description" : {
+                                    "type" : "string",
+                                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                },
                             }
                         },
                         {
@@ -106,6 +126,10 @@
                                     "type" : "integer",
                                     "default" : 4096,
                                     "description" : "The size threshold that dictates whether String and binary values should be stored in the binary store. String and binary values smaller than this value are stored with the node, whereas string and binary values with a size equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is '4096' bytes, or 4 kilobytes."
+                                },
+                                "description" : {
+                                    "type" : "string",
+                                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
                                 },
                             }
                         },
@@ -137,6 +161,10 @@
                                     "default" : 4096,
                                     "description" : "The size threshold that dictates whether String and binary values should be stored in the binary store. String and binary values smaller than this value are stored with the node, whereas string and binary values with a size equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is '4096' bytes, or 4 kilobytes."
                                 },
+                                "description" : {
+                                    "type" : "string",
+                                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                },
                             }
                         },
                     ]
@@ -160,13 +188,21 @@
                     "type" : "boolean",
                     "default" : true,
                     "description" : "Specifies whether users can create additional workspaces beyond the predefined, system, and default workspaces. The default value is 'true'."
-                }
+                },
+                "description" : {
+                    "type" : "string",
+                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                },
             }
         },
         "security" : {
             "type" : "object",
             "additionalProperties" : false,
             "properties" : {
+                "description" : {
+                    "type" : "string",
+                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                },
                 "jaas" : {
                     "type" : "object",
                     "description" : "The configuration of the authentication/authorization provider that uses JAAS.",
@@ -175,7 +211,11 @@
                             "type" : "string",
                             "default" : "modeshape-jcr",
                             "description" : "The name of the JAAS policy that should be to validate credentials. If not specified, JAAS authentication is not used."
-                        }
+                        },
+                        "description" : {
+                            "type" : "string",
+                            "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                        },
                     }
                 },
                 "anonymous" : {
@@ -201,6 +241,10 @@
                             "default" : false,
                             "description" : "Indicates whether a failed attempt to authenticate should automatically fall back to attempt to anonymous access instead. If anonymous access is not enabled, then failed login attempts will still cause a LoginException to be thrown. The default value is 'false'."
                         },
+                        "description" : {
+                            "type" : "string",
+                            "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                        },
                     }
                 },
                 "providers" : {
@@ -223,7 +267,11 @@
                             "name" : {
                                 "type" : "string",
                                 "description" : "The optional unqiue name of the security provider configuration, used for administration and reporting. If not specified, the classname will be used."
-                            }
+                            },
+                            "description" : {
+                                "type" : "string",
+                                "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                            },
                         }
                     }
                 }
@@ -234,6 +282,10 @@
             "additionalProperties" : false,
             "description" : "The specification of the configuration options for the query system.",
             "properties" : {
+                "description" : {
+                    "type" : "string",
+                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                },
                 "enabled" : {
                     "type" : "boolean",
                     "default" : true,
@@ -265,7 +317,11 @@
                             "name" : {
                                 "type" : "string",
                                 "description" : "The optional unique name of the extractor configuration, used for administration and reporting purposes. If not specified, the extractor's classname will be used."
-                            }
+                            },
+                            "description" : {
+                                "type" : "string",
+                                "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                            },
                         }
                     }
                 },
@@ -282,7 +338,11 @@
                                     "enum" : ["ram"],
                                     "required" : true,
                                     "description" : "The specification of the in-memory storage type."
-                                }
+                                },
+                                "description" : {
+                                    "type" : "string",
+                                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                },
                             }
                         },
                         {
@@ -312,7 +372,11 @@
                                     "enum" : [ "auto", "simple", "nio", "mmap" ],
                                     "default" : "auto",
                                     "description" : "Specifies the exact type of Lucene FSDirectory implementation to be used. If set to 'auto' (the default), NIOFSDirectory will be used on non Windows systems and SimpleFSDirectory will be used on Windows. If set to 'simple', then SimpleFSDirectory will be used. If set to 'nio', then NIOFSDirectory will be used. If set to 'mmap', then MMapDirectory will be used. Make sure to refer to Javadocs of these Directory implementations before changing this setting. Even though NIOFSDirectory or MMapDirectory can bring substantial performace boosts they also have constraints and limitations."
-                                }
+                                },
+                                "description" : {
+                                    "type" : "string",
+                                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                },
                             }
                         },
                         {
@@ -353,7 +417,11 @@
                                     "default" : 3600,
                                     "minimum" : 0,
                                     "description" : "The number of seconds specifying the frequency of copying the master index into the 'sourceLocation' directory. The copy is incremental, so it only copies the changes since the last copy. The recommended value for the refresh period is (at least) 50% higher that the time to copy the information, and defaults to 3600 seconds - 60 minutes."
-                                }
+                                },
+                                "description" : {
+                                    "type" : "string",
+                                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                },
                             }
                         },
                         {
@@ -412,7 +480,11 @@
                                     "minimum" : 0,
                                     "default" : 0,
                                     "description" : "The number of seconds before retrying initialization. If the slave can't find the master index, it will try again (in the background) until it's found, without preventing the application to start. Queries performed before the index is initialized are not blocked but will return empty results. A value of '0' is used by default, signaling that initialization will fail with an exception rather than trying in the background. To prevent the application from starting without an invalid index but still control an initialization timeout, use 'retryMarkerLookup' instead."
-                                }
+                                },
+                                "description" : {
+                                    "type" : "string",
+                                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                },
                             }
                         },
                         {
@@ -447,7 +519,11 @@
                                     "exclusiveMinimum" : 0,
                                     "default" : 16834,
                                     "description" : "The maximum size in bytes for each chunk of data. Larger sizes offer better search performance but might be problematic during network replication or storage. The default is 16KB, or 16834."
-                                }
+                                },
+                                "description" : {
+                                    "type" : "string",
+                                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                },
                             }
                         },
                         {
@@ -469,15 +545,25 @@
                                 "classloader" : {
                                     "type" : "string",
                                     "description" : "The optional name of the classloader or module that should be used to load the DirectoryProvider implementation class. If empty or not provided, the classpath accessible to ModeShape will be used."
-                                }
+                                },
+                                "description" : {
+                                    "type" : "string",
+                                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                },
                             }
                         }
                     ]
                 },
                 "indexing" : {
                     "type" : "object",
-                    "additionalProperties" : false,
                     "description" : "The configuration settings controlling how the search indexes are created and maintained.",
+                    "patternProperties" : {
+                        "hibernate[.]search[.].*" : {
+                            "type" : "string",
+                            "required" : false,
+                            "description" : "Additional properties that follow the 'hibernate.search.*' pattern will override all other properties and will be passed directly to Hibernate Search. These are optional, and should only be used for advanced configuration."
+                        }
+                    },
                     "properties" : {
                         "threadPool" : {
                             "type" : "string",
@@ -533,6 +619,10 @@
                             "minimum" : 0,
                             "description" : "Specifies the maximum size of the queue used for making asynchronous updates. When the queue is filled, updates block until the queue catches up. A value of '0' is the default and implies no limit to the queue size."
                         },
+                        "description" : {
+                            "type" : "string",
+                            "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                        },
                         "backend" : {
                             "description" : "The specification of options for how the indexes are to be updated. The value is a single nested document, with a required 'type' property (with values of 'lucene', 'jms-backend', 'jgroups-master', 'jgroups-slave', 'blackhold', or 'custom') and additional properties that are dictated by the 'type' value. If not specified, 'lucene' storage will be used.",
                             "type" : [ 
@@ -546,7 +636,11 @@
                                             "enum" : ["lucene"],
                                             "required" : true,
                                             "description" : "The specification of the Lucene backend for writing all updates directly to Lucene."
-                                        }
+                                        },
+                                        "description" : {
+                                            "type" : "string",
+                                            "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                        },
                                     }
                                 },
                                 {
@@ -569,7 +663,11 @@
                                             "type" : "string",
                                             "required" : true,
                                             "description" : "Defines the name in JNDI where JMS queue can be found. The queue will be used to post work messages.",
-                                        }
+                                        },
+                                        "description" : {
+                                            "type" : "string",
+                                            "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                        },
                                     }
                                 }
                                 {
@@ -592,7 +690,11 @@
                                             "type" : "string",
                                             "required" : true,
                                             "description" : "Defines the name in JNDI where JMS queue can be found. The queue will be used to post work messages.",
-                                        }
+                                        },
+                                        "description" : {
+                                            "type" : "string",
+                                            "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                        },
                                     }
                                 },
                                 {
@@ -615,7 +717,11 @@
                                             "type" : "string",
                                             "required" : true,
                                             "description" : "The JGroups channel configuration. The value can either be the path to a resource file on the classpath, or a value containing the JGroups configuration (in either XML or old-style format)."
-                                        }
+                                        },
+                                        "description" : {
+                                            "type" : "string",
+                                            "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                        },
                                     }
                                 },
                                 {
@@ -638,7 +744,11 @@
                                             "type" : "string",
                                             "required" : true,
                                             "description" : "Defines the name in JNDI where JMS queue can be found. The queue will be used to post work messages.",
-                                        }
+                                        },
+                                        "description" : {
+                                            "type" : "string",
+                                            "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                        },
                                     }
                                 },
                                 {
@@ -651,6 +761,10 @@
                                             "enum" : ["blackhole"],
                                             "required" : true,
                                             "description" : "The specification of the blackhole backend."
+                                        },
+                                        "description" : {
+                                            "type" : "string",
+                                            "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
                                         },
                                     }
                                 },
@@ -673,19 +787,16 @@
                                         "classloader" : {
                                             "type" : "string",
                                             "description" : "The optional name of the classloader or module that should be used to load the BackendQueueProcessor implementation class. If empty or not provided, the classpath accessible to ModeShape will be used."
-                                        }
+                                        },
+                                        "description" : {
+                                            "type" : "string",
+                                            "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                        },
                                     }
                                 }
                             ]
                         }
                     },
-                    "patternProperties" : {
-                        "hibernate[.]search[.].*" : {
-                            "type" : "string",
-                            "required" : false,
-                            "description" : "Additional properties that follow the 'hibernate.search.*' pattern will override all other properties and will be passed directly to Hibernate Search. These are optional, and should only be used for advanced configuration."
-                        }
-                    }
                 }
             }
         },
@@ -694,6 +805,10 @@
             "description" : "The options for sequencing.",
             "additionalProperties" : false,
             "properties" : {
+                "description" : {
+                    "type" : "string",
+                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                },
                 "removeDerivedContentWithOriginal" : {
                     "type" : "boolean",
                     "default" : true,
@@ -741,7 +856,11 @@
                                 },
                                 "uniqueItems" : true, 
                                 "description" : "The optional MIME types for the kind of content that this sequencer configuration should process. If not specified, then the sequencer class' default MIME types will be used. Set to an empty array to forcibly allow processing content with any MIME type."
-                            }
+                            },
+                            "description" : {
+                                "type" : "string",
+                                "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                            },
                         }
                     }
                 }
@@ -765,7 +884,11 @@
                 "channelConfiguration" : {
                     "type" : "string",
                     "description" : "An optional string which represents a JChannel configuration file. Normally, a CDATA wrapped XML section should be used"
-                }
+                },
+                "description" : {
+                    "type" : "string",
+                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                },
             }
         }
     }

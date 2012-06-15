@@ -1,0 +1,96 @@
+{
+    "name" : "Thorough",
+    "transactionMode" : "auto",
+    "monitoring" : {
+        "enabled" : true,
+    },
+    "workspaces" : {
+        "predefined" : ["otherWorkspace"],
+        "default" : "default",
+        "allowCreation" : true,
+    },
+    "storage" : {
+        "cacheName" : "Thorough",
+        "cacheConfiguration" : "infinispan_configuration.xml",
+        "transactionManagerLookup" = "org.infinispan.transaction.lookup.GenericTransactionManagerLookup",
+        "binaryStorage" : {
+            "type" : "file",
+            "directory" : "Thorough/binaries",
+            "minimumBinarySizeInBytes" : 4096
+        }
+    },
+    "security" : {
+        "anonymous" : {
+            "username" : "<anonymous>",
+            "roles" : ["readonly","readwrite","admin"],
+            "useOnFailedLogin" : false
+        },
+        "providers" : [
+            {
+                "name" : "My Custom Security Provider",
+                "type" : "com.example.MyAuthenticationProvider",
+            },
+            {
+                "type" : "JAAS",
+                "policyName" : "modeshape-jcr",
+            }
+        ]
+    },
+    "query" : {
+        "enabled" : true,
+        "rebuildUponStartup" : "if_missing",
+        "extractors" : [
+            {
+                "name" : "MyFileType extractor",
+                "type" : "com.example.myfile.MyExtractor",
+            },
+            {
+                "name" : "General content-based extractor",
+                "type" : "tika",
+            }
+        ],
+        "indexStorage" : {
+            "type" : "filesystem",
+            "location" : "Thorough/indexes",
+            "lockingStrategy" : "native",
+            "fileSystemAccessType" : "auto"
+        },
+        "indexing" : {
+            "threadPool" : "modeshape-workers",
+            "analyzer" : "org.apache.lucene.analysis.standard.StandardAnalyzer",
+            "similarity" : "org.apache.lucene.search.DefaultSimilarity",
+            "batchSize" : -1,
+            "indexFormat" : "LUCENE_35",
+            "readerStrategy" : "shared",
+            "mode" : "sync",
+            "asyncThreadPoolSize" : 1,
+            "asyncMaxQueueSize" : 0,
+            "backend" : {
+                "type" : "lucene",
+                
+            },
+            "hibernate.search.custom.overridden.property" : "value",
+        }
+    },
+    "sequencing" : {
+        "removeDerivedContentWithOriginal" : true,
+        "threadPool" : "modeshape-workers",
+        "sequencers" : [
+            {
+                "name" : "ZIP Files loaded under '/files' and extracted into '/sequenced/zip/$1'",
+                "type" : "ZipSequencer",
+                "pathExpressions" : ["default:/files(//)(*.zip[*])/jcr:content[@jcr:data] => default:/sequenced/zip/$1"],
+            },
+            {
+                "name" : "Delimited Text File Sequencer",
+                "type" : "org.modeshape.sequencer.text.DelimitedTextSequencer",
+                "pathExpressions" : [ 
+                    "default:/files//(*.csv[*])/jcr:content[@jcr:data] => default:/sequenced/text/delimited/$1"
+                ],
+                "splitPattern" : ","
+            }
+        ]
+    },
+    "clustering" : {
+    }
+}

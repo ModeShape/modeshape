@@ -1,0 +1,113 @@
+{
+    "name" : "Thorough",
+    "transactionMode" : "auto",
+    "description" : "This is a sample configuration that defines options with their defaults.",
+    "monitoring" : {
+        "enabled" : true,
+    },
+    "workspaces" : {
+        "description" : "The 'default' workspace is used by default, while 'otherWorkspace' will exist at startup.",
+        "predefined" : ["otherWorkspace"],
+        "default" : "default",
+        "allowCreation" : true,
+    },
+    "storage" : {
+        "description" : "Repository content will be stored in the 'Thorough' cache defined in the specified Infinispan configuration file. If the 'cacheConfiguration' is not specified, the cache will persist content on the file system.",
+        "cacheName" : "Thorough",
+        "cacheConfiguration" : "infinispan_configuration.xml",
+        "transactionManagerLookup" = "org.infinispan.transaction.lookup.GenericTransactionManagerLookup",
+        "binaryStorage" : {
+            "description" : "Binary values (>=4096 bytes in size) will be stored on the file system at the relative path 'Thorough/binaries'. Smaller binaries will be stored with the referenced content.",
+            "type" : "file",
+            "directory" : "Thorough/binaries",
+            "minimumBinarySizeInBytes" : 4096
+        }
+    },
+    "security" : {
+        "description" : "Three providers are set up: the first is a custom provider, then JAAS, and finally anonymous",
+        "anonymous" : {
+            "description" : "Grants all roles to users with '<anonymous>' as username, but does not automatically authenticate any user that fails to authenticate via the other previous providers.",
+            "username" : "<anonymous>",
+            "roles" : ["readonly","readwrite","admin"],
+            "useOnFailedLogin" : false
+        },
+        "providers" : [
+            {
+                "name" : "My Custom Security Provider",
+                "type" : "com.example.MyAuthenticationProvider",
+                "description" : "A custom security provider used for authentication and authorization."
+            },
+            {
+                "type" : "JAAS",
+                "policyName" : "modeshape-jcr",
+                "description" : "JAAS should use the 'modeshape-jcr' policy.",
+            }
+        ]
+    },
+    "query" : {
+        "description" : "Queries are enabled, and indexes should be rebuilt if they are not found",
+        "enabled" : true,
+        "rebuildUponStartup" : "if_missing",
+        "extractors" : [
+            {
+                "name" : "MyFileType extractor",
+                "type" : "com.example.myfile.MyExtractor",
+                "description" : "A custom extractor implementation.",
+            },
+            {
+                "name" : "General content-based extractor",
+                "type" : "tika",
+                "description" : "The Tika-based extractor, which requires adding the Tika JARs to the classpath",
+            }
+        ],
+        "indexStorage" : {
+            "description" : "Indexes will be stored on the file system at the relative path 'Thorough/indexes', with a locking strategy that uses native OS locks and which automatically determines the type of file system based Directory implementation..",
+            "type" : "filesystem",
+            "location" : "Thorough/indexes",
+            "lockingStrategy" : "native",
+            "fileSystemAccessType" : "auto"
+        },
+        "indexing" : {
+            "description" : "Indexes will be updated synchronously when changes are persisted (either in Session.save or transaction commit if used), and index readers can be shared. The indexes will use the 'LUCENE_35' format; changing this after indexes exist may cause problems and require re-indexing.",
+            "threadPool" : "modeshape-workers",
+            "analyzer" : "org.apache.lucene.analysis.standard.StandardAnalyzer",
+            "similarity" : "org.apache.lucene.search.DefaultSimilarity",
+            "batchSize" : -1,
+            "indexFormat" : "LUCENE_35",
+            "readerStrategy" : "shared",
+            "mode" : "sync",
+            "asyncThreadPoolSize" : 1,
+            "asyncMaxQueueSize" : 0,
+            "backend" : {
+                "type" : "lucene",
+                "description" : "The changes to the indexes are written directly to the Lucene indexes. If this were clustered, then a different backend should be used (e.g., to have one process do all the writing to the indexes and allow all processes to read/query).",
+                
+            },
+            "hibernate.search.custom.overridden.property" : "value",
+        }
+    },
+    "sequencing" : {
+        "description" : "Define several sequencers to automatically analyze and extract structured content from files uploaded to the repository. If a file is updated, the content previously derived by the sequencer(s) will be removed before the newly-derived content is stored. Since sequencing is done asynchronously, specify that threads from the 'modeshape-workers' thread poool be used.",
+        "removeDerivedContentWithOriginal" : true,
+        "threadPool" : "modeshape-workers",
+        "sequencers" : [
+            {
+                "name" : "ZIP Files loaded under '/files' and extracted into '/sequenced/zip/$1'",
+                "type" : "ZipSequencer",
+                "pathExpressions" : ["default:/files(//)(*.zip[*])/jcr:content[@jcr:data] => default:/sequenced/zip/$1"],
+            },
+            {
+                "description" : "Extracts row and column information from CSV files uploaded under '/files', and stores the derived information under '/sequenced/text/delimited/...'. The ',' character should be used to delimit the different values in a row.",
+                "name" : "Delimited Text File Sequencer",
+                "type" : "org.modeshape.sequencer.text.DelimitedTextSequencer",
+                "pathExpressions" : [ 
+                    "default:/files//(*.csv[*])/jcr:content[@jcr:data] => default:/sequenced/text/delimited/$1"
+                ],
+                "splitPattern" : ","
+            }
+        ]
+    },
+    "clustering" : {
+        "description" : "This nested document is not needed, since this repository will not be clustered.",
+    }
+}
