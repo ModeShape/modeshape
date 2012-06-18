@@ -55,15 +55,12 @@ public final class I18n implements I18nResource {
 
     private static final Logger LOGGER = Logger.getLogger(I18n.class);
 
-    private static final LocalizationRepository DEFAULT_LOCALIZATION_REPOSITORY = new ClasspathLocalizationRepository();
-
     /**
      * The first level of this map indicates whether an i18n class has been localized to a particular locale. The second level
      * contains any problems encountered during localization.
      */
     static final ConcurrentMap<Locale, Map<Class<?>, Set<String>>> LOCALE_TO_CLASS_TO_PROBLEMS_MAP = new ConcurrentHashMap<Locale, Map<Class<?>, Set<String>>>();
 
-    private static LocalizationRepository localizationRepository = DEFAULT_LOCALIZATION_REPOSITORY;
 
     /**
      * Note, calling this method will <em>not</em> trigger localization of the supplied internationalization class.
@@ -118,27 +115,6 @@ public final class I18n implements I18nResource {
             return Collections.emptySet();
         }
         return problems;
-    }
-
-    /**
-     * Get the repository of localized messages. By default, this instance uses a {@link ClasspathLocalizationRepository} that
-     * uses this class' classloader.
-     * 
-     * @return localizationRepository
-     */
-    public static LocalizationRepository getLocalizationRepository() {
-        return localizationRepository;
-    }
-
-    /**
-     * Set the repository of localized messages. If <code>null</code>, a {@link ClasspathLocalizationRepository} instance that
-     * uses this class loader will be used.
-     * 
-     * @param localizationRepository the localization repository to use; may be <code>null</code> if the default repository should
-     *        be used.
-     */
-    public static void setLocalizationRepository( LocalizationRepository localizationRepository ) {
-        I18n.localizationRepository = localizationRepository != null ? localizationRepository : DEFAULT_LOCALIZATION_REPOSITORY;
     }
 
     /**
@@ -237,21 +213,20 @@ public final class I18n implements I18nResource {
                 return;
             }
             // Get the URL to the localization properties file ...
-            final LocalizationRepository repos = getLocalizationRepository();
             final String localizationBaseName = i18nClass.getName();
-            URL bundleUrl = repos.getLocalizationBundle(localizationBaseName, locale);
+            URL bundleUrl = ClasspathLocalizationRepository.getLocalizationBundle(i18nClass.getClassLoader(), localizationBaseName, locale);
             if (bundleUrl == null) {
                 LOGGER.warn(CommonI18n.i18nBundleNotFoundInClasspath,
-                            repos.getPathsToSearchForBundle(localizationBaseName, locale));
+                            ClasspathLocalizationRepository.getPathsToSearchForBundle(localizationBaseName, locale));
                 // Nothing was found, so try the default locale
                 Locale defaultLocale = Locale.getDefault();
                 if (!defaultLocale.equals(locale)) {
-                    bundleUrl = repos.getLocalizationBundle(localizationBaseName, defaultLocale);
+                    bundleUrl = ClasspathLocalizationRepository.getLocalizationBundle(i18nClass.getClassLoader(), localizationBaseName, defaultLocale);
                 }
                 // Return if no applicable localization file could be found
                 if (bundleUrl == null) {
                     LOGGER.error(CommonI18n.i18nBundleNotFoundInClasspath,
-                                 repos.getPathsToSearchForBundle(localizationBaseName, defaultLocale));
+                                 ClasspathLocalizationRepository.getPathsToSearchForBundle(localizationBaseName, defaultLocale));
                     LOGGER.error(CommonI18n.i18nLocalizationFileNotFound, localizationBaseName);
                     problems.add(CommonI18n.i18nLocalizationFileNotFound.text(localizationBaseName));
                     return;

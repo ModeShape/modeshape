@@ -21,14 +21,12 @@
   ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
-<module xmlns="urn:jboss:module:1.1" name="org.modeshape.jcr.api">
+<module xmlns="urn:jboss:module:1.1" name="org.modeshape.common">
+    <resources>
+        <resource-root path="modeshape-common-${project.version}.jar" />
+    </resources>
+
     <dependencies>
-        <module name="javax.jcr" export="true"/>
         <module name="javax.api" export="true"/>
     </dependencies>
-
-    <resources>
-        <resource-root path="modeshape-jcr-api-${project.version}.jar" />
-    </resources>
-    
 </module>

@@ -23,14 +23,14 @@
  */
 package org.modeshape.common.i18n;
 
+import org.modeshape.common.util.CheckArg;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 /**
- * Implementation of a {@link LocalizationRepository} that loads a properties file from the classpath of the supplied
- * {@link ClassLoader class loader}.
+ * Class that loads a properties file from the classpath of the supplied {@link ClassLoader class loader}.
  * <p>
  * This repository for a property file by building locations of the form "path/to/class_locale.properties", where "path/to/class"
  * is created from the fully-qualified classname and all "." replaced with "/" characters, "locale" is the a variant of the locale
@@ -39,40 +39,29 @@ import java.util.Locale;
  * </p>
  * named with a name that matches
  */
-public class ClasspathLocalizationRepository implements LocalizationRepository {
+public final class ClasspathLocalizationRepository {
 
-    private final ClassLoader classLoader;
-
-    /**
-     * Create a repository using the current thread's {@link Thread#getContextClassLoader() context class loader} or, if that is
-     * null, the same class loader that loaded this class.
-     */
-    public ClasspathLocalizationRepository() {
-        this(null);
+    private ClasspathLocalizationRepository() {
     }
 
     /**
-     * Create a repository using the supplied class loader. Null may be passed if the class loader should be obtained from the
-     * current thread's {@link Thread#getContextClassLoader() context class loader} or, if that is null, the same class loader
-     * that loaded this class.
-     * 
-     * @param classLoader the class loader to use; may be null
+     * Obtain the URL to the properties file containing the localized messages given the supplied bundle name. This method is
+     * responsible for searching to find the most appropriate localized messages given the locale, but does not need to search
+     * using the {@link Locale#getDefault() default locale} (as that is done by the {@link I18n#text(Object...) calling} method.
+     *
+     * @param bundleName the name of the bundle of properties; never null
+     * @param locale the locale for which the properties file URL is desired
+     * @return the URL to the properties file containing the localized messages for the named bundle, or null if no such bundle
+     *         could be found
      */
-    public ClasspathLocalizationRepository( ClassLoader classLoader ) {
-        if (classLoader == null) classLoader = this.getClass().getClassLoader();
-        this.classLoader = classLoader;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public URL getLocalizationBundle( String bundleName,
-                                      Locale locale ) {
+    public static URL getLocalizationBundle( ClassLoader classLoader,
+                                             String bundleName,
+                                             Locale locale ) {
+        CheckArg.isNotNull(classLoader, "classLoader");
         URL url = null;
         List<String> paths = getPathsToSearchForBundle(bundleName, locale);
         for (String path : paths) {
-            url = this.classLoader.getResource(path);
+            url = classLoader.getResource(path);
             if (url != null) {
                 return url;
             }
@@ -80,8 +69,15 @@ public class ClasspathLocalizationRepository implements LocalizationRepository {
         return url;
     }
 
-    @Override
-    public List<String> getPathsToSearchForBundle( String bundleName,
+    /**
+     * Returns a list of paths (as string) of the different bundles searched in the
+     * {@link ClasspathLocalizationRepository#getLocalizationBundle(ClassLoader, String, java.util.Locale)}  method.
+
+     * @param bundleName the name of the bundle of properties; never null
+     * @param locale the locale for which the properties file URL is desired
+     * @return a list of paths which the repository would look at.
+     */
+    static List<String> getPathsToSearchForBundle( String bundleName,
                                                    Locale locale ) {
         List<String> result = new ArrayList<String>();
         String pathPrefix = bundleName.replaceAll("\\.", "/");

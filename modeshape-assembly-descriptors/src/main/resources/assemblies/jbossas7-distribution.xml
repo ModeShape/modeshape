@@ -61,13 +61,22 @@
 			<unpack>false</unpack>
 		</dependencySet>
 
-		<!-- Module for the ModeShape engine (and dependencies) -->
+        <!--Commons module-->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>modules/org/modeshape/common/main</outputDirectory>
+            <includes>
+                <include>org.modeshape:modeshape-common:jar</include>
+            </includes>
+            <unpack>false</unpack>
+        </dependencySet>
+
+        <!-- Module for the ModeShape engine (and dependencies) -->
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
             <outputDirectory>modules/org/modeshape/main</outputDirectory>
             <includes>
                 <include>org.modeshape:modeshape-jcr:jar</include>
-                <include>org.modeshape:modeshape-common:jar</include>
                 <include>org.modeshape:modeshape-schematic:jar</include>
                 <include>org.modeshape:modeshape-jbossas-subsystem:jar</include>
             </includes>
@@ -102,6 +111,7 @@
                 <include>org.eclipse*:core:jar:${eclipse.jdt.core.version}</include>
                 <include>org.eclipse*:resources:jar:${eclipse.core.resources.version}</include>
                 <include>org.eclipse*:expressions:jar:${eclipse.core.expressions.version}</include>
+                <include>org.eclipse*:preferences:jar:${eclipse.equinox.preferences.version}</include>
                 <include>org.eclipse*:runtime:jar:${eclipse.core.runtime.version}</include>
                 <include>org.eclipse*:osgi:jar:${eclipse.osgi.version}</include>
                 <include>org.eclipse*:jobs:jar:${eclipse.core.jobs.version}</include>

@@ -27,7 +27,6 @@
     </resources>
 
     <dependencies>
-        <module name="org.modeshape" />
         <module name="org.modeshape.sequencer.sramp"/>
         <module name="org.modeshape.sequencer.xsd"/>
     </dependencies>

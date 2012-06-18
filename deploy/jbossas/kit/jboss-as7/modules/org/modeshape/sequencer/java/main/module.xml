@@ -37,6 +37,7 @@
     </resources>
 
     <dependencies>
-        <module name="org.modeshape" />
+        <module name="org.modeshape.jcr.api"/>
+        <module name="org.modeshape.common"/>
     </dependencies>
 </module>
