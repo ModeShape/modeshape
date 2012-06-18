@@ -89,7 +89,7 @@ public class AddSequencer extends AbstractAddStepHandler {
             ModelNode node = operation.get(key);
             if (!node.isDefined()) continue;
             if (key.equals(ModelKeys.SEQUENCER_CLASSNAME) && ModelAttributes.SEQUENCER_CLASSNAME.isMarshallable(operation)) {
-                props.put(FieldName.TYPE, node.asString());
+                props.put(FieldName.CLASSNAME, node.asString());
             } else if (key.equals(ModelKeys.MODULE) && ModelAttributes.MODULE.isMarshallable(operation)) {
                 props.put(FieldName.CLASSLOADER, node.asString());
             } else if (key.equals(ModelKeys.PATH_EXPRESSIONS)) {

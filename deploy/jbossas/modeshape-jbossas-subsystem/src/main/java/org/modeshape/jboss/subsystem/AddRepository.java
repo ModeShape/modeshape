@@ -195,7 +195,7 @@ public class AddRepository extends AbstractAddStepHandler {
         // Servlet authenticator ...
         EditableArray providers = security.getOrCreateArray(FieldName.PROVIDERS);
         EditableDocument servlet = Schematic.newDocument();
-        servlet.set(FieldName.TYPE, "servlet");
+        servlet.set(FieldName.CLASSNAME, "servlet");
         servlet.set(FieldName.NAME, "Authenticator that uses the Servlet context");
         providers.addDocument(servlet);
 
@@ -208,7 +208,7 @@ public class AddRepository extends AbstractAddStepHandler {
                 for (String key : authenticator.keys()) {
                     String value = authenticator.get(key).asString();
                     if (key.equals(ModelKeys.CLASSNAME)) {
-                        key = FieldName.TYPE;
+                        key = FieldName.CLASSNAME;
                     } else if (key.equals(ModelKeys.MODULE)) {
                         key = FieldName.CLASSLOADER;
                     }

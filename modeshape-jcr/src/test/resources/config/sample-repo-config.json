@@ -16,7 +16,7 @@
         },
         "providers" : [
             {
-                "type" : "JAAS",
+                "classname" : "JAAS",
                 "policyName" : "modeshape-jcr"
             }
         ]

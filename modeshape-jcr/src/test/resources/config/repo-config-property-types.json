@@ -5,7 +5,7 @@
         "sequencers":[
             {
                 "name":"Test sequencer",
-                "type":"org.modeshape.jcr.TestSequencersHolder$SequencerWithProperties",
+                "classname":"org.modeshape.jcr.TestSequencersHolder$SequencerWithProperties",
                 "pathExpression":"default://",
                 "intList":[1, 1, 2, 3],
                 "intSet":[1, 2, 3],

@@ -5,7 +5,7 @@
         "sequencers" : [
             {
                 "name" : "XSD sequencer",
-                "type" : "xsdsequencer",
+                "classname" : "xsdsequencer",
                 "pathExpressions" : [ "default:/(*.xsd)/jcr:content[@jcr:data]" ]
             }
         ]

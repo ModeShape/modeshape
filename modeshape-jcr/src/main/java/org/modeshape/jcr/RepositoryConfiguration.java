@@ -535,7 +535,7 @@ public class RepositoryConfiguration {
     static {
         Set<String> skipProps = new HashSet<String>();
         skipProps.add(FieldName.CLASSLOADER);
-        skipProps.add(FieldName.TYPE);
+        skipProps.add(FieldName.CLASSNAME);
         COMPONENT_SKIP_PROPERTIES = Collections.unmodifiableSet(skipProps);
 
         String jaasProvider = "org.modeshape.jcr.security.JaasProvider";
@@ -895,7 +895,7 @@ public class RepositoryConfiguration {
         }
 
         public AbstractBinaryStore getBinaryStore() throws NamingException, IOException {
-            String type = binaryStorage.getString(FieldName.TYPE, "transient");
+            String type = binaryStorage.getString(FieldName.CLASSNAME, "transient");
             AbstractBinaryStore store = null;
             if (type.equalsIgnoreCase("transient")) {
                 store = TransientBinaryStore.get();
@@ -1046,13 +1046,17 @@ public class RepositoryConfiguration {
          */
         public List<Component> getCustomProviders() {
             Problems problems = new SimpleProblems();
-            List<Component> components = readComponents(security, FieldName.PROVIDERS, FieldName.TYPE, PROVIDER_ALIASES, problems);
+            List<Component> components = readComponents(security,
+                                                        FieldName.PROVIDERS,
+                                                        FieldName.CLASSNAME,
+                                                        PROVIDER_ALIASES,
+                                                        problems);
             assert !problems.hasErrors();
             return components;
         }
 
         protected void validateCustomProviders( Problems problems ) {
-            readComponents(security, FieldName.PROVIDERS, FieldName.TYPE, PROVIDER_ALIASES, problems);
+            readComponents(security, FieldName.PROVIDERS, FieldName.CLASSNAME, PROVIDER_ALIASES, problems);
         }
 
         private boolean isIncludedInCustomProviders( String classname ) {
@@ -1354,13 +1358,17 @@ public class RepositoryConfiguration {
          */
         public List<Component> getTextExtractors() {
             Problems problems = new SimpleProblems();
-            List<Component> components = readComponents(query, FieldName.EXTRACTORS, FieldName.TYPE, EXTRACTOR_ALIASES, problems);
+            List<Component> components = readComponents(query,
+                                                        FieldName.EXTRACTORS,
+                                                        FieldName.CLASSNAME,
+                                                        EXTRACTOR_ALIASES,
+                                                        problems);
             assert !problems.hasErrors();
             return components;
         }
 
         protected void validateTextExtractors( Problems problems ) {
-            readComponents(query, FieldName.EXTRACTORS, FieldName.TYPE, EXTRACTOR_ALIASES, problems);
+            readComponents(query, FieldName.EXTRACTORS, FieldName.CLASSNAME, EXTRACTOR_ALIASES, problems);
         }
 
         protected void setDefProp( Properties props,
@@ -1421,7 +1429,7 @@ public class RepositoryConfiguration {
             Problems problems = new SimpleProblems();
             List<Component> components = readComponents(sequencing,
                                                         FieldName.SEQUENCERS,
-                                                        FieldName.TYPE,
+                                                        FieldName.CLASSNAME,
                                                         SEQUENCER_ALIASES,
                                                         problems);
             assert !problems.hasErrors();
@@ -1434,7 +1442,7 @@ public class RepositoryConfiguration {
          * @param problems the container for problems reading the sequencer information; may not be null
          */
         protected void validateSequencers( Problems problems ) {
-            readComponents(sequencing, FieldName.SEQUENCERS, FieldName.TYPE, SEQUENCER_ALIASES, problems);
+            readComponents(sequencing, FieldName.SEQUENCERS, FieldName.CLASSNAME, SEQUENCER_ALIASES, problems);
         }
     }
 
@@ -1502,7 +1510,7 @@ public class RepositoryConfiguration {
             for (Object value : components) {
                 if (value instanceof Document) {
                     Document component = (Document)value;
-                    String classname = component.getString(FieldName.TYPE);
+                    String classname = component.getString(FieldName.CLASSNAME);
                     String classpath = component.getString(FieldName.CLASSLOADER); // optional
                     String name = component.getString(FieldName.NAME); // optional
                     if (classname != null) {

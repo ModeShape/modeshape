@@ -5,7 +5,7 @@
         "sequencers" : [
             {
                 "name" : "Ddl sequencer test",
-                "type" : "DdlSequencer",
+                "classname" : "DdlSequencer",
                 "pathExpressions" : [ "default://(*.ddl)/jcr:content[@jcr:data] => default:/ddl" ]
             }
         ]

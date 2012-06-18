@@ -255,7 +255,7 @@
                         "description" : "Specification of a security provider configuration.",
                         "additionalProperties" : true,
                         "properties" : {
-                            "type" : {
+                            "classname" : {
                                 "type" : "string",
                                 "required" : true,
                                 "description" : "The fully-qualified name of the 'org.modeshape.jcr.security.AuthenticationProvider' implementation class. Aliases can be used for the built-in providers: 'jaas' for the JAAS provider, and 'servlet' for the Servlet provider."
@@ -305,7 +305,7 @@
                         "description" : "Specification of a text extractor configuration.",
                         "additionalProperties" : true,
                         "properties" : {
-                            "type" : {
+                            "classname" : {
                                 "type" : "string",
                                 "required" : true,
                                 "description" : "The fully-qualified name of the 'org.modeshape.jcr.text.TextExtractor' implementation class. A shortcut for built-in extractors is to just specify the name of the class (without the package specifciation)."
@@ -828,7 +828,7 @@
                         "additionalProperties" : true,
                         "description" : "Specification of a sequencer configuration.",
                         "properties" : {
-                            "type" : {
+                            "classname" : {
                                 "type" : "string",
                                 "required" : true,
                                 "description" : "The fully-qualified name of the 'org.modeshape.jcr.api.sequencer.Sequencer' subclass. A shortcut for built-in sequencers is to just use the name of the class (without the package specification)."

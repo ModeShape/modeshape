@@ -5,7 +5,7 @@
         "sequencers" : [
             {
                 "name" : "ZIP sequencer",
-                "type" : "zipsequencer",
+                "classname" : "zipsequencer",
                 "pathExpressions" : [ "default:/(*.zip)/jcr:content[@jcr:data] => /zip" ]
             }
         ]
