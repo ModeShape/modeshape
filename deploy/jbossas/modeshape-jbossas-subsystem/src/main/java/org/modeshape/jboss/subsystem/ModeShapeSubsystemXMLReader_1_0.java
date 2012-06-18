@@ -827,7 +827,9 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                         ModelAttributes.MODULE.parseAndSetParameter(attrValue, sequencer, reader);
                         break;
                     default:
-                        throw ParseUtils.unexpectedAttribute(reader, i);
+                        // extra attributes are allowed to set sequencer-specific properties ...
+                        sequencer.get(attrName).set(attrValue);
+                        break;
                 }
             }
         }
