@@ -998,11 +998,17 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.changeDispatchingQueue = other.changeDispatchingQueue;
                 this.changeBus = other.changeBus;
             } else {
-                // find the Schematic database and Infinispan Cache ...
-                CacheContainer container = config.getContentCacheContainer();
-                String cacheName = config.getCacheName();
-                this.database = Schematic.get(container, cacheName);
-                assert this.database != null;
+                CacheContainer container = null;
+                String cacheName = null;
+                try {
+                    // find the Schematic database and Infinispan Cache ...
+                    container = config.getContentCacheContainer();
+                    cacheName = config.getCacheName();
+                    this.database = Schematic.get(container, cacheName);
+                    assert this.database != null;
+                } catch (RuntimeException e) {
+                    throw e;
+                }
                 this.txnMgr = this.database.getCache().getAdvancedCache().getTransactionManager();
                 MonitorFactory monitorFactory = new RepositoryMonitorFactory(this);
                 this.transactions = createTransactions(config.getTransactionMode(), monitorFactory, this.txnMgr);
