@@ -320,7 +320,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             stateLock.lock();
             // Always update the configuration ...
             RunningState oldState = this.runningState.get();
-            this.config.set(new RepositoryConfiguration(copy, copy.getString(FieldName.NAME)));
+            RepositoryConfiguration newConfig = new RepositoryConfiguration(copy, copy.getString(FieldName.NAME));
+            // Make sure the new configuration uses the same environment as the old one ...
+            newConfig = newConfig.with(oldConfiguration.environment());
+            this.config.set(newConfig);
             if (oldState != null) {
                 assert state.get() == State.RUNNING;
                 // Repository is running, so create a new running state ...
@@ -998,17 +1001,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.changeDispatchingQueue = other.changeDispatchingQueue;
                 this.changeBus = other.changeBus;
             } else {
-                CacheContainer container = null;
-                String cacheName = null;
-                try {
-                    // find the Schematic database and Infinispan Cache ...
-                    container = config.getContentCacheContainer();
-                    cacheName = config.getCacheName();
-                    this.database = Schematic.get(container, cacheName);
-                    assert this.database != null;
-                } catch (RuntimeException e) {
-                    throw e;
-                }
+                // find the Schematic database and Infinispan Cache ...
+                CacheContainer container = config.getContentCacheContainer();
+                String cacheName = config.getCacheName();
+                this.database = Schematic.get(container, cacheName);
+                assert this.database != null;
                 this.txnMgr = this.database.getCache().getAdvancedCache().getTransactionManager();
                 MonitorFactory monitorFactory = new RepositoryMonitorFactory(this);
                 this.transactions = createTransactions(config.getTransactionMode(), monitorFactory, this.txnMgr);
