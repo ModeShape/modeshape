@@ -128,20 +128,20 @@ public class BsonReadingAndWritingTest {
 
     @Test
     public void shouldRoundTripSimpleBsonObjectWithDateValue() {
-        input = new BasicDocument("foo", new Date(now()));
+        input = new BasicDocument("foo", new Date());
         assertRoundtrip(input);
     }
 
     @Test
     public void shouldRoundTripSimpleBsonObjectWithTimestampValue() {
-        input = new BasicDocument("foo", new Timestamp(new Date(now())));
+        input = new BasicDocument("foo", new Timestamp(new Date()));
         assertRoundtrip(input);
     }
 
     @Test
     public void shouldRoundTripSimpleBsonObjectWithObjectId() {
         // print = true;
-        int time = (int)(now() / 1000L);
+        int time = Math.abs((int) new Date().getTime());
         if (print) System.out.println("time value: " + time);
         input = new BasicDocument("foo", new ObjectId(time, 1, 2, 3));
         assertRoundtrip(input);
@@ -272,10 +272,6 @@ public class BsonReadingAndWritingTest {
             System.out.flush();
         }
         assert input.equals(output);
-    }
-
-    protected long now() {
-        return System.currentTimeMillis();
     }
 
     protected Document writeThenRead( Document object,
