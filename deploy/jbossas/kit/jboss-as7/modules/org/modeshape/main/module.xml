@@ -28,19 +28,6 @@
         <resource-root path="conf" />
         <resource-root path="modeshape-schematic-${project.version}.jar" />  
         <resource-root path="modeshape-jbossas-subsystem-${project.version}.jar" />
-        <!-- Include all of the built-in sequencers -->
-        <resource-root path="modeshape-sequencer-ddl-${project.version}.jar" />
-        <resource-root path="modeshape-sequencer-images-${project.version}.jar" />
-        <resource-root path="modeshape-sequencer-java-${project.version}.jar" />
-        <resource-root path="modeshape-sequencer-mp3-${project.version}.jar" />
-        <resource-root path="modeshape-sequencer-msoffice-${project.version}.jar" />
-        <resource-root path="modeshape-sequencer-sramp-${project.version}.jar" />
-        <!--resource-root path="modeshape-sequencer-teiid-${project.version}.jar" /-->
-        <resource-root path="modeshape-sequencer-text-${project.version}.jar" />
-        <resource-root path="modeshape-sequencer-wsdl-${project.version}.jar" />
-        <resource-root path="modeshape-sequencer-xml-${project.version}.jar" />
-        <resource-root path="modeshape-sequencer-xsd-${project.version}.jar" />
-        <resource-root path="modeshape-sequencer-zip-${project.version}.jar" />
     </resources>
 
    <dependencies>
@@ -59,8 +46,8 @@
         <module name="javax.servlet.api"/>
         <module name="javax.resource.api"/>
         <!-- For logging ... -->
-        <module name="org.slf4j"/>
-        <module name="org.jboss.logging" />
+        <module name="org.slf4j" export="true"/>
+        <module name="org.jboss.logging" export="true"/>
         <!-- For the subsystem ... -->
         <module name="org.jboss.as.controller"/>
         <module name="org.jboss.staxmapper"/>

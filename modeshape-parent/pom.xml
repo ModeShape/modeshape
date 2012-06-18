@@ -275,6 +275,21 @@
         <jbossjta.version>4.16.2.Final</jbossjta.version>
         <aperture.version>1.1.0.Beta1</aperture.version>
         <logback.version>0.9.29</logback.version>
+        <eclipse.equinox.common.version>3.3.0-v20070426</eclipse.equinox.common.version>
+        <eclipse.jdt.core.version>3.3.0-v_771</eclipse.jdt.core.version>
+        <eclipse.core.resources.version>3.3.0-v20070604</eclipse.core.resources.version>
+        <eclipse.core.expressions.version>3.3.0-v20070606-0010</eclipse.core.expressions.version>
+        <eclipse.core.runtime.version>3.3.100-v20070530</eclipse.core.runtime.version>
+        <eclipse.osgi.version>3.3.0-v20070530</eclipse.osgi.version>
+        <eclipse.core.jobs.version>3.3.0-v20070423</eclipse.core.jobs.version>
+        <eclipse.equinox.registry.version>3.3.0-v20070522</eclipse.equinox.registry.version>
+        <eclipse.equinox.preferences.version>3.2.100-v20070522</eclipse.equinox.preferences.version>
+        <eclipse.core.contenttype.version>3.2.100-v20070319</eclipse.core.contenttype.version>
+        <eclipse.xsd.version>2.2.3</eclipse.xsd.version>
+        <eclipse.emf.common.version>2.4.0</eclipse.emf.common.version>
+        <eclipse.emf.ecore.version>2.4.2</eclipse.emf.ecore.version>
+        <eclipse.emf.ecorechange.version>2.2.3</eclipse.emf.ecorechange.version>
+        <eclipse.emf.ecorexmi.version>2.4.1</eclipse.emf.ecorexmi.version>
 
         <!--
             JBOSS AS
@@ -1169,52 +1184,52 @@
             <dependency>
                 <groupId>org.eclipse.equinox</groupId>
                 <artifactId>common</artifactId>
-                <version>3.3.0-v20070426</version>
+                <version>${eclipse.equinox.common.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jdt</groupId>
                 <artifactId>core</artifactId>
-                <version>3.3.0-v_771</version>
+                <version>${eclipse.jdt.core.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.core</groupId>
                 <artifactId>resources</artifactId>
-                <version>3.3.0-v20070604</version>
+                <version>${eclipse.core.resources.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.core</groupId>
                 <artifactId>expressions</artifactId>
-                <version>3.3.0-v20070606-0010</version>
+                <version>${eclipse.core.expressions.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.core</groupId>
                 <artifactId>runtime</artifactId>
-                <version>3.3.100-v20070530</version>
+                <version>${eclipse.core.runtime.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse</groupId>
                 <artifactId>osgi</artifactId>
-                <version>3.3.0-v20070530</version>
+                <version>${eclipse.osgi.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.core</groupId>
                 <artifactId>jobs</artifactId>
-                <version>3.3.0-v20070423</version>
+                <version>${eclipse.core.jobs.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.equinox</groupId>
                 <artifactId>registry</artifactId>
-                <version>3.3.0-v20070522</version>
+                <version>${eclipse.equinox.registry.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.equinox</groupId>
                 <artifactId>preferences</artifactId>
-                <version>3.2.100-v20070522</version>
+                <version>${eclipse.equinox.preferences.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.core</groupId>
                 <artifactId>contenttype</artifactId>
-                <version>3.2.100-v20070319</version>
+                <version>${eclipse.core.contenttype.version}</version>
             </dependency>
             <dependency>
                 <groupId>javassist</groupId>
@@ -1254,27 +1269,27 @@
             <dependency>
                 <groupId>org.eclipse.xsd</groupId>
                 <artifactId>xsd</artifactId>
-                <version>2.2.3</version>
+                <version>${eclipse.xsd.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.emf</groupId>
                 <artifactId>common</artifactId>
-                <version>2.4.0</version>
+                <version>${eclipse.emf.common.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.emf</groupId>
                 <artifactId>ecore</artifactId>
-                <version>2.4.2</version>
+                <version>${eclipse.emf.ecore.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.emf</groupId>
                 <artifactId>ecore-change</artifactId>
-                <version>2.2.3</version>
+                <version>${eclipse.emf.ecorechange.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.emf</groupId>
                 <artifactId>ecore-xmi</artifactId>
-                <version>2.4.1</version>
+                <version>${eclipse.emf.ecorexmi.version}</version>
             </dependency>
             <!--
                 TCK tests

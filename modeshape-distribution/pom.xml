@@ -135,6 +135,7 @@
                     <artifactId>modeshape-common</artifactId>
                     <version>${project.version}</version>
                     <classifier>component-with-dependencies</classifier>
+                    <type>zip</type>
                 </dependency>
 
                 <dependency>
@@ -142,6 +143,7 @@
                     <artifactId>modeshape-jcr-api</artifactId>
                     <version>${project.version}</version>
                     <classifier>component-with-dependencies</classifier>
+                    <type>zip</type>
                 </dependency>
 
                 <dependency>
@@ -149,6 +151,7 @@
                     <artifactId>modeshape-schematic</artifactId>
                     <classifier>component-with-dependencies</classifier>
                     <version>${project.version}</version>
+                    <type>zip</type>
                 </dependency>
 
                 <dependency>
@@ -156,6 +159,7 @@
                     <artifactId>modeshape-jcr</artifactId>
                     <classifier>component-with-dependencies</classifier>
                     <version>${project.version}</version>
+                    <type>zip</type>
                 </dependency>
 
                 <dependency>
@@ -163,6 +167,7 @@
                     <artifactId>modeshape-sequencer-images</artifactId>
                     <classifier>module-with-dependencies</classifier>
                     <version>${project.version}</version>
+                    <type>zip</type>
                 </dependency>
 
                 <dependency>
@@ -170,6 +175,7 @@
                     <artifactId>modeshape-unit-test</artifactId>
                     <classifier>module-with-dependencies</classifier>
                     <version>${project.version}</version>
+                    <type>zip</type>
                 </dependency>
 
                 <dependency>
@@ -177,6 +183,7 @@
                     <artifactId>modeshape-sequencer-mp3</artifactId>
                     <classifier>module-with-dependencies</classifier>
                     <version>${project.version}</version>
+                    <type>zip</type>
                 </dependency>
 
                 <dependency>
@@ -184,6 +191,7 @@
                     <artifactId>modeshape-sequencer-java</artifactId>
                     <classifier>module-with-dependencies</classifier>
                     <version>${project.version}</version>
+                    <type>zip</type>
                 </dependency>
 
                 <dependency>
@@ -191,6 +199,7 @@
                     <artifactId>modeshape-sequencer-msoffice</artifactId>
                     <classifier>module-with-dependencies</classifier>
                     <version>${project.version}</version>
+                    <type>zip</type>
                 </dependency>
 
                 <!--<dependency>-->
@@ -198,12 +207,14 @@
                 <!--<artifactId>modeshape-sequencer-teiid</artifactId>-->
                 <!--<classifier>module-with-dependencies</classifier>-->
                 <!--<version>${project.version}</version>-->
+                <!--<type>zip</type>-->
                 <!--</dependency>-->
                 <dependency>
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-sequencer-text</artifactId>
                     <classifier>module-with-dependencies</classifier>
                     <version>${project.version}</version>
+                    <type>zip</type>
                 </dependency>
 
                 <dependency>
@@ -211,6 +222,7 @@
                     <artifactId>modeshape-sequencer-xml</artifactId>
                     <classifier>module-with-dependencies</classifier>
                     <version>${project.version}</version>
+                    <type>zip</type>
                 </dependency>
 
                 <dependency>
@@ -218,6 +230,7 @@
                     <artifactId>modeshape-sequencer-xsd</artifactId>
                     <classifier>module-with-dependencies</classifier>
                     <version>${project.version}</version>
+                    <type>zip</type>
                 </dependency>
 
                 <dependency>
@@ -225,6 +238,7 @@
                     <artifactId>modeshape-sequencer-wsdl</artifactId>
                     <classifier>module-with-dependencies</classifier>
                     <version>${project.version}</version>
+                    <type>zip</type>
                 </dependency>
 
                 <dependency>
@@ -232,6 +246,7 @@
                     <artifactId>modeshape-sequencer-sramp</artifactId>
                     <classifier>module-with-dependencies</classifier>
                     <version>${project.version}</version>
+                    <type>zip</type>
                 </dependency>
 
                 <dependency>
@@ -239,6 +254,7 @@
                     <artifactId>modeshape-sequencer-zip</artifactId>
                     <classifier>module-with-dependencies</classifier>
                     <version>${project.version}</version>
+                    <type>zip</type>
                 </dependency>
 
                 <dependency>
@@ -246,6 +262,7 @@
                     <artifactId>modeshape-sequencer-ddl</artifactId>
                     <classifier>module-with-dependencies</classifier>
                     <version>${project.version}</version>
+                    <type>zip</type>
                 </dependency>
 
                 <dependency>
@@ -253,6 +270,7 @@
                     <artifactId>modeshape-web-jcr</artifactId>
                     <classifier>module-with-dependencies</classifier>
                     <version>${project.version}</version>
+                    <type>zip</type>
                 </dependency>
 
                 <dependency>
@@ -260,6 +278,7 @@
                     <artifactId>modeshape-web-jcr-rest</artifactId>
                     <classifier>module-with-dependencies</classifier>
                     <version>${project.version}</version>
+                    <type>zip</type>
                 </dependency>
 
                 <dependency>
@@ -267,6 +286,7 @@
                     <artifactId>modeshape-web-jcr-rest-client</artifactId>
                     <classifier>module-with-dependencies</classifier>
                     <version>${project.version}</version>
+                    <type>zip</type>
                 </dependency>
 
                 <!--<dependency>-->
@@ -274,6 +294,7 @@
                 <!--<artifactId>modeshape-web-jcr-webdav</artifactId>-->
                 <!--<classifier>module-with-dependencies</classifier>-->
                 <!--<version>${project.version}</version>-->
+                <!--<type>zip</type>-->
                 <!--</dependency>-->
 
                 <dependency>
@@ -281,6 +302,7 @@
                     <artifactId>modeshape-jdbc-local</artifactId>
                     <classifier>module-with-dependencies</classifier>
                     <version>${project.version}</version>
+                    <type>zip</type>
                 </dependency>
 
                 <dependency>
@@ -288,6 +310,7 @@
                     <artifactId>modeshape-jdbc</artifactId>
                     <classifier>module-with-dependencies</classifier>
                     <version>${project.version}</version>
+                    <type>zip</type>
                 </dependency>
 
                 <dependency>

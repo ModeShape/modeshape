@@ -43,7 +43,8 @@
 
 		<!-- Module for the standard JCR API -->
 		<dependencySet>
-			<outputDirectory>modules/javax/jcr/main</outputDirectory>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>modules/javax/jcr/main</outputDirectory>
 			<includes>
 				<include>javax.jcr:jcr</include>
 			</includes>
@@ -52,37 +53,152 @@
 
 		<!-- Module for the ModeShape API (extension of the JCR API) -->
 		<dependencySet>
-			<outputDirectory>modules/org/modeshape/jcr/api/main</outputDirectory>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>modules/org/modeshape/jcr/api/main</outputDirectory>
 			<includes>
 				<include>org.modeshape:modeshape-jcr-api:jar</include>
 			</includes>
-			<excludes>
-				<exclude>*:*:*:component-with-dependencies</exclude>
-			</excludes>
 			<unpack>false</unpack>
 		</dependencySet>
 
 		<!-- Module for the ModeShape engine (and dependencies) -->
-		<dependencySet>
-			<outputDirectory>modules/org/modeshape/main</outputDirectory>
-			<includes>
-				<include>org.modeshape:modeshape-jcr:jar</include>
-				<include>org.modeshape:modeshape-common:jar</include>
-				<include>org.modeshape:modeshape-schematic:jar</include>
-				<include>org.modeshape:modeshape-jbossas-subsystem:jar</include>
-				<!-- Include the Sequencer JARs (with dependencies) for all the built-in sequencers -->
-				<include>org.modeshape:modeshape-sequencer-*:jar</include>
-			</includes>
-			<excludes>
-			  <exclude>*:*:*:component-with-dependencies</exclude>
-			  <exclude>*:*:*:module-with-dependencies</exclude>
-			</excludes>
-			<unpack>false</unpack>
-		</dependencySet>
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>modules/org/modeshape/main</outputDirectory>
+            <includes>
+                <include>org.modeshape:modeshape-jcr:jar</include>
+                <include>org.modeshape:modeshape-common:jar</include>
+                <include>org.modeshape:modeshape-schematic:jar</include>
+                <include>org.modeshape:modeshape-jbossas-subsystem:jar</include>
+            </includes>
+            <unpack>false</unpack>
+        </dependencySet>
 
-		<!-- Module for Hibernate Search (Engine) -->
+        <!--Sequencers-->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>modules/org/modeshape/sequencer/ddl/main</outputDirectory>
+            <includes>
+                <include>org.modeshape:modeshape-sequencer-ddl:jar</include>
+            </includes>
+        </dependencySet>
+
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>modules/org/modeshape/sequencer/images/main</outputDirectory>
+            <includes>
+                <include>org.modeshape:modeshape-sequencer-images:jar</include>
+            </includes>
+        </dependencySet>
+
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>modules/org/modeshape/sequencer/java/main</outputDirectory>
+            <useTransitiveDependencies>true</useTransitiveDependencies>
+            <includes>
+                <include>org.modeshape:modeshape-sequencer-java:jar</include>
+                <include>javassist:javassist:jar</include>
+                <include>org.eclipse*:common:jar:${eclipse.equinox.common.version}</include>
+                <include>org.eclipse*:core:jar:${eclipse.jdt.core.version}</include>
+                <include>org.eclipse*:resources:jar:${eclipse.core.resources.version}</include>
+                <include>org.eclipse*:expressions:jar:${eclipse.core.expressions.version}</include>
+                <include>org.eclipse*:runtime:jar:${eclipse.core.runtime.version}</include>
+                <include>org.eclipse*:osgi:jar:${eclipse.osgi.version}</include>
+                <include>org.eclipse*:jobs:jar:${eclipse.core.jobs.version}</include>
+                <include>org.eclipse*:registry:jar:${eclipse.equinox.registry.version}</include>
+                <include>org.eclipse*:contenttype:jar:${eclipse.core.contenttype.version}</include>
+            </includes>
+        </dependencySet>
+
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>modules/org/modeshape/sequencer/mp3/main</outputDirectory>
+            <includes>
+                <include>org.modeshape:modeshape-sequencer-mp3:jar</include>
+                <include>org:jaudiotagger:jar</include>
+            </includes>
+        </dependencySet>
+
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>modules/org/modeshape/sequencer/msoffice/main</outputDirectory>
+            <includes>
+                <include>org.modeshape:modeshape-sequencer-msoffice:jar</include>
+                <include>org.apache*:poi:jar</include>
+                <include>org.apache*:poi-scratchpad:jar</include>
+            </includes>
+        </dependencySet>
+
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>modules/org/modeshape/sequencer/sramp/main</outputDirectory>
+            <includes>
+                <include>org.modeshape:modeshape-sequencer-sramp:jar</include>
+            </includes>
+        </dependencySet>
+
+        <!--<dependencySet>-->
+            <!--<outputDirectory>modules/org/modeshape/sequencer/teiid/main</outputDirectory>-->
+            <!--<includes>-->
+                <!--<include>org.modeshape:modeshape-sequencer-teiid:jar</include>-->
+                <!--<include>com.beust:jcommander:jar</include>-->
+            <!--</includes>-->
+        <!--<excludes>-->
+            <!--<exclude>org.modeshape:modeshape-common</exclude>-->
+            <!--<exclude>org.modeshape:modeshape-jcr-api</exclude>-->
+        <!--</excludes>-->
+        <!--</dependencySet>-->
+
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>modules/org/modeshape/sequencer/text/main</outputDirectory>
+            <includes>
+                <include>org.modeshape:modeshape-sequencer-text:jar</include>
+            </includes>
+        </dependencySet>
+
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>modules/org/modeshape/sequencer/wsdl/main</outputDirectory>
+            <includes>
+                <include>org.modeshape:modeshape-sequencer-wsdl:jar</include>
+                <include>wsdl4j:wsdl4j:jar</include>
+            </includes>
+        </dependencySet>
+
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>modules/org/modeshape/sequencer/xml/main</outputDirectory>
+            <includes>
+                <include>org.modeshape:modeshape-sequencer-xml:jar</include>
+            </includes>
+        </dependencySet>
+
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>modules/org/modeshape/sequencer/xsd/main</outputDirectory>
+            <includes>
+                <include>org.modeshape:modeshape-sequencer-xsd:jar</include>
+                <include>org.eclipse*:xsd:jar:${eclipse.xsd.version}</include>
+                <include>org.eclipse*:common:jar:${eclipse.emf.common.version}</include>
+                <include>org.eclipse*:ecore:jar:${eclipse.emf.ecore.version}</include>
+                <include>org.eclipse*:ecore-change:jar:${eclipse.emf.ecorechange.version}</include>
+                <include>org.eclipse*:ecore-xmi:jar:${eclipse.emf.ecorexmi.version}</include>
+            </includes>
+        </dependencySet>
+
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>modules/org/modeshape/sequencer/zip/main</outputDirectory>
+            <includes>
+                <include>org.modeshape:modeshape-sequencer-zip:jar</include>
+            </includes>
+        </dependencySet>
+
+        <!-- Module for Hibernate Search (Engine) -->
 		<dependencySet>
-			<outputDirectory>modules/org/hibernate/search-engine/${hibernate.search.module.slot}</outputDirectory>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>modules/org/hibernate/search-engine/${hibernate.search.module.slot}</outputDirectory>
 			<unpack>false</unpack>
 			<useTransitiveFiltering>true</useTransitiveFiltering>
 			<includes>
@@ -97,7 +213,8 @@
 
 		<!-- Module for Lucene (Core + Regex) -->
 		<dependencySet>
-			<outputDirectory>modules/org/apache/lucene/${lucene.module.slot}</outputDirectory>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>modules/org/apache/lucene/${lucene.module.slot}</outputDirectory>
 			<useTransitiveFiltering>true</useTransitiveFiltering>
 			<includes>
 				<include>org.apache.lucene:lucene-core</include>
@@ -109,13 +226,11 @@
 
 		<!-- Module for the ModeShape JDBC driver -->
 		<dependencySet>
-			<outputDirectory>modules/org/modeshape/jdbc/main</outputDirectory>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>modules/org/modeshape/jdbc/main</outputDirectory>
 			<includes>
 				<include>org.modeshape:modeshape-jdbc-local:jar</include>
 			</includes>
-			<excludes>
-              <exclude>*:*:*:module-with-dependencies</exclude>
-			</excludes>
 			<unpack>false</unpack>
 		</dependencySet>
 

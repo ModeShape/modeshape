@@ -2,7 +2,7 @@
     <id>module-with-dependencies</id>
     <includeBaseDirectory>false</includeBaseDirectory>
     <formats>
-        <format>jar</format>
+        <format>zip</format>
     </formats>
     <dependencySets>
         <dependencySet>
