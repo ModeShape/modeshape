@@ -28,29 +28,29 @@ import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StopContext;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.jcr.JcrEngine;
+import org.modeshape.jcr.ModeShapeEngine;
 
 /**
- * An <code>EngineService</code> instance is a JBoss service object for a {@link JcrEngine}.
+ * An <code>EngineService</code> instance is a JBoss service object for a {@link ModeShapeEngine}.
  */
-public final class EngineService implements Service<JcrEngine>, Serializable {
+public final class EngineService implements Service<ModeShapeEngine>, Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private final JcrEngine engine;
+    private final ModeShapeEngine engine;
 
     /**
      * Set the engine instance for this service
      * 
      * @param engine the engine (never <code>null</code>)
      */
-    public EngineService( JcrEngine engine ) {
+    public EngineService( ModeShapeEngine engine ) {
         CheckArg.isNotNull(engine, "engine");
         this.engine = engine;
     }
 
     @Override
-    public JcrEngine getValue() throws IllegalStateException, IllegalArgumentException {
+    public ModeShapeEngine getValue() throws IllegalStateException, IllegalArgumentException {
         return this.engine;
     }
 

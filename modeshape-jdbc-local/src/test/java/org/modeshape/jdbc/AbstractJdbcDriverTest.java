@@ -42,15 +42,15 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.JcrRepository.QueryLanguage;
+import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.MultiUseAbstractTest;
 import org.modeshape.jcr.RepositoryConfiguration;
-import org.modeshape.jcr.TestingEnvironment;
 
 /**
- * This is a test suite that operates against a complete JcrRepository instance created and managed using the JcrEngine.
- * Essentially this is an integration test, but it does test lower-level functionality of the implementation of the JCR interfaces
- * related to querying. (It is simply more difficult to unit test these implementations because of the difficulty in mocking the
- * many other components to replicate the same functionality.)
+ * This is a test suite that operates against a complete JcrRepository instance created and managed using the
+ * {@link ModeShapeEngine}. Essentially this is an integration test, but it does test lower-level functionality of the
+ * implementation of the JCR interfaces related to querying. (It is simply more difficult to unit test these implementations
+ * because of the difficulty in mocking the many other components to replicate the same functionality.)
  * <p>
  * Also, because queries are read-only, the engine is set up once and used for the entire set of test methods.
  * </p>

@@ -1584,7 +1584,7 @@ public class RepositoryConfiguration {
      * Also, the following code shows how an existing RepositoryConfiguration instance for a deployed repository can be updated:
      * 
      * <pre>
-     *   JcrEngine engine = ...
+     *   ModeShapeEngine engine = ...
      *   Repository deployed = engine.getRepository("repo");
      *   RepositoryConfiguration deployedConfig = deployed.getConfiguration();
      * 

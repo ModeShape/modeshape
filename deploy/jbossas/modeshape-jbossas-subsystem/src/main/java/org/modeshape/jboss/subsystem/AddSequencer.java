@@ -39,7 +39,7 @@ import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceTarget;
 import org.modeshape.jboss.service.SequencerService;
-import org.modeshape.jcr.JcrEngine;
+import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 
@@ -108,7 +108,7 @@ public class AddSequencer extends AbstractAddStepHandler {
         ServiceBuilder<JcrRepository> sequencerBuilder = target.addService(ModeShapeServiceNames.sequencerServiceName(repositoryName,
                                                                                                                       sequencerName),
                                                                            sequencerService);
-        sequencerBuilder.addDependency(ModeShapeServiceNames.ENGINE, JcrEngine.class, sequencerService.getJcrEngineInjector());
+        sequencerBuilder.addDependency(ModeShapeServiceNames.ENGINE, ModeShapeEngine.class, sequencerService.getModeShapeEngineInjector());
         sequencerBuilder.addDependency(ModeShapeServiceNames.repositoryServiceName(repositoryName),
                                        JcrRepository.class,
                                        sequencerService.getJcrRepositoryInjector());

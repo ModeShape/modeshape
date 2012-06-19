@@ -52,7 +52,7 @@ import org.modeshape.jboss.service.BinaryStorage;
 import org.modeshape.jboss.service.IndexStorage;
 import org.modeshape.jboss.service.ReferenceFactoryService;
 import org.modeshape.jboss.service.RepositoryService;
-import org.modeshape.jcr.JcrEngine;
+import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
@@ -233,7 +233,7 @@ public class AddRepository extends AbstractAddStepHandler {
         ServiceBuilder<JcrRepository> builder = target.addService(repositoryServiceName, repositoryService);
 
         // Add dependency to the ModeShape engine service ...
-        builder.addDependency(ModeShapeServiceNames.ENGINE, JcrEngine.class, repositoryService.getEngineInjector());
+        builder.addDependency(ModeShapeServiceNames.ENGINE, ModeShapeEngine.class, repositoryService.getEngineInjector());
 
         // Add dependency to the JGroups channel (used for events) ...
         if (clusterStackName != null) {

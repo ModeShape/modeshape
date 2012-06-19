@@ -38,7 +38,7 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.statistic.Stopwatch;
-import org.modeshape.jcr.JcrEngine;
+import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.TestingEnvironment;
 import org.modeshape.jcr.TestingUtil;
@@ -57,7 +57,7 @@ public class InMemoryTest {
     private TestingEnvironment environment;
     private TransactionManager txnMgr;
     private RepositoryConfiguration config;
-    protected JcrEngine engine;
+    protected ModeShapeEngine engine;
     protected Repository repository;
     protected Session session;
 
@@ -72,7 +72,7 @@ public class InMemoryTest {
         INFINISPAN_STARTUP.stop();
         MODESHAPE_STARTUP.start();
         config = new RepositoryConfiguration(REPO_NAME, environment);
-        engine = new JcrEngine();
+        engine = new ModeShapeEngine();
         engine.start();
         engine.deploy(config);
         repository = engine.startRepository(config.getName()).get();

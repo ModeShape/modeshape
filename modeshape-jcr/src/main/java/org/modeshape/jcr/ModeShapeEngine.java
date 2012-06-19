@@ -50,9 +50,9 @@ import org.infinispan.schematic.document.Changes;
 import org.infinispan.schematic.document.Editor;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.collection.Problems;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.ImmediateFuture;
-import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.NamedThreadFactory;
 import org.modeshape.jcr.api.Repositories;
 
@@ -60,7 +60,7 @@ import org.modeshape.jcr.api.Repositories;
  * A container for repositories.
  */
 @ThreadSafe
-public class JcrEngine implements Repositories {
+public class ModeShapeEngine implements Repositories {
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
@@ -76,7 +76,7 @@ public class JcrEngine implements Repositories {
         STOPPING;
     }
 
-    public JcrEngine() {
+    public ModeShapeEngine() {
     }
 
     protected final boolean checkRunning() {
@@ -539,8 +539,8 @@ public class JcrEngine implements Repositories {
      * Here's some code that shows how this is done:
      * 
      * <pre>
-     *   JcrEngine engine = ...
-     *   Repository deployed = engine.{@link JcrEngine#getRepository(String) getRepository("repo")};
+     *   ModeShapeEngine engine = ...
+     *   Repository deployed = engine.{@link ModeShapeEngine#getRepository(String) getRepository("repo")};
      *   RepositoryConfiguration deployedConfig = deployed.{@link JcrRepository#getConfiguration() getConfiguration()};
      *   
      *   // Create an editor, which is actually manipulating a copy of the configuration document ...
@@ -556,7 +556,7 @@ public class JcrEngine implements Repositories {
      *       // you've done something wrong with your editor
      *   } else {
      *       // Update the deployed repository's configuration with these changes ...
-     *       Future&lt;Boolean> future = engine.{@link JcrEngine#update(String, Changes) update("repo",changes)};
+     *       Future&lt;Boolean> future = engine.{@link ModeShapeEngine#update(String, Changes) update("repo",changes)};
      *           
      *       // Optionally block while the repository instance is changed to 
      *       // reflect the new configuration ...

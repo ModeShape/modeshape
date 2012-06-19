@@ -56,7 +56,7 @@ public class JndiRepositoryFactory implements ObjectFactory {
     private static final String CONFIG_FILES = "configFiles";
     private static final String REPOSITORY_NAME = "repositoryName";
 
-    private static final JcrEngine engine = new JcrEngine();
+    private static final ModeShapeEngine engine = new ModeShapeEngine();
     protected static final Logger log = Logger.getLogger(JndiRepositoryFactory.class);
 
     /**
@@ -74,9 +74,9 @@ public class JndiRepositoryFactory implements ObjectFactory {
     /**
      * Get or initialize the JCR Repository instance as described by the supplied configuration file and repository name.
      * 
-     * @param configFileName the name of the file containing the configuration information for the {@code JcrEngine}; may not be
-     *        null. This method will first attempt to load this file as a resource from the classpath. If no resource with the
-     *        given name exists, the name will be treated as a file name and loaded from the file system. May be null if the
+     * @param configFileName the name of the file containing the configuration information for the {@code ModeShapeEngine}; may
+     *        not be null. This method will first attempt to load this file as a resource from the classpath. If no resource with
+     *        the given name exists, the name will be treated as a file name and loaded from the file system. May be null if the
      *        repository should already exist.
      * @param repositoryName the name of the repository; may be null if the repository name is to be read from the configuration
      *        file (note that this does require parsing the configuration file)
@@ -193,10 +193,10 @@ public class JndiRepositoryFactory implements ObjectFactory {
      * Creates an {@code JcrRepository} or ModeShape engine using the reference information specified.
      * <p>
      * This method first attempts to convert the {@code obj} parameter into a {@link Reference reference to JNDI configuration
-     * information}. If that is successful, a {@link JcrEngine} will be created (if not previously created by a call to this
+     * information}. If that is successful, a {@link ModeShapeEngine} will be created (if not previously created by a call to this
      * method) and it will be configured from the resource or file at the location specified by the {@code configFile} key in the
-     * reference. After the configuration is successful, the {@link JcrEngine#getRepository(String) JcrEngine will be queried} for
-     * the repository with the name specified by the value of the @{code repositoryName} key in the reference.
+     * reference. After the configuration is successful, the {@link ModeShapeEngine#getRepository(String) ModeShapeEngine} will be
+     * queried} for the repository with the name specified by the value of the @{code repositoryName} key in the reference.
      * </p>
      * 
      * @param obj the reference to the JNDI configuration information; must be a non-null instance of {@link Reference}
@@ -208,8 +208,8 @@ public class JndiRepositoryFactory implements ObjectFactory {
      * @throws IOException if there is an error or problem reading the configuration resource at the supplied path
      * @throws SAXException if the contents of the configuration resource are not valid XML
      * @throws NamingException if there is an error registering the namespace listener
-     * @throws RepositoryException if the {@link JcrEngine#start() JcrEngine could not be started}, the named repository does not
-     *         exist in the given configuration resource, or the named repository could not be created
+     * @throws RepositoryException if the {@link ModeShapeEngine#start() ModeShapeEngine could not be started}, the named
+     *         repository does not exist in the given configuration resource, or the named repository could not be created
      */
     @Override
     public Object getObjectInstance( Object obj,

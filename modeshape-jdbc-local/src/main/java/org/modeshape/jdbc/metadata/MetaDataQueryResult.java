@@ -23,24 +23,25 @@
  */
 package org.modeshape.jdbc.metadata;
 
-import javax.jcr.ItemNotFoundException;
-import javax.jcr.Node;
-import javax.jcr.NodeIterator;
-import javax.jcr.RepositoryException;
-import javax.jcr.Value;
-import javax.jcr.query.Row;
-import javax.jcr.query.RowIterator;
-import org.modeshape.jdbc.JdbcJcrValueFactory;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import javax.jcr.ItemNotFoundException;
+import javax.jcr.Node;
+import javax.jcr.NodeIterator;
+import javax.jcr.RepositoryException;
+import javax.jcr.Value;
+import javax.jcr.query.QueryResult;
+import javax.jcr.query.Row;
+import javax.jcr.query.RowIterator;
+import org.modeshape.jdbc.JdbcJcrValueFactory;
 
 /**
  * The MetaDataQueryResult is used to provide {@link NodeIterator} and the {@link RowIterator} in order to provide query results
  * when metadata is requested. This is done because there are no sql queries that can be executed to obtain certain types of
- * metadata in a return QueryResult from the JcrEngine.
+ * metadata in a return {@link QueryResult} from the ModeShapeEngine.
  */
 public class MetaDataQueryResult implements javax.jcr.query.QueryResult {
 

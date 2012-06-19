@@ -32,7 +32,7 @@ import javax.transaction.TransactionManager;
 import org.infinispan.Cache;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.logging.Logger;
-import org.modeshape.jcr.JcrEngine.State;
+import org.modeshape.jcr.ModeShapeEngine.State;
 import org.modeshape.jcr.value.binary.TransientBinaryStore;
 
 /**
@@ -88,7 +88,7 @@ public class TestingUtil {
         }
     }
 
-    public static void killEngine( JcrEngine engine ) {
+    public static void killEngine( ModeShapeEngine engine ) {
         if (engine == null) return;
         try {
             if (engine.getState() != State.RUNNING) return;

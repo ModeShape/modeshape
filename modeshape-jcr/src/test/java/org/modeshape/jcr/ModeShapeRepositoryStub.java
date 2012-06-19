@@ -56,7 +56,7 @@ public class ModeShapeRepositoryStub extends RepositoryStub {
     private Properties configProps;
     private String repositoryConfigurationName;
     private JcrRepository repository;
-    private JcrEngine engine;
+    private ModeShapeEngine engine;
 
     static {
         // Initialize the JAAS configuration to allow for an admin login later
@@ -110,7 +110,7 @@ public class ModeShapeRepositoryStub extends RepositoryStub {
                                                 + configFileName + "\" on the classpath");
             }
 
-            engine = new JcrEngine();
+            engine = new ModeShapeEngine();
             engine.start();
 
             // Deploy and start the repository, and block until started...
