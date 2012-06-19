@@ -13,7 +13,7 @@ import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import org.modeshape.common.collection.Problems;
-import org.modeshape.jcr.JcrEngine;
+import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.api.JcrTools;
 
@@ -24,7 +24,7 @@ public class SequencerDemo {
     public static void main( String[] argv ) {
 
         // Create and start the engine ...
-        JcrEngine engine = new JcrEngine();
+        ModeShapeEngine engine = new ModeShapeEngine();
         engine.start();
 
         // Load the configuration for a repository via the classloader (can also use path to a file)...

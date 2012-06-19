@@ -36,15 +36,15 @@ import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.jcr.ConfigurationException;
-import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrRepository;
+import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.NoSuchRepositoryException;
 import org.modeshape.jcr.RepositoryConfiguration;
 
 public class SequencerService implements Service<JcrRepository> {
 
-    private final InjectedValue<JcrEngine> jcrEngineInjector = new InjectedValue<JcrEngine>();
+    private final InjectedValue<ModeShapeEngine> engineInjector = new InjectedValue<ModeShapeEngine>();
     private final InjectedValue<JcrRepository> jcrRepositoryInjector = new InjectedValue<JcrRepository>();
 
     private final Properties sequencerProperties;
@@ -61,13 +61,13 @@ public class SequencerService implements Service<JcrRepository> {
         return null;
     }
 
-    private JcrEngine getJcrEngine() {
-        return jcrEngineInjector.getValue();
+    private ModeShapeEngine getModeShapeEngine() {
+        return engineInjector.getValue();
     }
 
     @Override
     public void start( StartContext arg0 ) throws StartException {
-        JcrEngine engine = getJcrEngine();
+        ModeShapeEngine engine = getModeShapeEngine();
 
         JcrRepository repository = null;
         try {
@@ -128,10 +128,10 @@ public class SequencerService implements Service<JcrRepository> {
     }
 
     /**
-     * @return the jcrEngineInjector
+     * @return the injector
      */
-    public InjectedValue<JcrEngine> getJcrEngineInjector() {
-        return jcrEngineInjector;
+    public InjectedValue<ModeShapeEngine> getModeShapeEngineInjector() {
+        return engineInjector;
     }
 
     /**

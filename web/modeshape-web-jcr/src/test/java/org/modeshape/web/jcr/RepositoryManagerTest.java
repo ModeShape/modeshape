@@ -40,7 +40,7 @@ public class RepositoryManagerTest {
     }
 
     @Test
-    public void shouldLoadFileBasedJcrEngineFromClassPath() throws Exception {
+    public void shouldLoadFileBasedModeShapeEngineFromClassPath() throws Exception {
         // This will start up the repository ...
         RepositoryManager.initialize(context);
 

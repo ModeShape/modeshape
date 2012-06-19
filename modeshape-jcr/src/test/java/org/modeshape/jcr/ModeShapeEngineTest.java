@@ -18,19 +18,19 @@ import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.jcr.ClientLoad.Client;
 import org.modeshape.jcr.ClientLoad.ClientResultProcessor;
-import org.modeshape.jcr.JcrEngine.State;
+import org.modeshape.jcr.ModeShapeEngine.State;
 import org.modeshape.jcr.RepositoryConfiguration.Default;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 
-public class JcrEngineTest extends AbstractTransactionalTest {
+public class ModeShapeEngineTest extends AbstractTransactionalTest {
 
     private RepositoryConfiguration config;
-    private JcrEngine engine;
+    private ModeShapeEngine engine;
 
     @Before
     public void beforeEach() throws Exception {
         config = RepositoryConfiguration.read("{ \"name\":\"my-repo\" }");
-        engine = new JcrEngine();
+        engine = new ModeShapeEngine();
     }
 
     @After

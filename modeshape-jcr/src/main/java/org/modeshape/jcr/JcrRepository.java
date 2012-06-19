@@ -85,7 +85,7 @@ import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.NamedThreadFactory;
-import org.modeshape.jcr.JcrEngine.State;
+import org.modeshape.jcr.ModeShapeEngine.State;
 import org.modeshape.jcr.RepositoryConfiguration.AnonymousSecurity;
 import org.modeshape.jcr.RepositoryConfiguration.BinaryStorage;
 import org.modeshape.jcr.RepositoryConfiguration.Component;
@@ -309,7 +309,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
      * @throws FileNotFoundException if the Infinispan configuration file is changed but could not be found
      * @throws IOException if there is a problem with the specified Infinispan configuration file
      * @throws NamingException if there is a problem looking in JNDI for the Infinispan CacheContainer
-     * @see JcrEngine#update(String, Changes)
+     * @see ModeShapeEngine#update(String, Changes)
      */
     void apply( Changes changes ) throws IOException, NamingException {
         try {
@@ -841,7 +841,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
     /**
      * Clean up the repository content's garbage.
      * 
-     * @see JcrEngine.GarbageCollectionTask#run()
+     * @see ModeShapeEngine.GarbageCollectionTask#run()
      */
     void cleanUp() {
         RunningState running = runningState.get();

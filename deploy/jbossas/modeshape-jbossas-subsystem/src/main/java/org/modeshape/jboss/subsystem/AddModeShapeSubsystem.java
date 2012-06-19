@@ -43,7 +43,7 @@ import org.modeshape.common.naming.SingletonInitialContextFactory;
 import org.modeshape.jboss.lifecycle.JBossLifeCycleListener;
 import org.modeshape.jboss.service.EngineService;
 import org.modeshape.jboss.service.ReferenceFactoryService;
-import org.modeshape.jcr.JcrEngine;
+import org.modeshape.jcr.ModeShapeEngine;
 
 class AddModeShapeSubsystem extends AbstractAddStepHandler {
 
@@ -95,25 +95,25 @@ class AddModeShapeSubsystem extends AbstractAddStepHandler {
         engine = buildModeShapeEngine(model);
 
         // Engine service
-        ServiceBuilder<JcrEngine> engineBuilder = target.addService(ModeShapeServiceNames.ENGINE, engine);
+        ServiceBuilder<ModeShapeEngine> engineBuilder = target.addService(ModeShapeServiceNames.ENGINE, engine);
         engineBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
-        ServiceController<JcrEngine> controller = engineBuilder.install();
+        ServiceController<ModeShapeEngine> controller = engineBuilder.install();
         controller.getServiceContainer().addTerminateListener(shutdownListener);
         newControllers.add(controller);
 
         // JNDI Binding
-        final ReferenceFactoryService<JcrEngine> referenceFactoryService = new ReferenceFactoryService<JcrEngine>();
+        final ReferenceFactoryService<ModeShapeEngine> referenceFactoryService = new ReferenceFactoryService<ModeShapeEngine>();
         final ServiceName referenceFactoryServiceName = ModeShapeServiceNames.ENGINE.append("reference-factory"); //$NON-NLS-1$
         final ServiceBuilder<?> referenceBuilder = target.addService(referenceFactoryServiceName, referenceFactoryService);
-        referenceBuilder.addDependency(ModeShapeServiceNames.ENGINE, JcrEngine.class, referenceFactoryService.getInjector());
+        referenceBuilder.addDependency(ModeShapeServiceNames.ENGINE, ModeShapeEngine.class, referenceFactoryService.getInjector());
         referenceBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
 
         final ContextNames.BindInfo bindInfo = ContextNames.bindInfoFor(ModeShapeJndiNames.JNDI_BASE_NAME);
         final BinderService binderService = new BinderService(bindInfo.getBindName());
         final ServiceBuilder<?> binderBuilder = target.addService(bindInfo.getBinderServiceName(), binderService);
         binderBuilder.addDependency(ModeShapeServiceNames.ENGINE,
-                                    JcrEngine.class,
-                                    new ManagedReferenceInjector<JcrEngine>(binderService.getManagedObjectInjector()));
+                                    ModeShapeEngine.class,
+                                    new ManagedReferenceInjector<ModeShapeEngine>(binderService.getManagedObjectInjector()));
         binderBuilder.addDependency(bindInfo.getParentContextServiceName(),
                                     ServiceBasedNamingStore.class,
                                     binderService.getNamingStoreInjector());
@@ -127,7 +127,7 @@ class AddModeShapeSubsystem extends AbstractAddStepHandler {
     }
 
     private EngineService buildModeShapeEngine( ModelNode model ) {
-        EngineService engine = new EngineService(new JcrEngine());
+        EngineService engine = new EngineService(new ModeShapeEngine());
         return engine;
     }
 }

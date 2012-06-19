@@ -45,8 +45,8 @@ import org.modeshape.common.logging.Logger;
 import org.modeshape.jboss.subsystem.MappedAttributeDefinition;
 import org.modeshape.jcr.ConfigurationException;
 import org.modeshape.jcr.Environment;
-import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.JcrRepository;
+import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.NoSuchRepositoryException;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
@@ -62,7 +62,7 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
     public static final String CONTENT_CONTAINER_NAME = "content";
     public static final String BINARY_STORAGE_CONTAINER_NAME = "binaries";
 
-    private final InjectedValue<JcrEngine> engineInjector = new InjectedValue<JcrEngine>();
+    private final InjectedValue<ModeShapeEngine> engineInjector = new InjectedValue<ModeShapeEngine>();
     private final InjectedValue<CacheContainer> cacheManagerInjector = new InjectedValue<CacheContainer>();
     private final InjectedValue<TransactionManager> txnMgrInjector = new InjectedValue<TransactionManager>();
     private final InjectedValue<ChannelFactory> channelFactoryInjector = new InjectedValue<ChannelFactory>();
@@ -85,7 +85,7 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
         }
     }
 
-    private JcrEngine getEngine() {
+    private ModeShapeEngine getEngine() {
         return engineInjector.getValue();
     }
 
@@ -118,7 +118,7 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
 
     @Override
     public void start( StartContext arg0 ) throws StartException {
-        JcrEngine engine = getEngine();
+        ModeShapeEngine engine = getEngine();
         Logger logger = Logger.getLogger(getClass());
         try {
             final String repositoryName = repositoryName();
@@ -191,7 +191,7 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
 
     @Override
     public void stop( StopContext context ) {
-        JcrEngine engine = getEngine();
+        ModeShapeEngine engine = getEngine();
         if (engine != null) {
             try {
                 // Undeploy the repository ...
@@ -212,7 +212,7 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
      */
     public void changeField( MappedAttributeDefinition defn,
                              ModelNode newValue ) throws RepositoryException, OperationFailedException {
-        JcrEngine engine = getEngine();
+        ModeShapeEngine engine = getEngine();
         String repositoryName = repositoryName();
 
         // Get a snapshot of the current configuration ...
@@ -251,7 +251,7 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
     public void changeSequencerField( MappedAttributeDefinition defn,
                                       ModelNode newValue,
                                       String sequencerName ) throws RepositoryException, OperationFailedException {
-        JcrEngine engine = getEngine();
+        ModeShapeEngine engine = getEngine();
         String repositoryName = repositoryName();
 
         // Get a snapshot of the current configuration ...
@@ -303,9 +303,9 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
     }
 
     /**
-     * @return the injector used to set the JcrEngine reference
+     * @return the injector used to set the {@link ModeShapeEngine} reference
      */
-    public InjectedValue<JcrEngine> getEngineInjector() {
+    public InjectedValue<ModeShapeEngine> getEngineInjector() {
         return engineInjector;
     }
 

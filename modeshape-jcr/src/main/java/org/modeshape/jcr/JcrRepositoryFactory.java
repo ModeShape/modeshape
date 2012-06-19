@@ -81,9 +81,9 @@ import org.modeshape.jcr.api.RepositoryFactory;
  * the JCR repository located in JNDI at the name "jcr/local/my_repository". Note that the use of such URLs requires that the
  * repository already be registered in JNDI at that location.</li>
  * <li><strong>JNDI location of engine and repository name</strong> - The URL contains the location in JNDI of an existing
- * ModeShape {@link JcrEngine engine} instance and the name of the <code>javax.jcr.Repository</code> repository as a URL query
- * parameter. For example, "<code>jndi:jcr/local?repositoryName=my_repository</code>" identifies a ModeShape engine registered in
- * JNDI at "jcr/local", and looks in that engine for a JCR repository named "<code>my_repository</code>".</li>
+ * ModeShape {@link ModeShapeEngine engine} instance and the name of the <code>javax.jcr.Repository</code> repository as a URL
+ * query parameter. For example, "<code>jndi:jcr/local?repositoryName=my_repository</code>" identifies a ModeShape engine
+ * registered in JNDI at "jcr/local", and looks in that engine for a JCR repository named "<code>my_repository</code>".</li>
  * <li><strong>Location of a repository configuration</strong> - The URL contains a location that is resolvable to a configuration
  * file for the repository. If the configuration file has not already been loaded by the factory, then the configuration file is
  * read and used to deploy a new repository; subsequent uses of the same URL will return the previously deployed repository
@@ -107,7 +107,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
     /**
      * The engine that hosts the deployed repository instances.
      */
-    private static final JcrEngine ENGINE = new JcrEngine();
+    private static final ModeShapeEngine ENGINE = new ModeShapeEngine();
 
     /**
      * The name of the key for the ModeShape JCR URL in the parameter map
@@ -160,9 +160,9 @@ public class JcrRepositoryFactory implements RepositoryFactory {
      * JcrRepositoryFactory#URL.
      * <p>
      * The value of this key is treated as a URL with the format {@code PROTOCOL://PATH[?repositoryName=REPOSITORY_NAME]} where
-     * PROTOCOL is "jndi" or "file", PATH is the JNDI name of the JcrEngine or the path to the configuration file, and
-     * REPOSITORY_NAME is the name of the repository to return if there is more than one JCR repository in the given JcrEngine or
-     * configuration file.
+     * PROTOCOL is "jndi" or "file", PATH is the JNDI name of the {@link ModeShapeEngine} or the path to the configuration file,
+     * and REPOSITORY_NAME is the name of the repository to return if there is more than one JCR repository in the given
+     * {@link ModeShapeEngine} or configuration file.
      * </p>
      * 
      * @param parameters a map of parameters to use to look up the repository; may be null
@@ -171,9 +171,9 @@ public class JcrRepositoryFactory implements RepositoryFactory {
      *         <li>the parameters map is empty; or,</li>
      *         <li>there is no parameter with the {@link #URL}; or,</li>
      *         <li>the value for the {@link #URL} key is null or cannot be parsed into a ModeShape JCR URL; or,</li>
-     *         <li>the ModeShape JCR URL is parseable but does not point to a JcrEngine (in the JNDI tree) or a configuration file
-     *         (in the classpath or file system); or,</li>
-     *         <li>or there is an error starting up the JcrEngine with the given configuration information.</li>
+     *         <li>the ModeShape JCR URL is parseable but does not point to a {@link ModeShapeEngine} (in the JNDI tree) or a
+     *         configuration file (in the classpath or file system); or,</li>
+     *         <li>or there is an error starting up the {@link ModeShapeEngine} with the given configuration information.</li>
      *         <ul>
      * @see RepositoryFactory#getRepository(Map)
      */
@@ -229,7 +229,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
         return null;
     }
 
-    private JcrEngine getEngine() {
+    private ModeShapeEngine getEngine() {
         // Make sure the engine is started ...
         switch (ENGINE.getState()) {
             case NOT_RUNNING:
@@ -272,13 +272,14 @@ public class JcrRepositoryFactory implements RepositoryFactory {
     }
 
     /**
-     * Returns a {@link JcrEngine} for the configuration in the given file.
+     * Returns a {@link ModeShapeEngine} for the configuration in the given file.
      * <p>
-     * If a {@link JcrEngine} has already been loaded by this class for the given configuration file, that engine will be reused.
+     * If a {@link ModeShapeEngine} has already been loaded by this class for the given configuration file, that engine will be
+     * reused.
      * </p>
      * 
      * @param configUrl the URL to the file in the file system or relative to the classpath; may not be null
-     * @return a {@code JcrEngine} that was initialized from the given configuration file or null if no engine could be
+     * @return a {@code ModeShapeEngine} that was initialized from the given configuration file or null if no engine could be
      *         initialized from that file without errors.
      */
     private JcrRepository getRepositoryFromConfigFile( URL configUrl ) {
@@ -309,7 +310,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
 
             // Look for an existing repository with the same URL ...
             String configKey = configUrl.toString();
-            JcrEngine engine = getEngine();
+            ModeShapeEngine engine = getEngine();
             if (engine.getRepositoryKeys().contains(configKey)) {
                 try {
                     return engine.getRepository(configKey);
@@ -426,8 +427,8 @@ public class JcrRepositoryFactory implements RepositoryFactory {
             InitialContext ic = new InitialContext(hashtable(parameters));
 
             Object ob = ic.lookup(jndiName);
-            if (ob instanceof JcrEngine) {
-                JcrEngine engine = (JcrEngine)ob;
+            if (ob instanceof ModeShapeEngine) {
+                ModeShapeEngine engine = (ModeShapeEngine)ob;
                 switch (engine.getState()) {
                     case NOT_RUNNING:
                     case STOPPING:
@@ -507,12 +508,13 @@ public class JcrRepositoryFactory implements RepositoryFactory {
      * Returns the repository with the given name from the {@link Repositories} referenced by {@code jcrUrl} if the engine and the
      * named repository exist, null otherwise.
      * <p>
-     * If the {@code jcrUrl} parameter contains a valid, ModeShape-compatible URL for a {@link JcrEngine} that has not yet been
-     * started, that {@code JcrEngine} will be created and {@link JcrEngine#start() started} as a side effect of this method.
+     * If the {@code jcrUrl} parameter contains a valid, ModeShape-compatible URL for a {@link ModeShapeEngine} that has not yet
+     * been started, that {@code ModeShapeEngine} will be created and {@link ModeShapeEngine#start() started} as a side effect of
+     * this method.
      * </p>
      * <p>
      * If the {@code repositoryName} parameter is null, the repository name specified in the {@code jcrUrl} parameter will be used
-     * instead. If no repository name is specified in the {@code jcrUrl} parameter and the {@code JcrEngine} has exactly one
+     * instead. If no repository name is specified in the {@code jcrUrl} parameter and the {@code ModeShapeEngine} has exactly one
      * repository, that repository will be used. Otherwise, this method will return {@code null}.
      * </p>
      * 
@@ -523,7 +525,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
      *         the {@code repositoryName} and the given engine has exactly one repository or the {@code jcrUrl} specifies a
      *         repository. If any of these conditions do not hold, {@code null} is returned.
      * @throws RepositoryException if the named repository exists but cannot be accessed
-     * @see JcrEngine#getRepository(String)
+     * @see ModeShapeEngine#getRepository(String)
      */
     public Repository getRepository( String jcrUrl,
                                      String repositoryName ) throws RepositoryException {

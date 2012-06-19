@@ -135,7 +135,7 @@ public interface RepositoryDelegate {
     <T> T unwrap( Class<T> iface ) throws SQLException;
 
     /**
-     * Called to get all the repository names currently available in the JcrEngine.
+     * Called to get all the repository names currently available in the ModeShapeEngine.
      * 
      * @return Set<String> of repository names
      * @throws RepositoryException

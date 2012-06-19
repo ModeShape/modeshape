@@ -23,19 +23,20 @@
  */
 package org.modeshape.jdbc;
 
-import javax.naming.Context;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import org.modeshape.jcr.JcrRepository;
 import java.sql.Driver;
 import java.util.Properties;
+import javax.naming.Context;
+import org.modeshape.jcr.JcrRepository;
+import org.modeshape.jcr.ModeShapeEngine;
 
 /**
- * This is a test suite that operates against a complete JcrRepository instance created and managed using the JcrEngine.
- * Essentially this is an integration test, but it does test lower-level functionality of the implementation of the JCR interfaces
- * related to querying. (It is simply more difficult to unit test these implementations because of the difficulty in mocking the
- * many other components to replicate the same functionality.)
+ * This is a test suite that operates against a complete JcrRepository instance created and managed using the
+ * {@link ModeShapeEngine}. Essentially this is an integration test, but it does test lower-level functionality of the
+ * implementation of the JCR interfaces related to querying. (It is simply more difficult to unit test these implementations
+ * because of the difficulty in mocking the many other components to replicate the same functionality.)
  * <p>
  * Also, because queries are read-only, the engine is set up once and used for the entire set of test methods.
  * </p>
