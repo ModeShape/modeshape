@@ -1080,7 +1080,8 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     // ===========================================================================================================================
 
     /**
-     * @see NodeReorderTest#testNodeReorder()
+     * @see NodeReorderTest#testNodeReorderSameName()
+     * @see NodeReorderTest#testNodeReorderSameNameWithRemove()
      * @throws Exception
      */
     @SuppressWarnings( "unchecked" )
