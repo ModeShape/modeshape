@@ -28,10 +28,10 @@
         "providers" : [
             {
                 "name" : "My Custom Security Provider",
-                "type" : "com.example.MyAuthenticationProvider",
+                "classname" : "com.example.MyAuthenticationProvider",
             },
             {
-                "type" : "JAAS",
+                "classname" : "jaas",
                 "policyName" : "modeshape-jcr",
             }
         ]
@@ -42,11 +42,11 @@
         "extractors" : [
             {
                 "name" : "MyFileType extractor",
-                "type" : "com.example.myfile.MyExtractor",
+                "classname" : "com.example.myfile.MyExtractor",
             },
             {
                 "name" : "General content-based extractor",
-                "type" : "tika",
+                "classname" : "tika",
             }
         ],
         "indexStorage" : {
@@ -78,12 +78,12 @@
         "sequencers" : [
             {
                 "name" : "ZIP Files loaded under '/files' and extracted into '/sequenced/zip/$1'",
-                "type" : "ZipSequencer",
+                "classname" : "ZipSequencer",
                 "pathExpressions" : ["default:/files(//)(*.zip[*])/jcr:content[@jcr:data] => default:/sequenced/zip/$1"],
             },
             {
                 "name" : "Delimited Text File Sequencer",
-                "type" : "org.modeshape.sequencer.text.DelimitedTextSequencer",
+                "classname" : "org.modeshape.sequencer.text.DelimitedTextSequencer",
                 "pathExpressions" : [ 
                     "default:/files//(*.csv[*])/jcr:content[@jcr:data] => default:/sequenced/text/delimited/$1"
                 ],

@@ -34,11 +34,11 @@
         "providers" : [
             {
                 "name" : "My Custom Security Provider",
-                "type" : "com.example.MyAuthenticationProvider",
+                "classname" : "com.example.MyAuthenticationProvider",
                 "description" : "A custom security provider used for authentication and authorization."
             },
             {
-                "type" : "JAAS",
+                "classname" : "JAAS",
                 "policyName" : "modeshape-jcr",
                 "description" : "JAAS should use the 'modeshape-jcr' policy.",
             }
@@ -51,12 +51,12 @@
         "extractors" : [
             {
                 "name" : "MyFileType extractor",
-                "type" : "com.example.myfile.MyExtractor",
+                "classname" : "com.example.myfile.MyExtractor",
                 "description" : "A custom extractor implementation.",
             },
             {
                 "name" : "General content-based extractor",
-                "type" : "tika",
+                "classname" : "tika",
                 "description" : "The Tika-based extractor, which requires adding the Tika JARs to the classpath",
             }
         ],
@@ -93,13 +93,13 @@
         "sequencers" : [
             {
                 "name" : "ZIP Files loaded under '/files' and extracted into '/sequenced/zip/$1'",
-                "type" : "ZipSequencer",
+                "classname" : "ZipSequencer",
                 "pathExpressions" : ["default:/files(//)(*.zip[*])/jcr:content[@jcr:data] => default:/sequenced/zip/$1"],
             },
             {
                 "description" : "Extracts row and column information from CSV files uploaded under '/files', and stores the derived information under '/sequenced/text/delimited/...'. The ',' character should be used to delimit the different values in a row.",
                 "name" : "Delimited Text File Sequencer",
-                "type" : "org.modeshape.sequencer.text.DelimitedTextSequencer",
+                "classname" : "org.modeshape.sequencer.text.DelimitedTextSequencer",
                 "pathExpressions" : [ 
                     "default:/files//(*.csv[*])/jcr:content[@jcr:data] => default:/sequenced/text/delimited/$1"
                 ],

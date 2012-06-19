@@ -5,7 +5,7 @@
         "sequencers" : [
             {
                 "name" : "WSDL sequencer",
-                "type" : "wsdlsequencer",
+                "classname" : "wsdlsequencer",
                 "pathExpressions" : [ "default:/(*.wsdl)/jcr:content[@jcr:data] => /wsdl" ]
             }
         ]

@@ -5,12 +5,12 @@
         "sequencers" : [
             {
                 "name" : "Images in separate location",
-                "type" : "ImageSequencer",
+                "classname" : "ImageSequencer",
                 "pathExpression" : "default://(*.(gif|png|pict|jpg))/jcr:content[@jcr:data] => default:/sequenced/images"
             },
             {
                 "name" : "Images in the same location",
-                "type" : "org.modeshape.sequencer.image.ImageMetadataSequencer",
+                "classname" : "org.modeshape.sequencer.image.ImageMetadataSequencer",
                 "pathExpressions" : [ "default://(*.(gif|png|pict|jpg))/jcr:content[@jcr:data]" ]
             }
         ]

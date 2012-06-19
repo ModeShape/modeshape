@@ -5,7 +5,7 @@
         "sequencers" : [
             {
                 "name" : "Office sequencer",
-                "type" : "msoffice",
+                "classname" : "msoffice",
                 "pathExpressions" : [ "default://(*.(xls|doc|ppt))/jcr:content[@jcr:data]" ]
             }
         ]

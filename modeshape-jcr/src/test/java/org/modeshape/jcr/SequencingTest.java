@@ -23,23 +23,23 @@
  */
 package org.modeshape.jcr;
 
-import javax.jcr.Node;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import java.io.InputStream;
+import javax.jcr.Node;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Json;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
-import java.io.InputStream;
 
 /**
  * Tests of various sequencing configurations.
@@ -82,7 +82,7 @@ public class SequencingTest extends AbstractSequencerTest {
         // Create the sequencer doc ...
         EditableDocument sequencer = Schematic.newDocument();
         sequencer.set(FieldName.NAME, desc);
-        sequencer.set(FieldName.TYPE, type);
+        sequencer.set(FieldName.CLASSNAME, type);
         sequencer.setArray(FieldName.PATH_EXPRESSIONS, (Object[])pathExpressions);
         sequencers.add(sequencer);
     }
@@ -183,9 +183,8 @@ public class SequencingTest extends AbstractSequencerTest {
         assertNotNull(getOutputNode("/shouldTriggerSequencer/" + TestSequencersHolder.DERIVED_NODE_NAME));
     }
 
-
     @Test
-    @FixFor("MODE-1361")
+    @FixFor( "MODE-1361" )
     public void shouldSequenceWithCriteriaAndRegexInputPath() throws Exception {
         EditableDocument doc = Schematic.newDocument();
         addSequencer(doc, "seq1", TestSequencersHolder.DefaultSequencer.class.getName(), "default://(*.foo)[bar/@baz] => /output");
@@ -202,10 +201,13 @@ public class SequencingTest extends AbstractSequencerTest {
     }
 
     @Test
-    @FixFor("MODE-1361")
-    public void shouldGenerateCorrectOutputNodePathForCapturingGroup() throws Exception{
+    @FixFor( "MODE-1361" )
+    public void shouldGenerateCorrectOutputNodePathForCapturingGroup() throws Exception {
         EditableDocument doc = Schematic.newDocument();
-        addSequencer(doc, "seq1", TestSequencersHolder.DefaultSequencer.class.getName(), "default://(*.xml)/jcr:content[@jcr:data] => /output/$1");
+        addSequencer(doc,
+                     "seq1",
+                     TestSequencersHolder.DefaultSequencer.class.getName(),
+                     "default://(*.xml)/jcr:content[@jcr:data] => /output/$1");
         startRepositoryWithConfiguration(doc);
 
         createNodeWithContentFromFile("cars.xml", "cars.xml");

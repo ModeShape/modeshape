@@ -75,6 +75,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.JcrObservationManager.JcrEventBundle;
+import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.api.value.DateTime;
 
 /**
@@ -126,7 +127,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
      *          },
      *          "providers" : [
      *              {
-     *                  "type" : "JAAS",
+     *                  "classname" : "JAAS",
      *                  "policyName" : "modeshape-jcr"
      *              }
      *          ]
@@ -149,7 +150,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         anonymous.setArray("roles", "readonly");
         anonymous.setBoolean("useOnFailedLogin", true);
         EditableArray providers = security.getOrCreateArray("providers");
-        EditableDocument jaas = Schematic.newDocument("type", "JAAS", "policyName", "modeshape-jcr");
+        EditableDocument jaas = Schematic.newDocument(FieldName.CLASSNAME, "JAAS", "policyName", "modeshape-jcr");
         providers.addDocument(jaas);
 
         EditableDocument workspaces = doc.getOrCreateDocument("workspaces");

@@ -535,7 +535,7 @@ public class RepositoryConfiguration {
     static {
         Set<String> skipProps = new HashSet<String>();
         skipProps.add(FieldName.CLASSLOADER);
-        skipProps.add(FieldName.TYPE);
+        skipProps.add(FieldName.CLASSNAME);
         COMPONENT_SKIP_PROPERTIES = Collections.unmodifiableSet(skipProps);
 
         String jaasProvider = "org.modeshape.jcr.security.JaasProvider";
@@ -895,7 +895,7 @@ public class RepositoryConfiguration {
         }
 
         public AbstractBinaryStore getBinaryStore() throws NamingException, IOException {
-            String type = binaryStorage.getString(FieldName.TYPE, "transient");
+            String type = binaryStorage.getString(FieldName.CLASSNAME, "transient");
             AbstractBinaryStore store = null;
             if (type.equalsIgnoreCase("transient")) {
                 store = TransientBinaryStore.get();
@@ -1046,13 +1046,17 @@ public class RepositoryConfiguration {
          */
         public List<Component> getCustomProviders() {
             Problems problems = new SimpleProblems();
-            List<Component> components = readComponents(security, FieldName.PROVIDERS, FieldName.TYPE, PROVIDER_ALIASES, problems);
+            List<Component> components = readComponents(security,
+                                                        FieldName.PROVIDERS,
+                                                        FieldName.CLASSNAME,
+                                                        PROVIDER_ALIASES,
+                                                        problems);
             assert !problems.hasErrors();
             return components;
         }
 
         protected void validateCustomProviders( Problems problems ) {
-            readComponents(security, FieldName.PROVIDERS, FieldName.TYPE, PROVIDER_ALIASES, problems);
+            readComponents(security, FieldName.PROVIDERS, FieldName.CLASSNAME, PROVIDER_ALIASES, problems);
         }
 
         private boolean isIncludedInCustomProviders( String classname ) {
@@ -1354,13 +1358,17 @@ public class RepositoryConfiguration {
          */
         public List<Component> getTextExtractors() {
             Problems problems = new SimpleProblems();
-            List<Component> components = readComponents(query, FieldName.EXTRACTORS, FieldName.TYPE, EXTRACTOR_ALIASES, problems);
+            List<Component> components = readComponents(query,
+                                                        FieldName.EXTRACTORS,
+                                                        FieldName.CLASSNAME,
+                                                        EXTRACTOR_ALIASES,
+                                                        problems);
             assert !problems.hasErrors();
             return components;
         }
 
         protected void validateTextExtractors( Problems problems ) {
-            readComponents(query, FieldName.EXTRACTORS, FieldName.TYPE, EXTRACTOR_ALIASES, problems);
+            readComponents(query, FieldName.EXTRACTORS, FieldName.CLASSNAME, EXTRACTOR_ALIASES, problems);
         }
 
         protected void setDefProp( Properties props,
@@ -1421,7 +1429,7 @@ public class RepositoryConfiguration {
             Problems problems = new SimpleProblems();
             List<Component> components = readComponents(sequencing,
                                                         FieldName.SEQUENCERS,
-                                                        FieldName.TYPE,
+                                                        FieldName.CLASSNAME,
                                                         SEQUENCER_ALIASES,
                                                         problems);
             assert !problems.hasErrors();
@@ -1434,7 +1442,7 @@ public class RepositoryConfiguration {
          * @param problems the container for problems reading the sequencer information; may not be null
          */
         protected void validateSequencers( Problems problems ) {
-            readComponents(sequencing, FieldName.SEQUENCERS, FieldName.TYPE, SEQUENCER_ALIASES, problems);
+            readComponents(sequencing, FieldName.SEQUENCERS, FieldName.CLASSNAME, SEQUENCER_ALIASES, problems);
         }
     }
 
@@ -1502,7 +1510,7 @@ public class RepositoryConfiguration {
             for (Object value : components) {
                 if (value instanceof Document) {
                     Document component = (Document)value;
-                    String classname = component.getString(FieldName.TYPE);
+                    String classname = component.getString(FieldName.CLASSNAME);
                     String classpath = component.getString(FieldName.CLASSLOADER); // optional
                     String name = component.getString(FieldName.NAME); // optional
                     if (classname != null) {
@@ -1868,25 +1876,86 @@ public class RepositoryConfiguration {
                 return ((Document)value).toMap();
             }
 
+            // Strings can be parsed into numbers ...
+            if (value instanceof String) {
+                String strValue = (String)value;
+                // Try the smallest ranges first ...
+                if (Short.TYPE.isAssignableFrom(expectedType) || Short.class.isAssignableFrom(expectedType)) {
+                    try {
+                        return Short.parseShort(strValue);
+                    } catch (NumberFormatException e) {
+                        // ignore and continue ...
+                    }
+                }
+                if (Integer.TYPE.isAssignableFrom(expectedType) || Integer.class.isAssignableFrom(expectedType)) {
+                    try {
+                        return Integer.parseInt(strValue);
+                    } catch (NumberFormatException e) {
+                        // ignore and continue ...
+                    }
+                }
+                if (Long.TYPE.isAssignableFrom(expectedType) || Long.class.isAssignableFrom(expectedType)) {
+                    try {
+                        return Long.parseLong(strValue);
+                    } catch (NumberFormatException e) {
+                        // ignore and continue ...
+                    }
+                }
+                if (Boolean.TYPE.isAssignableFrom(expectedType) || Boolean.class.isAssignableFrom(expectedType)) {
+                    try {
+                        return Boolean.parseBoolean(strValue);
+                    } catch (NumberFormatException e) {
+                        // ignore and continue ...
+                    }
+                }
+                if (Float.TYPE.isAssignableFrom(expectedType) || Float.class.isAssignableFrom(expectedType)) {
+                    try {
+                        return Float.parseFloat(strValue);
+                    } catch (NumberFormatException e) {
+                        // ignore and continue ...
+                    }
+                }
+                if (Double.TYPE.isAssignableFrom(expectedType) || Double.class.isAssignableFrom(expectedType)) {
+                    try {
+                        return Double.parseDouble(strValue);
+                    } catch (NumberFormatException e) {
+                        // ignore and continue ...
+                    }
+                }
+            }
+
             // return value as it is
             return value;
         }
 
         private Object valueToArray( Class<?> arrayComponentType,
                                      Object value ) throws Exception {
-            boolean valueIsArray = value instanceof Array;
-
-            int arraySize = valueIsArray ? ((Array)value).size() : 1;
-            Object array = java.lang.reflect.Array.newInstance(arrayComponentType, arraySize);
-
-            if (valueIsArray) {
+            if (value instanceof Array) {
+                Array valueArray = (Array)value;
+                int arraySize = valueArray.size();
+                Object newArray = java.lang.reflect.Array.newInstance(arrayComponentType, arraySize);
                 for (int i = 0; i < ((Array)value).size(); i++) {
-                    java.lang.reflect.Array.set(array, i, ((Array)value).get(i));
+                    Object element = valueArray.get(i);
+                    element = convertValueToType(arrayComponentType, element);
+                    java.lang.reflect.Array.set(newArray, i, element);
                 }
-            } else {
-                java.lang.reflect.Array.set(array, 0, value);
+                return newArray;
+            } else if (value instanceof String) {
+                // Parse the string into a comma-separated set of values (this works if it's just a single value) ...
+                String strValue = (String)value;
+                if (strValue.length() > 0) {
+                    String[] stringValues = strValue.split(",");
+                    Object newArray = java.lang.reflect.Array.newInstance(arrayComponentType, stringValues.length);
+                    for (int i = 0; i < stringValues.length; i++) {
+                        Object element = convertValueToType(arrayComponentType, stringValues[i]);
+                        java.lang.reflect.Array.set(newArray, i, element);
+                    }
+                    return newArray;
+                }
             }
-            return array;
+
+            // Otherwise, just initialize it to an empty array ...
+            return java.lang.reflect.Array.newInstance(arrayComponentType, 0);
         }
 
         private Collection<?> valueToCollection( Object value,

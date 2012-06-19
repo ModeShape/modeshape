@@ -45,6 +45,7 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.security.JaasSecurityContext.UserPasswordCallbackHandler;
 
 public class AuthenticationAndAuthorizationTest {
@@ -113,7 +114,7 @@ public class AuthenticationAndAuthorizationTest {
      *         },
      *         "providers" : [
      *             {
-     *                 "type" : "JAAS",
+     *                 "classname" : "JAAS",
      *                 "policyName" : "modeshape-jcr"
      *             }
      *         ]
@@ -132,7 +133,7 @@ public class AuthenticationAndAuthorizationTest {
      *         },
      *         "providers" : [
      *             {
-     *                 "type" : "JAAS",
+     *                 "classname" : "JAAS",
      *                 "policyName" : "modeshape-jcr"
      *             }
      *         ]
@@ -167,7 +168,7 @@ public class AuthenticationAndAuthorizationTest {
         if (jaasPolicyName != null) {
             // Add the JAAS provider ...
             EditableArray providers = security.getOrCreateArray("providers");
-            EditableDocument jaas = Schematic.newDocument("type", "JAAS", "policyName", "modeshape-jcr");
+            EditableDocument jaas = Schematic.newDocument(FieldName.CLASSNAME, "JAAS", "policyName", "modeshape-jcr");
             providers.addDocument(jaas);
         }
 

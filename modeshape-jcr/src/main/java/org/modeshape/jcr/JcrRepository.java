@@ -312,15 +312,20 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
      * @see JcrEngine#update(String, Changes)
      */
     void apply( Changes changes ) throws IOException, NamingException {
-        final RepositoryConfiguration oldConfiguration = this.config.get();
-        Editor copy = oldConfiguration.edit();
-        ConfigurationChange configChanges = new ConfigurationChange();
-        copy.apply(changes, configChanges);
         try {
             stateLock.lock();
+            // Get the configuration and apply the same changes ...
+            final RepositoryConfiguration oldConfiguration = this.config.get();
+            Editor copy = oldConfiguration.edit();
+            ConfigurationChange configChanges = new ConfigurationChange();
+            copy.apply(changes, configChanges);
+
             // Always update the configuration ...
             RunningState oldState = this.runningState.get();
-            this.config.set(new RepositoryConfiguration(copy, copy.getString(FieldName.NAME)));
+            RepositoryConfiguration newConfig = new RepositoryConfiguration(copy, copy.getString(FieldName.NAME));
+            // Make sure the new configuration uses the same environment as the old one ...
+            newConfig = newConfig.with(oldConfiguration.environment());
+            this.config.set(newConfig);
             if (oldState != null) {
                 assert state.get() == State.RUNNING;
                 // Repository is running, so create a new running state ...
@@ -927,6 +932,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         protected RunningState( JcrRepository.RunningState other,
                                 JcrRepository.ConfigurationChange change ) throws IOException, NamingException {
             this.config = repositoryConfiguration();
+            if (other == null) {
+                logger.debug("Starting '{0}' repository with configuration: \n{1}", repositoryName(), this.config);
+            } else {
+                logger.debug("Updating '{0}' repository with configuration: \n{1}", repositoryName(), this.config);
+            }
             ExecutionContext tempContext = new ExecutionContext();
 
             // Set up monitoring (doing this early in the process so it is avialable to other components to use) ...
@@ -945,7 +955,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 }
             }
 
-            logger.debug("Starting '{0}' repository", repositoryName());
             this.systemWorkspaceName = RepositoryConfiguration.SYSTEM_WORKSPACE_NAME;
             this.systemWorkspaceKey = NodeKey.keyForWorkspaceName(this.systemWorkspaceName);
 
@@ -966,16 +975,12 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     logger.warn(JcrI18n.storageRelatedConfigurationChangesWillTakeEffectAfterShutdown, getName());
                 }
                 // reuse the existing storage-related components ...
-                this.database = other.database;
-                this.txnMgr = other.txnMgr;
-                if (change.transactionMode) {
-                    MonitorFactory monitorFactory = new RepositoryMonitorFactory(this);
-                    this.transactions = createTransactions(config.getTransactionMode(), monitorFactory, this.txnMgr);
-                } else {
-                    this.transactions = other.transactions;
-                }
                 this.cache = other.cache;
                 this.context = other.context;
+                this.database = other.database;
+                this.txnMgr = database.getCache().getAdvancedCache().getTransactionManager();
+                MonitorFactory monitorFactory = new RepositoryMonitorFactory(this);
+                this.transactions = createTransactions(config.getTransactionMode(), monitorFactory, this.txnMgr);
                 if (change.largeValueChanged) {
                     // We can update the value used in the repository cache dynamically ...
                     BinaryStorage binaryStorage = config.getBinaryStorage();
@@ -998,17 +1003,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.changeDispatchingQueue = other.changeDispatchingQueue;
                 this.changeBus = other.changeBus;
             } else {
-                CacheContainer container = null;
-                String cacheName = null;
-                try {
-                    // find the Schematic database and Infinispan Cache ...
-                    container = config.getContentCacheContainer();
-                    cacheName = config.getCacheName();
-                    this.database = Schematic.get(container, cacheName);
-                    assert this.database != null;
-                } catch (RuntimeException e) {
-                    throw e;
-                }
+                // find the Schematic database and Infinispan Cache ...
+                CacheContainer container = config.getContentCacheContainer();
+                String cacheName = config.getCacheName();
+                this.database = Schematic.get(container, cacheName);
+                assert this.database != null;
                 this.txnMgr = this.database.getCache().getAdvancedCache().getTransactionManager();
                 MonitorFactory monitorFactory = new RepositoryMonitorFactory(this);
                 this.transactions = createTransactions(config.getTransactionMode(), monitorFactory, this.txnMgr);
